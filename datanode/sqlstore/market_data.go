@@ -98,7 +98,7 @@ func (md *MarketData) GetMarketDataByID(ctx context.Context, marketID string) (e
 	md.log.Debug("Retrieving market data from Postgres", logging.String("market-id", marketID))
 
 	var marketData entities.MarketData
-	query := "select * from market_data_snapshot where market = $1"
+	query := "select * from current_market_data where market = $1"
 
 	return marketData, md.wrapE(pgxscan.Get(ctx, md.Connection, &marketData, query, entities.MarketID(marketID)))
 }
@@ -107,7 +107,7 @@ func (md *MarketData) GetMarketsData(ctx context.Context) ([]entities.MarketData
 	md.log.Debug("Retrieving markets data from Postgres")
 
 	var marketData []entities.MarketData
-	query := "select * from market_data_snapshot"
+	query := "select * from current_market_data"
 
 	defer metrics.StartSQLQuery("MarketData", "GetMarketsData")()
 	err := pgxscan.Select(ctx, md.Connection, &marketData, query)

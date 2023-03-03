@@ -33,7 +33,7 @@ type BlockExplorerServiceClient interface {
 	// Info
 	//
 	// Retrieves information about the block explorer.
-	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built,
+	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 }
 
@@ -87,7 +87,7 @@ type BlockExplorerServiceServer interface {
 	// Info
 	//
 	// Retrieves information about the block explorer.
-	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built,
+	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	mustEmbedUnimplementedBlockExplorerServiceServer()
 }

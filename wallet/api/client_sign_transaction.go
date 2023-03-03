@@ -73,14 +73,14 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(errs)
 	}
 
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow, 2); err != nil {
 		return nil, requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	if connectedWallet.RequireInteraction() {
 		receivedAt := time.Now()
-		approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, traceID, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+		approved, err := h.interactor.RequestTransactionReviewForSigning(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 		if err != nil {
 			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
@@ -157,7 +157,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID, TransactionSuccessfullySigned)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, 2, TransactionSuccessfullySigned)
 
 	return ClientSignTransactionResult{
 		Tx: tx,
