@@ -9,7 +9,7 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |

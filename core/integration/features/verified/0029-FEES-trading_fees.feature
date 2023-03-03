@@ -20,7 +20,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -88,8 +88,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    |
+      | trader3 | ETH   | ETH/DEC21 | 4329   | 5687    |
+      | trader4 | ETH   | ETH/DEC21 | 4088   | 5889    |
 
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -109,7 +109,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -191,9 +191,9 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 726    | 9285    |
+      | trader3a | ETH   | ETH/DEC21 | 2886   | 7125    |
       | trader3b | ETH   | ETH/DEC21 | 363    | 9643    |
-      | trader4  | ETH   | ETH/DEC21 | 657    | 9318    |
+      | trader4  | ETH   | ETH/DEC21 | 4088   | 5887    |
 
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -218,7 +218,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -353,6 +353,7 @@ Feature: Fees calculations
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
 
+  @WhutMargin
   Scenario: S005, Testing fees get collected when amended order trades (0029-FEES-005)
 
     Given the fees configuration named "fees-config-1":
@@ -368,7 +369,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -442,9 +443,9 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 678    | 9333    |
+      | trader3a | ETH   | ETH/DEC21 | 2886   | 7125    |
       | trader3b | ETH   | ETH/DEC21 | 339    | 9667    |
-      | trader4  | ETH   | ETH/DEC21 | 621    | 604     |
+      | trader4  | ETH   | ETH/DEC21 | 1225   | 0       |
 
     # Placing second set of orders
     When the parties place the following orders with ticks:
@@ -486,6 +487,7 @@ Feature: Fees calculations
       | trader3a | ETH   | ETH/DEC21 | 1159   | 8862    |
       | trader4  | ETH   | ETH/DEC21 | 1102   | 109     |
 
+  @WhutMargin
   Scenario: S006, Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees (0029-FEES-008)
 
     Given the fees configuration named "fees-config-1":
@@ -501,7 +503,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -545,12 +547,12 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 33888  | 9966613 |
-      | trader4 | ETH   | ETH/DEC21 | 21384  | 121     |
+      | trader3 | ETH   | ETH/DEC21 | 144288 | 9856213 |
+      | trader4 | ETH   | ETH/DEC21 | 21505  | 0       |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 17820       | 19602  | 21384   | 24948   |
+      | trader4 | ETH/DEC21 | 110220      | 121242 | 132264  | 154308   |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -587,7 +589,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -655,7 +657,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -756,7 +758,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -844,8 +846,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 5976   | 4034    |
-      | trader4  | ETH   | ETH/DEC21 | 9292   | 675     |
+      | trader3a | ETH   | ETH/DEC21 | 5772   | 4238    |
+      | trader4  | ETH   | ETH/DEC21 | 9259   | 708     |
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -881,7 +883,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader4  | ETH   | ETH/DEC21 | 10679  | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 10093  | 586     |
       | trader3a | ETH   | ETH/DEC21 | 5503   | 3791    |
 
     Then the market data for the market "ETH/DEC21" should be:
@@ -915,7 +917,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -985,7 +987,7 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader4 | ETH/DEC21 | 4421        | 5305    |
+      | trader4 | ETH/DEC21 | 4409        | 5290    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1023,7 +1025,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1087,12 +1089,12 @@ Feature: Fees calculations
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | initial |
       | trader3a | ETH/DEC21 | 1170        | 1404    |
-      | trader4  | ETH/DEC21 | 2390        | 2868    |
+      | trader4  | ETH/DEC21 | 1980        | 2376    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 1404   | 3492    |
-      | trader4  | ETH   | ETH/DEC21 | 2756   | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 2376   | 380     |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1125,7 +1127,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1199,7 +1201,7 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader4 | ETH/DEC21 | 4421        | 5305    |
+      | trader4 | ETH/DEC21 | 4409        | 5290    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1237,7 +1239,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1304,12 +1306,12 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader4 | ETH/DEC21 | 3570        | 3927   | 4284    | 4998    |
+      | trader4 | ETH/DEC21 | 2970        | 3267   | 3564    | 4158    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 |    0   | 0       |
-      | trader4  | ETH   | ETH/DEC21 | 3801   | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 3564   | 237     |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1342,7 +1344,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
@@ -1407,12 +1409,12 @@ Feature: Fees calculations
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | initial |
-      | trader4 | ETH/DEC21 | 4788        | 5745    |
+      | trader4 | ETH/DEC21 | 3960        | 4752    |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
-      | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 4661   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1427,7 +1429,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         |
 
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount        |
@@ -1467,7 +1469,7 @@ Feature: Fees calculations
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
       | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 7500        | 24000  | 30000   | 37500   |
+      | trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
 
     Then the parties cancel the following orders:
       | party | reference       |
@@ -1523,7 +1525,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1 | default-none     | default-eth-for-future | 1e0                    | 0                         |
 
     And the parties deposit on asset's general account the following amount:
       | party    | asset | amount        |
@@ -1563,7 +1565,7 @@ Feature: Fees calculations
     Then the parties should have the following margin levels:
       | party    | market id | maintenance | search | initial | release |
       | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
-      | trader3b | ETH/DEC21 | 7500        | 24000  | 30000   | 37500   |
+      | trader3b | ETH/DEC21 | 54000       | 172800 | 216000  | 270000  |
 
     Then the parties cancel the following orders:
       | party | reference       |
@@ -1631,7 +1633,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -1756,7 +1758,7 @@ Feature: Fees calculations
 
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e0                    | 0                         |
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -1833,8 +1835,8 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    |
-      | trader4 | ETH   | ETH/DEC21 | 657    | 9131    |
+      | trader3 | ETH   | ETH/DEC21 | 4329   | 5822    |
+      | trader4 | ETH   | ETH/DEC21 | 4088   | 5700    |
 
     And the accumulated infrastructure fees should be "61" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
