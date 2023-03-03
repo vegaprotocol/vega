@@ -201,6 +201,7 @@ func testListingKeysCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 		"public_keys": "read",
 	}).Times(1).Return(false, api.ErrUserCloseTheConnection)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrConnectionClosed)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, connectedWallet)
