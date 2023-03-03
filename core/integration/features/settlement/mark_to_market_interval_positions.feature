@@ -16,8 +16,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
+      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1     | default-eth-for-future | 1e0                    | 0                         |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -113,7 +113,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
+      | designatedLoser | ETH/DEC19 | 58154       | 69784  | 87231   | 116308  |
 
     # insurance pool generation - modify order book
     And the parties cancel the following orders:
@@ -263,7 +263,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC20 | 47134       | 56560  | 70701   | 94268   |
+      | designatedLoser | ETH/DEC20 | 58154       | 69784  | 87231   | 116308  |
 
     # insurance pool generation - modify order book
     And the parties cancel the following orders:

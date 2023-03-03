@@ -3,7 +3,7 @@ Feature: Test mark to market settlement
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -42,7 +42,7 @@ Feature: Test mark to market settlement
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      | party1 | ETH   | ETH/DEC19 | 1320   | 8680    |
       | party2 | ETH   | ETH/DEC19 | 1273   | 8727    |
 
     # party3 does not have position record exist since party3 does not have either an open position nor active order
@@ -57,14 +57,15 @@ Feature: Test mark to market settlement
       | party1 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 1440   | 8560    |
+      #| party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 7682   | 1318    |
+      | party1 | ETH   | ETH/DEC19 | 5280   | 3720    |
       | party3 | ETH   | ETH/DEC19 | 2605   | 7395    |
       | party2 | ETH   | ETH/DEC19 | 2605   | 8395    |
 
@@ -108,7 +109,7 @@ Feature: Test mark to market settlement
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      | party1 | ETH   | ETH/DEC19 | 1320   | 8680    |
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
@@ -117,20 +118,20 @@ Feature: Test mark to market settlement
       | party1 | ETH/DEC19 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 1440   | 8560    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 1202   | 4798    |
+      | party1 | ETH   | ETH/DEC19 | 6000   | 0       |
       | party3 | ETH   | ETH/DEC19 | 5461   | 4539    |
       | party2 | ETH   | ETH/DEC19 | 5461   | 8539    |
     Then the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4000   | ETH   |
-      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 4000   | ETH   |
+      | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1440   | ETH   |
+      | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1440   | ETH   |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4000   | ETH   |
       | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 4000   | ETH   |
 
@@ -188,7 +189,7 @@ Feature: Test mark to market settlement
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 4921   | 5079    |
+      | party1 | ETH   | ETH/DEC19 | 1320   | 8680    |
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
@@ -196,7 +197,7 @@ Feature: Test mark to market settlement
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5041   | 4959    |
+      | party1 | ETH   | ETH/DEC19 | 1440   | 8560    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -205,7 +206,7 @@ Feature: Test mark to market settlement
     # here we expect party 2 to still have the same margin as the previous trade did not change the markprice
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 9842   | 158     |
+      | party1 | ETH   | ETH/DEC19 | 2640   | 7360    |
       | party3 | ETH   | ETH/DEC19 | 132    | 9868    |
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
     And the cumulated balance for all accounts should be worth "330000"
@@ -259,10 +260,10 @@ Feature: Test mark to market settlement
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 145    | 345     |
       | party2 | ETH   | ETH/DEC19 | 145    | 355     |
-      | party3 | ETH   | ETH/DEC19 | 315    | 195     |
+      | party3 | ETH   | ETH/DEC19 | 510    | 0       |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 121         | 133    | 145     | 169     |
       | party2 | ETH/DEC19 | 121         | 133    | 145     | 169     |
-      | party3 | ETH/DEC19 | 263         | 289    | 315     | 368     |
+      | party3 | ETH/DEC19 | 2243        | 2467   | 2691    | 3140    |
