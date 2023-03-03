@@ -1179,10 +1179,11 @@ type TestEventSource struct {
 }
 
 func newTestEventSource(onEvent func(events.Event, chan<- events.Event)) (*TestEventSource, error) {
-	evtSource, err := broker.NewBufferFilesEventSource(eventsDir, 0, 0, chainID)
+	rawEvtSource, err := broker.NewBufferFilesEventSource(eventsDir, 0, 0, chainID)
 	if err != nil {
 		return nil, err
 	}
+	evtSource := broker.NewDeserializer(rawEvtSource)
 
 	return &TestEventSource{
 		fileSource: evtSource,

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/libs/proto"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -60,14 +61,14 @@ func (e *bufferFileEventSource) Send(events.Event) error {
 	return nil
 }
 
-func (e *bufferFileEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
-	eventsCh := make(chan events.Event, e.sendChannelBufferSize)
+func (e *bufferFileEventSource) Receive(ctx context.Context) (<-chan []byte, <-chan error) {
+	eventsCh := make(chan []byte, e.sendChannelBufferSize)
 	errorCh := make(chan error, 1)
 
 	go func() {
 		for _, eventFile := range e.archiveFiles {
-			err := e.sendAllBufferedEventsInFile(ctx, eventsCh, filepath.Join(e.bufferFilesDir, eventFile.Name()),
-				e.timeBetweenBlocks, e.chainID)
+			err := e.sendAllRawEventsInFile(ctx, eventsCh, filepath.Join(e.bufferFilesDir, eventFile.Name()),
+				e.timeBetweenBlocks)
 			if err != nil {
 				errorCh <- fmt.Errorf("failed to send events in buffer file: %w", err)
 			}
@@ -77,8 +78,8 @@ func (e *bufferFileEventSource) Receive(ctx context.Context) (<-chan events.Even
 	return eventsCh, errorCh
 }
 
-func (e *bufferFileEventSource) sendAllBufferedEventsInFile(ctx context.Context, out chan<- events.Event, file string,
-	timeBetweenBlocks time.Duration, chainID string,
+func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out chan<- []byte, file string,
+	timeBetweenBlocks time.Duration,
 ) error {
 	eventFile, err := os.Open(file)
 	defer func() {
@@ -89,7 +90,6 @@ func (e *bufferFileEventSource) sendAllBufferedEventsInFile(ctx context.Context,
 		return fmt.Errorf("failed to open file: %w", err)
 	}
 
-	eventBlock := make([]*eventspb.BusEvent, 0)
 	var offset int64
 
 	for {
@@ -97,61 +97,54 @@ func (e *bufferFileEventSource) sendAllBufferedEventsInFile(ctx context.Context,
 		case <-ctx.Done():
 			return nil
 		default:
-
-			event, _, read, err := readBufferedEvent(eventFile, offset)
+			rawEvent, _, read, err := readRawEvent(eventFile, offset)
 			if err != nil {
 				return fmt.Errorf("failed to read buffered event:%w", err)
 			}
 
 			if read == 0 {
-				err = sendBufferedBlock(ctx, out, eventBlock)
-				if err != nil {
-					return fmt.Errorf("send block failed:%w", err)
-				}
 				return nil
 			}
 
 			offset += int64(read)
 
+			// We have to deserialize the busEvent here (even though we output the raw busEvent)
+			// to be able to skip the first few events before we get a BeginBlock and to be
+			// able to to sleep between blocks.
+			busEvent := &eventspb.BusEvent{}
+			if err := proto.Unmarshal(rawEvent, busEvent); err != nil {
+				return fmt.Errorf("failed to unmarshal bus event: %w", err)
+			}
+
 			// Buffer files do not necessarily start on block boundaries, to prevent sending part of a block
 			// events are ignored until an initial begin block event is encountered
 			if len(e.currentBlock) == 0 {
-				if event.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
-					e.currentBlock = event.Block
+				if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
+					e.currentBlock = busEvent.Block
 				} else {
 					continue
 				}
 			}
 
-			err = checkChainID(chainID, event.ChainId)
-
-			if err != nil {
-				return fmt.Errorf("check chain id failed: %w", err)
-			}
-
-			if event.Block != e.currentBlock {
-				if err := sendBufferedBlock(ctx, out, eventBlock); err != nil {
-					return fmt.Errorf("failed to send buffered block: %w", err)
-				}
-				eventBlock = eventBlock[:0]
+			// Optional sleep between blocks to mimic running against core
+			if busEvent.Block != e.currentBlock {
 				time.Sleep(timeBetweenBlocks)
-				e.currentBlock = event.Block
+				e.currentBlock = busEvent.Block
 			}
 
-			eventBlock = append(eventBlock, event)
+			err = sendRawEvent(ctx, out, rawEvent)
+			if err != nil {
+				return fmt.Errorf("send event failed:%w", err)
+			}
 		}
 	}
 }
 
-func sendBufferedBlock(ctx context.Context, out chan<- events.Event, batch []*eventspb.BusEvent) error {
-	for _, busEvent := range batch {
-		evt := toEvent(ctx, busEvent)
-
-		select {
-		case out <- evt:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
+func sendRawEvent(ctx context.Context, out chan<- []byte, rawEvent []byte) error {
+	select {
+	case out <- rawEvent:
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 	return nil
 }
