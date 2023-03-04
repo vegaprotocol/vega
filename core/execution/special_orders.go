@@ -326,7 +326,7 @@ func (m *Market) updateLPOrders(
 			m.broker.Send(evt)
 		}
 
-		cancelled := m.applyBondPenaltiesAndLiquidationExcludingPending(
+		cancelled := m.applyBondPenaltiesAndCancelLPs(
 			ctx, bondPenalties, closed, marginsBefore,
 		)
 
@@ -349,7 +349,7 @@ func (m *Market) updateLPOrders(
 	return []*types.Order{}
 }
 
-func (m *Market) applyBondPenaltiesAndLiquidationExcludingPending(
+func (m *Market) applyBondPenaltiesAndCancelLPs(
 	ctx context.Context,
 	bondPenalties []events.Margin,
 	closed []events.Margin,
@@ -410,14 +410,16 @@ func (m *Market) applyBondPenaltiesAndLiquidationExcludingPending(
 		// now we can had them to the cancelled map
 		// as we don't need to use it anymore apart for returning
 		for _, v := range reallyClosed {
-			cancelled[v.Party()] = struct{}{}
-		}
-
-		_, err := m.resolveClosedOutParties(ctx, reallyClosed)
-		if err != nil {
-			m.log.Error("unable to closed out parties",
-				logging.String("market-id", m.GetID()),
-				logging.Error(err))
+			party := v.Party()
+			if m.liquidity.IsLiquidityProvider(party) {
+				err := m.cancelLiquidityProvision(ctx, party, false)
+				if err != nil {
+					m.log.Error("Failed to cancel LP",
+						logging.Error(err),
+						logging.PartyID(party))
+				}
+				cancelled[v.Party()] = struct{}{}
+			}
 		}
 	}
 

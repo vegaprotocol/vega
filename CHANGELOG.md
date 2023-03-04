@@ -25,6 +25,7 @@
 - [7723](https://github.com/vegaprotocol/vega/issues/7723) - Make the `SessionBegan` interaction easy to identify using a `WorkflowType`
 - [7724](https://github.com/vegaprotocol/vega/issues/7724) - Add steps number to interactions to convey a progression feeling.
 - [7353](https://github.com/vegaprotocol/vega/issues/7353) - Improve query setting current orders to only the most recent row after snapshot restore.
+- [7763](https://github.com/vegaprotocol/vega/issues/7763) - Remove separate LP close out code path.
 
 ### 🐛 Fixes
 - [7596](https://github.com/vegaprotocol/vega/issues/7596) - Slippage factors not persisted in database
