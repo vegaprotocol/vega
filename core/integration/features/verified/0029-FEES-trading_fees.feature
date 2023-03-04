@@ -542,8 +542,15 @@ Feature: Fees calculations
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |
-      | 1000       | TRADING_MODE_CONTINUOUS |
+      | mark price | trading mode            | target stake |supplied stake |
+      | 1000       | TRADING_MODE_CONTINUOUS |   2000       | 0             |
+
+    Then the order book should have the following volumes for market "ETH/DEC21":
+      | side | price | volume |
+      | buy  | 910   | 0      |
+      | buy  | 920   | 300    |
+      | sell | 1080  | 300    |
+      | sell | 1090  | 0      |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
