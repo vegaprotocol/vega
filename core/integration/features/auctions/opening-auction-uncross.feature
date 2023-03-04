@@ -98,8 +98,10 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | limits.markets.maxPeggedOrders                      | 10    | 
     When the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | party5 | ETH/DEC19 | buy  | 100000 | BID              | 1      |
+      | party4 | ETH/DEC19 | buy  | 100000 | BID              | 1      |
+      | party4 | ETH/DEC19 | buy  | 100000 | MID              | 1      |
       | party5 | ETH/DEC19 | sell | 100000 | ASK              | 1      |
+      | party5 | ETH/DEC19 | sell | 100000 | MID              | 1      |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -113,14 +115,51 @@ Feature: Set up a market, with an opening auction, then uncross the book
     
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
-      | party5 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 0     | STATUS_PARKED |
+      | party4 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 0     | STATUS_PARKED |
+      | party4 | ETH/DEC19 | buy  | 100000 | MID       | 1      | 0     | STATUS_PARKED |
       | party5 | ETH/DEC19 | sell | 100000 | ASK       | 1      | 0     | STATUS_PARKED |
+      | party5 | ETH/DEC19 | sell | 100000 | MID       | 1      | 0     | STATUS_PARKED |
     
     When the opening auction period ends for market "ETH/DEC19"
     Then the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | auction trigger             |
       | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
     And the pegged orders should have the following states:
-      | party  | market id | side | volume | reference | offset | price | status        |
-      | party5 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 899   | STATUS_ACTIVE |
-      | party5 | ETH/DEC19 | sell | 100000 | ASK       | 1      | 1101  | STATUS_ACTIVE |
+      | party  | market id | side | volume | reference | offset | price | status           |
+      | party4 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 899   | STATUS_ACTIVE    |
+      | party4 | ETH/DEC19 | buy  | 100000 | MID       | 1      | 999   | STATUS_ACTIVE    |
+      | party5 | ETH/DEC19 | sell | 100000 | ASK       | 1      | 1101  | STATUS_CANCELLED |
+      | party5 | ETH/DEC19 | sell | 100000 | MID       | 1      | 1001  | STATUS_CANCELLED |
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1101  |      0 |
+      | sell | 1100  |     83 |
+      | sell | 1001  |      0 |
+      | buy  | 999   | 100000 |
+      | buy  | 900   |    101 |
+      | buy  | 899   | 100000 |
+    
+    # Move the best bid and assure the orders don't resurrect
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the pegged orders should have the following states:
+      | party  | market id | side | volume | reference | offset | price | status           |
+      | party4 | ETH/DEC19 | buy  | 100000 | BID       | 1      | 899   | STATUS_ACTIVE    |
+      | party4 | ETH/DEC19 | buy  | 100000 | MID       | 1      | 949   | STATUS_ACTIVE    |
+      | party5 | ETH/DEC19 | sell | 100000 | ASK       | 1      | 1101  | STATUS_CANCELLED |
+      | party5 | ETH/DEC19 | sell | 100000 | MID       | 1      | 1001  | STATUS_CANCELLED |
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1101  |      0 |
+      | sell | 1100  |      1 |
+      | sell | 1050  |     86 |
+      | sell | 1001  |      0 |
+      | sell | 1000  |      1 |
+      | sell | 999   |      0 |
+      | sell | 951   |      0 |
+      | buy  | 999   |      0 |
+      | buy  | 949   | 100000 |
+      | buy  | 900   |      1 |
+      | buy  | 899   | 100000 |
+      | buy  | 850   |    106 |

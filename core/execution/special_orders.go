@@ -158,11 +158,34 @@ func (m *Market) repriceAllSpecialOrders(
 
 	// now no lp orders are in the book anymore,
 	// we can then just re-submit all pegged orders
-	// if we needed to re-submit peggted orders,
+	// if we needed to re-submit pegged orders,
 	// let's do it now
-	partiesPos := map[string]events.MarketPosition{}
-	if needsPeggedUpdates {
-		_, partiesPos = m.reSubmitPeggedOrders(ctx, toSubmit)
+	// partiesPos := map[string]events.MarketPosition{}
+	if needsPeggedUpdates && len(toSubmit) > 0 {
+		updatedOrders, partiesPos := m.reSubmitPeggedOrders(ctx, toSubmit)
+		risks, _, _ := m.updateMargins(ctx, partiesPos)
+		if len(risks) > 0 {
+			transfers, distressed, _, err := m.collateral.MarginUpdate(
+				ctx, m.GetID(), risks)
+			if err == nil && len(transfers) > 0 {
+				evt := events.NewLedgerMovements(ctx, transfers)
+				m.broker.Send(evt)
+			}
+			for _, p := range distressed {
+				distressedParty := p.Party()
+				for _, o := range updatedOrders {
+					if o.Party == distressedParty && o.Status == types.OrderStatusActive {
+						// cancel only the pegged orders, the reset will get picked up during regular closeout flow if need be
+						_, err := m.cancelOrder(ctx, distressedParty, o.ID)
+						if err != nil {
+							m.log.Panic("Failed to cancel order",
+								logging.Error(err),
+								logging.String("OrderID", o.ID))
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// now we have all the re-submitted pegged orders and the
@@ -173,7 +196,7 @@ func (m *Market) repriceAllSpecialOrders(
 		ctx, minLpPrice, maxLpPrice, m.repriceLiquidityOrder)
 
 	m.liquidity.ClearLPOrders()
-	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels, partiesPos)
+	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels)
 }
 
 func (m *Market) enterAuctionSpecialOrders(
@@ -223,14 +246,15 @@ func (m *Market) updateLPOrders(
 	allOrders []*types.Order,
 	submits []*types.Order,
 	cancels []*liquidity.ToCancel,
-	partiesPos map[string]events.MarketPosition,
+	// partiesPos map[string]events.MarketPosition,
 ) []*types.Order {
 	// this is a list of order which a LP distressed
 	var (
-		orderEvts []events.Event
-		cancelIDs = map[string]struct{}{}
-		submitIDs = map[string]struct{}{}
-		now       = m.timeService.GetTimeNow().UnixNano()
+		orderEvts  []events.Event
+		cancelIDs  = map[string]struct{}{}
+		submitIDs  = map[string]struct{}{}
+		partiesPos = map[string]events.MarketPosition{}
+		now        = m.timeService.GetTimeNow().UnixNano()
 	)
 
 	// now we gonna map all the order which
@@ -292,32 +316,8 @@ func (m *Market) updateLPOrders(
 	// send cancel events
 	m.broker.SendBatch(orderEvts)
 
-	// an ordered list of positions
-	var (
-		positions     = make([]events.MarketPosition, 0, len(partiesPos))
-		marginsBefore = map[string]*num.Uint{}
-		id            = m.GetID()
-		assetID, _    = m.mkt.GetAsset()
-	)
-	// now we can check parties positions
-	for party, pos := range partiesPos {
-		positions = append(positions, pos)
-		mar, err := m.collateral.GetPartyMarginAccount(id, party, assetID)
-		if err != nil {
-			m.log.Panic("party have position without a margin",
-				logging.MarketID(id),
-				logging.PartyID(party),
-			)
-		}
-		marginsBefore[party] = mar.Balance
-	}
-
-	sort.Slice(positions, func(i, j int) bool {
-		return positions[i].Party() < positions[j].Party()
-	})
-
 	// now we calculate all the new margins
-	risks := m.updateMargin(ctx, positions)
+	risks, positions, marginsBefore := m.updateMargins(ctx, partiesPos)
 	if len(risks) > 0 {
 		transfers, closed, bondPenalties, err := m.collateral.MarginUpdate(
 			ctx, m.GetID(), risks)
@@ -347,6 +347,35 @@ func (m *Market) updateLPOrders(
 	}
 
 	return []*types.Order{}
+}
+
+func (m *Market) updateMargins(ctx context.Context, partiesPos map[string]events.MarketPosition) ([]events.Risk, []events.MarketPosition, map[string]*num.Uint) {
+	// an ordered list of positions
+	var (
+		positions     = make([]events.MarketPosition, 0, len(partiesPos))
+		marginsBefore = map[string]*num.Uint{}
+		id            = m.GetID()
+		assetID, _    = m.mkt.GetAsset()
+	)
+	// now we can check parties positions
+	for party, pos := range partiesPos {
+		positions = append(positions, pos)
+		mar, err := m.collateral.GetPartyMarginAccount(id, party, assetID)
+		if err != nil {
+			m.log.Panic("party have position without a margin",
+				logging.MarketID(id),
+				logging.PartyID(party),
+			)
+		}
+		marginsBefore[party] = mar.Balance
+	}
+
+	sort.Slice(positions, func(i, j int) bool {
+		return positions[i].Party() < positions[j].Party()
+	})
+
+	// now we calculate all the new margins
+	return m.updateMargin(ctx, positions), positions, marginsBefore
 }
 
 func (m *Market) applyBondPenaltiesAndCancelLPs(
