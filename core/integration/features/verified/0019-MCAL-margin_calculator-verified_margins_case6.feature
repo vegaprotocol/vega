@@ -15,8 +15,8 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
       | party1     | ETH   | 1000000000 |
       | sellSideMM | ETH   | 1000000000 |
       | buySideMM  | ETH   | 1000000000 |
-      | aux        | ETH   | 1000000000 |
-      | aux2       | ETH   | 1000000000 |
+      | aux        | ETH   | 10000000000 |
+      | aux2       | ETH   | 10000000000 |
       | lpprov     | ETH   | 1000000000 |
 
     When the parties submit the following liquidity provision:
@@ -27,8 +27,8 @@ Feature: CASE-6: Trader submits short order that will trade - new formula & zero
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     Then the parties place the following orders:
       | party | market id | side | volume | price    | resulting trades | type       | tif     | reference      |
-      | aux   | ETH/DEC19 | buy  | 1      | 7900000  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-buy  |
-      | aux   | ETH/DEC19 | sell | 1      | 26000000 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-sell |
+      | aux   | ETH/DEC19 | buy  | 20     | 7900000  | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-buy  |
+      | aux   | ETH/DEC19 | sell | 20     | 26000000 | 0                | TYPE_LIMIT | TIF_GTC | cancel-me-sell |
       | aux   | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1        |
       | aux2  | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1        |
     Then the opening auction period ends for market "ETH/DEC19"
