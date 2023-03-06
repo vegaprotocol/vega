@@ -68,7 +68,7 @@ Feature: Closeout scenarios
       | trader2 | ETH/DEC19 | 321         | 481     | 642     | 963     |
       | lprov   | ETH/DEC19 | 800729      | 1201093 | 1601458 | 2402187 |
     # margin level_trader2= OrderSize*MarkPrice*RF = 40*10*0.801225765=321
-    # margin level_Lprov= OrderSize*MarkPrice*RF = max(223*10*3.55690359157934000,4040*10*0.801225765)=32370
+    # margin level_Lprov= OrderSize*MarkPrice*RF = max(96*10*3.55690359157934000,100000*10*0.801225765)=801225.765
 
 
     Then the parties should have the following account balances:
@@ -110,6 +110,10 @@ Feature: Closeout scenarios
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
     Then the mark price should be "100" for the market "ETH/DEC19"
     And the network moves ahead "1" blocks
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                   | target stake | supplied stake |
+      | 100        | TRADING_MODE_MONITORING_AUCTION| 71138        |   100000       |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
