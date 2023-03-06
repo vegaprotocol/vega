@@ -92,7 +92,7 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
-func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool) {
+func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, sf num.Decimal) {
 	// we have to ensure that we know the price/position factor
 	size := int64(trade.Size)
 	if seller {
@@ -108,7 +108,7 @@ func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool) {
 	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, priceUint.Clone())
 	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, priceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM(price)
+	p.pendingMTM(price, sf)
 }
 
 func (p *Position) UpdateOrdersClosed() {
@@ -230,14 +230,14 @@ func (p *Position) mtm(markPrice *num.Uint, positionFactor num.Decimal) {
 	p.UnrealisedPnl = openVolumeDec.Mul(markPriceDec.Sub(p.AverageEntryPrice)).Div(positionFactor)
 }
 
-func (p *Position) pendingMTM(price num.Decimal) {
+func (p *Position) pendingMTM(price, sf num.Decimal) {
 	if p.PendingOpenVolume == 0 {
 		p.PendingUnrealisedPnl = num.DecimalZero()
 		return
 	}
 
 	vol := num.DecimalFromInt64(p.PendingOpenVolume)
-	p.PendingUnrealisedPnl = vol.Mul(price.Sub(p.PendingAverageEntryPrice))
+	p.PendingUnrealisedPnl = vol.Mul(price.Sub(p.PendingAverageEntryPrice)).Div(sf)
 }
 
 func CalculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {

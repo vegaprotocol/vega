@@ -285,7 +285,7 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.riskFactorSub = sqlsubscribers.NewRiskFactor(s.riskFactorService)
 	s.netParamSub = sqlsubscribers.NewNetworkParameter(s.networkParameterService)
 	s.checkpointSub = sqlsubscribers.NewCheckpoint(s.checkpointService)
-	s.positionsSub = sqlsubscribers.NewPosition(s.positionService)
+	s.positionsSub = sqlsubscribers.NewPosition(s.positionService, s.marketsService)
 	s.oracleSpecSub = sqlsubscribers.NewOracleSpec(s.oracleSpecService)
 	s.oracleDataSub = sqlsubscribers.NewOracleData(s.oracleDataService)
 	s.liquidityProvisionSub = sqlsubscribers.NewLiquidityProvision(s.liquidityProvisionService)
