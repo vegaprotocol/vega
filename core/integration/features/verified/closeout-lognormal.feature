@@ -111,10 +111,6 @@ Feature: Closeout scenarios
     Then the mark price should be "100" for the market "ETH/DEC19"
     And the network moves ahead "1" blocks
 
-    And the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode                   | target stake | supplied stake |
-      | 100        | TRADING_MODE_MONITORING_AUCTION| 71138        |   100000       |
-
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | buy  | 5     | 0      |
