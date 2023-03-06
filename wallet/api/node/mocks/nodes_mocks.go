@@ -38,6 +38,20 @@ func (m *MockNode) EXPECT() *MockNodeMockRecorder {
 	return m.recorder
 }
 
+// CheckTransaction mocks base method.
+func (m *MockNode) CheckTransaction(arg0 context.Context, arg1 *v10.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckTransaction", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckTransaction indicates an expected call of CheckTransaction.
+func (mr *MockNodeMockRecorder) CheckTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockNode)(nil).CheckTransaction), arg0, arg1)
+}
+
 // Host mocks base method.
 func (m *MockNode) Host() string {
 	m.ctrl.T.Helper()
