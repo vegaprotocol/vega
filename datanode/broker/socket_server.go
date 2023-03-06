@@ -22,7 +22,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/golang/protobuf/proto"
 	"go.nanomsg.org/mangos/v3"
@@ -99,8 +98,8 @@ func (s socketServer) Listen() error {
 	return nil
 }
 
-func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
-	outboundCh := make(chan events.Event, s.config.SocketServerOutboundBufferSize)
+func (s socketServer) Receive(ctx context.Context) (<-chan []byte, <-chan error) {
+	outboundCh := make(chan []byte, s.config.SocketServerOutboundBufferSize)
 	// channel onto which we push the raw messages from the queue
 	inboundCh := make(chan []byte, s.config.SocketServerInboundBufferSize)
 	errCh := make(chan error, 1)
@@ -119,25 +118,9 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 		defer close(outboundCh)
 
 		for msg := range inboundCh {
-			var be eventspb.BusEvent
-			if err := proto.Unmarshal(msg, &be); err != nil {
-				// surely we should stop if this happens?
-				s.log.Error("Failed to unmarshal received event", logging.Error(err))
-				continue
-			}
-			if be.Version != eventspb.Version {
-				return fmt.Errorf("mismatched BusEvent version received: %d, want %d", be.Version, eventspb.Version)
-			}
-
-			evt := toEvent(ctx, &be)
-			if evt == nil {
-				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
-				continue
-			}
-
 			// Listen for context cancels, even if we're blocked sending events
 			select {
-			case outboundCh <- evt:
+			case outboundCh <- msg:
 			case <-ctx.Done():
 				return ctx.Err()
 			}

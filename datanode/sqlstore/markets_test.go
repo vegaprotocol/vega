@@ -33,7 +33,6 @@ func TestMarkets_Add(t *testing.T) {
 func TestMarkets_Get(t *testing.T) {
 	t.Run("GetByID should return the request market if it exists", getByIDShouldReturnTheRequestedMarketIfItExists)
 	t.Run("GetByID should return error if the market does not exist", getByIDShouldReturnErrorIfTheMarketDoesNotExist)
-	t.Run("GetAll should not include rejected markets", getAllShouldNotIncludeRejectedMarkets)
 	t.Run("GetAllPaged should not include rejected markets", getAllPagedShouldNotIncludeRejectedMarkets)
 }
 
@@ -79,40 +78,6 @@ func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
 
 	_, err = md.GetByID(ctx, "not-a-market")
 	require.Error(t, err)
-}
-
-func getAllShouldNotIncludeRejectedMarkets(t *testing.T) {
-	bs, md := setupMarketsTest(t)
-
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
-	block := addTestBlock(t, ctx, bs)
-
-	market := entities.Market{
-		ID:       "deadbeef",
-		TxHash:   generateTxHash(),
-		VegaTime: block.VegaTime,
-		State:    entities.MarketStateActive,
-	}
-	err := md.Upsert(ctx, &market)
-	require.NoError(t, err, "Saving market entity to database")
-
-	rejected := entities.Market{
-		ID:       "DEADBAAD",
-		TxHash:   generateTxHash(),
-		VegaTime: block.VegaTime,
-		State:    entities.MarketStateRejected,
-	}
-	err = md.Upsert(ctx, &rejected)
-	require.NoError(t, err, "Saving market entity to database")
-
-	markets, err := md.GetAll(ctx, entities.OffsetPagination{})
-	require.NoError(t, err)
-	assert.Len(t, markets, 1)
-	assert.Equal(t, market.ID, markets[0].ID)
-	assert.Equal(t, market.TxHash, markets[0].TxHash)
-	assert.Equal(t, market.VegaTime, markets[0].VegaTime)
-	assert.Equal(t, market.State, markets[0].State)
 }
 
 func getAllPagedShouldNotIncludeRejectedMarkets(t *testing.T) {
@@ -384,8 +349,10 @@ func getTestMarket() *vega.Market {
 			Open:     0,
 			Close:    0,
 		},
-		PositionDecimalPlaces: 8,
-		LpPriceRange:          "0.95",
+		PositionDecimalPlaces:   8,
+		LpPriceRange:            "0.95",
+		LinearSlippageFactor:    "1.23",
+		QuadraticSlippageFactor: "5.67",
 	}
 }
 

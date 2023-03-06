@@ -1444,24 +1444,11 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		}
 	}
 
-	oldPos, ok := m.position.GetPositionByPartyID(order.Party)
 	// Register order as potential positions
 	pos := m.position.RegisterOrder(ctx, order)
-	checkMargin := true
-	if !isPegged && ok {
-		oldVol, newVol := pos.Size()+pos.Buy()-pos.Sell(), oldPos.Size()+pos.Buy()-pos.Sell()
-		if oldVol < 0 {
-			oldVol = -oldVol
-		}
-		if newVol < 0 {
-			newVol = -newVol
-		}
-		// check margin if the new volume is greater, or the same (implying long to short, or short to long)
-		checkMargin = oldVol <= newVol
-	}
 
 	// Perform check and allocate margin unless the order is (partially) closing the party position
-	if checkMargin {
+	if !pos.OrderReducesExposure(order) {
 		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
@@ -2662,7 +2649,7 @@ func (m *Market) amendOrder(
 			// Do not amend in place, the amend could be something
 			// not supported for an amend in place, and not pass
 			// the validation of the order book
-			cancellation, err := m.matching.CancelOrder(amendedOrder)
+			cancellation, err := m.matching.CancelOrder(existingOrder)
 			if cancellation == nil || err != nil {
 				m.log.Panic("Failure to cancel order from matching engine",
 					logging.String("party-id", amendedOrder.Party),
@@ -2737,7 +2724,7 @@ func (m *Market) amendOrder(
 	// is already on the book, not rollback will be needed, the margin
 	// will be updated later on for sure.
 
-	// akways update margin, even for price/size decrease
+	// always update margin, even for price/size decrease
 	if err = m.checkMarginForOrder(ctx, pos, amendedOrder); err != nil {
 		// Undo the position registering
 		_ = m.position.AmendOrder(ctx, amendedOrder, existingOrder)

@@ -71,70 +71,106 @@ type condition func(string) (bool, error)
 // NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
 // suits the processing of the filters.
 // OracleSpec allows the existence of one and only one.
+// Currently VEGA network utilises internal triggers in the oracle function path, even though
+// the oracles are treated as external data sources.
+// For this reason this function checks if the provided external type of data source definition
+// contains a key name that indicates a builtin type of logic
+// and if the given data source definition is an internal type of data source, for more context refer to
+// https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed
 func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
-	signersFromSpec := []*types.Signer{}
+	filtersFromSpec := []*types.DataSourceSpecFilter{}
+	isExtType := false
 	if originalSpec.Spec != nil {
 		if originalSpec.Spec.Data != nil {
-			src := *originalSpec.Spec.Data
-
-			signersFromSpec = src.GetSigners()
+			filtersFromSpec = originalSpec.Spec.Data.GetFilters()
+			isExtType = originalSpec.Spec.Data.IsExternal()
 		}
 	}
 
-	if len(signersFromSpec) == 0 {
-		return nil, ErrMissingSigners
-	}
-
-	signers := map[string]struct{}{}
-	for _, pk := range signersFromSpec {
-		signers[pk.String()] = struct{}{}
-	}
-
-	filtersFromSpec := originalSpec.Spec.Data.GetFilters()
 	if len(filtersFromSpec) == 0 {
 		return nil, ErrAtLeastOneFilterIsRequired
 	}
 
+	builtInKey := false
 	typedFilters := map[string]*filter{}
 	for _, f := range filtersFromSpec {
-		if types.DataSourceSpecPropertyKeyIsEmpty(f.Key) {
-			return nil, ErrMissingPropertyKey
-		}
-		if len(f.Key.Name) == 0 {
-			return nil, ErrMissingPropertyName
-		}
-
-		_, exist := typedFilters[f.Key.Name]
-		if exist {
-			return nil, types.ErrMultipleSameKeyNamesInFilterList
-		}
-
-		conditions, err := toConditions(f.Key.Type, f.Conditions)
-		if err != nil {
-			return nil, err
-		}
-
-		typedFilter, ok := typedFilters[f.Key.Name]
-
-		var dp uint64
-		if f.Key.NumberDecimalPlaces != nil {
-			dp = *f.Key.NumberDecimalPlaces
-		}
-		if !ok {
-			typedFilters[f.Key.Name] = &filter{
-				propertyName:     f.Key.Name,
-				propertyType:     f.Key.Type,
-				numberOfDecimals: dp,
-				conditions:       conditions,
+		if isExtType {
+			if types.DataSourceSpecPropertyKeyIsEmpty(f.Key) {
+				return nil, ErrMissingPropertyKey
 			}
-			continue
+
+			if len(f.Key.Name) == 0 {
+				return nil, ErrMissingPropertyName
+			}
+
+			_, exist := typedFilters[f.Key.Name]
+			if exist {
+				return nil, types.ErrMultipleSameKeyNamesInFilterList
+			}
+
+			if strings.HasPrefix(f.Key.Name, "vegaprotocol.builtin") && f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+				builtInKey = true
+			}
+
+			conditions, err := toConditions(f.Key.Type, f.Conditions)
+			if err != nil {
+				return nil, err
+			}
+
+			typedFilter, ok := typedFilters[f.Key.Name]
+			var dp uint64
+			if f.Key.NumberDecimalPlaces != nil {
+				dp = *f.Key.NumberDecimalPlaces
+			}
+			if !ok {
+				typedFilters[f.Key.Name] = &filter{
+					propertyName:     f.Key.Name,
+					propertyType:     f.Key.Type,
+					numberOfDecimals: dp,
+					conditions:       conditions,
+				}
+				continue
+			}
+
+			if typedFilter.propertyType != f.Key.Type {
+				return nil, errMismatchPropertyType(typedFilter.propertyName, typedFilter.propertyType, f.Key.Type)
+			}
+
+			typedFilter.conditions = append(typedFilter.conditions, conditions...)
+		} else {
+			// Currently VEGA network uses only one type of internal data source - time triggered
+			// that uses the property name "vegaprotocol.builtin.timestamp"
+			// https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed
+			conditions, err := toConditions(datapb.PropertyKey_TYPE_TIMESTAMP, f.Conditions)
+			if err != nil {
+				return nil, err
+			}
+			typedFilters[f.String()] = &filter{
+				propertyName: "vegaprotocol.builtin.timestamp",
+				propertyType: datapb.PropertyKey_TYPE_TIMESTAMP,
+				conditions:   conditions,
+			}
+		}
+	}
+
+	signers := map[string]struct{}{}
+	if !builtInKey && isExtType {
+		signersFromSpec := []*types.Signer{}
+		if originalSpec.Spec != nil {
+			if originalSpec.Spec.Data != nil {
+				src := *originalSpec.Spec.Data
+
+				signersFromSpec = src.GetSigners()
+			}
 		}
 
-		if typedFilter.propertyType != f.Key.Type {
-			return nil, errMismatchPropertyType(typedFilter.propertyName, typedFilter.propertyType, f.Key.Type)
+		if len(signersFromSpec) == 0 {
+			return nil, ErrMissingSigners
 		}
 
-		typedFilter.conditions = append(typedFilter.conditions, conditions...)
+		for _, pk := range signersFromSpec {
+			signers[pk.String()] = struct{}{}
+		}
 	}
 
 	os := &OracleSpec{

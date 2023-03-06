@@ -89,23 +89,25 @@ func (fc *FileClient) Send(event events.Event) error {
 }
 
 func WriteToBufferFile(bufferFile *os.File, bufferSeqNum uint64, event events.Event) error {
-	e := event.StreamMessage()
-
-	seqNumBytes := make([]byte, NumberOfSeqNumBytes)
-	sizeBytes := make([]byte, NumberOfSizeBytes)
-
-	size := NumberOfSeqNumBytes + uint32(proto.Size(e))
-	protoBytes, err := proto.Marshal(e)
+	rawEvent, err := proto.Marshal(event.StreamMessage())
 	if err != nil {
 		return fmt.Errorf("failed to marshal bus event:%w", err)
 	}
+	return WriteRawToBufferFile(bufferFile, bufferSeqNum, rawEvent)
+}
+
+func WriteRawToBufferFile(bufferFile *os.File, bufferSeqNum uint64, rawEvent []byte) error {
+	seqNumBytes := make([]byte, NumberOfSeqNumBytes)
+	sizeBytes := make([]byte, NumberOfSizeBytes)
+
+	size := NumberOfSeqNumBytes + uint32(len(rawEvent))
 
 	binary.BigEndian.PutUint64(seqNumBytes, bufferSeqNum)
 	binary.BigEndian.PutUint32(sizeBytes, size)
 	allBytes := append([]byte{}, sizeBytes...)
 	allBytes = append(allBytes, seqNumBytes...)
-	allBytes = append(allBytes, protoBytes...)
-	_, err = bufferFile.Write(allBytes)
+	allBytes = append(allBytes, rawEvent...)
+	_, err := bufferFile.Write(allBytes)
 	if err != nil {
 		return fmt.Errorf("failed to write to buffer file:%w", err)
 	}

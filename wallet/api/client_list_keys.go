@@ -53,7 +53,7 @@ func (h *ClientListKeys) Handle(ctx context.Context, connectedWallet ConnectedWa
 }
 
 func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceID string, connectedWallet *ConnectedWallet) *jsonrpc.ErrorDetails {
-	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID); err != nil {
+	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, PermissionRequestWorkflow, 2); err != nil {
 		return requestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
@@ -72,7 +72,7 @@ func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceI
 
 	// At this point, we need a "read" access on public keys.
 	perms.PublicKeys.Access = wallet.ReadAccess
-	approved, err := h.interactor.RequestPermissionsReview(ctx, traceID, connectedWallet.Hostname(), connectedWallet.Name(), perms.Summary())
+	approved, err := h.interactor.RequestPermissionsReview(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), perms.Summary())
 	if err != nil {
 		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 			return errDetails
@@ -99,7 +99,7 @@ func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceI
 		return internalError(ErrCouldNotListKeys)
 	}
 
-	h.interactor.NotifySuccessfulRequest(ctx, traceID, PermissionsSuccessfullyUpdated)
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, 2, PermissionsSuccessfullyUpdated)
 
 	return nil
 }

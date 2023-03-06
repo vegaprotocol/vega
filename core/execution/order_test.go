@@ -2695,67 +2695,92 @@ func testPeggedOrderMidPriceCalc(t *testing.T) {
 
 func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	now := time.Unix(10, 0)
-	closeSec := int64(10000000000)
-	closingAt := time.Unix(closeSec, 0)
-	tm := getTestMarket(t, now, nil, nil)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
 	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
-	addAccount(t, tm, "party1")
-	addAccount(t, tm, "party2")
-	addAccount(t, tm, "party3")
-	addAccount(t, tm, "party4")
-	auxParty := "auxParty"
-	addAccount(t, tm, auxParty)
+	auxParty1, auxParty2, lp, party1 := "auxParty", "auxParty2", "lp", "party1"
+	addAccount(t, tm, auxParty1)
+	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, lp, 10000000)
+	addAccount(t, tm, party1)
 
-	// Assure liquidity auction won't be triggered
-	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
-	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
-	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
-	require.NotNil(t, conf)
-	require.NoError(t, err)
-	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
-
-	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 100000)
-	conf, err = tm.market.SubmitOrder(context.Background(), alwaysOnAsk)
-	require.NotNil(t, conf)
-	require.NoError(t, err)
-	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
-
-	// Move into auction
-	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 100})
-	tm.market.EnterAuction(ctx)
-
-	buyPeggedOrder := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party1", 1000000000000, 0)
+	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
+	peggedOffset := uint64(10)
+	buyPeggedOrder := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, party1, peggedOffset, 0)
 	buyPeggedOrder.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 10)
-	confirmation1, err := tm.market.SubmitOrder(ctx, &buyPeggedOrder)
-	assert.NotNil(t, confirmation1)
-	assert.Equal(t, confirmation1.Order.Status, types.OrderStatusParked)
+	confirmationPeggedBuy, err := tm.market.SubmitOrder(ctx, &buyPeggedOrder)
+	assert.NotNil(t, confirmationPeggedBuy)
+	assert.Equal(t, confirmationPeggedBuy.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
-	sellPeggedOrder := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party1", 1000000000000, 0)
+	sellPeggedOrder := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, party1, peggedOffset, 0)
 	sellPeggedOrder.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 10)
-	confirmation2, err := tm.market.SubmitOrder(ctx, &sellPeggedOrder)
-	assert.NotNil(t, confirmation2)
-	assert.Equal(t, confirmation2.Order.Status, types.OrderStatusParked)
+	confirmationPeggedSell, err := tm.market.SubmitOrder(ctx, &sellPeggedOrder)
+	assert.NotNil(t, confirmationPeggedSell)
+	assert.Equal(t, confirmationPeggedSell.Order.Status, types.OrderStatusParked)
 	assert.NoError(t, err)
+	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
 
-	sellOrder1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party2", 4, 2000)
-	confirmation3, err := tm.market.SubmitOrder(ctx, &sellOrder1)
-	assert.NotNil(t, confirmation3)
-	assert.NoError(t, err)
+	bestBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 1)
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty1, 1, 10000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 2000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty1, 1, 2000),
+	}
+	bestBidConf, err := tm.market.SubmitOrder(ctx, bestBid)
+	require.NoError(t, err)
+	require.NotNil(t, bestBidConf)
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NoError(t, err)
+		require.NotNil(t, conf)
+	}
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(5000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+		},
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 10),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lps, lp, vgcrypto.RandomHash()))
 
-	tm.market.LeaveAuctionWithIDGen(ctx, closingAt, newTestIDGenerator())
+	// leave opening auction
+	now = now.Add(2 * time.Second)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
 
-	buyOrder1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party3", 100, 6500)
-	confirmation4, err := tm.market.SubmitOrder(ctx, &buyOrder1)
-	assert.NotNil(t, confirmation4)
-	assert.NoError(t, err)
+	md := tm.market.GetMarketData()
+	require.NotNil(t, md)
+	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
-	sellOrder2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "party4", 20, 7000)
-	confirmation5, err := tm.market.SubmitOrder(ctx, &sellOrder2)
-	assert.NotNil(t, confirmation5)
-	assert.NoError(t, err)
+	// 1 pegged order should get deployed, the other one should remain parked
+	// as its offset is such that the price would be negative with current best bid
+	assert.Equal(t, confirmationPeggedBuy.Order.Status, types.OrderStatusParked)
+	assert.Equal(t, confirmationPeggedSell.Order.Status, types.OrderStatusActive)
+	assert.Equal(t, 1, tm.market.GetParkedOrderCount())
 
+	amend := &types.OrderAmendment{
+		OrderID:  bestBidConf.Order.ID,
+		MarketID: bestBidConf.Order.MarketID,
+		Price:    num.NewUint(peggedOffset + 1),
+	}
+
+	tm.events = nil
+	amended, err := tm.market.AmendOrder(ctx, amend, bestBidConf.Order.Party, vgcrypto.RandomHash())
+	require.NoError(t, err)
+	assert.Equal(t, amended.Order.Status, types.OrderStatusActive)
+
+	// now both orders should get unparked
+	assert.Equal(t, confirmationPeggedBuy.Order.Status, types.OrderStatusActive)
+	assert.Equal(t, confirmationPeggedSell.Order.Status, types.OrderStatusActive)
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
