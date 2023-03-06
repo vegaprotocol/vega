@@ -414,12 +414,21 @@ func hasNotFoundError(errs ...error) bool {
 	return false
 }
 
+func hasError(errs ...error) bool {
+	for _, err := range errs {
+		if err != nil {
+			return true
+		}
+	}
+	return false
+}
+
 func formatE(err error, errs ...error) error {
-	if err == nil {
+	allErrs := append(errs, err)
+
+	if !hasError(allErrs...) {
 		return nil
 	}
-
-	allErrs := append(errs, err)
 
 	switch {
 	// only for "GetOne"-like store methods

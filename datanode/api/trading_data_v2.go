@@ -468,10 +468,16 @@ func (t *tradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req
 	if req.OffsetPagination != nil {
 		// TODO: This has been deprecated in the GraphQL API, but needs to be supported until it is removed.
 		marketData, err := t.handleGetMarketDataHistoryWithOffsetPagination(ctx, req, startTime, endTime)
-		return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
+		if err != nil {
+			return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
+		}
+		return marketData, nil
 	}
 	marketData, err := t.handleGetMarketDataHistoryWithCursorPagination(ctx, req, startTime, endTime)
-	return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
+	if err != nil {
+		return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
+	}
+	return marketData, nil
 }
 
 func (t *tradingDataServiceV2) handleGetMarketDataHistoryWithOffsetPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest, startTime, endTime time.Time) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -1576,11 +1582,17 @@ func (t *tradingDataServiceV2) ListAssets(ctx context.Context, req *v2.ListAsset
 
 	if assetId := ptr.UnBox(req.AssetId); assetId != "" {
 		asset, err := t.getSingleAsset(ctx, assetId)
-		return asset, formatE(ErrAssetServiceGetByID, err)
+		if err != nil {
+			return nil, formatE(ErrAssetServiceGetByID, err)
+		}
+		return asset, nil
 	}
 
 	assets, err := t.getAllAssets(ctx, req.Pagination)
-	return assets, formatE(ErrAssetServiceGetAll, err)
+	if err != nil {
+		return nil, formatE(ErrAssetServiceGetAll, err)
+	}
+	return assets, nil
 }
 
 func (t *tradingDataServiceV2) getSingleAsset(ctx context.Context, assetID string) (*v2.ListAssetsResponse, error) {
@@ -2903,11 +2915,17 @@ func (t *tradingDataServiceV2) ListKeyRotations(ctx context.Context, req *v2.Lis
 
 	if nodeID := ptr.UnBox(req.NodeId); nodeID != "" {
 		rotations, err := t.getNodeKeyRotations(ctx, nodeID, pagination)
-		return rotations, formatE(ErrKeyRotationServiceGetPerNode, errors.Wrapf(err, "nodeID: %s", nodeID))
+		if err != nil {
+			return nil, formatE(ErrKeyRotationServiceGetPerNode, errors.Wrapf(err, "nodeID: %s", nodeID))
+		}
+		return rotations, nil
 	}
 
 	rotations, err := t.getAllKeyRotations(ctx, pagination)
-	return rotations, formatE(ErrKeyRotationServiceGetAll, err)
+	if err != nil {
+		return nil, formatE(ErrKeyRotationServiceGetAll, err)
+	}
+	return rotations, nil
 }
 
 func (t *tradingDataServiceV2) getAllKeyRotations(ctx context.Context, pagination entities.CursorPagination) (*v2.ListKeyRotationsResponse, error) {
