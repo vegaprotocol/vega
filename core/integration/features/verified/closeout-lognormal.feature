@@ -52,7 +52,7 @@ Feature: Closeout scenarios
     Then the auction ends with a traded volume of "10" at a price of "10"
     And the mark price should be "10" for the market "ETH/DEC19"
 
-    # setup trader2 position to be ready to takeover trader3's position once trader3 is closed out
+    # trader2 posts and order that would take over position of trader3 if they have enough to support it at the new mark price
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader2 | ETH/DEC19 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |
@@ -70,12 +70,11 @@ Feature: Closeout scenarios
     # margin level_trader2= OrderSize*MarkPrice*RF = 40*10*0.801225765=321
     # margin level_Lprov= OrderSize*MarkPrice*RF = max(96*10*3.55690359157934000,100000*10*0.801225765)=801225.765
 
-
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 642    | 1358    |
 
-    # setup trader3 position and close it out
+    # trader3 posts a limit order
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | trader3 | ETH/DEC19 | buy  | 10     | 100   | 0                | TYPE_LIMIT | TIF_GTC | buy-position-31 |
@@ -104,49 +103,43 @@ Feature: Closeout scenarios
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | 0              | 0            |
       | auxiliary2 | 10     | 0              | 0            |
-    #setup trader3 position and close it out
+    # fill trader3's limit order, it becomes immediately distressed and gets closed out
+    # mark price moves from 10 to 100 and trader2 no longer has enough margin to maintain their order,
+    # the order gets cancelled first so they don't trade with the network
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-    Then the mark price should be "100" for the market "ETH/DEC19"
-    And the network moves ahead "1" blocks
-
-    Then the order book should have the following volumes for market "ETH/DEC19":
+    Then the following trades should be executed:
+      | buyer      | price | size | seller     |
+      | trader3    | 100   | 10   | auxiliary2 |
+      | auxiliary2 | 5     | 5    | network    |
+      | lprov      | 1     | 5    | network    |
+      | network    | 3     | 10   | trader3    |
+    And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | buy  | 5     | 0      |
       | buy  | 1     | 0      |
       | sell | 1000  | 10     |
       | sell | 1005  | 0      |
-    #trader3 is closed out
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 0   | 2000    |
-    #trader2 has enough balance to maintain their position of 10 long, but not the order
+    #trader3 is closed out, trader2 has no more open orders as they got cancelled after becoming distressed
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-
-    #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
-    # trader2 sees their order cancelled, but they helped to resolve trader3's close-out, buying 10@50, and MTM that to 100
-    # So they made a bit of profit
-    Then the parties should have the following account balances:
+    And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-
-    # Because trader2 does not get closed out lprov does not have to step in. The PnL is founder
-    # under trader2, not lprov
-    Then the parties should have the following profit and loss:
+    And the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
       | auxiliary2 | 5      | 475            | 503          |
       | trader2    | 0      | 0              | 0            |  
       | trader3    | 0      | 0              | -162         |
       | lprov      | 5      | 495            | -413         |
-       Then the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode                    | auction trigger                   | 
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                    | auction trigger           | 
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
   Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
