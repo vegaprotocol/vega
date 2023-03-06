@@ -35,11 +35,11 @@ Feature: Test liquidity provider reward distribution
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the markets:
       | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e6                    | 1e6                       |
-      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.5                    | 0                       |
+      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 0.5                    | 0                       |
     And the average block duration is "1"
 
-  Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
+  Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -132,7 +132,7 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
 
-  Scenario: 2 LPs joining at start, equal commitments
+  Scenario: 002, 2 LPs joining at start, equal commitments
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -231,7 +231,7 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 8      | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 8      | ETH   |
 
-  Scenario: 2 LPs joining at start, equal commitments, unequal offsets
+  Scenario: 003, 2 LPs joining at start, equal commitments, unequal offsets
     Given the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 5s    |
@@ -380,7 +380,7 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 19     | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 21     | ETH   |
 
-  Scenario: 2 LPs joining at start, unequal commitments
+  Scenario: 004, 2 LPs joining at start, unequal commitments
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -483,15 +483,19 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-  Scenario: 2 LPs joining at start, unequal commitments, 1 LP joining later
+  Scenario: 005, 2 LPs joining at start, unequal commitments, 1 LP lp3 joining later, and 4 LPs lp4/5/6/7 with large commitment and low/high fee joins later (0042-LIQF-029,0042-LIQF-030, 0042-LIQF-024)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | lp1    | ETH   | 1000000000 |
       | lp2    | ETH   | 1000000000 |
       | lp3    | ETH   | 1000000000 |
-      | party1 | ETH   | 100000000  |
-      | party2 | ETH   | 100000000  |
+      | lp4    | ETH   | 1000000000 |
+      | lp5    | ETH   | 1000000000 |
+      | lp6    | ETH   | 1000000000 |
+      | lp7    | ETH   | 1000000000 |
+      | party1 | ETH   | 100000000000  |
+      | party2 | ETH   | 100000000000  |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -508,9 +512,9 @@ Feature: Test liquidity provider reward distribution
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 1000   | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1000   | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
@@ -577,6 +581,8 @@ Feature: Test liquidity provider reward distribution
       | lp2   | 0.1               | 10000                   |
       | lp3   | 0.5               | 20000                   |
 
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
+
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 16     | 1000  | 3                | TYPE_LIMIT | TIF_FOK |
@@ -614,8 +620,29 @@ Feature: Test liquidity provider reward distribution
       | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 9      | ETH   |
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | buy  | BID              | 1          | 4      | submission |
+      | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | sell | ASK              | 1          | 4      | submission |
+  When time is updated to "2019-11-30T00:41:08Z"
+  And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
+
+  And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | buy  | BID              | 1          | 4      | submission |
+      | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | sell | ASK              | 1          | 4      | submission |
+  When time is updated to "2019-11-30T00:42:08Z"
+  And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
+
+  And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
+      | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
+  When time is updated to "2019-11-30T00:43:08Z"
+  And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
+
   @Panic
-  Scenario: 2 LPs joining at start, unequal commitments, market settles (0042-LIQF-014)
+  Scenario: 006, 2 LPs joining at start, unequal commitments, market settles (0042-LIQF-014)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -702,7 +729,7 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 6      | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
 
-  Scenario: 2 LPs joining at start, unequal commitments, 1 leaves later (0042-LIQF-012)
+  Scenario: 007, 2 LPs joining at start, unequal commitments, 1 leaves later (0042-LIQF-012)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -810,3 +837,102 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 8      | ETH   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+
+  Scenario: 008, 2 LPs joining at start, unequal commitments, 1 LP joins later , and 1 LP leave(0042-LIQF-019,0042-LIQF-020,0042-LIQF-023, 0042-LIQF-025, 0042-LIQF-026, 0042-LIQF-027, 0042-LIQF-028)
+
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | lp1    | ETH   | 1000000000 |
+      | lp2    | ETH   | 1000000000 |
+      | lp3    | ETH   | 1000000000 |
+      | lp4    | ETH   | 1000000000 |
+      | party1 | ETH   | 100000000  |
+      | party2 | ETH   | 100000000  |
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | buy  | BID              | 1          | 2      | submission |
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | sell  | MID              | 2          | 1      | submission |
+     
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
+      | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | sell  | MID              | 2          | 1      | submission |
+      
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC21"
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the target stake should be "9000" for the market "ETH/DEC21"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
+
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+    Then time is updated to "2019-11-30T00:10:05Z"
+
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | submission |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | submission |
+    When time is updated to "2019-11-30T00:43:08Z"
+    And the liquidity fee factor should be "0.0015" for the market "ETH/DEC21"
+
+    #lp3 leaves, lp fee goes back
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type      |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
+
+   And the target stake should be "9000" for the market "ETH/DEC21"
+   And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+   Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+   And the target stake should be "10000" for the market "ETH/DEC21"
+   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+   And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+   # lp3 join when market is below target stake with a small commitment and low fee
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+  # lp3 join when market is below target stake with a small commitment and high fee
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.003 | buy  | BID              | 1          | 4      | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.003 | sell | ASK              | 1          | 4      | amendment |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+  # lp4 join when market is below target stake with a large commitment
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | buy  | BID              | 1          | 4      | submission |
+      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+  # lp4 leaves when market is above the target stake
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | buy  | BID              | 1          | 4      | cancellation |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | sell | ASK              | 1          | 4      | cancellation |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+
+  # lp4 join when market is below target stake with a large commitment
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.001 | buy  | BID              | 1          | 4      | submission |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.001 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
+
