@@ -83,6 +83,10 @@ func NewEngine(
 	}
 }
 
+func (e *Engine) UpdateCollateralStartingBlock(b uint64) {
+	e.nextCollateralBlockNumber = b
+}
+
 func (e *Engine) UpdateStakingStartingBlock(b uint64) {
 	e.nextStakingBlockNumber = b
 	e.nextVestingBlockNumber = b
@@ -115,8 +119,6 @@ func (e *Engine) Start() {
 	if e.log.IsDebug() {
 		e.log.Debug("Start listening for Ethereum events from")
 	}
-
-	e.nextCollateralBlockNumber = e.filterer.CurrentHeight(ctx)
 
 	e.poller.Loop(func() {
 		if e.log.IsDebug() {
