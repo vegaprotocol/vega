@@ -8,12 +8,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/stretchr/testify/assert"
 )
@@ -159,8 +158,8 @@ func Test_FileBufferedEventSource_BufferingDisabledWhenEventsPerFileIsZero(t *te
 	path := t.TempDir()
 	archivePath := t.TempDir()
 
-	eventSource := &testEventSource{
-		eventsCh: make(chan events.Event, 1000),
+	eventSource := &testRawEventSource{
+		eventsCh: make(chan []byte, 1000),
 		errCh:    make(chan error),
 	}
 
@@ -176,7 +175,7 @@ func Test_FileBufferedEventSource_BufferingDisabledWhenEventsPerFileIsZero(t *te
 
 	numberOfEventsToSend := 100
 	for i := 0; i < numberOfEventsToSend; i++ {
-		a := events.NewAssetEvent(context.Background(), types.Asset{ID: fmt.Sprintf("%03d", i)})
+		a := []byte("TEST_EVENT_" + strconv.Itoa(i))
 		eventSource.eventsCh <- a
 	}
 
@@ -185,8 +184,7 @@ func Test_FileBufferedEventSource_BufferingDisabledWhenEventsPerFileIsZero(t *te
 		files, _ := os.ReadDir(path)
 		assert.Equal(t, 0, len(files))
 		e := <-evtCh
-		r := e.(*events.Asset)
-		assert.Equal(t, fmt.Sprintf("%03d", i), r.Asset().Id)
+		assert.Equal(t, fmt.Sprintf("TEST_EVENT_%d", i), string(e))
 	}
 }
 
@@ -194,8 +192,8 @@ func Test_FileBufferedEventSource_ErrorSentOnPathError(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	eventSource := &testEventSource{
-		eventsCh: make(chan events.Event),
+	eventSource := &testRawEventSource{
+		eventsCh: make(chan []byte),
 		errCh:    make(chan error),
 	}
 
@@ -221,8 +219,8 @@ func Test_FileBufferedEventSource_ErrorsArePassedThrough(t *testing.T) {
 	path := t.TempDir()
 	archivePath := t.TempDir()
 
-	eventSource := &testEventSource{
-		eventsCh: make(chan events.Event),
+	eventSource := &testRawEventSource{
+		eventsCh: make(chan []byte),
 		errCh:    make(chan error),
 	}
 
@@ -248,8 +246,8 @@ func Test_FileBufferedEventSource_EventsAreBufferedAndPassedThrough(t *testing.T
 	path := t.TempDir()
 	archivePath := t.TempDir()
 
-	eventSource := &testEventSource{
-		eventsCh: make(chan events.Event),
+	eventSource := &testRawEventSource{
+		eventsCh: make(chan []byte),
 		errCh:    make(chan error),
 	}
 
@@ -263,24 +261,17 @@ func Test_FileBufferedEventSource_EventsAreBufferedAndPassedThrough(t *testing.T
 
 	evtCh, _ := fb.Receive(context.Background())
 
-	a1 := events.NewAssetEvent(context.Background(), types.Asset{ID: "1"})
-	a2 := events.NewAssetEvent(context.Background(), types.Asset{ID: "2"})
-	a3 := events.NewAssetEvent(context.Background(), types.Asset{ID: "3"})
+	eventSource.eventsCh <- []byte("TEST_EVENT_1")
+	eventSource.eventsCh <- []byte("TEST_EVENT_2")
+	eventSource.eventsCh <- []byte("TEST_EVENT_3")
 
-	eventSource.eventsCh <- a1
-	eventSource.eventsCh <- a2
-	eventSource.eventsCh <- a3
+	r1 := <-evtCh
+	r2 := <-evtCh
+	r3 := <-evtCh
 
-	e1 := <-evtCh
-	r1 := e1.(*events.Asset)
-	e2 := <-evtCh
-	r2 := e2.(*events.Asset)
-	e3 := <-evtCh
-	r3 := e3.(*events.Asset)
-
-	assert.Equal(t, "1", r1.Asset().Id)
-	assert.Equal(t, "2", r2.Asset().Id)
-	assert.Equal(t, "3", r3.Asset().Id)
+	assert.Equal(t, []byte("TEST_EVENT_1"), r1)
+	assert.Equal(t, []byte("TEST_EVENT_2"), r2)
+	assert.Equal(t, []byte("TEST_EVENT_3"), r3)
 }
 
 func Test_FileBufferedEventSource_RollsBufferFiles(t *testing.T) {
@@ -290,8 +281,8 @@ func Test_FileBufferedEventSource_RollsBufferFiles(t *testing.T) {
 	path := t.TempDir()
 	archivePath := t.TempDir()
 
-	eventSource := &testEventSource{
-		eventsCh: make(chan events.Event),
+	eventSource := &testRawEventSource{
+		eventsCh: make(chan []byte),
 		errCh:    make(chan error),
 	}
 
@@ -308,8 +299,7 @@ func Test_FileBufferedEventSource_RollsBufferFiles(t *testing.T) {
 
 	numberOfEventsToSend := 100
 	for i := 0; i < numberOfEventsToSend; i++ {
-		a := events.NewAssetEvent(context.Background(), types.Asset{ID: fmt.Sprintf("%03d", i)})
-		eventSource.eventsCh <- a
+		eventSource.eventsCh <- []byte("TEST_EVENT_" + strconv.Itoa(i))
 	}
 
 	// This check consumes all events, and after each event buffer file is read it checks that it is removed
@@ -335,20 +325,19 @@ func Test_FileBufferedEventSource_RollsBufferFiles(t *testing.T) {
 		}
 
 		e := <-evtCh
-		r := e.(*events.Asset)
-		assert.Equal(t, fmt.Sprintf("%03d", i), r.Asset().Id)
+		assert.Equal(t, []byte("TEST_EVENT_"+strconv.Itoa(i)), e)
 	}
 }
 
-type testEventSource struct {
-	eventsCh chan events.Event
+type testRawEventSource struct {
+	eventsCh chan []byte
 	errCh    chan error
 }
 
-func (t *testEventSource) Listen() error {
+func (t *testRawEventSource) Listen() error {
 	return nil
 }
 
-func (t *testEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+func (t *testRawEventSource) Receive(ctx context.Context) (<-chan []byte, <-chan error) {
 	return t.eventsCh, t.errCh
 }

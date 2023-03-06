@@ -184,6 +184,8 @@ type CancelRequest struct{}
 // application wants to connect to a wallet.
 type RequestWalletConnectionReview struct {
 	Hostname string `json:"hostname"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestWalletSelection is a request emitted when the service requires the user
@@ -193,6 +195,8 @@ type RequestWalletConnectionReview struct {
 type RequestWalletSelection struct {
 	Hostname         string   `json:"hostname"`
 	AvailableWallets []string `json:"availableWallets"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestPassphrase is a request emitted when the service wants to confirm
@@ -201,6 +205,8 @@ type RequestWalletSelection struct {
 type RequestPassphrase struct {
 	Wallet string `json:"wallet"`
 	Reason string `json:"reason"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestPermissionsReview is a review request emitted when a third-party
@@ -209,6 +215,8 @@ type RequestPermissionsReview struct {
 	Hostname    string            `json:"hostname"`
 	Wallet      string            `json:"wallet"`
 	Permissions map[string]string `json:"permissions"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestTransactionReviewForSending is a review request emitted when a third-party
@@ -219,6 +227,8 @@ type RequestTransactionReviewForSending struct {
 	PublicKey   string    `json:"publicKey"`
 	Transaction string    `json:"transaction"`
 	ReceivedAt  time.Time `json:"receivedAt"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestTransactionReviewForSigning is a review request when a third-party
@@ -229,6 +239,8 @@ type RequestTransactionReviewForSigning struct {
 	PublicKey   string    `json:"publicKey"`
 	Transaction string    `json:"transaction"`
 	ReceivedAt  time.Time `json:"receivedAt"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // WalletConnectionDecision is a specific response for interactor.RequestWalletConnectionReview.
@@ -298,6 +310,8 @@ type ErrorOccurred struct {
 type RequestSucceeded struct {
 	// Message can contain a custom success message.
 	Message string `json:"message"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // TransactionSucceeded is a notification sent when the sending of a
@@ -325,6 +339,8 @@ type TransactionSucceeded struct {
 	// Node contains all the information related to the node selected for the
 	// sending of the transaction.
 	Node SelectedNode `json:"node"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // TransactionFailed is a notification sent when the sending of a
@@ -352,6 +368,8 @@ type TransactionFailed struct {
 	// Node contains all the information related to the node selected for the
 	// sending of the transaction.
 	Node SelectedNode `json:"node"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 type SelectedNode struct {
