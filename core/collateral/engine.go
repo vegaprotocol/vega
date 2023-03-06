@@ -66,7 +66,7 @@ var (
 	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account.
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
 	// ErrAttemptingToDeleteAccountWithNonZeroBalance an attempt to delete an account with remaining funds has been made.
-	ErrAttemptingToDeleteAccountWithNonZeroBalance = errors.New("not enough funds to withdraw")
+	ErrAttemptingToDeleteAccountWithNonZeroBalance = errors.New("attempting to delete an account with non-zero balance")
 )
 
 // Broker send events
