@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 var (
@@ -29,6 +30,8 @@ var (
 )
 
 func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transaction, error) {
+	txID = strings.ToUpper(txID)
+
 	query := `SELECT * FROM tx_results where tx_hash=$1`
 	var rows []entities.TxResultRow
 
