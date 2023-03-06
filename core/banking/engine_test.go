@@ -49,6 +49,7 @@ type testEngine struct {
 	epoch                 *mocks.MockEpochService
 	bridgeView            *mocks.MockERC20BridgeView
 	marketActivityTracker *mocks.MockMarketActivityTracker
+	ethSource             *mocks.MockEthereumEventSource
 }
 
 func getTestEngine(t *testing.T) *testEngine {
@@ -64,10 +65,11 @@ func getTestEngine(t *testing.T) *testEngine {
 	epoch := mocks.NewMockEpochService(ctrl)
 	bridgeView := mocks.NewMockERC20BridgeView(ctrl)
 	marketActivityTracker := mocks.NewMockMarketActivityTracker(ctrl)
+	ethSource := mocks.NewMockEthereumEventSource(ctrl)
 
 	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker, bridgeView)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top, epoch, marketActivityTracker, bridgeView, ethSource)
 
 	return &testEngine{
 		Engine:                eng,
@@ -81,6 +83,7 @@ func getTestEngine(t *testing.T) *testEngine {
 		epoch:                 epoch,
 		bridgeView:            bridgeView,
 		marketActivityTracker: marketActivityTracker,
+		ethSource:             ethSource,
 	}
 }
 

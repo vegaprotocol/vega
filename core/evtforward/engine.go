@@ -13,6 +13,7 @@
 package evtforward
 
 import (
+	"context"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethereum"
@@ -59,6 +60,10 @@ func (e *Engine) ReloadConf(config Config) {
 	if e.ethEngine != nil {
 		e.ethEngine.ReloadConf(config.Ethereum)
 	}
+}
+
+func (e *Engine) UpdateCollateralStartingBlock(b uint64) {
+	e.ethEngine.UpdateCollateralStartingBlock(b)
 }
 
 func (e *Engine) UpdateStakingStartingBlock(b uint64) {
@@ -120,6 +125,8 @@ func (e *Engine) SetupEthereumEngine(
 		ethCfg.MultiSigControl(),
 	)
 
+	e.UpdateCollateralStartingBlock(filterer.CurrentHeight(context.Background()))
+
 	if e.multisigControlStartingBlock != 0 {
 		e.ethEngine.UpdateMultiSigControlStartingBlock(e.multisigControlStartingBlock)
 	}
@@ -168,6 +175,8 @@ func (e *NoopEngine) ReloadConf(_ Config) {
 		e.log.Debug("Reloading Ethereum configuration is a no-op")
 	}
 }
+
+func (e *NoopEngine) UpdateCollateralStartingBlock(b uint64) {}
 
 func (e *NoopEngine) UpdateStakingStartingBlock(b uint64) {}
 

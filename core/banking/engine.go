@@ -36,7 +36,7 @@ import (
 	"github.com/emirpasic/gods/sets/treeset"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
@@ -105,6 +105,10 @@ type MarketActivityTracker interface {
 	MarkPaidProposer(market, payoutAsset string, marketsInScope []string, funder string)
 }
 
+type EthereumEventSource interface {
+	UpdateCollateralStartingBlock(uint64)
+}
+
 const (
 	pendingState uint32 = iota
 	okState
@@ -114,21 +118,23 @@ const (
 var defaultValidationDuration = 2 * time.Hour
 
 type Engine struct {
-	cfg         Config
-	log         *logging.Logger
-	timeService TimeService
-	broker      broker.Interface
-	col         Collateral
-	witness     Witness
-	notary      Notary
-	assets      Assets
-	top         Topology
+	cfg            Config
+	log            *logging.Logger
+	timeService    TimeService
+	broker         broker.Interface
+	col            Collateral
+	witness        Witness
+	notary         Notary
+	assets         Assets
+	top            Topology
+	ethEventSource EthereumEventSource
 
-	assetActs     map[string]*assetAction
-	seen          *treeset.Set
-	withdrawals   map[string]withdrawalRef
-	withdrawalCnt *big.Int
-	deposits      map[string]*types.Deposit
+	assetActs        map[string]*assetAction
+	seen             *treeset.Set
+	lastSeenEthBlock uint64 // the block height of the latest ERC20 chain event
+	withdrawals      map[string]withdrawalRef
+	withdrawalCnt    *big.Int
+	deposits         map[string]*types.Deposit
 
 	currentEpoch uint64
 	bss          *bankingSnapshotState
@@ -168,6 +174,7 @@ func New(
 	epoch EpochService,
 	marketActivityTracker MarketActivityTracker,
 	bridgeView ERC20BridgeView,
+	ethEventSource EthereumEventSource,
 ) (e *Engine) {
 	defer func() {
 		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
@@ -185,6 +192,7 @@ func New(
 		assets:                     assets,
 		notary:                     notary,
 		top:                        top,
+		ethEventSource:             ethEventSource,
 		assetActs:                  map[string]*assetAction{},
 		seen:                       treeset.NewWithStringComparator(),
 		withdrawals:                map[string]withdrawalRef{},
