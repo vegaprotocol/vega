@@ -65,8 +65,6 @@ var (
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account.
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
-	// ErrAttemptingToDeleteAccountWithNonZeroBalance an attempt to delete an account with remaining funds has been made.
-	ErrAttemptingToDeleteAccountWithNonZeroBalance = errors.New("attempting to delete an account with non-zero balance")
 )
 
 // Broker send events
@@ -1343,7 +1341,7 @@ func (e *Engine) RemoveBondAccount(partyID, marketID, asset string) error {
 		return ErrAccountDoesNotExist
 	}
 	if !bondAcc.Balance.IsZero() {
-		return ErrAttemptingToDeleteAccountWithNonZeroBalance
+		e.log.Panic("attempting to delete a bond account with non-zero balance")
 	}
 	e.removeAccount(bondID)
 	return nil

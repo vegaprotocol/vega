@@ -275,8 +275,7 @@ func TestDeleteBondAccount(t *testing.T) {
 	err = eng.UpdateBalance(context.Background(), bnd, bal)
 	require.Nil(t, err)
 
-	err = eng.RemoveBondAccount(party, testMarketID, testMarketAsset)
-	require.EqualError(t, err, collateral.ErrAttemptingToDeleteAccountWithNonZeroBalance.Error())
+	require.Panics(t, func() { eng.RemoveBondAccount(party, testMarketID, testMarketAsset) })
 
 	transfer := &types.Transfer{
 		Owner: party,

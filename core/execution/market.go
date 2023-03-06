@@ -1738,18 +1738,18 @@ func (m *Market) confirmMTM(
 				asset, _ := m.mkt.GetAsset()
 				closedRecalculated := make([]events.Margin, 0, len(closed))
 				for _, c := range closed {
-					recalculated := c
 					if pos, ok := m.position.GetPositionByPartyID(c.Party()); ok {
 						margin, err := m.collateral.GetPartyMargin(pos, asset, m.mkt.ID)
 						if err != nil {
 							m.log.Error("couldn't get party margin",
 								logging.PartyID(c.Party()),
 								logging.Error(err))
+							// keep old value if we weren't able to recalculate
+							closedRecalculated = append(closedRecalculated, c)
 							continue
 						}
-						recalculated = margin
+						closedRecalculated = append(closedRecalculated, margin)
 					}
-					closedRecalculated = append(closedRecalculated, recalculated)
 				}
 				closed = closedRecalculated
 			}
