@@ -160,7 +160,6 @@ func (m *Market) repriceAllSpecialOrders(
 	// we can then just re-submit all pegged orders
 	// if we needed to re-submit pegged orders,
 	// let's do it now
-	// partiesPos := map[string]events.MarketPosition{}
 	if needsPeggedUpdates && len(toSubmit) > 0 {
 		updatedOrders, partiesPos := m.reSubmitPeggedOrders(ctx, toSubmit)
 		risks, _, _ := m.updateMargins(ctx, partiesPos)
@@ -246,7 +245,6 @@ func (m *Market) updateLPOrders(
 	allOrders []*types.Order,
 	submits []*types.Order,
 	cancels []*liquidity.ToCancel,
-	// partiesPos map[string]events.MarketPosition,
 ) []*types.Order {
 	// this is a list of order which a LP distressed
 	var (
