@@ -68,7 +68,7 @@ type filter struct {
 
 type condition func(string) (bool, error)
 
-// NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
+// NewOracleSpec builds an OracleSpec from a types.OracleSpec (currently uses one level below - types.ExternalDataSourceSpec) in a form that
 // suits the processing of the filters.
 // OracleSpec allows the existence of one and only one.
 // Currently VEGA network utilises internal triggers in the oracle function path, even though
