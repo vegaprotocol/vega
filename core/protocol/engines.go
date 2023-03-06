@@ -25,6 +25,7 @@ type EventForwarderEngine interface {
 	Stop()
 
 	// methods used to update starting blocks of the eef
+	UpdateCollateralStartingBlock(uint64)
 	UpdateStakingStartingBlock(uint64)
 	UpdateMultisigControlStartingBlock(uint64)
 }

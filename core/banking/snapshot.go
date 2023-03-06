@@ -169,7 +169,9 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
 	seen := &types.PayloadBankingSeen{
-		BankingSeen: &types.BankingSeen{},
+		BankingSeen: &types.BankingSeen{
+			LastSeenEthBlock: e.lastSeenEthBlock,
+		},
 	}
 	seen.BankingSeen.Refs = make([]string, 0, e.seen.Size())
 	iter := e.seen.Iterator()
@@ -336,6 +338,7 @@ func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 	for _, v := range seen.Refs {
 		e.seen.Add(v)
 	}
+	e.lastSeenEthBlock = seen.LastSeenEthBlock
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
 	return err
 }
@@ -402,4 +405,12 @@ func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Pay
 func (e *Engine) OnEpochRestore(ctx context.Context, ep types.Epoch) {
 	e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
 	e.currentEpoch = ep.Seq
+}
+
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	if e.lastSeenEthBlock != 0 {
+		e.log.Info("restoring collateral bridge starting block", logging.Uint64("block", e.lastSeenEthBlock))
+		e.ethEventSource.UpdateCollateralStartingBlock(e.lastSeenEthBlock)
+	}
+	return nil
 }
