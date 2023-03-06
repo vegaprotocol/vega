@@ -41,6 +41,7 @@
 - [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
 - [7483](https://github.com/vegaprotocol/vega/issues/7483) - Fix market data history returning 0 values for price monitoring bounds
 - [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
+- [7766](https://github.com/vegaprotocol/vega/issues/7766) - Fix orders from new parties not being included in the nearest MTM
 
 
 ## 0.68.0
