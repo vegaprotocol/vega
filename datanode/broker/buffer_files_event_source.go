@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -22,6 +23,7 @@ type bufferFileEventSource struct {
 	chainID               string
 	archiveFiles          []fs.FileInfo
 	currentBlock          string
+	cbmu                  sync.RWMutex
 }
 
 //revive:disable:unexported-return
@@ -110,7 +112,7 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 
 			// We have to deserialize the busEvent here (even though we output the raw busEvent)
 			// to be able to skip the first few events before we get a BeginBlock and to be
-			// able to to sleep between blocks.
+			// able to sleep between blocks.
 			busEvent := &eventspb.BusEvent{}
 			if err := proto.Unmarshal(rawEvent, busEvent); err != nil {
 				return fmt.Errorf("failed to unmarshal bus event: %w", err)
@@ -118,18 +120,8 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 
 			// Buffer files do not necessarily start on block boundaries, to prevent sending part of a block
 			// events are ignored until an initial begin block event is encountered
-			if len(e.currentBlock) == 0 {
-				if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
-					e.currentBlock = busEvent.Block
-				} else {
-					continue
-				}
-			}
-
-			// Optional sleep between blocks to mimic running against core
-			if busEvent.Block != e.currentBlock {
-				time.Sleep(timeBetweenBlocks)
-				e.currentBlock = busEvent.Block
+			if !e.setCurrentBlock(busEvent, timeBetweenBlocks) {
+				continue
 			}
 
 			err = sendRawEvent(ctx, out, rawEvent)
@@ -138,6 +130,26 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 			}
 		}
 	}
+}
+
+func (e *bufferFileEventSource) setCurrentBlock(busEvent *eventspb.BusEvent, timeBetweenBlocks time.Duration) bool {
+	e.cbmu.Lock()
+	defer e.cbmu.Unlock()
+
+	if len(e.currentBlock) == 0 {
+		if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
+			e.currentBlock = busEvent.Block
+		} else {
+			return false
+		}
+		return true
+	}
+	// Optional sleep between blocks to mimic running against core
+	if busEvent.Block != e.currentBlock {
+		time.Sleep(timeBetweenBlocks)
+		e.currentBlock = busEvent.Block
+	}
+	return true
 }
 
 func sendRawEvent(ctx context.Context, out chan<- []byte, rawEvent []byte) error {
