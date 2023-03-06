@@ -646,6 +646,8 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
+		// If the data source type is internal - check only filters content.
+
 		t := tp.Internal.GetTime()
 		if t == nil {
 			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
@@ -667,14 +669,8 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		}
 
 	case *vegapb.DataSourceDefinition_External:
-		// For now check only for oracle type for external data source. Add a check for Oracle type data later when other sources are added.
+		// If data source type is external - check if the signers are present first.
 		o := tp.External.GetOracle()
-
-		// First check if the oracle is builtin
-		//filters := o.Filters
-		//if isBuiltInSpec(filters) {
-		// return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
-		// }
 
 		signers := o.Signers
 		if len(signers) == 0 {
@@ -692,6 +688,7 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			}
 		}
 
+		filters := o.Filters
 		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
 	}
 
