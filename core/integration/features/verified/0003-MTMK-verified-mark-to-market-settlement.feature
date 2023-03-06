@@ -38,6 +38,10 @@ Feature: MTM settlement tests
       | party5 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party5-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
+    And the market data for the market "ETH/DEC19" should be:
+       | mark price | trading mode             | target stake | supplied stake | open interest |
+       | 100        | TRADING_MODE_CONTINUOUS  | 0            | 0              | 1             |
+
     Then the parties cancel the following orders:
       | party  | reference |
       | party4 | party4-1  |
