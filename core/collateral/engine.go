@@ -65,6 +65,8 @@ var (
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
 	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account.
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
+	// ErrAttemptingToDeleteAccountWithNonZeroBalance an attempt to delete an account with remaining funds has been made.
+	ErrAttemptingToDeleteAccountWithNonZeroBalance = errors.New("not enough funds to withdraw")
 )
 
 // Broker send events
@@ -1332,6 +1334,19 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 	}
 
 	return res, nil
+}
+
+func (e *Engine) RemoveBondAccount(partyID, marketID, asset string) error {
+	bondID := e.accountID(marketID, partyID, asset, types.AccountTypeBond)
+	bondAcc, ok := e.accs[bondID]
+	if !ok {
+		return ErrAccountDoesNotExist
+	}
+	if !bondAcc.Balance.IsZero() {
+		return ErrAttemptingToDeleteAccountWithNonZeroBalance
+	}
+	e.removeAccount(bondID)
+	return nil
 }
 
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates).

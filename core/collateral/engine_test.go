@@ -255,6 +255,50 @@ func testCreateBondAccountSuccess(t *testing.T) {
 	assert.Equal(t, account.Balance, bndacc.Balance.String())
 }
 
+func TestDeleteBondAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
+
+	party := "myparty"
+	err := eng.RemoveBondAccount(party, testMarketID, testMarketAsset)
+	require.EqualError(t, err, collateral.ErrAccountDoesNotExist.Error())
+
+	bal := num.NewUint(500)
+	// create party
+	_, err = eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	require.NoError(t, err)
+	bnd, err := eng.CreatePartyBondAccount(context.Background(), party, testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	// add funds
+	err = eng.UpdateBalance(context.Background(), bnd, bal)
+	require.Nil(t, err)
+
+	err = eng.RemoveBondAccount(party, testMarketID, testMarketAsset)
+	require.EqualError(t, err, collateral.ErrAttemptingToDeleteAccountWithNonZeroBalance.Error())
+
+	transfer := &types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: bal,
+			Asset:  testMarketAsset,
+		},
+		Type:      types.TransferTypeBondHigh,
+		MinAmount: bal,
+	}
+
+	_, err = eng.BondUpdate(context.Background(), testMarketID, transfer)
+	require.NoError(t, err)
+
+	err = eng.RemoveBondAccount(party, testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	_, err = eng.GetPartyBondAccount(testMarketID, party, testMarketAsset)
+
+	require.ErrorContains(t, err, "account does not exist")
+}
+
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
