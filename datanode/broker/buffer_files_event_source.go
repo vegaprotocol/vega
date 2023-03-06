@@ -120,12 +120,12 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 
 			// Buffer files do not necessarily start on block boundaries, to prevent sending part of a block
 			// events are ignored until an initial begin block event is encountered
+			e.mu.Lock()
 			if len(e.currentBlock) == 0 {
 				if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
-					e.mu.Lock()
 					e.currentBlock = busEvent.Block
-					e.mu.Unlock()
 				} else {
+					e.mu.Unlock()
 					continue
 				}
 			}
@@ -133,10 +133,9 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 			// Optional sleep between blocks to mimic running against core
 			if busEvent.Block != e.currentBlock {
 				time.Sleep(timeBetweenBlocks)
-				e.mu.Lock()
 				e.currentBlock = busEvent.Block
-				e.mu.Unlock()
 			}
+			e.mu.Unlock()
 
 			err = sendRawEvent(ctx, out, rawEvent)
 			if err != nil {
