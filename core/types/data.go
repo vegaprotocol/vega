@@ -282,6 +282,10 @@ func DataSourceSpecPropertyKeyFromProto(protoKey *datapb.PropertyKey) *DataSourc
 }
 
 func DataSourceSpecPropertyKeyIsEmpty(key *DataSourceSpecPropertyKey) bool {
+	if key == nil {
+		return true
+	}
+
 	if key.Name == "" && key.Type == 0 {
 		return true
 	}
