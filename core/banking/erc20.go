@@ -64,7 +64,7 @@ func (e *Engine) EnableERC20(
 		txHash:      txHash,
 		bridgeView:  e.bridgeView,
 	}
-	e.assetActs[aa.id] = aa
+	e.addAction(aa)
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
@@ -91,7 +91,7 @@ func (e *Engine) UpdateERC20(
 		txHash:                  txHash,
 		bridgeView:              e.bridgeView,
 	}
-	e.assetActs[aa.id] = aa
+	e.addAction(aa)
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
@@ -131,7 +131,7 @@ func (e *Engine) DepositERC20(
 		txHash:      txHash,
 		bridgeView:  e.bridgeView,
 	}
-	e.assetActs[aa.id] = aa
+	e.addAction(aa)
 	e.deposits[dep.ID] = dep
 
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
@@ -160,6 +160,9 @@ func (e *Engine) ERC20WithdrawalEvent(
 		return ErrWithdrawalNotReady
 	}
 
+	if blockNumber > e.lastSeenEthBlock {
+		e.lastSeenEthBlock = blockNumber
+	}
 	withd.WithdrawalDate = e.timeService.GetTimeNow().UnixNano()
 	withd.TxHash = txHash
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *withd))
@@ -312,4 +315,11 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 	}
 
 	return signature
+}
+
+func (e *Engine) addAction(aa *assetAction) {
+	e.assetActs[aa.id] = aa
+	if aa.blockHeight > e.lastSeenEthBlock {
+		e.lastSeenEthBlock = aa.blockHeight
+	}
 }
