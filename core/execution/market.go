@@ -1103,15 +1103,17 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
+	trades := make([]*types.Trade, 0, len(uncrossedOrders))
 	for _, uncrossedOrder := range uncrossedOrders {
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
+		trades = append(trades, uncrossedOrder.Trades...)
 	}
 
 	// Send an event bus update
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
-	m.checkLiquidity(ctx, nil, true)
+	m.checkLiquidity(ctx, trades, true)
 	m.commandLiquidityAuction(ctx)
 
 	if !m.as.InAuction() {

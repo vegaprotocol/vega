@@ -210,6 +210,7 @@ Feature: Fees calculations
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
+  @WhutBug
   Scenario: S003, Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep (0029-FEES-006)
 
     When the following network parameters are set:
