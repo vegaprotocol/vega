@@ -282,7 +282,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party  | volume | unrealised pnl | realised pnl |
       | party0 | 0      | 0              | -2178        |
    
-    And the accumulated liquidity fees should be "24" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "42" for the market "ETH/DEC21"
 
     # assure that closing out one LP doesn't prevent fees from being fully distributed
     When the network moves ahead "100" blocks

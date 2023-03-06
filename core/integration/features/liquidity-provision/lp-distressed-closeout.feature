@@ -427,7 +427,6 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
-    # party0 only able to cover portion of the fees due to excessive bond slashing
     And the accumulated liquidity fees should be "45" for the market "ETH/DEC21"
     And the insurance pool balance should be "4765" for the market "ETH/DEC21"
     Then the order book should have the following volumes for market "ETH/DEC21":
