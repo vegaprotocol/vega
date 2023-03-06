@@ -645,15 +645,36 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 	}
 
 	switch tp := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_Internal:
+		t := tp.Internal.GetTime()
+		if t == nil {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
+		}
+
+		if len(t.Conditions) == 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+		}
+
+		if len(t.Conditions) != 0 {
+			for j, condition := range t.Conditions {
+				if len(condition.Value) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].value", parentProperty, name, j), ErrIsRequired)
+				}
+				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsRequired)
+				}
+			}
+		}
+
 	case *vegapb.DataSourceDefinition_External:
 		// For now check only for oracle type for external data source. Add a check for Oracle type data later when other sources are added.
 		o := tp.External.GetOracle()
 
 		// First check if the oracle is builtin
-		filters := o.Filters
-		if isBuiltInSpec(filters) {
-			return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
-		}
+		//filters := o.Filters
+		//if isBuiltInSpec(filters) {
+		// return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
+		// }
 
 		signers := o.Signers
 		if len(signers) == 0 {
