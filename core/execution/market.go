@@ -1731,7 +1731,27 @@ func (m *Market) confirmMTM(
 				m.log.Error("Failed to perform bond slashing",
 					logging.Error(err))
 			}
-			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+			// if bond slashing occurred then amounts in "closed" will not be accurate
+			if len(transfers) > 0 {
+				m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+				asset, _ := m.mkt.GetAsset()
+				closedRecalculated := make([]events.Margin, 0, len(closed))
+				for _, c := range closed {
+					recalculated := c
+					if pos, ok := m.position.GetPositionByPartyID(c.Party()); ok {
+						margin, err := m.collateral.GetPartyMargin(pos, asset, m.mkt.ID)
+						if err != nil {
+							m.log.Error("couldn't get party margin",
+								logging.PartyID(c.Party()),
+								logging.Error(err))
+							continue
+						}
+						recalculated = margin
+					}
+					closedRecalculated = append(closedRecalculated, recalculated)
+				}
+				closed = closedRecalculated
+			}
 		}
 		if len(closed) > 0 {
 			upd, err := m.resolveClosedOutParties(
