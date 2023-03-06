@@ -113,18 +113,18 @@ Feature: Closeout scenarios
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | buy  | 5     | 5      |
-      | buy  | 1     | 100000 |
+      | buy  | 5     | 0      |
+      | buy  | 1     | 0      |
       | sell | 1000  | 10     |
-      | sell | 1005  | 100    |
+      | sell | 1005  | 0      |
     #trader3 is closed out
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 2161   | 0       |
+      | trader2 | USD   | ETH/DEC19 | 0   | 2000    |
     #trader2 has enough balance to maintain their position of 10 long, but not the order
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 1771        | 2656   | 3542    | 5313    |
+      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
       | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
     #trader2's order is canceled since mark price has moved from 10 to 100, hence margin level has increased by 10 times
@@ -132,7 +132,7 @@ Feature: Closeout scenarios
     # So they made a bit of profit
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC19 | 2161   | 0       |
+      | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -141,11 +141,13 @@ Feature: Closeout scenarios
     Then the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
-      | auxiliary2 | 0      | 0              | 900          |
-      | trader2    | 10     | 500            | -339         |
-      | trader3    | 0      | 0              | -162          |
-      | lprov      | 0      | 0              | 0            |
-    And the mark price should be "100" for the market "ETH/DEC19"
+      | auxiliary2 | 5      | 475            | 503          |
+      | trader2    | 0      | 0              | 0            |  
+      | trader3    | 0      | 0              | -162         |
+      | lprov      | 5      | 495            | -413         |
+       Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                    | auction trigger                   | 
+      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
 
   Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
