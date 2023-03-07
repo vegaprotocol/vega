@@ -46,7 +46,8 @@
 - [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
 - [7766](https://github.com/vegaprotocol/vega/issues/7766) - Fix orders from new parties not being included in the nearest MTM
 - [7499](https://github.com/vegaprotocol/vega/issues/7499) - Implement transaction check functionality to wallet
-
+- [7745](https://github.com/vegaprotocol/vega/issues/7745) - Use margin after the application of a bond penalty to assess LP solvency
+- [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
 
 ## 0.68.0
 

@@ -520,6 +520,20 @@ func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3)
 }
 
+// RemoveBondAccount mocks base method.
+func (m *MockCollateral) RemoveBondAccount(arg0, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveBondAccount", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveBondAccount indicates an expected call of RemoveBondAccount.
+func (mr *MockCollateralMockRecorder) RemoveBondAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveBondAccount", reflect.TypeOf((*MockCollateral)(nil).RemoveBondAccount), arg0, arg1, arg2)
+}
+
 // RemoveDistressed mocks base method.
 func (m *MockCollateral) RemoveDistressed(arg0 context.Context, arg1 []events.MarketPosition, arg2, arg3 string) (*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()

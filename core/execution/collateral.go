@@ -154,6 +154,9 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 	asset, _ := m.mkt.GetAsset()
 	ret := make([]*types.LedgerMovement, 0, len(closed))
 	for _, c := range closed {
+		if !m.liquidity.IsLiquidityProvider(c.Party()) {
+			continue
+		}
 		penalty, _ := num.UintFromDecimal(
 			num.DecimalFromUint(c.MarginShortFall()).Mul(m.bondPenaltyFactor).Floor(),
 		)
