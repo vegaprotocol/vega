@@ -51,7 +51,7 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a future market change without oracle spec fails", testUpdateFutureMarketChangeSubmissionWithoutOracleSpecFails)
 	t.Run("Submitting a future market change without either of the required oracle spec fails", testUpdateFutureMarketChangeSubmissionMissingSingleOracleSpecFails)
 	t.Run("Submitting a future market change with oracle spec succeeds", testUpdateFutureMarketChangeSubmissionWithOracleSpecSucceeds)
-	t.Run("Submitting a future market change without pub-keys fails", testUpdateFutureMarketChangeSubmissionWithoutPubKeysFails)
+	t.Run("Submitting a future market change without pub-keys fails", testUpdateFutureMarketSettlementDataChangeSubmissionWithoutPubKeysFails)
 	t.Run("Submitting a future market change with wrong pub-keys fails", testUpdateFutureMarketChangeSubmissionWithWrongPubKeysFails)
 	t.Run("Submitting a future market change with pub-keys succeeds", testUpdateFutureMarketChangeSubmissionWithPubKeysSucceeds)
 	t.Run("Submitting a future market change without filters fails", testUpdateFutureMarketChangeSubmissionWithoutFiltersFails)
@@ -91,8 +91,6 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a log normal risk parameters change with invalid sigma", testUpdateLogNormalRiskParametersChangeSubmissionInvalidSigma)
 	t.Run("Submitting a log normal risk parameters change with invalid r", testUpdateLogNormalRiskParametersChangeSubmissionInvalidR)
 	t.Run("Submitting a update market with a too long reference fails", testUpdateMarketSubmissionWithTooLongReferenceFails)
-	t.Run("Submitting a future market with internal time for trade termination succeeds", testUpdateMarketFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceeds)
-	t.Run("Submitting a future market with trade termination from external oracle with no public key fails", testUpdateMarketFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails)
 	t.Run("Submitting a market with market ID succeeds", testUpdateMarketWithMarketIDSucceeds)
 	t.Run("Submitting a market without market ID fails", testUpdateMarketWithoutMarketIDFails)
 	t.Run("Submitting an LP price range change with 'banana' value fails", testUpdateMarketWithLpRangeBananaFails)
@@ -104,6 +102,11 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a slippage fraction change with a negative value fails", testUpdateMarketChangeSubmissionWithSlippageFactorNegativeFails)
 	t.Run("Submitting a slippage fraction change with a too large value fails", testUpdateMarketChangeSubmissionWithSlippageFactorTooLargeFails)
 	t.Run("Submitting a slippage fraction change with an empty string succeeds", testUpdateNewMarketChangeSubmissionWithEmptySlippageFactorPasses)
+	t.Run("Submitting a market with external data for termination without signers fails", testUpdateMarketFutureMarketSubmissionWithExternalSourceForTradingTerminationNoSignersFails)
+	t.Run("Submitting a market with internal data source to terminate with `vegaprotocol.builtin` in key name no signers succeeds", testUpdateMarketFutureMarketSubmissionWithInternalTimestampForTradingTerminationNoSignersSucceeds)
+	t.Run("Submitting a market with internal data source to terminate with invalid operator and no signers fails", testUpdateMarketFutureMarketSubmissionWithInvalidOperatorInternalSourceForTradingTerminationNoSignersFails)
+	t.Run("Submitting a market with oracle to terminate with `vegaprotocol.builtin` in key name no signers fails", testUpdateMarketFutureMarketSubmissionWithExternalSourceForTradingTerminationBuiltInKeyNoSignersFails)
+	t.Run("Submitting a market with oracle to settle with `vegaprotocol.builtin` in key name no signers fails", testUpdateMarketFutureMarketSubmissionWithExternalSourceForTradingSettlementBuiltInKeyNoSignersFails)
 }
 
 func testUpdateMarketChangeSubmissionWithoutUpdateMarketFails(t *testing.T) {
@@ -884,7 +887,7 @@ func testUpdateFutureMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
 }
 
-func testUpdateFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
+func testUpdateFutureMarketSettlementDataChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateMarket{
@@ -898,6 +901,15 @@ func testUpdateFutureMarketChangeSubmissionWithoutPubKeysFails(t *testing.T) {
 									).SetOracleConfig(
 										&vegapb.DataSourceSpecConfiguration{
 											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*datapb.Condition{},
+												},
+											},
 										},
 									),
 								},
@@ -2299,7 +2311,121 @@ func testUpdateMarketSubmissionWithTooLongReferenceFails(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.reference"), commands.ErrReferenceTooLong)
 }
 
-func testUpdateMarketFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceeds(t *testing.T) {
+func testUpdateMarketFutureMarketSubmissionWithInternalTimestampForTradingTerminationNoSignersSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Product: &types.UpdateInstrumentConfiguration_Future{
+								Future: &types.UpdateFutureProduct{
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeInt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															Value:    fmt.Sprintf("%d", time.Now().Add(time.Hour*24*365).UnixNano()),
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+}
+
+func testUpdateMarketFutureMarketSubmissionWithInvalidOperatorInternalSourceForTradingTerminationNoSignersFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Product: &types.UpdateInstrumentConfiguration_Future{
+								Future: &types.UpdateFutureProduct{
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeInt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
+															Value:    "value 1",
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.internal.time.conditions[0].operator"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+}
+
+func testUpdateMarketFutureMarketSubmissionWithExternalSourceForTradingTerminationNoSignersFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_UpdateMarket{
+				UpdateMarket: &types.UpdateMarket{
+					Changes: &types.UpdateMarketConfiguration{
+						Instrument: &types.UpdateInstrumentConfiguration{
+							Product: &types.UpdateInstrumentConfiguration_Future{
+								Future: &types.UpdateFutureProduct{
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*datapb.Condition{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+}
+
+func testUpdateMarketFutureMarketSubmissionWithExternalSourceForTradingTerminationBuiltInKeyNoSignersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateMarket{
@@ -2338,10 +2464,10 @@ func testUpdateMarketFutureMarketSubmissionWithInternalTimestampForTradingTermin
 		},
 	})
 
-	assert.NotContains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
 }
 
-func testUpdateMarketFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t *testing.T) {
+func testUpdateMarketFutureMarketSubmissionWithExternalSourceForTradingSettlementBuiltInKeyNoSignersFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &types.ProposalTerms{
 			Change: &types.ProposalTerms_UpdateMarket{
@@ -2350,7 +2476,7 @@ func testUpdateMarketFutureMarketSubmissionWithExternalTradingTerminationNoPubli
 						Instrument: &types.UpdateInstrumentConfiguration{
 							Product: &types.UpdateInstrumentConfiguration_Future{
 								Future: &types.UpdateFutureProduct{
-									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
 										vegapb.DataSourceDefinitionTypeExt,
 									).SetOracleConfig(
 										&vegapb.DataSourceSpecConfiguration{
@@ -2358,8 +2484,8 @@ func testUpdateMarketFutureMarketSubmissionWithExternalTradingTerminationNoPubli
 											Filters: []*datapb.Filter{
 												{
 													Key: &datapb.PropertyKey{
-														Name: "trading.terminated",
-														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+														Name: "vegaprotocol.builtin.timestamp",
+														Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 													},
 													Conditions: []*datapb.Condition{
 														{
@@ -2380,7 +2506,7 @@ func testUpdateMarketFutureMarketSubmissionWithExternalTradingTerminationNoPubli
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers"), commands.ErrIsRequired)
 }
 
 func testUpdateMarketWithMarketIDSucceeds(t *testing.T) {
