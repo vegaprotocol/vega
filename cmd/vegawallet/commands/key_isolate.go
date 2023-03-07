@@ -45,7 +45,7 @@ var (
 type IsolateKeyHandler func(api.AdminIsolateKeyParams) (isolateKeyResult, error)
 
 type isolateKeyResult struct {
-	api.AdminIsolateKeyResult
+	Wallet   string `json:"wallet"`
 	FilePath string `json:"filePath"`
 }
 
@@ -64,8 +64,8 @@ func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 		}
 		result := rawResult.(api.AdminIsolateKeyResult)
 		return isolateKeyResult{
-			AdminIsolateKeyResult: result,
-			FilePath:              walletStore.GetWalletPath(result.Wallet),
+			Wallet:   result.Wallet,
+			FilePath: walletStore.GetWalletPath(result.Wallet),
 		}, nil
 	}
 

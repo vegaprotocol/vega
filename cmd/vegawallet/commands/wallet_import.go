@@ -41,9 +41,15 @@ var (
 
 type ImportWalletHandler func(api.AdminImportWalletParams) (importWalletResult, error)
 
+type importedWallet struct {
+	Name                 string `json:"name"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	FilePath             string `json:"filePath"`
+}
+
 type importWalletResult struct {
-	api.AdminImportWalletResult
-	FilePath string `json:"filePath"`
+	Wallet importedWallet `json:"wallet"`
+	Key    firstPublicKey `json:"key"`
 }
 
 func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
@@ -63,8 +69,16 @@ func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		result := rawResult.(api.AdminImportWalletResult)
 		return importWalletResult{
-			AdminImportWalletResult: result,
-			FilePath:                walletStore.GetWalletPath(result.Wallet.Name),
+			Wallet: importedWallet{
+				Name:                 result.Wallet.Name,
+				KeyDerivationVersion: result.Wallet.KeyDerivationVersion,
+				FilePath:             walletStore.GetWalletPath(result.Wallet.Name),
+			},
+			Key: firstPublicKey{
+				PublicKey: result.Key.PublicKey,
+				Algorithm: result.Key.Algorithm,
+				Meta:      result.Key.Meta,
+			},
 		}, nil
 	}
 
@@ -174,8 +188,8 @@ func PrintImportWalletResponse(w io.Writer, resp importWalletResult) {
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported at: ").SuccessText(resp.FilePath).NextLine()
-	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.FilePath).NextLine()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been imported at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
 	str.CheckMark().SuccessText("Importing the wallet succeeded").NextSection()
 
 	str.Text("First public key:").NextLine()

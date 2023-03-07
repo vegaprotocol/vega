@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -31,9 +32,22 @@ var (
 	`)
 )
 
+type createdWallet struct {
+	Name                 string `json:"name"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	RecoveryPhrase       string `json:"recoveryPhrase"`
+	FilePath             string `json:"filePath"`
+}
+
+type firstPublicKey struct {
+	PublicKey string            `json:"publicKey"`
+	Algorithm wallet.Algorithm  `json:"algorithm"`
+	Meta      []wallet.Metadata `json:"metadata"`
+}
+
 type createWalletResult struct {
-	api.AdminCreateWalletResult
-	FilePath string `json:"filePath"`
+	Wallet createdWallet  `json:"wallet"`
+	Key    firstPublicKey `json:"key"`
 }
 
 type CreateWalletHandler func(api.AdminCreateWalletParams) (createWalletResult, error)
@@ -56,8 +70,17 @@ func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 		result := rawResult.(api.AdminCreateWalletResult)
 
 		return createWalletResult{
-			AdminCreateWalletResult: result,
-			FilePath:                walletStore.GetWalletPath(result.Wallet.Name),
+			Wallet: createdWallet{
+				Name:                 result.Wallet.Name,
+				KeyDerivationVersion: result.Wallet.KeyDerivationVersion,
+				RecoveryPhrase:       result.Wallet.RecoveryPhrase,
+				FilePath:             walletStore.GetWalletPath(result.Wallet.Name),
+			},
+			Key: firstPublicKey{
+				PublicKey: result.Key.PublicKey,
+				Algorithm: result.Key.Algorithm,
+				Meta:      result.Key.Meta,
+			},
 		}, nil
 	}
 
@@ -136,8 +159,8 @@ func PrintCreateWalletResponse(w io.Writer, resp createWalletResult) {
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.FilePath).NextLine()
-	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.FilePath).NextLine()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
 	str.CheckMark().SuccessText("Creating wallet succeeded").NextSection()
 
 	str.Text("Wallet recovery phrase:").NextLine()
