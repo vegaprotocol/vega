@@ -15,6 +15,12 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.68.2
+
+### 🐛 Fixes
+- [7763](https://github.com/vegaprotocol/vega/issues/7763) - Do not closeout LP outside of MTM flow
+
+
 ## 0.68.1
 
 ### 🐛 Fixes
