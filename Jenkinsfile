@@ -386,7 +386,7 @@ pipeline {
                             propagate: true, // fast fail
                             wait: true,
                             parameters: [
-                                string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases'),
+                                string(name: 'RELEASES_REPO', value: 'vegaprotocol/vega-dev-releases-system-tests'),
                                 string(name: 'VEGA_BRANCH', value: commitHash),
                                 string(name: 'SYSTEM_TESTS_BRANCH', value: params.SYSTEM_TESTS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchSystemTests),
                                 string(name: 'VEGATOOLS_BRANCH', value: params.VEGATOOLS_BRANCH ?: pipelineDefaults.capsuleSystemTests.branchVegatools),
