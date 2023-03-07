@@ -347,6 +347,7 @@ from timescaledb_information.hypertables
 	}
 
 	retentionEntities := make([]string, 0)
+	defer rows.Close()
 
 	for rows.Next() {
 		var entity string

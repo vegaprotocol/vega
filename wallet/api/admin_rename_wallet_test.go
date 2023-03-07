@@ -136,7 +136,7 @@ func testGettingInternalErrorDuringExistingWalletVerificationDoesNotRenameWallet
 
 	// then
 	require.NotNil(t, errorDetails)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testRenamingWalletWithNameAlreadyTakenFails(t *testing.T) {
@@ -182,7 +182,7 @@ func testGettingInternalErrorDuringNonExistingWalletVerificationDoesNotRenameWal
 
 	// then
 	require.NotNil(t, errorDetails)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringRenamingDoesNotRenameWallet(t *testing.T) {

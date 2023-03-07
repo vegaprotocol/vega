@@ -645,8 +645,31 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 	}
 
 	switch tp := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_Internal:
+		// If the data source type is internal - check only filters content.
+
+		t := tp.Internal.GetTime()
+		if t == nil {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
+		}
+
+		if len(t.Conditions) == 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+		}
+
+		if len(t.Conditions) != 0 {
+			for j, condition := range t.Conditions {
+				if len(condition.Value) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].value", parentProperty, name, j), ErrIsRequired)
+				}
+				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsRequired)
+				}
+			}
+		}
+
 	case *vegapb.DataSourceDefinition_External:
-		// For now check only for oracle type for external data source. Add a check for Oracle type data later when other sources are added.
+		// If data source type is external - check if the signers are present first.
 		o := tp.External.GetOracle()
 
 		signers := o.Signers
@@ -666,30 +689,10 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		}
 
 		filters := o.Filters
-		if isBuiltInSpec(filters) {
-			return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
-		}
-
 		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
 	}
 
 	return errs
-}
-
-func isBuiltInSpec(filters []*datapb.Filter) bool {
-	if len(filters) != 1 {
-		return false
-	}
-
-	if filters[0].Key == nil || filters[0].Conditions == nil {
-		return false
-	}
-
-	if strings.HasPrefix(filters[0].Key.Name, "vegaprotocol.builtin") && filters[0].Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-		return true
-	}
-
-	return false
 }
 
 func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentProperty string) Errors {

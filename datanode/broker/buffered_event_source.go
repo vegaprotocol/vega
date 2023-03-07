@@ -12,33 +12,26 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/broker"
+
 	"code.vegaprotocol.io/vega/datanode/utils"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type FileBufferedEventSource struct {
 	log                   *logging.Logger
 	lastBufferedSeqNum    chan uint64
 	sendChannelBufferSize int
-	source                EventReceiver
+	source                RawEventReceiver
 	bufferFilePath        string
 	archiveFilesPath      string
 	config                BufferedEventSourceConfig
 }
 
-const (
-	numberOfSeqNumBytes = 8
-	numberOfSizeBytes   = 4
-)
-
 func NewBufferedEventSource(ctx context.Context, log *logging.Logger, config BufferedEventSourceConfig,
-	source EventReceiver, bufferFilesDir string,
+	source RawEventReceiver, bufferFilesDir string,
 	archiveFilesDir string,
 ) (*FileBufferedEventSource, error) {
 	err := os.RemoveAll(bufferFilesDir)
@@ -98,7 +91,7 @@ func (m *FileBufferedEventSource) Listen() error {
 	return m.source.Listen()
 }
 
-func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan []byte, <-chan error) {
 	sourceEventCh, sourceErrCh := m.source.Receive(ctx)
 
 	if m.config.EventsPerFile == 0 {
@@ -106,7 +99,7 @@ func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Ev
 		return sourceEventCh, sourceErrCh
 	}
 
-	sinkEventCh := make(chan events.Event, m.sendChannelBufferSize)
+	sinkEventCh := make(chan []byte, m.sendChannelBufferSize)
 	sinkErrorCh := make(chan error, 1)
 
 	ctxWithCancel, cancel := context.WithCancel(ctx)
@@ -122,7 +115,7 @@ func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Ev
 	return sinkEventCh, sinkErrorCh
 }
 
-func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourceEventCh <-chan events.Event,
+func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourceEventCh <-chan []byte,
 	sourceErrCh <-chan error, sinkErrorCh chan error,
 ) {
 	bufferSeqNum := uint64(0)
@@ -152,7 +145,7 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 			}
 
 			bufferSeqNum++
-			err = writeToBuffer(bufferFile, bufferSeqNum, event)
+			err = broker.WriteRawToBufferFile(bufferFile, bufferSeqNum, event)
 			metrics.EventBufferWrittenCountInc()
 
 			if err != nil {
@@ -186,7 +179,7 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 	}
 }
 
-func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sinkEventCh chan events.Event, sinkErrorCh chan error) {
+func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sinkEventCh chan []byte, sinkErrorCh chan error) {
 	var offset int64
 	var lastBufferSeqNum uint64
 	var lastSentBufferSeqNum uint64
@@ -220,7 +213,7 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 				}
 			}
 
-			event, bufferSeqNum, read, err := readBufferedEvent(bufferFile, offset)
+			event, bufferSeqNum, read, err := readRawEvent(bufferFile, offset)
 			if err != nil {
 				sinkErrorCh <- fmt.Errorf("error when reading event from buffer file:%w", err)
 				return
@@ -229,8 +222,7 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 			offset += int64(read)
 
 			if event != nil {
-				evt := toEvent(ctx, event)
-				sinkEventCh <- evt
+				sinkEventCh <- event
 				metrics.EventBufferReadCountInc()
 				lastSentBufferSeqNum = bufferSeqNum
 
@@ -269,31 +261,6 @@ func (m *FileBufferedEventSource) rollBufferFile(currentBufferFile *os.File, seq
 		return nil, fmt.Errorf("failed to create events buffer file:%w", err)
 	}
 	return newBufferFile, nil
-}
-
-func writeToBuffer(bufferFile *os.File, bufferSeqNum uint64, event events.Event) error {
-	e := event.StreamMessage()
-
-	seqNumBytes := make([]byte, numberOfSeqNumBytes)
-	sizeBytes := make([]byte, numberOfSizeBytes)
-
-	size := numberOfSeqNumBytes + uint32(proto.Size(e))
-	protoBytes, err := proto.Marshal(e)
-	if err != nil {
-		return fmt.Errorf("failed to marshal bus event:%w", err)
-	}
-
-	binary.BigEndian.PutUint64(seqNumBytes, bufferSeqNum)
-	binary.BigEndian.PutUint32(sizeBytes, size)
-	allBytes := append([]byte{}, sizeBytes...)
-	allBytes = append(allBytes, seqNumBytes...)
-	allBytes = append(allBytes, protoBytes...)
-	_, err = bufferFile.Write(allBytes)
-	if err != nil {
-		return fmt.Errorf("failed to write to buffer file:%w", err)
-	}
-
-	return nil
 }
 
 func (m *FileBufferedEventSource) removeBufferFile(bufferFile *os.File) error {
@@ -336,10 +303,10 @@ func (m *FileBufferedEventSource) moveBufferFileToArchive(bufferFilePath string)
 	return nil
 }
 
-func readBufferedEvent(eventFile *os.File, offset int64) (event *eventspb.BusEvent, seqNum uint64,
+func readRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
 	totalBytesRead uint32, err error,
 ) {
-	sizeBytes := make([]byte, numberOfSizeBytes)
+	sizeBytes := make([]byte, broker.NumberOfSizeBytes)
 	read, err := eventFile.ReadAt(sizeBytes, offset)
 
 	if err == io.EOF {
@@ -348,11 +315,11 @@ func readBufferedEvent(eventFile *os.File, offset int64) (event *eventspb.BusEve
 		return nil, 0, 0, fmt.Errorf("error reading message size from events file:%w", err)
 	}
 
-	if read < numberOfSizeBytes {
+	if read < broker.NumberOfSizeBytes {
 		return nil, 0, 0, nil
 	}
 
-	messageOffset := offset + numberOfSizeBytes
+	messageOffset := offset + broker.NumberOfSizeBytes
 
 	msgSize := binary.BigEndian.Uint32(sizeBytes)
 	seqNumAndMsgBytes := make([]byte, msgSize)
@@ -367,18 +334,12 @@ func readBufferedEvent(eventFile *os.File, offset int64) (event *eventspb.BusEve
 		return nil, 0, 0, nil
 	}
 
-	seqNumBytes := seqNumAndMsgBytes[:numberOfSeqNumBytes]
+	seqNumBytes := seqNumAndMsgBytes[:broker.NumberOfSeqNumBytes]
 	seqNum = binary.BigEndian.Uint64(seqNumBytes)
+	msgBytes := seqNumAndMsgBytes[broker.NumberOfSeqNumBytes:]
+	totalBytesRead = broker.NumberOfSizeBytes + msgSize
 
-	event = &eventspb.BusEvent{}
-	msgBytes := seqNumAndMsgBytes[numberOfSeqNumBytes:]
-	err = proto.Unmarshal(msgBytes, event)
-	if err != nil {
-		return nil, 0, 0, fmt.Errorf("failed to unmarshal bus event: %w", err)
-	}
-	totalBytesRead = numberOfSizeBytes + msgSize
-
-	return event, seqNum, totalBytesRead, nil
+	return msgBytes, seqNum, totalBytesRead, nil
 }
 
 const bufferFileNamePrepend = "datanode-buffer"

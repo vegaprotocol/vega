@@ -260,6 +260,12 @@ func (s DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 		switch dsn := s.SourceType.oneOfProto().(type) {
 		case *vegapb.DataSourceDefinition_External:
 			filters = DataSourceSpecFiltersFromProto(dsn.External.GetOracle().Filters)
+
+		case *vegapb.DataSourceDefinition_Internal:
+			conditions := DataSourceSpecConditionsFromProto(dsn.Internal.GetTime().Conditions)
+			filters = append(filters, &DataSourceSpecFilter{
+				Conditions: conditions,
+			})
 		}
 	}
 
@@ -419,4 +425,24 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 
 	*s = *DataSourceDefinitionFromProto(ds)
 	return s
+}
+
+func (s *DataSourceDefinition) IsExternal() bool {
+	switch s.SourceType.oneOfProto().(type) {
+	case *vegapb.DataSourceDefinition_External:
+		return true
+	}
+
+	return false
+}
+
+func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() *vegapb.DataSourceSpecConfigurationTime {
+	if s.SourceType != nil {
+		switch tp := s.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinition_Internal:
+			return tp.Internal.GetTime()
+		}
+	}
+
+	return nil
 }

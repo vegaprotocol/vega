@@ -277,6 +277,10 @@ func (t *Topology) serialise(k string) ([]byte, error) {
 
 func (t *Topology) OnStateLoaded(ctx context.Context) error {
 	// tell the internal EEF where it got up to so we do not resend events we're already seen
-	t.ethEventSource.UpdateMultisigControlStartingBlock(t.getLastBlockSeen())
+	lastSeen := t.getLastBlockSeen()
+	if lastSeen != 0 {
+		t.log.Info("restoring multisig starting block", logging.Uint64("block", lastSeen))
+		t.ethEventSource.UpdateMultisigControlStartingBlock(t.getLastBlockSeen())
+	}
 	return nil
 }

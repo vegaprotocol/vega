@@ -105,6 +105,18 @@ func (s *FileStore) UnlockWallet(ctx context.Context, name, passphrase string) e
 	return nil
 }
 
+func (s *FileStore) IsWalletAlreadyUnlocked(ctx context.Context, name string) (bool, error) {
+	if err := checkContextStatus(ctx); err != nil {
+		return false, err
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	_, isUnlocked := s.unlockedWallets[name]
+	return isUnlocked, nil
+}
+
 func (s *FileStore) LockWallet(ctx context.Context, name string) error {
 	if err := checkContextStatus(ctx); err != nil {
 		return err

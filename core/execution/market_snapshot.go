@@ -182,7 +182,7 @@ func NewMarketFromSnapshot(
 		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
 	}
 
-	if mkt.State == types.MarketStateSettled {
+	if em.Closed {
 		market.closed = true
 		stateVarEngine.UnregisterStateVariable(asset, mkt.ID)
 	}
@@ -221,6 +221,7 @@ func (m *Market) getState() *types.ExecMarket {
 		SettlementData:             sp,
 		NextMTM:                    m.nextMTM.UnixNano(),
 		Parties:                    parties,
+		Closed:                     m.closed,
 	}
 
 	return em

@@ -73,6 +73,8 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 
 func toV2IntervalString(interval vega.Interval) (string, error) {
 	switch interval {
+	case vega.Interval_INTERVAL_BLOCK:
+		return "block", nil
 	case vega.Interval_INTERVAL_I1M:
 		return "1 minute", nil
 	case vega.Interval_INTERVAL_I5M:

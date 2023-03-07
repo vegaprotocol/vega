@@ -201,3 +201,32 @@ func (p MarketPosition) VWSell() *num.Uint {
 	}
 	return num.UintZero()
 }
+
+func (p MarketPosition) OrderReducesExposure(ord *types.Order) bool {
+	if ord == nil || p.Size() == 0 || ord.PeggedOrder != nil {
+		return false
+	}
+	// long position and short order
+	if p.Size() > 0 && ord.Side == types.SideSell {
+		// market order reduces exposure and doesn't flip position to the other side
+		if p.Size()-int64(ord.Remaining) >= 0 && ord.Type == types.OrderTypeMarket {
+			return true
+		}
+		// sum of all short limit orders wouldn't flip the position if filled (ord already included in pos)
+		if p.Size()-p.Sell() >= 0 && ord.Type == types.OrderTypeLimit {
+			return true
+		}
+	}
+	// short position and long order
+	if p.Size() < 0 && ord.Side == types.SideBuy {
+		// market order reduces exposure and doesn't flip position to the other side
+		if p.Size()+int64(ord.Remaining) <= 0 && ord.Type == types.OrderTypeMarket {
+			return true
+		}
+		// sum of all long limit orders wouldn't flip the position if filled (ord already included in pos)
+		if p.Size()+p.Buy() <= 0 && ord.Type == types.OrderTypeLimit {
+			return true
+		}
+	}
+	return false
+}

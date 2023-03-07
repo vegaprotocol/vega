@@ -531,10 +531,10 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 			ctx, lpSubmissionCancel, lpparty),
 	)
 
-	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
+	t.Run("bond account doesn't exist any more", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
-		assert.NoError(t, err)
-		assert.Equal(t, num.UintZero(), acc.Balance)
+		assert.ErrorContains(t, err, "account does not exist")
+		assert.Nil(t, acc)
 	})
 }
 

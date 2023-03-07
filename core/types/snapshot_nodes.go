@@ -335,6 +335,7 @@ type ExecMarket struct {
 	SettlementData             *num.Numeric
 	NextMTM                    int64
 	Parties                    []string
+	Closed                     bool
 }
 
 type PriceMonitor struct {
@@ -480,7 +481,8 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []string
+	Refs             []string
+	LastSeenEthBlock uint64
 }
 
 type BankingAssetActions struct {
@@ -2080,14 +2082,16 @@ func (b BDeposit) IntoProto() *snapshot.Deposit {
 
 func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
 	ret := BankingSeen{
-		Refs: bs.Refs,
+		Refs:             bs.Refs,
+		LastSeenEthBlock: bs.LastSeenEthBlock,
 	}
 	return &ret
 }
 
 func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	ret := snapshot.BankingSeen{
-		Refs: b.Refs,
+		Refs:             b.Refs,
+		LastSeenEthBlock: b.LastSeenEthBlock,
 	}
 	return &ret
 }
@@ -2947,6 +2951,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		NextMTM:                    em.NextMarkToMarket,
 		LastTradedPrice:            lastTradedPrice,
 		Parties:                    em.Parties,
+		Closed:                     em.Closed,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2978,6 +2983,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		NextMarkToMarket:           e.NextMTM,
 		LastTradedPrice:            e.LastTradedPrice.String(),
 		Parties:                    e.Parties,
+		Closed:                     e.Closed,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())

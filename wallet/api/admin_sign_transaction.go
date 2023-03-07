@@ -33,8 +33,8 @@ type AdminSignTransactionParams struct {
 	Wallet        string              `json:"wallet"`
 	Passphrase    string              `json:"passphrase"`
 	PublicKey     string              `json:"publicKey"`
-	Transaction   interface{}         `json:"transaction"`
 	Network       string              `json:"network"`
+	Transaction   interface{}         `json:"transaction"`
 	LastBlockData *AdminLastBlockData `json:"lastBlockData"`
 }
 
@@ -65,7 +65,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
@@ -84,7 +84,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(fmt.Errorf("the transaction is not a valid Vega command: %w", err))
+		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
 	}
 
 	request.PubKey = params.PublicKey
@@ -143,7 +143,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, params ParsedAdminSignTransactionParams) (*AdminLastBlockData, *jsonrpc.ErrorDetails) {
 	exists, err := h.networkStore.NetworkExists(params.Network)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not check the network existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
 	} else if !exists {
 		return nil, invalidParams(ErrNetworkDoesNotExist)
 	}
@@ -159,7 +159,7 @@ func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 
 	nodeSelector, err := h.nodeSelectorBuilder(n.API.GRPC.Hosts, n.API.GRPC.Retries)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
+		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
 	node, err := nodeSelector.Node(ctx, noNodeSelectionReporting)

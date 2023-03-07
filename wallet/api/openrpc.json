@@ -393,6 +393,126 @@
       ]
     },
     {
+      "name": "client.check_transaction",
+      "summary": "Check a transaction or a bundle of transactions and send them to the network.",
+      "description": "This method sends a transaction or a bundle of transactions to the network to verify their validity.\n\nThe network does not add them to a block. What happens with the transaction is up to the third-party application.\n\nThe user has to review the transaction after this step.",
+      "tags": [
+        {
+          "name": "client"
+        },
+        {
+          "name": "transaction"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "publicKey",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/public_key"
+          }
+        },
+        {
+          "name": "transaction",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/transaction"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transaction"
+          ],
+          "properties": {
+            "receivedAt": {
+              "type": "string",
+              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "sentAt": {
+              "type": "string",
+              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/network_error_no_healthy_node"
+        },
+        {
+          "$ref": "#/components/errors/network_error_could_not_get_chain_id"
+        },
+        {
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
+        },
+        {
+          "$ref": "#/components/errors/network_error_failed_transaction"
+        },
+        {
+          "$ref": "#/components/errors/user_error_connection_closed"
+        },
+        {
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
+        },
+        {
+          "$ref": "#/components/errors/user_error_request_cancelled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
+        },
+        {
+          "$ref": "#/components/errors/application_error_block_height_is_too_historic"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_per_block_limit_reached"
+        }
+      ],
+      "examples": [
+        {
+          "name": "Check a transaction for \"vega.xyz\"",
+          "description": "",
+          "params": [
+            {
+              "name": "publicKey",
+              "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
+            },
+            {
+              "name": "transaction",
+              "value": {}
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "receivedAt": "2021-02-18T21:54:42.123Z",
+              "sentAt": "2021-02-18T21:54:42.123Z",
+              "txHash": "E8C167126D1FC8D92898AB9C07C318161DF68753A1316A69ABDC9ADC557723B3"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "client.get_chain_id",
       "summary": "Returns the chain ID of the network in use.",
       "description": "This method returns the chain ID of the network in use.\n\nIt should be called by every third-party application to know from which network it should fetch data.",
@@ -944,13 +1064,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -971,10 +1084,6 @@
             {
               "name": "newWallet",
               "value": "my-new-wallet-name"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -1197,7 +1306,7 @@
               },
               "apps": {
                 "console": "console.vega.xyz",
-                "tokenDApp": "token.vega.xyz",
+                "governance": "governance.vega.xyz",
                 "explorer": "explorer.vega.xyz"
               }
             }
@@ -1285,6 +1394,62 @@
                   ]
                 }
               }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.rename_network",
+      "summary": "Renames a network",
+      "description": "This method renames a network in-place.\n\nIf the new name matches an existing network, it fails.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "newName",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Rename a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "my-network"
+            },
+            {
+              "name": "newWallet",
+              "value": "my-new-network-name"
             }
           ],
           "result": {
@@ -2847,6 +3012,18 @@
           }
         },
         {
+          "name": "nodeAddress",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "retries",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
           "name": "sendingMode",
           "required": true,
           "schema": {
@@ -2891,6 +3068,100 @@
             "transactionHash": {
               "type": "string",
               "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "admin.check_transaction",
+      "summary": "Check transaction command using the specified wallet and public key.",
+      "description": "This method checks a transaction is valid, and returns a base64-encoded transaction that can be sent using the method `admin.send_transaction`",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "transaction"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "pubKey",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "network",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "nodeAddress",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "retries",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "transaction",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "$ref": "#/components/schemas/transaction"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transaction"
+          ],
+          "properties": {
+            "receivedAt": {
+              "type": "string",
+              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "sentAt": {
+              "type": "string",
+              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
             },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
@@ -3559,7 +3830,7 @@
           "console": {
             "type": "string"
           },
-          "tokenDApp": {
+          "governance": {
             "type": "string"
           },
           "explorer": {

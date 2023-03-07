@@ -165,7 +165,7 @@ func testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails
 	// then
 	require.NotNil(t, errorDetails)
 	require.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testAdminUpdatePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
