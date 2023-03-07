@@ -39,7 +39,7 @@ func (h *GenerateAPITokenHandler) Handle(ctx context.Context, params GenerateAPI
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet.Name); err != nil {
-		return "", fmt.Errorf("could not verify the wallet existence: %w", err)
+		return "", fmt.Errorf("could not verify the wallet exists: %w", err)
 	} else if !exist {
 		return "", api.ErrWalletDoesNotExist
 	}

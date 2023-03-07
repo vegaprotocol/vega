@@ -3,7 +3,8 @@
 ## Unreleased 0.69.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7710](https://github.com/vegaprotocol/vega/issues/7710) - Rename "token dApp" to "governance"
+- [7731](https://github.com/vegaprotocol/vega/issues/7731) - Upgrade the interplanetary file system library to latest release
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -13,15 +14,40 @@
 - [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config locate` CLI that returns the location of the service configuration file.
 - [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config describe` CLI that display the service configuration.
 - [7656](https://github.com/vegaprotocol/vega/issues/7656) - Add `vega wallet service config reset` CLI that reset the service configuration to its default state.
+- [7681](https://github.com/vegaprotocol/vega/issues/7681) - Remove unnecessary `protobuf` marshalling in event pipeline
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
+- [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
+- [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
+- [7722](https://github.com/vegaprotocol/vega/issues/7722) - Send a reason for a passphrase request through the wallet's `interactor`
+- [5967](https://github.com/vegaprotocol/vega/issues/5967) - Do not ask for wallet passphrase if it has already been unlocked.
+- [5967](https://github.com/vegaprotocol/vega/issues/5967) - Preselect the wallet during connection is there is only one.
+- [7723](https://github.com/vegaprotocol/vega/issues/7723) - Make the `SessionBegan` interaction easy to identify using a `WorkflowType`
+- [7724](https://github.com/vegaprotocol/vega/issues/7724) - Add steps number to interactions to convey a progression feeling.
+- [7353](https://github.com/vegaprotocol/vega/issues/7353) - Improve query setting current orders to only the most recent row after snapshot restore.
+- [7763](https://github.com/vegaprotocol/vega/issues/7763) - Remove separate LP close out code path.
+- [7686](https://github.com/vegaprotocol/vega/issues/7686) - Network History load will retry when IPFS cannot connect to peers.
 
 ### 🐛 Fixes
+- [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
+- [7596](https://github.com/vegaprotocol/vega/issues/7596) - Slippage factors not persisted in database
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
-- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source 
+- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source
+- [7720](https://github.com/vegaprotocol/vega/issues/7720) - Return an empty slice instead of nil when describing a wallet network
+- [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source
 - [7659](https://github.com/vegaprotocol/vega/issues/7659) - Tidy up REST documentation for consistency
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
+- [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
+- [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
+- [7751](https://github.com/vegaprotocol/vega/issues/7751) - Store the block height of the last seen `ERC20` event in the snapshot so deposits are not lost when the network is down
+- [7713](https://github.com/vegaprotocol/vega/issues/7713) - Fix PnL values on trade in the positions API
+- [7726](https://github.com/vegaprotocol/vega/issues/7726) - Add market data current state table to ensure node restored from network history has latest market data
+- [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
+- [7483](https://github.com/vegaprotocol/vega/issues/7483) - Fix market data history returning 0 values for price monitoring bounds
+- [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
+- [7766](https://github.com/vegaprotocol/vega/issues/7766) - Fix orders from new parties not being included in the nearest MTM
+- [7499](https://github.com/vegaprotocol/vega/issues/7499) - Implement transaction check functionality to wallet
+- [7745](https://github.com/vegaprotocol/vega/issues/7745) - Use margin after the application of a bond penalty to assess LP solvency
+- [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
 
 ## 0.68.0
 

@@ -54,8 +54,10 @@ func TestReceiveEvents(t *testing.T) {
 	broker.WriteToBufferFile(bufferFile2, 11, a5)
 	bufferFile2.Close()
 
-	eventSource, err := NewBufferFilesEventSource(bufferFilesDir, 0, 1000, "")
+	rawEventSource, err := NewBufferFilesEventSource(bufferFilesDir, 0, 1000, "")
 	assert.NoError(t, err)
+
+	eventSource := NewDeserializer(rawEventSource)
 
 	err = eventSource.Listen()
 	assert.NoError(t, err)

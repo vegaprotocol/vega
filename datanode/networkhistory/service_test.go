@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmSdt6UgB6SNUmKgRnwXHT71jHBgUoEMLVFnfqGh5sg7D4", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmU1BibuzhqSFEJVQytxm3M99RagbtJHGp4bcGWoVzR2DY", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmdaCJCMMxaUnSA54KTN1JGFCmTSbj8Cstv5RdGtfNZPqE", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmecFv3Kn3dHdkJJMABp3FwhtCMqWaHhhdPNufpYwbphVe", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmQJLQE5wgwwVxpaiAnG4KSc3WELpjajDfwzGq5HJu5Gdc", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "Qmc4xsUjDgKYxjaMEqf4Go5NohEZxoNsQQLBF3CWD8PTRd", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmfQSrqZWA7BLLCBHiY2LqUjwhidvYGnPNaXRq6L8mS8KN", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmZF1TRT4UgJKuio7Ldkt3cnre3ocZgFHkXciX5YN4wjMG", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmQtnJ7AinCrrHPVRnCh1CYoGbSmSDRkLw7sf96MAS4x6K", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmRvvDU7hczLaQiUfdTyP78xLzMMKXJszsNqAZN2eE4K2u", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTyh8JdNRR4D6MzycerdFHAUER9wbpZhD5WKeE9E5KMPS", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmPR8dV8V4gZNgX7yiZ8Nb1QTzUqXRB9xqj7nFumQgs99n", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1179,10 +1179,11 @@ type TestEventSource struct {
 }
 
 func newTestEventSource(onEvent func(events.Event, chan<- events.Event)) (*TestEventSource, error) {
-	evtSource, err := broker.NewBufferFilesEventSource(eventsDir, 0, 0, chainID)
+	rawEvtSource, err := broker.NewBufferFilesEventSource(eventsDir, 0, 0, chainID)
 	if err != nil {
 		return nil, err
 	}
+	evtSource := broker.NewDeserializer(rawEvtSource)
 
 	return &TestEventSource{
 		fileSource: evtSource,

@@ -481,7 +481,8 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []string
+	Refs             []string
+	LastSeenEthBlock uint64
 }
 
 type BankingAssetActions struct {
@@ -2081,14 +2082,16 @@ func (b BDeposit) IntoProto() *snapshot.Deposit {
 
 func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
 	ret := BankingSeen{
-		Refs: bs.Refs,
+		Refs:             bs.Refs,
+		LastSeenEthBlock: bs.LastSeenEthBlock,
 	}
 	return &ret
 }
 
 func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	ret := snapshot.BankingSeen{
-		Refs: b.Refs,
+		Refs:             b.Refs,
+		LastSeenEthBlock: b.LastSeenEthBlock,
 	}
 	return &ret
 }

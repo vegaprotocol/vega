@@ -67,27 +67,29 @@ const (
 	// system.
 	ErrorCodeRequestNotPermitted jsonrpc.ErrorCode = 2000
 
-	// ErrorCodeRequestHasBeenCancelledByApplication refers to an automated cancellation of a
-	// request by the application core. This happens when some requirements are
-	// missing to ensure correct handling of a request.
+	// ErrorCodeRequestHasBeenCancelledByApplication refers to an automated
+	// cancellation of a request by the application core. This happens when some
+	// requirements are missing to ensure correct handling of a request.
 	ErrorCodeRequestHasBeenCancelledByApplication jsonrpc.ErrorCode = 2001
 
 	// User error codes are errors that results from the user. It ranges
 	// from 3000 to 3999, included.
 
-	// ErrorCodeConnectionHasBeenClosed refers to an interruption of the service triggered
-	// by the user.
+	// ErrorCodeConnectionHasBeenClosed refers to an interruption of the service
+	// triggered by the user.
 	ErrorCodeConnectionHasBeenClosed jsonrpc.ErrorCode = 3000
 
-	// ErrorCodeRequestHasBeenRejected refers to an explicit rejection of a request by the
-	// user. When received, the third-party application should consider the user
-	// has withdrawn from the action, and thus, abort the action.
+	// ErrorCodeRequestHasBeenRejected refers to an explicit rejection of a
+	// request by the user. When received, the third-party application should
+	// consider the user has withdrawn from the action, and thus, abort the
+	// action.
 	ErrorCodeRequestHasBeenRejected jsonrpc.ErrorCode = 3001
 
-	// ErrorCodeRequestHasBeenCancelledByUser refers to a cancellation of a request by the
-	// user. It's conceptually different from a rejection. Contrary to a rejection,
-	// when a cancellation is received, the third-party application should temporarily
-	// back off, maintain its state, and wait for the user to be ready to continue.
+	// ErrorCodeRequestHasBeenCancelledByUser refers to a cancellation of a
+	// request by the user. It's conceptually different from a rejection.
+	// Contrary to a rejection, when a cancellation is received, the third-party
+	// application should temporarily back off, maintain its state, and wait for
+	// the user to be ready to continue.
 	ErrorCodeRequestHasBeenCancelledByUser jsonrpc.ErrorCode = 3002
 )
 
@@ -98,6 +100,8 @@ var (
 	ErrBlockHeightTooHistoric                             = errors.New("the block height is too historic")
 	ErrCannotRotateKeysOnIsolatedWallet                   = errors.New("cannot rotate keys on an isolated wallet")
 	ErrChainIDIsRequired                                  = errors.New("the chain ID is required")
+	ErrConnectionClosed                                   = errors.New("the connection has been closed")
+	ErrCouldNotCheckTransaction                           = errors.New("could not check transaction")
 	ErrCouldNotConnectToWallet                            = errors.New("could not connect to the wallet")
 	ErrCouldNotGetChainIDFromNode                         = errors.New("could not get the chain ID from the node")
 	ErrCouldNotGetLastBlockInformation                    = errors.New("could not get information about the last block on the network")
@@ -138,10 +142,11 @@ var (
 	ErrProofOfWorkDifficultyRequired                      = errors.New("the proof-of-work difficulty is required")
 	ErrProofOfWorkHashFunctionRequired                    = errors.New("the proof-of-work hash function is required")
 	ErrPublicKeyDoesNotExist                              = errors.New("the public key does not exist")
-	ErrPublicKeyIsNotAllowedToBeUsed                      = errors.New("the public key is not allowed to be used")
+	ErrPublicKeyIsNotAllowedToBeUsed                      = errors.New("this public key is not allowed to be used")
 	ErrPublicKeyIsRequired                                = errors.New("the public key is required")
 	ErrRawTransactionIsNotValidVegaTransaction            = errors.New("the raw transaction is not a valid Vega transaction")
 	ErrRecoveryPhraseIsRequired                           = errors.New("the recovery phrase is required")
+	ErrRequestCancelled                                   = errors.New("the request has been cancelled")
 	ErrRequestInterrupted                                 = errors.New("the request has been interrupted")
 	ErrSendingModeCannotBeTypeUnspecified                 = errors.New(`the sending mode can't be "TYPE_UNSPECIFIED"`)
 	ErrSendingModeIsRequired                              = errors.New("the sending mode is required")
@@ -155,6 +160,7 @@ var (
 	ErrUserCancelledTheRequest                            = errors.New("the user cancelled the request")
 	ErrUserCloseTheConnection                             = errors.New("the user closed the connection")
 	ErrUserRejectedAccessToKeys                           = errors.New("the user rejected the access to the keys")
+	ErrUserRejectedCheckingOfTransaction                  = errors.New("the user rejected the checking of the transaction")
 	ErrUserRejectedSendingOfTransaction                   = errors.New("the user rejected the sending of the transaction")
 	ErrUserRejectedSigningOfTransaction                   = errors.New("the user rejected the signing of the transaction")
 	ErrUserRejectedWalletConnection                       = errors.New("the user rejected the wallet connection")
@@ -219,16 +225,12 @@ func invalidParams(err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewInvalidParams(err)
 }
 
-func requestNotPermittedError(err error) *jsonrpc.ErrorDetails {
-	return applicationError(ErrorCodeRequestNotPermitted, err)
+func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
+	return jsonrpc.NewServerError(ErrorCodeRequestHasBeenInterrupted, err)
 }
 
 func connectionClosedError(err error) *jsonrpc.ErrorDetails {
 	return userError(ErrorCodeConnectionHasBeenClosed, err)
-}
-
-func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
-	return jsonrpc.NewServerError(ErrorCodeRequestHasBeenInterrupted, err)
 }
 
 func userCancellationError(err error) *jsonrpc.ErrorDetails {
@@ -237,6 +239,10 @@ func userCancellationError(err error) *jsonrpc.ErrorDetails {
 
 func userRejectionError(err error) *jsonrpc.ErrorDetails {
 	return userError(ErrorCodeRequestHasBeenRejected, err)
+}
+
+func requestNotPermittedError(err error) *jsonrpc.ErrorDetails {
+	return applicationError(ErrorCodeRequestNotPermitted, err)
 }
 
 func applicationCancellationError(err error) *jsonrpc.ErrorDetails {
@@ -251,18 +257,25 @@ func internalError(err error) *jsonrpc.ErrorDetails {
 // API error response based on the underlying error.
 // If none of them matches, the error handling is delegating to the caller.
 func handleRequestFlowError(ctx context.Context, traceID string, interactor Interactor, err error) *jsonrpc.ErrorDetails {
+	if errors.Is(err, ErrUserCancelledTheRequest) {
+		// 1. Using a different error message to better fit the front-end needs.
+		// 2. Contrary to the response returned to the third-party application,
+		//    we notify an ApplicationError to the wallet front-end, so it knows
+		//    it has to consider this error as a terminal one.
+		interactor.NotifyError(ctx, traceID, ApplicationError, ErrRequestCancelled)
+		return userCancellationError(err)
+	}
 	if errors.Is(err, ErrUserCloseTheConnection) {
-		// This error means the user closed the connection by stopping the
-		// wallet front-end application. As a result, there is no notification
-		// to be sent to the user.
+		// 1. Using a different error message to better fit the front-end needs.
+		// 2. Contrary to the response returned to the third-party application,
+		//    we notify an ApplicationError to the wallet front-end, so it knows
+		//    it has to consider this error as a terminal one.
+		interactor.NotifyError(ctx, traceID, ApplicationError, ErrConnectionClosed)
 		return connectionClosedError(err)
 	}
 	if errors.Is(err, ErrRequestInterrupted) {
 		interactor.NotifyError(ctx, traceID, ServerError, err)
 		return requestInterruptedError(err)
-	}
-	if errors.Is(err, ErrUserCancelledTheRequest) {
-		return userCancellationError(err)
 	}
 	return nil
 }

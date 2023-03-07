@@ -236,6 +236,7 @@ message BankingDeposits {
 
 message BankingSeen {
   repeated string refs = 1;
+  uint64 last_seen_eth_block = 2;
 }
 
 message BankingAssetActions {

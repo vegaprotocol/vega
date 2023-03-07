@@ -98,6 +98,21 @@ func (mr *MockWalletStoreMockRecorder) GetWalletPath(arg0 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWalletPath", reflect.TypeOf((*MockWalletStore)(nil).GetWalletPath), arg0)
 }
 
+// IsWalletAlreadyUnlocked mocks base method.
+func (m *MockWalletStore) IsWalletAlreadyUnlocked(arg0 context.Context, arg1 string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsWalletAlreadyUnlocked", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsWalletAlreadyUnlocked indicates an expected call of IsWalletAlreadyUnlocked.
+func (mr *MockWalletStoreMockRecorder) IsWalletAlreadyUnlocked(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsWalletAlreadyUnlocked", reflect.TypeOf((*MockWalletStore)(nil).IsWalletAlreadyUnlocked), arg0, arg1)
+}
+
 // ListWallets mocks base method.
 func (m *MockWalletStore) ListWallets(arg0 context.Context) ([]string, error) {
 	m.ctrl.T.Helper()
@@ -370,29 +385,29 @@ func (mr *MockInteractorMockRecorder) NotifyError(arg0, arg1, arg2, arg3 interfa
 }
 
 // NotifyFailedTransaction mocks base method.
-func (m *MockInteractor) NotifyFailedTransaction(arg0 context.Context, arg1, arg2, arg3 string, arg4 error, arg5 time.Time, arg6 string) {
+func (m *MockInteractor) NotifyFailedTransaction(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4 string, arg5 error, arg6 time.Time, arg7 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyFailedTransaction", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	m.ctrl.Call(m, "NotifyFailedTransaction", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // NotifyFailedTransaction indicates an expected call of NotifyFailedTransaction.
-func (mr *MockInteractorMockRecorder) NotifyFailedTransaction(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifyFailedTransaction(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyFailedTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifyFailedTransaction), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyFailedTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifyFailedTransaction), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // NotifyInteractionSessionBegan mocks base method.
-func (m *MockInteractor) NotifyInteractionSessionBegan(arg0 context.Context, arg1 string) error {
+func (m *MockInteractor) NotifyInteractionSessionBegan(arg0 context.Context, arg1 string, arg2 api.WorkflowType, arg3 byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NotifyInteractionSessionBegan", arg0, arg1)
+	ret := m.ctrl.Call(m, "NotifyInteractionSessionBegan", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // NotifyInteractionSessionBegan indicates an expected call of NotifyInteractionSessionBegan.
-func (mr *MockInteractorMockRecorder) NotifyInteractionSessionBegan(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifyInteractionSessionBegan(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyInteractionSessionBegan", reflect.TypeOf((*MockInteractor)(nil).NotifyInteractionSessionBegan), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyInteractionSessionBegan", reflect.TypeOf((*MockInteractor)(nil).NotifyInteractionSessionBegan), arg0, arg1, arg2, arg3)
 }
 
 // NotifyInteractionSessionEnded mocks base method.
@@ -408,117 +423,132 @@ func (mr *MockInteractorMockRecorder) NotifyInteractionSessionEnded(arg0, arg1 i
 }
 
 // NotifySuccessfulRequest mocks base method.
-func (m *MockInteractor) NotifySuccessfulRequest(arg0 context.Context, arg1, arg2 string) {
+func (m *MockInteractor) NotifySuccessfulRequest(arg0 context.Context, arg1 string, arg2 byte, arg3 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifySuccessfulRequest", arg0, arg1, arg2)
+	m.ctrl.Call(m, "NotifySuccessfulRequest", arg0, arg1, arg2, arg3)
 }
 
 // NotifySuccessfulRequest indicates an expected call of NotifySuccessfulRequest.
-func (mr *MockInteractorMockRecorder) NotifySuccessfulRequest(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifySuccessfulRequest(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulRequest", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulRequest), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulRequest", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulRequest), arg0, arg1, arg2, arg3)
 }
 
 // NotifySuccessfulTransaction mocks base method.
-func (m *MockInteractor) NotifySuccessfulTransaction(arg0 context.Context, arg1, arg2, arg3, arg4 string, arg5 time.Time, arg6 string) {
+func (m *MockInteractor) NotifySuccessfulTransaction(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4, arg5 string, arg6 time.Time, arg7 string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifySuccessfulTransaction", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	m.ctrl.Call(m, "NotifySuccessfulTransaction", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // NotifySuccessfulTransaction indicates an expected call of NotifySuccessfulTransaction.
-func (mr *MockInteractorMockRecorder) NotifySuccessfulTransaction(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) NotifySuccessfulTransaction(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulTransaction), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifySuccessfulTransaction", reflect.TypeOf((*MockInteractor)(nil).NotifySuccessfulTransaction), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // RequestPassphrase mocks base method.
-func (m *MockInteractor) RequestPassphrase(arg0 context.Context, arg1, arg2 string) (string, error) {
+func (m *MockInteractor) RequestPassphrase(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestPassphrase", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RequestPassphrase", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestPassphrase indicates an expected call of RequestPassphrase.
-func (mr *MockInteractorMockRecorder) RequestPassphrase(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestPassphrase(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPassphrase", reflect.TypeOf((*MockInteractor)(nil).RequestPassphrase), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPassphrase", reflect.TypeOf((*MockInteractor)(nil).RequestPassphrase), arg0, arg1, arg2, arg3, arg4)
 }
 
 // RequestPermissionsReview mocks base method.
-func (m *MockInteractor) RequestPermissionsReview(arg0 context.Context, arg1, arg2, arg3 string, arg4 map[string]string) (bool, error) {
+func (m *MockInteractor) RequestPermissionsReview(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4 string, arg5 map[string]string) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestPermissionsReview", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "RequestPermissionsReview", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestPermissionsReview indicates an expected call of RequestPermissionsReview.
-func (mr *MockInteractorMockRecorder) RequestPermissionsReview(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestPermissionsReview(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPermissionsReview", reflect.TypeOf((*MockInteractor)(nil).RequestPermissionsReview), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestPermissionsReview", reflect.TypeOf((*MockInteractor)(nil).RequestPermissionsReview), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// RequestTransactionReviewForChecking mocks base method.
+func (m *MockInteractor) RequestTransactionReviewForChecking(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4, arg5, arg6 string, arg7 time.Time) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequestTransactionReviewForChecking", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RequestTransactionReviewForChecking indicates an expected call of RequestTransactionReviewForChecking.
+func (mr *MockInteractorMockRecorder) RequestTransactionReviewForChecking(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReviewForChecking", reflect.TypeOf((*MockInteractor)(nil).RequestTransactionReviewForChecking), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // RequestTransactionReviewForSending mocks base method.
-func (m *MockInteractor) RequestTransactionReviewForSending(arg0 context.Context, arg1, arg2, arg3, arg4, arg5 string, arg6 time.Time) (bool, error) {
+func (m *MockInteractor) RequestTransactionReviewForSending(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4, arg5, arg6 string, arg7 time.Time) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestTransactionReviewForSending", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "RequestTransactionReviewForSending", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestTransactionReviewForSending indicates an expected call of RequestTransactionReviewForSending.
-func (mr *MockInteractorMockRecorder) RequestTransactionReviewForSending(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestTransactionReviewForSending(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReviewForSending", reflect.TypeOf((*MockInteractor)(nil).RequestTransactionReviewForSending), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReviewForSending", reflect.TypeOf((*MockInteractor)(nil).RequestTransactionReviewForSending), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // RequestTransactionReviewForSigning mocks base method.
-func (m *MockInteractor) RequestTransactionReviewForSigning(arg0 context.Context, arg1, arg2, arg3, arg4, arg5 string, arg6 time.Time) (bool, error) {
+func (m *MockInteractor) RequestTransactionReviewForSigning(arg0 context.Context, arg1 string, arg2 byte, arg3, arg4, arg5, arg6 string, arg7 time.Time) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestTransactionReviewForSigning", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "RequestTransactionReviewForSigning", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestTransactionReviewForSigning indicates an expected call of RequestTransactionReviewForSigning.
-func (mr *MockInteractorMockRecorder) RequestTransactionReviewForSigning(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestTransactionReviewForSigning(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReviewForSigning", reflect.TypeOf((*MockInteractor)(nil).RequestTransactionReviewForSigning), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestTransactionReviewForSigning", reflect.TypeOf((*MockInteractor)(nil).RequestTransactionReviewForSigning), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
 }
 
 // RequestWalletConnectionReview mocks base method.
-func (m *MockInteractor) RequestWalletConnectionReview(arg0 context.Context, arg1, arg2 string) (string, error) {
+func (m *MockInteractor) RequestWalletConnectionReview(arg0 context.Context, arg1 string, arg2 byte, arg3 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestWalletConnectionReview", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RequestWalletConnectionReview", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestWalletConnectionReview indicates an expected call of RequestWalletConnectionReview.
-func (mr *MockInteractorMockRecorder) RequestWalletConnectionReview(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestWalletConnectionReview(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletConnectionReview", reflect.TypeOf((*MockInteractor)(nil).RequestWalletConnectionReview), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletConnectionReview", reflect.TypeOf((*MockInteractor)(nil).RequestWalletConnectionReview), arg0, arg1, arg2, arg3)
 }
 
 // RequestWalletSelection mocks base method.
-func (m *MockInteractor) RequestWalletSelection(arg0 context.Context, arg1, arg2 string, arg3 []string) (api.SelectedWallet, error) {
+func (m *MockInteractor) RequestWalletSelection(arg0 context.Context, arg1 string, arg2 byte, arg3 string, arg4 []string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RequestWalletSelection", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(api.SelectedWallet)
+	ret := m.ctrl.Call(m, "RequestWalletSelection", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // RequestWalletSelection indicates an expected call of RequestWalletSelection.
-func (mr *MockInteractorMockRecorder) RequestWalletSelection(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockInteractorMockRecorder) RequestWalletSelection(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletSelection", reflect.TypeOf((*MockInteractor)(nil).RequestWalletSelection), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequestWalletSelection", reflect.TypeOf((*MockInteractor)(nil).RequestWalletSelection), arg0, arg1, arg2, arg3, arg4)
 }
 
 // MockConnectionsManager is a mock of ConnectionsManager interface.
