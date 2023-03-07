@@ -31,13 +31,18 @@ var (
 	`)
 )
 
-type CreateWalletHandler func(api.AdminCreateWalletParams) (api.AdminCreateWalletResult, error)
+type createWalletResult struct {
+	api.AdminCreateWalletResult
+	FilePath string `json:"filePath"`
+}
+
+type CreateWalletHandler func(api.AdminCreateWalletParams) (createWalletResult, error)
 
 func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminCreateWalletParams) (api.AdminCreateWalletResult, error) {
+	h := func(params api.AdminCreateWalletParams) (createWalletResult, error) {
 		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.AdminCreateWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return createWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
@@ -45,9 +50,15 @@ func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		rawResult, errDetails := createWallet.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.AdminCreateWalletResult{}, errors.New(errDetails.Data)
+			return createWalletResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.AdminCreateWalletResult), nil
+
+		result := rawResult.(api.AdminCreateWalletResult)
+
+		return createWalletResult{
+			AdminCreateWalletResult: result,
+			FilePath:                walletStore.GetWalletPath(result.Wallet.Name),
+		}, nil
 	}
 
 	return BuildCmdCreateWallet(w, h, rf)
@@ -119,14 +130,14 @@ func (f *CreateWalletFlags) Validate() (api.AdminCreateWalletParams, error) {
 	return req, nil
 }
 
-func PrintCreateWalletResponse(w io.Writer, resp api.AdminCreateWalletResult) {
+func PrintCreateWalletResponse(w io.Writer, resp createWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 
-	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.Wallet.FilePath).NextLine()
-	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.Wallet.FilePath).NextLine()
+	str.CheckMark().Text("Wallet ").Bold(resp.Wallet.Name).Text(" has been created at: ").SuccessText(resp.FilePath).NextLine()
+	str.CheckMark().Text("First key pair has been generated for the wallet ").Bold(resp.Wallet.Name).Text(" at: ").SuccessText(resp.FilePath).NextLine()
 	str.CheckMark().SuccessText("Creating wallet succeeded").NextSection()
 
 	str.Text("Wallet recovery phrase:").NextLine()

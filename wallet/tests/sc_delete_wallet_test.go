@@ -38,7 +38,7 @@ func TestDeleteWallet(t *testing.T) {
 
 	// then
 	require.NoError(t, err)
-	assert.NoFileExists(t, createWalletResp.Wallet.FilePath)
+	assert.NoFileExists(t, createWalletResp.FilePath)
 }
 
 func TestDeleteNonExistingWallet(t *testing.T) {
