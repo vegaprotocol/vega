@@ -18,8 +18,7 @@ type AdminIsolateKeyParams struct {
 }
 
 type AdminIsolateKeyResult struct {
-	Wallet   string `json:"wallet"`
-	FilePath string `json:"filePath"`
+	Wallet string `json:"wallet"`
 }
 
 type AdminIsolateKey struct {
@@ -65,8 +64,7 @@ func (h *AdminIsolateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 	}
 
 	return AdminIsolateKeyResult{
-		Wallet:   isolatedWallet.Name(),
-		FilePath: h.walletStore.GetWalletPath(isolatedWallet.Name()),
+		Wallet: isolatedWallet.Name(),
 	}, nil
 }
 

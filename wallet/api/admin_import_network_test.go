@@ -43,19 +43,10 @@ func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty sources",
 			params: api.AdminImportNetworkParams{
-				Name:     "fairground",
-				FilePath: "",
-				URL:      "",
+				Name: "fairground",
+				URL:  "",
 			},
 			expectedError: api.ErrNetworkSourceIsRequired,
-		}, {
-			name: "with both sources",
-			params: api.AdminImportNetworkParams{
-				Name:     "fairground",
-				FilePath: "some-file-path",
-				URL:      "some-url",
-			},
-			expectedError: api.ErrMultipleNetworkSources,
 		},
 	}
 
@@ -94,8 +85,8 @@ func testImportingNetworkThatAlreadyExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: filePath,
+		Name: name,
+		URL:  api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -120,8 +111,8 @@ func testGettingInternalErrorDuringVerificationDoesNotImportNetwork(t *testing.T
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: filePath,
+		Name: name,
+		URL:  api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -140,8 +131,8 @@ func testImportingANetworkFromAFileThatDoesntExistFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: "some-file-path",
+		Name: name,
+		URL:  api.FileSchemePrefix + "some-file-path",
 	})
 
 	// then
@@ -170,8 +161,8 @@ func testImportingValidFileSaves(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: filePath,
+		Name: name,
+		URL:  api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -194,7 +185,7 @@ func testImportingWithNoNameFails(t *testing.T) {
 
 	// when the config has no network name, and there is no network name specified in the params
 	_, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		FilePath: filePath,
+		URL: api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -220,7 +211,7 @@ func testImportingWithNameInConfig(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		FilePath: filePath,
+		URL: api.FileSchemePrefix + filePath,
 	})
 
 	// then

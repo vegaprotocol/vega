@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/wallet/api"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
 	"github.com/spf13/cobra"
@@ -31,13 +32,31 @@ var (
 	`)
 )
 
-type CreateWalletHandler func(api.AdminCreateWalletParams) (api.AdminCreateWalletResult, error)
+type createdWallet struct {
+	Name                 string `json:"name"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	RecoveryPhrase       string `json:"recoveryPhrase"`
+	FilePath             string `json:"filePath"`
+}
+
+type firstPublicKey struct {
+	PublicKey string            `json:"publicKey"`
+	Algorithm wallet.Algorithm  `json:"algorithm"`
+	Meta      []wallet.Metadata `json:"metadata"`
+}
+
+type createWalletResult struct {
+	Wallet createdWallet  `json:"wallet"`
+	Key    firstPublicKey `json:"key"`
+}
+
+type CreateWalletHandler func(api.AdminCreateWalletParams) (createWalletResult, error)
 
 func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminCreateWalletParams) (api.AdminCreateWalletResult, error) {
+	h := func(params api.AdminCreateWalletParams) (createWalletResult, error) {
 		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.AdminCreateWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return createWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
@@ -45,9 +64,24 @@ func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		rawResult, errDetails := createWallet.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.AdminCreateWalletResult{}, errors.New(errDetails.Data)
+			return createWalletResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.AdminCreateWalletResult), nil
+
+		result := rawResult.(api.AdminCreateWalletResult)
+
+		return createWalletResult{
+			Wallet: createdWallet{
+				Name:                 result.Wallet.Name,
+				KeyDerivationVersion: result.Wallet.KeyDerivationVersion,
+				RecoveryPhrase:       result.Wallet.RecoveryPhrase,
+				FilePath:             walletStore.GetWalletPath(result.Wallet.Name),
+			},
+			Key: firstPublicKey{
+				PublicKey: result.Key.PublicKey,
+				Algorithm: result.Key.Algorithm,
+				Meta:      result.Key.Meta,
+			},
+		}, nil
 	}
 
 	return BuildCmdCreateWallet(w, h, rf)
@@ -119,7 +153,7 @@ func (f *CreateWalletFlags) Validate() (api.AdminCreateWalletParams, error) {
 	return req, nil
 }
 
-func PrintCreateWalletResponse(w io.Writer, resp api.AdminCreateWalletResult) {
+func PrintCreateWalletResponse(w io.Writer, resp createWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
