@@ -892,6 +892,9 @@ Feature: Test liquidity provider reward distribution
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
 
+    Then the liquidity provisions should have the following states:
+      | id  | party | market    | commitment amount | status           |
+      | lp3 | lp3   | ETH/DEC21 | 9000              | STATUS_CANCELLED |
    And the network moves ahead "10" blocks
    And the target stake should be "9000" for the market "ETH/DEC21"
    And the supplied stake should be "19000" for the market "ETH/DEC21"
