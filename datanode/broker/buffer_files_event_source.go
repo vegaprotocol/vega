@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -16,6 +17,7 @@ import (
 )
 
 type bufferFileEventSource struct {
+	mu                    sync.Mutex
 	bufferFilesDir        string
 	timeBetweenBlocks     time.Duration
 	sendChannelBufferSize int
@@ -118,10 +120,12 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 
 			// Buffer files do not necessarily start on block boundaries, to prevent sending part of a block
 			// events are ignored until an initial begin block event is encountered
+			e.mu.Lock()
 			if len(e.currentBlock) == 0 {
 				if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
 					e.currentBlock = busEvent.Block
 				} else {
+					e.mu.Unlock()
 					continue
 				}
 			}
@@ -131,6 +135,7 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 				time.Sleep(timeBetweenBlocks)
 				e.currentBlock = busEvent.Block
 			}
+			e.mu.Unlock()
 
 			err = sendRawEvent(ctx, out, rawEvent)
 			if err != nil {

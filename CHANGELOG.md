@@ -26,6 +26,7 @@
 - [7724](https://github.com/vegaprotocol/vega/issues/7724) - Add steps number to interactions to convey a progression feeling.
 - [7353](https://github.com/vegaprotocol/vega/issues/7353) - Improve query setting current orders to only the most recent row after snapshot restore.
 - [7763](https://github.com/vegaprotocol/vega/issues/7763) - Remove separate LP close out code path.
+- [7686](https://github.com/vegaprotocol/vega/issues/7686) - Network History load will retry when IPFS cannot connect to peers.
 
 ### 🐛 Fixes
 - [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
