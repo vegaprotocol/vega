@@ -1334,6 +1334,19 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 	return res, nil
 }
 
+func (e *Engine) RemoveBondAccount(partyID, marketID, asset string) error {
+	bondID := e.accountID(marketID, partyID, asset, types.AccountTypeBond)
+	bondAcc, ok := e.accs[bondID]
+	if !ok {
+		return ErrAccountDoesNotExist
+	}
+	if !bondAcc.Balance.IsZero() {
+		e.log.Panic("attempting to delete a bond account with non-zero balance")
+	}
+	e.removeAccount(bondID)
+	return nil
+}
+
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates).
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error) {
 	// create "fake" settle account for market ID
