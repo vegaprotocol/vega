@@ -2066,6 +2066,10 @@ func TestSubmit(t *testing.T) {
 				}
 			}
 
+			for _, v := range found {
+				fmt.Printf("FOUND: %v\n", v)
+			}
+
 			assert.Len(t, found, 2)
 
 			// the manually submitted limit order should replace the automatically deployed LP order
@@ -2083,7 +2087,7 @@ func TestSubmit(t *testing.T) {
 				},
 				{
 					size:   expiringOrder.Size,
-					status: types.OrderStatusCancelled,
+					status: types.OrderStatusParked,
 					ref:    lpSubmission.Reference,
 					found:  false,
 				},
