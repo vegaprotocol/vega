@@ -108,6 +108,10 @@ func (c *InsecureGRPCAdapter) Statistics(ctx context.Context) (nodetypes.Statist
 	}, nil
 }
 
+func (c *InsecureGRPCAdapter) CheckTransaction(ctx context.Context, req *apipb.CheckTransactionRequest) (*apipb.CheckTransactionResponse, error) {
+	return c.client.CheckTransaction(ctx, req)
+}
+
 func (c *InsecureGRPCAdapter) SubmitTransaction(ctx context.Context, req *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error) {
 	return c.client.SubmitTransaction(ctx, req)
 }

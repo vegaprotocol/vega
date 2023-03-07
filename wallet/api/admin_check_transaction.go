@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,59 +12,52 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
-
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
 )
 
-type AdminSendTransactionParams struct {
+type AdminCheckTransactionParams struct {
 	Wallet      string      `json:"wallet"`
 	Passphrase  string      `json:"passphrase"`
 	PublicKey   string      `json:"publicKey"`
 	Network     string      `json:"network"`
 	NodeAddress string      `json:"nodeAddress"`
 	Retries     uint64      `json:"retries"`
-	SendingMode string      `json:"sendingMode"`
 	Transaction interface{} `json:"transaction"`
 }
 
-type ParsedAdminSendTransactionParams struct {
+type ParsedAdminCheckTransactionParams struct {
 	Wallet         string
 	Passphrase     string
 	PublicKey      string
 	Network        string
 	NodeAddress    string
 	Retries        uint64
-	SendingMode    apipb.SubmitTransactionRequest_Type
 	RawTransaction string
 }
 
-type AdminSendTransactionResult struct {
-	ReceivedAt time.Time                      `json:"receivedAt"`
-	SentAt     time.Time                      `json:"sentAt"`
-	TxHash     string                         `json:"transactionHash"`
-	Tx         *commandspb.Transaction        `json:"transaction"`
-	Node       AdminSendTransactionNodeResult `json:"node"`
+type AdminCheckTransactionResult struct {
+	ReceivedAt         time.Time                      `json:"receivedAt"`
+	SentAt             time.Time                      `json:"sentAt"`
+	Tx                 *commandspb.Transaction        `json:"transaction"`
+	Node               AdminSendTransactionNodeResult `json:"node"`
+	EncodedTransaction string
 }
 
-type AdminSendTransactionNodeResult struct {
-	Host string `json:"host"`
-}
-
-type AdminSendTransaction struct {
+type AdminCheckTransaction struct {
 	walletStore         WalletStore
 	networkStore        NetworkStore
 	nodeSelectorBuilder NodeSelectorBuilder
 }
 
-func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	params, err := validateAdminSendTransactionParams(rawParams)
+func (h *AdminCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	params, err := validateAdminCheckTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
@@ -87,6 +81,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
+
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
 		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
@@ -115,7 +110,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 
 	signature, err := w.SignTx(params.PublicKey, commands.BundleInputDataForSigning(marshaledInputData, lastBlockData.ChainID))
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not sign the transaction: %w", err))
+		return nil, internalError(fmt.Errorf("could not check the transaction: %w", err))
 	}
 
 	// Build the transaction.
@@ -131,30 +126,33 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not compute the proof-of-work: %w", err))
 	}
-
 	tx.Pow = &commandspb.ProofOfWork{
 		Nonce: powNonce,
 		Tid:   txID,
 	}
 
 	sentAt := time.Now()
-	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
-	if err != nil {
+	if err := currentNode.CheckTransaction(ctx, tx); err != nil {
 		return nil, networkErrorFromTransactionError(err)
 	}
 
-	return AdminSendTransactionResult{
+	rawTx, err := proto.Marshal(tx)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not marshal the transaction: %w", err))
+	}
+
+	return AdminCheckTransactionResult{
 		ReceivedAt: receivedAt,
 		SentAt:     sentAt,
-		TxHash:     txHash,
 		Tx:         tx,
 		Node: AdminSendTransactionNodeResult{
 			Host: currentNode.Host(),
 		},
+		EncodedTransaction: base64.StdEncoding.EncodeToString(rawTx),
 	}, nil
 }
 
-func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSendTransactionParams) (node.Node, *jsonrpc.ErrorDetails) {
+func (h *AdminCheckTransaction) getNode(ctx context.Context, params ParsedAdminCheckTransactionParams) (node.Node, *jsonrpc.ErrorDetails) {
 	var hosts []string
 	var retries uint64
 	if len(params.Network) != 0 {
@@ -193,7 +191,7 @@ func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSe
 	return currentNode, nil
 }
 
-func (h *AdminSendTransaction) getLastBlockDataFromNetwork(ctx context.Context, node node.Node) (*AdminLastBlockData, *jsonrpc.ErrorDetails) {
+func (h *AdminCheckTransaction) getLastBlockDataFromNetwork(ctx context.Context, node node.Node) (*AdminLastBlockData, *jsonrpc.ErrorDetails) {
 	lastBlock, err := node.LastBlock(ctx)
 	if err != nil {
 		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
@@ -212,54 +210,56 @@ func (h *AdminSendTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 	}, nil
 }
 
-func NewAdminSendTransaction(walletStore WalletStore, networkStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder) *AdminSendTransaction {
-	return &AdminSendTransaction{
+func NewAdminCheckTransaction(
+	walletStore WalletStore, networkStore NetworkStore, nodeSelectorBuilder NodeSelectorBuilder,
+) *AdminCheckTransaction {
+	return &AdminCheckTransaction{
 		walletStore:         walletStore,
 		networkStore:        networkStore,
 		nodeSelectorBuilder: nodeSelectorBuilder,
 	}
 }
 
-func validateAdminSendTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSendTransactionParams, error) {
+func validateAdminCheckTransactionParams(rawParams jsonrpc.Params) (ParsedAdminCheckTransactionParams, error) {
 	if rawParams == nil {
-		return ParsedAdminSendTransactionParams{}, ErrParamsRequired
+		return ParsedAdminCheckTransactionParams{}, ErrParamsRequired
 	}
 
-	params := AdminSendTransactionParams{}
+	params := AdminCheckTransactionParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return ParsedAdminSendTransactionParams{}, ErrParamsDoNotMatch
+		return ParsedAdminCheckTransactionParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.Wallet == "" {
-		return ParsedAdminSendTransactionParams{}, ErrWalletIsRequired
+		return ParsedAdminCheckTransactionParams{}, ErrWalletIsRequired
 	}
 
 	if params.Passphrase == "" {
-		return ParsedAdminSendTransactionParams{}, ErrPassphraseIsRequired
+		return ParsedAdminCheckTransactionParams{}, ErrPassphraseIsRequired
 	}
 
 	if params.PublicKey == "" {
-		return ParsedAdminSendTransactionParams{}, ErrPublicKeyIsRequired
+		return ParsedAdminCheckTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
 	if params.Network == "" && params.NodeAddress == "" {
-		return ParsedAdminSendTransactionParams{}, ErrNetworkOrNodeAddressIsRequired
+		return ParsedAdminCheckTransactionParams{}, ErrNetworkOrNodeAddressIsRequired
 	}
 
 	if params.Network != "" && params.NodeAddress != "" {
-		return ParsedAdminSendTransactionParams{}, ErrSpecifyingNetworkAndNodeAddressIsNotSupported
+		return ParsedAdminCheckTransactionParams{}, ErrSpecifyingNetworkAndNodeAddressIsNotSupported
 	}
 
 	if params.Transaction == nil || params.Transaction == "" {
-		return ParsedAdminSendTransactionParams{}, ErrTransactionIsRequired
+		return ParsedAdminCheckTransactionParams{}, ErrTransactionIsRequired
 	}
 
 	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ParsedAdminSendTransactionParams{}, ErrTransactionIsNotValidJSON
+		return ParsedAdminCheckTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
-	return ParsedAdminSendTransactionParams{
+	return ParsedAdminCheckTransactionParams{
 		Wallet:         params.Wallet,
 		Passphrase:     params.Passphrase,
 		PublicKey:      params.PublicKey,
