@@ -21,6 +21,7 @@ type GRPCAdapter interface {
 	Statistics(ctx context.Context) (nodetypes.Statistics, error)
 	SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error)
 	SubmitTransaction(ctx context.Context, in *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error)
+	CheckTransaction(ctx context.Context, in *apipb.CheckTransactionRequest) (*apipb.CheckTransactionResponse, error)
 	LastBlock(ctx context.Context) (nodetypes.LastBlock, error)
 	Stop() error
 }
@@ -115,6 +116,39 @@ func (n *RetryingNode) LastBlock(ctx context.Context) (nodetypes.LastBlock, erro
 	}
 
 	return resp, nil
+}
+
+func (n *RetryingNode) CheckTransaction(ctx context.Context, tx *commandspb.Transaction) error {
+	n.log.Debug("checking the transaction through the gRPC API", zap.String("host", n.grpcAdapter.Host()))
+	var resp *apipb.CheckTransactionResponse
+	if err := n.retry(func() error {
+		req := apipb.CheckTransactionRequest{
+			Tx: tx,
+		}
+		requestTime := time.Now()
+		r, err := n.grpcAdapter.CheckTransaction(ctx, &req)
+		if err != nil {
+			return n.handleSubmissionError(err)
+		}
+		n.log.Debug("response from CheckTransaction",
+			zap.String("host", n.grpcAdapter.Host()),
+			zap.Bool("success", r.Success),
+			zap.Time("request-time", requestTime),
+		)
+		resp = r
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if !resp.Success {
+		return nodetypes.TransactionError{
+			ABCICode: resp.Code,
+			Message:  resp.Data,
+		}
+	}
+
+	return nil
 }
 
 func (n *RetryingNode) SendTransaction(ctx context.Context, tx *commandspb.Transaction, ty apipb.SubmitTransactionRequest_Type) (string, error) {

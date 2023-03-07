@@ -10,53 +10,49 @@ import (
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
 )
 
-type ClientSendTransactionParams struct {
+const TransactionSuccessfullyChecked = "The transaction has been successfully checked."
+
+type ClientCheckTransactionParams struct {
 	PublicKey   string      `json:"publicKey"`
-	SendingMode string      `json:"sendingMode"`
 	Transaction interface{} `json:"transaction"`
 }
 
-type ClientParsedSendTransactionParams struct {
+type ClientParsedCheckTransactionParams struct {
 	PublicKey      string
-	SendingMode    apipb.SubmitTransactionRequest_Type
 	RawTransaction string
 }
 
-type ClientSendTransactionResult struct {
+type ClientCheckTransactionResult struct {
 	ReceivedAt time.Time               `json:"receivedAt"`
 	SentAt     time.Time               `json:"sentAt"`
-	TxHash     string                  `json:"transactionHash"`
 	Tx         *commandspb.Transaction `json:"transaction"`
 }
 
-type ClientSendTransaction struct {
+type ClientCheckTransaction struct {
 	walletStore  WalletStore
 	interactor   Interactor
 	nodeSelector node.Selector
 	spam         SpamHandler
 }
 
-func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
-	params, err := validateSendTransactionParams(rawParams)
+	params, err := validateCheckTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
-	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
-	if err := jsonpb.Unmarshal(txReader, request); err != nil {
+	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
 		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
 	}
 
@@ -71,7 +67,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		} else {
 			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet associated to the connection: %w", err))
 		}
-		return nil, internalError(ErrCouldNotSignTransaction)
+		return nil, internalError(ErrCouldNotCheckTransaction)
 	}
 
 	request.PubKey = params.PublicKey
@@ -86,16 +82,16 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	receivedAt := time.Now()
 	if connectedWallet.RequireInteraction() {
-		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
+		approved, err := h.interactor.RequestTransactionReviewForChecking(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 		if err != nil {
 			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
 			}
 			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
-			return nil, internalError(ErrCouldNotSendTransaction)
+			return nil, internalError(ErrCouldNotCheckTransaction)
 		}
 		if !approved {
-			return nil, userRejectionError(ErrUserRejectedSendingOfTransaction)
+			return nil, userRejectionError(ErrUserRejectedCheckingOfTransaction)
 		}
 	}
 
@@ -111,7 +107,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	stats, err := currentNode.SpamStatistics(ctx, request.PubKey)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from node: %w", err))
+		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block information from the node: %w", err))
 		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
@@ -139,14 +135,14 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	inputData, err := commands.MarshalInputData(rawInputData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotCheckTransaction)
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Signing the transaction...")
 	signature, err := w.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, stats.ChainID))
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign the transaction: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotCheckTransaction)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
 
@@ -166,96 +162,62 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 			return nil, applicationCancellationError(err)
 		}
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		return nil, internalError(ErrCouldNotCheckTransaction)
 	}
 
 	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
 	sentAt := time.Now()
 
-	h.interactor.Log(ctx, traceID, InfoLog, "Sending the transaction to the network...")
-	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
-	if err != nil {
+	h.interactor.Log(ctx, traceID, InfoLog, "Checking the transaction on the network...")
+	if err := currentNode.CheckTransaction(ctx, tx); err != nil {
 		h.interactor.NotifyFailedTransaction(ctx, traceID, 2, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())
 		return nil, networkErrorFromTransactionError(err)
 	}
 
-	h.interactor.NotifySuccessfulTransaction(ctx, traceID, 2, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())
+	h.interactor.NotifySuccessfulRequest(ctx, traceID, 2, TransactionSuccessfullyChecked)
 
-	return ClientSendTransactionResult{
+	return ClientCheckTransactionResult{
 		ReceivedAt: receivedAt,
 		SentAt:     sentAt,
-		TxHash:     txHash,
 		Tx:         tx,
 	}, nil
 }
 
-func protoToJSON(tx proto.Message) string {
-	m := jsonpb.Marshaler{
-		EmitDefaults: true,
-		Indent:       "  ",
-	}
-	jsonProto, mErr := m.MarshalToString(tx)
-	if mErr != nil {
-		// We ignore this error as it's not critical. At least, we can transmit
-		// the transaction hash so the client front-end can redirect to the
-		// block explorer.
-		jsonProto = ""
-	}
-	return jsonProto
-}
-
-func validateSendTransactionParams(rawParams jsonrpc.Params) (ClientParsedSendTransactionParams, error) {
+func validateCheckTransactionParams(rawParams jsonrpc.Params) (ClientParsedCheckTransactionParams, error) {
 	if rawParams == nil {
-		return ClientParsedSendTransactionParams{}, ErrParamsRequired
+		return ClientParsedCheckTransactionParams{}, ErrParamsRequired
 	}
 
-	params := ClientSendTransactionParams{}
+	params := ClientCheckTransactionParams{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
-		return ClientParsedSendTransactionParams{}, ErrParamsDoNotMatch
+		return ClientParsedCheckTransactionParams{}, ErrParamsDoNotMatch
 	}
 
 	if params.PublicKey == "" {
-		return ClientParsedSendTransactionParams{}, ErrPublicKeyIsRequired
-	}
-
-	if params.SendingMode == "" {
-		return ClientParsedSendTransactionParams{}, ErrSendingModeIsRequired
-	}
-
-	isValidSendingMode := false
-	var sendingMode apipb.SubmitTransactionRequest_Type
-	for tp, sm := range apipb.SubmitTransactionRequest_Type_value {
-		if tp == params.SendingMode {
-			isValidSendingMode = true
-			sendingMode = apipb.SubmitTransactionRequest_Type(sm)
-		}
-	}
-	if !isValidSendingMode {
-		return ClientParsedSendTransactionParams{}, fmt.Errorf("the sending mode %q is not a valid one", params.SendingMode)
-	}
-
-	if sendingMode == apipb.SubmitTransactionRequest_TYPE_UNSPECIFIED {
-		return ClientParsedSendTransactionParams{}, ErrSendingModeCannotBeTypeUnspecified
+		return ClientParsedCheckTransactionParams{}, ErrPublicKeyIsRequired
 	}
 
 	if params.Transaction == nil {
-		return ClientParsedSendTransactionParams{}, ErrTransactionIsRequired
+		return ClientParsedCheckTransactionParams{}, ErrTransactionIsRequired
+	}
+
+	if params.Transaction == nil {
+		return ClientParsedCheckTransactionParams{}, ErrTransactionIsRequired
 	}
 
 	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ClientParsedSendTransactionParams{}, ErrTransactionIsNotValidJSON
+		return ClientParsedCheckTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
-	return ClientParsedSendTransactionParams{
+	return ClientParsedCheckTransactionParams{
 		PublicKey:      params.PublicKey,
 		RawTransaction: string(tx),
-		SendingMode:    sendingMode,
 	}, nil
 }
 
-func NewClientSendTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler) *ClientSendTransaction {
-	return &ClientSendTransaction{
+func NewClientCheckTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler) *ClientCheckTransaction {
+	return &ClientCheckTransaction{
 		walletStore:  walletStore,
 		interactor:   interactor,
 		nodeSelector: nodeSelector,
