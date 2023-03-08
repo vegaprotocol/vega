@@ -50,12 +50,7 @@
         {
           "name": "Accepting a connection from \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" requests a connection to a wallet and the user accepts.",
-          "params": [
-            {
-              "name": "hostname",
-              "value": "vega.xyz"
-            }
-          ],
+          "params": [],
           "result": {
             "name": "Success",
             "value": "null"
