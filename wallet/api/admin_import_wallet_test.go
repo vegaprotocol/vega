@@ -3,7 +3,6 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -79,7 +78,6 @@ func testImportingWalletWithInvalidParamsFails(t *testing.T) {
 			params: api.AdminImportWalletParams{
 				Wallet:         vgrand.RandomStr(5),
 				RecoveryPhrase: "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-				Version:        0,
 				Passphrase:     vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletKeyDerivationVersionIsRequired,
@@ -109,7 +107,6 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
-	expectedPath := filepath.Join(vgrand.RandomStr(3), vgrand.RandomStr(3))
 	var importedWallet wallet.Wallet
 
 	// setup
@@ -120,7 +117,6 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 		importedWallet = w
 		return nil
 	})
-	handler.walletStore.EXPECT().GetWalletPath(name).Times(1).Return(expectedPath)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportWalletParams{
@@ -140,8 +136,6 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 	assert.Equal(t, []wallet.Metadata{{Key: "name", Value: "Key 1"}}, keyPair.Metadata())
 	// Verify the result.
 	assert.Equal(t, name, result.Wallet.Name)
-	assert.Equal(t, uint32(2), result.Wallet.Version)
-	assert.Equal(t, expectedPath, result.Wallet.FilePath)
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), result.Key.Algorithm.Version)

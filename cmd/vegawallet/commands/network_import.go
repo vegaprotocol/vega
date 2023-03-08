@@ -128,9 +128,12 @@ func (f *ImportNetworkFlags) Validate() (api.AdminImportNetworkParams, error) {
 		return api.AdminImportNetworkParams{}, flags.MutuallyExclusiveError("from-file", "from-url")
 	}
 
+	url := f.URL
+	if len(f.FilePath) != 0 {
+		url = api.FileSchemePrefix + f.FilePath
+	}
 	return api.AdminImportNetworkParams{
-		FilePath:  f.FilePath,
-		URL:       f.URL,
+		URL:       url,
 		Name:      f.Name,
 		Overwrite: f.Force,
 	}, nil

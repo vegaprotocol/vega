@@ -137,6 +137,9 @@ type Interactor interface {
 	RequestTransactionReviewForChecking(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
 
+// FileSchemePrefix defines the prefix used in URL's to indicate that the string represents a file-path.
+const FileSchemePrefix = "file://"
+
 // WorkflowType defines the type of interaction workflow that started by a
 // method.
 type WorkflowType string

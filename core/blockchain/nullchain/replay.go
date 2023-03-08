@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -90,25 +91,46 @@ func (r *Replayer) saveBlock(appHash []byte) {
 	r.current = nil
 }
 
+func readLine(r *bufio.Reader) ([]byte, error) {
+	line := []byte{}
+	for {
+		l, more, err := r.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+
+		line = append(line, l...)
+		if !more {
+			return line, nil
+		}
+	}
+}
+
 // replayChain sends all the recorded per-block transactions into the protocol returning the block-height and block-time it reached
 // appHeight is the block-height the application will process next, any blocks less than this will not be replayed.
 func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Time, error) {
-	// open the replay file and read line by line
-	s := bufio.NewScanner(r.rFile)
-	s.Split(bufio.ScanLines)
-
 	var replayedHeight int64
 	var replayedTime time.Time
-	for s.Scan() {
+
+	s := bufio.NewReader(r.rFile)
+	for {
+		line, err := readLine(s)
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return replayedHeight, replayedTime, err
+		}
+
 		select {
 		case <-r.stop:
 			r.log.Info("core is shutting down, nullchain replaying stopped", logging.Int64("block-height", replayedHeight))
 			return replayedHeight, replayedTime, nil
 		default:
 		}
-
 		var data blockData
-		if err := json.Unmarshal(s.Bytes(), &data); err != nil {
+		if err := json.Unmarshal(line, &data); err != nil {
 			return replayedHeight, replayedTime, err
 		}
 

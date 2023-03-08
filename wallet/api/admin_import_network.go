@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -17,7 +18,6 @@ var ErrInvalidNetworkSource = errors.New("invalid network source")
 
 type AdminImportNetworkParams struct {
 	Name      string `json:"name"`
-	FilePath  string `json:"filePath"`
 	URL       string `json:"url"`
 	Overwrite bool   `json:"overwrite"`
 }
@@ -93,12 +93,8 @@ func validateImportNetworkParams(rawParams jsonrpc.Params) (AdminImportNetworkPa
 		return AdminImportNetworkParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.FilePath == "" && params.URL == "" {
+	if params.URL == "" {
 		return AdminImportNetworkParams{}, ErrNetworkSourceIsRequired
-	}
-
-	if params.FilePath != "" && params.URL != "" {
-		return AdminImportNetworkParams{}, ErrMultipleNetworkSources
 	}
 
 	return params, nil
@@ -109,21 +105,23 @@ func validateImportNetworkParams(rawParams jsonrpc.Params) (AdminImportNetworkPa
 func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network, error) {
 	net := &network.Network{}
 	rs := NewReaders()
-	if len(params.FilePath) != 0 {
-		exists, err := vgfs.FileExists(params.FilePath)
+
+	s, filePath, contains := strings.Cut(params.URL, FileSchemePrefix)
+	if contains && len(s) == 0 {
+		exists, err := vgfs.FileExists(filePath)
 		if err != nil {
-			return nil, fmt.Errorf("could not check file's existence at %q: %w", params.FilePath, err)
+			return nil, fmt.Errorf("could not check file's existence at %q: %w", filePath, err)
 		}
 		if !exists {
 			return nil, fmt.Errorf("the network source file does not exist: %w", ErrInvalidNetworkSource)
 		}
 
-		err = rs.ReadFromFile(params.FilePath, net)
+		err = rs.ReadFromFile(filePath, net)
 		if err == paths.ErrEmptyFile {
 			return nil, fmt.Errorf("network source file is empty: %w", ErrInvalidNetworkSource)
 		}
 		if err != nil {
-			return nil, fmt.Errorf("could not read the network configuration at %q: %w", params.FilePath, err)
+			return nil, fmt.Errorf("could not read the network configuration at %q: %w", filePath, err)
 		}
 		return net, nil
 	}

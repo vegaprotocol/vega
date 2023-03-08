@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking changes
 - [7710](https://github.com/vegaprotocol/vega/issues/7710) - Rename "token dApp" to "governance"
+- [6905](https://github.com/vegaprotocol/vega/issues/6905) - Deprecated `Version` field removed from `admin.import_wallet`
+- [6905](https://github.com/vegaprotocol/vega/issues/6905) - References to file paths have been removed from `admin.import_wallet`, `admin.import_network`, `admin.create_wallet` and `admin.isolate_key` API
 - [7731](https://github.com/vegaprotocol/vega/issues/7731) - Upgrade the interplanetary file system library to latest release
 
 ### 🗑️ Deprecation
@@ -48,6 +50,7 @@
 - [7499](https://github.com/vegaprotocol/vega/issues/7499) - Implement transaction check functionality to wallet
 - [7745](https://github.com/vegaprotocol/vega/issues/7745) - Use margin after the application of a bond penalty to assess LP solvency
 - [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
+- [7786](https://github.com/vegaprotocol/vega/issues/7786) - Fix validation of order amendments (check for negative pegged offset)
 
 ## 0.68.0
 

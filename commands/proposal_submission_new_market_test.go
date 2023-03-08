@@ -934,9 +934,9 @@ func testPriceMonitoringChangeSubmissionWithWrongTriggerProbabilityFails(t *test
 			})
 
 			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.0.probability"),
-				errors.New("should be between 0 (exclusive) and 1 (exclusive)"))
+				errors.New("should be between 0.9 (exclusive) and 1 (exclusive)"))
 			assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.price_monitoring_parameters.triggers.1.probability"),
-				errors.New("should be between 0 (exclusive) and 1 (exclusive)"))
+				errors.New("should be between 0.9 (exclusive) and 1 (exclusive)"))
 		})
 	}
 }
