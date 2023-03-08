@@ -483,7 +483,7 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-  Scenario: 005, 2 LPs joining at start, unequal commitments, 1 LP lp3 joining later, and 4 LPs lp4/5/6/7 with large commitment and low/high fee joins later (0042-LIQF-029,0042-LIQF-030, 0042-LIQF-024)
+  Scenario: 005, 2 LPs joining at start, unequal commitments, 1 LP lp3 joining later, and 4 LPs lp4/5/6/7 with large commitment and low/high fee joins later
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -619,27 +619,33 @@ Feature: Test liquidity provider reward distribution
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 1      | ETH   |
       | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 9      | ETH   |
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-
-   And the parties submit the following liquidity provision:
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
+    And the target stake should be "7608" for the market "ETH/DEC21"
+    And the supplied stake should be "20000" for the market "ETH/DEC21"
+     #AC 0042-LIQF-024:lp4 joining a market that is above the target stake with a commitment large enough to push one of two higher bids above the target stake, and a higher fee bid than the current fee: the fee doesn't change
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | buy  | BID              | 1          | 4      | submission |
       | lp4 | lp4   | ETH/DEC21 | 20000             | 0.004 | sell | ASK              | 1          | 4      | submission |
-  When time is updated to "2019-11-30T00:41:08Z"
-  And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
-
-  And the parties submit the following liquidity provision:
+    When time is updated to "2019-11-30T00:41:08Z"
+    And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
+    #AC 0042-LIQF-029: lp5 joining a market that is above the target stake with a sufficiently large commitment to push ALL higher bids above the target stake and a lower fee bid than the current fee: their fee is used
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | buy  | BID              | 1          | 4      | submission |
       | lp5 | lp5   | ETH/DEC21 | 30000             | 0.0005 | sell | ASK              | 1          | 4      | submission |
-  When time is updated to "2019-11-30T00:42:08Z"
-  And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
+    When time is updated to "2019-11-30T00:42:08Z"
+    And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
+    And the target stake should be "7608" for the market "ETH/DEC21"
+    And the supplied stake should be "70000" for the market "ETH/DEC21"
 
-  And the parties submit the following liquidity provision:
+    #AC 0042-LIQF-030: lp6 joining a market that is above the target stake with a commitment not large enough to push any higher bids above the target stake, and a lower fee bid than the current fee: the fee doesn't change
+    And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
       | lp6 | lp6   | ETH/DEC21 | 2000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
-  When time is updated to "2019-11-30T00:43:08Z"
-  And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
+    When time is updated to "2019-11-30T00:43:08Z"
+    And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
 
   @Panic
   Scenario: 006, 2 LPs joining at start, unequal commitments, market settles (0042-LIQF-014)
@@ -838,7 +844,7 @@ Feature: Test liquidity provider reward distribution
 
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-  Scenario: 008, 2 LPs joining at start, unequal commitments, 1 LP joins later , and 1 LP leave(0042-LIQF-019,0042-LIQF-020,0042-LIQF-023, 0042-LIQF-025, 0042-LIQF-026, 0042-LIQF-027, 0042-LIQF-028)
+  Scenario: 008, 2 LPs joining at start, unequal commitments, 1 LP joins later , and 1 LP leave
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
@@ -846,6 +852,7 @@ Feature: Test liquidity provider reward distribution
       | lp2    | ETH   | 1000000000 |
       | lp3    | ETH   | 1000000000 |
       | lp4    | ETH   | 1000000000 |
+      | lp5    | ETH   | 1000000000 |
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
 
@@ -867,14 +874,12 @@ Feature: Test liquidity provider reward distribution
       | party2 | ETH/DEC21 | sell | 90     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
-
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the target stake should be "9000" for the market "ETH/DEC21"
     And the supplied stake should be "10000" for the market "ETH/DEC21"
-
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
 
-    Then time is updated to "2019-11-30T00:10:05Z"
+    And the network moves ahead "1" blocks
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type    |
@@ -887,7 +892,8 @@ Feature: Test liquidity provider reward distribution
     And the target stake should be "9000" for the market "ETH/DEC21"
     And the supplied stake should be "19000" for the market "ETH/DEC21"
 
-    #AC 0042-LIQF-026: lp3 leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size changes the LP that meets the target stake (from lp3 to lp1): fee changes to fee bid by the LP that is now at the place in the bid order to provide the target stake
+    #AC 0042-LIQF-025: lp3 leaves a market that is above target stake when their fee bid is currently being used: fee changes to fee bid by the LP who takes their place in the bidding order 
+     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type      |
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
@@ -895,62 +901,105 @@ Feature: Test liquidity provider reward distribution
     Then the liquidity provisions should have the following states:
       | id  | party | market    | commitment amount | status           |
       | lp3 | lp3   | ETH/DEC21 | 9000              | STATUS_CANCELLED |
-   And the network moves ahead "10" blocks
-   And the target stake should be "9000" for the market "ETH/DEC21"
-   And the supplied stake should be "19000" for the market "ETH/DEC21"
-   And the liquidity fee factor should be "0.0015" for the market "ETH/DEC21"
+    And the network moves ahead "10" blocks
+    And the target stake should be "9000" for the market "ETH/DEC21"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
 
-   Then the parties place the following orders:
+    Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | party1 | ETH/DEC21 | buy  | 30     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC21 | sell | 30     | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
-   And the target stake should be "10000" for the market "ETH/DEC21"
-   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
-   And the liquidity fee factor should be "0.0015" for the market "ETH/DEC21"
-   And the network moves ahead "1" blocks
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "10000" for the market "ETH/DEC21"
+    #AC 0042-LIQF-020: lp3 joining a market that is below the target stake with a lower fee bid than the current fee: fee doesn't change
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
+      | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "11000" for the market "ETH/DEC21"
 
-   And the target stake should be "10000" for the market "ETH/DEC21"
-   And the supplied stake should be "19000" for the market "ETH/DEC21"
-   # AC 0042-LIQF-020: lp3 joining a market that is below the target stake with a lower fee bid than the current fee: fee doesn't change
-  #  And the parties submit the following liquidity provision:
-  #     | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-  #     | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | buy  | BID              | 1          | 4      | submission |
-  #     | lp3 | lp3   | ETH/DEC21 | 1000              | 0.0001 | sell | ASK              | 1          | 4      | submission |
-  #  And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
-  #  And the network moves ahead "1" blocks
+    #AC 0042-LIQF-019: lp3 joining a market that is below the target stake with a higher fee bid than the current fee: their fee is used
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/DEC21 | 2000              | 0.003 | buy  | BID              | 1          | 4      | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 2000              | 0.003 | sell | ASK              | 1          | 4      | amendment |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "12000" for the market "ETH/DEC21"
 
-  # # lp3 join when market is below target stake with a small commitment and high fee
-  #  And the parties submit the following liquidity provision:
-  #     | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-  #     | lp3 | lp3   | ETH/DEC21 | 1000              | 0.003 | buy  | BID              | 1          | 4      | amendment |
-  #     | lp3 | lp3   | ETH/DEC21 | 1000              | 0.003 | sell | ASK              | 1          | 4      | amendment |
-  #   And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
-  #   And the network moves ahead "1" blocks
+  #lp4 join when market is below target stake with a large commitment
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | buy  | BID              | 1          | 4      | submission |
+      | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
 
-  # # lp4 join when market is below target stake with a large commitment
-  #  And the parties submit the following liquidity provision:
-  #     | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-  #     | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | buy  | BID              | 1          | 4      | submission |
-  #     | lp4 | lp4   | ETH/DEC21 | 10000             | 0.004 | sell | ASK              | 1          | 4      | submission |
-  #   And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
-  #   And the network moves ahead "1" blocks
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "22000" for the market "ETH/DEC21"
 
-  #   And the target stake should be "10000" for the market "ETH/DEC21"
-  #   And the supplied stake should be "21000" for the market "ETH/DEC21"
+  # AC 0042-LIQF-028: lp4 leaves a market that is above target stake when their fee bid is higher than the one currently being used: fee doesn't change
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | buy  | BID              | 1          | 4      | cancellation |
+      | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | sell | ASK              | 1          | 4      | cancellation |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "12000" for the market "ETH/DEC21"
+  # lp4 join when market is above target stake with a large commitment
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp4 | lp4   | ETH/DEC21 | 4000              | 0.004 | buy  | BID              | 1          | 4      | submission |
+      | lp4 | lp4   | ETH/DEC21 | 4000              | 0.004 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "16000" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
 
-  # # AC 0042-LIQF-028: lp4 leaves a market that is above target stake when their fee bid is higher than the one currently being used: fee doesn't change
-  #  And the parties submit the following liquidity provision:
-  #     | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-  #     | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | buy  | BID              | 1          | 4      | cancellation |
-  #     | lp4 | lp4   | ETH/DEC21 | 10000              | 0.004 | sell | ASK              | 1          | 4      | cancellation |
-  #   And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
-  #   And the network moves ahead "1" blocks
+    # AC 0042-LIQF-023: An LP joining a market that is above the target stake with a commitment large enough to push one of two higher bids above the target stake, and a lower fee bid than the current fee: the fee changes to the other lower bid
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | buy  | BID              | 1          | 4      | submission |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "22000" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
 
-  # # lp4 join when market is below target stake with a large commitment
-  #  And the parties submit the following liquidity provision:
-  #     | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-  #     | lp4 | lp4   | ETH/DEC21 | 10000              | 0.001 | buy  | BID              | 1          | 4      | submission |
-  #     | lp4 | lp4   | ETH/DEC21 | 10000              | 0.001 | sell | ASK              | 1          | 4      | submission |
-  #   And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
+    #AC 0042-LIQF-026: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size changes the LP that meets the target stake: fee changes to fee bid by the LP that is now at the place in the bid order to provide the target stake 
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
+      | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "16000" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
 
+   And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | buy  | BID              | 1          | 4      | submission |
+      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | sell | ASK              | 1          | 4      | submission |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "17000" for the market "ETH/DEC21"
+    And the network moves ahead "1" blocks
+    
+    #AC 0042-LIQF-027: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size doesn't change the LP that meets the target stake: fee doesn't change
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
+      | lp5 | lp5   | ETH/DEC21 | 1000              | 0.0015 | sell | ASK              | 1          | 4      | cancellation |
+    And the liquidity fee factor should be "0.003" for the market "ETH/DEC21"
+    And the target stake should be "12000" for the market "ETH/DEC21"
+    And the supplied stake should be "16000" for the market "ETH/DEC21"
