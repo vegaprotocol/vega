@@ -820,6 +820,5 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	err := tm.market.AmendLiquidityProvision(
 		ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash())
-	// require.EqualError(t, err, "margin would be below maintenance: insufficient margin")
 	require.EqualError(t, err, "commitment submission not allowed")
 }

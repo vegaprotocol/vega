@@ -194,7 +194,6 @@ func (m *Market) repriceAllSpecialOrders(
 	newOrders, cancels := m.liquidity.Update(
 		ctx, minLpPrice, maxLpPrice, m.repriceLiquidityOrder)
 
-	//	m.liquidity.ClearLPOrders()
 	return m.updateLPOrders(ctx, lpOrders, newOrders, cancels)
 }
 
@@ -220,13 +219,12 @@ func (m *Market) stopAllSpecialOrders(
 	)
 
 	// now we just get the list of all LPs to be cancelled
-	cancels := m.liquidity.UndeployLPs(ctx, updatedOrders)
-	_ = cancels
+	_ = m.liquidity.UndeployLPs(ctx, updatedOrders)
 	lpOrders := m.matching.GetAllLiquidityOrders()
 	m.removeLPOrdersFromBook(ctx, lpOrders)
-
 	now := m.timeService.GetTimeNow().UnixNano()
 	evts := make([]events.Event, 0, len(lpOrders))
+
 	for _, o := range lpOrders {
 		o.Status = types.OrderStatusParked
 		o.UpdatedAt = now
@@ -234,22 +232,6 @@ func (m *Market) stopAllSpecialOrders(
 	}
 
 	m.broker.SendBatch(evts)
-
-	// for _, cancel := range cancels {
-	// 	for _, orderID := range cancel.OrderIDs {
-	// 		if _, err := m.cancelOrder(ctx, cancel.Party, orderID); err != nil {
-	// 			// here we panic, an order which should be in a the market
-	// 			// appears not to be. there's either an issue in the liquidity
-	// 			// engine and we are trying to remove a non-existing order
-	// 			// or the market lost track of the order
-	// 			m.log.Panic("unable to amend a liquidity order",
-	// 				logging.OrderID(orderID),
-	// 				logging.PartyID(cancel.Party),
-	// 				logging.MarketID(market),
-	// 				logging.Error(err))
-	// 		}
-	// 	}
-	// }
 }
 
 func (m *Market) updateLPOrders(
@@ -309,7 +291,6 @@ func (m *Market) updateLPOrders(
 		// these order were actually cancelled, just send the event
 		if toCancel {
 			if !toSubmit {
-				// order.Status = types.OrderStatusCancelled
 				order.Status = types.OrderStatusParked
 				orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 			}
