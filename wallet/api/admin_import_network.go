@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
@@ -14,7 +15,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-var ErrInvalidNetworkSource = errors.New("invalid network source")
+var (
+	ErrInvalidNetworkSource = errors.New("invalid network source")
+
+	githubToml = regexp.MustCompile(`(http[s]?://)(github\.com).*(.toml)$`)
+)
 
 type AdminImportNetworkParams struct {
 	Name      string `json:"name"`
@@ -83,6 +88,20 @@ func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params)
 	}, nil
 }
 
+// urlPreCheck looks for basic user errors in the given URL. For example if a github
+// URL is supplied instead of a link to the raw-file-contents.
+func urlPreCheck(url string) error {
+	m := githubToml.FindString(url)
+	if len(m) == 0 {
+		return nil
+	}
+
+	// make a suggestion
+	suggestion := strings.Replace(url, "github.com", "raw.githubusercontent.com", 1)
+	suggestion = strings.Replace(suggestion, "/blob/", "/", 1)
+	return fmt.Errorf("this URL leads to a Github page and not the network configuration, did you mean %s", suggestion)
+}
+
 func validateImportNetworkParams(rawParams jsonrpc.Params) (AdminImportNetworkParams, error) {
 	if rawParams == nil {
 		return AdminImportNetworkParams{}, ErrParamsRequired
@@ -97,6 +116,9 @@ func validateImportNetworkParams(rawParams jsonrpc.Params) (AdminImportNetworkPa
 		return AdminImportNetworkParams{}, ErrNetworkSourceIsRequired
 	}
 
+	if err := urlPreCheck(params.URL); err != nil {
+		return AdminImportNetworkParams{}, err
+	}
 	return params, nil
 }
 
