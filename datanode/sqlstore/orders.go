@@ -132,39 +132,6 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	return orders, os.wrapE(err)
 }
 
-// GetByMarket returns the last update of the all the orders in a particular market.
-func (os *Orders) GetByMarket(ctx context.Context, marketIDStr string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
-	marketID := entities.MarketID(marketIDStr)
-
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1`, sqlOrderColumns)
-	args := []interface{}{marketID}
-	return os.queryOrders(ctx, query, args, &p)
-}
-
-// GetByParty returns the last update of the all the orders in a particular party.
-func (os *Orders) GetByParty(ctx context.Context, partyIDStr string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByParty")()
-	partyID := entities.PartyID(partyIDStr)
-
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
-	args := []interface{}{partyID}
-	return os.queryOrders(ctx, query, args, &p)
-}
-
-// GetByReference returns the last update of orders with the specified user-suppled reference.
-func (os *Orders) GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByReference")()
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE reference=$1`, sqlOrderColumns)
-	args := []interface{}{reference}
-	return os.queryOrders(ctx, query, args, &p)
-}
-
-// GetByReference returns the last update of orders with the specified user-suppled reference.
-func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return os.ListOrders(ctx, nil, nil, &reference, false, p, entities.DateRange{}, entities.OrderFilter{})
-}
-
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {

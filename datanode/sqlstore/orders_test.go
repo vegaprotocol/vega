@@ -187,46 +187,6 @@ func TestOrders(t *testing.T) {
 		}
 	})
 
-	t.Run("GetByMarket", func(t *testing.T) {
-		fetchedOrders, err := os.GetByMarket(ctx, markets[0].ID.String(), entities.OffsetPagination{})
-		require.NoError(t, err)
-		assert.Len(t, fetchedOrders, numTestOrders/2)
-		for _, fetchedOrder := range fetchedOrders {
-			assert.Equal(t, markets[0].ID, fetchedOrder.MarketID)
-		}
-
-		t.Run("OffsetPagination", func(t *testing.T) {
-			fetchedOrdersP, err := os.GetByMarket(ctx,
-				markets[0].ID.String(),
-				entities.OffsetPagination{Skip: 4, Limit: 3, Descending: true})
-			require.NoError(t, err)
-			assert.Equal(t, reverseOrderSlice(fetchedOrders)[4:7], fetchedOrdersP)
-		})
-	})
-
-	t.Run("GetByParty", func(t *testing.T) {
-		fetchedOrders, err := os.GetByParty(ctx, parties[0].ID.String(), entities.OffsetPagination{})
-		require.NoError(t, err)
-		assert.Len(t, fetchedOrders, numTestOrders/3)
-		for _, fetchedOrder := range fetchedOrders {
-			assert.Equal(t, parties[0].ID, fetchedOrder.PartyID)
-		}
-	})
-
-	t.Run("GetByReference", func(t *testing.T) {
-		fetchedOrders, err := os.GetByReference(ctx, "my_reference_1", entities.OffsetPagination{})
-		require.NoError(t, err)
-		assert.Len(t, fetchedOrders, 1)
-		assert.Equal(t, fetchedOrders[0], updatedOrders[1])
-	})
-
-	t.Run("GetByReferencePaged", func(t *testing.T) {
-		fetchedOrders, _, err := os.GetByReferencePaged(ctx, "my_reference_1", entities.CursorPagination{})
-		require.NoError(t, err)
-		assert.Len(t, fetchedOrders, 1)
-		assert.Equal(t, fetchedOrders[0], updatedOrders[1])
-	})
-
 	t.Run("GetAllVersionsByOrderID", func(t *testing.T) {
 		fetchedOrders, err := os.GetAllVersionsByOrderID(ctx, orders[3].ID.String(), entities.OffsetPagination{})
 		require.NoError(t, err)

@@ -16,7 +16,6 @@ import (
 	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot/orders"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -103,7 +102,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 			removedConstraintsAndIndexes, err = b.migrateDatabase(ctx, log, removedConstraintsAndIndexes,
 				snapshotDatabaseVersion, withIndexesAndOrderTriggers)
 			if err != nil {
-				return LoadResult{}, fmt.Errorf("failed to migrate database from version %d to %d", dbMetaData.DatabaseVersion, snapshotDatabaseVersion)
+				return LoadResult{}, fmt.Errorf("failed to migrate database from version %d to %d: %w", dbMetaData.DatabaseVersion, snapshotDatabaseVersion, err)
 			}
 			log.Infof("finished migrating database from version %d to version %d", dbMetaData.DatabaseVersion, snapshotDatabaseVersion)
 
@@ -151,13 +150,6 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		return LoadResult{}, fmt.Errorf("failed to recreate continuous aggregate data: %w", err)
 	}
 
-	if !withIndexesAndOrderTriggers {
-		log.Infof("restoring current orders set")
-		err = orders.RestoreCurrentOrdersSet(ctx, b.connPool)
-		if err != nil {
-			return LoadResult{}, fmt.Errorf("failed to restore current orders set: %w", err)
-		}
-	}
 	return LoadResult{
 		LoadedFromHeight: heightToLoadFrom,
 		LoadedToHeight:   historyToHeight,
