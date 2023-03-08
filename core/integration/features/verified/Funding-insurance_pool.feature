@@ -270,7 +270,6 @@ Scenario: 002 create a suicidal trade from "designatedLoser" to get closeout imm
     And the mark price should be "150" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    # insurance pool generation - setup orderbook
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
