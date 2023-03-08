@@ -32,7 +32,7 @@ Feature: Position resolution case 5 lognormal risk model
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: 001 using lognormal risk model, set "designatedLooser" close-out; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
+  Scenario: 001 using lognormal risk model, setup a scenario where designatedLoser gets closed out; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -165,7 +165,6 @@ Feature: Position resolution case 5 lognormal risk model
       | party            | asset | market id | margin | general |
       | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
 
-    Then debug transfers
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
     Then the following transfers should happen:
       | from             | to              | from account            | to account                       | market id | amount | asset |
