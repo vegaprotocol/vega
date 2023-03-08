@@ -24,6 +24,7 @@ func TestCheckOrderAmendment(t *testing.T) {
 	t.Run("amend order invalid expiry type - fail", testAmendOrderInvalidExpiryFail)
 	t.Run("amend order tif to GFA - fail", testAmendOrderToGFA)
 	t.Run("amend order tif to GFN - fail", testAmendOrderToGFN)
+	t.Run("amend order pegged_offset", testAmendOrderPeggedOffset)
 }
 
 func testNilOrderAmendmentFails(t *testing.T) {
@@ -123,6 +124,26 @@ func testAmendOrderInvalidExpiryFail(t *testing.T) {
 	arg.TimeInForce = proto.Order_TIME_IN_FORCE_IOC
 	err = checkOrderAmendment(arg)
 	assert.Error(t, err)
+}
+
+func testAmendOrderPeggedOffset(t *testing.T) {
+	arg := &commandspb.OrderAmendment{
+		OrderId:      "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		MarketId:     "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+		PeggedOffset: "-1789",
+		TimeInForce:  proto.Order_TIME_IN_FORCE_GTC, // just here to test the case with empty pegged offset
+	}
+
+	err := checkOrderAmendment(arg)
+	assert.Error(t, err.ErrorOrNil())
+
+	arg.PeggedOffset = ""
+	err = checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
+
+	arg.PeggedOffset = "1000"
+	err = checkOrderAmendment(arg)
+	assert.NoError(t, err.ErrorOrNil())
 }
 
 /*
