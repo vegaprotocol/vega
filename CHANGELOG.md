@@ -51,6 +51,7 @@
 - [7745](https://github.com/vegaprotocol/vega/issues/7745) - Use margin after the application of a bond penalty to assess LP solvency
 - [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
 - [7786](https://github.com/vegaprotocol/vega/issues/7786) - Fix validation of order amendments (check for negative pegged offset)
+- [7750](https://github.com/vegaprotocol/vega/issues/7750) - Fix not all paths cleanly close network history index store.
 
 ## 0.68.0
 
