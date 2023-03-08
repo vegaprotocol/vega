@@ -14,8 +14,6 @@ type AdminImportWalletParams struct {
 	RecoveryPhrase       string `json:"recoveryPhrase"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
 	Passphrase           string `json:"passphrase"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 type AdminImportWalletResult struct {
@@ -26,9 +24,6 @@ type AdminImportWalletResult struct {
 type AdminImportedWallet struct {
 	Name                 string `json:"name"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
-	FilePath             string `json:"filePath"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 type AdminImportWallet struct {
@@ -64,9 +59,7 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 	return AdminImportWalletResult{
 		Wallet: AdminImportedWallet{
 			Name:                 w.Name(),
-			Version:              w.KeyDerivationVersion(),
 			KeyDerivationVersion: w.KeyDerivationVersion(),
-			FilePath:             h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),
@@ -99,10 +92,6 @@ func validateImportWalletParams(rawParams jsonrpc.Params) (AdminImportWalletPara
 
 	if params.RecoveryPhrase == "" {
 		return AdminImportWalletParams{}, ErrRecoveryPhraseIsRequired
-	}
-
-	if params.KeyDerivationVersion == 0 {
-		params.KeyDerivationVersion = params.Version
 	}
 
 	if params.KeyDerivationVersion == 0 {

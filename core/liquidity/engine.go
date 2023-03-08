@@ -674,7 +674,8 @@ func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID 
 		Reference:            ref,
 		LiquidityProvisionID: lpID,
 	}
-	return order.Create(e.timeService.GetTimeNow())
+	p, _ := e.provisions.Get(partyID)
+	return order.Create(p.CreatedAt)
 }
 
 func (e *Engine) undeployOrdersFromShape(

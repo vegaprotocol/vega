@@ -4,6 +4,8 @@
 
 ### 🚨 Breaking changes
 - [7710](https://github.com/vegaprotocol/vega/issues/7710) - Rename "token dApp" to "governance"
+- [6905](https://github.com/vegaprotocol/vega/issues/6905) - Deprecated `Version` field removed from `admin.import_wallet`
+- [6905](https://github.com/vegaprotocol/vega/issues/6905) - References to file paths have been removed from `admin.import_wallet`, `admin.import_network`, `admin.create_wallet` and `admin.isolate_key` API
 - [7731](https://github.com/vegaprotocol/vega/issues/7731) - Upgrade the interplanetary file system library to latest release
 
 ### 🗑️ Deprecation
@@ -19,6 +21,7 @@
 - [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
+- [7792](https://github.com/vegaprotocol/vega/issues/7792) - An attempt to import a network when the `url` is to `github` and not the raw file contents is caught early with a suggested `url`
 - [7722](https://github.com/vegaprotocol/vega/issues/7722) - Send a reason for a passphrase request through the wallet's `interactor`
 - [5967](https://github.com/vegaprotocol/vega/issues/5967) - Do not ask for wallet passphrase if it has already been unlocked.
 - [5967](https://github.com/vegaprotocol/vega/issues/5967) - Preselect the wallet during connection is there is only one.
@@ -26,8 +29,10 @@
 - [7724](https://github.com/vegaprotocol/vega/issues/7724) - Add steps number to interactions to convey a progression feeling.
 - [7353](https://github.com/vegaprotocol/vega/issues/7353) - Improve query setting current orders to only the most recent row after snapshot restore.
 - [7763](https://github.com/vegaprotocol/vega/issues/7763) - Remove separate LP close out code path.
+- [7686](https://github.com/vegaprotocol/vega/issues/7686) - Network History load will retry when IPFS cannot connect to peers.
 
 ### 🐛 Fixes
+- [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
 - [7596](https://github.com/vegaprotocol/vega/issues/7596) - Slippage factors not persisted in database
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source
@@ -44,7 +49,9 @@
 - [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
 - [7766](https://github.com/vegaprotocol/vega/issues/7766) - Fix orders from new parties not being included in the nearest MTM
 - [7499](https://github.com/vegaprotocol/vega/issues/7499) - Implement transaction check functionality to wallet
-
+- [7745](https://github.com/vegaprotocol/vega/issues/7745) - Use margin after the application of a bond penalty to assess LP solvency
+- [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
+- [7786](https://github.com/vegaprotocol/vega/issues/7786) - Fix validation of order amendments (check for negative pegged offset)
 
 ## 0.68.0
 

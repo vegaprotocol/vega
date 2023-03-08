@@ -604,8 +604,7 @@
               "required": [
                 "name",
                 "keyDerivationVersion",
-                "recoveryPhrase",
-                "filePath"
+                "recoveryPhrase"
               ],
               "properties": {
                 "name": {
@@ -615,9 +614,6 @@
                   "type": "number"
                 },
                 "recoveryPhrase": {
-                  "type": "string"
-                },
-                "filePath": {
                   "type": "string"
                 }
               }
@@ -667,8 +663,7 @@
               "wallet": {
                 "name": "my-wallet",
                 "keyDerivationVersion": 2,
-                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-                "filePath": "some/path/to/my-wallet"
+                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
               },
               "key": {
                 "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -746,8 +741,7 @@
               "description": "the imported wallet",
               "required": [
                 "name",
-                "keyDerivationVersion",
-                "filePath"
+                "keyDerivationVersion"
               ],
               "properties": {
                 "name": {
@@ -755,9 +749,6 @@
                 },
                 "keyDerivationVersion": {
                   "type": "number"
-                },
-                "filePath": {
-                  "type": "string"
                 }
               }
             },
@@ -813,8 +804,7 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "keyDerivationVersion": 2,
-                "filePath": "some/path/to/my-wallet"
+                "keyDerivationVersion": 2
               },
               "key": {
                 "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -1515,19 +1505,14 @@
       "params": [
         {
           "name": "name",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "filePath",
-          "required": true,
+          "description": "The name to give to the imported network. If unset the network's name will be taken from the imported definition",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "url",
+          "description": "The URL of a network to import. The prefix `file://` can be used to indicate a file-path.",
           "required": true,
           "schema": {
             "type": "string"
@@ -1547,14 +1532,10 @@
         "schema": {
           "type": "object",
           "required": [
-            "name",
-            "filePath"
+            "name"
           ],
           "properties": {
             "name": {
-              "type": "string"
-            },
-            "filePath": {
               "type": "string"
             }
           }
@@ -1569,15 +1550,14 @@
               "value": "local-network"
             },
             {
-              "name": "filePath",
-              "value": "/Users/username/local-network.toml"
+              "name": "url",
+              "value": "file:///Users/username/local-network.toml"
             }
           ],
           "result": {
             "name": "Success",
             "value": {
-              "name": "local-network",
-              "filePath": "/Users/username/vega-home/wallet-service/networks/local-network.toml"
+              "name": "local-network"
             }
           }
         }
@@ -2032,18 +2012,11 @@
         "schema": {
           "type": "object",
           "required": [
-            "wallet",
-            "filePath"
+            "wallet"
           ],
           "properties": {
             "wallet": {
               "description": "Name of the generated isolated wallet",
-              "schema": {
-                "type": "string"
-              }
-            },
-            "filePath": {
-              "description": "Path to the isolated wallet file",
               "schema": {
                 "type": "string"
               }
@@ -2075,8 +2048,7 @@
           "result": {
             "name": "Success",
             "value": {
-              "wallet": "my-wallet.b5fd9d3c.isolated",
-              "filePath": "some/path/to/my-wallet.b5fd9d3c.isolated"
+              "wallet": "my-wallet.b5fd9d3c.isolated"
             }
           }
         }
