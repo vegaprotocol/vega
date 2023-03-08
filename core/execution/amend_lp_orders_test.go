@@ -642,7 +642,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			expectedStatus := types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusParked
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -792,7 +792,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			expectedStatus := types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusParked
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -820,5 +820,5 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	err := tm.market.AmendLiquidityProvision(
 		ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash())
-	require.EqualError(t, err, "margin would be below maintenance: insufficient margin")
+	require.EqualError(t, err, "commitment submission not allowed")
 }
