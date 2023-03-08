@@ -103,7 +103,6 @@ func readLine(r *bufio.Reader) ([]byte, error) {
 		if !more {
 			return line, nil
 		}
-
 	}
 }
 
@@ -115,7 +114,6 @@ func (r *Replayer) replayChain(appHeight int64, chainID string) (int64, time.Tim
 
 	s := bufio.NewReader(r.rFile)
 	for {
-
 		line, err := readLine(s)
 		if err == io.EOF {
 			break
