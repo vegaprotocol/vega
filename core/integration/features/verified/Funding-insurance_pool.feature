@@ -296,7 +296,6 @@ Scenario: 002 create a suicidal trade from "designatedLooser" to get closeout im
       | aux   | 1      | 0              | 0            |
       | aux2  | -1     | 0              | 0            |
 
-    # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
