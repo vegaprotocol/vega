@@ -44,8 +44,9 @@ type Orders struct {
 }
 
 var ordersOrdering = TableOrdering{
+	ColumnOrdering{Name: "created_at", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: DESC},
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
-	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
 func NewOrders(connectionSource *ConnectionSource) *Orders {
@@ -92,7 +93,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		query := fmt.Sprintf("SELECT %s FROM orders_current_versions WHERE id=$1 and version=$2", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID, version)
 	} else {
-		query := fmt.Sprintf("SELECT %s FROM orders_current WHERE id=$1", sqlOrderColumns)
+		query := fmt.Sprintf("SELECT %s FROM orders_current_desc WHERE id=$1", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
 
@@ -169,15 +170,30 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 }
 
 func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
-	pagination entities.CursorPagination,
+	pagination entities.CursorPagination, alreadyOrdered bool,
 ) ([]entities.Order, entities.PageInfo, error) {
 	var (
 		err      error
 		orders   []entities.Order
 		pageInfo entities.PageInfo
 	)
+	// This is a bit subtle - if we're selecting from a view that's doing DISTINCT ON ... ORDER BY
+	// it is imperative that we don't apply an ORDER BY clause to the outer query or else postgres
+	// will try and materialize the entire view; so rely on the view to sort correctly for us.
+	ordering := ordersOrdering
 
-	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination)
+	paginateQuery := PaginateQuery[entities.OrderCursor]
+	if alreadyOrdered {
+		paginateQuery = PaginateQueryWithoutOrderBy[entities.OrderCursor]
+	}
+
+	// We don't have views and indexes for iterating backwards for now so we can't use 'last'
+	// as it requires us to order in reverse
+	if pagination.HasBackward() {
+		return nil, entities.PageInfo{}, fmt.Errorf("'last' pagination for orders not currently supported")
+	}
+
+	query, args, err = paginateQuery(query, args, ordering, pagination)
 	if err != nil {
 		return orders, pageInfo, err
 	}
@@ -207,9 +223,33 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
+func currentView(party, market, reference *string, liveOnly bool, p entities.CursorPagination) (string, bool, error) {
+	if !p.NewestFirst {
+		return "", false, fmt.Errorf("oldest first order query is not currently supported")
+	}
+	if liveOnly {
+		return "orders_live", false, nil
+	}
+	if reference != nil {
+		return "orders_current_desc_by_reference", true, nil
+	}
+	if party != nil {
+		return "orders_current_desc_by_party", true, nil
+	}
+	if market != nil {
+		return "orders_current_desc_by_market", true, nil
+	}
+	return "orders_current_desc", true, nil
+}
+
 func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
 	dateRange entities.DateRange, orderFilter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
+	table, alreadyOrdered, err := currentView(party, market, reference, liveOnly, p)
+	if err != nil {
+		return nil, entities.PageInfo{}, err
+	}
+
 	var filters []filter
 	if party != nil {
 		filters = append(filters, filter{"party_id", entities.PartyID(*party)})
@@ -226,17 +266,12 @@ func (os *Orders) ListOrders(ctx context.Context, party *string, market *string,
 	where, args := buildWhereClause(filters...)
 	where, args = applyOrderFilter(where, args, orderFilter)
 
-	table := "orders_current"
-	if liveOnly {
-		table = "orders_live"
-	}
-
 	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, where)
 	query, args = filterDateRange(query, ordersFilterDateColumn, dateRange, args...)
 
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 
-	return os.queryOrdersWithCursorPagination(ctx, query, args, p)
+	return os.queryOrdersWithCursorPagination(ctx, query, args, p, alreadyOrdered)
 }
 
 func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
@@ -247,7 +282,7 @@ func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p en
 	query := fmt.Sprintf(`SELECT %s from orders_current_versions WHERE id=$1`, sqlOrderColumns)
 	defer metrics.StartSQLQuery("Orders", "GetByOrderIDPaged")()
 
-	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p)
+	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p, true)
 }
 
 type filter struct {

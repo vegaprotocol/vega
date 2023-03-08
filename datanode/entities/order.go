@@ -204,8 +204,9 @@ var OrderColumns = []string{
 }
 
 type OrderCursor struct {
-	VegaTime time.Time `json:"vegaTime"`
-	SeqNum   uint64    `json:"seqNum"`
+	CreatedAt time.Time `json:"createdAt"`
+	ID        OrderID   `json:"id"`
+	VegaTime  time.Time `json:"vegaTime"`
 }
 
 func (oc *OrderCursor) Parse(cursorString string) error {
@@ -226,8 +227,9 @@ func (oc OrderCursor) String() string {
 
 func (o Order) Cursor() *Cursor {
 	cursor := OrderCursor{
-		VegaTime: o.VegaTime,
-		SeqNum:   o.SeqNum,
+		CreatedAt: o.CreatedAt,
+		ID:        o.ID,
+		VegaTime:  o.VegaTime,
 	}
 
 	return NewCursor(cursor.String())

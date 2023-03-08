@@ -53,6 +53,13 @@ create index on orders (market_id, created_at desc, id, vega_time desc, seq_num 
 create index on orders (party_id, created_at desc, id, vega_time desc, seq_num desc);
 create index on orders (reference, created_at desc, id, vega_time desc, seq_num desc);
 
+CREATE VIEW orders_current_desc
+ AS
+SELECT DISTINCT ON (orders.created_at, orders.id) *
+FROM orders
+ORDER BY orders.created_at DESC, orders.id, orders.vega_time DESC, orders.seq_num DESC;
+
+
 CREATE VIEW orders_current_desc_by_market
  AS
 SELECT DISTINCT ON (orders.created_at, orders.market_id, orders.id) *
@@ -74,7 +81,7 @@ SELECT DISTINCT ON (orders.created_at, orders.reference, orders.id) *
 -- Selecting current order by id to be done as follows -> select * from orders where id = <order id> order by vega_time desc, seq_num desc limit 1
 
 -- +goose Down
-
+drop view orders_current_desc;
 drop view orders_current_desc_by_reference;
 drop view orders_current_desc_by_party;
 drop view orders_current_desc_by_market;
