@@ -24,6 +24,7 @@ func TestAdminImportNetwork(t *testing.T) {
 	t.Run("Importing a network from a valid file saves", testImportingValidFileSaves)
 	t.Run("Importing a network with no name fails", testImportingWithNoNameFails)
 	t.Run("Importing a network from a valid file with name in config works", testImportingWithNameInConfig)
+	t.Run("Importing a network with a github url suggests better alternative", testImportNetworkWithURL)
 }
 
 func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
@@ -218,6 +219,63 @@ func testImportingWithNameInConfig(t *testing.T) {
 	require.Nil(t, errorDetails)
 	assert.Equal(t, result.Name, "local")
 	assert.Equal(t, result.FilePath, resultFilePath)
+}
+
+func testImportNetworkWithURL(t *testing.T) {
+	// given
+	ctx := context.Background()
+
+	d := t.TempDir()
+	filePath := filepath.Join(d + "tmp.toml")
+	err := os.WriteFile(filePath, []byte("Name = \"local\""), 0o644)
+	require.NoError(t, err)
+
+	// setup
+	_ = "network-path/local.toml"
+	handler := newImportNetworkHandler(t)
+
+	testCases := []struct {
+		name       string
+		url        string
+		suggestion string
+		jsonrpcErr jsonrpc.ErrorCode
+	}{
+		{
+			name:       "real-url",
+			url:        "https://github.com/vegaprotocol/networks-internal/blob/main/fairground/vegawallet-fairground.toml",
+			suggestion: "https://raw.githubusercontent.com/vegaprotocol/networks-internal/main/fairground/vegawallet-fairground.toml",
+			jsonrpcErr: jsonrpc.ErrorCodeInvalidParams,
+		},
+		{
+			name:       "without s in http",
+			url:        "http://github.com/blah/blob/main/fairground/network.toml",
+			suggestion: "http://raw.githubusercontent.com/blah/main/fairground/network.toml",
+			jsonrpcErr: jsonrpc.ErrorCodeInvalidParams,
+		},
+		{
+			name:       "non-github url tries to fetch",
+			url:        "https://example.com",
+			jsonrpcErr: jsonrpc.ErrorCodeInternalError,
+		},
+		{
+			name:       "missing .toml tries to fetch",
+			url:        "https://github.com/vegaprotocol/vega/issues",
+			jsonrpcErr: jsonrpc.ErrorCodeInternalError,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
+				URL: tc.url,
+			})
+			// then
+			require.NotNil(t, errorDetails)
+			assert.Equal(t, tc.jsonrpcErr, errorDetails.Code)
+			if tc.suggestion != "" {
+				require.Contains(t, errorDetails.Data, tc.suggestion)
+			}
+		})
+	}
 }
 
 type importNetworkHandler struct {

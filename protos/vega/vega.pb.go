@@ -1243,7 +1243,8 @@ const (
 	Order_STATUS_REJECTED Order_Status = 6
 	// Used for closed partially filled IOC orders
 	Order_STATUS_PARTIALLY_FILLED Order_Status = 7
-	// Order has been removed from the order book and has been parked, this applies to pegged orders only
+	// Order has been removed from the order book and has been parked,
+	// this applies to pegged orders and liquidity orders (orders created from a liquidity provision shape)
 	Order_STATUS_PARKED Order_Status = 8
 )
 

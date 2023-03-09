@@ -169,7 +169,8 @@ message Order {
     STATUS_REJECTED = 6;
     // Used for closed partially filled IOC orders
     STATUS_PARTIALLY_FILLED = 7;
-    // Order has been removed from the order book and has been parked, this applies to pegged orders only
+    // Order has been removed from the order book and has been parked,
+    // this applies to pegged orders and liquidity orders (orders created from a liquidity provision shape)
     STATUS_PARKED = 8;
 
     // Note: If adding an enum value, add a matching entry in:

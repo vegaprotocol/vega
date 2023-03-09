@@ -2083,7 +2083,7 @@ func TestSubmit(t *testing.T) {
 				},
 				{
 					size:   expiringOrder.Size,
-					status: types.OrderStatusCancelled,
+					status: types.OrderStatusParked,
 					ref:    lpSubmission.Reference,
 					found:  false,
 				},
