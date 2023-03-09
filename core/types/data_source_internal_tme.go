@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 // DataSourceSpecConfigurationTime is used internally.
@@ -41,9 +42,14 @@ func (s DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
 }
 
 func DataSourceSpecConfigurationTimeFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) *DataSourceSpecConfigurationTime {
-	return &DataSourceSpecConfigurationTime{
-		Conditions: DataSourceSpecConditionsFromProto(protoConfig.Conditions),
+	dst := &DataSourceSpecConfigurationTime{
+		Conditions: []*DataSourceSpecCondition{},
 	}
+	if protoConfig != nil {
+		dst.Conditions = DataSourceSpecConditionsFromProto(protoConfig.Conditions)
+	}
+
+	return dst
 }
 
 type DataSourceDefinitionInternalTime struct {
@@ -57,7 +63,10 @@ func (i *DataSourceDefinitionInternalTime) oneOfProto() interface{} {
 }
 
 func (i *DataSourceDefinitionInternalTime) IntoProto() *vegapb.DataSourceDefinitionInternal_Time {
-	ids := &vegapb.DataSourceSpecConfigurationTime{}
+	ids := &vegapb.DataSourceSpecConfigurationTime{
+		Conditions: []*datapb.Condition{},
+	}
+
 	if i.Time != nil {
 		ids = i.Time.IntoProto()
 	}
