@@ -42,6 +42,8 @@ func NewDefaultInitializationConfig() InitializationConfig {
 		TimeOut:           encoding.Duration{Duration: 1 * time.Minute},
 		GrpcAPIPorts:      []int{},
 		ToSegment:         "",
+		FetchRetryMax:     5,
+		RetryTimeout:      encoding.Duration{Duration: time.Second},
 	}
 }
 
@@ -50,4 +52,6 @@ type InitializationConfig struct {
 	MinimumBlockCount int64             `long:"block-count" description:"the minimum number of blocks to fetch"`
 	TimeOut           encoding.Duration `long:"timeout" description:"maximum time allowed to auto-initialise the node"`
 	GrpcAPIPorts      []int             `long:"grpc-api-ports" description:"list of additional ports to check to for api connection when getting latest segment"`
+	FetchRetryMax     uint64            `long:"fetch-retry-max" description:"maximum number of times to retry fetching segments - default 5"`
+	RetryTimeout      encoding.Duration `long:"retry-timeout" description:"time to wait between retries - default 1 second"`
 }

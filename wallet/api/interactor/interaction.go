@@ -8,24 +8,25 @@ import (
 )
 
 const (
-	CancelRequestName                      InteractionName = "CANCEL_REQUEST"
-	DecisionName                           InteractionName = "DECISION"
-	EnteredPassphraseName                  InteractionName = "ENTERED_PASSPHRASE"
-	ErrorOccurredName                      InteractionName = "ERROR_OCCURRED"
-	InteractionSessionBeganName            InteractionName = "INTERACTION_SESSION_BEGAN"
-	InteractionSessionEndedName            InteractionName = "INTERACTION_SESSION_ENDED"
-	LogName                                InteractionName = "LOG"
-	RequestPassphraseName                  InteractionName = "REQUEST_PASSPHRASE"
-	RequestPermissionsReviewName           InteractionName = "REQUEST_PERMISSIONS_REVIEW"
-	RequestSucceededName                   InteractionName = "REQUEST_SUCCEEDED"
-	RequestTransactionReviewForSendingName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SENDING"
-	RequestTransactionReviewForSigningName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SIGNING"
-	RequestWalletConnectionReviewName      InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
-	RequestWalletSelectionName             InteractionName = "REQUEST_WALLET_SELECTION"
-	SelectedWalletName                     InteractionName = "SELECTED_WALLET"
-	TransactionFailedName                  InteractionName = "TRANSACTION_FAILED"
-	TransactionSucceededName               InteractionName = "TRANSACTION_SUCCEEDED"
-	WalletConnectionDecisionName           InteractionName = "WALLET_CONNECTION_DECISION"
+	CancelRequestName                       InteractionName = "CANCEL_REQUEST"
+	DecisionName                            InteractionName = "DECISION"
+	EnteredPassphraseName                   InteractionName = "ENTERED_PASSPHRASE"
+	ErrorOccurredName                       InteractionName = "ERROR_OCCURRED"
+	InteractionSessionBeganName             InteractionName = "INTERACTION_SESSION_BEGAN"
+	InteractionSessionEndedName             InteractionName = "INTERACTION_SESSION_ENDED"
+	LogName                                 InteractionName = "LOG"
+	RequestPassphraseName                   InteractionName = "REQUEST_PASSPHRASE"
+	RequestPermissionsReviewName            InteractionName = "REQUEST_PERMISSIONS_REVIEW"
+	RequestSucceededName                    InteractionName = "REQUEST_SUCCEEDED"
+	RequestTransactionReviewForSendingName  InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SENDING"
+	RequestTransactionReviewForSigningName  InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SIGNING"
+	RequestTransactionReviewForCheckingName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_CHECKING"
+	RequestWalletConnectionReviewName       InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
+	RequestWalletSelectionName              InteractionName = "REQUEST_WALLET_SELECTION"
+	SelectedWalletName                      InteractionName = "SELECTED_WALLET"
+	TransactionFailedName                   InteractionName = "TRANSACTION_FAILED"
+	TransactionSucceededName                InteractionName = "TRANSACTION_SUCCEEDED"
+	WalletConnectionDecisionName            InteractionName = "WALLET_CONNECTION_DECISION"
 )
 
 type InteractionName string
@@ -101,6 +102,12 @@ func (f *Interaction) UnmarshalJSON(data []byte) error {
 		f.Data = data
 	case RequestTransactionReviewForSigningName:
 		data := RequestTransactionReviewForSigning{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestTransactionReviewForCheckingName:
+		data := RequestTransactionReviewForChecking{}
 		if err := mapstructure.Decode(input.Data, &data); err != nil {
 			return err
 		}
@@ -222,6 +229,18 @@ type RequestPermissionsReview struct {
 // RequestTransactionReviewForSending is a review request emitted when a third-party
 // application wants to send a transaction.
 type RequestTransactionReviewForSending struct {
+	Hostname    string    `json:"hostname"`
+	Wallet      string    `json:"wallet"`
+	PublicKey   string    `json:"publicKey"`
+	Transaction string    `json:"transaction"`
+	ReceivedAt  time.Time `json:"receivedAt"`
+
+	StepNumber uint8 `json:"stepNumber"`
+}
+
+// RequestTransactionReviewForChecking is a review request when a third-party
+// application wants the user to check a transaction.
+type RequestTransactionReviewForChecking struct {
 	Hostname    string    `json:"hostname"`
 	Wallet      string    `json:"wallet"`
 	PublicKey   string    `json:"publicKey"`

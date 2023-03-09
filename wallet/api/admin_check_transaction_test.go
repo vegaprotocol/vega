@@ -18,17 +18,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAdminSendTransaction(t *testing.T) {
-	t.Run("Sending transaction with invalid params fails", testAdminSendingTransactionWithInvalidParamsFails)
-	t.Run("Sending transaction with valid params succeeds", testAdminSendingTransactionWithValidParamsSucceeds)
-	t.Run("Getting internal error during wallet verification fails", testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails)
-	t.Run("Sending transaction with wallet that doesn't exist fails", testAdminSendingTransactionWithWalletThatDoesntExistFails)
-	t.Run("Getting internal error during wallet retrieval fails", testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails)
-	t.Run("Sending transaction with malformed transaction fails", testAdminSendingTransactionWithMalformedTransactionFails)
-	t.Run("Sending transaction which is invalid fails", testAdminSendingTransactionWithInvalidTransactionFails)
+func TestAdminCheckTransaction(t *testing.T) {
+	t.Run("Checking transaction with invalid params fails", testAdminCheckingTransactionWithInvalidParamsFails)
+	t.Run("Checking transaction with valid params succeeds", testAdminCheckingTransactionWithValidParamsSucceeds)
+	t.Run("Getting internal error during wallet verification fails", testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails)
+	t.Run("Checking transaction with wallet that doesn't exist fails", testAdminCheckingTransactionWithWalletThatDoesntExistFails)
+	t.Run("Getting internal error during wallet retrieval fails", testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails)
+	t.Run("Checking transaction with malformed transaction fails", testAdminCheckingTransactionWithMalformedTransactionFails)
+	t.Run("Checking transaction which is invalid fails", testAdminCheckingTransactionWithInvalidTransactionFails)
 }
 
-func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
+func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
 		params        interface{}
@@ -46,7 +46,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with empty wallet",
-			params: api.AdminSendTransactionParams{
+			params: api.AdminCheckTransactionParams{
 				Wallet:      "",
 				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
@@ -57,7 +57,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with empty passphrase",
-			params: api.AdminSendTransactionParams{
+			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
 				Passphrase:  "",
 				PublicKey:   vgrand.RandomStr(5),
@@ -68,7 +68,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with empty public key",
-			params: api.AdminSendTransactionParams{
+			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
 				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   "",
@@ -79,7 +79,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with empty transaction",
-			params: api.AdminSendTransactionParams{
+			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
 				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
@@ -90,7 +90,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with no network or node address",
-			params: api.AdminSendTransactionParams{
+			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
 				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
@@ -101,7 +101,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with no network and node address",
-			params: api.AdminSendTransactionParams{
+			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
 				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
@@ -119,7 +119,7 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			ctx := context.Background()
 
 			// setup
-			handler := newAdminSendTransactionHandler(tt, unexpectedNodeSelectorCall(tt))
+			handler := newAdminCheckTransactionHandler(tt, unexpectedNodeSelectorCall(tt))
 
 			// when
 			result, errorDetails := handler.handle(t, ctx, tc.params)
@@ -131,17 +131,16 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 	}
 }
 
-func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
+func testAdminCheckingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
 	passphrase := vgrand.RandomStr(5)
 	nodeHost := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
-	hash := "hashy mchashface"
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -153,7 +152,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 			ProofOfWorkDifficulty:   1,
 			ChainID:                 vgrand.RandomStr(5),
 		}, nil)
-		node.EXPECT().SendTransaction(ctx, gomock.Any(), gomock.Any()).Times(1).Return(hash, nil)
+		node.EXPECT().CheckTransaction(ctx, gomock.Any()).Times(1).Return(nil)
 		node.EXPECT().Host().Times(1).Return(nodeHost)
 		return nodeSelector, nil
 	})
@@ -166,7 +165,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      w.Name(),
 		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
@@ -176,11 +175,10 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	assert.Nil(t, errorDetails)
-	assert.Equal(t, hash, result.TxHash)
 	assert.NotEmpty(t, result.Tx)
 }
 
-func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
+func testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
@@ -188,7 +186,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	passphrase := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -207,7 +205,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	handler.walletStore.EXPECT().WalletExists(ctx, walletName).Times(1).Return(false, assert.AnError)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      walletName,
 		Passphrase:  passphrase,
 		PublicKey:   vgrand.RandomStr(5),
@@ -220,11 +218,11 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	assert.Empty(t, result)
 }
 
-func testAdminSendingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
+func testAdminCheckingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 
-	params := api.AdminSendTransactionParams{
+	params := api.AdminCheckTransactionParams{
 		Wallet:      vgrand.RandomStr(5),
 		Passphrase:  vgrand.RandomStr(5),
 		PublicKey:   vgrand.RandomStr(5),
@@ -233,7 +231,7 @@ func testAdminSendingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 	}
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
+	handler := newAdminCheckTransactionHandler(t, unexpectedNodeSelectorCall(t))
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, params.Wallet).Times(1).Return(false, nil)
@@ -246,7 +244,7 @@ func testAdminSendingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
+func testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
@@ -254,7 +252,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 	passphrase := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -275,7 +273,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 	handler.walletStore.EXPECT().GetWallet(ctx, walletName).Times(1).Return(nil, assert.AnError)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      walletName,
 		Passphrase:  passphrase,
 		PublicKey:   vgrand.RandomStr(5),
@@ -288,7 +286,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 	assert.Empty(t, result)
 }
 
-func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
+func testAdminCheckingTransactionWithMalformedTransactionFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := vgrand.RandomStr(5)
@@ -296,7 +294,7 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	w, kp := walletWithKey(t)
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
+	handler := newAdminCheckTransactionHandler(t, unexpectedNodeSelectorCall(t))
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
@@ -304,7 +302,7 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      w.Name(),
 		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
@@ -317,7 +315,7 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
+func testAdminCheckingTransactionWithInvalidTransactionFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
@@ -325,7 +323,7 @@ func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
 	w, kp := walletWithKey(t)
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, unexpectedNodeSelectorCall(t))
+	handler := newAdminCheckTransactionHandler(t, unexpectedNodeSelectorCall(t))
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
@@ -333,7 +331,7 @@ func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
-	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
+	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      w.Name(),
 		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
@@ -346,38 +344,38 @@ func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-type AdminSendTransactionHandler struct {
-	*api.AdminSendTransaction
+type AdminCheckTransactionHandler struct {
+	*api.AdminCheckTransaction
 	ctrl         *gomock.Controller
 	walletStore  *mocks.MockWalletStore
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *AdminSendTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminSendTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *AdminCheckTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminCheckTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.AdminSendTransactionResult)
+		result, ok := rawResult.(api.AdminCheckTransactionResult)
 		if !ok {
-			t.Fatal("AdminUpdatePermissions handler result is not a AdminSendTransactionResult")
+			t.Fatal("AdminUpdatePermissions handler result is not a AdminCheckTransactionResult")
 		}
 		return result, err
 	}
-	return api.AdminSendTransactionResult{}, err
+	return api.AdminCheckTransactionResult{}, err
 }
 
-func newAdminSendTransactionHandler(t *testing.T, builder api.NodeSelectorBuilder) *AdminSendTransactionHandler {
+func newAdminCheckTransactionHandler(t *testing.T, nodeBuilder api.NodeSelectorBuilder) *AdminCheckTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	walletStore := mocks.NewMockWalletStore(ctrl)
 	networkStore := mocks.NewMockNetworkStore(ctrl)
 
-	return &AdminSendTransactionHandler{
-		AdminSendTransaction: api.NewAdminSendTransaction(walletStore, networkStore, builder),
-		ctrl:                 ctrl,
-		walletStore:          walletStore,
-		networkStore:         networkStore,
+	return &AdminCheckTransactionHandler{
+		AdminCheckTransaction: api.NewAdminCheckTransaction(walletStore, networkStore, nodeBuilder),
+		ctrl:                  ctrl,
+		walletStore:           walletStore,
+		networkStore:          networkStore,
 	}
 }

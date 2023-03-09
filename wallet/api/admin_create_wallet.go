@@ -23,7 +23,6 @@ type AdminCreatedWallet struct {
 	Name                 string `json:"name"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
 	RecoveryPhrase       string `json:"recoveryPhrase"`
-	FilePath             string `json:"filePath"`
 }
 
 type AdminFirstPublicKey struct {
@@ -44,7 +43,7 @@ func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if exist {
 		return nil, invalidParams(ErrWalletAlreadyExists)
 	}
@@ -68,7 +67,6 @@ func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 			Name:                 w.Name(),
 			KeyDerivationVersion: w.KeyDerivationVersion(),
 			RecoveryPhrase:       recoveryPhrase,
-			FilePath:             h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),

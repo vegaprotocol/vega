@@ -3,7 +3,6 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -103,7 +102,6 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
-	expectedPath := filepath.Join(vgrand.RandomStr(3), vgrand.RandomStr(3))
 
 	// setup
 	handler := newIsolateKeyHandler(t)
@@ -112,7 +110,6 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(nil)
-	handler.walletStore.EXPECT().GetWalletPath(gomock.Any()).Times(1).Return(expectedPath)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
@@ -125,7 +122,6 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.True(t, strings.HasPrefix(result.Wallet, expectedWallet.Name()))
-	assert.Equal(t, expectedPath, result.FilePath)
 }
 
 func testIsolatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
@@ -177,7 +173,7 @@ func testIsolatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testin
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {

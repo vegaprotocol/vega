@@ -17,6 +17,7 @@ import (
 )
 
 type bufferFileEventSource struct {
+	mu                    sync.Mutex
 	bufferFilesDir        string
 	timeBetweenBlocks     time.Duration
 	sendChannelBufferSize int
@@ -120,34 +121,28 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 
 			// Buffer files do not necessarily start on block boundaries, to prevent sending part of a block
 			// events are ignored until an initial begin block event is encountered
-			if !e.setCurrentBlock(busEvent, timeBetweenBlocks) {
-				continue
+			e.mu.Lock()
+			if len(e.currentBlock) == 0 {
+				if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
+					e.currentBlock = busEvent.Block
+				} else {
+					e.mu.Unlock()
+					continue
+				}
 			}
+
+			// Optional sleep between blocks to mimic running against core
+			if busEvent.Block != e.currentBlock {
+				time.Sleep(timeBetweenBlocks)
+				e.currentBlock = busEvent.Block
+			}
+			e.mu.Unlock()
 
 			err = sendRawEvent(ctx, out, rawEvent)
 			if err != nil {
 				return fmt.Errorf("send event failed:%w", err)
 			}
 		}
-	}
-}
-
-func (e *bufferFileEventSource) setCurrentBlock(busEvent *eventspb.BusEvent, timeBetweenBlocks time.Duration) bool {
-	e.cbmu.Lock()
-	defer e.cbmu.Unlock()
-
-	if len(e.currentBlock) == 0 {
-		if busEvent.Type == eventspb.BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK {
-			e.currentBlock = busEvent.Block
-		} else {
-			return false
-		}
-		return true
-	}
-	// Optional sleep between blocks to mimic running against core
-	if busEvent.Block != e.currentBlock {
-		time.Sleep(timeBetweenBlocks)
-		e.currentBlock = busEvent.Block
 	}
 	return true
 }

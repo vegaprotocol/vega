@@ -68,7 +68,7 @@ type filter struct {
 
 type condition func(string) (bool, error)
 
-// NewOracleSpec builds an OracleSpec from a types.OracleSpec in a form that
+// NewOracleSpec builds an OracleSpec from a types.OracleSpec (currently uses one level below - types.ExternalDataSourceSpec) in a form that
 // suits the processing of the filters.
 // OracleSpec allows the existence of one and only one.
 // Currently VEGA network utilises internal triggers in the oracle function path, even though
@@ -79,6 +79,8 @@ type condition func(string) (bool, error)
 // https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed
 func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
 	filtersFromSpec := []*types.DataSourceSpecFilter{}
+	signersFromSpec := []*types.Signer{}
+
 	isExtType := false
 	if originalSpec.Spec != nil {
 		if originalSpec.Spec.Data != nil {
@@ -87,9 +89,8 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 		}
 	}
 
-	if len(filtersFromSpec) == 0 {
-		return nil, ErrAtLeastOneFilterIsRequired
-	}
+	// We check if the filters list is empty in the proposal submission step.
+	// We do not need to double that logic here.
 
 	builtInKey := false
 	typedFilters := map[string]*filter{}
@@ -97,10 +98,6 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 		if isExtType {
 			if types.DataSourceSpecPropertyKeyIsEmpty(f.Key) {
 				return nil, ErrMissingPropertyKey
-			}
-
-			if len(f.Key.Name) == 0 {
-				return nil, ErrMissingPropertyName
 			}
 
 			_, exist := typedFilters[f.Key.Name]
@@ -155,7 +152,6 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 
 	signers := map[string]struct{}{}
 	if !builtInKey && isExtType {
-		signersFromSpec := []*types.Signer{}
 		if originalSpec.Spec != nil {
 			if originalSpec.Spec.Data != nil {
 				src := *originalSpec.Spec.Data
@@ -164,9 +160,8 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 			}
 		}
 
-		if len(signersFromSpec) == 0 {
-			return nil, ErrMissingSigners
-		}
+		// We check if the signers list is empty h in the proposal submission step.
+		// We do not need to duble that logic here.
 
 		for _, pk := range signersFromSpec {
 			signers[pk.String()] = struct{}{}

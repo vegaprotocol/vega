@@ -658,6 +658,7 @@ func (m *Market) cancelLiquidityProvision(
 			return err
 		}
 		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
+		m.collateral.RemoveBondAccount(party, m.GetID(), asset)
 	}
 
 	// now let's update the fee selection

@@ -310,6 +310,36 @@ func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Co
 	return approval.Approved, nil
 }
 
+func (i *SequentialInteractor) RequestTransactionReviewForChecking(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, api.ErrRequestInterrupted
+	}
+
+	i.receptionChan <- Interaction{
+		TraceID: traceID,
+		Name:    RequestTransactionReviewForCheckingName,
+		Data: RequestTransactionReviewForChecking{
+			Hostname:    hostname,
+			Wallet:      wallet,
+			PublicKey:   pubKey,
+			Transaction: transaction,
+			ReceivedAt:  receivedAt,
+			StepNumber:  stepNumber,
+		},
+	}
+
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	if err != nil {
+		return false, err
+	}
+
+	approval, ok := interaction.Data.(Decision)
+	if !ok {
+		return false, InvalidResponsePayloadError(DecisionName)
+	}
+	return approval.Approved, nil
+}
+
 func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID string, expectedResponseName InteractionName) (Interaction, error) {
 	var response Interaction
 	running := true
