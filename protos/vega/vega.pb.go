@@ -209,7 +209,7 @@ const (
 	AuctionTrigger_AUCTION_TRIGGER_PRICE AuctionTrigger = 3
 	// Deprecated
 	AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY AuctionTrigger = 4
-	// Liquidity auction due to not enough comitted liquidity
+	// Liquidity auction due to not enough committed liquidity
 	AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET AuctionTrigger = 5
 	// Liquidity auction due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book
 	AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS AuctionTrigger = 6

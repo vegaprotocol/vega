@@ -77,7 +77,7 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_PRICE = 3;
   // Deprecated
   AUCTION_TRIGGER_LIQUIDITY = 4;
-  // Liquidity auction due to not enough comitted liquidity
+  // Liquidity auction due to not enough committed liquidity
   AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET = 5;
   // Liquidity auction due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book
   AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS = 6;
