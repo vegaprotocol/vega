@@ -26,10 +26,12 @@ type AuctionState interface {
 	IsOpeningAuction() bool
 	IsLiquidityAuction() bool
 	IsLiquidityExtension() bool
-	StartLiquidityAuction(t time.Time, d *types.AuctionDuration, trigger types.AuctionTrigger)
+	StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration)
+	StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration)
 	SetReadyToLeave()
 	InAuction() bool
-	ExtendAuctionLiquidity(delta types.AuctionDuration, trigger types.AuctionTrigger)
+	ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration)
+	ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration)
 	ExpiresAt() *time.Time
 }
 
@@ -109,11 +111,11 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 			return false // all done
 		}
 		// we're still in trouble, extend the auction
-		trigger := types.AuctionTriggerUnableToDeployLPOrders
+		extend := as.ExtendAuctionLiquidityNoOrders
 		if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-			trigger = types.AuctionTriggerLiquidityTargetNotMet
+			extend = as.ExtendAuctionLiquidityUnmetTarget
 		}
-		as.ExtendAuctionLiquidity(ext, trigger)
+		extend(ext)
 		return false
 	}
 	// multiply target stake by triggering ratio
@@ -127,21 +129,21 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 			return true
 		}
 		if exp != nil {
-			trigger := types.AuctionTriggerUnableToDeployLPOrders
+			extend := as.ExtendAuctionLiquidityNoOrders
 			if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-				trigger = types.AuctionTriggerLiquidityTargetNotMet
+				extend = as.ExtendAuctionLiquidityUnmetTarget
 			}
-			as.ExtendAuctionLiquidity(ext, trigger)
+			extend(ext)
 
 			return false
 		}
-		trigger := types.AuctionTriggerUnableToDeployLPOrders
+		start := as.StartLiquidityAuctionNoOrders
 		if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
-			trigger = types.AuctionTriggerLiquidityTargetNotMet
+			start = as.StartLiquidityAuctionUnmetTarget
 		}
-		as.StartLiquidityAuction(t, &types.AuctionDuration{
+		start(t, &types.AuctionDuration{
 			Duration: md, // we multiply this by a second later on
-		}, trigger)
+		})
 	}
 	return false
 }

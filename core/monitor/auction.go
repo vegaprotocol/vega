@@ -61,9 +61,17 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	return &s
 }
 
-// StartLiquidityAuction - set the state to start a liquidity triggered auction
+func (a *AuctionState) StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration) {
+	a.startLiquidityAuction(t, d, types.AuctionTriggerUnableToDeployLPOrders)
+}
+
+func (a *AuctionState) StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration) {
+	a.startLiquidityAuction(t, d, types.AuctionTriggerLiquidityTargetNotMet)
+}
+
+// startLiquidityAuction - set the state to start a liquidity triggered auction
 // @TODO these functions will be removed once the types are in proto.
-func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration, tigger types.AuctionTrigger) {
+func (a *AuctionState) startLiquidityAuction(t time.Time, d *types.AuctionDuration, tigger types.AuctionTrigger) {
 	a.mode = types.MarketTradingModeMonitoringAuction
 	a.trigger = tigger
 	a.start = true
@@ -105,9 +113,17 @@ func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 	a.ExtendAuction(delta)
 }
 
-// ExtendAuctionLiquidity - call from liquidity monitoring to extend the auction
+func (a *AuctionState) ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration) {
+	a.extendAuctionLiquidity(delta, types.AuctionTriggerUnableToDeployLPOrders)
+}
+
+func (a *AuctionState) ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration) {
+	a.extendAuctionLiquidity(delta, types.AuctionTriggerLiquidityTargetNotMet)
+}
+
+// extendAuctionLiquidity - call from liquidity monitoring to extend the auction
 // sets the extension trigger field accordingly.
-func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration, trigger types.AuctionTrigger) {
+func (a *AuctionState) extendAuctionLiquidity(delta types.AuctionDuration, trigger types.AuctionTrigger) {
 	t := trigger
 	a.extension = &t
 	a.extensionEventSent = false
