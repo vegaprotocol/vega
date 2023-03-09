@@ -24,7 +24,6 @@ type bufferFileEventSource struct {
 	chainID               string
 	archiveFiles          []fs.FileInfo
 	currentBlock          string
-	cbmu                  sync.RWMutex
 }
 
 //revive:disable:unexported-return
@@ -144,7 +143,6 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 			}
 		}
 	}
-	return true
 }
 
 func sendRawEvent(ctx context.Context, out chan<- []byte, rawEvent []byte) error {
