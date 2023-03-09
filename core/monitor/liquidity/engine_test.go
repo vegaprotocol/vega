@@ -125,7 +125,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldStart {
-				h.AuctionState.EXPECT().StartLiquidityAuction(now, gomock.Any()).Times(1)
+				h.AuctionState.EXPECT().StartLiquidityAuction(now, gomock.Any(), gomock.Any()).Times(1)
 			}
 			var trades []*types.Trade
 			rf := types.RiskFactor{}
@@ -168,7 +168,7 @@ func TestEngineInOpeningAuction(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
 			if test.auctionShouldStart {
-				h.AuctionState.EXPECT().ExtendAuctionLiquidity(gomock.Any()).Times(1)
+				h.AuctionState.EXPECT().ExtendAuctionLiquidity(gomock.Any(), gomock.Any()).Times(1)
 			} else {
 				// opening auciton is flagged as ready to leave
 				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)
@@ -203,7 +203,7 @@ func TestEngineAfterParametersUpdate(t *testing.T) {
 	h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&expiresAt)
 	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
 		Duration: params.AuctionExtension,
-	}).Times(1)
+	}, gomock.Any()).Times(1)
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
 
 	mon.CheckLiquidity(h.AuctionState, now, num.NewUint(40), trades, rf, markPrice.Clone(), bestStaticBidVolume, bestStaticAskVolume, true)
@@ -219,7 +219,7 @@ func TestEngineAfterParametersUpdate(t *testing.T) {
 	// Verify the auction extension is called with update parameters.
 	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
 		Duration: updatedParams.AuctionExtension,
-	}).Times(1)
+	}, gomock.Any()).Times(1)
 
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
 	// Higher current stake to test the updated Triggering Ratio is reached.
@@ -247,7 +247,7 @@ func TestEngineAfterParametersUpdateWithAuctionExtension0(t *testing.T) {
 	h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&expiresAt)
 	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
 		Duration: 1, // to test the patch.
-	}).Times(1)
+	}, gomock.Any()).Times(1)
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
 
 	mon.CheckLiquidity(h.AuctionState, now, num.NewUint(40), trades, rf, markPrice.Clone(), bestStaticBidVolume, bestStaticAskVolume, true)
@@ -263,7 +263,7 @@ func TestEngineAfterParametersUpdateWithAuctionExtension0(t *testing.T) {
 	// Verify the auction extension is called with update parameters.
 	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
 		Duration: 1, // to test the patch.
-	}).Times(1)
+	}, gomock.Any()).Times(1)
 
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
 	// Higher current stake to test the updated Triggering Ratio is reached.

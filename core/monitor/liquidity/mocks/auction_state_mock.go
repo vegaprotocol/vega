@@ -9,6 +9,7 @@ import (
 	time "time"
 
 	types "code.vegaprotocol.io/vega/core/types"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -50,15 +51,15 @@ func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
 }
 
 // ExtendAuctionLiquidity mocks base method.
-func (m *MockAuctionState) ExtendAuctionLiquidity(arg0 types.AuctionDuration) {
+func (m *MockAuctionState) ExtendAuctionLiquidity(arg0 types.AuctionDuration, arg1 vega.AuctionTrigger) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExtendAuctionLiquidity", arg0)
+	m.ctrl.Call(m, "ExtendAuctionLiquidity", arg0, arg1)
 }
 
 // ExtendAuctionLiquidity indicates an expected call of ExtendAuctionLiquidity.
-func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidity(arg0 interface{}) *gomock.Call {
+func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidity(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidity", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidity), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidity", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidity), arg0, arg1)
 }
 
 // InAuction mocks base method.
@@ -130,13 +131,13 @@ func (mr *MockAuctionStateMockRecorder) SetReadyToLeave() *gomock.Call {
 }
 
 // StartLiquidityAuction mocks base method.
-func (m *MockAuctionState) StartLiquidityAuction(arg0 time.Time, arg1 *types.AuctionDuration) {
+func (m *MockAuctionState) StartLiquidityAuction(arg0 time.Time, arg1 *types.AuctionDuration, arg2 vega.AuctionTrigger) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartLiquidityAuction", arg0, arg1)
+	m.ctrl.Call(m, "StartLiquidityAuction", arg0, arg1, arg2)
 }
 
 // StartLiquidityAuction indicates an expected call of StartLiquidityAuction.
-func (mr *MockAuctionStateMockRecorder) StartLiquidityAuction(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockAuctionStateMockRecorder) StartLiquidityAuction(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuction), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuction), arg0, arg1, arg2)
 }
