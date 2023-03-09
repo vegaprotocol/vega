@@ -29,7 +29,7 @@ Feature: Closeout scenarios
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
       | auxiliary1 | USD   | 1000000000000 |
-      | auxiliary2 | USD   | 1000000000000 | 
+      | auxiliary2 | USD   | 1000000000000 |
       | trader2    | USD   | 2000          |
       | trader3    | USD   | 162           |
       | lprov      | USD   | 1000000000000 |
@@ -135,12 +135,12 @@ Feature: Closeout scenarios
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | -900           | 0            |
       | auxiliary2 | 5      | 475            | 503          |
-      | trader2    | 0      | 0              | 0            |  
+      | trader2    | 0      | 0              | 0            |
       | trader3    | 0      | 0              | -162         |
       | lprov      | 5      | 495            | -413         |
     Then the market data for the market "ETH/DEC19" should be:
-      | mark price | trading mode                    | auction trigger           | 
-      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | mark price | trading mode                    | auction trigger                            |
+      | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
 
   Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"

@@ -107,14 +107,14 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 		bestStaticBidVolume uint64
 		bestStaticAskVolume uint64
 		// expect
-		auctionShouldStart bool
+		auctionTrigger types.AuctionTrigger
 	}{
-		{"Current <  (Target * c1)", num.NewUint(10), num.NewUint(30), 1, 1, true},
-		{"Current >  (Target * c1)", num.NewUint(15), num.NewUint(15), 1, 1, false},
-		{"Current == (Target * c1)", num.NewUint(10), num.NewUint(20), 1, 1, false},
-		{"Current >  (Target * c1), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, true},
-		{"Current == (Target * c1), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, true},
-		{"Current == (Target * c1), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, true},
+		{"Current <  (Target * c1)", num.NewUint(10), num.NewUint(30), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
+		{"Current >  (Target * c1)", num.NewUint(15), num.NewUint(15), 1, 1, types.AuctionTriggerUnspecified},
+		{"Current == (Target * c1)", num.NewUint(10), num.NewUint(20), 1, 1, types.AuctionTriggerUnspecified},
+		{"Current >  (Target * c1), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, types.AuctionTriggerUnableToDeployLPOrders},
+		{"Current == (Target * c1), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, types.AuctionTriggerUnableToDeployLPOrders},
+		{"Current == (Target * c1), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, types.AuctionTriggerUnableToDeployLPOrders},
 	}
 
 	h := newTestHarness(t).WhenInLiquidityAuction(false)
@@ -124,8 +124,10 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 	h.AuctionState.EXPECT().ExpiresAt().Times(len(tests)).Return(nil)
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			if test.auctionShouldStart {
-				h.AuctionState.EXPECT().StartLiquidityAuction(now, gomock.Any()).Times(1)
+			if test.auctionTrigger == types.AuctionTriggerLiquidityTargetNotMet {
+				h.AuctionState.EXPECT().StartLiquidityAuctionUnmetTarget(now, gomock.Any()).Times(1)
+			} else if test.auctionTrigger == types.AuctionTriggerUnableToDeployLPOrders {
+				h.AuctionState.EXPECT().StartLiquidityAuctionNoOrders(now, gomock.Any()).Times(1)
 			}
 			var trades []*types.Trade
 			rf := types.RiskFactor{}
@@ -149,15 +151,15 @@ func TestEngineInOpeningAuction(t *testing.T) {
 		bestStaticBidVolume uint64
 		bestStaticAskVolume uint64
 		// expect
-		auctionShouldStart bool
+		auctionTrigger types.AuctionTrigger
 	}{
-		{"Current <  (Target)", num.NewUint(10), num.NewUint(30), 1, 1, true},
-		{"Current >  (Target)", num.NewUint(15), num.NewUint(15), 1, 1, false},
-		{"Current == (Target * C1)", num.NewUint(10), num.NewUint(20), 1, 1, true},
-		{"Current == (Target)", num.NewUint(20), num.NewUint(20), 1, 1, false},
-		{"Current >  (Target), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, true},
-		{"Current == (Target), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, true},
-		{"Current == (Target), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, true},
+		{"Current <  (Target)", num.NewUint(10), num.NewUint(30), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
+		{"Current >  (Target)", num.NewUint(15), num.NewUint(15), 1, 1, types.AuctionTriggerUnspecified},
+		{"Current == (Target * C1)", num.NewUint(10), num.NewUint(20), 1, 1, types.AuctionTriggerLiquidityTargetNotMet},
+		{"Current == (Target)", num.NewUint(20), num.NewUint(20), 1, 1, types.AuctionTriggerUnspecified},
+		{"Current >  (Target), no best bid", num.NewUint(15), num.NewUint(15), 0, 1, types.AuctionTriggerUnableToDeployLPOrders},
+		{"Current == (Target), no best ask", num.NewUint(10), num.NewUint(20), 1, 0, types.AuctionTriggerUnableToDeployLPOrders},
+		{"Current == (Target), no best bid and ask", num.NewUint(10), num.NewUint(20), 0, 0, types.AuctionTriggerUnableToDeployLPOrders},
 	}
 
 	h := newTestHarness(t).WhenInOpeningAuction()
@@ -167,8 +169,10 @@ func TestEngineInOpeningAuction(t *testing.T) {
 	h.AuctionState.EXPECT().ExpiresAt().Times(len(tests)).Return(nil)
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			if test.auctionShouldStart {
-				h.AuctionState.EXPECT().ExtendAuctionLiquidity(gomock.Any()).Times(1)
+			if test.auctionTrigger == types.AuctionTriggerLiquidityTargetNotMet {
+				h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(gomock.Any()).Times(1)
+			} else if test.auctionTrigger == types.AuctionTriggerUnableToDeployLPOrders {
+				h.AuctionState.EXPECT().ExtendAuctionLiquidityNoOrders(gomock.Any()).Times(1)
 			} else {
 				// opening auciton is flagged as ready to leave
 				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)
@@ -201,7 +205,7 @@ func TestEngineAfterParametersUpdate(t *testing.T) {
 
 	expiresAt := now.Add(-24 * time.Hour)
 	h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&expiresAt)
-	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
+	h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(types.AuctionDuration{
 		Duration: params.AuctionExtension,
 	}).Times(1)
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
@@ -217,7 +221,7 @@ func TestEngineAfterParametersUpdate(t *testing.T) {
 
 	h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&expiresAt)
 	// Verify the auction extension is called with update parameters.
-	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
+	h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(types.AuctionDuration{
 		Duration: updatedParams.AuctionExtension,
 	}).Times(1)
 
@@ -245,7 +249,7 @@ func TestEngineAfterParametersUpdateWithAuctionExtension0(t *testing.T) {
 
 	expiresAt := now.Add(-24 * time.Hour)
 	h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&expiresAt)
-	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
+	h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(types.AuctionDuration{
 		Duration: 1, // to test the patch.
 	}).Times(1)
 	h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(target)
@@ -261,7 +265,7 @@ func TestEngineAfterParametersUpdateWithAuctionExtension0(t *testing.T) {
 
 	h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&expiresAt)
 	// Verify the auction extension is called with update parameters.
-	h.AuctionState.EXPECT().ExtendAuctionLiquidity(types.AuctionDuration{
+	h.AuctionState.EXPECT().ExtendAuctionLiquidityUnmetTarget(types.AuctionDuration{
 		Duration: 1, // to test the patch.
 	}).Times(1)
 

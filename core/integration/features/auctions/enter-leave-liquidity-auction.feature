@@ -145,8 +145,8 @@ Feature: Ensure we can enter and leave liquidity auction
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC19"
     And the market data for the market "ETH/DEC19" should be:
-      | trading mode                 | extension trigger         | supplied stake | target stake |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1              | 11           |
+      | trading mode                 | extension trigger                        | supplied stake | target stake |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1              | 11           |
 
     # Amend LP, set the commitment amount to be enough to leave opening auction
     When the parties submit the following liquidity provision:

@@ -556,7 +556,7 @@ Feature: Fees calculations
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
-    
+
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
@@ -810,8 +810,8 @@ Feature: Fees calculations
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     # now place orders during auction
     When the parties place the following orders with ticks:
@@ -954,8 +954,8 @@ Feature: Fees calculations
     When the network moves ahead "1" blocks
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1163,8 +1163,8 @@ Feature: Fees calculations
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -1282,11 +1282,11 @@ Feature: Fees calculations
     Then the network moves ahead "301" blocks
 
     Then the following trades should be executed:
-      | buyer    | price | size | seller  |
-      | trader3a | 1002  | 1    | trader4 |
-      | trader3a | 900   | 2    | trader4 |
-      | aux1     | 500   | 1    | network |
-      | aux1     | 490   | 2    | network |
+      | buyer    | price | size | seller   |
+      | trader3a | 1002  | 1    | trader4  |
+      | trader3a | 900   | 2    | trader4  |
+      | aux1     | 500   | 1    | network  |
+      | aux1     | 490   | 2    | network  |
       | network  | 493   | 3    | trader3a |
 
     # For trader3a & 4- Sharing IF and LP
@@ -1308,7 +1308,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 |    0   | 0       |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
       | trader4  | ETH   | ETH/DEC21 | 3801   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:

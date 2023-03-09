@@ -26,10 +26,12 @@ type AuctionState interface {
 	IsOpeningAuction() bool
 	IsLiquidityAuction() bool
 	IsLiquidityExtension() bool
-	StartLiquidityAuction(t time.Time, d *types.AuctionDuration)
+	StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration)
+	StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration)
 	SetReadyToLeave()
 	InAuction() bool
-	ExtendAuctionLiquidity(delta types.AuctionDuration)
+	ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration)
+	ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration)
 	ExpiresAt() *time.Time
 }
 
@@ -109,7 +111,11 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 			return false // all done
 		}
 		// we're still in trouble, extend the auction
-		as.ExtendAuctionLiquidity(ext)
+		extend := as.ExtendAuctionLiquidityNoOrders
+		if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+			extend = as.ExtendAuctionLiquidityUnmetTarget
+		}
+		extend(ext)
 		return false
 	}
 	// multiply target stake by triggering ratio
@@ -123,11 +129,19 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 			return true
 		}
 		if exp != nil {
-			as.ExtendAuctionLiquidity(ext)
+			extend := as.ExtendAuctionLiquidityNoOrders
+			if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+				extend = as.ExtendAuctionLiquidityUnmetTarget
+			}
+			extend(ext)
 
 			return false
 		}
-		as.StartLiquidityAuction(t, &types.AuctionDuration{
+		start := as.StartLiquidityAuctionNoOrders
+		if bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
+			start = as.StartLiquidityAuctionUnmetTarget
+		}
+		start(t, &types.AuctionDuration{
 			Duration: md, // we multiply this by a second later on
 		})
 	}
