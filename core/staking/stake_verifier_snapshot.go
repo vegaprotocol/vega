@@ -168,7 +168,10 @@ func (s *StakeVerifier) OnStateLoaded(ctx context.Context) error {
 	if lastBlockSeen == 0 {
 		lastBlockSeen = s.accs.getLastBlockSeen()
 	}
-	s.ethEventSource.UpdateStakingStartingBlock(lastBlockSeen)
+	if lastBlockSeen != 0 {
+		s.log.Info("restoring staking bridge starting block", logging.Uint64("block", lastBlockSeen))
+		s.ethEventSource.UpdateStakingStartingBlock(lastBlockSeen)
+	}
 	return nil
 }
 

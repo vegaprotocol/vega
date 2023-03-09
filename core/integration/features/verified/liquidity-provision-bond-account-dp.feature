@@ -149,6 +149,6 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
-      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 426828       | 50000          | 120           |
+      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 426828       | 50000          | 120           |
 

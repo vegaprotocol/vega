@@ -216,7 +216,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	})
 
 	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 	assert.Empty(t, result)
 }
 
@@ -313,7 +313,7 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	})
 
 	// then
-	assertInvalidParams(t, errorDetails, errors.New("the transaction is not a valid Vega command: unknown field \"bob\" in vega.wallet.v1.SubmitTransactionRequest"))
+	assertInvalidParams(t, errorDetails, errors.New("the transaction does not use a valid Vega command: unknown field \"bob\" in vega.wallet.v1.SubmitTransactionRequest"))
 	assert.Empty(t, result)
 }
 

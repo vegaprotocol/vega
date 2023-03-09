@@ -700,6 +700,15 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 
 	err = files.WriteTo(rootNodeFile, historySegment)
 	if err != nil {
+		// check if the file exists and if so, remove it
+		_, statErr := os.Stat(historySegment)
+		if statErr == nil {
+			remErr := os.Remove(historySegment)
+			if remErr != nil {
+				return SegmentIndexEntry{}, fmt.Errorf("could not write out the fetched history segment: %w, and could not remove existing history segment: %v", err, remErr)
+			}
+		}
+
 		return SegmentIndexEntry{}, fmt.Errorf("could not write out the fetched history segment: %w", err)
 	}
 

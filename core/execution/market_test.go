@@ -7528,7 +7528,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerLiquidityTargetNotMet, md.Trigger)
 
 	// don't use AddSum, we need to keep the original amount somewhere
 	lpa2 := &types.LiquidityProvisionAmendment{
@@ -7578,7 +7578,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticBidVolume)
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
 
 	supplied, err = num.DecimalFromString(md.SuppliedStake)
 	require.NoError(t, err)
@@ -7620,7 +7620,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticOfferVolume)
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
 
 	supplied, err = num.DecimalFromString(md.SuppliedStake)
 	require.NoError(t, err)
@@ -7639,7 +7639,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
 
 	supplied, err = num.DecimalFromString(md.SuppliedStake)
 	require.NoError(t, err)
@@ -7761,7 +7761,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
 
 	buyOrder3 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder3", types.SideBuy, party1, 1, sellOrder1.Price.Uint64())
 	buyConf3, err := tm.market.SubmitOrder(ctx, buyOrder3)
@@ -7770,7 +7770,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
 
 	sellOrder4 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "sellOrder4", types.SideSell, party2, 11, sellOrder1.Price.Uint64()+1)
 	sellConf4, err := tm.market.SubmitOrder(ctx, sellOrder4)
@@ -7781,7 +7781,7 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 
 	md = tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
-	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
+	require.Equal(t, types.AuctionTriggerUnableToDeployLPOrders, md.Trigger)
 
 	buyOrder4 := getMarketOrder(tm, tm.now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder4", types.SideBuy, party1, 1, buyOrder1.Price.Uint64()-1)
 	buyConf4, err := tm.market.SubmitOrder(ctx, buyOrder4)

@@ -531,10 +531,10 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 			ctx, lpSubmissionCancel, lpparty),
 	)
 
-	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
+	t.Run("bond account doesn't exist any more", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
-		assert.NoError(t, err)
-		assert.Equal(t, num.UintZero(), acc.Balance)
+		assert.ErrorContains(t, err, "account does not exist")
+		assert.Nil(t, acc)
 	})
 }
 
@@ -642,7 +642,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			expectedStatus := types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusParked
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -792,7 +792,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			expectedStatus := types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusParked
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -820,5 +820,5 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	err := tm.market.AmendLiquidityProvision(
 		ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash())
-	require.EqualError(t, err, "margin would be below maintenance: insufficient margin")
+	require.EqualError(t, err, "commitment submission not allowed")
 }

@@ -21,6 +21,7 @@ type ClientAPI interface {
 	ConnectWallet(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails)
 	GetChainID(ctx context.Context) (jsonrpc.Result, *jsonrpc.ErrorDetails)
 	ListKeys(ctx context.Context, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
+	CheckTransaction(ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
 	SignTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
 	SendTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
 }
@@ -133,6 +134,25 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 		}
 
 		return clientAPI.SendTransaction(ctx, rpcRequest.Params, connectedWallet)
+	}
+
+	commands["client.check_transaction"] = func(ctx context.Context, _ *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+		hostname, err := resolveHostname(httpRequest)
+		if err != nil {
+			return nil, jsonrpc.NewServerError(api.ErrorCodeHostnameResolutionFailure, err)
+		}
+
+		vwt, err := ExtractVWT(httpRequest)
+		if err != nil {
+			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
+		}
+
+		connectedWallet, err := connectionsManager.ConnectedWallet(hostname, vwt.Token())
+		if err != nil {
+			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
+		}
+
+		return clientAPI.CheckTransaction(ctx, rpcRequest.Params, connectedWallet)
 	}
 
 	return &API{

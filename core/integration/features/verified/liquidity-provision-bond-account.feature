@@ -40,8 +40,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |
     And the parties deposit on asset's general account the following amount:
-      | party  | asset | amount    |
-      | party0 | USD   | 12500    |
+      | party  | asset | amount |
+      | party0 | USD   | 12500  |
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
@@ -160,8 +160,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
-      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 462397       | 50000          | 130           |
+      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 462397       | 50000          | 130           |
 
   @Now
   Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting

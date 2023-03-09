@@ -162,7 +162,7 @@ func testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails(t *te
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testAdminDescribeKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {

@@ -3650,8 +3650,10 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_OPENING
   "Price monitoring"
   AUCTION_TRIGGER_PRICE
-  "Liquidity monitoring"
-  AUCTION_TRIGGER_LIQUIDITY
+  "Liquidity monitoring due to unmet target stake"
+  AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
+  "Liquidity monitoring due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book"
+  AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 }
 
 "Event types"

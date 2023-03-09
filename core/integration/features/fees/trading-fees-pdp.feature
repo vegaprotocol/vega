@@ -801,8 +801,8 @@ Feature: Fees calculations
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -952,8 +952,8 @@ Feature: Fees calculations
     And the network moves ahead "1" blocks
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -995,7 +995,7 @@ Feature: Fees calculations
     # we're still in liquidity auction
     #Then the market data for the market "ETH/DEC21" should be:
     #| trading mode                    | auction trigger           |
-    #  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+    #  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -1167,7 +1167,7 @@ Feature: Fees calculations
   # When the opening auction period ends for market "ETH/DEC21"
   # Then the market data for the market "ETH/DEC21" should be:
   #   | trading mode                    | auction trigger           |
-  #   | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+  #   | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
   # Given the parties submit the following liquidity provision:
   #   | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -1310,7 +1310,7 @@ Feature: Fees calculations
       | trader4  | ETH   | ETH/DEC21 |   3564 | 237     |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             | 
+      | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
   Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead

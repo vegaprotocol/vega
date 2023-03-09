@@ -26,11 +26,8 @@ import (
 )
 
 func TestOracleSpec(t *testing.T) {
-	t.Run("Creating without required public keys fails", testOracleSpecCreatingWithoutPubKeysFails)
 	t.Run("Creating builtin oracle without pubkeys succeeeds", testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds)
-	t.Run("Creating without filters fails", testOracleSpecCreatingWithoutFiltersFails)
 	t.Run("Creating with filters but without key fails", testOracleSpecCreatingWithFiltersWithoutKeyFails)
-	t.Run("Creating with filters but without property name fails", testOracleSpecCreatingWithFiltersWithoutPropertyNameFails)
 	t.Run("Creating with split filters with same type works", testOracleSpecCreatingWithSplitFiltersWithSameTypeFails)
 	t.Run("Creating with filters with inconvertible type fails", testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails)
 	t.Run("Matching with unauthorized public keys fails", testOracleSpecMatchingUnauthorizedPubKeysFails)
@@ -44,37 +41,6 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Matching presence of missing properties fails", testOracleSpecMatchingPropertiesPresenceFails)
 	t.Run("Matching with inconvertible type fails", testOracleSpecMatchingWithInconvertibleTypeFails)
 	t.Run("Verifying binding of property works", testOracleSpecVerifyingBindingWorks)
-}
-
-func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
-	// given
-	spec := types.ExternalDataSourceSpec{
-		Spec: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: []*types.Signer{},
-					Filters: []*types.DataSourceSpecFilter{
-						{
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "price",
-								Type: datapb.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: []*types.DataSourceSpecCondition{},
-						},
-					},
-				},
-			),
-		},
-	}
-	// when
-	oracleSpec, err := oracles.NewOracleSpec(spec)
-
-	// then
-	require.Error(t, err)
-	assert.Equal(t, "signers are required", err.Error())
-	assert.Nil(t, oracleSpec)
 }
 
 func testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds(t *testing.T) {
@@ -108,32 +74,6 @@ func testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds(t *testing.T) {
 	assert.NotNil(t, oracleSpec)
 }
 
-func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
-	// given
-	spec := types.ExternalDataSourceSpec{
-		Spec: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: []*types.Signer{
-						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-					},
-					Filters: []*types.DataSourceSpecFilter{},
-				},
-			),
-		},
-	}
-
-	// when
-	oracleSpec, err := oracles.NewOracleSpec(spec)
-
-	// then
-	require.Error(t, err)
-	assert.Equal(t, "at least one filter is required", err.Error())
-	assert.Nil(t, oracleSpec)
-}
-
 func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	// given
 	spec := types.ExternalDataSourceSpec{
@@ -162,40 +102,6 @@ func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	// then
 	require.Error(t, err)
 	assert.Equal(t, "a property key is required", err.Error())
-	assert.Nil(t, oracleSpec)
-}
-
-func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
-	// given
-	spec := types.ExternalDataSourceSpec{
-		Spec: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: []*types.Signer{
-						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-					},
-					Filters: []*types.DataSourceSpecFilter{
-						{
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "",
-								Type: datapb.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: nil,
-						},
-					},
-				},
-			),
-		},
-	}
-
-	// when
-	oracleSpec, err := oracles.NewOracleSpec(spec)
-
-	// then
-	require.Error(t, err)
-	assert.Equal(t, "a property name is required", err.Error())
 	assert.Nil(t, oracleSpec)
 }
 

@@ -42,8 +42,13 @@ type EventReceiver interface {
 	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
 }
 
-type eventReceiverSender interface {
-	EventReceiver
+type RawEventReceiver interface {
+	Listen() error
+	Receive(ctx context.Context) (<-chan []byte, <-chan error)
+}
+
+type rawEventReceiverSender interface {
+	RawEventReceiver
 	Send(events.Event) error
 }
 

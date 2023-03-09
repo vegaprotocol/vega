@@ -222,7 +222,7 @@ func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error
 		return api.AdminSendTransactionParams{}, err
 	}
 
-	// Encode transaction into nested structure; this is a bit nasty but mirroring what happens
+	// Encode transaction into a nested structure; this is a bit nasty but mirroring what happens
 	// when our json-rpc library parses a request. There's an issue (6983#) to make the use
 	// json.RawMessage instead.
 	transaction := make(map[string]any)

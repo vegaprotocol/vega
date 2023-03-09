@@ -77,6 +77,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
 			os.Exit(1)
 		}
+		defer networkHistoryStore.Stop()
 
 		segments, err := networkHistoryStore.ListAllIndexEntriesOldestFirst()
 		if err != nil {

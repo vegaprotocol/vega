@@ -146,6 +146,7 @@ type MarketCollateral interface {
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
 	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error)
+	RemoveBondAccount(partyID, marketID, asset string) error
 	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error)
 	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
 	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
@@ -1733,7 +1734,27 @@ func (m *Market) confirmMTM(
 				m.log.Error("Failed to perform bond slashing",
 					logging.Error(err))
 			}
-			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+			// if bond slashing occurred then amounts in "closed" will not be accurate
+			if len(transfers) > 0 {
+				m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+				asset, _ := m.mkt.GetAsset()
+				closedRecalculated := make([]events.Margin, 0, len(closed))
+				for _, c := range closed {
+					if pos, ok := m.position.GetPositionByPartyID(c.Party()); ok {
+						margin, err := m.collateral.GetPartyMargin(pos, asset, m.mkt.ID)
+						if err != nil {
+							m.log.Error("couldn't get party margin",
+								logging.PartyID(c.Party()),
+								logging.Error(err))
+							// keep old value if we weren't able to recalculate
+							closedRecalculated = append(closedRecalculated, c)
+							continue
+						}
+						closedRecalculated = append(closedRecalculated, margin)
+					}
+				}
+				closed = closedRecalculated
+			}
 		}
 		if len(closed) > 0 {
 			upd, err := m.resolveClosedOutParties(

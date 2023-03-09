@@ -291,7 +291,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 
 	for _, evt := range positions {
 		party := evt.Party()
-		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size(), evt.Price())
+		current, lastSettledPrice := e.getOrCreateCurrentPosition(party, evt.Size())
 		traded, hasTraded = trades[party]
 		tradeset := make([]events.TradeSettlement, 0, len(traded))
 		for _, t := range traded {
@@ -460,11 +460,11 @@ func (e *Engine) settleAll(assetDecimals uint32) ([]*types.Transfer, error) {
 	return aggregated, nil
 }
 
-func (e *Engine) getOrCreateCurrentPosition(party string, size int64, price *num.Uint) (int64, *num.Uint) {
+func (e *Engine) getOrCreateCurrentPosition(party string, size int64) (int64, *num.Uint) {
 	p, ok := e.settledPosition[party]
 	if !ok {
 		e.settledPosition[party] = size
-		return 0, price
+		return 0, num.UintZero()
 	}
 	return p, e.lastMarkPrice
 }

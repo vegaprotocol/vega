@@ -49,16 +49,28 @@ func (mr *MockAuctionStateMockRecorder) ExpiresAt() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpiresAt", reflect.TypeOf((*MockAuctionState)(nil).ExpiresAt))
 }
 
-// ExtendAuctionLiquidity mocks base method.
-func (m *MockAuctionState) ExtendAuctionLiquidity(arg0 types.AuctionDuration) {
+// ExtendAuctionLiquidityNoOrders mocks base method.
+func (m *MockAuctionState) ExtendAuctionLiquidityNoOrders(arg0 types.AuctionDuration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ExtendAuctionLiquidity", arg0)
+	m.ctrl.Call(m, "ExtendAuctionLiquidityNoOrders", arg0)
 }
 
-// ExtendAuctionLiquidity indicates an expected call of ExtendAuctionLiquidity.
-func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidity(arg0 interface{}) *gomock.Call {
+// ExtendAuctionLiquidityNoOrders indicates an expected call of ExtendAuctionLiquidityNoOrders.
+func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidityNoOrders(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidity", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidity), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidityNoOrders", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidityNoOrders), arg0)
+}
+
+// ExtendAuctionLiquidityUnmetTarget mocks base method.
+func (m *MockAuctionState) ExtendAuctionLiquidityUnmetTarget(arg0 types.AuctionDuration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExtendAuctionLiquidityUnmetTarget", arg0)
+}
+
+// ExtendAuctionLiquidityUnmetTarget indicates an expected call of ExtendAuctionLiquidityUnmetTarget.
+func (mr *MockAuctionStateMockRecorder) ExtendAuctionLiquidityUnmetTarget(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionLiquidityUnmetTarget", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionLiquidityUnmetTarget), arg0)
 }
 
 // InAuction mocks base method.
@@ -129,14 +141,26 @@ func (mr *MockAuctionStateMockRecorder) SetReadyToLeave() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReadyToLeave", reflect.TypeOf((*MockAuctionState)(nil).SetReadyToLeave))
 }
 
-// StartLiquidityAuction mocks base method.
-func (m *MockAuctionState) StartLiquidityAuction(arg0 time.Time, arg1 *types.AuctionDuration) {
+// StartLiquidityAuctionNoOrders mocks base method.
+func (m *MockAuctionState) StartLiquidityAuctionNoOrders(arg0 time.Time, arg1 *types.AuctionDuration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartLiquidityAuction", arg0, arg1)
+	m.ctrl.Call(m, "StartLiquidityAuctionNoOrders", arg0, arg1)
 }
 
-// StartLiquidityAuction indicates an expected call of StartLiquidityAuction.
-func (mr *MockAuctionStateMockRecorder) StartLiquidityAuction(arg0, arg1 interface{}) *gomock.Call {
+// StartLiquidityAuctionNoOrders indicates an expected call of StartLiquidityAuctionNoOrders.
+func (mr *MockAuctionStateMockRecorder) StartLiquidityAuctionNoOrders(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuction", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuction), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuctionNoOrders", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuctionNoOrders), arg0, arg1)
+}
+
+// StartLiquidityAuctionUnmetTarget mocks base method.
+func (m *MockAuctionState) StartLiquidityAuctionUnmetTarget(arg0 time.Time, arg1 *types.AuctionDuration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartLiquidityAuctionUnmetTarget", arg0, arg1)
+}
+
+// StartLiquidityAuctionUnmetTarget indicates an expected call of StartLiquidityAuctionUnmetTarget.
+func (mr *MockAuctionStateMockRecorder) StartLiquidityAuctionUnmetTarget(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartLiquidityAuctionUnmetTarget", reflect.TypeOf((*MockAuctionState)(nil).StartLiquidityAuctionUnmetTarget), arg0, arg1)
 }

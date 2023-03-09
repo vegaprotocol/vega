@@ -141,6 +141,12 @@ func (l *NodeCommand) runNode([]string) error {
 	})
 
 	eg.Go(func() error {
+		defer func() {
+			if l.conf.NetworkHistory.Enabled {
+				l.networkHistoryService.Stop()
+			}
+		}()
+
 		return l.sqlBroker.Receive(ctx)
 	})
 
@@ -164,12 +170,7 @@ func (l *NodeCommand) runNode([]string) error {
 	nodeLog.Info("Vega data node startup complete")
 
 	err := eg.Wait()
-
 	if errors.Is(err, context.Canceled) {
-		if l.conf.NetworkHistory.Enabled {
-			l.networkHistoryService.Stop()
-		}
-
 		return nil
 	}
 

@@ -68,7 +68,7 @@ func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
 					"type": "not vega command",
 				},
 			},
-			expectedError: errors.New("the transaction is not a valid Vega command: unknown field \"type\" in vega.wallet.v1.SubmitTransactionRequest"),
+			expectedError: errors.New("the transaction does not use a valid Vega command: unknown field \"type\" in vega.wallet.v1.SubmitTransactionRequest"),
 		},
 	}
 
@@ -412,7 +412,7 @@ func testFailingToGetSpamStatsDoesNotSignTransaction(t *testing.T) {
 	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
 	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
 	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(types.SpamStatistics{}, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block from the node: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.NetworkError, fmt.Errorf("could not get the latest block information from the node: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
 
 	// when
