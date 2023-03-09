@@ -150,7 +150,7 @@ const (
 	AuctionTriggerPrice AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_PRICE
 	// Liquidity monitoring due to unmet target trigger.
 	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
-	// Liquidity monitoring due to being unable to deploy LP orders due to missing best bid or ask
+	// Liquidity monitoring due to being unable to deploy LP orders due to missing best bid or ask.
 	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 )
 
