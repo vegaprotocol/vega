@@ -6,97 +6,10 @@
 			"edges": [
 				{
 					"node": {
-						"id": "fd33cf01126a58d950161dcdea1d2026dc9bea6f2e8f4db54d151d852ad82388",
+						"id": "ea438780e0f53a4fade0d05819f46716e101f2e63e18803cd3731875d523135b",
 						"infrastructureFeeAccount": {
 							"asset": {
-								"id": "fd33cf01126a58d950161dcdea1d2026dc9bea6f2e8f4db54d151d852ad82388"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "f821cf3188ebf0b38b293869ee83014ffc3167227b0d62bc206eb0dc8de6666b",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "e7992c821cd759786be5e9e11d35c35eee69701c7bc2aa5058f308db9b3bf35f",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "e624e09a4a01f9510519b4c5d3de24e0037aa73b04a7919b4b25f7b696b5f5a5",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "e51e465052cfaf5f7f51e5b338213531a1f1b4271bc171474f9d0ea923252086",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "e51e465052cfaf5f7f51e5b338213531a1f1b4271bc171474f9d0ea923252086"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "d8c29d479e6539a02a9cedacbe5dd84034fbbc3e862decfd81cb1bf4a944623f",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "d112e8ec08a8c55bc2e23bfa6f82f67f6b0918a0f69111e8e1a3b4a4cc12883a",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "cfd0ac1846e15f50b3255efaab20b682a1889594c652c0604fad0d1a38c2f627",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "ce9dcc857ad86932b636ddda1105b10c8368443bae4f3148b8d504cd626e67d2",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "c4c9f3f113f3d33166d2365240e330ac1f315b4a86ae6e5990d208a9f0e3c691",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "b81fbe84f16898324516bc6afabd3eaab8137b05ad152ba6010ff3f5d3ed6e2a",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "b81fbe84f16898324516bc6afabd3eaab8137b05ad152ba6010ff3f5d3ed6e2a"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "b775c642226bba19b61acbd17e0e8c29cbea01e608bcbeed31260179bbc024c8"
+								"id": "ea438780e0f53a4fade0d05819f46716e101f2e63e18803cd3731875d523135b"
 							},
 							"balance": "0",
 							"market": null,
@@ -119,22 +32,10 @@
 				},
 				{
 					"node": {
-						"id": "a3dd1be1fd843cbe3461b273486d7e8004887688639f5296527398160444de85",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "93884bc59d09bec81c614cbfddcb94433e49935bd4a6eeeb61a0c0d0265cd2aa",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "8e9ad69580968668a30ff2f4625bc10828aa2a69839240c4eea8cdda4fb48c1b",
+						"id": "aa7a5a629097b0d3abdb2510d992dfd943409db2cbe63151f6dd710a64f6c8bd",
 						"infrastructureFeeAccount": {
 							"asset": {
-								"id": "8e9ad69580968668a30ff2f4625bc10828aa2a69839240c4eea8cdda4fb48c1b"
+								"id": "aa7a5a629097b0d3abdb2510d992dfd943409db2cbe63151f6dd710a64f6c8bd"
 							},
 							"balance": "0",
 							"market": null,
@@ -144,226 +45,15 @@
 				},
 				{
 					"node": {
-						"id": "8aae4be5b878e7f3353b04a7084b299061a529d21d8860bab2a8ff0e03c9ec85",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "7a43e14bdd3ae2f05613cb0ad59bca493dc8cd0a79cd95535e403c32637f4f60",
+						"id": "0fa76c9a96793dd080f21c41e4c192cee76d34bd150d5ead49574296a10cc665",
 						"infrastructureFeeAccount": {
 							"asset": {
-								"id": "7a43e14bdd3ae2f05613cb0ad59bca493dc8cd0a79cd95535e403c32637f4f60"
+								"id": "0fa76c9a96793dd080f21c41e4c192cee76d34bd150d5ead49574296a10cc665"
 							},
 							"balance": "0",
 							"market": null,
 							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
 						}
-					}
-				},
-				{
-					"node": {
-						"id": "7971e5aa6349eb326d9faa3a3bc75d4a01cd0e5fe26a210a755170f795abf8ae",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "75c3b031975927b2d5180c64115b89457f1d71b908831374bc6072cc7008f9f2",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "71ed1adfb73c79a658663f05a71f09f773b4f19869bef9e18e5163f34366faa9",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "71ed1adfb73c79a658663f05a71f09f773b4f19869bef9e18e5163f34366faa9"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "679ab34d5d2dc96037571d6661d1add767de675c47fe91e20d2c8d12f45c4168",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "63880cae33125002b9f6601eb691e47aec7cb653a9e6c1545292acebc1309062",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "620654a7b9c7914495a93002034ca90aa6b337fa1ff6c6c9d3f51c14ec310d44",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "5e39a2390c2a56ab899bb0b8076aa99acd3e29c103177138ffcdc8f4f1cd04f9",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "5ce4b0a1364c82429ba1d3bfe164a01fe85ceb69206b5d441a19b285b22b8de2",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "5c533642c94e03176259446afa8ad913e315ac223b1ef77fe6163712db21caa1",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "5afeec63fc8c991817a7c4d15e5e2bc0e0db9f5d4b8588b8e7e5c31f19923cf0",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "5afeec63fc8c991817a7c4d15e5e2bc0e0db9f5d4b8588b8e7e5c31f19923cf0"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "5a615c0fa27bb0aba364b09a5af2a5c1f05d5a0769b3bab6b98311e9194d1208"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "5a23f61df3feef09b48a31fff7710d006cbe69b9a9aff4117824653ab616964d",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "50a1f81f9dd693babe3aee035051dd5b0b8eeecda4c370c04937c92c8a103fa8",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "50a1f81f9dd693babe3aee035051dd5b0b8eeecda4c370c04937c92c8a103fa8"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "46fa9a5a7850eb7761bb01930a2718e119f4fec873e813dcca3443c55a155009",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "45f148aa80cba0b9c301c5e2e949a5afe54bc5922916f0b1c5abe85f30609f4e",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "45d11aa933ccf1dfd7e7569fc4372e364e6f48df2afbdde0d8a3aec105344f8e",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "45d11aa933ccf1dfd7e7569fc4372e364e6f48df2afbdde0d8a3aec105344f8e"
-							},
-							"balance": "1",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "41da6d9faa63f968015de2fdea769045414cbf2497809a6950a9b3abcd735d0a",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "41da6d9faa63f968015de2fdea769045414cbf2497809a6950a9b3abcd735d0a"
-							},
-							"balance": "0",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "3bdc87420ecea6c6f9f9c8a0a40a0420f01b033df6b36ce6a93caf8355052439",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "37c040533a4df1d68bbcb0e1dc2fafc961cdc40627cd8cc8b7d204fde2d3cbc3",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "280e88d572f0fa77bcc36624035450e8c303b56bbc19b0ac86c2f05a9a38c717",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "20d14cd4f3a67810c895e862e583adb42d42a35bacd06add0836de798cf43467",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717",
-						"infrastructureFeeAccount": {
-							"asset": {
-								"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717"
-							},
-							"balance": "1",
-							"market": null,
-							"type": "ACCOUNT_TYPE_FEES_INFRASTRUCTURE"
-						}
-					}
-				},
-				{
-					"node": {
-						"id": "1db787e5f0e761c477234f053ea766d4c427267340544ac42c4f1bbb2e3dfa23",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "13e42422949992d0480dd8fe5434cb86510f90b07f4d4f0d2ca5968111ab5177",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "0f60547967b175eb1f1163b918f3b40d73cde94b8956860dc0abff81a8c229db",
-						"infrastructureFeeAccount": null
-					}
-				},
-				{
-					"node": {
-						"id": "0cc66e6bf0062f5014afda499728da979de287dd26454d3181e02d711180df37",
-						"infrastructureFeeAccount": null
 					}
 				},
 				{
@@ -382,5 +72,5 @@
 			]
 		}
 	},
-	"Duration": 5263792
+	"Duration": 27341026
 }
