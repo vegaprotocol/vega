@@ -108,8 +108,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | ETH/DEC20 | 632800019919| 949200029878 | 1265600039838 | 1898400059757 |
 
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger                    | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY  | 199186       | 0              | 112           |
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
      
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
 
@@ -163,8 +163,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | USD   | ETH/DEC21 | 3100294| 0       | 0      |
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger                    | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY  | 199186       | 0              | 112           |
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
 
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
