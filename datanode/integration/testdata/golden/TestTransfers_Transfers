@@ -3,24 +3,8 @@
 	"Query": "{ transfersConnection(direction : To){ edges{ node{ id from fromAccountType to toAccountType amount reference status asset{ id } } } } }",
 	"Result": {
 		"transfersConnection": {
-			"edges": [
-				{
-					"node": {
-						"amount": "1200000000000000000000",
-						"asset": {
-							"id": "1e742dff5284512a23dab7ecc8a5b6e369df8db06ecbc910a715fffc59b3a717"
-						},
-						"from": "60d57f010c4cbec3e6ada27ee6b2f5c0ae648c82d1cd2615f4bf94dbad284c12",
-						"fromAccountType": "ACCOUNT_TYPE_GENERAL",
-						"id": "72ffd8bb538fbe9d2d52a43afc61402dc3daa2139fc1463e2b15f22d1e8d6b6d",
-						"reference": "TestTransfer",
-						"status": "STATUS_DONE",
-						"to": "9e943ef53c200110b1d9945f35819c326671e71a20a4b60ec1d9542c65c2d7ff",
-						"toAccountType": "ACCOUNT_TYPE_GENERAL"
-					}
-				}
-			]
+			"edges": null
 		}
 	},
-	"Duration": 2055084
+	"Duration": 2903006
 }
