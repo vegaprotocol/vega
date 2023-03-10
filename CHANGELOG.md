@@ -50,6 +50,7 @@
 - [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
 - [7483](https://github.com/vegaprotocol/vega/issues/7483) - Fix market data history returning 0 values for price monitoring bounds
 - [7732](https://github.com/vegaprotocol/vega/issues/7732) - Fix panic when amending orders
+- [7588](https://github.com/vegaprotocol/vega/issues/7588) - Fix margin calculations when missing exit price
 - [7766](https://github.com/vegaprotocol/vega/issues/7766) - Fix orders from new parties not being included in the nearest MTM
 - [7499](https://github.com/vegaprotocol/vega/issues/7499) - Implement transaction check functionality to wallet
 - [7745](https://github.com/vegaprotocol/vega/issues/7745) - Use margin after the application of a bond penalty to assess LP solvency

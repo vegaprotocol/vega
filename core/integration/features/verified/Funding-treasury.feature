@@ -42,7 +42,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec19Oracle     | 0.74667                | 0                         |
       | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 1e6                    | 1e6                       |
       | ETH/DEC21 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec21Oracle     | 1e6                    | 1e6                       |
 
@@ -175,8 +175,8 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 72966  | 999999932820 |
-      | sellSideProvider | USD   | ETH/DEC19 | 853949 | 999999148951 |
+      | buySideProvider  | USD   | ETH/DEC19 | 66216  | 999999939570 |
+      | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
 
     When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -191,8 +191,8 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | buySideProvider  | USD   | ETH/DEC19 | 67146  | 999999932820 |
-      | sellSideProvider | USD   | ETH/DEC19 | 859769 | 999999148951 |
+      | buySideProvider  | USD   | ETH/DEC19 | 60396  | 999999939570 |
+      | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054 |
 
     Then the following transfers should happen:
       | from            | to               | from account            | to account              | market id | amount | asset |

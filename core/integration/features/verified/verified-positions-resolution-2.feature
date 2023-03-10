@@ -3,7 +3,7 @@ Feature: Position resolution case 2
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.535                  | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -49,7 +49,7 @@ Feature: Position resolution case 2
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 23200       | 74240  | 92800   | 116000  |
+      | designatedLooser | ETH/DEC19 | 23273       | 74473  | 93092   | 116365  |
 
     # insurance pool generation - modify order book
     Then the parties cancel the following orders:
@@ -80,7 +80,7 @@ Feature: Position resolution case 2
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 29000       | 92800  | 116000  | 145000  |
+      | designatedLooser | ETH/DEC19 | 18618       | 59577  | 74472   | 93090  |
 
     # check positions
     Then the parties should have the following profit and loss:

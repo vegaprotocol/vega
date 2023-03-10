@@ -8,7 +8,7 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | network.markPriceUpdateMaximumFrequency | 0s    |
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount       |
       | party1     | ETH   | 980000000    |
@@ -131,8 +131,8 @@ Feature: CASE-5: Trader submits short order that will trade - new formula & low 
       | sellSideMM | ETH/DEC19 | sell | 11     | 50000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 50     | 50000000 | 2                | TYPE_LIMIT | TIF_GTC | ref-2     |
     And the parties should have the following margin levels:
-      | party  | market id | maintenance | search    | initial   | release   |
-      | party1 | ETH/DEC19 | 65000000    | 208000000 | 260000000 | 325000000 |
+      | party  | market id | maintenance | search     | initial    | release    |
+      | party1 | ETH/DEC19 | 715000000   | 2288000000 | 2860000000 | 3575000000 |
     And the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | party1 | -13    | -530200000     | 0            |

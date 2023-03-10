@@ -3,7 +3,7 @@ Feature: Position resolution case 3
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.5349                 | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -36,15 +36,17 @@ Feature: Position resolution case 3
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
-    # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (150-(140*1+140*1)/2) = 290*10 = 2900
+    And the parties should have the following margin levels:
+      | party            | market id | maintenance | search | initial | release |
+      | designatedLooser | ETH/DEC19 | 23269       | 74460  | 93076   | 116345  |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 11600  | 400     |
+      | designatedLooser | BTC   | ETH/DEC19 | 12000  | 0     |
 
     Then the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 2900        | 9280   | 11600   | 14500   |
+      | designatedLooser | ETH/DEC19 | 23269       | 74460  | 93076   | 116345  |
 
     # insurance pool generation - modify order book
     Then the parties cancel the following orders:
@@ -57,7 +59,7 @@ Feature: Position resolution case 3
     # check the party accounts
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | BTC   | ETH/DEC19 | 11600  | 400     |
+      | designatedLooser | BTC   | ETH/DEC19 | 12000  | 0       |
 
     # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders with ticks:

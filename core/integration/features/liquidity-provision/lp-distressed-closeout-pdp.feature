@@ -43,11 +43,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | party1 | ETH/DEC21 | buy  | 100    | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH/DEC21 | buy  | 100000 | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/DEC21 | buy  | 100    | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/DEC21 | buy  | 1000   | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | party2 | ETH/DEC21 | sell | 100    | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | party2 | ETH/DEC21 | sell | 100    | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party2 | ETH/DEC21 | sell | 100000 | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       | party2 | ETH/DEC21 | sell | 1000   | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     When the opening auction period ends for market "ETH/DEC21"
@@ -80,46 +80,46 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 474    | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1420   | 0       | 3482 |
-    And the insurance pool balance should be "759" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 1468   | 0       | 3386 |
+    And the insurance pool balance should be "807" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 474    | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2150   | 0       | 2064 |
-    And the insurance pool balance should be "1468" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 2412   | 0       | 1540 |
+    And the insurance pool balance should be "1730" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 474    | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2790   | 0       | 826  |
-    And the insurance pool balance should be "2087" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 3148   | 0       | 0    |
+    And the insurance pool balance should be "2555" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 474    | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1782   | 0       | 0    |
-    And the insurance pool balance should be "3942" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
+    And the insurance pool balance should be "4664" for the market "ETH/DEC21"
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
 
-    # existing LP position not liquidated as there isn't enough volume on the book
+    # existing LP position liquidated
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party0 | -2096  | -90            | 0            |
+      | party0 |      0 | 0              | -2320        |
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 1100  | 100    |
+      | sell | 1100  | 97904  |
       | buy  | 990   | 100    |
-      | buy  | 900   | 100    |
+      | buy  | 900   | 100000 |
     And the accumulated liquidity fees should be "29" for the market "ETH/DEC21"
 
     # Make sure that at no point fees get distributed since the LP has been closed out
