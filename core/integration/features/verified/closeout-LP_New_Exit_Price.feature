@@ -181,8 +181,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderB | ETH/DEC21 | 62745519    | 94118278 | 125491038 | 188236557 |
 
       And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger                    | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY  | 199186       | 0              | 112           |
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
     
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
