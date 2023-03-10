@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -295,13 +296,16 @@ func (s *Store) updateBatch(ctx context.Context, params map[string]string) error
 	evts := make([]events.Event, 0, len(params))
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for k, v := range params {
+	keys := maps.Keys(params)
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := params[k]
 		svalue, ok := s.store[k]
 		if !ok {
 			s.log.Warn("unknown network parameter read from checkpoint", logging.String("param", k))
 			continue
 		}
-		if err := svalue.Update(v); err != nil {
+		if err := svalue.UpdateOptionalValidation(v, false); err != nil {
 			return fmt.Errorf("unable to update %s: %w", k, err)
 		}
 		s.paramUpdates[k] = struct{}{}
