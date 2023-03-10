@@ -150,7 +150,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general      |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0            |
+      | designatedLoser  | USD   | ETH/DEC19 | 0      | 0            |
       | sellSideProvider | USD   | ETH/DEC19 | 83564  | 999999919336 |
       | buySideProvider  | USD   | ETH/DEC19 | 66216  | 999999939570 |
       | aux              | USD   | ETH/DEC19 | 1088   | 999999998902 |
@@ -219,7 +219,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general       |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0             |
+      | designatedLoser  | USD   | ETH/DEC19 | 0      | 0             |
       | sellSideProvider | USD   | ETH/DEC19 | 64666  | 999999944054  |
       | buySideProvider  | USD   | ETH/DEC19 | 60396  | 999999939570  |
       | aux              | USD   | ETH/DEC19 | 1108   | 999999998862  |
