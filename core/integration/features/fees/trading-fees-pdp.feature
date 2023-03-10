@@ -801,8 +801,8 @@ Feature: Fees calculations
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -952,8 +952,8 @@ Feature: Fees calculations
     And the network moves ahead "1" blocks
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -983,8 +983,8 @@ Feature: Fees calculations
     #| trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | initial | 
-      | trader4 | ETH/DEC21 | 4421        | 5305    | 
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC21 | 4421        | 5305    |
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -995,7 +995,7 @@ Feature: Fees calculations
     # we're still in liquidity auction
     #Then the market data for the market "ETH/DEC21" should be:
     #| trading mode                    | auction trigger           |
-    #  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+    #  | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -1167,7 +1167,7 @@ Feature: Fees calculations
   # When the opening auction period ends for market "ETH/DEC21"
   # Then the market data for the market "ETH/DEC21" should be:
   #   | trading mode                    | auction trigger           |
-  #   | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+  #   | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
   # Given the parties submit the following liquidity provision:
   #   | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -1306,11 +1306,11 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 |      0 | 0       |
-      | trader4  | ETH   | ETH/DEC21 |   3801 | 0       |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader4  | ETH   | ETH/DEC21 | 3801   | 0       |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             | 
+      | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
   Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead

@@ -148,8 +148,10 @@ const (
 	AuctionTriggerOpening AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_OPENING
 	// Price monitoring trigger.
 	AuctionTriggerPrice AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_PRICE
-	// Liquidity monitoring trigger.
-	AuctionTriggerLiquidity AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
+	// Liquidity monitoring due to unmet target trigger.
+	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
+	// Liquidity monitoring due to being unable to deploy LP orders due to missing best bid or ask.
+	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 )
 
 type InstrumentMetadata struct {

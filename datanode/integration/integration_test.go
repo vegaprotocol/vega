@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	lastEpoch            = 346
+	lastEpoch            = 110
 	playbackTimeout      = 5 * time.Minute
 	chainID              = "testnet-001"
 	compressedTestdata   = "testdata/system_tests.evt.gz"
@@ -206,7 +206,7 @@ func assertGraphQLQueriesReturnSame(t *testing.T, query string) {
 		details := queryDetails{}
 		require.NoError(t, json.Unmarshal(jsonBytes, &details), "Unable to unmarshal golden file")
 		assert.Equal(t, details.Query, query, "GraphQL query string differs from recorded in the golden file, regenerate by running 'go test' with the -golden flag")
-		assert.JSONEq(t, string(respJsn), string(respJsn))
+		assert.JSONEq(t, string(respJsn), string(details.Result))
 	}
 }
 
