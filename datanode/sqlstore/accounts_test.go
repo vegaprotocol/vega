@@ -95,14 +95,6 @@ func TestAccount(t *testing.T) {
 		assert.Len(t, accs, 0)
 	})
 
-	// TODO: remove.
-	t.Run("query account balance v1", func(t *testing.T) {
-		// QueryBalanceV1 correctly filters on marketID
-		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{account.MarketID}}
-		_, err := accountStore.QueryBalancesV1(ctx, filter, entities.OffsetPagination{})
-		require.NoError(t, err)
-	})
-
 	accBal1 := entities.AccountBalance{Account: &account, Balance: decimal.NewFromInt(10)}
 	accBal2 := entities.AccountBalance{Account: &account2, Balance: decimal.NewFromInt(100)}
 
