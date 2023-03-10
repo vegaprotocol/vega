@@ -37,7 +37,10 @@ Feature: Test mark to market settlement with insurance pool
     And the market data for the market "ETH/DEC19" should be:
       | mark price | trading mode            | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1100         | 0              | 1             |
-
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | lpprov | ETH   | ETH/DEC19 | 0      | 100000  |
+     
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
