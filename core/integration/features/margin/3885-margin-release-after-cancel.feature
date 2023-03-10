@@ -4,7 +4,7 @@ Feature: Regression test for issue 3885
 
     Given the markets:
       | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e6                    | 1e6                       |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e0                    | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -49,14 +49,14 @@ Feature: Regression test for issue 3885
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 28     | 9972    |
+      | party1 | BTC   | ETH/DEC19 | 256    | 9744    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | party1-3  |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 37     | 9963    |
+      | party1 | BTC   | ETH/DEC19 | 265    | 9735    |
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -65,7 +65,7 @@ Feature: Regression test for issue 3885
       | party1 | party1-3  |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 37     | 9963    |
+      | party1 | BTC   | ETH/DEC19 | 265    | 9735    |
     # With a small change to force margin recalculating whennever an order is removed, we can have margins released.
     # But back when we implemented this, we decided not to check margins for parties who still have an open position.
     # The reasoning being that any party with an open position will get their margin released/topped up next MTM cycle.

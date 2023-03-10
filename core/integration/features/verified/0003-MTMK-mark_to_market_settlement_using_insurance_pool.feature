@@ -3,7 +3,7 @@ Feature: Test mark to market settlement with insurance pool
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -34,7 +34,13 @@ Feature: Test mark to market settlement with insurance pool
       | aux   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1100         | 0              | 1             |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | lpprov | ETH   | ETH/DEC19 | 0      | 100000  |
+     
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -42,7 +48,7 @@ Feature: Test mark to market settlement with insurance pool
       | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 5122   | 0       |
+      | party1 | ETH   | ETH/DEC19 | 1320   | 3802    |
       | party2 | ETH   | ETH/DEC19 | 132    | 9868    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
@@ -59,8 +65,8 @@ Feature: Test mark to market settlement with insurance pool
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 0       |
-      | party2 | ETH   | ETH/DEC19 | 13586  | 1414    |
-      | party3 | ETH   | ETH/DEC19 | 721    | 9279    |
+      | party2 | ETH   | ETH/DEC19 | 15000  | 0       |
+      | party3 | ETH   | ETH/DEC19 | 7920   | 2080    |
 
     And the cumulated balance for all accounts should be worth "155122"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"

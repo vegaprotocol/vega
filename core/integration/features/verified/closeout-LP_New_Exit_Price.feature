@@ -1,4 +1,4 @@
-Feature: Closeout LP scenarios with a trader comes with a crazy order, check the newly added slippage factor, inear and quadratic
+Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, check the newly added slippage factor, linear and quadratic
   # Replicate a scenario from Lewis
   Background:
 
@@ -28,7 +28,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.liquidity.stakeToCcyVolume       | 1     |
 
-  Scenario: 001 Replicate a scenario from Lewis, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
+  Scenario: 001 Replicate a scenario from Lewis with Elias' implementation on Exit_price when there is insufficient orders, linear slippage factor = 1e6, quadratic slippage factor = 1e6, 0019-MCAL-001, 0019-MCAL-002
     # 1. trader B made LP commitment 150,000
     # 2. trader C and A cross at 0.5 with size of 111, and this opens continuous trading (trade B is short)
     # 3. trader C comes with an order with crazy price
@@ -77,62 +77,40 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | buy  | 49    | 1      |
       | sell | 2000  | 1      |
       | sell | 2020  | 74     |
+      | sell | 3000  | 1      |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | traderA | ETH/DEC20 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | traderB | ETH/DEC20 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
+    Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | buy  | 29    | 0   |
+      | buy  | 49    | 1      |
+      | sell | 2000  | 0      |
+      | sell | 2020  | 0     |
+      | sell | 3000  | 0      |
+
+    # traderB has both LP pegged orders, limit order, and positions
+    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
+    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
+    # margin for short positions: min(112*9000000000000000, 50*(112*1e6+112^2*1e6))+112*50*3.55690359157934000 = 632,800,019,918.66 
+    # margin_long = 207237.0441
+    # margin_short= 632,800,019,918.66
+    
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond   |
-      | traderB | USD   | ETH/DEC20 | 511138 | 2439156 | 150000 |
+      | party   | asset | market id | margin  | general | bond  |
+      | traderB | USD   | ETH/DEC20 | 3100294 | 0       | 0     |
+
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search       | initial       | release       |
+      | traderB | ETH/DEC20 | 632800019919| 949200029878 | 1265600039838 | 1898400059757 |
 
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
-
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | bond   |
-      | traderA | USD   | ETH/DEC20 | 13754  | 9999999985946 |        |
-      | traderB | USD   | ETH/DEC20 | 511138 | 2439156       | 150000 |
-
-    When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price       | resulting trades | type       | tif     |
-      | traderC | ETH/DEC20 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
-
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin        | general       |
-      | traderA | USD   | ETH/DEC20 | 13754         | 9999999985946 |
-      | traderB | USD   | ETH/DEC20 | 3100294       | 0             |
-      # capping in action
-      | traderC | USD   | ETH/DEC20 | 42684        | 9999999957316 |
-
-    And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 0              | 112           |
-
-    # Need a trade at a new price to trigger closeout
-    When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | traderA | ETH/DEC20 | buy  | 1      | 51    | 0                | TYPE_LIMIT | TIF_GTC |
-      | traderC | ETH/DEC20 | sell | 1      | 51    | 1                | TYPE_LIMIT | TIF_GTC |
-
-    And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 51         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 204984       | 0              | 113           |
-
-    And the following trades should be executed:
-      | buyer   | price       | size | seller  |
-      | traderA | 51          |   1  | traderC |
-      | network | 45000000000 | 112  | traderC |
-      | traderB | 45000000000 | 112  | network |
-
-    Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl   |
-      | traderA | 113    | -188           | 0              |
-      | traderB | 0      | 0              | -3099994       |
-      | traderC | -113   | 5039999994288  | -5039996894106 |
-
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
+     
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
 
   Scenario: 002 Replicate a scenario from Lewis, linear slippage factor = 1e0, quadratic slippage factor = 1e2
@@ -182,36 +160,30 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
 
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general | bond   |
-      | traderB | USD   | ETH/DEC21 | 511138 | 2439156 | 150000 |
+      | traderB | USD   | ETH/DEC21 | 3100294| 0       | 0      |
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
 
+    # traderB has both LP pegged orders, limit order, and positions
+    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
+    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
+    # margin for short positions: min(112*9000000000000000, 50*(112*1e1+112^2*1e2))+112*50*3.55690359157934000 = 62745518.66
+    # margin_long = 207237.0441
+    # margin_short= 62745518.66
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | 
-      | traderA | USD   | ETH/DEC21 | 13754  | 9999999985946 | 
-     
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | bond   |
-      | traderB | USD   | ETH/DEC21 | 511138 | 2439156       | 150000 |
+      | party   | asset | market id | margin     | general       | 
+      | traderA | USD   | ETH/DEC21 | 125460250  | 9999874539450 | 
 
-    When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price       | resulting trades | type       | tif     |
-      | traderC | ETH/DEC21 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search   | initial   | release   |
+      | traderB | ETH/DEC21 | 62745519    | 94118278 | 125491038 | 188236557 |
 
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin    | general       | 
-      | traderA | USD   | ETH/DEC21 | 13754     | 9999999985946 | 
-      | traderB | USD   | ETH/DEC21 | 3100294   | 0             | 
-      | traderC | USD   | ETH/DEC21 | 42684     | 9999999957316 | 
-
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 0              | 112           |
-
-    # TODO: Fix bug with auction not getting properly triggered and verify that LP gets closed out after market goes back to continuous trading
-
+      And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 199186       | 0              | 112           |
+    
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: 003 Replicate a scenario from Lewis, linear slippage factor = 1e1, quadratic slippage factor = 1e3
@@ -243,11 +215,6 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | party   | market id | maintenance | search  | initial | release |
       | traderB | ETH/DEC22 | 1449759     | 2174638 | 2899518 | 4349277 |
 
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
-    # margin for short position: min(1*(2000-350)*1/1, 350*(1*1e2+1^2*1e0))+1*350*3.55690359157934000 =2894.916257
-    # margin for the long position/orders is larger than the short size, so we take the margin for long side which is 1449759
-
     And the following trades should be executed:
       | buyer   | price | size | seller  |
       | traderA | 350   | 1    | traderB |
@@ -268,48 +235,18 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | traderA | ETH/DEC22 | buy  | 111    | 50    | 0                | TYPE_LIMIT | TIF_GTC |
       | traderB | ETH/DEC22 | sell | 111    | 50    | 1                | TYPE_LIMIT | TIF_GTC |
 
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond   |
-      | traderB | USD   | ETH/DEC22 | 511138 | 2439156 | 150000 |
-
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
-    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/76+(2020-50)*74/76+(3000-50)*1/76), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =241973.397
-    # margin_long = 207237.0441
-    # margin_short= 13516.23368+241973.397=255489.6307
-
-    And the market data for the market "ETH/DEC22" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
-
+    # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
+    # margin for short position: min(112*9000000000000000, 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
+   
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | 
-      | traderA | USD   | ETH/DEC22 | 13754  | 9999999985946 | 
-      | traderB | USD   | ETH/DEC22 | 511138 | 2439156       | 
+      | party   | asset | market id | margin  | general | bond   |
+      | traderB | USD   | ETH/DEC22 | 3100294 | 0       | 0      |
 
-    When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price       | resulting trades | type       | tif     |
-      | traderC | ETH/DEC22 | sell | 120    | 45000000000 | 0                | TYPE_LIMIT | TIF_GTC |
-
-    # traderB has both LP pegged orders, limit order, and positions
-    # margin for pegged orders long: 5173*0.801225765*50=207237.0441
-    # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/112+(2020-50)*74/112+(3000-50)*1/112+(45000000000-50)*36/112), 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
-    # margin_long = 207237.0441
-    # margin_short= 13516.23368+627275918.7=627289434.9
-
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general       | 
-      | traderA | USD   | ETH/DEC22 | 13754   | 9999999985946 | 
-      | traderB | USD   | ETH/DEC22 | 3100294 | 0             | 
-      | traderC | USD   | ETH/DEC22 | 42684   | 9999999957316 | 
-
-    And the market data for the market "ETH/DEC22" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 0              | 112           |
-
-      # TODO: Fix bug with auction not getting properly triggered and verify that LP gets closed out after market goes back to continuous trading
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search    | initial    | release    |
+      | traderB | ETH/DEC22 | 627275919   | 940913878 | 1254551838 | 1881827757 |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC22"
 
@@ -380,17 +317,18 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     # traderB has both LP pegged orders, limit order, and positions
     # margin for pegged orders long: 5173*0.801225765*50=207237.0441
     # margin for pegged+limit orders short:76*3.5569036*50=13516.23368
-    # margin for short positions: min(112*((2000-50)*1/76+(2020-50)*74/76+(3000-50)*1/76), 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =241973.397
+    # margin for short positions: min(112*900000000000, 50*(112*1e2+112^2*1e0))+112*50*3.55690359157934000 =1207118.66
     # margin_long = 207237.0441
-    # margin_short= 13516.23368+241973.397=255489.6307
+    # margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general | bond   |
-      | traderB | USD   | ETH/DEC23 | 511138 | 2439156 | 150000 |
+      | party   | asset | market id | margin | general       | 
+      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 
+      | traderB | USD   | ETH/DEC23 | 2899818| 50476         | 
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | traderB | ETH/DEC23 | 255419      | 383128 | 510838  | 766257  |
+      | traderB | ETH/DEC23 | 1220635     | 1830952| 2441270 | 3661905  |
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
@@ -400,11 +338,6 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     And the market data for the market "ETH/DEC23" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 50         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 199186       | 150000         | 112           |
-
-    And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | 
-      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 
-      | traderB | USD   | ETH/DEC23 | 511138 | 2439156       | 
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price       | resulting trades | type       | tif     |
@@ -434,7 +367,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general       | 
       | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 
-      | traderB | USD   | ETH/DEC23 | 2441270 | 509024        | 
+      | traderB | USD   | ETH/DEC23 | 2899818 | 50476         | 
       | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 
 
     Then the parties should have the following margin levels:
@@ -477,5 +410,7 @@ Feature: Closeout LP scenarios with a trader comes with a crazy order, check the
       | party   | volume | unrealised pnl | realised pnl |
       | traderD | 0      | 0              | 0            |
       | traderE | 0      | 0              | 0            |
+
+
 
 

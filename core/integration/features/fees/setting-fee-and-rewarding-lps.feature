@@ -35,8 +35,8 @@ Feature: Test liquidity provider reward distribution
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the markets:
       | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees          | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 0.5                    | 0                       |
-      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 0.5                    | 0                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1    | default-margin-calculator | 2                | fees-config-1 | price-monitoring-1 | ethDec21Oracle     | 1e0                    | 1e0                       |
+      | ETH/DEC22 | ETH        | ETH   | lognormal-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring-2 | ethDec21Oracle     | 1e0                    | 1e0                       |
     And the average block duration is "1"
 
   Scenario: 001, 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
@@ -167,6 +167,7 @@ Feature: Test liquidity provider reward distribution
       | buyer  | price | size | seller |
       | party1 | 1000  | 90   | party2 |
 
+    And debug all events
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
     And the mark price should be "1000" for the market "ETH/DEC21"
     And the open interest should be "90" for the market "ETH/DEC21"
