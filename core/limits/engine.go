@@ -122,10 +122,7 @@ func (e *Engine) OnLimitsProposeMarketEnabledFromUpdate(ctx context.Context, dat
 		e.proposeMarketEnabledFrom = time.Time{}
 	} else {
 		t, _ := time.Parse(time.RFC3339, date)
-		if e.timeService.GetTimeNow().Before(t) {
-			// only if the date is in the future
-			e.proposeMarketEnabledFrom = t
-		}
+		e.proposeMarketEnabledFrom = t
 	}
 	e.onUpdate(e.timeService.GetTimeNow())
 	e.sendEvent(ctx)
@@ -140,10 +137,7 @@ func (e *Engine) OnLimitsProposeAssetEnabledFromUpdate(ctx context.Context, date
 		e.proposeAssetEnabledFrom = time.Time{}
 	} else {
 		t, _ := time.Parse(time.RFC3339, date)
-		if e.timeService.GetTimeNow().Before(t) {
-			// only if the date is in the future
-			e.proposeAssetEnabledFrom = t
-		}
+		e.proposeAssetEnabledFrom = t
 	}
 
 	e.onUpdate(e.timeService.GetTimeNow())
