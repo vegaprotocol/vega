@@ -717,7 +717,7 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsRequired)
 			}
 			if _, ok := datapb.PropertyKey_Type_name[int32(filter.Key.Type)]; !ok {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsRequired)
+				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsNotValid)
 			}
 		}
 
