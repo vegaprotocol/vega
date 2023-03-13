@@ -6,12 +6,9 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"strconv"
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/contextutil"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/didip/tollbooth/v7"
 	"github.com/didip/tollbooth/v7/libstring"
 	"github.com/didip/tollbooth/v7/limiter"
@@ -20,6 +17,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
@@ -117,7 +117,7 @@ func (r *RateLimit) expressDisappointment(w http.ResponseWriter, msg, ip string,
 		w.Header().Add("Retry-After", fmt.Sprintf("%0.f", remaining))
 	}
 	w.WriteHeader(status)
-	w.Write([]byte(msg))
+	_, _ = w.Write([]byte(msg))
 }
 
 func (r *RateLimit) ipForRequest(req *http.Request) string {
@@ -128,7 +128,7 @@ func (r *RateLimit) ipForRequest(req *http.Request) string {
 func (r *RateLimit) GRPCInterceptor(
 	ctx context.Context,
 	req interface{},
-	info *grpc.UnaryServerInfo,
+	_ *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (resp interface{}, err error) {
 	if !r.cfg.Load().Enabled {
@@ -171,39 +171,25 @@ func (r *RateLimit) GRPCInterceptor(
 		return nil, status.Error(codes.Unavailable, banMsg)
 	}
 
-	setRateLimitXResponseHeaders(ctx, r.log, r.lmt, ip)
 	if r.lmt.LimitReached(ip) {
 		r.naughtyStep.smackBottom(ip)
-		setRateLimitResponseHeaders(ctx, r.log, r.lmt, 0)
+		setRateLimitResponseHeaders(ctx, r.log, r.lmt, 0, ip)
 		return nil, status.Error(codes.Unavailable, limitMsg)
 	}
 
 	tokensLeft := r.lmt.Tokens(ip)
-	setRateLimitResponseHeaders(ctx, r.log, r.lmt, tokensLeft)
+	setRateLimitResponseHeaders(ctx, r.log, r.lmt, tokensLeft, ip)
 	return handler(ctx, req)
-}
-
-// setRateLimitXResponseHeaders sets the same set of headers that tollbooth adds to every HTTP response
-// when being used as a http server limiter.
-func setRateLimitXResponseHeaders(ctx context.Context, log *logging.Logger, lmt *limiter.Limiter, ip string) {
-	for _, h := range []metadata.MD{
-		metadata.Pairs("X-Rate-Limit-Limit", strconv.FormatFloat(lmt.GetMax(), 'f', -1, 64)),
-		metadata.Pairs("X-Rate-Limit-Duration", "1"),
-		metadata.Pairs("X-Rate-Limit-Request-Remote-Addr", ip),
-	} {
-		if errH := grpc.SetHeader(ctx, h); errH != nil {
-			log.Error("failed to set header", logging.Error(errH))
-		}
-	}
 }
 
 // setRateLimitResponseHeaders configures RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset
 // as seen at https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-ratelimit-headers
-func setRateLimitResponseHeaders(ctx context.Context, log *logging.Logger, lmt *limiter.Limiter, tokensLeft int) {
+func setRateLimitResponseHeaders(ctx context.Context, log *logging.Logger, lmt *limiter.Limiter, tokensLeft int, ip string) {
 	for _, h := range []metadata.MD{
 		metadata.Pairs("RateLimit-Limit", fmt.Sprintf("%d", int(math.Round(lmt.GetMax())))),
 		metadata.Pairs("RateLimit-Reset", "1"),
 		metadata.Pairs("RateLimit-Remaining", fmt.Sprintf("%d", tokensLeft)),
+		metadata.Pairs("RateLimit-Request-Remote-Addr", ip),
 	} {
 		if errH := grpc.SetHeader(ctx, h); errH != nil {
 			log.Error("failed to set header", logging.Error(errH))

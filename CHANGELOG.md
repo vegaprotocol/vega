@@ -3,6 +3,7 @@
 ## Unreleased 0.69.0
 
 ### 🚨 Breaking changes
+- [7798](https://github.com/vegaprotocol/vega/issues/7798) - Remove redundant headers from the rate limiter response.
 - [7710](https://github.com/vegaprotocol/vega/issues/7710) - Rename "token dApp" to "governance"
 - [6905](https://github.com/vegaprotocol/vega/issues/6905) - Deprecated `Version` field removed from `admin.import_wallet`
 - [6905](https://github.com/vegaprotocol/vega/issues/6905) - References to file paths have been removed from `admin.import_wallet`, `admin.import_network`, `admin.create_wallet` and `admin.isolate_key` API
