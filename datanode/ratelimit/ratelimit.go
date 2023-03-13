@@ -92,7 +92,7 @@ func (r *RateLimit) HTTPMiddleware(next http.Handler) http.Handler {
 		ip := r.ipForRequest(req)
 
 		if r.naughtyStep.isBanned(ip) {
-			r.expressDisappointment(w, banMsg, ip, http.StatusTooManyRequests, true)
+			r.expressDisappointment(w, banMsg, ip, http.StatusForbidden, true)
 			return
 		}
 
