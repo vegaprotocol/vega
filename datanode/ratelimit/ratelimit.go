@@ -38,7 +38,7 @@ func init() {
 // WithSecret is a GRPC dial option that adds the "X-Rate-Limit-Secret": <secret> header to all calls.
 func WithSecret() grpc.DialOption {
 	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		ctx = metadata.AppendToOutgoingContext(ctx, "X-Rate-Limit-Secret", secret)
+		ctx = metadata.AppendToOutgoingContext(ctx, "RateLimit-Secret", secret)
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 	return grpc.WithUnaryInterceptor(interceptor)
@@ -114,7 +114,7 @@ func (r *RateLimit) expressDisappointment(w http.ResponseWriter, msg, ip string,
 		expiry := r.naughtyStep.bans[ip]
 		remaining := time.Until(expiry).Seconds()
 
-		w.Header().Add("Retry-After", fmt.Sprintf("%0.f", remaining))
+		w.Header().Add("RateLimit-Retry-After", fmt.Sprintf("%0.f", remaining))
 	}
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(msg))
@@ -138,7 +138,7 @@ func (r *RateLimit) GRPCInterceptor(
 	// Check if the client gave the secret in the metadata, if so skip rate limiting
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
-		mdSecrets := md.Get("X-Rate-Limit-Secret")
+		mdSecrets := md.Get("RateLimit-Secret")
 		for _, mdSecret := range mdSecrets {
 			if mdSecret == secret {
 				return handler(ctx, req)
@@ -164,7 +164,7 @@ func (r *RateLimit) GRPCInterceptor(
 		expiry := r.naughtyStep.bans[ip]
 		remaining := time.Until(expiry).Seconds()
 
-		if err := grpc.SetHeader(ctx, metadata.Pairs("Retry-After", fmt.Sprintf("%0.f", remaining))); err != nil {
+		if err := grpc.SetHeader(ctx, metadata.Pairs("RateLimit-Retry-After", fmt.Sprintf("%0.f", remaining))); err != nil {
 			r.log.Error("failed to set header", logging.Error(err))
 		}
 
