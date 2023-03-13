@@ -79,7 +79,7 @@ func (es *Epochs) GetCurrent(ctx context.Context) (entities.Epoch, error) {
 	query := `WITH epochs_current AS (SELECT DISTINCT ON (id) * FROM epochs ORDER BY id DESC, vega_time DESC)
 		SELECT e.id, e.start_time, e.expire_time, e.end_time, e.tx_hash, e.vega_time, bs.height first_block, be.height last_block FROM epochs_current AS e
     	LEFT JOIN blocks bs on e.start_time = bs.vega_time
-    	LEFT JOIN blocks be on e.end_time = be.vega_time FETCH FIRST ROW ONLY;`
+    	LEFT JOIN blocks be on e.end_time = be.vega_time ORDER BY id DESC, vega_time DESC FETCH FIRST ROW ONLY;`
 
 	epoch := entities.Epoch{}
 	defer metrics.StartSQLQuery("Epochs", "GetCurrent")()
