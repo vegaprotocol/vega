@@ -494,6 +494,8 @@ service TradingDataService {
     // Response contains the bootstrap peers
     rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse);
 
+    rpc ListTransactionEntities(ListTransactionEntitiesRequest) returns (ListTransactionEntitiesResponse);
+
     // Ping
     //
     // Ping the data node
@@ -2807,6 +2809,40 @@ message NetworkHistoryBootstrapPeersResponse {
     repeated string bootstrap_peers = 1;
 }
 
+message ListTransactionEntitiesRequest {
+    string transaction_hash = 1;
+}
+
+message ListTransactionEntitiesResponse {
+    repeated vega.Account accounts = 1;
+    repeated vega.Order orders = 2;
+    repeated vega.Position positions = 3;
+    repeated vega.LedgerEntry ledger_entries = 4;
+    repeated AccountBalance balance_changes = 5;
+    repeated vega.events.v1.Transfer transfers = 6;
+    repeated vega.Vote votes = 7;
+    repeated ERC20MultiSigSignerAddedBundle erc20_multi_sig_signer_added_bundles = 8;
+    repeated ERC20MultiSigSignerRemovedBundle erc20_multi_sig_signer_removed_bundles = 9;
+    repeated vega.Trade trades = 10;
+    repeated vega.OracleSpec oracle_specs = 11;
+    repeated vega.OracleData oracle_data = 12;
+    repeated vega.Market markets = 13;
+    repeated vega.Party parties = 14;
+    repeated vega.MarginLevels margin_levels = 15;
+    repeated vega.Reward rewards = 16;
+    repeated vega.Deposit deposits = 17;
+    repeated vega.Withdrawal withdrawals = 18;
+    repeated vega.Asset assets = 19;
+    repeated vega.LiquidityProvision liquidity_provisions = 20;
+    repeated vega.Proposal proposals = 21;
+    repeated vega.Delegation delegations = 22;
+    repeated vega.Node nodes = 23;
+    repeated vega.commands.v1.NodeSignature node_signatures = 24;
+    repeated vega.NetworkParameter network_parameters = 25;
+    repeated vega.events.v1.KeyRotation key_rotations = 26;
+    repeated vega.events.v1.EthereumKeyRotation ethereum_key_rotations = 27;
+    repeated vega.events.v1.ProtocolUpgradeEvent protocol_upgrade_proposals = 28;
+}
 
 // Request to ping the data node
 message PingRequest {

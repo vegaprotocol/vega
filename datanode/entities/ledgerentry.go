@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -23,15 +24,15 @@ import (
 
 type LedgerEntry struct {
 	LedgerEntryTime    time.Time
-	FromAccountID      AccountID
-	ToAccountID        AccountID
+	FromAccountID      AccountID `db:"account_from_id"`
+	ToAccountID        AccountID `db:"account_to_id"`
 	Quantity           decimal.Decimal
 	TxHash             TxHash
 	VegaTime           time.Time
 	TransferTime       time.Time
 	Type               LedgerMovementType
-	FromAccountBalance decimal.Decimal
-	ToAccountBalance   decimal.Decimal
+	FromAccountBalance decimal.Decimal `db:"account_from_balance"`
+	ToAccountBalance   decimal.Decimal `db:"account_to_balance"`
 }
 
 var LedgerEntryColumns = []string{
@@ -40,6 +41,28 @@ var LedgerEntryColumns = []string{
 	"tx_hash", "vega_time", "transfer_time", "type",
 	"account_from_balance",
 	"account_to_balance",
+}
+
+// @TODO - replace this with a better solution
+func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) (*vega.LedgerEntry, error) {
+	fromAcc, err := accountSource.GetByID(ctx, le.FromAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
+	}
+
+	toAcc, err := accountSource.GetByID(ctx, le.ToAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
+	}
+
+	return &vega.LedgerEntry{
+		FromAccount:        fromAcc.ToAccountDetailsProto(),
+		ToAccount:          toAcc.ToAccountDetailsProto(),
+		Amount:             le.Quantity.String(),
+		Type:               vega.TransferType(le.Type),
+		FromAccountBalance: le.FromAccountBalance.String(),
+		ToAccountBalance:   le.ToAccountBalance.String(),
+	}, nil
 }
 
 func (le LedgerEntry) ToRow() []any {

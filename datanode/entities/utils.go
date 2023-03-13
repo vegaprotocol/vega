@@ -172,3 +172,7 @@ func (h *TxHash) DecodeBinary(ci *pgtype.ConnInfo, src []byte) error {
 func NanosToPostgresTimestamp(nanos int64) time.Time {
 	return time.Unix(0, nanos).Truncate(time.Microsecond)
 }
+
+func toPointer[T any](v T) *T {
+	return &v
+}

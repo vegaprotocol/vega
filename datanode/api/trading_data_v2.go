@@ -13,7 +13,6 @@ package api
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"math"
 	"math/rand"
@@ -35,10 +34,12 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -733,7 +734,7 @@ func (t *tradingDataServiceV2) ListERC20MultiSigSignerAddedBundles(ctx context.C
 				Submitter:  b.Submitter.String(),
 				Nonce:      b.Nonce,
 				Timestamp:  b.VegaTime.UnixNano(),
-				Signatures: packNodeSignatures(signatures),
+				Signatures: entities.PackNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
 			},
 			Cursor: b.Cursor().Encode(),
@@ -789,7 +790,7 @@ func (t *tradingDataServiceV2) ListERC20MultiSigSignerRemovedBundles(ctx context
 				Submitter:  b.Submitter.String(),
 				Nonce:      b.Nonce,
 				Timestamp:  b.VegaTime.UnixNano(),
-				Signatures: packNodeSignatures(signatures),
+				Signatures: entities.PackNodeSignatures(signatures),
 				EpochSeq:   strconv.FormatInt(b.EpochID, 10),
 			},
 			Cursor: b.Cursor().Encode(),
@@ -850,29 +851,12 @@ func (t *tradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		AssetSource:   asset.ERC20Contract,
 		Nonce:         nonce.String(),
 		VegaAssetId:   asset.ID.String(),
-		Signatures:    packNodeSignatures(signatures),
+		Signatures:    entities.PackNodeSignatures(signatures),
 		LifetimeLimit: proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().LifetimeLimit,
 		Threshold:     proposal.Terms.GetUpdateAsset().GetChanges().GetErc20().WithdrawThreshold,
 	}, nil
 }
 
-// packNodeSignatures packs a list signatures into the form:
-// 0x + sig1 + sig2 + ... + sigN in hex encoded form
-// If the list is empty, return an empty string instead.
-func packNodeSignatures(signatures []entities.NodeSignature) string {
-	pack := ""
-	if len(signatures) > 0 {
-		pack = "0x"
-	}
-
-	for _, v := range signatures {
-		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
-	}
-
-	return pack
-}
-
-// GetERC20ListAssetBundle returns the signature bundle needed to list an asset on the ERC20 contract.
 func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req *v2.GetERC20ListAssetBundleRequest) (*v2.GetERC20ListAssetBundleResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetERC20ListAssetBundleV2")()
 
@@ -903,7 +887,7 @@ func (t *tradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		AssetSource: asset.ERC20Contract,
 		Nonce:       nonce.String(),
 		VegaAssetId: asset.ID.String(),
-		Signatures:  packNodeSignatures(signatures),
+		Signatures:  entities.PackNodeSignatures(signatures),
 	}, nil
 }
 
@@ -946,7 +930,7 @@ func (t *tradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 		Amount:        fmt.Sprintf("%v", w.Amount),
 		Nonce:         w.Ref,
 		TargetAddress: w.Ext.GetErc20().ReceiverAddress,
-		Signatures:    packNodeSignatures(signatures),
+		Signatures:    entities.PackNodeSignatures(signatures),
 		// timestamps is unix nano, contract needs unix. So load if first, and cut nanos
 		Creation: w.CreatedTimestamp.Unix(),
 	}, nil
@@ -3150,6 +3134,139 @@ func (t *tradingDataServiceV2) NetworkHistoryBootstrapPeers(context.Context, *v2
 func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Ping")()
 	return &v2.PingResponse{}, nil
+}
+
+func (t *tradingDataServiceV2) ListTransactionEntities(ctx context.Context, req *v2.ListTransactionEntitiesRequest) (*v2.ListTransactionEntitiesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListTransactionEntities")()
+
+	txHash := entities.TxHash(req.GetTransactionHash())
+
+	accounts, err := t.accountService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+	}
+
+	balances, err := t.accountService.GetBalancesByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
+	}
+
+	orders, err := t.orderService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrOrderServiceGetByTxHash, err)
+	}
+
+	positions, err := t.positionService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPostitionsGetByTxHash, err)
+	}
+
+	ledgerEntries, err := t.ledgerService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrLedgerEntriesGetByTxHash, err)
+	}
+
+	ledgerEntriesProtos, err := mapSlice(ledgerEntries,
+		func(item entities.LedgerEntry) (*vega.LedgerEntry, error) {
+			return item.ToProto(ctx, t.accountService)
+		},
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	transfers, err := t.transfersService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTransfersGetByTxHash)
+	}
+
+	transfersProtos, err := mapSlice(transfers,
+		func(item entities.Transfer) (*v1.Transfer, error) {
+			return item.ToProto(ctx, t.accountService)
+		},
+	)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	votes, err := t.governanceService.GetVotesByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrVotesGetByTxHash)
+	}
+
+	addedEvents, err := t.multiSigService.GetAddedByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrERC20MultiSigSignerAddedEventGetByTxHash)
+	}
+
+	addedEventsProtos, err := mapSlice(addedEvents,
+		func(item entities.ERC20MultiSigSignerAddedEvent) (*v2.ERC20MultiSigSignerAddedBundle, error) {
+			return item.ToDataNodeApiV2Proto(ctx, t.notaryService)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	removedEvents, err := t.multiSigService.GetRemovedByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrERC20MultiSigSignerRemovedEventGetByTxHash)
+	}
+
+	removedEventsProtos, err := mapSlice(removedEvents,
+		func(item entities.ERC20MultiSigSignerRemovedEvent) (*v2.ERC20MultiSigSignerRemovedBundle, error) {
+			return item.ToDataNodeApiV2Proto(ctx, t.notaryService)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	trades, err := t.tradeService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTradeServiceGetByTxHash)
+	}
+
+	oracleSpecs, err := t.oracleSpecService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrTradeServiceGetByTxHash) // TODO return proper error
+	}
+
+	return &v2.ListTransactionEntitiesResponse{
+		Accounts:                          toProtos[*vega.Account](accounts),
+		Orders:                            toProtos[*vega.Order](orders),
+		Positions:                         toProtos[*vega.Position](positions),
+		LedgerEntries:                     ledgerEntriesProtos,
+		BalanceChanges:                    toProtos[*v2.AccountBalance](balances),
+		Transfers:                         transfersProtos,
+		Votes:                             toProtos[*vega.Vote](votes),
+		Erc20MultiSigSignerAddedBundles:   addedEventsProtos,
+		Erc20MultiSigSignerRemovedBundles: removedEventsProtos,
+		Trades:                            toProtos[*vega.Trade](trades),
+		OracleSpecs:                       toProtos[*vega.OracleSpec](oracleSpecs),
+		// OracleData: ,
+	}, nil
+}
+
+func toProtos[T proto.Message, V entities.ProtoEntity[T]](inputs []V) []T {
+	protos := make([]T, 0, len(inputs))
+	for _, input := range inputs {
+		proto := input.ToProto()
+		protos = append(protos, proto)
+	}
+	return protos
+}
+
+func mapSlice[T proto.Message, V any](inputs []V, toProto func(V) (T, error)) ([]T, error) {
+	protos := make([]T, 0, len(inputs))
+	for _, input := range inputs {
+		proto, err := toProto(input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert to proto: %w", err)
+		}
+		protos = append(protos, proto)
+	}
+	return protos, nil
 }
 
 func batch[T any](in []T, batchSize int) [][]T {

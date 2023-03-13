@@ -34,6 +34,25 @@ type Account struct {
 	VegaTime time.Time
 }
 
+func (a Account) ToProto() *vega.Account {
+	return &vega.Account{
+		Id:       a.ID.String(),
+		Owner:    a.PartyID.String(),
+		Asset:    a.AssetID.String(),
+		MarketId: a.MarketID.String(),
+		Type:     a.Type,
+	}
+}
+
+func (a Account) ToAccountDetailsProto() *vega.AccountDetails {
+	return &vega.AccountDetails{
+		Owner:    toPointer(a.PartyID.String()),
+		AssetId:  a.AssetID.String(),
+		MarketId: toPointer(a.MarketID.String()),
+		Type:     a.Type,
+	}
+}
+
 func (a Account) String() string {
 	return fmt.Sprintf("{ID: %s}", a.ID)
 }

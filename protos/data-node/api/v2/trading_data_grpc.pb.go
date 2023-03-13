@@ -397,6 +397,7 @@ type TradingDataServiceClient interface {
 	// Retrieves the bootstrap peers for data nodes.
 	// Response contains the bootstrap peers
 	NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error)
+	ListTransactionEntities(ctx context.Context, in *ListTransactionEntitiesRequest, opts ...grpc.CallOption) (*ListTransactionEntitiesResponse, error)
 	// Ping
 	//
 	// Ping the data node
@@ -1553,6 +1554,15 @@ func (c *tradingDataServiceClient) NetworkHistoryBootstrapPeers(ctx context.Cont
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListTransactionEntities(ctx context.Context, in *ListTransactionEntitiesRequest, opts ...grpc.CallOption) (*ListTransactionEntitiesResponse, error) {
+	out := new(ListTransactionEntitiesResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListTransactionEntities", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/Ping", in, out, opts...)
@@ -1941,6 +1951,7 @@ type TradingDataServiceServer interface {
 	// Retrieves the bootstrap peers for data nodes.
 	// Response contains the bootstrap peers
 	NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error)
+	ListTransactionEntities(context.Context, *ListTransactionEntitiesRequest) (*ListTransactionEntitiesResponse, error)
 	// Ping
 	//
 	// Ping the data node
@@ -2209,6 +2220,9 @@ func (UnimplementedTradingDataServiceServer) NetworkHistoryStatus(context.Contex
 }
 func (UnimplementedTradingDataServiceServer) NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryBootstrapPeers not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListTransactionEntities(context.Context, *ListTransactionEntitiesRequest) (*ListTransactionEntitiesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTransactionEntities not implemented")
 }
 func (UnimplementedTradingDataServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
@@ -3827,6 +3841,24 @@ func _TradingDataService_NetworkHistoryBootstrapPeers_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ListTransactionEntities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTransactionEntitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListTransactionEntities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListTransactionEntities",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListTransactionEntities(ctx, req.(*ListTransactionEntitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PingRequest)
 	if err := dec(in); err != nil {
@@ -4131,6 +4163,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NetworkHistoryBootstrapPeers",
 			Handler:    _TradingDataService_NetworkHistoryBootstrapPeers_Handler,
+		},
+		{
+			MethodName: "ListTransactionEntities",
+			Handler:    _TradingDataService_ListTransactionEntities_Handler,
 		},
 		{
 			MethodName: "Ping",

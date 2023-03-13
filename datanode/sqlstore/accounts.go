@@ -64,13 +64,6 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 }
 
 func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (entities.Account, error) {
-	if account, ok := as.getAccountFromCache(accountID); ok {
-		return account, nil
-	}
-
-	as.cacheLock.Lock()
-	defer as.cacheLock.Unlock()
-
 	// It's possible that in-between releasing the read lock and obtaining the write lock that the account has been
 	// added to cache, so we need to check here and return the cached account if that's the case.
 	if account, ok := as.idToAccount[accountID]; ok {
@@ -98,6 +91,20 @@ func (as *Accounts) GetAll(ctx context.Context) ([]entities.Account, error) {
 	err := pgxscan.Select(ctx, as.Connection, &accounts, `
 		SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time
 		FROM accounts`)
+	return accounts, err
+}
+
+func (as *Accounts) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Account, error) {
+	accounts := []entities.Account{}
+	defer metrics.StartSQLQuery("Accounts", "GetByTxHash")()
+
+	err := pgxscan.Select(
+		ctx,
+		as.Connection,
+		&accounts,
+		`SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time FROM accounts WHERE tx_hash=$1`,
+		txHash,
+	)
 	return accounts, err
 }
 
@@ -225,4 +232,18 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 
 	pagedAccountBalances, pageInfo := entities.PageEntities[*v2.AccountEdge](accountBalances, pagination)
 	return pagedAccountBalances, pageInfo, nil
+}
+
+func (as *Accounts) GetBalancesByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.AccountBalance, error) {
+	balances := []entities.AccountBalance{}
+	defer metrics.StartSQLQuery("Accounts", "GetBalancesByTxHash")()
+
+	err := pgxscan.Select(
+		ctx,
+		as.Connection,
+		&balances,
+		fmt.Sprintf("%s WHERE current_balances.tx_hash=$1", accountBalancesQuery()),
+		txHash,
+	)
+	return balances, err
 }

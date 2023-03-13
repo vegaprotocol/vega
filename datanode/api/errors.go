@@ -82,15 +82,25 @@ var (
 	ErrEstimateFee                      = errors.New("failed to estimate fee")
 	ErrEstimateMargin                   = errors.New("failed to estimate margin")
 	// OrderService...
-	ErrOrderServiceGetOrders   = errors.New("failed to get orders")
-	ErrOrderServiceGetVersions = errors.New("failed to get order versions")
-	ErrOrderNotFound           = errors.New("order not found")
+	ErrOrderServiceGetOrders        = errors.New("failed to get orders")
+	ErrOrderServiceGetVersions      = errors.New("failed to get order versions")
+	ErrOrderNotFound                = errors.New("order not found")
+	ErrOrderServiceGetByMarket      = errors.New("failed to get orders for market")
+	ErrOrderServiceGetByMarketAndID = errors.New("failed to get orders for market and ID")
+	ErrOrderServiceGetByParty       = errors.New("failed to get orders for party")
+	ErrOrderServiceGetByReference   = errors.New("failed to get orders for reference")
+	ErrOrderServiceGetByTxHash      = errors.New("failed to get orders for tx hash")
+	ErrMissingOrderIDParameter      = errors.New("missing orderID parameter")
 	// NodeService...
 	ErrNodeServiceGetNodes    = errors.New("failed to get nodes")
 	ErrNodeServiceGetNodeData = errors.New("failed to get node data")
 	// TradeService...
-	ErrTradeServiceGetByMarket = errors.New("failed to get trades for market")
-	ErrTradeServiceList        = errors.New("failed to list trades")
+	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
+	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
+	ErrTradeServiceList                = errors.New("failed to list trades")
+	ErrTradeServiceGetPositionsByParty = errors.New("failed to get positions for party")
+	ErrTradeServiceGetByOrderID        = errors.New("failed to get trades for order ID")
+	ErrTradeServiceGetByTxHash         = errors.New("failed to get trades for tx hash")
 	// MarketService...
 	ErrMarketServiceGetByID              = errors.New("failed to get market for ID")
 	ErrMarketServiceGetAllPaged          = errors.New("failed to get all markets paged")
@@ -153,6 +163,9 @@ var (
 	ErrGetConnectedPeerAddresses    = errors.New("failed to get connected peer addresses")
 	ErrGetMostRecentHistorySegment  = errors.New("failed to get most recent history segment")
 	ErrListAllNetworkHistorySegment = errors.New("failed to list all history segments")
+	ErrFetchNetworkHistorySegment   = errors.New("failed to fetch segment")
+	ErrNetworkHistoryNotEnabled     = errors.New("network history not enabled")
+	ErrCopyHistorySegmentToFile     = errors.New("failed to copy history segment to file")
 	ErrGetIpfsAddress               = errors.New("failed to get node's ipfs address")
 	// ErrGetEpoch is returned when the epoch cannot be retrieved.
 	ErrGetEpoch     = errors.New("failed to get epoch")
@@ -181,6 +194,17 @@ var (
 	ErrEthereumKeyRotationServiceGetAll     = errors.New("failed to get all ethereum key rotations")
 	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
+	// Positions
+	ErrPostitionsGetByTxHash = errors.New("failed to get positions for tx hash")
+	// Ledger entries
+	ErrLedgerEntriesGetByTxHash = errors.New("failed to get ledger entries for tx hash")
+	// Transfers
+	ErrTransfersGetByTxHash = errors.New("failed to get transfers for tx hash")
+	// Votes
+	ErrVotesGetByTxHash = errors.New("failed to get votes for tx hash")
+	// ERC20MultiSigSignerEvents
+	ErrERC20MultiSigSignerAddedEventGetByTxHash   = errors.New("failed to get ERC20 multisig signer add events for tx hash")
+	ErrERC20MultiSigSignerRemovedEventGetByTxHash = errors.New("failed to get ERC20 multisig signer removed events for tx hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
