@@ -665,6 +665,10 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsRequired)
 				}
+
+				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsNotValid)
+				}
 			}
 		}
 
@@ -712,6 +716,9 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 			if filter.Key.Type == datapb.PropertyKey_TYPE_UNSPECIFIED {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsRequired)
 			}
+			if _, ok := datapb.PropertyKey_Type_name[int32(filter.Key.Type)]; !ok {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsNotValid)
+			}
 		}
 
 		if len(filter.Conditions) != 0 {
@@ -721,6 +728,9 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 				}
 				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.conditions.%d.operator", parentProperty, name, i, j), ErrIsRequired)
+				}
+				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.conditions.%d.operator", parentProperty, name, i, j), ErrIsNotValid)
 				}
 			}
 		}
