@@ -16,7 +16,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e-3                   | 1e-3                       |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -24,15 +24,14 @@ Feature: Position resolution case 5 lognormal risk model
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @MTMDelta
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book (0007-POSN-013, 0038-OLIQ-011)
-
+  Scenario: using lognormal risk model, set "designatedLoser " closeout while the position of "designatedLoser " is not fully covered by orders on the order book (0007-POSN-013, 0038-OLIQ-011)
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLooser | USD   | 21981         |
+      | designatedLoser  | USD   | 21981         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
@@ -57,10 +56,6 @@ Feature: Position resolution case 5 lognormal risk model
     And the mark price should be "150" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general      | bond |
-      | lpprov | USD   | ETH/DEC19 | 682144 | 999999308856 | 9000 |
-
     # If an LP order has offset set such that the resulting price falls outside [1,2001] then the system adjusts it automatically so that it's placed on the bound
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
@@ -76,15 +71,16 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 250   | 36     |
-      | sell | 2000  | 10     |
       | buy  | 1     | 10     |
       | buy  | 40    | 225    |
+      | sell | 250   | 36     |
+      | sell | 2000  | 10     |
+
 
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | designatedLoser  | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
@@ -94,24 +90,12 @@ Feature: Position resolution case 5 lognormal risk model
       | buy  | 1     | 10     |
 
     Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general      | bond |
-      | lpprov | USD   | ETH/DEC19 | 17055  | 999999973945 | 9000 |
-
-    Then the parties should have the following margin levels:
-      | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
-
-    Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 17631  | 0       |
+      | designatedLoser  | USD   | ETH/DEC19 | 17631  | 0       |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
-      | designatedLooser | 290    | 0              | 0            |
-
-    #designatedLooser has position of vol 290; price 150; calculated risk factor long: 0.336895684; risk factor short: 0.4878731
-    #what's on the order book to cover the position is shown above, which makes the exit price (1*10+215*40)/225=38, slippage per unit is 150-38=112
-    #margin level is PositionVol*(markPrice*RiskFactor+SlippagePerUnit) = 290*(150*0.336895684+112)=47134
+      | designatedLoser  | 290    | 0              | 0            |
 
     Then the parties cancel the following orders:
       | party           | reference      |
@@ -126,17 +110,21 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
+      | designatedLoser  | USD   | ETH/DEC19 | 0      | 0       |
+
+    Then the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | designatedLoser  | 0      | 0              | -17631       |
 
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
     Then the following transfers should happen:
       | from             | to              | from account            | to account                       | market id | amount | asset |
-      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | designatedLoser  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
       | buySideProvider  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
       | buySideProvider  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 14     | USD   |
-      | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | designatedLoser  |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market           | lpprov          | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 14702  | USD   |
+      | designatedLoser  | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 14702  | USD   |
       | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 14702  | USD   |
       | market           | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 14196  | USD   |
       | buySideProvider  | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |

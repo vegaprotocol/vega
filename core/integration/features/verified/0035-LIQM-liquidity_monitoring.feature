@@ -36,12 +36,16 @@ Feature: Test liquidity monitoring
       | party  | asset | amount     |
       | party1 | ETH   | 100000000  |
       | party2 | ETH   | 100000000  |
+      | party3 | ETH   | 100000000  |
+      | party4 | ETH   | 100000000  |
       | lprov1 | ETH   | 1000000000 |
       | lprov2 | ETH   | 1000000000 |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
+      | party3 | USD   | 100000000 |
+      | party4 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
       | lprov1 | USD   | 500000    |
       | lprov2 | USD   | 500000    |
@@ -55,14 +59,16 @@ Feature: Test liquidity monitoring
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC21 | buy  | 20     | 900  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC21 | sell | 20     | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1000         | 1000           | 10            |
+      | mark price | trading mode            | horizon |min bound| max bound|  target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 100     |990      |1010      |   1000        | 1000           |  10            |
 
     Then clear all events
 
@@ -164,6 +170,8 @@ Feature: Test liquidity monitoring
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC21 | buy  | 20     | 950  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC21 | sell | 20     | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 15     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
@@ -230,6 +238,8 @@ Feature: Test liquidity monitoring
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 970   | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | buy  | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC21 | buy  | 100     | 950  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party4 | ETH/DEC21 | sell | 199     | 1050  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 1      | 1030  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 60     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 

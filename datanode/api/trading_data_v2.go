@@ -2190,7 +2190,7 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 }
 
 func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{},
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{NewestFirst: true},
 		entities.DateRange{}, entities.OrderFilter{})
 	if err != nil {
 		return errors.Wrap(err, "fetching orders initial image")
