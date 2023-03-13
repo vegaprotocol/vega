@@ -60,6 +60,7 @@
 - [7750](https://github.com/vegaprotocol/vega/issues/7750) - Fix not all paths cleanly close network history index store.
 - [7805](https://github.com/vegaprotocol/vega/issues/7805) - Fix re-announcing node in the same epoch kills data node.
 - [7820](https://github.com/vegaprotocol/vega/issues/7820) - Remove the check for past date in limits engine
+- [7822](https://github.com/vegaprotocol/vega/issues/7822) - Fix get last epoch query
 
 ## 0.68.0
 
