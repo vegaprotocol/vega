@@ -127,17 +127,17 @@ go test -c -gcflags="ALL=-N -l" ./cmd/vega
 To build a binary to step through integration tests, simply run
 
 ```bash
-go test -c -gcflags="ALL=-N -l" ./integration
+go test -c -gcflags="ALL=-N -l" ./core/integration
 ```
 
 The output will be a binary called either `vega.test` or `integration.test`.
 
 ### Start delve in headless mode
 
-As-is, you can use the compiled binary to step through the code in dlv. Setting breakpoints using things like `b execution/market.go:2107` is quite tedious, though, and only shows you a few lines of code around the breakpoint. Having the ability to set breakpoints and check out variables in our editor is what we're after. To do that, we need to start dlv as a debug server, so we can connect to it from inside Vim:
+As-is, you can use the compiled binary to step through the code in dlv. Setting breakpoints using things like `b core/execution/market.go:2107` is quite tedious, though, and only shows you a few lines of code around the breakpoint. Having the ability to set breakpoints and check out variables in our editor is what we're after. To do that, we need to start dlv as a debug server, so we can connect to it from inside Vim:
 
 ```bash
-dlv exec --headless --api-version=2 --listen 127.0.0.1:9876 ./integration.test
+dlv exec --headless --api-version=2 --listen 127.0.0.1:9876 ./integration.test -- ./core/integration/features
 ```
 
 The address and port to listen to is arbitrary, but in this particular example, we'll use 9876. In this example we're starting a debug session on the integration test binary. To debug `vega.test`, just replace `integration.test` with `vega.test` (obviously).
@@ -147,7 +147,7 @@ The address and port to listen to is arbitrary, but in this particular example, 
 Passing in additional arguments/parameters is as easy as just appending `--` to the command above and specifying the desired arguments and flags. To run integration tests with a specific tag, for example, the full command looks like this:
 
 ```bash
-dlv exec --headless --api-version=2 --listen 127.0.0.1:9876 ./integration.test -- ./integration/features --godog.tags=LPWrong
+dlv exec --headless --api-version=2 --listen 127.0.0.1:9876 ./integration.test -- --godog.tags=LPWrong -- ./core/integration/features
 ```
 
 ### Connecting to delve from Vim
@@ -155,7 +155,7 @@ dlv exec --headless --api-version=2 --listen 127.0.0.1:9876 ./integration.test -
 Now that dlv is running, we can open the code we want to step through in Vim, and connect to our debugger:
 
 ```bash
-vim execution/market.go
+vim core/execution/market.go
 ```
 
 Once in our editor, just enter the  command `:GoDebugConnect 127.0.0.1:9876`

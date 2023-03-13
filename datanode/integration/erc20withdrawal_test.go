@@ -15,8 +15,9 @@ package integration_test
 import "testing"
 
 func TestERC20WithdrawalApproval(t *testing.T) {
+	// This is a bit suboptimal as this needs updating when the event file is replaced; perhaps we can make it nicer in the future.
 	queries := map[string]string{
-		"ERC20WithdrawalApproval": `{ erc20WithdrawalApproval(withdrawalId: "7EB9B511E4DA3397DFC2A71D05A1A0DD4CC1782AA5080D4FE30C2EC1E31622E6"){ assetSource amount nonce signatures targetAddress } }`,
+		"ERC20WithdrawalApproval": `{ erc20WithdrawalApproval(withdrawalId: "692595a5049cebd114ed62265e300fb9252967e52beef35b42ff4e298059a954"){ assetSource amount nonce signatures targetAddress } }`,
 	}
 
 	for name, query := range queries {

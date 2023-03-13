@@ -104,7 +104,7 @@ func testSendingTransactionWithInvalidParamsFails(t *testing.T) {
 					"type": "not vega command",
 				},
 			},
-			expectedError: errors.New("the transaction is not a valid Vega command: unknown field \"type\" in vega.wallet.v1.SubmitTransactionRequest"),
+			expectedError: errors.New("the transaction does not use a valid Vega command: unknown field \"type\" in vega.wallet.v1.SubmitTransactionRequest"),
 		},
 	}
 

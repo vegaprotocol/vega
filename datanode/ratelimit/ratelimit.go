@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/logging"
@@ -91,13 +92,13 @@ func (r *RateLimit) HTTPMiddleware(next http.Handler) http.Handler {
 		ip := r.ipForRequest(req)
 
 		if r.naughtyStep.isBanned(ip) {
-			r.expressDisappointment(w, banMsg, http.StatusForbidden)
+			r.expressDisappointment(w, banMsg, ip, http.StatusTooManyRequests, true)
 			return
 		}
 
 		if httpError := tollbooth.LimitByRequest(r.lmt, w, req); httpError != nil {
 			r.naughtyStep.smackBottom(ip)
-			r.expressDisappointment(w, limitMsg, http.StatusTooManyRequests)
+			r.expressDisappointment(w, limitMsg, ip, http.StatusTooManyRequests, false)
 			return
 		}
 
@@ -106,8 +107,15 @@ func (r *RateLimit) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(middle)
 }
 
-func (r *RateLimit) expressDisappointment(w http.ResponseWriter, msg string, status int) {
+func (r *RateLimit) expressDisappointment(w http.ResponseWriter, msg, ip string, status int, banned bool) {
 	w.Header().Add("Content-Type", "application/json")
+
+	if banned {
+		expiry := r.naughtyStep.bans[ip]
+		remaining := time.Until(expiry).Seconds()
+
+		w.Header().Add("Retry-After", fmt.Sprintf("%0.f", remaining))
+	}
 	w.WriteHeader(status)
 	w.Write([]byte(msg))
 }
@@ -153,6 +161,13 @@ func (r *RateLimit) GRPCInterceptor(
 
 	// Check the naughty step
 	if r.naughtyStep.isBanned(ip) {
+		expiry := r.naughtyStep.bans[ip]
+		remaining := time.Until(expiry).Seconds()
+
+		if err := grpc.SetHeader(ctx, metadata.Pairs("Retry-After", fmt.Sprintf("%0.f", remaining))); err != nil {
+			r.log.Error("failed to set header", logging.Error(err))
+		}
+
 		return nil, status.Error(codes.Unavailable, banMsg)
 	}
 

@@ -59,6 +59,7 @@ func testServiceV2_GetMethods_ListingMethodsSucceeds(t *testing.T) {
 	require.Equal(t, http.StatusOK, statusCode)
 	response := intoGetMethodsResponse(t, rawResponse)
 	assert.Equal(t, []string{
+		"client.check_transaction",
 		"client.connect_wallet",
 		"client.disconnect_wallet",
 		"client.get_chain_id",

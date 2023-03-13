@@ -202,8 +202,8 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 
 // Create sets the creation time (CreatedAt) to t and returns the
 // updated order.
-func (o *Order) Create(t time.Time) *Order {
-	o.CreatedAt = t.UnixNano()
+func (o *Order) Create(t int64) *Order {
+	o.CreatedAt = t
 	return o
 }
 

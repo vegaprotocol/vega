@@ -123,7 +123,17 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 			tx_hash,
 			vega_time)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		ON CONFLICT (node_id, epoch_seq) DO UPDATE
+		SET
+			stake_score = EXCLUDED.stake_score,
+		    performance_score = EXCLUDED.performance_score,
+		    ranking_score = EXCLUDED.ranking_score,
+		    voting_power = EXCLUDED.voting_power,
+		    previous_status = EXCLUDED.previous_status,
+		    status = EXCLUDED.status,
+		    tx_hash = EXCLUDED.tx_hash,
+		    vega_time = EXCLUDED.vega_time`,
 		aux.NodeID,
 		rs.EpochSeq,
 		rs.StakeScore,

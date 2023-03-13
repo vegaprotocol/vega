@@ -35,42 +35,6 @@ Feature: Test for issue 5460
       | party_r  | ETH   | 10000000000000000 |
       | party_r1 | ETH   | 10000000000000000 |
 
-  Scenario: 001 post market order
-
-    Given the parties submit the following liquidity provision:
-      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | buy  | BID              | 1          | 200000 | submission |
-      | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | buy  | MID              | 2          | 100000 | submission |
-      | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | sell | ASK              | 1          | 200000 | submission |
-      | lp1 | party0 | ETH/DEC21 | 100000000         | 0.001 | sell | MID              | 2          | 100000 | submission |
-
-    And the parties place the following orders:
-      | party  | market id | side | volume  | price     | resulting trades | type       | tif     |
-      | party1 | ETH/DEC21 | buy  | 100000  | 90000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/DEC21 | buy  | 100000  | 99000000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | ETH/DEC21 | buy  | 1000000 | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 100000  | 101000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 100000  | 110000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/DEC21 | sell | 1000000 | 100000000 | 0                | TYPE_LIMIT | TIF_GTC |
-
-    Then the network moves ahead "4" blocks
-
-    When the opening auction period ends for market "ETH/DEC21"
-    Then the auction ends with a traded volume of "1000000" at a price of "100000000"
-
-    And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | TRADING_MODE_CONTINUOUS | 43200   | 82056031  | 121701233 | 54210000     | 100000000      | 1000000       |
-
-    When the parties place the following orders:
-      | party  | market id | side | volume  | price     | resulting trades | type        | tif     | reference |
-      | party1 | ETH/DEC21 | buy  | 2000000 | 101000000 | 4                | TYPE_MARKET | TIF_GFN | ref-ref   |
-    And the network moves ahead "100" blocks
-
-    Then the market data for the market "ETH/DEC21" should be:
-      | mark price | last traded price | trading mode                    | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | 110000000         | TRADING_MODE_MONITORING_AUCTION | 43200   | 82779760  | 122774631 | 77492869     | 100000000      | 1299540       |
-
   Scenario: 002 replicate bug
 
     When the parties submit the following liquidity provision:

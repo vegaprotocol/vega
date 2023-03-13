@@ -26,10 +26,7 @@ type orderStore interface {
 	Add(o entities.Order) error
 	GetAll(ctx context.Context) ([]entities.Order, error)
 	GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error)
-	GetByMarket(ctx context.Context, marketID string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error)
-	GetByParty(ctx context.Context, partyID string, p entities.OffsetPagination) ([]entities.Order, error)
-	GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
@@ -84,22 +81,6 @@ func (o *Order) GetOrder(ctx context.Context, orderID string, version *int32) (e
 
 func (o *Order) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
 	return o.store.GetByMarketAndID(ctx, marketIDstr, orderIDs)
-}
-
-func (o *Order) GetByMarket(ctx context.Context, marketID string, p entities.OffsetPagination) ([]entities.Order, error) {
-	return o.store.GetByMarket(ctx, marketID, p)
-}
-
-func (o *Order) GetByParty(ctx context.Context, partyID string, p entities.OffsetPagination) ([]entities.Order, error) {
-	return o.store.GetByParty(ctx, partyID, p)
-}
-
-func (o *Order) GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error) {
-	return o.store.GetByReference(ctx, reference, p)
-}
-
-func (o *Order) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
-	return o.store.GetAllVersionsByOrderID(ctx, id, p)
 }
 
 func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {

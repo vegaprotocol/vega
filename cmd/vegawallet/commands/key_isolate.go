@@ -42,22 +42,31 @@ var (
 	}
 )
 
-type IsolateKeyHandler func(api.AdminIsolateKeyParams) (api.AdminIsolateKeyResult, error)
+type IsolateKeyHandler func(api.AdminIsolateKeyParams) (isolateKeyResult, error)
+
+type isolateKeyResult struct {
+	Wallet   string `json:"wallet"`
+	FilePath string `json:"filePath"`
+}
 
 func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminIsolateKeyParams) (api.AdminIsolateKeyResult, error) {
+	h := func(params api.AdminIsolateKeyParams) (isolateKeyResult, error) {
 		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.AdminIsolateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
+			return isolateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
 		isolateKey := api.NewAdminIsolateKey(walletStore)
 		rawResult, errDetails := isolateKey.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.AdminIsolateKeyResult{}, errors.New(errDetails.Data)
+			return isolateKeyResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.AdminIsolateKeyResult), nil
+		result := rawResult.(api.AdminIsolateKeyResult)
+		return isolateKeyResult{
+			Wallet:   result.Wallet,
+			FilePath: walletStore.GetWalletPath(result.Wallet),
+		}, nil
 	}
 
 	return BuildCmdIsolateKey(w, h, rf)
@@ -153,7 +162,7 @@ func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, error) {
 	}, nil
 }
 
-func PrintIsolateKeyResponse(w io.Writer, resp api.AdminIsolateKeyResult) {
+func PrintIsolateKeyResponse(w io.Writer, resp isolateKeyResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

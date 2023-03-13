@@ -13,13 +13,15 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | 1       | 0.99        | 300               |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.7                    | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
+      | party4 | USD   | 100000000 |
+      | party5 | USD   | 100000000 |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -38,8 +40,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |
     And the parties deposit on asset's general account the following amount:
-      | party  | asset | amount    |
-      | party0 | USD   | 12500    |
+      | party  | asset | amount |
+      | party0 | USD   | 12500  |
     And the average block duration is "1"
 
     And the parties submit the following liquidity provision:
@@ -49,12 +51,14 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party4 | ETH/MAR22 | buy  | 100    | 850   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/MAR22 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
       | party2 | ETH/MAR22 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party5 | ETH/MAR22 | sell | 100    | 1200  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-5 |
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
@@ -125,22 +129,26 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party0 | ETH/MAR22 | sell | 70     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
       | party1 | ETH/MAR22 | buy  | 100    | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party1-buy-4  |
 
-    And the insurance pool balance should be "11458" for the market "ETH/MAR22"
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party0 | ETH/MAR22 | 428592      | 471451 | 514310  | 600028   |
+      | party1 | ETH/MAR22 | 89962       | 98958  | 107954  | 125946   |
+
+    And the insurance pool balance should be "12231" for the market "ETH/MAR22"
 
     #check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond |
-      | party0 | USD   | ETH/MAR22 | 501322 | 0        | 0    |
+      | party0 | USD   | ETH/MAR22 | 500549 | 0        | 0    |
       | party1 | USD   | ETH/MAR22 | 107954 | 99891506 |      |
       | party2 | USD   | ETH/MAR22 | 264970 | 99734930 |      |
       | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |      |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 425372      | 467909 | 510446  | 595520  |
+      | party0 | ETH/MAR22 | 428592      | 471451 | 514310  | 600028  |
       | party1 | ETH/MAR22 | 89962       | 98958  | 107954  | 125946  |
       | party2 | ETH/MAR22 | 220809      | 242889 | 264970  | 309132  |
-    #| party2 | ETH/MAR22 | 221129      | 243241 | 265354  | 309580  |
 
     #documented behaviour why margin account has higher value than margin initial level:
     #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.
@@ -152,12 +160,11 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
-      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 462397       | 50000          | 130           |
+      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 462397       | 50000          | 130           |
 
   @Now
   Scenario: 002, LP gets slashed twice during continuous trading, 0044-LIME-002, No DPD setting
-
 
     Given the liquidity monitoring parameters:
       | name               | triggering ratio | time window | scaling factor |
@@ -261,29 +268,17 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1000      | 426828       | 50000          | 120           |
 
-    And the insurance pool balance should be "9756" for the market "ETH/MAR22"
+    And the insurance pool balance should be "56753" for the market "ETH/MAR22"
     #check the volume on the order book
 
     #check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond  |
-      | party0 | USD   | ETH/MAR22 | 467403 | 2349    | 20732 |
+      | party0 | USD   | ETH/MAR22 | 443487 | 0       | 0     |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 389503      | 428453 | 467403  | 545304  |
-
-    # Lp provider party0 keeps on putting order, and more bond slashing is done
-    When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference     |
-      | party0 | ETH/MAR22 | sell | 5      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party0-sell-3 |
-
-    And the insurance pool balance should be "19252" for the market "ETH/MAR22"
-
-    # margin levels stays the same as there is no new trade to trigger new mark price
-    And the parties should have the following account balances:
-      | party  | asset | market id | margin | general | bond |
-      | party0 | USD   | ETH/MAR22 | 480958 | 0       | 0    |
+      | party0 | ETH/MAR22 | 429703      | 472673 | 515643  | 601584  |
 
 #documented behavier why margin account has higher value than margin initial level:
 #When an LP submits a new order, we recalculate the margin requirements as we do for any order. At this point, we don't care if the party is an LP or not. We work out the margin requirements assuming whatever position the party holds stays the same. If the margin requirement increases, we try and top up the margin balance to the initial margin level. If this means dipping in to the bond account, we slash the bond account and apply a penalty.

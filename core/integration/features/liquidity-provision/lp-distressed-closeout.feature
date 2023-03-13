@@ -26,7 +26,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: 001, LP gets distressed during continuous trading (0042-LIQF-014)
     Given the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 0.5                    | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 5721       |
@@ -43,11 +43,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
-      | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
+      | party1 | ETH/DEC21 | buy  | 1000   | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/DEC21 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | party2 | ETH/DEC21 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
-      | party2 | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party2 | ETH/DEC21 | sell | 1000   | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
 
     When the opening auction period ends for market "ETH/DEC21"
@@ -80,51 +80,104 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
       | party3 | ETH/DEC21 | buy  | 5      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 1488   | 0       | 3348 |
-    And the insurance pool balance should be "826" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 1530   | 0       | 3264 |
+    And the insurance pool balance should be "868" for the market "ETH/DEC21"
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 5      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2253   | 0       | 1862 |
-    And the insurance pool balance should be "1569" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 2527   | 0       | 1314 |
+    And the insurance pool balance should be "1843" for the market "ETH/DEC21"
+
+    Then the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status        |
+      | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_ACTIVE |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC21 | buy  | 5      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 2928   | 0       | 556  |
-    And the insurance pool balance should be "2222" for the market "ETH/DEC21"
-
-    When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party3 | ETH/DEC21 | buy  | 5      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin | general | bond |
-      | party0 | ETH   | ETH/DEC21 | 233    | 0       | 0    |
-    And the insurance pool balance should be "5495" for the market "ETH/DEC21"
+      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
+    And the insurance pool balance should be "4847" for the market "ETH/DEC21"
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
 
-    # existing LP position not liquidated as there isn't enough volume on the book
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party0 | 0      | 0              | -1819        |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party0 | ETH/DEC21 | 0           |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1055       | TRADING_MODE_MONITORING_AUCTION | 2954         | 0              | 28            |
+
+    # Party0 was completely closed out, so everything should be in a final state (0 volume, only realised loss, etc...)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party0 | -22    | -90            | 0            |
+      | party0 | 0      | 0              | -1819        |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party0 | ETH/DEC21 | 0           |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
-      | sell | 1100  | 1      |
+      | sell | 1100  | 983    |
       | buy  | 990   | 1      |
-      | buy  | 900   | 1      |
-    And the accumulated liquidity fees should be "29" for the market "ETH/DEC21"
+      | buy  | 900   | 1000   |
+    And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
 
     # Make sure that at no point fees get distributed since the LP has been closed out
     Then the network moves ahead "12" blocks
-    And the accumulated liquidity fees should be "29" for the market "ETH/DEC21"
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | target stake | supplied stake | open interest |
+      | 1055       | TRADING_MODE_MONITORING_AUCTION | 2954         | 0              | 28            |
+
+    And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | party1 | ETH/DEC21 | 6000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp2 | party1 | ETH/DEC21 | 6000              | 0.001 | sell | ASK              | 500        | 10     | amendment  |
+
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | target stake | supplied stake | open interest |
+      | 1055       | TRADING_MODE_CONTINUOUS | 2954         | 6000           | 28            |
+
+    # add another MTM 
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC21 | buy  | 1      | 1055  | 1                | TYPE_LIMIT | TIF_FOK |
+
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party0 | ETH/DEC21 | 0           |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
+
+    Then the network moves ahead "1" blocks
+    # add another MTM 
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC21 | buy  | 1      | 1056  | 1                | TYPE_LIMIT | TIF_FOK |
+
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party0 | ETH/DEC21 | 0           |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general | bond |
+      | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
 
   Scenario: 002, LP gets distressed after auction
     Given the simple risk model named "simple-risk-model-2":
@@ -288,7 +341,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: 003, 2 LPs on the market, LP1 gets distressed and closed-out during continuous trading (0042-LIQF-014)
     Given the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | lp price range | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 1e6                    | 1e6                       |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01           | 5e-2                   | 0                       |
     And the parties deposit on asset's general account the following amount:
       | party   | asset | amount     |
       | party0  | ETH   | 5721       |
@@ -423,10 +476,7 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general | bond |
       | party0 | ETH   | ETH/DEC21 | 0      | 0       | 0    |
-    And the insurance pool balance should be "4848" for the market "ETH/DEC21"
-    # party0 only able to cover portion of the fees due to excessive bond slashing
-    And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
-
+    And the insurance pool balance should be "4765" for the market "ETH/DEC21"
     Then the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 900   | 1      |
@@ -438,14 +488,14 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
     #lp1(party0) is closed-out, some of the sell orders had been used for close-out trade
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | party0  | 0      | 0              | -1316        |
+      | party0  | 0      | 0              | -1331        |
       | party10 | -5     | 0              | 0            |
 
     Then the liquidity provisions should have the following states:
       | id  | party  | market    | commitment amount | status           |
       | lp1 | party0 | ETH/DEC21 | 5000              | STATUS_CANCELLED |
 
-    And the accumulated liquidity fees should be "23" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "45" for the market "ETH/DEC21"
   
     # Make sure that at no point fees get distributed since the LP has been closed out
     Then the network moves ahead "12" blocks

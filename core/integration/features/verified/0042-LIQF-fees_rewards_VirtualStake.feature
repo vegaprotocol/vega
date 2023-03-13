@@ -23,7 +23,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | network.markPriceUpdateMaximumFrequency             | 0s    |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.2                    | 0                         |
 
     # block duration of 2 seconds
     And the average block duration is "2"
@@ -580,7 +580,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 5334   | 3666    | 1000 |
+      | lp1   | USD   | ETH/MAR22 | 5244   | 3756    | 1000 |
 
 
     # 1st set of trades: market moves against lp1s position, margin-insufficient, margin topped up from general and bond
@@ -606,7 +606,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 4818   | 1182    | 1000 |
+      | lp1   | USD   | ETH/MAR22 | 6348   | 0       | 652 |
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
@@ -651,47 +651,6 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.1               | 1000                    |
-      | lp2   | 0.9               | 10000                   |
-
-    # Trigger liquidity distribution
-    When the network moves ahead "1" blocks:
-
-    Then the following transfers should happen:
-      | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 7      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 71     | USD   |
-
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
-
-
-    # 3rd set of trades: market moves against LP1s position, margin-insufficient, margin topped up from general and bond
-    When the network moves ahead "1" blocks:
-
-    When the parties amend the following orders:
-      | party  | reference | price | size delta | tif     |
-      | party1 | pa1-b1    | 1350  | 0          | TIF_GTC |
-      | party2 | pa2-s1    | 1550  | 0          | TIF_GTC |
-
-    And the parties place the following orders with ticks:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | party1 | ETH/MAR22 | buy  | 30     | 1450  | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | ETH/MAR22 | sell | 30     | 1450  | 1                | TYPE_LIMIT | TIF_GTC |
-
-    Then the following trades should be executed:
-      | buyer  | price | size | seller |
-      | party1 | 1450  | 30   | party2 |
-
-    # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1450 * 30 * 0.002) = 87
-
-    And the accumulated liquidity fees should be "87" for the market "ETH/MAR22"
-
-    Then the parties should have the following account balances:
-      | party | asset | market id | margin | general | bond |
-      | lp1   | USD   | ETH/MAR22 | 2513   | 0       | 0    |
-
-    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
       | lp2   | 1                 | 10000                   |
 
     # Trigger liquidity distribution
@@ -699,6 +658,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 87     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 78     | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
+
+    

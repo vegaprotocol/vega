@@ -57,7 +57,7 @@ func testImportNetworkFlagsValidFlagsWithFilePathSucceeds(t *testing.T) {
 
 	expectedReq := api.AdminImportNetworkParams{
 		Name:      networkName,
-		FilePath:  filePath,
+		URL:       api.FileSchemePrefix + filePath,
 		Overwrite: true,
 	}
 

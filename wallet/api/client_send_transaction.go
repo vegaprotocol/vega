@@ -57,7 +57,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(fmt.Errorf("the transaction is not a valid Vega command: %w", err))
+		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
 	}
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
@@ -85,7 +85,6 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	receivedAt := time.Now()
-
 	if connectedWallet.RequireInteraction() {
 		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 		if err != nil {
@@ -127,11 +126,13 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, nodeCommunicationError(ErrCouldNotGetChainIDFromNode)
 	}
 
+	h.interactor.Log(ctx, traceID, InfoLog, "Verifying if the transaction passes the anti-spam rules...")
 	err = h.spam.CheckSubmission(request, &stats)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not send transaction: %w", err))
 		return nil, applicationCancellationError(err)
 	}
+	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction passes the anti-spam rules.")
 
 	// Sign the payload.
 	rawInputData := wcommands.ToInputData(request, stats.LastBlockHeight)
@@ -169,9 +170,9 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 
 	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
-
 	sentAt := time.Now()
-	h.interactor.Log(ctx, traceID, InfoLog, "Sending the transaction...")
+
+	h.interactor.Log(ctx, traceID, InfoLog, "Sending the transaction to the network...")
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
 		h.interactor.NotifyFailedTransaction(ctx, traceID, 2, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())

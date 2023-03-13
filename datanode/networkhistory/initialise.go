@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cenkalti/backoff"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/service"
@@ -35,10 +37,17 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 	connCfg sqlstore.ConnectionConfig, networkHistoryService NetworkHistory,
 	grpcPorts []int, verboseMigration bool,
 ) error {
-	ctx, ctxCancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
-	defer ctxCancelFn()
+	var (
+		blocksFetched int64
+		currentSpan   sqlstore.DatanodeBlockSpan
+		err           error
+	)
+	attempt := 1
 
-	currentSpan, err := networkHistoryService.GetDatanodeBlockSpan(ctx)
+	sqlCtx, cancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
+	defer cancel()
+
+	currentSpan, err = networkHistoryService.GetDatanodeBlockSpan(sqlCtx)
 	if err != nil {
 		return fmt.Errorf("failed to get datanode block span: %w", err)
 	}
@@ -46,13 +55,15 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 	var toSegmentID string
 	blocksToFetch := cfg.MinimumBlockCount
 	if len(cfg.ToSegment) == 0 {
-		response, _, err := networkHistoryService.GetMostRecentHistorySegmentFromPeers(ctx,
+		response, _, err := networkHistoryService.GetMostRecentHistorySegmentFromPeers(sqlCtx,
 			grpcPorts)
 		if err != nil {
+			log.Errorf("failed to get most recent history segment from peers: %v", err)
 			return fmt.Errorf("failed to get most recent history segment from peers: %w", err)
 		}
 
 		if response == nil {
+			log.Error("unable to get a most recent segment response from peers")
 			return errors.New("unable to get a most recent segment response from peers")
 		}
 
@@ -76,25 +87,43 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 		toSegmentID = cfg.ToSegment
 	}
 
-	log.Infof("fetching history using as the first segment:{%s} and minimum blocks to fetch %d", toSegmentID, blocksToFetch)
+	op := func() (err error) {
+		log.Infof("attempt %d to initialise datanode from network history", attempt)
 
-	blocksFetched, err := FetchHistoryBlocks(ctx, log.Infof, toSegmentID,
-		func(ctx context.Context, historySegmentID string) (FetchResult, error) {
-			segment, err := networkHistoryService.FetchHistorySegment(ctx, historySegmentID)
-			if err != nil {
-				return FetchResult{}, err
-			}
-			return FromSegmentIndexEntry(segment), nil
-		}, blocksToFetch)
+		retryCtx, retryCancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
+		defer func() {
+			retryCancel()
+			attempt++
+		}()
+
+		log.Infof("fetching history using as the first segment:{%s} and minimum blocks to fetch %d", toSegmentID, blocksToFetch)
+
+		blocksFetched, err = FetchHistoryBlocks(retryCtx, log.Infof, toSegmentID,
+			func(ctx context.Context, historySegmentID string) (FetchResult, error) {
+				segment, err := networkHistoryService.FetchHistorySegment(retryCtx, historySegmentID)
+				if err != nil {
+					return FetchResult{}, err
+				}
+				return FromSegmentIndexEntry(segment), nil
+			}, blocksToFetch)
+
+		if err != nil {
+			log.Errorf("failed to fetch history blocks: %v", err)
+		}
+
+		if blocksFetched == 0 {
+			return fmt.Errorf("failed to get any blocks from network history")
+		}
+
+		log.Infof("fetched %d blocks from network history", blocksFetched)
+
+		return err
+	}
+
+	err = backoff.Retry(op, backoff.WithMaxRetries(backoff.NewConstantBackOff(cfg.RetryTimeout.Duration), cfg.FetchRetryMax))
 	if err != nil {
 		return fmt.Errorf("failed to fetch history blocks:%w", err)
 	}
-
-	if blocksFetched == 0 {
-		return fmt.Errorf("failed to get any blocks from network history")
-	}
-
-	log.Infof("fetched %d blocks from network history", blocksFetched)
 
 	log.Infof("loading history into the datanode")
 	segments, err := networkHistoryService.ListAllHistorySegments()
@@ -127,7 +156,10 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 
 	contiguousHistory := GetContiguousHistoryForSpan(contiguousHistories, from, to)
 
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(ctx, *contiguousHistory, connCfg, currentSpan.HasData, verboseMigration)
+	loadCtx, loadCtxCancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
+	defer loadCtxCancel()
+
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanode(loadCtx, *contiguousHistory, connCfg, currentSpan.HasData, verboseMigration)
 	if err != nil {
 		return fmt.Errorf("failed to load history into the datanode: %w", err)
 	}
