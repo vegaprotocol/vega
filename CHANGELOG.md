@@ -36,6 +36,7 @@
 
 ### 🐛 Fixes
 - [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
+- [7695](https://github.com/vegaprotocol/vega/issues/7695) - Fix `create_hypertable` in migrations.
 - [7596](https://github.com/vegaprotocol/vega/issues/7596) - Slippage factors not persisted in database
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source
