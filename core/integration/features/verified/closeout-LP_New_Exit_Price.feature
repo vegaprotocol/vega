@@ -229,6 +229,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | buy  | 49    | 1      |
       | sell | 2000  | 1      |
       | sell | 2020  | 74     |
+      | sell | 3000  | 1      |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -246,8 +247,12 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | buy  | 49    | 1      |
       | sell | 2000  | 0      |
       | sell | 2020  | 0      |
+      | sell | 3000  | 0      |
 
     Then the network moves ahead "100" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | 
+      | traderB | -112   | 300            | 0            | 
 
     And the parties should have the following position changes for market "ETH/DEC22":
       | party   | status                        |
