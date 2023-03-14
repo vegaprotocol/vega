@@ -152,8 +152,8 @@ Feature: Price monitoring triggers test on or around monitoring bounds with deci
     # 9000000001   11000000000
     # Update price monitoring bounds
     When the markets are updated:
-      | id        | price monitoring            |
-      | ETH/DEC20 | my-updated-price-monitoring |
+      | id        | price monitoring            | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | my-updated-price-monitoring | 0.001                  | 0                         |
     Then the market data for the market "ETH/DEC20" should be:
       | mark price  | trading mode            | horizon | min bound  | max bound   | target stake    | supplied stake   | open interest |
       | 10000000000 | TRADING_MODE_CONTINUOUS | 5       | 9000000001 | 11000000000 | 743400000000000 | 9000000000000000 | 1             |
@@ -206,8 +206,8 @@ Feature: Price monitoring triggers test on or around monitoring bounds with deci
 
     # Update price monitoring bounds
     When the markets are updated:
-      | id        | price monitoring              |
-      | ETH/DEC20 | my-updated-price-monitoring   |
+      | id        | price monitoring            | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | my-updated-price-monitoring | 0.001                  | 0                         |
     Then the market data for the market "ETH/DEC20" should be:
       | mark price  | trading mode            | horizon | min bound  | max bound   | target stake    | supplied stake   | open interest |
       | 10000000000 | TRADING_MODE_CONTINUOUS | 5       | 9000000001 | 11000000000 | 743400000000000 | 9000000000000000 | 1             |

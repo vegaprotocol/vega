@@ -47,8 +47,8 @@ Feature: test risk model parameter sigma
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/MAR53 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |
@@ -103,8 +103,8 @@ Feature: test risk model parameter sigma
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id       | liquidity monitoring |
-      | ETH/MAR0 | updated-lqm-params   |
+      | id       | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR0 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |

@@ -419,14 +419,14 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
+		"linear slippage factor", // slippage factors must be explicitly set to avoid setting them to hard-coded defaults
+		"quadratic slippage factor",
 	}, []string{
 		"data source config",   // product update
 		"price monitoring",     // price monitoring update
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
 		"lp price range",
-		"linear slippage factor",
-		"quadratic slippage factor",
 	})
 }
 
