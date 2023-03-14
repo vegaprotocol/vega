@@ -314,11 +314,8 @@ func headersInterceptor(
 
 		for _, h := range []metadata.MD{
 			// Deprecated: use 'X-Block-Height' and 'X-Block-Timestamp' instead to determine if data is fresh.
-			metadata.Pairs("X-Vega-Connection", "CONNECTED"),
 			metadata.Pairs("X-Block-Height", strconv.FormatInt(height, 10)),
 			metadata.Pairs("X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
-			// TODO: remove warning once deprecated header is gone.
-			metadata.Pairs("Warning", "199 - \"The header 'X-Vega-Connection' is deprecated and now defaults to 'CONNECTED'. It will be removed in a future version. See https://github.com/vegaprotocol/vega/issues/7385#issuecomment-1398719810\""),
 		} {
 			if errH := grpc.SetHeader(ctx, h); errH != nil {
 				log.Error("failed to set header", logging.Error(errH))
