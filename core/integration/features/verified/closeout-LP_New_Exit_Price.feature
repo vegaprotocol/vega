@@ -247,6 +247,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | sell | 2000  | 0      |
       | sell | 2020  | 0      |
 
+    Then the network moves ahead "100" blocks
+
     And the parties should have the following position changes for market "ETH/DEC22":
       | party   | status                        |
       | traderB | POSITION_STATUS_ORDERS_CLOSED |
