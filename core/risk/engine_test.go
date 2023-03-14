@@ -35,6 +35,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var DefaultSlippageFactor = num.DecimalFromFloat(0.1)
+
 func peggedOrderCounterForTest(int64) {}
 
 type MLEvent interface {
@@ -395,7 +397,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil, types.DefaultSlippageFactor, types.DefaultSlippageFactor)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil, DefaultSlippageFactor, DefaultSlippageFactor)
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -499,7 +501,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil, types.DefaultSlippageFactor, types.DefaultSlippageFactor)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, "mktid", "ETH", statevar, num.DecimalFromInt64(1), false, nil, DefaultSlippageFactor, DefaultSlippageFactor)
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
@@ -610,7 +612,7 @@ func testMarginWithOrderInBookAfterParamsUpdate(t *testing.T) {
 	statevarEngine.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevarEngine.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
 	asset := "ETH"
-	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, marketID, asset, statevarEngine, num.DecimalFromInt64(1), false, nil, types.DefaultSlippageFactor, types.DefaultSlippageFactor)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, ts, broker, marketID, asset, statevarEngine, num.DecimalFromInt64(1), false, nil, DefaultSlippageFactor, DefaultSlippageFactor)
 
 	evt := testMargin{
 		party:   "tx",
@@ -756,8 +758,8 @@ func getTestEngine(t *testing.T) *testEngine {
 		num.DecimalFromInt64(1),
 		false,
 		nil,
-		types.DefaultSlippageFactor,
-		types.DefaultSlippageFactor,
+		DefaultSlippageFactor,
+		DefaultSlippageFactor,
 	)
 
 	return &testEngine{
