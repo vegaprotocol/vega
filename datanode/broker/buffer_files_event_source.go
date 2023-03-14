@@ -112,7 +112,7 @@ func (e *bufferFileEventSource) sendAllRawEventsInFile(ctx context.Context, out 
 
 			// We have to deserialize the busEvent here (even though we output the raw busEvent)
 			// to be able to skip the first few events before we get a BeginBlock and to be
-			// able to to sleep between blocks.
+			// able to sleep between blocks.
 			busEvent := &eventspb.BusEvent{}
 			if err := proto.Unmarshal(rawEvent, busEvent); err != nil {
 				return fmt.Errorf("failed to unmarshal bus event: %w", err)

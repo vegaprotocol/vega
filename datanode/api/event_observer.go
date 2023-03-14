@@ -18,8 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
-	"google.golang.org/grpc/codes"
-
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
@@ -61,10 +59,7 @@ func (t coreServiceEventBusServer) Send(data []*eventspb.BusEvent) error {
 func (e *eventObserver) ObserveEventBus(
 	stream protoapi.CoreService_ObserveEventBusServer,
 ) error {
-	server := coreServiceEventBusServer{stream}
-	eventService := e.eventService
-
-	return observeEventBus(e.log, e.Config, server, eventService)
+	return observeEventBus(e.log, e.Config, coreServiceEventBusServer{stream}, e.eventService)
 }
 
 func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBusServer, eventService EventService) error {
@@ -87,12 +82,13 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+		return formatE(ErrMalformedRequest, err)
 	}
+
 	metrics.StartEventBusActiveSubscriptionCount(types)
 	defer metrics.StopEventBusActiveSubscriptionCount(types)
 
-	filters := []subscribers.EventFilter{}
+	var filters []subscribers.EventFilter
 	if len(req.MarketId) > 0 && len(req.PartyId) > 0 {
 		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketId, req.PartyId))
 	} else {
@@ -109,11 +105,10 @@ func observeEventBus(log *logging.Logger, config Config, eventBusServer eventBus
 	defer close(bCh)
 
 	if req.BatchSize > 0 {
-		err := observeEventsWithAck(ctx, log, eventBusServer, req.BatchSize, ch, bCh)
-		return err
+		return observeEventsWithAck(ctx, log, eventBusServer, req.BatchSize, ch, bCh)
 	}
-	err = observeEvents(ctx, log, eventBusServer, ch)
-	return err
+
+	return observeEvents(ctx, log, eventBusServer, ch)
 }
 
 func observeEvents(
@@ -138,11 +133,11 @@ func observeEvents(
 
 			if err := stream.Send(data); err != nil {
 				log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, err)
+				return formatE(ErrStreamInternal, err)
 			}
 			publishedEvents.updateStats(data)
 		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+			return formatE(ErrStreamInternal, ctx.Err())
 		}
 	}
 }
@@ -171,17 +166,17 @@ func observeEventsWithAck(
 
 			if err := stream.Send(data); err != nil {
 				log.Error("Error sending event on stream", logging.Error(err))
-				return apiError(codes.Internal, ErrStreamInternal, err)
+				return formatE(ErrStreamInternal, err)
 			}
 			publishedEvents.updateStats(data)
 		case <-ctx.Done():
-			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+			return formatE(ErrStreamInternal, ctx.Err())
 		}
 
 		// now we try to read again the new size / ack
 		req, err := recvEventRequest(ctx, defaultReqTimeout, stream)
 		if err != nil {
-			return err
+			return formatE(ErrStreamInternal, err)
 		}
 
 		if req.BatchSize != batchSize {
