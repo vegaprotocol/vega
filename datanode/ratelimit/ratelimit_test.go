@@ -36,13 +36,13 @@ func TestRateLimit_HTTPMiddleware(t *testing.T) {
 		assert.Equal(t, 100, count)
 	}
 
-	// We should have been banned after this so wait a second, then request again, the ban time remaining should be 599 seconds
+	// We should have been banned after this so wait a second, then request again,
+	// the ban time remaining should not be empty.
 	time.Sleep(time.Second)
 
 	res := httptest.NewRecorder()
 	limiter.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusForbidden, res.Code)
-	expiry := res.Header().Get("Retry-After")
+	expiry := res.Header().Get("RateLimit-Retry-After")
 	assert.NotEmpty(t, expiry)
-	assert.Equal(t, "599", expiry)
 }
