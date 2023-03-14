@@ -2098,7 +2098,7 @@ func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 
 func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 	ret := snapshot.BankingAssetActions{
-		AssetAction: make([]*snapshot.AssetAction, 0, len(a.AssetAction)),
+		AssetAction: make([]*checkpointpb.AssetAction, 0, len(a.AssetAction)),
 	}
 	for _, aa := range a.AssetAction {
 		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
@@ -2106,8 +2106,8 @@ func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 	return &ret
 }
 
-func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
-	ret := &snapshot.AssetAction{
+func (aa *AssetAction) IntoProto() *checkpointpb.AssetAction {
+	ret := &checkpointpb.AssetAction{
 		Id:                 aa.ID,
 		State:              aa.State,
 		Asset:              aa.Asset,
@@ -2143,7 +2143,7 @@ func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAsse
 	return &ret
 }
 
-func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
+func AssetActionFromProto(a *checkpointpb.AssetAction) *AssetAction {
 	aa := &AssetAction{
 		ID:            a.Id,
 		State:         a.State,
