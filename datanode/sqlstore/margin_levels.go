@@ -127,3 +127,14 @@ func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Cont
 	pagedMargins, pageInfo := entities.PageEntities[*v2.MarginEdge](marginLevels, pagination)
 	return pagedMargins, pageInfo, nil
 }
+
+func (ml *MarginLevels) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error) {
+	var marginLevels []entities.MarginLevels
+	query := fmt.Sprintf(`SELECT %s FROM current_margin_levels WHERE tx_hash = $1`, sqlMarginLevelColumns)
+
+	if err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, txHash); err != nil {
+		return nil, err
+	}
+
+	return marginLevels, nil
+}

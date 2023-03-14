@@ -99,6 +99,20 @@ func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID,
 	}
 }
 
+func (lp *LiquidityProvision) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LiquidityProvision, error) {
+	defer metrics.StartSQLQuery("LiquidityProvision", "GetByTxHash")()
+
+	var liquidityProvisions []entities.LiquidityProvision
+	query := fmt.Sprintf(`SELECT %s FROM liquidity_provisions WHERE tx_hash = $1`, sqlOracleLiquidityProvisionColumns)
+
+	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return liquidityProvisions, nil
+}
+
 func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
 	reference string, live bool, pagination entities.CursorPagination,
 ) ([]entities.LiquidityProvision, entities.PageInfo, error) {

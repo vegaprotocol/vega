@@ -14,6 +14,7 @@ type pupStore interface {
 		approvedBy *string,
 		pagination entities.CursorPagination,
 	) ([]entities.ProtocolUpgradeProposal, entities.PageInfo, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.ProtocolUpgradeProposal, error)
 }
 type ProtocolUpgrade struct {
 	pupStore       pupStore
@@ -47,4 +48,8 @@ func (p *ProtocolUpgrade) ListProposals(ctx context.Context,
 	pagination entities.CursorPagination,
 ) ([]entities.ProtocolUpgradeProposal, entities.PageInfo, error) {
 	return p.pupStore.List(ctx, status, approvedBy, pagination)
+}
+
+func (p *ProtocolUpgrade) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.ProtocolUpgradeProposal, error) {
+	return p.pupStore.GetByTxHash(ctx, txHash)
 }

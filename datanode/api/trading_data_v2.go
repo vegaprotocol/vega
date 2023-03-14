@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
+	cmdsV1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
@@ -3229,7 +3230,98 @@ func (t *tradingDataServiceV2) ListTransactionEntities(ctx context.Context, req 
 
 	oracleSpecs, err := t.oracleSpecService.GetByTxHash(ctx, txHash)
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrTradeServiceGetByTxHash) // TODO return proper error
+		return nil, apiError(codes.Internal, ErrOracleSpecGetByTxHash)
+	}
+
+	oracleData, err := t.oracleDataService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrOracleDataGetByTxHash)
+	}
+
+	markets, err := t.marketService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrMarketServiceGetByTxHash)
+	}
+
+	parties, err := t.partyService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrPartyServiceGetByTxHash)
+	}
+
+	marginLevels, err := t.riskService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	marginLevelsProtos, err := mapSlice(marginLevels,
+		func(item entities.MarginLevels) (*vega.MarginLevels, error) {
+			return item.ToProto(ctx, t.accountService)
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	rewards, err := t.rewardService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrRewardsGetByTxHash)
+	}
+
+	deposits, err := t.depositService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrDepositsGetByTxHash)
+	}
+
+	withdrawals, err := t.withdrawalService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrWithdrawalsGetByTxHash)
+	}
+
+	assets, err := t.assetService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAssetsGetByTxHash)
+	}
+
+	lps, err := t.liquidityProvisionService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAssetsGetByTxHash)
+	}
+
+	proposals, err := t.governanceService.GetProposalsByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrProposalsGetByTxHash)
+	}
+
+	delegations, err := t.delegationService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrDelegationsGetByTxHash)
+	}
+
+	// t.nodeService.GetNodeByID() TODO
+
+	signatures, err := t.notaryService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrSignaturesGetByTxHash)
+	}
+
+	netParams, err := t.networkParameterService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrNetworkParamatersGetByTxHash)
+	}
+
+	keyRotations, err := t.keyRotationService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrKeyRotationsGetByTxHash)
+	}
+
+	ethKeyRotations, err := t.ethereumKeyRotationService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrEthereumKeyRotationsGetByTxHash)
+	}
+
+	pups, err := t.protocolUpgradeService.GetByTxHash(ctx, txHash)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrEthereumKeyRotationsGetByTxHash)
 	}
 
 	return &v2.ListTransactionEntitiesResponse{
@@ -3244,7 +3336,23 @@ func (t *tradingDataServiceV2) ListTransactionEntities(ctx context.Context, req 
 		Erc20MultiSigSignerRemovedBundles: removedEventsProtos,
 		Trades:                            toProtos[*vega.Trade](trades),
 		OracleSpecs:                       toProtos[*vega.OracleSpec](oracleSpecs),
-		// OracleData: ,
+		OracleData:                        toProtos[*vega.OracleData](oracleData),
+		Markets:                           toProtos[*vega.Market](markets),
+		Parties:                           toProtos[*vega.Party](parties),
+		MarginLevels:                      marginLevelsProtos,
+		Rewards:                           toProtos[*vega.Reward](rewards),
+		Deposits:                          toProtos[*vega.Deposit](deposits),
+		Withdrawals:                       toProtos[*vega.Withdrawal](withdrawals),
+		Assets:                            toProtos[*vega.Asset](assets),
+		LiquidityProvisions:               toProtos[*vega.LiquidityProvision](lps),
+		Proposals:                         toProtos[*vega.Proposal](proposals),
+		Delegations:                       toProtos[*vega.Delegation](delegations),
+		// Nodes: , TODO - this will require simplified version of the node struct to be added, entities and protos
+		NodeSignatures:           toProtos[*cmdsV1.NodeSignature](signatures),
+		NetworkParameters:        toProtos[*vega.NetworkParameter](netParams),
+		KeyRotations:             toProtos[*v1.KeyRotation](keyRotations),
+		EthereumKeyRotations:     toProtos[*v1.EthereumKeyRotation](ethKeyRotations),
+		ProtocolUpgradeProposals: toProtos[*v1.ProtocolUpgradeEvent](pups),
 	}, nil
 }
 

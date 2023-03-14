@@ -40,6 +40,7 @@ func TestDeposits(t *testing.T) {
 	t.Run("Upsert should insert deposit updates if the same deposit id is inserted in a different block", testInsertDepositUpdatesIfNewBlock)
 	t.Run("GetByID should retrieve the latest state of the deposit with the given ID", testDepositsGetByID)
 	t.Run("GetByParty should retrieve the latest state of all deposits for a given party", testDepositsGetByParty)
+	t.Run("GetByTxHash", testDepositsGetTxhash)
 }
 
 func TestDepositsPagination(t *testing.T) {
@@ -293,6 +294,32 @@ func testDepositsGetByParty(t *testing.T) {
 	got, _, err := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.OffsetPagination{}, entities.DateRange{})
 	assert.NoError(t, err)
 	assert.Equal(t, want, got)
+}
+
+func testDepositsGetTxhash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ds, conn := setupDepositStoreTests(t)
+
+	var rowCount int
+
+	err := conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	depositProto1 := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
+	depositProto1.Id = "deadbeef01"
+
+	deposit, err := entities.DepositFromProto(depositProto1, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting market proto to database entity")
+
+	err = ds.Upsert(ctx, deposit)
+	require.NoError(t, err)
+
+	deposits, err := ds.GetByTxHash(ctx, entities.TxHash(deposit.TxHash))
+	assert.NoError(t, err)
+	assert.Equal(t, *deposit, deposits[0])
 }
 
 func getTestDeposit(id, party, asset, amount, txHash string, ts int64) *vega.Deposit {

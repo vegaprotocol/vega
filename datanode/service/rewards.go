@@ -23,6 +23,7 @@ import (
 type rewardStore interface {
 	Add(ctx context.Context, r entities.Reward) error
 	GetAll(ctx context.Context) ([]entities.Reward, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error)
 	GetByCursor(ctx context.Context, partyID *string, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination) ([]entities.Reward, entities.PageInfo, error)
 	GetSummaries(ctx context.Context, partyID *string, assetID *string) ([]entities.RewardSummary, error)
 	GetEpochSummaries(ctx context.Context, filter entities.RewardSummaryFilter, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error)
@@ -51,6 +52,10 @@ func (r *Reward) Add(ctx context.Context, reward entities.Reward) error {
 
 func (r *Reward) GetAll(ctx context.Context) ([]entities.Reward, error) {
 	return r.store.GetAll(ctx)
+}
+
+func (r *Reward) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error) {
+	return r.store.GetByTxHash(ctx, txHash)
 }
 
 func (r *Reward) GetByCursor(ctx context.Context, partyID, assetID *string, fromEpoch, toEpoch *uint64, p entities.CursorPagination) ([]entities.Reward, entities.PageInfo, error) {

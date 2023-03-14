@@ -76,6 +76,8 @@ var (
 	ErrorInvalidAssetID = newInvalidArgumentError("invalid asset ID")
 	// ErrMissingNodeID is returned when the node ID is missing from the request.
 	ErrMissingNodeID = newInvalidArgumentError("missing node id")
+	// ErrOracleServiceSpecID is returned when there was no data foind for the given ID.
+	ErrOracleServiceGetSpec = errors.New("failed retrieve data for oracle spec")
 	// ErrERC20InvalidTokenContractAddress is returned when the ERC20 token contract address is invalid.
 	ErrERC20InvalidTokenContractAddress = errors.New("invalid erc20 token contract address")
 	ErrSendingGRPCHeader                = errors.New("failed to send header")
@@ -106,6 +108,9 @@ var (
 	ErrMarketServiceGetAllPaged          = errors.New("failed to get all markets paged")
 	ErrMarketServiceGetMarketData        = errors.New("failed to get market data")
 	ErrMarketServiceGetMarketDataHistory = errors.New("failed to get market data history")
+	ErrMarketServiceGetMarkets           = errors.New("failed to get markets")
+	ErrMarketServiceGetByTxHash          = errors.New("failed to get orders for tx hash")
+	ErrMarketServiceGetDepth             = errors.New("failed to get market depth")
 	// AccountService...
 	ErrAccountServiceListAccounts = errors.New("failed to get accounts")
 	ErrFailedToSendSnapshot       = errors.New("failed to send accounts snapshot")
@@ -133,8 +138,9 @@ var (
 	ErrCandleServiceSubscribeToCandles  = errors.New("failed to subscribe to candle data")
 	ErrCandleServiceGetCandlesForMarket = errors.New("failed to get candles for market")
 	// PartyService...
-	ErrPartyServiceGetAll  = errors.New("failed to get parties")
-	ErrPartyServiceGetByID = errors.New("failed to get party for ID")
+	ErrPartyServiceGetAll      = errors.New("failed to get parties")
+	ErrPartyServiceGetByID     = errors.New("failed to get party for ID")
+	ErrPartyServiceGetByTxHash = errors.New("failed to get parties for tx hash")
 	// NotaryService...
 	ErrNotaryServiceGetByResourceID = errors.New("failed to get notary for resource ID")
 	// OracleSpecService...
@@ -157,10 +163,20 @@ var (
 	ErrGetNetworkLimits = errors.New("failed to get network limits")
 	// ErrGetNetworkParameters is returned when the network parameters cannot be retrieved.
 	ErrGetNetworkParameters = errors.New("failed to get network parameters")
-	// Rewards...
-	ErrGetRewards = errors.New("failed to get rewards")
 	// Network History...
-	ErrGetConnectedPeerAddresses    = errors.New("failed to get connected peer addresses")
+	ErrGetConnectedPeerAddresses = errors.New("failed to get connected peer addresses")
+	// TimeService...
+	ErrTimeServiceGetTimeNow = errors.New("failed to get time now")
+	// Blockchain...
+	ErrBlockchainBacklogLength = errors.New("failed to get backlog length from blockchain")
+	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
+	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
+	ErrBlockchainChainID       = errors.New("failed to get chain ID from blockchain")
+	// Rewards.
+	ErrGetRewards         = errors.New("failed to get rewards")
+	ErrRewardsGetByTxHash = errors.New("failed to get rewards for tx hash")
+	// Network History.
+	ErrGetActivePeerAddresses       = errors.New("failed to get active peer addresses")
 	ErrGetMostRecentHistorySegment  = errors.New("failed to get most recent history segment")
 	ErrListAllNetworkHistorySegment = errors.New("failed to list all history segments")
 	ErrFetchNetworkHistorySegment   = errors.New("failed to fetch segment")
@@ -194,17 +210,42 @@ var (
 	ErrEthereumKeyRotationServiceGetAll     = errors.New("failed to get all ethereum key rotations")
 	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
-	// Positions
+	// Positions...
 	ErrPostitionsGetByTxHash = errors.New("failed to get positions for tx hash")
-	// Ledger entries
+	// Ledger entries...
 	ErrLedgerEntriesGetByTxHash = errors.New("failed to get ledger entries for tx hash")
-	// Transfers
+	// Transfers...
 	ErrTransfersGetByTxHash = errors.New("failed to get transfers for tx hash")
-	// Votes
+	// Votes...
 	ErrVotesGetByTxHash = errors.New("failed to get votes for tx hash")
-	// ERC20MultiSigSignerEvents
+	// ERC20MultiSigSignerEvents...
 	ErrERC20MultiSigSignerAddedEventGetByTxHash   = errors.New("failed to get ERC20 multisig signer add events for tx hash")
 	ErrERC20MultiSigSignerRemovedEventGetByTxHash = errors.New("failed to get ERC20 multisig signer removed events for tx hash")
+	// Oracles...
+	ErrOracleSpecGetByTxHash = errors.New("failed to get oracle spec for tx hash")
+	ErrOracleDataGetByTxHash = errors.New("failed to get oracle data for tx hash")
+	// Deposits...
+	ErrDepositsGetByTxHash = errors.New("failed to get deposits for tx hash")
+	// Withdrawals...
+	ErrWithdrawalsGetByTxHash = errors.New("failed to get withdrawals for tx hash")
+	// Assets...
+	ErrAssetsGetByTxHash = errors.New("failed to get assets for tx hash")
+	// Liquidity provision...
+	ErrLiquidityProvisionGetByTxHash = errors.New("failed to get liquidity provision for tx hash")
+	// Proposals...
+	ErrProposalsGetByTxHash = errors.New("failed to get proposals for tx hash")
+	// Delegations...
+	ErrDelegationsGetByTxHash = errors.New("failed to get delegations for tx hash")
+	// Signatures...
+	ErrSignaturesGetByTxHash = errors.New("failed to get signatures for tx hash")
+	// NetworkParamaters...
+	ErrNetworkParamatersGetByTxHash = errors.New("failed to get network paramaters for tx hash")
+	// KeyRotations...
+	ErrKeyRotationsGetByTxHash = errors.New("failed to get key rotations for tx hash")
+	// EthereumKeyRotations...
+	ErrEthereumKeyRotationsGetByTxHash = errors.New("failed to get ethereum key rotations for tx hash")
+	// ProtocolUpgradeProposals...
+	ErrProtocolUpgradeProposalsGetByTxHash = errors.New("failed to get protocol upgrade proposals for tx hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

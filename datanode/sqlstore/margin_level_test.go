@@ -33,6 +33,7 @@ func TestMarginLevels(t *testing.T) {
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all markets if only party ID is provided", testGetMarginLevelsByPartyID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all parties if only market ID is provided", testGetMarginLevelsByMarketID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for the given party/market ID", testGetMarginLevelsByID)
+	t.Run("GetByTxHash", testGetMarginLevelsByID)
 
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given party if no pagination is provided", testGetMarginLevelsByIDPaginationWithPartyNoCursor)
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given market if no pagination is provided", testGetMarginLevelsByIDPaginationWithMarketNoCursor)
@@ -427,6 +428,77 @@ func testGetMarginLevelsByID(t *testing.T) {
 	want := []entities.MarginLevels{want1}
 
 	assert.ElementsMatch(t, want, got)
+}
+
+func testGetMarginByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	blockSource, ml, accountStore, conn := setupMarginLevelTests(t, ctx)
+	block := blockSource.getNextBlock(t, ctx)
+
+	var rowCount int
+	err := conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	ml1 := getMarginLevelProto()
+	ml2 := getMarginLevelProto()
+	ml3 := getMarginLevelProto()
+	ml4 := getMarginLevelProto()
+
+	ml2.PartyId = "DEADBAAD"
+
+	ml3.Timestamp = ml2.Timestamp + 1000000000
+	ml3.MaintenanceMargin = "2000"
+	ml3.SearchLevel = "2000"
+
+	ml4.Timestamp = ml2.Timestamp + 1000000000
+	ml4.MaintenanceMargin = "2000"
+	ml4.SearchLevel = "2000"
+	ml4.PartyId = "DEADBAAD"
+
+	marginLevel1, err := entities.MarginLevelsFromProto(ctx, ml1, accountStore, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting margin levels proto to database entity")
+
+	marginLevel2, err := entities.MarginLevelsFromProto(ctx, ml2, accountStore, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting margin levels proto to database entity")
+
+	err = ml.Add(marginLevel1)
+	require.NoError(t, err)
+	err = ml.Add(marginLevel2)
+	require.NoError(t, err)
+
+	_, err = ml.Flush(ctx)
+	assert.NoError(t, err)
+
+	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, rowCount)
+
+	got, err := ml.GetByTxHash(ctx, marginLevel1.TxHash)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(got))
+
+	// We have to truncate the time because Postgres only supports time to microsecond granularity.
+	want1 := marginLevel1
+	want1.Timestamp = want1.Timestamp.Truncate(time.Microsecond)
+	want1.VegaTime = want1.VegaTime.Truncate(time.Microsecond)
+
+	want := []entities.MarginLevels{want1}
+	assert.ElementsMatch(t, want, got)
+
+	got2, err := ml.GetByTxHash(ctx, marginLevel2.TxHash)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(got2))
+
+	// We have to truncate the time because Postgres only supports time to microsecond granularity.
+	want2 := marginLevel2
+	want2.Timestamp = want2.Timestamp.Truncate(time.Microsecond)
+	want2.VegaTime = want2.VegaTime.Truncate(time.Microsecond)
+
+	want = []entities.MarginLevels{want2}
+	assert.ElementsMatch(t, want, got2)
 }
 
 func populateMarginLevelPaginationTestData(t *testing.T, ctx context.Context) (*sqlstore.MarginLevels, map[int]entities.Block, map[int]entities.MarginLevels) {

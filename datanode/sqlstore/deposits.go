@@ -80,6 +80,20 @@ func (d *Deposits) GetByID(ctx context.Context, depositID string) (entities.Depo
 		ctx, d.Connection, &deposit, query, entities.DepositID(depositID)))
 }
 
+func (d *Deposits) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Deposit, error) {
+	defer metrics.StartSQLQuery("Deposits", "GetByTxHash")()
+
+	var deposits []entities.Deposit
+	query := fmt.Sprintf(`SELECT %s FROM deposits WHERE tx_hash = $1`, sqlDepositsColumns)
+
+	err := pgxscan.Select(ctx, d.Connection, &deposits, query, txHash)
+	if err != nil {
+		return nil, d.wrapE(err)
+	}
+
+	return deposits, nil
+}
+
 func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, pagination entities.Pagination, dateRange entities.DateRange) (
 	[]entities.Deposit, entities.PageInfo, error,
 ) {

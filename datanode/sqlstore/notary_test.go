@@ -28,6 +28,7 @@ func TestNotary(t *testing.T) {
 	t.Run("Adding a single signature", testAddSignatures)
 	t.Run("Adding multiple signatures for multiple resources", testAddMultipleSignatures)
 	t.Run("Getting a non-existing resource signatures", testNoResource)
+	t.Run("GetByTxHash", testSignatureGetByTx)
 }
 
 func setupNotaryStoreTests(t *testing.T) (*sqlstore.Notary, *sqlstore.Blocks, sqlstore.Connection) {
@@ -118,6 +119,27 @@ func testNoResource(t *testing.T) {
 	res, _, err := ws.GetByResourceID(ctx, "deadbeefdeadbeef", entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 0)
+}
+
+func testSignatureGetByTx(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	ns, bs, _ := setupNotaryStoreTests(t)
+
+	signature := getTestNodeSignature(t, ctx, bs, "deadbeef", "iamsig")
+	require.NoError(t, ns.Add(ctx, signature))
+
+	signature2 := getTestNodeSignature(t, ctx, bs, "deadbaef", "iamsig")
+	require.NoError(t, ns.Add(ctx, signature))
+
+	signatures, err := ns.GetByTxHash(ctx, signature.TxHash)
+	require.NoError(t, err)
+	require.Equal(t, signature, signatures[0])
+
+	signatures, err = ns.GetByTxHash(ctx, signature2.TxHash)
+	require.NoError(t, err)
+	require.Equal(t, signature2, signatures[0])
 }
 
 func TestNodeSignaturePagination(t *testing.T) {

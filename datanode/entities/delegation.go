@@ -39,7 +39,7 @@ func (d Delegation) String() string {
 		d.EpochID, d.PartyID, d.NodeID, d.Amount)
 }
 
-func (d *Delegation) ToProto() *vega.Delegation {
+func (d Delegation) ToProto() *vega.Delegation {
 	protoDelegation := vega.Delegation{
 		Party:    d.PartyID.String(),
 		NodeId:   d.NodeID.String(),

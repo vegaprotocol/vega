@@ -162,6 +162,24 @@ order by id, vega_time desc
 	return market, m.wrapE(err)
 }
 
+func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error) {
+	defer metrics.StartSQLQuery("Markets", "GetByTxHash")()
+
+	var markets []entities.Market
+	query := fmt.Sprintf(`SELECT %s FROM markets_current where tx_hash = $1`, sqlMarketsColumns)
+	err := pgxscan.Select(ctx, m.Connection, &markets, query, txHash)
+
+	if err == nil {
+		m.cacheLock.Lock()
+		for _, market := range markets {
+			m.cache[market.ID.String()] = market
+		}
+		m.cacheLock.Unlock()
+	}
+
+	return markets, m.wrapE(err)
+}
+
 func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
 	key := newCacheKey(marketID, pagination, includeSettled)
 	m.allCacheLock.Lock()

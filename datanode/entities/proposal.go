@@ -80,7 +80,7 @@ type Proposal struct {
 	TxHash                  TxHash
 }
 
-func (p *Proposal) ToProto() *vega.Proposal {
+func (p Proposal) ToProto() *vega.Proposal {
 	var lpMajority *string
 	if !p.RequiredLPMajority.IsZero() {
 		lpMajority = toPtr(p.RequiredLPMajority.String())

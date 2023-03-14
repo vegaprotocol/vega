@@ -106,6 +106,18 @@ func (as *Assets) GetByID(ctx context.Context, id string) (entities.Asset, error
 	return a, as.wrapE(err)
 }
 
+func (as *Assets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Asset, error) {
+	defer metrics.StartSQLQuery("Assets", "GetByTxHash")()
+
+	var assets []entities.Asset
+	err := pgxscan.Select(ctx, as.Connection, &assets, getAssetQuery(ctx)+` WHERE tx_hash=$1`, txHash)
+	if err != nil {
+		return nil, as.wrapE(err)
+	}
+
+	return assets, nil
+}
+
 func (as *Assets) GetAll(ctx context.Context) ([]entities.Asset, error) {
 	assets := []entities.Asset{}
 	defer metrics.StartSQLQuery("Assets", "GetAll")()

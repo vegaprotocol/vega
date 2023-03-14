@@ -30,6 +30,7 @@ func addNetParam(t *testing.T, ctx context.Context, ns *sqlstore.NetworkParamete
 		Key:      key,
 		Value:    value,
 		VegaTime: block.VegaTime,
+		TxHash:   generateTxHash(),
 	}
 	ns.Add(ctx, p)
 	return p
@@ -55,6 +56,13 @@ func TestNetParams(t *testing.T) {
 		expected := []entities.NetworkParameter{param2b, param1b}
 		pagination := entities.CursorPagination{}
 		actual, _, err := netParamStore.GetAll(ctx, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := []entities.NetworkParameter{param2b}
+		actual, err := netParamStore.GetByTxHash(ctx, param2b.TxHash)
 		require.NoError(t, err)
 		assert.Equal(t, expected, actual)
 	})

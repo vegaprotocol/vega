@@ -34,6 +34,7 @@ func TestMarkets_Get(t *testing.T) {
 	t.Run("GetByID should return the request market if it exists", getByIDShouldReturnTheRequestedMarketIfItExists)
 	t.Run("GetByID should return error if the market does not exist", getByIDShouldReturnErrorIfTheMarketDoesNotExist)
 	t.Run("GetAllPaged should not include rejected markets", getAllPagedShouldNotIncludeRejectedMarkets)
+	t.Run("GetByTxHash", getByTxHashReturnsMatchingMarkets)
 }
 
 func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
@@ -58,6 +59,31 @@ func getByIDShouldReturnTheRequestedMarketIfItExists(t *testing.T) {
 	assert.Equal(t, market.TxHash, marketFromDB.TxHash)
 	assert.Equal(t, market.VegaTime, marketFromDB.VegaTime)
 	assert.Equal(t, market.State, marketFromDB.State)
+}
+
+func getByTxHashReturnsMatchingMarkets(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	block := addTestBlock(t, ctx, bs)
+
+	market := entities.Market{
+		ID:       "deadbeef",
+		TxHash:   generateTxHash(),
+		VegaTime: block.VegaTime,
+		State:    entities.MarketStateActive,
+	}
+	err := md.Upsert(ctx, &market)
+	require.NoError(t, err, "Saving market entity to database")
+
+	foundMarkets, err := md.GetByTxHash(ctx, market.TxHash)
+	require.NoError(t, err)
+	require.Len(t, foundMarkets, 1)
+	assert.Equal(t, market.ID, foundMarkets[0].ID)
+	assert.Equal(t, market.TxHash, foundMarkets[0].TxHash)
+	assert.Equal(t, market.VegaTime, foundMarkets[0].VegaTime)
+	assert.Equal(t, market.State, foundMarkets[0].State)
 }
 
 func getByIDShouldReturnErrorIfTheMarketDoesNotExist(t *testing.T) {
