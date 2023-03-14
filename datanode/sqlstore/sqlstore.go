@@ -371,6 +371,9 @@ func getPolicy(entity string, policies []RetentionPolicy) (RetentionPolicy, bool
 }
 
 func setRetentionPolicy(db *sql.DB, entity string, policy string, log *logging.Logger) error {
+	if policy == "" {
+		return nil
+	}
 	if _, err := db.Exec(fmt.Sprintf("SELECT remove_retention_policy('%s', true);", entity)); err != nil {
 		return fmt.Errorf("removing retention policy from %s: %w", entity, err)
 	}
@@ -383,6 +386,19 @@ func setRetentionPolicy(db *sql.DB, entity string, policy string, log *logging.L
 
 	if _, err := db.Exec(fmt.Sprintf("SELECT add_retention_policy('%s', INTERVAL '%s');", entity, policy)); err != nil {
 		return fmt.Errorf("adding retention policy to %s: %w", entity, err)
+	}
+
+	return nil
+}
+
+func setChunkInterval(db *sql.DB, entity string, interval string, log *logging.Logger) error {
+	if interval == "" {
+		return nil
+	}
+
+	log.Info("Setting chunk interval", zap.String("entity", entity), zap.String("interval", interval))
+	if _, err := db.Exec(fmt.Sprintf("SELECT set_chunk_time_interval('%s', INTERVAL '%s');", entity, interval)); err != nil {
+		return fmt.Errorf("setting chunk interval for %s: %w", entity, err)
 	}
 
 	return nil
@@ -419,12 +435,23 @@ func ApplyDataRetentionPolicies(config Config, log *logging.Logger) error {
 			policy := defaultPolicies[0]
 			override, ok := getPolicy(entity, overridePolicies)
 			if ok { // we have found an override policy so apply it instead of the default
+				// make sure that if any part of the override policy is empty, we use the default
+				if override.DataRetentionPeriod == "" {
+					override.DataRetentionPeriod = policy.DataRetentionPeriod
+				}
+				if override.ChunkInterval == "" {
+					override.ChunkInterval = policy.ChunkInterval
+				}
 				policy = override
 			}
 
 			// Set the default retention period
 			if err := setRetentionPolicy(db, entity, policy.DataRetentionPeriod, log); err != nil {
 				return fmt.Errorf("setting retention policy for %s to %s: %w", entity, policy.DataRetentionPeriod, err)
+			}
+
+			if err := setChunkInterval(db, entity, policy.ChunkInterval, log); err != nil {
+				return fmt.Errorf("setting chunk interval for %s to %s: %w", entity, policy.ChunkInterval, err)
 			}
 
 			continue
@@ -444,7 +471,19 @@ func ApplyDataRetentionPolicies(config Config, log *logging.Logger) error {
 
 		override, ok := getPolicy(entity, overridePolicies)
 		if ok { // we have found an override policy so apply it instead of the default
+			// make sure that if any part of the override policy is empty, we use the default
+			if override.DataRetentionPeriod == "" {
+				override.DataRetentionPeriod = policy.DataRetentionPeriod
+			}
+			if override.ChunkInterval == "" {
+				override.ChunkInterval = policy.ChunkInterval
+			}
+
 			policy = override
+		}
+
+		if err := setChunkInterval(db, entity, policy.ChunkInterval, log); err != nil {
+			return fmt.Errorf("setting chunk interval for %s to %s: %w", entity, policy.ChunkInterval, err)
 		}
 
 		aboveMinimum, retentionPeriodInSecs, err := checkPolicyPeriodIsAtOrAboveMinimum(oneDayAsSeconds, policy, db)

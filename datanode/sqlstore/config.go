@@ -60,6 +60,7 @@ type ConnectionConfig struct {
 type RetentionPolicy struct {
 	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
 	DataRetentionPeriod  string `string:"interval" description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc. To retain data indefinitely specify 'forever'"`
+	ChunkInterval        string `string:"chunk-interval" description:"the interval at which to create new chunks, e.g '1 day', '1 month', '1 year' etc."`
 }
 
 type ConnectionRetryConfig struct {
