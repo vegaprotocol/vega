@@ -103,9 +103,7 @@ Feature: Closeout scenarios
       | party      | volume | unrealised pnl | realised pnl |
       | auxiliary1 | -10    | 0              | 0            |
       | auxiliary2 | 10     | 0              | 0            |
-    # fill trader3's limit order, it becomes immediately distressed and gets closed out
-    # mark price moves from 10 to 100 and trader2 no longer has enough margin to maintain their order,
-    # the order gets cancelled first so they don't trade with the network
+    #setup trader3 position and close it out
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | auxiliary2 | ETH/DEC19 | sell | 10     | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
@@ -177,8 +175,8 @@ Feature: Closeout scenarios
       | trader2 | ETH/DEC20 | 1026        | 1539   | 2052    | 3078    |
 
     Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 1026   | 0       |
+      | party   | asset | market id | margin | general |  status       |
+      | trader2 | USD   | ETH/DEC20 | 1026   | 0       | ORDERS_CLOSED |
 
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
@@ -190,8 +188,8 @@ Feature: Closeout scenarios
       | 10         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 29877        | 100000         | 11            |
 
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl |
-      | trader2 | -1     | 0              | 0            |
+      | party   | volume | unrealised pnl | realised pnl | status       |
+      | trader2 | -1     | 0              | 0            | ORDERS_CLOSED|
 
     Then the network moves ahead "14" blocks
     And the market data for the market "ETH/DEC20" should be:
@@ -204,8 +202,8 @@ Feature: Closeout scenarios
       | 40         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 29877        | 100000         | 21            |
 
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl |
-      | trader2 | 0      | 0              | -1026        |
+      | party   | volume | unrealised pnl | realised pnl | status    | 
+      | trader2 | 0      | 0              | -1026        | CLOSED_OUT|
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
