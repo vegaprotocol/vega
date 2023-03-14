@@ -140,7 +140,7 @@ Feature: Closeout scenarios
       | mark price | trading mode                    | auction trigger                            |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
 
-  Scenario: 002, Position becomes distressed upon exiting an auction (0012-POSR-007)
+  Scenario: 002, Position becomes distressed upon exiting an auction (0012-POSR-007, 0007-POSN-016)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
@@ -178,10 +178,6 @@ Feature: Closeout scenarios
       | party   | asset | market id | margin | general |  
       | trader2 | USD   | ETH/DEC20 | 1026   | 0       | 
 
-  #   And the parties should have the following position changes for market "ETH/DEC20":
-  # | party   | status        |
-  # | trader2 | ORDERS_CLOSED |
-
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
       | auxiliary1 | ETH/DEC20 | sell | 10     | 40    | 0                | TYPE_LIMIT | TIF_GTC |
@@ -212,9 +208,13 @@ Feature: Closeout scenarios
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
 
-    And the parties should have the following position changes for market "ETH/DEC20":
-      | party   | status      |
-       | trader2 | CLOSED_OUT |
-      # | trader2 | ORDERS_CLOSED |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC20 | 0           | 0      | 0       | 0       |
 
-  Scenario: 003, check the newly added "loss socialisation amount" (0007-POSN-014)
+    And the parties should have the following position changes for market "ETH/DEC20":
+      | party   | status                     |
+      | trader2 | POSITION_STATUS_CLOSED_OUT |
+
+
+ 
