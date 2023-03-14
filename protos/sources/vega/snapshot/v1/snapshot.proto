@@ -6,7 +6,6 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/snapshot/v1";
 import "vega/vega.proto";
 import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/chain_events.proto";
 import "vega/governance.proto";
 import "vega/events/v1/events.proto";
 import "vega/checkpoint/v1/checkpoint.proto";
@@ -210,22 +209,6 @@ message TxRef {
   uint64 log_index = 4;
 }
 
-message AssetAction {
-  string id = 1;
-  uint32 state = 2;
-  string asset = 3;
-  uint64 block_number = 4;
-  uint64 tx_index = 5;
-  string hash = 6;
-
-  vega.BuiltinAssetDeposit builtin_deposit = 7;
-  vega.ERC20Deposit erc20_deposit = 8;
-  vega.ERC20AssetList asset_list = 9;
-  vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
-  bool erc20_bridge_stopped = 11;
-  bool erc20_bridge_resumed = 12;
-}
-
 message BankingWithdrawals {
   repeated Withdrawal withdrawals = 1;
 }
@@ -240,7 +223,7 @@ message BankingSeen {
 }
 
 message BankingAssetActions {
-  repeated AssetAction asset_action = 1;
+  repeated vega.checkpoint.v1.AssetAction asset_action = 1;
 }
 
 message BankingRecurringTransfers {
