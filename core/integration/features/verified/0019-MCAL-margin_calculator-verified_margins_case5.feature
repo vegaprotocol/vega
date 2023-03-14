@@ -1,4 +1,4 @@
-Feature: CASE-5: Trader submits short order that will trade - new formula & low exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-003, 0019-MCAL-0016)
+Feature: CASE-5: Trader submits short order that will trade - new formula & low exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-003, 0019-MCAL-016)
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
