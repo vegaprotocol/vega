@@ -22,13 +22,15 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | market.liquidity.targetstake.triggering.ratio | 0.24  |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | decimal places | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       | 1e6                    | 1e6                       |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1              | 2                       | 0.7                    | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
       | party1 | USD   | 100000000 |
       | party2 | USD   | 100000000 |
       | party3 | USD   | 100000000 |
+      | party4 | USD   | 100000000 |
+      | party5 | USD   | 100000000 |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -45,12 +47,15 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | party4 | ETH/MAR22 | buy  | 100    | 850   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-4  |
       | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/MAR22 | buy  | 1      | 990   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
       | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-2  |
       | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-3 |
       | party2 | ETH/MAR22 | sell | 1      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-1 |
       | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-2 |
+      | party5 | ETH/MAR22 | sell | 100    | 1200  | 0                | TYPE_LIMIT | TIF_GTC | sell-ref-5 |
+
 
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "10" at a price of "1000"
@@ -129,14 +134,14 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     #check the requried balances
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
-      | party0 | USD   | ETH/MAR22 | 467474 | 2278     | 28537 |
+      | party0 | USD   | ETH/MAR22 | 469299 | 453     | 28537 |
       | party1 | USD   | ETH/MAR22 | 107954 | 99891646 |       |
       | party2 | USD   | ETH/MAR22 | 264970 | 99734960 |       |
       | party3 | USD   | ETH/MAR22 | 28826  | 99971294 |       |
 
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party0 | ETH/MAR22 | 389562      | 428518 | 467474  | 545386  |
+      | party0 | ETH/MAR22 | 391083      | 430191 | 469299  | 547516  |
       | party1 | ETH/MAR22 | 89962       | 98958  | 107954  | 125946  |
       | party2 | ETH/MAR22 | 220809      | 242889 | 264970  | 309132  |
 
@@ -144,6 +149,6 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
     Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/MAR22" should be:
-      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 426828       | 50000          | 120           |
+      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 426828       | 50000          | 120           |
 

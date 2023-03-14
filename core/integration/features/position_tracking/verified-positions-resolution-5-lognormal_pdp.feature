@@ -16,21 +16,21 @@ Feature: Position resolution case 5 lognormal risk model
 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | position decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 2                       | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 2                       | 1e-3                   | 1e-3                      |
 
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book
+  Scenario: using lognormal risk model, set "designatedLoser " closeout while the position of "designatedLoser " is not fully covered by orders on the order book
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLooser | USD   | 21600         |
+      | designatedLoser  | USD   | 32000         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
@@ -53,7 +53,7 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 2100  | 0      |
+      | sell | 2001  | 450    |
       | sell | 2000  | 1000   |
       | buy  | 1     | 901000 |
 
@@ -65,7 +65,6 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 2100  | 0      |
       | sell | 2000  | 1000   |
       | sell | 250   | 3600   |
       | sell | 150   | 29000  |
@@ -76,11 +75,15 @@ Feature: Position resolution case 5 lognormal risk model
     # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | designatedLooser | ETH/DEC19 | buy  | 29000  | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | designatedLoser  | ETH/DEC19 | buy  | 29000  | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 17250  | 0       |
+      | designatedLoser  | USD   | ETH/DEC19 | 27650  | 0       |
+
+    Then the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | designatedLoser  | 29000  | 0              | 0            |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
@@ -103,19 +106,23 @@ Feature: Position resolution case 5 lognormal risk model
 
     Then the parties should have the following account balances:
       | party            | asset | market id | margin | general |
-      | designatedLooser | USD   | ETH/DEC19 | 0      | 0       |
+      | designatedLoser  | USD   | ETH/DEC19 | 0      | 0       |
+
+    Then the parties should have the following profit and loss:
+      | party            | volume | unrealised pnl | realised pnl |
+      | designatedLoser  | 0      | 0              | -27650       |
 
     # then we make sure the insurance pool collected the funds (however they get later spent on MTM payment to closeout-facilitating party)
     Then the following transfers should happen:
       | from             | to              | from account            | to account                       | market id | amount | asset |
-      | designatedLooser | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
+      | designatedLoser  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
       | buySideProvider  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC19 | 0      | USD   |
       | buySideProvider  | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 1      | USD   |
-      | designatedLooser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
+      | designatedLoser  |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market           | lpprov          | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLooser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 14321  | USD   |
-      | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 14321  | USD   |
-      | market           | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 13828  | USD   |
+      | designatedLoser  | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 24721  | USD   |
+      | market           | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 24721  | USD   |
+      | market           | lpprov          | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 23869  | USD   |
       | buySideProvider  | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"

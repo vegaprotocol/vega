@@ -111,6 +111,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create network history store:%w", err)
 	}
+	defer networkHistoryStore.Stop()
 
 	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory,
 		connPool, snapshotService, networkHistoryStore, cmd.Config.API.Port,

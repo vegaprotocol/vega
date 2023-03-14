@@ -39,13 +39,24 @@ var (
 	`)
 )
 
-type ImportWalletHandler func(api.AdminImportWalletParams) (api.AdminImportWalletResult, error)
+type ImportWalletHandler func(api.AdminImportWalletParams) (importWalletResult, error)
+
+type importedWallet struct {
+	Name                 string `json:"name"`
+	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+	FilePath             string `json:"filePath"`
+}
+
+type importWalletResult struct {
+	Wallet importedWallet `json:"wallet"`
+	Key    firstPublicKey `json:"key"`
+}
 
 func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminImportWalletParams) (api.AdminImportWalletResult, error) {
+	h := func(params api.AdminImportWalletParams) (importWalletResult, error) {
 		walletStore, err := wallets.InitialiseStore(rf.Home)
 		if err != nil {
-			return api.AdminImportWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
+			return importWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
@@ -53,9 +64,22 @@ func NewCmdImportWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		rawResult, errDetails := importWallet.Handle(context.Background(), params)
 		if errDetails != nil {
-			return api.AdminImportWalletResult{}, errors.New(errDetails.Data)
+			return importWalletResult{}, errors.New(errDetails.Data)
 		}
-		return rawResult.(api.AdminImportWalletResult), nil
+
+		result := rawResult.(api.AdminImportWalletResult)
+		return importWalletResult{
+			Wallet: importedWallet{
+				Name:                 result.Wallet.Name,
+				KeyDerivationVersion: result.Wallet.KeyDerivationVersion,
+				FilePath:             walletStore.GetWalletPath(result.Wallet.Name),
+			},
+			Key: firstPublicKey{
+				PublicKey: result.Key.PublicKey,
+				Algorithm: result.Key.Algorithm,
+				Meta:      result.Key.Meta,
+			},
+		}, nil
 	}
 
 	return BuildCmdImportWallet(w, h, rf)
@@ -158,7 +182,7 @@ func (f *ImportWalletFlags) Validate() (api.AdminImportWalletParams, error) {
 	return params, nil
 }
 
-func PrintImportWalletResponse(w io.Writer, resp api.AdminImportWalletResult) {
+func PrintImportWalletResponse(w io.Writer, resp importWalletResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

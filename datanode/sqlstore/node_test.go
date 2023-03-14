@@ -499,3 +499,35 @@ func testNodePaginationLastBefore(t *testing.T) {
 		EndCursor:       nodes[6].Cursor().Encode(),
 	}, pageInfo)
 }
+
+func TestNode_AddRankingScoreInSameEpoch(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	ns := sqlstore.NewNode(connectionSource)
+
+	block := addTestBlock(t, ctx, bs)
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+
+	// node1 goes from pending -> ersatz -> tendermint
+	// then gets demoted straight to pending with a zero perf score
+	addRankingScore(t, ctx, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.NewFromFloat(0.25),
+			PreviousStatus:   entities.ValidatorNodeStatusPending,
+			Status:           entities.ValidatorNodeStatusErsatz,
+			EpochSeq:         2,
+			VegaTime:         block.VegaTime,
+		})
+	addRankingScore(t, ctx, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.Zero,
+			PreviousStatus:   entities.ValidatorNodeStatusTendermint,
+			Status:           entities.ValidatorNodeStatusPending,
+			EpochSeq:         2,
+			VegaTime:         block.VegaTime,
+		})
+}

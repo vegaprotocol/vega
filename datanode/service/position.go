@@ -14,7 +14,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
@@ -111,26 +110,21 @@ func (p *Position) GetByMarketAndParties(ctx context.Context, marketID string, p
 func (p *Position) GetByMarketAndParty(ctx context.Context, marketID string, partyID string) (entities.Position, error) {
 	key := positionCacheKey{entities.MarketID(marketID), entities.PartyID(partyID)}
 	value, ok := p.cache.Get(key)
-	if !ok {
-		pos, err := p.store.GetByMarketAndParty(
-			ctx, marketID, partyID)
-		if err == nil {
-			p.cache.Add(key, pos)
-		} else { // If store errors in the cache too
-			p.cache.Add(key, err)
+	if ok {
+		// make sure the value in cache is a position entity, ignore errors
+		if v, ok := value.(entities.Position); ok {
+			return v, nil
 		}
-
-		return pos, err
+	}
+	// either cache miss, or an error was cached, either way fall back to store and update cache
+	pos, err := p.store.GetByMarketAndParty(
+		ctx, marketID, partyID)
+	// let's not cache errors here
+	if err == nil {
+		p.cache.Add(key, pos)
 	}
 
-	switch v := value.(type) {
-	case entities.Position:
-		return v, nil
-	case error:
-		return entities.Position{}, v
-	default:
-		return entities.Position{}, fmt.Errorf("unknown type in cache")
-	}
+	return pos, err
 }
 
 func (p *Position) GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error) {

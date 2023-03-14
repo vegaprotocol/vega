@@ -37,6 +37,21 @@ func (m *MockClientAPI) EXPECT() *MockClientAPIMockRecorder {
 	return m.recorder
 }
 
+// CheckTransaction mocks base method.
+func (m *MockClientAPI) CheckTransaction(arg0 context.Context, arg1 jsonrpc.Params, arg2 api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckTransaction", arg0, arg1, arg2)
+	ret0, _ := ret[0].(jsonrpc.Result)
+	ret1, _ := ret[1].(*jsonrpc.ErrorDetails)
+	return ret0, ret1
+}
+
+// CheckTransaction indicates an expected call of CheckTransaction.
+func (mr *MockClientAPIMockRecorder) CheckTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockClientAPI)(nil).CheckTransaction), arg0, arg1, arg2)
+}
+
 // ConnectWallet mocks base method.
 func (m *MockClientAPI) ConnectWallet(arg0 context.Context, arg1 string) (wallet.Wallet, *jsonrpc.ErrorDetails) {
 	m.ctrl.T.Helper()

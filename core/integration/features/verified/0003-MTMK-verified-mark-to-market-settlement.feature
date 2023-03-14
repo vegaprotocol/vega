@@ -7,7 +7,7 @@ Feature: MTM settlement tests
   Background:
     Given the markets:
       | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -38,6 +38,10 @@ Feature: MTM settlement tests
       | party5 | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GFA | party5-2  |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "100" for the market "ETH/DEC19"
+    And the market data for the market "ETH/DEC19" should be:
+       | mark price | trading mode             | target stake | supplied stake | open interest |
+       | 100        | TRADING_MODE_CONTINUOUS  | 0            | 0              | 1             |
+
     Then the parties cancel the following orders:
       | party  | reference |
       | party4 | party4-1  |

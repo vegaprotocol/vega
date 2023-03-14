@@ -335,6 +335,7 @@ type ExecMarket struct {
 	SettlementData             *num.Numeric
 	NextMTM                    int64
 	Parties                    []string
+	Closed                     bool
 }
 
 type PriceMonitor struct {
@@ -480,7 +481,8 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []string
+	Refs             []string
+	LastSeenEthBlock uint64
 }
 
 type BankingAssetActions struct {
@@ -2080,21 +2082,23 @@ func (b BDeposit) IntoProto() *snapshot.Deposit {
 
 func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
 	ret := BankingSeen{
-		Refs: bs.Refs,
+		Refs:             bs.Refs,
+		LastSeenEthBlock: bs.LastSeenEthBlock,
 	}
 	return &ret
 }
 
 func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	ret := snapshot.BankingSeen{
-		Refs: b.Refs,
+		Refs:             b.Refs,
+		LastSeenEthBlock: b.LastSeenEthBlock,
 	}
 	return &ret
 }
 
 func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 	ret := snapshot.BankingAssetActions{
-		AssetAction: make([]*snapshot.AssetAction, 0, len(a.AssetAction)),
+		AssetAction: make([]*checkpointpb.AssetAction, 0, len(a.AssetAction)),
 	}
 	for _, aa := range a.AssetAction {
 		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
@@ -2102,8 +2106,8 @@ func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 	return &ret
 }
 
-func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
-	ret := &snapshot.AssetAction{
+func (aa *AssetAction) IntoProto() *checkpointpb.AssetAction {
+	ret := &checkpointpb.AssetAction{
 		Id:                 aa.ID,
 		State:              aa.State,
 		Asset:              aa.Asset,
@@ -2139,7 +2143,7 @@ func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAsse
 	return &ret
 }
 
-func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
+func AssetActionFromProto(a *checkpointpb.AssetAction) *AssetAction {
 	aa := &AssetAction{
 		ID:            a.Id,
 		State:         a.State,
@@ -2947,6 +2951,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		NextMTM:                    em.NextMarkToMarket,
 		LastTradedPrice:            lastTradedPrice,
 		Parties:                    em.Parties,
+		Closed:                     em.Closed,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2978,6 +2983,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		NextMarkToMarket:           e.NextMTM,
 		LastTradedPrice:            e.LastTradedPrice.String(),
 		Parties:                    e.Parties,
+		Closed:                     e.Closed,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())

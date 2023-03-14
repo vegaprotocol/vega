@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -123,7 +124,17 @@ func (store *Node) UpsertRanking(ctx context.Context, rs *entities.RankingScore,
 			tx_hash,
 			vega_time)
 		VALUES
-			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		ON CONFLICT (node_id, epoch_seq) DO UPDATE
+		SET
+			stake_score = EXCLUDED.stake_score,
+		    performance_score = EXCLUDED.performance_score,
+		    ranking_score = EXCLUDED.ranking_score,
+		    voting_power = EXCLUDED.voting_power,
+		    previous_status = EXCLUDED.previous_status,
+		    status = EXCLUDED.status,
+		    tx_hash = EXCLUDED.tx_hash,
+		    vega_time = EXCLUDED.vega_time`,
 		aux.NodeID,
 		rs.EpochSeq,
 		rs.StakeScore,
@@ -239,6 +250,10 @@ func (store *Node) GetNodeData(ctx context.Context, epochSeq uint64) (entities.N
 		entities.ValidatorNodeStatusPending:    &nodeData.PendingNodes,
 	}
 	for _, n := range nodes {
+		if n.RankingScore == nil {
+			store.log.Warn("ignoring node with empty ranking score", logging.String("id", n.ID.String()))
+			continue
+		}
 		status := n.RankingScore.Status
 		previousStatus := n.RankingScore.PreviousStatus
 		if status == entities.ValidatorNodeStatusUnspecified {

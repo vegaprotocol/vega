@@ -30,8 +30,8 @@ import (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/risk Orderbook,AuctionState,TimeService,StateVarEngine,Model
 
 var (
-	ErrInsufficientFundsForMaintenanceMargin = errors.New("insufficient funds for maintenance margin")
-	ErrRiskFactorsNotAvailableForAsset       = errors.New("risk factors not available for the specified asset")
+	ErrInsufficientFundsForInitialMargin = errors.New("insufficient funds for initial margin")
+	ErrRiskFactorsNotAvailableForAsset   = errors.New("risk factors not available for the specified asset")
 )
 
 const RiskFactorStateVarName = "risk-factors"
@@ -255,7 +255,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		levels.MarketID = e.mktID
 
 		curMargin := evt.MarginBalance()
-		if num.Sum(curMargin, evt.GeneralBalance()).LT(levels.MaintenanceMargin) {
+		if num.Sum(curMargin, evt.GeneralBalance()).LT(levels.InitialMargin) {
 			low = append(low, evt)
 			continue
 		}
@@ -315,10 +315,11 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	curMarginBalance := evt.MarginBalance()
 
-	// there's not enough monies in the accounts of the party,
-	// we break from here. The minimum requires is MAINTENANCE, not INITIAL here!
-	if num.Sum(curMarginBalance, evt.GeneralBalance()).LT(margins.MaintenanceMargin) {
-		return nil, nil, ErrInsufficientFundsForMaintenanceMargin
+	if num.Sum(curMarginBalance, evt.GeneralBalance()).LT(margins.InitialMargin) {
+		// there's not enough monies in the accounts of the party
+		// and the order does not reduce party's exposure,
+		// we break from here. The minimum requirement is INITIAL.
+		return nil, nil, ErrInsufficientFundsForInitialMargin
 	}
 
 	// propagate margins levels to the buffer

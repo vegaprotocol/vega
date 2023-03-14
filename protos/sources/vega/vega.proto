@@ -23,6 +23,8 @@ enum Side {
 enum Interval {
   // Default value, always invalid
   INTERVAL_UNSPECIFIED = 0;
+  // The block interval is not a fixed amount of time, rather it used to indicate grouping of events that occur in a single block. It is usually about a second.
+  INTERVAL_BLOCK = -1;
   // 1 minute.
   INTERVAL_I1M = 60;
   // 5 minutes.
@@ -73,8 +75,12 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_OPENING = 2;
   // Price monitoring trigger
   AUCTION_TRIGGER_PRICE = 3;
-  // Liquidity monitoring trigger
+  // Deprecated
   AUCTION_TRIGGER_LIQUIDITY = 4;
+  // Liquidity auction due to not enough committed liquidity
+  AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET = 5;
+  // Liquidity auction due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book
+  AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS = 6;
 }
 
 // A pegged reference defines which price point a pegged order is linked to - meaning
@@ -163,7 +169,8 @@ message Order {
     STATUS_REJECTED = 6;
     // Used for closed partially filled IOC orders
     STATUS_PARTIALLY_FILLED = 7;
-    // Order has been removed from the order book and has been parked, this applies to pegged orders only
+    // Order has been removed from the order book and has been parked,
+    // this applies to pegged orders and liquidity orders (orders created from a liquidity provision shape)
     STATUS_PARKED = 8;
 
     // Note: If adding an enum value, add a matching entry in:

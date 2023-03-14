@@ -16,9 +16,7 @@ import (
 	"context"
 	"math/big"
 	"sort"
-	"sync/atomic"
 
-	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -103,46 +101,10 @@ func (e *Engine) serialiseScheduledTransfers() ([]byte, error) {
 }
 
 func (e *Engine) serialiseAssetActions() ([]byte, error) {
-	aa := make([]*types.AssetAction, 0, len(e.assetActs))
-	for _, v := range e.assetActs {
-		// this is optional as bridge action don't have one
-		var assetID string
-		if v.asset != nil {
-			assetID = v.asset.ToAssetType().ID
-		}
-
-		var bridgeStopped bool
-		if v.erc20BridgeStopped != nil {
-			bridgeStopped = true
-		}
-
-		var bridgeResumed bool
-		if v.erc20BridgeResumed != nil {
-			bridgeResumed = true
-		}
-
-		aa = append(aa, &types.AssetAction{
-			ID:                      v.id,
-			State:                   v.state.Load(),
-			BlockNumber:             v.blockHeight,
-			Asset:                   assetID,
-			TxIndex:                 v.logIndex,
-			Hash:                    v.txHash,
-			BuiltinD:                v.builtinD,
-			Erc20AL:                 v.erc20AL,
-			Erc20D:                  v.erc20D,
-			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
-			BridgeStopped:           bridgeStopped,
-			BridgeResume:            bridgeResumed,
-		})
-	}
-
-	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
-
 	payload := types.Payload{
 		Data: &types.PayloadBankingAssetActions{
 			BankingAssetActions: &types.BankingAssetActions{
-				AssetAction: aa,
+				AssetAction: e.getAssetActions(),
 			},
 		},
 	}
@@ -169,7 +131,9 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
 	seen := &types.PayloadBankingSeen{
-		BankingSeen: &types.BankingSeen{},
+		BankingSeen: &types.BankingSeen{
+			LastSeenEthBlock: e.lastSeenEthBlock,
+		},
 	}
 	seen.BankingSeen.Refs = make([]string, 0, e.seen.Size())
 	iter := e.seen.Iterator()
@@ -336,62 +300,18 @@ func (e *Engine) restoreSeen(seen *types.BankingSeen, p *types.Payload) error {
 	for _, v := range seen.Refs {
 		e.seen.Add(v)
 	}
+	e.lastSeenEthBlock = seen.LastSeenEthBlock
 	e.bss.serialisedSeen, err = proto.Marshal(p.IntoProto())
 	return err
 }
 
 func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Payload) error {
 	var err error
-	for _, v := range aa.AssetAction {
-		var (
-			asset         *assets.Asset
-			bridgeStopped *types.ERC20EventBridgeStopped
-			bridgeResumed *types.ERC20EventBridgeResumed
-		)
-		// only others action than bridge stop and resume
-		// have an actual asset associated
-		if !v.BridgeResume && !v.BridgeStopped {
-			asset, err = e.assets.Get(v.Asset)
-			if err != nil {
-				e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
-			}
-		}
 
-		if v.BridgeStopped {
-			bridgeStopped = &types.ERC20EventBridgeStopped{BridgeStopped: true}
-		}
-
-		if v.BridgeResume {
-			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
-		}
-
-		state := &atomic.Uint32{}
-		state.Store(v.State)
-		aa := &assetAction{
-			id:                      v.ID,
-			state:                   state,
-			blockHeight:             v.BlockNumber,
-			asset:                   asset,
-			logIndex:                v.TxIndex,
-			txHash:                  v.Hash,
-			builtinD:                v.BuiltinD,
-			erc20AL:                 v.Erc20AL,
-			erc20D:                  v.Erc20D,
-			erc20AssetLimitsUpdated: v.ERC20AssetLimitsUpdated,
-			erc20BridgeStopped:      bridgeStopped,
-			erc20BridgeResumed:      bridgeResumed,
-			// this is needed every time now
-			bridgeView: e.bridgeView,
-		}
-
-		if len(aa.getRef().Hash) == 0 {
-			// if we're here it means that the IntoProto code has not done its job properly for a particular asset action type
-			e.log.Panic("asset action has not been serialised correct and is empty", logging.String("txHash", aa.txHash))
-		}
-
-		e.assetActs[v.ID] = aa
+	e.loadAssetActions(aa.AssetAction)
+	for _, aa := range e.assetActs {
 		if err := e.witness.RestoreResource(aa, e.onCheckDone); err != nil {
-			e.log.Panic("unable to restore witness resource", logging.String("id", v.ID), logging.Error(err))
+			e.log.Panic("unable to restore witness resource", logging.String("id", aa.id), logging.Error(err))
 		}
 	}
 
@@ -402,4 +322,12 @@ func (e *Engine) restoreAssetActions(aa *types.BankingAssetActions, p *types.Pay
 func (e *Engine) OnEpochRestore(ctx context.Context, ep types.Epoch) {
 	e.log.Debug("epoch restoration notification received", logging.String("epoch", ep.String()))
 	e.currentEpoch = ep.Seq
+}
+
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	if e.lastSeenEthBlock != 0 {
+		e.log.Info("restoring collateral bridge starting block", logging.Uint64("block", e.lastSeenEthBlock))
+		e.ethEventSource.UpdateCollateralStartingBlock(e.lastSeenEthBlock)
+	}
+	return nil
 }

@@ -16,8 +16,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     And the markets:
       | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
+      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1     | default-eth-for-future | 1e0                    | 0                         |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -30,7 +30,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLoser  | USD   | 21600         |
+      | designatedLoser  | USD   | 21981         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
@@ -85,7 +85,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |
-      | designatedLoser | USD   | ETH/DEC19 | 17250  | 0       |
+      | designatedLoser | USD   | ETH/DEC19 | 17631  | 0       |
 
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
@@ -113,7 +113,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC19 | 47134       | 56560  | 70701   | 94268   |
+      | designatedLoser | ETH/DEC19 | 58154       | 69784  | 87231   | 116308  |
 
     # insurance pool generation - modify order book
     And the parties cancel the following orders:
@@ -144,8 +144,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     # check positions and verify loss socialisation is reflected in realised P&L (0007-POSN-013)
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
-      | designatedLoser | 0      | 0              | -17250       |
-      | buySideProvider | 291    | 34800          | -21030       |
+      | designatedLoser | 0      | 0              | -17631       |
+      | buySideProvider | 291    | 34800          | -20649       |
 
     # check margin levels
     Then the parties should have the following margin levels:
@@ -163,13 +163,13 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | buySideProvider | market          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC19 | 14     | USD   |
       | designatedLoser |                 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC19 | 0      | USD   |
       | market          | buySideProvider | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC19 | 0      | USD   |
-      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 13770  | USD   |
-      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 13770  | USD   |
-      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 13770  | USD   |
+      | designatedLoser | market          | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE           | ETH/DEC19 | 14151  | USD   |
+      | market          | market          | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT          | ETH/DEC19 | 14151  | USD   |
+      | market          | buySideProvider | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 14151  | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
       | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 21981  | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 75     | USD   |
-      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 45433  | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 76     | USD   |
+      | buySideProvider | buySideProvider | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN              | ETH/DEC19 | 45052  | USD   |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
@@ -180,7 +180,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | party            | asset | amount        |
       | sellSideProvider | USD   | 1000000000000 |
       | buySideProvider  | USD   | 1000000000000 |
-      | designatedLoser  | USD   | 21600         |
+      | designatedLoser  | USD   | 21981         |
       | aux              | USD   | 1000000000000 |
       | aux2             | USD   | 1000000000000 |
       | lpprov           | USD   | 1000000000000 |
@@ -235,7 +235,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |
-      | designatedLoser | USD   | ETH/DEC20 | 17250  | 0       |
+      | designatedLoser | USD   | ETH/DEC20 | 17631  | 0       |
 
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
@@ -263,7 +263,7 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     When the network moves ahead "4" blocks
     Then the parties should have the following margin levels:
       | party           | market id | maintenance | search | initial | release |
-      | designatedLoser | ETH/DEC20 | 47134       | 56560  | 70701   | 94268   |
+      | designatedLoser | ETH/DEC20 | 58154       | 69784  | 87231   | 116308  |
 
     # insurance pool generation - modify order book
     And the parties cancel the following orders:
@@ -299,8 +299,8 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
 
     Then the parties should have the following profit and loss:
       | party           | volume | unrealised pnl | realised pnl |
-      | designatedLoser | 0      | 0              | -17250       |
-      | buySideProvider | 291    | 34800          | -21030       |
+      | designatedLoser | 0      | 0              | -17631       |
+      | buySideProvider | 291    | 34800          | -20649       |
 
     # check margin levels
     Then the parties should have the following margin levels:

@@ -84,7 +84,12 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockNetworkHistoryService := mocks.NewMockNetworkHistoryService(mockCtrl)
 
-	eventSource, err := broker.NewEventReceiverSender(conf.Broker, logging.NewTestLogger(), "")
+	rawEventSource, err := broker.NewEventReceiverSender(conf.Broker, logging.NewTestLogger(), "")
+	if err != nil {
+		t.Fatalf("failed to create raw event source: %v", err)
+	}
+
+	eventSource := broker.NewDeserializer(rawEventSource)
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}

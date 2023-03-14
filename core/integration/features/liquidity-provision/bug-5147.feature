@@ -9,7 +9,7 @@ Feature: Test LP orders with different decimals for market and asset
       | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees         | price monitoring | data source config     | position decimal places | decimal places | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5                       | 5              | 1e6                    | 1e6                       |
+      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 5                       | 5              | 5e-2                   | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |

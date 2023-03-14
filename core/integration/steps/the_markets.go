@@ -176,6 +176,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
+			filters := settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters()
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName: ti.Future.QuoteName,
 				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
@@ -183,7 +184,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+						Filters: filters,
 					},
 				),
 				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
@@ -191,7 +192,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+						Filters: filters,
 					},
 				),
 				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
@@ -405,27 +406,27 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"price monitoring",
 		"margin calculator",
 		"auction duration",
+		"linear slippage factor",
+		"quadratic slippage factor",
 	}, []string{
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
 		"lp price range",
-		"linear slippage factor",
-		"quadratic slippage factor",
 	})
 }
 
 func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
+		"linear slippage factor", // slippage factors must be explicitly set to avoid setting them to hard-coded defaults
+		"quadratic slippage factor",
 	}, []string{
 		"data source config",   // product update
 		"price monitoring",     // price monitoring update
 		"risk model",           // risk model update
 		"liquidity monitoring", // liquidity monitoring update
 		"lp price range",
-		"linear slippage factor",
-		"quadratic slippage factor",
 	})
 }
 
@@ -541,7 +542,7 @@ func (r marketRow) lpPriceRange() float64 {
 func (r marketRow) linearSlippageFactor() float64 {
 	if !r.row.HasColumn("linear slippage factor") {
 		// set to 0.1 by default
-		return 0.1
+		return 0.001
 	}
 	return r.row.MustF64("linear slippage factor")
 }
@@ -549,7 +550,7 @@ func (r marketRow) linearSlippageFactor() float64 {
 func (r marketRow) quadraticSlippageFactor() float64 {
 	if !r.row.HasColumn("quadratic slippage factor") {
 		// set to 0.1 by default
-		return 0.1
+		return 0.0
 	}
 	return r.row.MustF64("quadratic slippage factor")
 }

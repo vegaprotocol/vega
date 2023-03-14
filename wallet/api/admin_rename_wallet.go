@@ -25,13 +25,13 @@ func (h *AdminRenameWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.NewName); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if exist {
 		return nil, invalidParams(ErrWalletAlreadyExists)
 	}

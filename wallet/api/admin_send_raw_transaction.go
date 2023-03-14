@@ -64,7 +64,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not check the network existence: %w", err))
+			return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
 		} else if !exists {
 			return nil, invalidParams(ErrNetworkDoesNotExist)
 		}
@@ -86,7 +86,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 
 	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
+		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
 	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)

@@ -90,7 +90,7 @@ func TestCacheError(t *testing.T) {
 
 	// Simulate store with no positions in it
 	store := mocks.NewMockPositionStore(ctrl)
-	store.EXPECT().GetByMarketAndParty(ctx, market1ID.String(), party1ID.String()).Return(
+	store.EXPECT().GetByMarketAndParty(ctx, market1ID.String(), party1ID.String()).Times(2).Return(
 		entities.Position{},
 		notFoundErr,
 	)

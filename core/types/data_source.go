@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/proto"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 // ErrMultipleSameKeyNamesInFilterList is returned when filters with same key names exists inside a single list.
@@ -259,7 +260,35 @@ func (s DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 	if s.SourceType != nil {
 		switch dsn := s.SourceType.oneOfProto().(type) {
 		case *vegapb.DataSourceDefinition_External:
-			filters = DataSourceSpecFiltersFromProto(dsn.External.GetOracle().Filters)
+			switch dst := dsn.External.SourceType.(type) {
+			case *vegapb.DataSourceDefinitionExternal_Oracle:
+				filters = DataSourceSpecFiltersFromProto(dst.Oracle.Filters)
+			}
+
+		case *vegapb.DataSourceDefinition_Internal:
+			if dsn.Internal != nil {
+				switch idsn := dsn.Internal.SourceType.(type) {
+				case *vegapb.DataSourceDefinitionInternal_Time:
+					dst := DataSourceSpecConfigurationTimeFromProto(idsn.Time)
+
+					// For the case the internal data source is time based
+					// (as of OT https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
+					// We add the filter key values manually to match a time based data source
+					// Ensure only a single filter has been created, that holds all given conditions
+					if len(dst.Conditions) > 0 {
+						filters = append(
+							filters,
+							&DataSourceSpecFilter{
+								Key: &DataSourceSpecPropertyKey{
+									Name: "vegaprotocol.builtin.timestamp",
+									Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+								},
+								Conditions: dst.Conditions,
+							},
+						)
+					}
+				}
+			}
 		}
 	}
 
@@ -419,4 +448,24 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 
 	*s = *DataSourceDefinitionFromProto(ds)
 	return s
+}
+
+func (s *DataSourceDefinition) IsExternal() bool {
+	switch s.SourceType.oneOfProto().(type) {
+	case *vegapb.DataSourceDefinition_External:
+		return true
+	}
+
+	return false
+}
+
+func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() *vegapb.DataSourceSpecConfigurationTime {
+	if s.SourceType != nil {
+		switch tp := s.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinition_Internal:
+			return tp.Internal.GetTime()
+		}
+	}
+
+	return nil
 }

@@ -312,6 +312,12 @@
 				},
 				{
 					"node": {
+						"key": "limits.markets.maxPeggedOrders",
+						"value": "1500"
+					}
+				},
+				{
+					"node": {
 						"key": "limits.markets.proposeEnabledFrom",
 						"value": "2021-12-17T14:34:26Z"
 					}
@@ -438,6 +444,30 @@
 				},
 				{
 					"node": {
+						"key": "network.markPriceUpdateMaximumFrequency",
+						"value": "5s"
+					}
+				},
+				{
+					"node": {
+						"key": "network.transaction.defaultgas",
+						"value": "1"
+					}
+				},
+				{
+					"node": {
+						"key": "network.transactions.maxgasperblock",
+						"value": "500000"
+					}
+				},
+				{
+					"node": {
+						"key": "network.transactions.minBlockCapacity",
+						"value": "32"
+					}
+				},
+				{
+					"node": {
 						"key": "network.validators.ersatz.multipleOfTendermintValidators",
 						"value": "0.5"
 					}
@@ -463,13 +493,13 @@
 				{
 					"node": {
 						"key": "network.validators.multisig.numberOfSigners",
-						"value": "13"
+						"value": "5"
 					}
 				},
 				{
 					"node": {
 						"key": "network.validators.tendermint.number",
-						"value": "30"
+						"value": "5"
 					}
 				},
 				{
@@ -541,7 +571,7 @@
 				{
 					"node": {
 						"key": "snapshot.interval.length",
-						"value": "12"
+						"value": "22"
 					}
 				},
 				{
@@ -612,6 +642,18 @@
 				},
 				{
 					"node": {
+						"key": "spam.protection.minMultisigUpdates",
+						"value": "1000000000000000000"
+					}
+				},
+				{
+					"node": {
+						"key": "spam.protection.minimumWithdrawalQuantumMultiple",
+						"value": "10"
+					}
+				},
+				{
+					"node": {
 						"key": "spam.protection.proposal.min.tokens",
 						"value": "1000000000000000000"
 					}
@@ -636,6 +678,12 @@
 				},
 				{
 					"node": {
+						"key": "validator.performance.scaling.factor",
+						"value": "0"
+					}
+				},
+				{
+					"node": {
 						"key": "validators.delegation.minAmount",
 						"value": "1000000000000000000"
 					}
@@ -655,5 +703,5 @@
 			]
 		}
 	},
-	"Duration": 2383375
+	"Duration": 2763721
 }

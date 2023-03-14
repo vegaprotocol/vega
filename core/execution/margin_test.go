@@ -313,3 +313,186 @@ func TestPartialFillMargins(t *testing.T) {
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }
+
+func TestMarginRequirementSkippedWhenReducingExposure(t *testing.T) {
+	ctx := context.Background()
+	party1 := "party1"
+	party2 := "party2"
+	party3 := "party3"
+	party4 := "party4"
+	auxParty, auxParty2 := "auxParty", "auxParty2"
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
+
+	addAccount(t, tm, party1)
+	addAccountWithAmount(tm, party2, 3000)
+	addAccountWithAmount(tm, party3, 1990)
+	addAccountWithAmount(tm, party4, 80)
+	addAccount(t, tm, auxParty)
+	addAccount(t, tm, auxParty2)
+	addAccountWithAmount(tm, "lpprov", 100000000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
+	// ensure auction durations are 1 second
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 500)
+	conf, err := tm.market.SubmitOrder(ctx, alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnAsk", types.SideSell, auxParty, 1, 1500)
+	conf, err = tm.market.SubmitOrder(ctx, alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+	// create orders so we can leave opening auction
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideBuy, auxParty, 1, 1000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty2, 1, 1000),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NotNil(t, conf)
+		require.NoError(t, err)
+	}
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(30000000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 400, 1),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceMid, 400, 1),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "lpprov", vgcrypto.RandomHash()))
+
+	party4Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, party4, types.SideBuy, party4, 1, uint64(500))
+	_, err = tm.market.SubmitOrder(ctx, party4Order)
+	require.ErrorContains(t, err, "margin")
+
+	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
+	tm.now = now
+	tm.market.OnTick(vegacontext.WithTraceID(ctx, vgcrypto.RandomHash()), now)
+
+	posSize := uint64(10)
+	matchingPrice := uint64(1000)
+	party2Order := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, party2, types.SideSell, party2, posSize, matchingPrice)
+	confirmation, err := tm.market.SubmitOrder(ctx, party2Order)
+	require.NoError(t, err)
+	require.NotNil(t, confirmation)
+
+	party3Order := getMarketOrder(tm, now, types.OrderTypeMarket, types.OrderTimeInForceIOC, party3, types.SideBuy, party3, posSize, matchingPrice)
+
+	confirmation, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.NoError(t, err)
+	require.NotNil(t, confirmation)
+	require.Equal(t, 1, len(confirmation.Trades))
+
+	// both parties low on margin
+	bal2 := tm.PartyGeneralAccount(t, party2).Balance
+	bal3 := tm.PartyGeneralAccount(t, party3).Balance
+	require.True(t, bal2.LT(num.NewUint(50)), bal2.String())
+	require.True(t, bal3.LT(num.NewUint(50)), bal3.String())
+
+	// parties try to place more limit orders in the same direction and fail
+	changeSizeTo(party2Order, 1)
+	party2Order.Type = types.OrderTypeMarket
+
+	changeSizeTo(party3Order, 1)
+	party3Order.Type = types.OrderTypeMarket
+
+	_, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.ErrorContains(t, err, "margin")
+	_, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.ErrorContains(t, err, "margin")
+
+	// parties try to reduce position with market order of size greater than position and fail
+	party2Order.Side = types.SideBuy
+	changeSizeTo(party2Order, posSize+1)
+	party2Order.Type = types.OrderTypeMarket
+
+	party3Order.Side = types.SideSell
+	changeSizeTo(party3Order, posSize+1)
+	party3Order.Type = types.OrderTypeMarket
+
+	_, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.ErrorContains(t, err, "margin")
+	_, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.ErrorContains(t, err, "margin")
+
+	// parties try to reduce position with passive limit order of size less than position and succeed
+	changeSizeTo(party2Order, posSize-2)
+	party2Order.Type = types.OrderTypeLimit
+	party2Order.TimeInForce = types.OrderTimeInForceGTC
+	party2Order.Price = num.UintZero().Sub(num.NewUint(matchingPrice), num.NewUint(501))
+
+	changeSizeTo(party3Order, posSize-2)
+	party3Order.Type = types.OrderTypeLimit
+	party3Order.TimeInForce = types.OrderTimeInForceGTC
+	party3Order.Price = num.UintZero().Add(num.NewUint(matchingPrice), num.NewUint(501))
+
+	conf, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.NoError(t, err)
+	require.Empty(t, conf.Trades)
+	conf, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.NoError(t, err)
+	require.Empty(t, conf.Trades)
+
+	// parties try to place a pegged order in the same opposite direction and fail
+	party2Order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: num.NewUint(10)}
+	changeSizeTo(party2Order, 1)
+	_, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.ErrorContains(t, err, "margin")
+	party2Order.PeggedOrder = nil
+
+	party3Order.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: num.NewUint(10)}
+	changeSizeTo(party2Order, 1)
+	_, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.ErrorContains(t, err, "margin")
+	party3Order.PeggedOrder = nil
+
+	// parties place more passive limit orders so that the total order size is greater than position size and fail
+	changeSizeTo(party2Order, 5)
+	changeSizeTo(party3Order, 5)
+
+	_, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.ErrorContains(t, err, "margin")
+	_, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.ErrorContains(t, err, "margin")
+
+	// parties successfully reduce their position with market order
+	partialReduction := uint64(5)
+	changeSizeTo(party2Order, partialReduction)
+	party2Order.Type = types.OrderTypeMarket
+	party2Order.TimeInForce = types.OrderTimeInForceFOK
+
+	changeSizeTo(party3Order, partialReduction)
+	party3Order.Type = types.OrderTypeMarket
+	party3Order.TimeInForce = types.OrderTimeInForceFOK
+
+	_, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.NoError(t, err)
+	_, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.NoError(t, err)
+
+	// parties try to close position with order with size equal to initial position size but fail as the position is now smaller
+	changeSizeTo(party2Order, posSize-partialReduction)
+	changeSizeTo(party3Order, posSize-partialReduction)
+
+	_, err = tm.market.SubmitOrder(ctx, party3Order)
+	require.NoError(t, err)
+	_, err = tm.market.SubmitOrder(ctx, party2Order)
+	require.NoError(t, err)
+}
+
+func changeSizeTo(ord *types.Order, size uint64) {
+	ord.Size = size
+	ord.Remaining = size
+}

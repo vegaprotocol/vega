@@ -32,10 +32,11 @@ const (
 	// The transaction will be submitted without waiting for response
 	SubmitTransactionRequest_TYPE_ASYNC SubmitTransactionRequest_Type = 1
 	// The transaction will be submitted, and blocking until the
-	// tendermint mempool return a response
+	// tendermint mempool returns a response
 	SubmitTransactionRequest_TYPE_SYNC SubmitTransactionRequest_Type = 2
 	// The transaction will submitted, and blocking until the tendermint
-	// network will have committed it into a block
+	// network will have committed it into a block. Used only for debugging,
+	// not for submitting transactions
 	SubmitTransactionRequest_TYPE_COMMIT SubmitTransactionRequest_Type = 3
 )
 
@@ -90,10 +91,11 @@ const (
 	// The transaction will be submitted without waiting for response
 	SubmitRawTransactionRequest_TYPE_ASYNC SubmitRawTransactionRequest_Type = 1
 	// The transaction will be submitted, and blocking until the
-	// tendermint mempool return a response
+	// tendermint mempool returns a response
 	SubmitRawTransactionRequest_TYPE_SYNC SubmitRawTransactionRequest_Type = 2
 	// The transaction will submitted, and blocking until the tendermint
-	// network will have committed it into a block
+	// network will have committed it into a block. Used only for debugging,
+	// not for submitting transactions
 	SubmitRawTransactionRequest_TYPE_COMMIT SubmitRawTransactionRequest_Type = 3
 )
 
@@ -861,7 +863,7 @@ func (x *CheckRawTransactionResponse) GetInfo() string {
 	return ""
 }
 
-// Request for the current time of the vega network
+// Request for the current time of the Vega network
 type GetVegaTimeRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1214,7 +1216,7 @@ type Statistics struct {
 	OrderSubscriptions uint32 `protobuf:"varint,21,opt,name=order_subscriptions,json=orderSubscriptions,proto3" json:"order_subscriptions,omitempty"`
 	// Current number of stream subscribers to trade data
 	TradeSubscriptions uint32 `protobuf:"varint,22,opt,name=trade_subscriptions,json=tradeSubscriptions,proto3" json:"trade_subscriptions,omitempty"`
-	// Current number of stream subscribers to candle-stick data
+	// Current number of stream subscribers to candlestick data
 	CandleSubscriptions uint32 `protobuf:"varint,23,opt,name=candle_subscriptions,json=candleSubscriptions,proto3" json:"candle_subscriptions,omitempty"`
 	// Current number of stream subscribers to market depth data
 	MarketDepthSubscriptions uint32 `protobuf:"varint,24,opt,name=market_depth_subscriptions,json=marketDepthSubscriptions,proto3" json:"market_depth_subscriptions,omitempty"`
@@ -2741,7 +2743,7 @@ var file_vega_api_v1_core_proto_rawDesc = []byte{
 	0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73,
 	0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x76, 0x31, 0x92, 0x41, 0x34, 0x12,
 	0x19, 0x0a, 0x0e, 0x56, 0x65, 0x67, 0x61, 0x20, 0x63, 0x6f, 0x72, 0x65, 0x20, 0x41, 0x50, 0x49,
-	0x73, 0x32, 0x07, 0x76, 0x30, 0x2e, 0x36, 0x38, 0x2e, 0x30, 0x1a, 0x13, 0x6c, 0x62, 0x2e, 0x74,
+	0x73, 0x32, 0x07, 0x76, 0x30, 0x2e, 0x36, 0x39, 0x2e, 0x30, 0x1a, 0x13, 0x6c, 0x62, 0x2e, 0x74,
 	0x65, 0x73, 0x74, 0x6e, 0x65, 0x74, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x78, 0x79, 0x7a, 0x2a,
 	0x02, 0x01, 0x02, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }

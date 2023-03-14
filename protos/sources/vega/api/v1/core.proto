@@ -13,7 +13,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core APIs";
-    version: "v0.68.0";
+    version: "v0.69.0";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz"
@@ -97,10 +97,11 @@ message SubmitTransactionRequest {
     // The transaction will be submitted without waiting for response
     TYPE_ASYNC = 1;
     // The transaction will be submitted, and blocking until the
-    // tendermint mempool return a response
+    // tendermint mempool returns a response
     TYPE_SYNC = 2;
     // The transaction will submitted, and blocking until the tendermint
-    // network will have committed it into a block
+    // network will have committed it into a block. Used only for debugging,
+    // not for submitting transactions
     TYPE_COMMIT = 3;
   }
 
@@ -157,10 +158,11 @@ message SubmitRawTransactionRequest {
     // The transaction will be submitted without waiting for response
     TYPE_ASYNC = 1;
     // The transaction will be submitted, and blocking until the
-    // tendermint mempool return a response
+    // tendermint mempool returns a response
     TYPE_SYNC = 2;
     // The transaction will submitted, and blocking until the tendermint
-    // network will have committed it into a block
+    // network will have committed it into a block. Used only for debugging,
+    // not for submitting transactions
     TYPE_COMMIT = 3;
   }
 
@@ -208,7 +210,7 @@ message CheckRawTransactionResponse {
   string info = 7;
 }
 
-// Request for the current time of the vega network
+// Request for the current time of the Vega network
 message GetVegaTimeRequest {}
 
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
@@ -292,7 +294,7 @@ message Statistics {
   uint32 order_subscriptions = 21;
   // Current number of stream subscribers to trade data
   uint32 trade_subscriptions = 22;
-  // Current number of stream subscribers to candle-stick data
+  // Current number of stream subscribers to candlestick data
   uint32 candle_subscriptions = 23;
   // Current number of stream subscribers to market depth data
   uint32 market_depth_subscriptions = 24;

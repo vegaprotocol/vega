@@ -459,16 +459,18 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		}
 		p.Print(str)
 		selectedWallet := readInput(p.String().QuestionMark().Text("Which wallet do you want to use? "), p, data.AvailableWallets)
-		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(selectedWallet).Text("\": "), p)
 		responseChan <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.SelectedWalletName,
 			Data: interactor.SelectedWallet{
-				Wallet:     selectedWallet,
-				Passphrase: passphrase,
+				Wallet: selectedWallet,
 			},
 		}
 	case interactor.RequestPassphrase:
+		if len(data.Reason) != 0 {
+			str := p.String().BlueArrow().Text(data.Reason).NextLine()
+			p.Print(str)
+		}
 		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(data.Wallet).Text("\": "), p)
 		responseChan <- interactor.Interaction{
 			TraceID: interaction.TraceID,

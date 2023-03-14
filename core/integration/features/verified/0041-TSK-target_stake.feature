@@ -47,8 +47,8 @@ Feature: Target stake
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.0              | 10s         | 1.5            |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -197,8 +197,8 @@ Feature: Target stake
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.0              | 20s         | 1.5            |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
 
     # put some volume on the book so that others can increase their
     # positions and close out if needed too
@@ -270,8 +270,8 @@ Feature: Target stake
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.0              | 10s         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
 
     # target_stake = 110 x 140 x 1 x 0.1 =1540
     And the target stake should be "1540" for the market "ETH/DEC21"
@@ -289,8 +289,8 @@ Feature: Target stake
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.0              | 10s         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -337,8 +337,8 @@ Feature: Target stake
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 1.0              | 10s         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | lp_1  | ETH/DEC21 | buy  | 1000   | 90    | 0                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
@@ -373,21 +373,21 @@ Feature: Target stake
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1100         | 1000           | 100           |
+      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1100         | 1000           | 100           |
 
     When the network moves ahead "11" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1100         | 1000           | 100           |
+      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1100         | 1000           | 100           |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | tt_1  | ETH/DEC21 | buy  | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | tt_2  | ETH/DEC21 | sell | 50     | 110   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 550          | 1000           | 100           |
+      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | 110        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 550          | 1000           | 100           |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:

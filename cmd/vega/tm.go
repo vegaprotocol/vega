@@ -18,8 +18,8 @@ import (
 	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
-	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
-	tmdebug "github.com/tendermint/tendermint/cmd/tendermint/commands/debug"
+	tmcmd "github.com/tendermint/tendermint/cmd/cometbft/commands"
+	tmdebug "github.com/tendermint/tendermint/cmd/cometbft/commands/debug"
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
 )

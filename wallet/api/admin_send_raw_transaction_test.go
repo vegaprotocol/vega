@@ -186,7 +186,7 @@ func testAdminSendingRawTransactionWithNetworkThatFailsExistenceCheckFails(t *te
 	})
 
 	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not check the network existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not determine if the network exists: %w", assert.AnError))
 	assert.Empty(t, result)
 }
 
@@ -236,7 +236,7 @@ func testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildin
 	})
 
 	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not initializing the node selector: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not initialize the node selector: %w", assert.AnError))
 	assert.Empty(t, result)
 }
 

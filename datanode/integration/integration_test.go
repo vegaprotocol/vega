@@ -46,10 +46,12 @@ import (
 )
 
 const (
-	lastEpoch       = 346
-	playbackTimeout = 5 * time.Minute
-	chainID         = "testnet-001"
-	testdataPath    = "testdata/system_tests.evt"
+	lastEpoch            = 110
+	playbackTimeout      = 5 * time.Minute
+	chainID              = "testnet-001"
+	compressedTestdata   = "testdata/system_tests.evt.gz"
+	eventsDir            = "testdata/events"
+	decompressedTestdata = "testdata/events/system_tests.evt"
 )
 
 var (
@@ -80,13 +82,23 @@ func TestMain(m *testing.M) {
 		log.Fatal("couldn't set up config: ", err)
 	}
 
-	eventFile := cfg.Broker.FileEventSourceConfig.File
-	if err = utils.DecompressFile(eventFile+".gz", eventFile); err != nil {
-		log.Fatal("couldn't decompress event file: ", err)
+	err = os.MkdirAll(eventsDir, os.ModePerm)
+	if err != nil {
+		log.Fatal("failed to make events dir: ", err)
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal("failed to get working dir: ", err)
+	}
+
+	decompressedTestDataPath := filepath.Join(cwd, decompressedTestdata)
+	if err = utils.DecompressFile(filepath.Join(cwd, compressedTestdata), decompressedTestDataPath); err != nil {
+		log.Fatal("couldn't decompress event file ", err)
 	}
 
 	defer func() {
-		if err := os.RemoveAll(eventFile); err != nil {
+		if err := os.RemoveAll(decompressedTestDataPath); err != nil {
 			log.Printf("failed to remove event file: %s", err)
 		}
 	}()
@@ -194,7 +206,7 @@ func assertGraphQLQueriesReturnSame(t *testing.T, query string) {
 		details := queryDetails{}
 		require.NoError(t, json.Unmarshal(jsonBytes, &details), "Unable to unmarshal golden file")
 		assert.Equal(t, details.Query, query, "GraphQL query string differs from recorded in the golden file, regenerate by running 'go test' with the -golden flag")
-		assert.JSONEq(t, string(respJsn), string(respJsn))
+		assert.JSONEq(t, string(respJsn), string(details.Result))
 	}
 }
 
@@ -207,7 +219,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	cfg := config.NewDefaultConfig()
 	cfg.Broker.UseEventFile = true
 	cfg.Broker.PanicOnError = true
-	cfg.Broker.FileEventSourceConfig.File = filepath.Join(cwd, testdataPath)
+	cfg.Broker.FileEventSourceConfig.Directory = filepath.Join(cwd, eventsDir)
 	cfg.Broker.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
 	cfg.API.WebUIEnabled = true
 	cfg.API.Reflection = true

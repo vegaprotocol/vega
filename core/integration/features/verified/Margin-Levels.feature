@@ -177,23 +177,200 @@ Feature: Check the margin scaling levels (maintenance, search, initial, release)
       | trader2  | 0      | 0              | -10000       |
       #| trader2  | -20    | 0              | 0            |
       | trader20 | 0      | 0              | -10000       |
-#| trader20 | -20    | 0              | 0            |
+  #| trader20 | -20    | 0              | 0            |
 
-#And the parties should have the following margin levels:
-#| party    | market id | maintenance | search | initial | release |
-#| trader2  | ETH/DEC19 | 4657        | 6985   | 9314    | 13971   |
-#| trader20 | ETH/DEC20 | 4657        | 5588   | 6985    | 9314    |
+  #And the parties should have the following margin levels:
+  #| party    | market id | maintenance | search | initial | release |
+  #| trader2  | ETH/DEC19 | 4657        | 6985   | 9314    | 13971   |
+  #| trader20 | ETH/DEC20 | 4657        | 5588   | 6985    | 9314    |
 
-# With the different MTM approach, these traders now get closed out
-# check margin search level
-#mentainance level before new open position: margin_trader2 = 20*50*3.55690359157934000=3557
-#initial level: margin_trader2 = 20*50*3.55690359157934000*2=7114 which is more than search level, so margin account is set at 7114
-#mentainance level before new open position: margin_trader20 = 20*50*3.55690359157934000=3557
-#initial level: margin_trader20 = 20*50*3.55690359157934000*1.5=5336 which is less than search level and higher than maintenance
+  # With the different MTM approach, these traders now get closed out
+  # check margin search level
+  #mentainance level before new open position: margin_trader2 = 20*50*3.55690359157934000=3557
+  #initial level: margin_trader2 = 20*50*3.55690359157934000*2=7114 which is more than search level, so margin account is set at 7114
+  #mentainance level before new open position: margin_trader20 = 20*50*3.55690359157934000=3557
+  #initial level: margin_trader20 = 20*50*3.55690359157934000*1.5=5336 which is less than search level and higher than maintenance
 
-#Then the parties should have the following account balances:
-#  | party    | asset | market id | margin | general |
-#  | trader2  | USD   | ETH/DEC19 | 7114   | 1886    |
-#  | trader20 | USD   | ETH/DEC20 | 6985   | 2015    |
+  #Then the parties should have the following account balances:
+  #  | party    | asset | market id | margin | general |
+  #  | trader2  | USD   | ETH/DEC19 | 7114   | 1886    |
+  #  | trader20 | USD   | ETH/DEC20 | 6985   | 2015    |
 
 
+  Scenario: Assure initial margin requirement must be met
+    Given the parties deposit on asset's general account the following amount:
+      | party      | asset | amount        |
+      | lprov      | USD   | 1000000000000 |
+      | auxiliary1 | USD   | 1000000000000 |
+      | auxiliary2 | USD   | 1000000000000 |
+      | trader1    | USD   | 711           |
+      | trader2    | USD   | 712           |
+      | trader3    | USD   | 321           |
+      | trader4    | USD   | 40            |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee  | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00 | sell | ASK              | 100        | 55     | submission |
+      | lp1 | lprov | ETH/DEC19 | 100000            | 0.00 | buy  | BID              | 100        | 55     | amendmend  |
+    And the parties place the following orders:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | auxiliary2 | ETH/DEC19 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | auxiliary1 | ETH/DEC19 | sell | 10     | 15    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | auxiliary2 | ETH/DEC19 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | auxiliary1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | 10            |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+      | trader2 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |                     |
+
+    When the parties deposit on asset's general account the following amount:
+      | party   | asset | amount |
+      | trader1 | USD   | 1      |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader1 | ETH/DEC19 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2 | ETH/DEC19 | sell | 9      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+    # both parties end up with same margin levels and account balances
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader1 | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+      | trader2 | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC19 | 712    | 0       |
+      | trader2 | USD   | ETH/DEC19 | 712    | 0       |
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader3 | ETH/DEC19 | buy  | 20     | 15    | 0                | TYPE_LIMIT | TIF_FOK | margin check failed |
+
+    When the parties deposit on asset's general account the following amount:
+      | party   | asset | amount |
+      | trader3 | USD   | 2      |
+    And the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC19 | buy  | 20     | 15    | 3                | TYPE_LIMIT | TIF_FOK |
+    # trader2 maintenance margin = 10 * 10 * 3.556903591 = 356
+    # trader3 maintenance margin = 20 * 10 * 0.801225765 = 161
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader1 | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+      | trader2 | ETH/DEC19 | 356         | 534    | 712     | 1068    |
+      | trader3 | ETH/DEC19 | 161         | 241    | 322     | 483     |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC19 | 712    | 0       |
+      | trader2 | USD   | ETH/DEC19 | 712    | 0       |
+      | trader3 | USD   | ETH/DEC19 | 322    | 1       |
+
+    When the network moves ahead "1" blocks
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader1 | -10    | 0              | 0            |
+      | trader2 | -10    | 0              | 0            |
+      | trader3 | 20     | 0              | 0            |
+
+    # both parties end up with same margin levels and account balances
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader1 | ETH/DEC19 | 406         | 609    | 812     | 1218    |
+      | trader2 | ETH/DEC19 | 406         | 609    | 812     | 1218    |
+      | trader3 | ETH/DEC19 | 321         | 481    | 642     | 963     |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader1 | USD   | ETH/DEC19 | 712    | 0       |
+      | trader2 | USD   | ETH/DEC19 | 712    | 0       |
+      | trader3 | USD   | ETH/DEC19 | 323    | 0       |
+
+    # party places a limit order that would reduce its exposure once it fills
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following margin levels:
+      | party   | market id | maintenance | initial |
+      | trader3 | ETH/DEC19 | 321         | 642     |
+
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary2 | ETH/DEC19 | buy  | 2      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 19     | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | initial |
+      | trader3 | ETH/DEC19 | 305         | 610     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC19 | sell | 18     | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 18     | 0              | 0            |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | initial |
+      | trader3 | ETH/DEC19 | 289         | 578     |
+
+    # position is long so extra buy order not allowed to skip margin check
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader3 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+
+    # total order size now 20 which would flip the position if everything filled
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader3 | ETH/DEC19 | sell | 3      | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+
+    # position would get flipped if order got filled
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type        | tif     | error               |
+      | trader3 | ETH/DEC19 | sell | 19     | 0     | 0                | TYPE_MARKET | TIF_FOK | margin check failed |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type        | tif     |
+      | trader3 | ETH/DEC19 | sell | 1      | 0     | 1                | TYPE_MARKET | TIF_FOK |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 17     | -85            | -5           |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | initial |
+      | trader3 | ETH/DEC19 | 137         | 274     |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type        | tif     |
+      | trader3 | ETH/DEC19 | sell | 17     | 0     | 2                | TYPE_MARKET | TIF_FOK |
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 0      | 0              | -142         |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | initial |
+      | trader3 | ETH/DEC19 | 61          | 122     |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC19 | 181    | 0       |
+
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode                    | auction trigger                            | target stake | supplied stake |
+      | 1          | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 1067         | 100000         |
+
+    # assure initial margin required to post order in auction
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | error               |
+      | trader4 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | margin check failed |
+
+    When the parties deposit on asset's general account the following amount:
+      | party   | asset | amount |
+      | trader4 | USD   | 32     |
+    Then the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader4 | ETH/DEC19 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | initial |
+      | trader4 | ETH/DEC19 | 36          | 72      |
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader4 | USD   | ETH/DEC19 | 72     | 0       |

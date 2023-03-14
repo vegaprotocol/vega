@@ -6,11 +6,9 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"strconv"
 	"sync/atomic"
+	"time"
 
-	"code.vegaprotocol.io/vega/datanode/contextutil"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/didip/tollbooth/v7"
 	"github.com/didip/tollbooth/v7/libstring"
 	"github.com/didip/tollbooth/v7/limiter"
@@ -19,6 +17,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"code.vegaprotocol.io/vega/datanode/contextutil"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
@@ -37,7 +38,7 @@ func init() {
 // WithSecret is a GRPC dial option that adds the "X-Rate-Limit-Secret": <secret> header to all calls.
 func WithSecret() grpc.DialOption {
 	interceptor := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-		ctx = metadata.AppendToOutgoingContext(ctx, "X-Rate-Limit-Secret", secret)
+		ctx = metadata.AppendToOutgoingContext(ctx, "RateLimit-Secret", secret)
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 	return grpc.WithUnaryInterceptor(interceptor)
@@ -91,13 +92,13 @@ func (r *RateLimit) HTTPMiddleware(next http.Handler) http.Handler {
 		ip := r.ipForRequest(req)
 
 		if r.naughtyStep.isBanned(ip) {
-			r.expressDisappointment(w, banMsg, http.StatusForbidden)
+			r.expressDisappointment(w, banMsg, ip, http.StatusTooManyRequests, true)
 			return
 		}
 
 		if httpError := tollbooth.LimitByRequest(r.lmt, w, req); httpError != nil {
 			r.naughtyStep.smackBottom(ip)
-			r.expressDisappointment(w, limitMsg, http.StatusTooManyRequests)
+			r.expressDisappointment(w, limitMsg, ip, http.StatusTooManyRequests, false)
 			return
 		}
 
@@ -106,10 +107,17 @@ func (r *RateLimit) HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(middle)
 }
 
-func (r *RateLimit) expressDisappointment(w http.ResponseWriter, msg string, status int) {
+func (r *RateLimit) expressDisappointment(w http.ResponseWriter, msg, ip string, status int, banned bool) {
 	w.Header().Add("Content-Type", "application/json")
+
+	if banned {
+		expiry := r.naughtyStep.bans[ip]
+		remaining := time.Until(expiry).Seconds()
+
+		w.Header().Add("RateLimit-Retry-After", fmt.Sprintf("%0.f", remaining))
+	}
 	w.WriteHeader(status)
-	w.Write([]byte(msg))
+	_, _ = w.Write([]byte(msg))
 }
 
 func (r *RateLimit) ipForRequest(req *http.Request) string {
@@ -120,7 +128,7 @@ func (r *RateLimit) ipForRequest(req *http.Request) string {
 func (r *RateLimit) GRPCInterceptor(
 	ctx context.Context,
 	req interface{},
-	info *grpc.UnaryServerInfo,
+	_ *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (resp interface{}, err error) {
 	if !r.cfg.Load().Enabled {
@@ -130,7 +138,7 @@ func (r *RateLimit) GRPCInterceptor(
 	// Check if the client gave the secret in the metadata, if so skip rate limiting
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
-		mdSecrets := md.Get("X-Rate-Limit-Secret")
+		mdSecrets := md.Get("RateLimit-Secret")
 		for _, mdSecret := range mdSecrets {
 			if mdSecret == secret {
 				return handler(ctx, req)
@@ -153,42 +161,35 @@ func (r *RateLimit) GRPCInterceptor(
 
 	// Check the naughty step
 	if r.naughtyStep.isBanned(ip) {
+		expiry := r.naughtyStep.bans[ip]
+		remaining := time.Until(expiry).Seconds()
+
+		if err := grpc.SetHeader(ctx, metadata.Pairs("RateLimit-Retry-After", fmt.Sprintf("%0.f", remaining))); err != nil {
+			r.log.Error("failed to set header", logging.Error(err))
+		}
+
 		return nil, status.Error(codes.Unavailable, banMsg)
 	}
 
-	setRateLimitXResponseHeaders(ctx, r.log, r.lmt, ip)
 	if r.lmt.LimitReached(ip) {
 		r.naughtyStep.smackBottom(ip)
-		setRateLimitResponseHeaders(ctx, r.log, r.lmt, 0)
+		setRateLimitResponseHeaders(ctx, r.log, r.lmt, 0, ip)
 		return nil, status.Error(codes.Unavailable, limitMsg)
 	}
 
 	tokensLeft := r.lmt.Tokens(ip)
-	setRateLimitResponseHeaders(ctx, r.log, r.lmt, tokensLeft)
+	setRateLimitResponseHeaders(ctx, r.log, r.lmt, tokensLeft, ip)
 	return handler(ctx, req)
-}
-
-// setRateLimitXResponseHeaders sets the same set of headers that tollbooth adds to every HTTP response
-// when being used as a http server limiter.
-func setRateLimitXResponseHeaders(ctx context.Context, log *logging.Logger, lmt *limiter.Limiter, ip string) {
-	for _, h := range []metadata.MD{
-		metadata.Pairs("X-Rate-Limit-Limit", strconv.FormatFloat(lmt.GetMax(), 'f', -1, 64)),
-		metadata.Pairs("X-Rate-Limit-Duration", "1"),
-		metadata.Pairs("X-Rate-Limit-Request-Remote-Addr", ip),
-	} {
-		if errH := grpc.SetHeader(ctx, h); errH != nil {
-			log.Error("failed to set header", logging.Error(errH))
-		}
-	}
 }
 
 // setRateLimitResponseHeaders configures RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset
 // as seen at https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-ratelimit-headers
-func setRateLimitResponseHeaders(ctx context.Context, log *logging.Logger, lmt *limiter.Limiter, tokensLeft int) {
+func setRateLimitResponseHeaders(ctx context.Context, log *logging.Logger, lmt *limiter.Limiter, tokensLeft int, ip string) {
 	for _, h := range []metadata.MD{
 		metadata.Pairs("RateLimit-Limit", fmt.Sprintf("%d", int(math.Round(lmt.GetMax())))),
 		metadata.Pairs("RateLimit-Reset", "1"),
 		metadata.Pairs("RateLimit-Remaining", fmt.Sprintf("%d", tokensLeft)),
+		metadata.Pairs("RateLimit-Request-Remote-Addr", ip),
 	} {
 		if errH := grpc.SetHeader(ctx, h); errH != nil {
 			log.Error("failed to set header", logging.Error(errH))

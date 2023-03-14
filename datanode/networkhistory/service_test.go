@@ -62,6 +62,7 @@ var (
 	fromEventsIntervalToHistoryTableDelta []map[string]tableDataSummary
 
 	snapshotsBackupDir string
+	eventsDir          string
 	eventsFile         string
 
 	networkHistoryService *networkhistory.Service
@@ -95,7 +96,7 @@ func TestMain(t *testing.M) {
 	}
 	defer os.RemoveAll(snapshotsBackupDir)
 
-	eventsDir, err := os.MkdirTemp("", "eventsdir")
+	eventsDir, err = os.MkdirTemp("", "eventsdir")
 	if err != nil {
 		panic(err)
 	}
@@ -378,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmdHVR9qTWx4J2geTTosapJdPXN618vWpbGNUXPWnbFJus", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmZBnY8eGiqRwJ5cQhPRg12P4vgpeyieVembXu15uYg4np", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmcFbEiWZtvVaSscBTt3d6n94iogCAy6oYyyTVntvfkUqz", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "Qme2NvuRm3EfR1pD2TaNcUbDRbjTkcaUnPybLGq2SEDX5G", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmYNGNqEQkKbuyHb31mkCMUZC8BxancKew6mF4gACirtgZ", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmbXTfadNAaKDNu67fksA96FnXiTrJDzEcu6Eun1vu6X26", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmUp5j5wfc7kRCQ1UGbX8KQZhG1UN63p3cJw9JdLN5tJfZ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmSX4cMeRLbBizPnYDpb5eih7azS9so6AMKqsYpKa7hqDF", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmW2QCLDSUfDG3nVxtYDxX59rDx1mS2y3AjNx9EHQTjooa", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmT69ehyJsDSgJf4ELqmMz5RikPBnyJePw8JdncnpfeKER", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmNRvNPYPooAqNiGVHmrbo8Ez4fRwpHRsNefL1XtwBV8y9", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "Qma5YPrL5Q7jH8T5nSxTggA4PUg3u7H5ZDurF24pzKZFZV", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -1178,10 +1179,11 @@ type TestEventSource struct {
 }
 
 func newTestEventSource(onEvent func(events.Event, chan<- events.Event)) (*TestEventSource, error) {
-	evtSource, err := broker.NewFileEventSource(eventsFile, 0, 0, chainID)
+	rawEvtSource, err := broker.NewBufferFilesEventSource(eventsDir, 0, 0, chainID)
 	if err != nil {
 		return nil, err
 	}
+	evtSource := broker.NewDeserializer(rawEvtSource)
 
 	return &TestEventSource{
 		fileSource: evtSource,

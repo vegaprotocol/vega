@@ -1449,9 +1449,7 @@ func TestSubmit(t *testing.T) {
 		t.Run("withdraw all funds from the general account", func(t *testing.T) {
 			acc, err := tm.collateralEngine.GetPartyGeneralAccount(pegged, tm.asset)
 			assert.NoError(t, err)
-			assert.NoError(t,
-				tm.collateralEngine.DecrementBalance(context.Background(), acc.ID, peggedInitialAmount.Clone()),
-			)
+			assert.NoError(t, tm.collateralEngine.UpdateBalance(ctx, acc.ID, num.UintZero()))
 
 			// then ensure balance is 0
 			acc, err = tm.collateralEngine.GetPartyGeneralAccount(pegged, tm.asset)
@@ -2085,7 +2083,7 @@ func TestSubmit(t *testing.T) {
 				},
 				{
 					size:   expiringOrder.Size,
-					status: types.OrderStatusCancelled,
+					status: types.OrderStatusParked,
 					ref:    lpSubmission.Reference,
 					found:  false,
 				},

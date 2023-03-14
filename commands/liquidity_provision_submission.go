@@ -95,6 +95,12 @@ func checkLiquidityProvisionShape(
 	zero := big.NewInt(0)
 
 	for idx, order := range orders {
+		if _, ok := types.PeggedReference_name[int32(order.Reference)]; !ok {
+			errs.AddForProperty(
+				fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
+				ErrIsNotValid,
+			)
+		}
 		if order.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			errs.AddForProperty(
 				fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
