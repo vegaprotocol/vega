@@ -406,13 +406,13 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"price monitoring",
 		"margin calculator",
 		"auction duration",
+		"linear slippage factor",
+		"quadratic slippage factor",
 	}, []string{
 		"decimal places",
 		"position decimal places",
 		"liquidity monitoring",
 		"lp price range",
-		"linear slippage factor",
-		"quadratic slippage factor",
 	})
 }
 
@@ -542,7 +542,7 @@ func (r marketRow) lpPriceRange() float64 {
 func (r marketRow) linearSlippageFactor() float64 {
 	if !r.row.HasColumn("linear slippage factor") {
 		// set to 0.1 by default
-		return 0.1
+		return 0.001
 	}
 	return r.row.MustF64("linear slippage factor")
 }
@@ -550,7 +550,7 @@ func (r marketRow) linearSlippageFactor() float64 {
 func (r marketRow) quadraticSlippageFactor() float64 {
 	if !r.row.HasColumn("quadratic slippage factor") {
 		// set to 0.1 by default
-		return 0.1
+		return 0.0
 	}
 	return r.row.MustF64("quadratic slippage factor")
 }
