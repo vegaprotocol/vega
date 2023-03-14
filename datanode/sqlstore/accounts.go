@@ -242,7 +242,7 @@ func (as *Accounts) GetBalancesByTxHash(ctx context.Context, txHash entities.TxH
 		ctx,
 		as.Connection,
 		&balances,
-		fmt.Sprintf("%s WHERE current_balances.tx_hash=$1", accountBalancesQuery()),
+		fmt.Sprintf("%s WHERE balances.tx_hash=$1", accountBalancesQuery()),
 		txHash,
 	)
 	return balances, err

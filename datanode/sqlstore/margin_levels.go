@@ -130,7 +130,7 @@ func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Cont
 
 func (ml *MarginLevels) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error) {
 	var marginLevels []entities.MarginLevels
-	query := fmt.Sprintf(`SELECT %s FROM current_margin_levels WHERE tx_hash = $1`, sqlMarginLevelColumns)
+	query := fmt.Sprintf(`SELECT %s FROM margin_levels WHERE tx_hash = $1`, sqlMarginLevelColumns)
 
 	if err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, txHash); err != nil {
 		return nil, err

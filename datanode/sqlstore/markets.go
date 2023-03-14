@@ -166,7 +166,7 @@ func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	defer metrics.StartSQLQuery("Markets", "GetByTxHash")()
 
 	var markets []entities.Market
-	query := fmt.Sprintf(`SELECT %s FROM markets_current where tx_hash = $1`, sqlMarketsColumns)
+	query := fmt.Sprintf(`SELECT %s FROM markets where tx_hash = $1`, sqlMarketsColumns)
 	err := pgxscan.Select(ctx, m.Connection, &markets, query, txHash)
 
 	if err == nil {

@@ -110,7 +110,7 @@ func (as *Assets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	defer metrics.StartSQLQuery("Assets", "GetByTxHash")()
 
 	var assets []entities.Asset
-	err := pgxscan.Select(ctx, as.Connection, &assets, getAssetQuery(ctx)+` WHERE tx_hash=$1`, txHash)
+	err := pgxscan.Select(ctx, as.Connection, &assets, `SELECT * FROM assets WHERE tx_hash=$1`, txHash)
 	if err != nil {
 		return nil, as.wrapE(err)
 	}

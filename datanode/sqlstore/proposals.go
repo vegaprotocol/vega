@@ -96,7 +96,7 @@ func (ps *Proposals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([
 	defer metrics.StartSQLQuery("Proposals", "GetByTxHash")()
 
 	var proposals []entities.Proposal
-	query := `SELECT * FROM proposals_current WHERE tx_hash=$1`
+	query := `SELECT * FROM proposals WHERE tx_hash=$1`
 	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, txHash)
 	if err != nil {
 		return nil, ps.wrapE(err)
