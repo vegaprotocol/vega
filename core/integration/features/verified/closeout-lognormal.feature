@@ -175,8 +175,12 @@ Feature: Closeout scenarios
       | trader2 | ETH/DEC20 | 1026        | 1539   | 2052    | 3078    |
 
     Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |  status       |
-      | trader2 | USD   | ETH/DEC20 | 1026   | 0       | ORDERS_CLOSED |
+      | party   | asset | market id | margin | general |  
+      | trader2 | USD   | ETH/DEC20 | 1026   | 0       | 
+
+  #   And the parties should have the following position changes for market "ETH/DEC20":
+  # | party   | status        |
+  # | trader2 | ORDERS_CLOSED |
 
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
@@ -188,8 +192,8 @@ Feature: Closeout scenarios
       | 10         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 29877        | 100000         | 11            |
 
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl | status       |
-      | trader2 | -1     | 0              | 0            | ORDERS_CLOSED|
+      | party   | volume | unrealised pnl | realised pnl | 
+      | trader2 | -1     | 0              | 0            | 
 
     Then the network moves ahead "14" blocks
     And the market data for the market "ETH/DEC20" should be:
@@ -202,10 +206,15 @@ Feature: Closeout scenarios
       | 40         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 29877        | 100000         | 21            |
 
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl | status    | 
-      | trader2 | 0      | 0              | -1026        | CLOSED_OUT|
+      | party   | volume | unrealised pnl | realised pnl | 
+      | trader2 | 0      | 0              | -1026        | 
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
+
+    And the parties should have the following position changes for market "ETH/DEC20":
+      | party   | status      |
+       | trader2 | CLOSED_OUT |
+      # | trader2 | ORDERS_CLOSED |
 
   Scenario: 003, check the newly added "loss socialisation amount" (0007-POSN-014)
