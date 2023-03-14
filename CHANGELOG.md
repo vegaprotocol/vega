@@ -47,6 +47,7 @@
 - [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
 - [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
 - [7751](https://github.com/vegaprotocol/vega/issues/7751) - Store the block height of the last seen `ERC20` event in the snapshot so deposits are not lost when the network is down
+- [7778](https://github.com/vegaprotocol/vega/issues/7778) - Store the block height of the last seen `ERC20` event in the checkpoint so deposits are not lost when the network is down
 - [7713](https://github.com/vegaprotocol/vega/issues/7713) - Fix PnL values on trade in the positions API
 - [7726](https://github.com/vegaprotocol/vega/issues/7726) - Add market data current state table to ensure node restored from network history has latest market data
 - [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
