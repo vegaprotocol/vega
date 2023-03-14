@@ -62,6 +62,7 @@
 - [7805](https://github.com/vegaprotocol/vega/issues/7805) - Fix re-announcing node in the same epoch kills data node.
 - [7820](https://github.com/vegaprotocol/vega/issues/7820) - Remove the check for past date in limits engine
 - [7822](https://github.com/vegaprotocol/vega/issues/7822) - Fix get last epoch query
+- [7823](https://github.com/vegaprotocol/vega/issues/7823) - Fix validation of liquidity provisions shapes references
 
 ## 0.68.0
 

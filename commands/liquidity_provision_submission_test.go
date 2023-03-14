@@ -170,6 +170,20 @@ func TestLiquidityProvisionSubmission(t *testing.T) {
 			lp:        commandspb.LiquidityProvisionSubmission{},
 			errString: "liquidity_provision_submission.buys (empty shape), liquidity_provision_submission.commitment_amount (is required), liquidity_provision_submission.fee (is required), liquidity_provision_submission.market_id (is required), liquidity_provision_submission.sells (empty shape)",
 		},
+		{
+			lp: commandspb.LiquidityProvisionSubmission{
+				CommitmentAmount: "100",
+				Fee:              "0.1",
+				MarketId:         "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+				Sells: []*types.LiquidityOrder{
+					{Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "0", Proportion: 1},
+				},
+				Buys: []*types.LiquidityOrder{
+					{Reference: types.PeggedReference(186), Offset: "0", Proportion: 1},
+				},
+			},
+			errString: "liquidity_provision_submission.buys.0.reference (is not a valid value)",
+		},
 	}
 
 	for i, c := range cases {
