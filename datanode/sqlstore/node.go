@@ -19,6 +19,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -249,6 +250,10 @@ func (store *Node) GetNodeData(ctx context.Context, epochSeq uint64) (entities.N
 		entities.ValidatorNodeStatusPending:    &nodeData.PendingNodes,
 	}
 	for _, n := range nodes {
+		if n.RankingScore == nil {
+			store.log.Warn("ignoring node with empty ranking score", logging.String("id", n.ID.String()))
+			continue
+		}
 		status := n.RankingScore.Status
 		previousStatus := n.RankingScore.PreviousStatus
 		if status == entities.ValidatorNodeStatusUnspecified {

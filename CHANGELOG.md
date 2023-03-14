@@ -3,6 +3,7 @@
 ## Unreleased 0.69.0
 
 ### 🚨 Breaking changes
+- [7798](https://github.com/vegaprotocol/vega/issues/7798) - Remove redundant headers from the rate limiter response.
 - [7710](https://github.com/vegaprotocol/vega/issues/7710) - Rename "token dApp" to "governance"
 - [6905](https://github.com/vegaprotocol/vega/issues/6905) - Deprecated `Version` field removed from `admin.import_wallet`
 - [6905](https://github.com/vegaprotocol/vega/issues/6905) - References to file paths have been removed from `admin.import_wallet`, `admin.import_network`, `admin.create_wallet` and `admin.isolate_key` API
@@ -36,6 +37,7 @@
 
 ### 🐛 Fixes
 - [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
+- [7695](https://github.com/vegaprotocol/vega/issues/7695) - Fix `create_hypertable` in migrations.
 - [7596](https://github.com/vegaprotocol/vega/issues/7596) - Slippage factors not persisted in database
 - [7535](https://github.com/vegaprotocol/vega/issues/7535) - Fix network history load takes an increasingly long time to complete
 - [7517](https://github.com/vegaprotocol/vega/issues/7517) - Add buffer files event source
@@ -45,6 +47,7 @@
 - [7563](https://github.com/vegaprotocol/vega/issues/7563) - Let the wallet work again with null `blockchain`
 - [7692](https://github.com/vegaprotocol/vega/issues/7692) - Fix network history load hanging after protocol upgrade
 - [7751](https://github.com/vegaprotocol/vega/issues/7751) - Store the block height of the last seen `ERC20` event in the snapshot so deposits are not lost when the network is down
+- [7778](https://github.com/vegaprotocol/vega/issues/7778) - Store the block height of the last seen `ERC20` event in the checkpoint so deposits are not lost when the network is down
 - [7713](https://github.com/vegaprotocol/vega/issues/7713) - Fix PnL values on trade in the positions API
 - [7726](https://github.com/vegaprotocol/vega/issues/7726) - Add market data current state table to ensure node restored from network history has latest market data
 - [7673](https://github.com/vegaprotocol/vega/issues/7673) - Accept internal data sources without signers
@@ -59,6 +62,8 @@
 - [7750](https://github.com/vegaprotocol/vega/issues/7750) - Fix not all paths cleanly close network history index store.
 - [7805](https://github.com/vegaprotocol/vega/issues/7805) - Fix re-announcing node in the same epoch kills data node.
 - [7820](https://github.com/vegaprotocol/vega/issues/7820) - Remove the check for past date in limits engine
+- [7822](https://github.com/vegaprotocol/vega/issues/7822) - Fix get last epoch query
+- [7823](https://github.com/vegaprotocol/vega/issues/7823) - Fix validation of liquidity provisions shapes references
 
 ## 0.68.0
 

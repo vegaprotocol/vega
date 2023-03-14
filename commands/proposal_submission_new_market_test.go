@@ -120,8 +120,8 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market with trading termination from internal source with invalid operator fails", testFutureMarketSubmissionWithInternalTradingInvalidOperatorTerminationFails)
 	t.Run("Submitting a future market with trading termination from external source with `vegaprotocol.builtin` key and no public keys fails", testFutureMarketSubmissionWithExternalTradingTerminationBuiltInKeyNoPublicKeyFails)
 	t.Run("Submitting a future market with trading settlement from external source with `vegaprotocol.builtin` key and no public keys fails", testFutureMarketSubmissionWithExternalTradingSettlementBuiltInKeyNoPublicKeyFails)
-
 	t.Run("Submitting a future market with trade termination from oracle with no public key fails", testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails)
+	t.Run("Submitting a future market with invalid oracle condition or type", testFutureMarketSubmissionWithInvalidOracleConditionOrType)
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -3257,6 +3257,48 @@ func testFutureMarketSubmissionWithInternalTimestampForTradingTerminationSucceed
 	})
 
 	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+}
+
+func testFutureMarketSubmissionWithInvalidOracleConditionOrType(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_Type(10000),
+													},
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_Operator(10000),
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.filters.0.conditions.0.operator"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.filters.0.key.type"), commands.ErrIsNotValid)
 }
 
 func testFutureMarketSubmissionWithExternalTradingTerminationNoPublicKeyFails(t *testing.T) {
