@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -23,24 +22,27 @@ func TestRateLimit_HTTPMiddleware(t *testing.T) {
 	r := NewFromConfig(&cfg, logging.NewTestLogger())
 
 	limiter := r.HTTPMiddleware(handler)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < cfg.Burst; i++ {
 		res := httptest.NewRecorder()
 		limiter.ServeHTTP(res, req)
-		require.Equal(t, http.StatusOK, res.Code)
+		assert.Equal(t, http.StatusOK, res.Code)
 		assert.Equal(t, i+1, count)
 	}
 
-	for i := 0; i < 101; i++ {
+	for i := 0; i < cfg.Burst+1; i++ {
 		res := httptest.NewRecorder()
 		limiter.ServeHTTP(res, req)
-		require.Equal(t, http.StatusTooManyRequests, res.Code)
+		assert.Equal(t, http.StatusTooManyRequests, res.Code)
 		assert.Equal(t, 100, count)
 	}
 
+	// We should have been banned after this so wait a second, then request again, the ban time remaining should be 599 seconds
+	time.Sleep(time.Second)
+
 	res := httptest.NewRecorder()
 	limiter.ServeHTTP(res, req)
-	require.Equal(t, http.StatusForbidden, res.Code)
+	assert.Equal(t, http.StatusForbidden, res.Code)
 	expiry := res.Header().Get("Retry-After")
-	require.NotEmpty(t, expiry)
-	assert.Equal(t, "600", expiry)
+	assert.NotEmpty(t, expiry)
+	assert.Equal(t, "599", expiry)
 }
