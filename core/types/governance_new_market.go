@@ -23,6 +23,7 @@ import (
 
 var (
 	ErrInvalidCommitmentAmount = errors.New("invalid commitment amount")
+	ErrMissingSlippageFactor   = errors.New("slippage factor not specified")
 	DefaultSlippageFactor      = num.MustDecimalFromString("0.1")
 )
 
@@ -240,17 +241,16 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 	linearSlippageFactor := DefaultSlippageFactor
 	quadraticSlippageFactor := DefaultSlippageFactor
 	var err error
-	if len(p.LinearSlippageFactor) > 0 {
-		linearSlippageFactor, err = num.DecimalFromString(p.LinearSlippageFactor)
-		if err != nil {
-			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
-		}
+	if len(p.LinearSlippageFactor) == 0 || len(p.QuadraticSlippageFactor) == 0 {
+		return nil, ErrMissingSlippageFactor
 	}
-	if len(p.QuadraticSlippageFactor) > 0 {
-		quadraticSlippageFactor, err = num.DecimalFromString(p.QuadraticSlippageFactor)
-		if err != nil {
-			return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
-		}
+	linearSlippageFactor, err = num.DecimalFromString(p.LinearSlippageFactor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+	}
+	quadraticSlippageFactor, err = num.DecimalFromString(p.QuadraticSlippageFactor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
 	}
 
 	r := &NewMarketConfiguration{
