@@ -337,8 +337,8 @@ Feature: Test closeout type 1: margin >= cost of closeout
       | 1.2           | 1.5            | 2              |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 0.001                  | 0                         |
 
     And the following network parameters are set:
       | name                                    | value |

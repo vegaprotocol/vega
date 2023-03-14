@@ -130,21 +130,21 @@ Feature: test risk model parameter ranges
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/MAR0  | updated-lqm-params   |
-      | ETH/MAR11 | updated-lqm-params   |
-      | ETH/MAR12 | updated-lqm-params   |
-      | ETH/MAR21 | updated-lqm-params   |
-      | ETH/MAR22 | updated-lqm-params   |
-      | ETH/MAR23 | updated-lqm-params   |
-      | ETH/MAR31 | updated-lqm-params   |
-      | ETH/MAR32 | updated-lqm-params   |
-      | ETH/MAR41 | updated-lqm-params   |
-      | ETH/MAR42 | updated-lqm-params   |
-      | ETH/MAR43 | updated-lqm-params   |
-      | ETH/MAR51 | updated-lqm-params   |
-      | ETH/MAR52 | updated-lqm-params   |
-      | ETH/MAR53 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR0  | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR11 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR12 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR22 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR23 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR31 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR32 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR41 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR42 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR43 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR51 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR52 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
 
     And the following network parameters are set:
       | name                                  | value |
@@ -444,21 +444,21 @@ Feature: test risk model parameter ranges
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/MAR0  | updated-lqm-params   |
-      | ETH/MAR11 | updated-lqm-params   |
-      | ETH/MAR12 | updated-lqm-params   |
-      | ETH/MAR21 | updated-lqm-params   |
-      | ETH/MAR22 | updated-lqm-params   |
-      | ETH/MAR23 | updated-lqm-params   |
-      | ETH/MAR32 | updated-lqm-params   |
-      | ETH/MAR31 | updated-lqm-params   |
-      | ETH/MAR41 | updated-lqm-params   |
-      | ETH/MAR42 | updated-lqm-params   |
-      | ETH/MAR43 | updated-lqm-params   |
-      | ETH/MAR51 | updated-lqm-params   |
-      | ETH/MAR52 | updated-lqm-params   |
-      | ETH/MAR53 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR0  | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR11 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR12 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR22 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR23 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR32 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR31 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR41 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR42 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR43 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR51 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR52 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
 
     And the following network parameters are set:
       | name                                  | value |
@@ -507,21 +507,21 @@ Feature: test risk model parameter ranges
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/MAR0  | updated-lqm-params   |
-      | ETH/MAR11 | updated-lqm-params   |
-      | ETH/MAR12 | updated-lqm-params   |
-      | ETH/MAR21 | updated-lqm-params   |
-      | ETH/MAR22 | updated-lqm-params   |
-      | ETH/MAR23 | updated-lqm-params   |
-      | ETH/MAR31 | updated-lqm-params   |
-      | ETH/MAR32 | updated-lqm-params   |
-      | ETH/MAR41 | updated-lqm-params   |
-      | ETH/MAR42 | updated-lqm-params   |
-      | ETH/MAR43 | updated-lqm-params   |
-      | ETH/MAR51 | updated-lqm-params   |
-      | ETH/MAR52 | updated-lqm-params   |
-      | ETH/MAR53 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR0  | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR11 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR12 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR21 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR22 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR23 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR31 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR32 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR41 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR42 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR43 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR51 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR52 | updated-lqm-params   | 1e6                    | 1e6                       |
+      | ETH/MAR53 | updated-lqm-params   | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |

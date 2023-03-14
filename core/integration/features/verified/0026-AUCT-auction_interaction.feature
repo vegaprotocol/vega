@@ -155,8 +155,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -224,8 +224,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -300,8 +300,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -545,8 +545,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -638,8 +638,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -747,8 +747,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -805,8 +805,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
