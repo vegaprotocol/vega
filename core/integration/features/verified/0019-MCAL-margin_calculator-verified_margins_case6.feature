@@ -1,4 +1,4 @@
-Feature: CASE-6: Trader submits short order that will trade - new formula & zero side of order book (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-006)
+Feature: CASE-6: Trader submits short order that will trade - new formula & zero side of order book (0019-MCAL-001, 0019-MCAL-002)
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
