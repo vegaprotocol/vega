@@ -133,7 +133,6 @@ func (o Order) String() string {
 		o.PostOnly,
 		o.ReduceOnly,
 	)
-
 }
 
 type Orders []*Order

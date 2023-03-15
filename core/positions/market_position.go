@@ -238,7 +238,7 @@ func (p MarketPosition) OrderReducesOnlyExposure(ord *types.Order) (reduce bool,
 		return false, 0
 	}
 
-	var size = p.Size()
+	size := p.Size()
 	if size < 0 {
 		size = -size
 	}
