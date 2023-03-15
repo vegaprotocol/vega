@@ -41,15 +41,15 @@ type Service struct {
 
 	chainID string
 
-	snapshotsCopyFromDir string
-	snapshotsCopyToDir   string
+	snapshotsCopyFromPath string
+	snapshotsCopyToPath   string
 
 	datanodeGrpcAPIPort int
 
 	publishLock sync.Mutex
 }
 
-func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connPool *pgxpool.Pool, connConfig sqlstore.ConnectionConfig,
+func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connPool *pgxpool.Pool,
 	chainID string,
 	snapshotService *snapshot.Service, datanodeGrpcAPIPort int,
 	snapshotsCopyFromDir, snapshotsCopyToDir string,
@@ -68,27 +68,27 @@ func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHom
 func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
 	snapshotService *snapshot.Service,
 	networkHistoryStore *store.Store, datanodeGrpcAPIPort int,
-	snapshotsCopyFromDir, snapshotsCopyToDir string,
+	snapshotsCopyFromPath, snapshotsCopyToPath string,
 ) (*Service, error) {
 	s := &Service{
-		cfg:                  cfg,
-		log:                  log,
-		connPool:             connPool,
-		snapshotService:      snapshotService,
-		store:                networkHistoryStore,
-		chainID:              chainID,
-		snapshotsCopyFromDir: snapshotsCopyFromDir,
-		snapshotsCopyToDir:   snapshotsCopyToDir,
-		datanodeGrpcAPIPort:  datanodeGrpcAPIPort,
+		cfg:                   cfg,
+		log:                   log,
+		connPool:              connPool,
+		snapshotService:       snapshotService,
+		store:                 networkHistoryStore,
+		chainID:               chainID,
+		snapshotsCopyFromPath: snapshotsCopyFromPath,
+		snapshotsCopyToPath:   snapshotsCopyToPath,
+		datanodeGrpcAPIPort:   datanodeGrpcAPIPort,
 	}
 
 	if cfg.WipeOnStartup {
-		err := fsutil.RemoveAllFromDirectoryIfExists(s.snapshotsCopyFromDir)
+		err := fsutil.RemoveAllFromDirectoryIfExists(s.snapshotsCopyFromPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to remove all from snapshots copy from path:%w", err)
 		}
 
-		err = fsutil.RemoveAllFromDirectoryIfExists(s.snapshotsCopyToDir)
+		err = fsutil.RemoveAllFromDirectoryIfExists(s.snapshotsCopyToPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to remove all from snapshots copy to path:%w", err)
 		}
@@ -229,7 +229,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanode(ctx context.Context, contiguous
 func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loadLog snapshot.LoadLog, contiguousHistory ContiguousHistory,
 	connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (snapshot.LoadResult, error) {
-	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir) }()
+	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromPath) }()
 
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
 	if err != nil {
@@ -240,19 +240,19 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 		logging.Int64("toHeight", contiguousHistory.HeightTo), logging.Int64("currentDatanodeFromHeight", datanodeBlockSpan.FromHeight),
 		logging.Int64("currentDatanodeToHeight", datanodeBlockSpan.ToHeight), logging.Bool("withIndexesAndOrderTriggers", withIndexesAndOrderTriggers))
 
-	err = os.MkdirAll(d.snapshotsCopyFromDir, fs.ModePerm)
+	err = os.MkdirAll(d.snapshotsCopyFromPath, fs.ModePerm)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to create staging directory:%w", err)
 	}
 
-	err = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromDir)
+	err = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromPath)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to empty staging directory:%w", err)
 	}
 
 	start := time.Now()
 
-	currentStateSnapshot, historySnapshots, err := d.copyMoreRecentHistoryIntoDir(ctx, contiguousHistory, datanodeBlockSpan, d.snapshotsCopyFromDir)
+	currentStateSnapshot, historySnapshots, err := d.copyMoreRecentHistoryIntoDir(ctx, contiguousHistory, datanodeBlockSpan, d.snapshotsCopyFromPath)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
 	}
@@ -261,7 +261,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 		return snapshot.LoadResult{}, fmt.Errorf("no data available to load: %w", err)
 	}
 
-	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, loadLog, currentStateSnapshot, historySnapshots, d.snapshotsCopyFromDir,
+	loadResult, err := d.snapshotService.LoadSnapshotData(ctx, loadLog, currentStateSnapshot, historySnapshots, d.snapshotsCopyFromPath,
 		connConfig, withIndexesAndOrderTriggers, verbose)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to load snapshot data:%w", err)
@@ -300,7 +300,7 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 	d.publishLock.Lock()
 	defer d.publishLock.Unlock()
 
-	_, snapshots, err := snapshot.GetCurrentStateSnapshots(d.snapshotsCopyToDir)
+	_, snapshots, err := snapshot.GetCurrentStateSnapshots(d.snapshotsCopyToPath)
 	if err != nil {
 		return fmt.Errorf("failed to get current state snapshots:%w", err)
 	}
@@ -314,7 +314,7 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 		return snapshotsOldestFirst[i].Height < snapshotsOldestFirst[j].Height
 	})
 
-	_, histories, err := snapshot.GetHistorySnapshots(d.snapshotsCopyToDir)
+	_, histories, err := snapshot.GetHistorySnapshots(d.snapshotsCopyToPath)
 	if err != nil {
 		return fmt.Errorf("failed to get history snapshots:%w", err)
 	}
@@ -330,7 +330,7 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 			return fmt.Errorf("failed to find history for current state snapshot:%w", err)
 		}
 
-		err = d.store.AddSnapshotData(ctx, history, currentState, d.snapshotsCopyToDir)
+		err = d.store.AddSnapshotData(ctx, history, currentState, d.snapshotsCopyToPath)
 		if err != nil {
 			return fmt.Errorf("failed to publish snapshot %s:%w", currentState, err)
 		}
