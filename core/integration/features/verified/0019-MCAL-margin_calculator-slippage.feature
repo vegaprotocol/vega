@@ -20,7 +20,7 @@ Feature: Test capped maximum slippage values are calculated correctly in range o
             | ETH/MAR23 | ETH        | USD   | simple-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future       | 100                    | 100                       |
 
 
-    Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-012)(0019-MCAL-013)
+    Scenario: Check slippage-factors yield the correct maximum slippage for a specific market state (0019-MCAL-011)(0019-MCAL-012)
 
         # Create position, order book, and mark price conditions matching the spec
         Given the parties deposit on asset's general account the following amount:
