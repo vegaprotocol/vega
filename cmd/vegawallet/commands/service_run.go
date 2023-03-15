@@ -575,6 +575,29 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 				Approved: approved,
 			},
 		}
+	case interactor.RequestTransactionReviewForChecking:
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" wants to send the following transaction to be checked:").NextLine()
+		str.Pad().Text("Using the key: ").InfoText(data.PublicKey).NextLine()
+		str.Pad().Text("From the wallet: ").InfoText(data.Wallet).NextLine()
+		fmtCmd := strings.Replace("  "+data.Transaction, "\n", "\n  ", -1)
+		str.InfoText(fmtCmd).NextLine()
+		p.Print(str)
+		approved := true
+		if !enableAutomaticConsent {
+			approved = yesOrNo(p.String().QuestionMark().Text("Do you want to sign this transaction?"), p)
+		}
+		if approved {
+			p.Print(p.String().CheckMark().Text("Signing approved.").NextLine())
+		} else {
+			p.Print(p.String().CrossMark().Text("Signing rejected.").NextLine())
+		}
+		responseChan <- interactor.Interaction{
+			TraceID: interaction.TraceID,
+			Name:    interactor.DecisionName,
+			Data: interactor.Decision{
+				Approved: approved,
+			},
+		}
 	case interactor.TransactionFailed:
 		str := p.String()
 		str.DangerBangMark().DangerText("The transaction failed.").NextLine()
