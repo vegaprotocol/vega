@@ -165,6 +165,8 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 		ExpiresAt:   o.ExpiresAt,
 		Reference:   o.Reference,
 		PeggedOrder: o.PeggedOrder,
+		PostOnly:    o.PostOnly,
+		ReduceOnly:  o.ReduceOnly,
 	}
 }
 

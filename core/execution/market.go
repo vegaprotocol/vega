@@ -1456,7 +1456,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// first check if we have a reduce only order and make sure it can go through
 	if order.ReduceOnly {
 		reduce, extraSize := pos.OrderReducesOnlyExposure(order)
-		// if we are not reducing, or if the position flips on a FOK, we shortcircuit her.
+		// if we are not reducing, or if the position flips on a FOK, we short-circuit here.
 		// in the case of a IOC, the order will be stopped once we reach 0
 		if !reduce || (order.TimeInForce == types.OrderTimeInForceFOK && extraSize > 0) {
 			return nil, nil, m.unregisterAndReject(
