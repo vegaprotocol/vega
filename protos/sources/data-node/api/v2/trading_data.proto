@@ -2286,6 +2286,28 @@ message ObserveDelegationsResponse {
 
 // -- Nodes --
 
+// Represents a basic node without any epoch specific details like delegations, staking, rewards etc.
+message NodeBasic {
+    // The node ID (wallet ID)
+    string id = 1;
+    // Pub key of the node operator
+    string pub_key = 2;
+    // Public key of Tendermint
+    string tm_pub_key = 3;
+    // Ethereum public key of the node
+    string ethereum_address = 4;
+    // URL where I can find out more info on the node
+    string info_url = 5;
+    // Country code for the location of the node
+    string location = 6;
+    // Node status
+    vega.NodeStatus status = 13;
+    // Node name
+    string name = 17;
+    // Avatar url
+    string avatar_url = 18;
+}
+
 // Request to get network data
 message GetNetworkDataRequest {}
 
@@ -2836,7 +2858,7 @@ message ListTransactionEntitiesResponse {
     repeated vega.LiquidityProvision liquidity_provisions = 20;
     repeated vega.Proposal proposals = 21;
     repeated vega.Delegation delegations = 22;
-    repeated vega.Node nodes = 23;
+    repeated NodeBasic nodes = 23;
     repeated vega.commands.v1.NodeSignature node_signatures = 24;
     repeated vega.NetworkParameter network_parameters = 25;
     repeated vega.events.v1.KeyRotation key_rotations = 26;

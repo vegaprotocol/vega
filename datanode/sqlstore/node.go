@@ -402,3 +402,17 @@ func (store *Node) GetNodeTxHash(ctx context.Context, nodeID string, epochSeq ui
 	query := fmt.Sprintf("%s AND nodes.id=$2", selectNodeQuery())
 	return node, store.wrapE(pgxscan.Get(ctx, store.Connection, &node, query, epochSeq, id))
 }
+
+func (store *Node) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.NodeBasic, error) {
+	defer metrics.StartSQLQuery("Node", "GeByTxHash")()
+
+	var nodes []entities.NodeBasic
+	query := `SELECT id, vega_pub_key, tendermint_pub_key, ethereum_address, name, location, 
+	info_url, avatar_url, status FROM nodes WHERE tx_hash = $1`
+
+	if err := pgxscan.Select(ctx, store.Connection, &nodes, query, txHash); err != nil {
+		return nil, store.wrapE(err)
+	}
+
+	return nodes, nil
+}

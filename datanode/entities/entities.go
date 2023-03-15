@@ -14,7 +14,7 @@ package entities
 
 import "google.golang.org/protobuf/proto"
 
-type entities interface {
+type Entities interface {
 	Market | Party | Trade | Order | MarketData | Reward | Candle | Deposit |
 		Withdrawal | Asset | OracleSpec | OracleData | Position | LiquidityProvision | Vote |
 		AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
@@ -24,7 +24,7 @@ type entities interface {
 }
 
 type PagedEntity[T proto.Message] interface {
-	entities | Transfer | MarginLevels
+	Entities | Transfer | MarginLevels
 
 	// ToProtoEdge may need some optional arguments in order to generate the proto, for example margin levels
 	// requires an account source. This is not ideal, but we can come back to this later if a better solution can be found.
@@ -33,7 +33,7 @@ type PagedEntity[T proto.Message] interface {
 }
 
 type ProtoEntity[T proto.Message] interface {
-	entities | Account
+	Entities | Account | NodeBasic
 	ToProto() T
 }
 

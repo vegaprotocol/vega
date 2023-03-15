@@ -21,6 +21,11 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"golang.org/x/sync/errgroup"
+
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -40,7 +45,6 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -3137,244 +3141,161 @@ func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingR
 	return &v2.PingResponse{}, nil
 }
 
-func (t *tradingDataServiceV2) ListTransactionEntities(ctx context.Context, req *v2.ListTransactionEntitiesRequest) (*v2.ListTransactionEntitiesResponse, error) {
+func (t *tradingDataServiceV2) ListTransactionEntities(
+	ctx context.Context,
+	req *v2.ListTransactionEntitiesRequest,
+) (*v2.ListTransactionEntitiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTransactionEntities")()
 
 	txHash := entities.TxHash(req.GetTransactionHash())
 
-	accounts, err := t.accountService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
-	}
+	eg, ctx := errgroup.WithContext(ctx)
 
-	balances, err := t.accountService.GetBalancesByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAccountServiceListAccounts, err)
-	}
+	// query
+	accounts := queryProtoEntities[*vega.Account](ctx, eg, txHash,
+		t.accountService.GetByTxHash, ErrAccountServiceGetByTxHash)
 
-	orders, err := t.orderService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrOrderServiceGetByTxHash, err)
-	}
+	orders := queryProtoEntities[*vega.Order](ctx, eg, txHash,
+		t.orderService.GetByTxHash, ErrOrderServiceGetByTxHash)
 
-	positions, err := t.positionService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPostitionsGetByTxHash, err)
-	}
+	positions := queryProtoEntities[*vega.Position](ctx, eg, txHash,
+		t.positionService.GetByTxHash, ErrPostitionsGetByTxHash)
 
-	ledgerEntries, err := t.ledgerService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrLedgerEntriesGetByTxHash, err)
-	}
+	balances := queryProtoEntities[*v2.AccountBalance](ctx, eg, txHash,
+		t.accountService.GetBalancesByTxHash, ErrAccountServiceGetBalancesByTxHash)
 
-	ledgerEntriesProtos, err := mapSlice(ledgerEntries,
+	votes := queryProtoEntities[*vega.Vote](ctx, eg, txHash,
+		t.governanceService.GetVotesByTxHash, ErrVotesGetByTxHash)
+
+	trades := queryProtoEntities[*vega.Trade](ctx, eg, txHash,
+		t.tradeService.GetByTxHash, ErrTradeServiceGetByTxHash)
+
+	oracleSpecs := queryProtoEntities[*vega.OracleSpec](ctx, eg, txHash,
+		t.oracleSpecService.GetByTxHash, ErrOracleSpecGetByTxHash)
+
+	oracleData := queryProtoEntities[*vega.OracleData](ctx, eg, txHash,
+		t.oracleDataService.GetByTxHash, ErrOracleDataGetByTxHash)
+
+	markets := queryProtoEntities[*vega.Market](ctx, eg, txHash,
+		t.marketService.GetByTxHash, ErrMarketServiceGetByTxHash)
+
+	parties := queryProtoEntities[*vega.Party](ctx, eg, txHash,
+		t.partyService.GetByTxHash, ErrPartyServiceGetByTxHash)
+
+	rewards := queryProtoEntities[*vega.Reward](ctx, eg, txHash,
+		t.rewardService.GetByTxHash, ErrRewardsGetByTxHash)
+
+	deposits := queryProtoEntities[*vega.Deposit](ctx, eg, txHash,
+		t.depositService.GetByTxHash, ErrDepositsGetByTxHash)
+
+	withdrawals := queryProtoEntities[*vega.Withdrawal](ctx, eg, txHash,
+		t.withdrawalService.GetByTxHash, ErrWithdrawalsGetByTxHash)
+
+	assets := queryProtoEntities[*vega.Asset](ctx, eg, txHash,
+		t.assetService.GetByTxHash, ErrAssetsGetByTxHash)
+
+	lps := queryProtoEntities[*vega.LiquidityProvision](ctx, eg, txHash,
+		t.liquidityProvisionService.GetByTxHash, ErrLiquidityProvisionGetByTxHash)
+
+	proposals := queryProtoEntities[*vega.Proposal](ctx, eg, txHash,
+		t.governanceService.GetProposalsByTxHash, ErrProposalsGetByTxHash)
+
+	delegations := queryProtoEntities[*vega.Delegation](ctx, eg, txHash,
+		t.delegationService.GetByTxHash, ErrDelegationsGetByTxHash)
+
+	signatures := queryProtoEntities[*cmdsV1.NodeSignature](ctx, eg, txHash,
+		t.notaryService.GetByTxHash, ErrSignaturesGetByTxHash)
+
+	netParams := queryProtoEntities[*vega.NetworkParameter](ctx, eg, txHash,
+		t.networkParameterService.GetByTxHash, ErrNetworkParamatersGetByTxHash)
+
+	keyRotations := queryProtoEntities[*v1.KeyRotation](ctx, eg, txHash,
+		t.keyRotationService.GetByTxHash, ErrKeyRotationsGetByTxHash)
+
+	ethKeyRotations := queryProtoEntities[*v1.EthereumKeyRotation](ctx, eg, txHash,
+		t.ethereumKeyRotationService.GetByTxHash, ErrEthereumKeyRotationsGetByTxHash)
+
+	pups := queryProtoEntities[*v1.ProtocolUpgradeEvent](ctx, eg, txHash,
+		t.protocolUpgradeService.GetByTxHash, ErrEthereumKeyRotationsGetByTxHash)
+
+	nodes := queryProtoEntities[*v2.NodeBasic](ctx, eg, txHash,
+		t.nodeService.GetByTxHash, ErrNodeServicGetByTxHash)
+
+	// query and map
+	ledgerEntries := queryAndMapEntities(ctx, eg, txHash,
+		t.ledgerService.GetByTxHash,
 		func(item entities.LedgerEntry) (*vega.LedgerEntry, error) {
 			return item.ToProto(ctx, t.accountService)
 		},
+		ErrLedgerEntriesGetByTxHash,
 	)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
 
-	transfers, err := t.transfersService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrTransfersGetByTxHash)
-	}
-
-	transfersProtos, err := mapSlice(transfers,
+	transfers := queryAndMapEntities(ctx, eg, txHash,
+		t.transfersService.GetByTxHash,
 		func(item entities.Transfer) (*v1.Transfer, error) {
 			return item.ToProto(ctx, t.accountService)
 		},
+		ErrTransfersGetByTxHash,
 	)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
 
-	votes, err := t.governanceService.GetVotesByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrVotesGetByTxHash)
-	}
-
-	addedEvents, err := t.multiSigService.GetAddedByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrERC20MultiSigSignerAddedEventGetByTxHash)
-	}
-
-	addedEventsProtos, err := mapSlice(addedEvents,
-		func(item entities.ERC20MultiSigSignerAddedEvent) (*v2.ERC20MultiSigSignerAddedBundle, error) {
-			return item.ToDataNodeApiV2Proto(ctx, t.notaryService)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	removedEvents, err := t.multiSigService.GetRemovedByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrERC20MultiSigSignerRemovedEventGetByTxHash)
-	}
-
-	removedEventsProtos, err := mapSlice(removedEvents,
-		func(item entities.ERC20MultiSigSignerRemovedEvent) (*v2.ERC20MultiSigSignerRemovedBundle, error) {
-			return item.ToDataNodeApiV2Proto(ctx, t.notaryService)
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	trades, err := t.tradeService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrTradeServiceGetByTxHash)
-	}
-
-	oracleSpecs, err := t.oracleSpecService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrOracleSpecGetByTxHash)
-	}
-
-	oracleData, err := t.oracleDataService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrOracleDataGetByTxHash)
-	}
-
-	markets, err := t.marketService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrMarketServiceGetByTxHash)
-	}
-
-	parties, err := t.partyService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrPartyServiceGetByTxHash)
-	}
-
-	marginLevels, err := t.riskService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, err)
-	}
-
-	marginLevelsProtos, err := mapSlice(marginLevels,
+	marginLevels := queryAndMapEntities(ctx, eg, txHash,
+		t.riskService.GetByTxHash,
 		func(item entities.MarginLevels) (*vega.MarginLevels, error) {
 			return item.ToProto(ctx, t.accountService)
 		},
+		ErrMarginLevelsGetByTxHash,
 	)
-	if err != nil {
+
+	addedEvents := queryAndMapEntities(ctx, eg, txHash,
+		t.multiSigService.GetAddedByTxHash,
+		func(item entities.ERC20MultiSigSignerAddedEvent) (*v2.ERC20MultiSigSignerAddedBundle, error) {
+			return item.ToDataNodeApiV2Proto(ctx, t.notaryService)
+		},
+		ErrERC20MultiSigSignerAddedEventGetByTxHash,
+	)
+
+	removedEvents := queryAndMapEntities(ctx, eg, txHash,
+		t.multiSigService.GetRemovedByTxHash,
+		func(item entities.ERC20MultiSigSignerRemovedEvent) (*v2.ERC20MultiSigSignerRemovedBundle, error) {
+			return item.ToDataNodeApiV2Proto(ctx, t.notaryService)
+		},
+		ErrERC20MultiSigSignerRemovedEventGetByTxHash,
+	)
+
+	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
 
-	rewards, err := t.rewardService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrRewardsGetByTxHash)
-	}
-
-	deposits, err := t.depositService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrDepositsGetByTxHash)
-	}
-
-	withdrawals, err := t.withdrawalService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrWithdrawalsGetByTxHash)
-	}
-
-	assets, err := t.assetService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAssetsGetByTxHash)
-	}
-
-	lps, err := t.liquidityProvisionService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrAssetsGetByTxHash)
-	}
-
-	proposals, err := t.governanceService.GetProposalsByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrProposalsGetByTxHash)
-	}
-
-	delegations, err := t.delegationService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrDelegationsGetByTxHash)
-	}
-
-	// t.nodeService.GetNodeByID() TODO
-
-	signatures, err := t.notaryService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrSignaturesGetByTxHash)
-	}
-
-	netParams, err := t.networkParameterService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrNetworkParamatersGetByTxHash)
-	}
-
-	keyRotations, err := t.keyRotationService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrKeyRotationsGetByTxHash)
-	}
-
-	ethKeyRotations, err := t.ethereumKeyRotationService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrEthereumKeyRotationsGetByTxHash)
-	}
-
-	pups, err := t.protocolUpgradeService.GetByTxHash(ctx, txHash)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrEthereumKeyRotationsGetByTxHash)
-	}
-
 	return &v2.ListTransactionEntitiesResponse{
-		Accounts:                          toProtos[*vega.Account](accounts),
-		Orders:                            toProtos[*vega.Order](orders),
-		Positions:                         toProtos[*vega.Position](positions),
-		LedgerEntries:                     ledgerEntriesProtos,
-		BalanceChanges:                    toProtos[*v2.AccountBalance](balances),
-		Transfers:                         transfersProtos,
-		Votes:                             toProtos[*vega.Vote](votes),
-		Erc20MultiSigSignerAddedBundles:   addedEventsProtos,
-		Erc20MultiSigSignerRemovedBundles: removedEventsProtos,
-		Trades:                            toProtos[*vega.Trade](trades),
-		OracleSpecs:                       toProtos[*vega.OracleSpec](oracleSpecs),
-		OracleData:                        toProtos[*vega.OracleData](oracleData),
-		Markets:                           toProtos[*vega.Market](markets),
-		Parties:                           toProtos[*vega.Party](parties),
-		MarginLevels:                      marginLevelsProtos,
-		Rewards:                           toProtos[*vega.Reward](rewards),
-		Deposits:                          toProtos[*vega.Deposit](deposits),
-		Withdrawals:                       toProtos[*vega.Withdrawal](withdrawals),
-		Assets:                            toProtos[*vega.Asset](assets),
-		LiquidityProvisions:               toProtos[*vega.LiquidityProvision](lps),
-		Proposals:                         toProtos[*vega.Proposal](proposals),
-		Delegations:                       toProtos[*vega.Delegation](delegations),
-		// Nodes: , TODO - this will require simplified version of the node struct to be added, entities and protos
-		NodeSignatures:           toProtos[*cmdsV1.NodeSignature](signatures),
-		NetworkParameters:        toProtos[*vega.NetworkParameter](netParams),
-		KeyRotations:             toProtos[*v1.KeyRotation](keyRotations),
-		EthereumKeyRotations:     toProtos[*v1.EthereumKeyRotation](ethKeyRotations),
-		ProtocolUpgradeProposals: toProtos[*v1.ProtocolUpgradeEvent](pups),
+		Accounts:                          <-accounts,
+		Orders:                            <-orders,
+		Positions:                         <-positions,
+		LedgerEntries:                     <-ledgerEntries,
+		BalanceChanges:                    <-balances,
+		Transfers:                         <-transfers,
+		Votes:                             <-votes,
+		Erc20MultiSigSignerAddedBundles:   <-addedEvents,
+		Erc20MultiSigSignerRemovedBundles: <-removedEvents,
+		Trades:                            <-trades,
+		OracleSpecs:                       <-oracleSpecs,
+		OracleData:                        <-oracleData,
+		Markets:                           <-markets,
+		Parties:                           <-parties,
+		MarginLevels:                      <-marginLevels,
+		Rewards:                           <-rewards,
+		Deposits:                          <-deposits,
+		Withdrawals:                       <-withdrawals,
+		Assets:                            <-assets,
+		LiquidityProvisions:               <-lps,
+		Proposals:                         <-proposals,
+		Delegations:                       <-delegations,
+		Nodes:                             <-nodes,
+		NodeSignatures:                    <-signatures,
+		NetworkParameters:                 <-netParams,
+		KeyRotations:                      <-keyRotations,
+		EthereumKeyRotations:              <-ethKeyRotations,
+		ProtocolUpgradeProposals:          <-pups,
 	}, nil
-}
-
-func toProtos[T proto.Message, V entities.ProtoEntity[T]](inputs []V) []T {
-	protos := make([]T, 0, len(inputs))
-	for _, input := range inputs {
-		proto := input.ToProto()
-		protos = append(protos, proto)
-	}
-	return protos
-}
-
-func mapSlice[T proto.Message, V any](inputs []V, toProto func(V) (T, error)) ([]T, error) {
-	protos := make([]T, 0, len(inputs))
-	for _, input := range inputs {
-		proto, err := toProto(input)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert to proto: %w", err)
-		}
-		protos = append(protos, proto)
-	}
-	return protos, nil
 }
 
 func batch[T any](in []T, batchSize int) [][]T {

@@ -96,6 +96,7 @@ var (
 	// NodeService...
 	ErrNodeServiceGetNodes    = errors.New("failed to get nodes")
 	ErrNodeServiceGetNodeData = errors.New("failed to get node data")
+	ErrNodeServicGetByTxHash  = errors.New("failed to get nodes for tx hash")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
 	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
@@ -112,9 +113,11 @@ var (
 	ErrMarketServiceGetByTxHash          = errors.New("failed to get orders for tx hash")
 	ErrMarketServiceGetDepth             = errors.New("failed to get market depth")
 	// AccountService...
-	ErrAccountServiceListAccounts = errors.New("failed to get accounts")
-	ErrFailedToSendSnapshot       = errors.New("failed to send accounts snapshot")
-	ErrAccountServiceGetBalances  = errors.New("failed to get balances")
+	ErrAccountServiceListAccounts        = errors.New("failed to get accounts")
+	ErrFailedToSendSnapshot              = errors.New("failed to send accounts snapshot")
+	ErrAccountServiceGetBalances         = errors.New("failed to get balances")
+	ErrAccountServiceGetByTxHash         = errors.New("failed to get accounts for tx hash")
+	ErrAccountServiceGetBalancesByTxHash = errors.New("failed to get balances for tx hash")
 	// DelegationService...
 	ErrDelegationServiceGet = errors.New("failed to get delegation")
 	// SummaryService...
@@ -246,6 +249,8 @@ var (
 	ErrEthereumKeyRotationsGetByTxHash = errors.New("failed to get ethereum key rotations for tx hash")
 	// ProtocolUpgradeProposals...
 	ErrProtocolUpgradeProposalsGetByTxHash = errors.New("failed to get protocol upgrade proposals for tx hash")
+	// MarginLevels
+	ErrMarginLevelsGetByTxHash = errors.New("failed to get margin levels for tx hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
