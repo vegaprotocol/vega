@@ -79,6 +79,8 @@ type OrderSubmission struct {
 	Reference string
 	// Used to specify the details for a pegged order
 	PeggedOrder *PeggedOrder
+	PostOnly    bool
+	ReduceOnly  bool
 }
 
 func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
@@ -97,6 +99,8 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 		Type:        o.Type,
 		Reference:   o.Reference,
 		PeggedOrder: pegged,
+		PostOnly:    o.PostOnly,
+		ReduceOnly:  o.ReduceOnly,
 	}
 }
 
@@ -125,12 +129,14 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 		Type:        p.Type,
 		Reference:   p.Reference,
 		PeggedOrder: peggedOrder,
+		PostOnly:    p.PostOnly,
+		ReduceOnly:  p.ReduceOnly,
 	}, nil
 }
 
 func (o OrderSubmission) String() string {
 	return fmt.Sprintf(
-		"marketID(%s) price(%s) size(%v) side(%s) timeInForce(%s) expiresAt(%v) type(%s) reference(%s) peggedOrder(%s)",
+		"marketID(%s) price(%s) size(%v) side(%s) timeInForce(%s) expiresAt(%v) type(%s) reference(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v)",
 		o.MarketID,
 		uintPointerToString(o.Price),
 		o.Size,
@@ -140,6 +146,8 @@ func (o OrderSubmission) String() string {
 		o.Type.String(),
 		o.Reference,
 		reflectPointerToString(o.PeggedOrder),
+		o.PostOnly,
+		o.ReduceOnly,
 	)
 }
 

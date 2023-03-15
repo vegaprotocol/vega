@@ -230,3 +230,20 @@ func (p MarketPosition) OrderReducesExposure(ord *types.Order) bool {
 	}
 	return false
 }
+
+// OrderReducesOnlyExposure returns true if the order reduce the position and the extra size if it was to flip the position side.
+func (p MarketPosition) OrderReducesOnlyExposure(ord *types.Order) (reduce bool, extraSize uint64) {
+	// if already closed, or increasing position, we shortcut
+	if p.Size() == 0 || (p.Size() < 0 && ord.Side == types.SideSell) || (p.Size() > 0 && ord.Side == types.SideBuy) {
+		return false, 0
+	}
+
+	var size = p.Size()
+	if size < 0 {
+		size = -size
+	}
+	if extraSizeI := size - int64(ord.Remaining); extraSizeI < 0 {
+		return true, uint64(-extraSizeI)
+	}
+	return true, 0
+}

@@ -116,6 +116,10 @@ func (err OrderError) Error() string {
 		return "OrderError: non-persistent order trades out of price bounds"
 	case OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS:
 		return "OrderError: too many pegged orders"
+	case OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE:
+		return "OrderError: post only order would trade"
+	case OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION:
+		return "OrderError: reduce only order would not reduce position"
 	default:
 		return "invalid OrderError"
 	}

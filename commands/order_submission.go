@@ -63,6 +63,35 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		)
 	}
 
+	if cmd.PostOnly && cmd.ReduceOnly {
+		errs.AddForProperty("order_submission.post_only",
+			errors.New("cannot be true at the same time as order_submission.reduce_only"))
+	} else {
+		if cmd.PostOnly {
+			if cmd.Type != types.Order_TYPE_LIMIT {
+				errs.AddForProperty("order_submission.post_only",
+					errors.New("only valid for limit orders"))
+			}
+			if cmd.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+				cmd.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
+				errs.AddForProperty("order_submission.post_only",
+					errors.New("only valid for persistent orders"))
+			}
+		}
+
+		if cmd.ReduceOnly {
+			if cmd.TimeInForce != types.Order_TIME_IN_FORCE_FOK &&
+				cmd.TimeInForce != types.Order_TIME_IN_FORCE_IOC {
+				errs.AddForProperty("order_submission.reduce_only",
+					errors.New("only valid for non-persistent orders"))
+			}
+			if cmd.PeggedOrder != nil {
+				errs.AddForProperty("order_submission.reduce_only",
+					errors.New("cannot be pegged"))
+			}
+		}
+	}
+
 	if cmd.PeggedOrder != nil {
 		if cmd.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			errs.AddForProperty("order_submission.pegged_order.reference", ErrIsRequired)
