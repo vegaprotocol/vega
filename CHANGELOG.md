@@ -48,6 +48,7 @@
 - [7763](https://github.com/vegaprotocol/vega/issues/7763) - Remove separate LP close out code path.
 - [7686](https://github.com/vegaprotocol/vega/issues/7686) - Network History load will retry when IPFS cannot connect to peers.
 - [7804](https://github.com/vegaprotocol/vega/issues/7804) - Headers include `Retry-After` when banned for exceeding rate limit.
+- [7840](https://github.com/vegaprotocol/vega/issues/7840) - Make chunk time interval configurable.
 
 ### 🐛 Fixes
 - [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
