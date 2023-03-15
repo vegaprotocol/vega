@@ -142,7 +142,7 @@ Feature: Closeout scenarios
       | mark price | trading mode                    | auction trigger                            |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
 
-  Scenario: Position becomes distressed upon exiting an auction (0012-POSR-007)
+  Scenario: Position becomes distressed upon exiting an auction (0012-POSR-008)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
