@@ -58,7 +58,6 @@ func NewDefaultConfig() Config {
 		BufferedEventSourceConfig: BufferedEventSourceConfig{
 			EventsPerFile:           10_000_000,
 			SendChannelBufferSize:   10_000,
-			MaxBufferedEvents:       100_000_000,
 			Archive:                 true,
 			ArchiveMaximumSizeBytes: 10_000_000_000,
 		},
@@ -82,7 +81,6 @@ type SocketConfig struct {
 type BufferedEventSourceConfig struct {
 	EventsPerFile           int   `long:"events-per-file" description:"the number of events to store in a file buffer, set to 0 to disable the buffer"`
 	SendChannelBufferSize   int   `long:"send-buffer-size" description:"sink event channel buffer size"`
-	MaxBufferedEvents       int   `long:"max-buffered-events" description:"max number of events that can be buffered, after this point events will no longer be buffered"`
 	Archive                 bool  `long:"archive" description:"archives event buffer files after they have been read, default false"`
 	ArchiveMaximumSizeBytes int64 `long:"archive-maximum-size" description:"the maximum size of the archive directory"`
 }
