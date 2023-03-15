@@ -3,39 +3,28 @@ package adapters
 import (
 	"context"
 	"sort"
+	"strings"
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"google.golang.org/grpc"
 )
 
-type InsecureGRPCAdapter struct {
+type GRPCAdapter struct {
 	client     apipb.CoreServiceClient
 	connection *grpc.ClientConn
 
 	host string
 }
 
-func (c *InsecureGRPCAdapter) Host() string {
+func (c *GRPCAdapter) Host() string {
 	return c.host
 }
 
-func toSpamStatistic(st *apipb.SpamStatistic) *nodetypes.SpamStatistic {
-	if st == nil {
-		// can happen if pointing to an older version of core where this
-		// particular spam statistic doesn't exist yet
-		return &nodetypes.SpamStatistic{}
-	}
-	return &nodetypes.SpamStatistic{
-		CountForEpoch: st.CountForEpoch,
-		MaxForEpoch:   st.MaxForEpoch,
-		BannedUntil:   st.BannedUntil,
-	}
-}
-
-func (c *InsecureGRPCAdapter) SpamStatistics(ctx context.Context, party string) (nodetypes.SpamStatistics, error) {
+func (c *GRPCAdapter) SpamStatistics(ctx context.Context, party string) (nodetypes.SpamStatistics, error) {
 	r, err := c.client.GetSpamStatistics(ctx,
 		&apipb.GetSpamStatisticsRequest{
 			PartyId: party,
@@ -94,7 +83,7 @@ func (c *InsecureGRPCAdapter) SpamStatistics(ctx context.Context, party string) 
 	}, nil
 }
 
-func (c *InsecureGRPCAdapter) Statistics(ctx context.Context) (nodetypes.Statistics, error) {
+func (c *GRPCAdapter) Statistics(ctx context.Context) (nodetypes.Statistics, error) {
 	statistics, err := c.client.Statistics(ctx, &apipb.StatisticsRequest{})
 	if err != nil {
 		return nodetypes.Statistics{}, err
@@ -108,15 +97,15 @@ func (c *InsecureGRPCAdapter) Statistics(ctx context.Context) (nodetypes.Statist
 	}, nil
 }
 
-func (c *InsecureGRPCAdapter) CheckTransaction(ctx context.Context, req *apipb.CheckTransactionRequest) (*apipb.CheckTransactionResponse, error) {
+func (c *GRPCAdapter) CheckTransaction(ctx context.Context, req *apipb.CheckTransactionRequest) (*apipb.CheckTransactionResponse, error) {
 	return c.client.CheckTransaction(ctx, req)
 }
 
-func (c *InsecureGRPCAdapter) SubmitTransaction(ctx context.Context, req *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error) {
+func (c *GRPCAdapter) SubmitTransaction(ctx context.Context, req *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error) {
 	return c.client.SubmitTransaction(ctx, req)
 }
 
-func (c *InsecureGRPCAdapter) LastBlock(ctx context.Context) (nodetypes.LastBlock, error) {
+func (c *GRPCAdapter) LastBlock(ctx context.Context) (nodetypes.LastBlock, error) {
 	lastBlock, err := c.client.LastBlockHeight(ctx, &apipb.LastBlockHeightRequest{})
 	if err != nil {
 		return nodetypes.LastBlock{}, err
@@ -134,17 +123,27 @@ func (c *InsecureGRPCAdapter) LastBlock(ctx context.Context) (nodetypes.LastBloc
 	}, nil
 }
 
-func (c *InsecureGRPCAdapter) Stop() error {
+func (c *GRPCAdapter) Stop() error {
 	return c.connection.Close()
 }
 
-func NewInsecureGRPCAdapter(host string) (*InsecureGRPCAdapter, error) {
-	connection, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func NewGRPCAdapter(host string) (*GRPCAdapter, error) {
+	useTLS := strings.HasPrefix(host, "tls://")
+
+	var creds credentials.TransportCredentials
+	if useTLS {
+		host = host[6:]
+		creds = credentials.NewClientTLSFromCert(nil, "")
+	} else {
+		creds = insecure.NewCredentials()
+	}
+
+	connection, err := grpc.Dial(host, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return nil, err
 	}
 
-	return &InsecureGRPCAdapter{
+	return &GRPCAdapter{
 		client:     apipb.NewCoreServiceClient(connection),
 		connection: connection,
 		host:       host,
