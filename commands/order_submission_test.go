@@ -140,7 +140,6 @@ func testSubmittingPostOrReduceOnlyOrders(t *testing.T) {
 		}
 		assert.Contains(t, errs, errors.New(tc.errString))
 	}
-
 }
 
 func testEmptyOrderSubmissionFails(t *testing.T) {
