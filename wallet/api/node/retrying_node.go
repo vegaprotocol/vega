@@ -232,7 +232,7 @@ func (n *RetryingNode) retry(o backoff.Operation) error {
 }
 
 func NewRetryingNode(log *zap.Logger, host string, retries uint64) (*RetryingNode, error) {
-	grpcAdapter, err := adapters.NewInsecureGRPCAdapter(host)
+	grpcAdapter, err := adapters.NewGRPCAdapter(host)
 	if err != nil {
 		log.Error("could not initialise an insecure gRPC adapter",
 			zap.String("host", host),
