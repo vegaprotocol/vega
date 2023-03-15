@@ -2285,6 +2285,12 @@ type Order {
 
   "The liquidity provision this order was created from"
   liquidityProvision: LiquidityProvision
+
+  "Is this a post only order"
+  postOnly: Boolean
+
+  "Is this a reduce only order"
+  reduceOnly: Boolean
 }
 
 "An order update in Vega, if active it will be on the order book for the market"
