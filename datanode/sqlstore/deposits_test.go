@@ -317,7 +317,7 @@ func testDepositsGetTxhash(t *testing.T) {
 	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
-	deposits, err := ds.GetByTxHash(ctx, entities.TxHash(deposit.TxHash))
+	deposits, err := ds.GetByTxHash(ctx, deposit.TxHash)
 	assert.NoError(t, err)
 	assert.Equal(t, *deposit, deposits[0])
 }

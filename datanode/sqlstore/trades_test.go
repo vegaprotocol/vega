@@ -108,7 +108,7 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	assert.Equal(t, tradeID2, trades[2].ID.String())
 }
 
-func TestStorage_GetByTxHash(t *testing.T) {
+func TestStorageGetByTxHash(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
 
@@ -283,7 +283,7 @@ func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trad
 
 	protos := []types.Trade{*trade1, *trade2, *trade3, *trade4, *trade5, *trade6}
 
-	var inserted []entities.Trade
+	inserted := []entities.Trade{}
 	var seqNum uint64
 	vegaTime := block1.VegaTime
 	for _, proto := range protos {

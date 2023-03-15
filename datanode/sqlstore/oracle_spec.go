@@ -97,7 +97,7 @@ func (os *OracleSpec) GetByTxHash(ctx context.Context, txHash entities.TxHash) (
 		return nil, os.wrapE(err)
 	}
 
-	var specs []entities.OracleSpec
+	specs := []entities.OracleSpec{}
 	for _, spec := range specsRaw {
 		specs = append(specs, dataSourceSpecRawToOracleSpec(spec))
 	}

@@ -33,7 +33,7 @@ func TestMarginLevels(t *testing.T) {
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all markets if only party ID is provided", testGetMarginLevelsByPartyID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for all parties if only market ID is provided", testGetMarginLevelsByMarketID)
 	t.Run("GetMarginLevelsByID should return the latest state of margin levels for the given party/market ID", testGetMarginLevelsByID)
-	t.Run("GetByTxHash", testGetMarginLevelsByID)
+	t.Run("GetByTxHash", testGetMarginByTxHash)
 
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given party if no pagination is provided", testGetMarginLevelsByIDPaginationWithPartyNoCursor)
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return all margin levels for a given market if no pagination is provided", testGetMarginLevelsByIDPaginationWithMarketNoCursor)
@@ -444,19 +444,7 @@ func testGetMarginByTxHash(t *testing.T) {
 
 	ml1 := getMarginLevelProto()
 	ml2 := getMarginLevelProto()
-	ml3 := getMarginLevelProto()
-	ml4 := getMarginLevelProto()
-
 	ml2.PartyId = "DEADBAAD"
-
-	ml3.Timestamp = ml2.Timestamp + 1000000000
-	ml3.MaintenanceMargin = "2000"
-	ml3.SearchLevel = "2000"
-
-	ml4.Timestamp = ml2.Timestamp + 1000000000
-	ml4.MaintenanceMargin = "2000"
-	ml4.SearchLevel = "2000"
-	ml4.PartyId = "DEADBAAD"
 
 	marginLevel1, err := entities.MarginLevelsFromProto(ctx, ml1, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")

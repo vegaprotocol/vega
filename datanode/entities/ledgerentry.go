@@ -43,7 +43,6 @@ var LedgerEntryColumns = []string{
 	"account_to_balance",
 }
 
-// @TODO - replace this with a better solution
 func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) (*vega.LedgerEntry, error) {
 	fromAcc, err := accountSource.GetByID(ctx, le.FromAccountID)
 	if err != nil {

@@ -38,7 +38,7 @@ func NewNode(connectionSource *ConnectionSource) *Node {
 	}
 }
 
-// this query requires a epoch_id as a first argument: WHERE epoch_id = $1
+// this query requires a epoch_id as a first argument: WHERE epoch_id = $1.
 func selectNodeQuery() string {
 	return `WITH
 	current_delegations AS (

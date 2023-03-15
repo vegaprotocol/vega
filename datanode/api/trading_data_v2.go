@@ -3207,7 +3207,7 @@ func (t *tradingDataServiceV2) ListTransactionEntities(
 		t.notaryService.GetByTxHash, ErrSignaturesGetByTxHash)
 
 	netParams := queryProtoEntities[*vega.NetworkParameter](ctx, eg, txHash,
-		t.networkParameterService.GetByTxHash, ErrNetworkParamatersGetByTxHash)
+		t.networkParameterService.GetByTxHash, ErrNetworkParametersGetByTxHash)
 
 	keyRotations := queryProtoEntities[*v1.KeyRotation](ctx, eg, txHash,
 		t.keyRotationService.GetByTxHash, ErrKeyRotationsGetByTxHash)

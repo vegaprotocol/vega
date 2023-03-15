@@ -195,7 +195,7 @@ func testLiquidityProvisionGetByTxHash(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 0, rowCount)
 
-	var lps []entities.LiquidityProvision
+	lps := []entities.LiquidityProvision{}
 	for _, lpp := range getTestLiquidityProvision() {
 		block := addTestBlock(t, ctx, bs)
 
