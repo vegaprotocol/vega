@@ -36,6 +36,9 @@ func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission
 	case asset.IsBuiltinAsset():
 		return app.banking.WithdrawBuiltinAsset(ctx, id, party, w.Asset, w.Amount)
 	case asset.IsERC20():
+		if w.Ext == nil {
+			return ErrMissingWithdrawERC20Ext
+		}
 		ext := w.Ext.GetErc20()
 		if ext == nil {
 			return ErrMissingWithdrawERC20Ext

@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased 0.69.0
+## Unreleased 0.70.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.69.0
 
 ### 🚨 Breaking changes
 - [7798](https://github.com/vegaprotocol/vega/issues/7798) - Remove redundant headers from the rate limiter response.
@@ -10,9 +25,7 @@
 - [7731](https://github.com/vegaprotocol/vega/issues/7731) - Upgrade the interplanetary file system library to latest release
 - [7802](https://github.com/vegaprotocol/vega/issues/7802) - Split liquidity auction trigger into two cases
 - [7728](https://github.com/vegaprotocol/vega/issues/7728) - Remove current order flag from table - adds restrictions to how orders can be paged
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7816](https://github.com/vegaprotocol/vega/issues/7816) - Require slippage factors to always be set
 
 ### 🛠 Improvements
 - [6942](https://github.com/vegaprotocol/vega/issues/6942) - Add `admin.rename_network` with `vega wallet network rename`
@@ -22,6 +35,7 @@
 - [7681](https://github.com/vegaprotocol/vega/issues/7681) - Remove unnecessary `protobuf` marshalling in event pipeline
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
 - [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
+- [7532](https://github.com/vegaprotocol/vega/issues/7532) - Load network history in a transaction 
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
 - [7792](https://github.com/vegaprotocol/vega/issues/7792) - An attempt to import a network when the `url` is to `github` and not the raw file contents is caught early with a suggested `url`
@@ -82,6 +96,8 @@
 
 ### 🛠 Improvements
 - [7501](https://github.com/vegaprotocol/vega/issues/7501) - Make logs more clear
+- [7555](https://github.com/vegaprotocol/vega/issues/7555) - Clean up code, add missing metrics and comments
+- [7477](https://github.com/vegaprotocol/vega/issues/7477) - Improve `gRPC` service error handling and formatting
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram

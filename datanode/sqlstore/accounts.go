@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgx/v4"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4"
 )
 
 var accountOrdering = TableOrdering{
@@ -193,30 +194,6 @@ func (as *Accounts) Query(ctx context.Context, filter entities.AccountFilter) ([
 	}
 
 	return accs, nil
-}
-
-func (as *Accounts) QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
-	query, args, err := filterAccountBalancesQuery(filter)
-	if err != nil {
-		return nil, fmt.Errorf("querying account balances: %w", err)
-	}
-
-	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
-
-	accountBalances := make([]entities.AccountBalance, 0)
-
-	defer metrics.StartSQLQuery("Accounts", "QueryBalancesV1")()
-	rows, err := as.Connection.Query(ctx, query, args...)
-	if err != nil {
-		return accountBalances, fmt.Errorf("querying account balances: %w", err)
-	}
-	defer rows.Close()
-
-	if err = pgxscan.ScanAll(&accountBalances, rows); err != nil {
-		return accountBalances, fmt.Errorf("parsing account balances: %w", err)
-	}
-
-	return accountBalances, nil
 }
 
 func (as *Accounts) QueryBalances(ctx context.Context,
