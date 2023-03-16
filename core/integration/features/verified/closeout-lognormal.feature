@@ -285,10 +285,7 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
       | buy  | 5     | 5      |
       | buy  | 1     | 400    |
 
-     When the parties place the following orders with ticks:
-      | party      | market id | side | volume | price | resulting trades | type       | tif     |
-      | auxiliary1 | ETH/DEC20 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
-      | auxiliary2 | ETH/DEC20 | sell | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+    Then the network moves ahead "5" blocks
 
     And the parties should have the following position changes for market "ETH/DEC20":
       | party   | status                        |
