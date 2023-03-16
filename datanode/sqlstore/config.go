@@ -42,6 +42,7 @@ type Config struct {
 	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `long:"disable-min-retention-policy-use-in-sys-test-only" description:"Disables the minimum retention policy interval check - only for use in system tests"`
 	RetentionPeriod                                    RetentionPeriod       `long:"retention-period" description:"Set the retention level for the database. standard, archive, or lite"`
 	VerboseMigration                                   encoding.Bool         `long:"verbose-migration" description:"Enable verbose logging of SQL migrations"`
+	ChunkIntervals                                     []ChunkInterval       `group:"ChunkIntervals" namespace:"ChunkIntervals"`
 }
 
 type ConnectionConfig struct {
@@ -57,9 +58,27 @@ type ConnectionConfig struct {
 	MinConnPoolSize       int32             `long:"min-conn-pool-size"`
 }
 
+type HypertableOverride interface {
+	RetentionPolicy | ChunkInterval
+	EntityName() string
+}
+
 type RetentionPolicy struct {
 	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
 	DataRetentionPeriod  string `string:"interval" description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc. To retain data indefinitely specify 'forever'"`
+}
+
+func (p RetentionPolicy) EntityName() string {
+	return p.HypertableOrCaggName
+}
+
+type ChunkInterval struct {
+	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
+	ChunkInterval        string `string:"chunk-interval" description:"the interval at which to create new chunks, e.g '1 day', '1 month', '1 year' etc."`
+}
+
+func (p ChunkInterval) EntityName() string {
+	return p.HypertableOrCaggName
 }
 
 type ConnectionRetryConfig struct {

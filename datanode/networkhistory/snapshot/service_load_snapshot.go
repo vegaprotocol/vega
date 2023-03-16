@@ -497,8 +497,8 @@ func copyDataIntoDatabase(ctx context.Context, vegaDbConn sqlstore.Connection, c
 		return 0, fmt.Errorf("failed to disable triggers, setting session replication role to replica failed: %w", err)
 	}
 	defer func() {
-		_, err = vegaDbConn.Exec(ctx, "SET session_replication_role = DEFAULT;")
-		if err != nil {
+		_, triggersErr := vegaDbConn.Exec(ctx, "SET session_replication_role = DEFAULT;")
+		if err == nil && triggersErr != nil {
 			err = fmt.Errorf("failed to re-enable triggers, setting session replication role to default failed: %w", err)
 			rowsCopied = 0
 		}
