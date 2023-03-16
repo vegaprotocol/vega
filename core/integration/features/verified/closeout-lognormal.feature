@@ -216,5 +216,83 @@ Feature: Closeout scenarios
       | party   | status                     |
       | trader2 | POSITION_STATUS_CLOSED_OUT |
 
+Scenario: 003, Position becomes distressed when market is in consitous mode 
+    Given the insurance pool balance should be "0" for the market "ETH/DEC19"
+      Given the following network parameters are set:
+      | name                                          | value |
+      | market.liquidity.targetstake.triggering.ratio | 0.01     |
+    Given the parties deposit on asset's general account the following amount:
+      | party      | asset | amount        |
+      | auxiliary1 | USD   | 1000000000000 |
+      | auxiliary2 | USD   | 1000000000000 |
+      | trader2    | USD   | 1000          |
+      | lprov      | USD   | 1000000000000 |
 
- 
+    When the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lprov | ETH/DEC20 | 400               | 0.001 | sell | ASK              | 100        | 2     | submission |
+      | lp1 | lprov | ETH/DEC20 | 400               | 0.001 | buy  | BID              | 100        | 55     | amendmend  |
+    Then the parties place the following orders:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference  |
+      | auxiliary2 | ETH/DEC20 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-5    |
+      | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1000 |
+      | auxiliary2 | ETH/DEC20 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1    |
+      | auxiliary1 | ETH/DEC20 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5       | 10        | 10        | 355          | 400            | 1             |
+      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 10        | 10        | 355          | 400            | 1             |
+
+    Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | sell | 1002  | 1      |
+      | sell | 1000  | 10     |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 400    |
+
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader2    | ETH/DEC20 | sell | 1      | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | sell | 1003  | 1      |
+      | sell | 1002  | 1      |
+      | sell | 1000  | 10     |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 400    |
+
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     |
+      | auxiliary2 | ETH/DEC20 | buy  | 12      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader2    | ETH/DEC20 | sell | 12      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search     | initial    | release    |
+      | trader2 | ETH/DEC20 | 1560000427  | 2340000640 | 3120000854 | 4680001281 |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |  
+      | trader2 | USD   | ETH/DEC20 | 999    | 0       | 
+
+    # trader2's order (price 1003) has been canceled
+    Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | sell | 1003  | 0      |
+      | sell | 1002  | 1      |
+      | sell | 1000  | 10     |
+      | buy  | 5     | 5      |
+      | buy  | 1     | 400    |
+
+    And the parties should have the following position changes for market "ETH/DEC20":
+      | party   | status                        |
+      | trader2 | POSITION_STATUS_ORDERS_CLOSED |
+
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4623         | 400            | 13            |
+
+
+    
+   
