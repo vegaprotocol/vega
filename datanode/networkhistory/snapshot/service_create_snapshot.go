@@ -84,7 +84,7 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 		return MetaData{}, fmt.Errorf("failed to set transaction isolation level to serilizable: %w", err)
 	}
 
-	snapshotInProgressFile := filepath.Join(b.snapshotsCopyToPath, InProgressFileName(chainID, toHeight))
+	snapshotInProgressFile := filepath.Join(b.absSnapshotsCopyToPath, InProgressFileName(chainID, toHeight))
 	if _, err = os.Create(snapshotInProgressFile); err != nil {
 		runAllInReverseOrder(cleanUp)
 		return MetaData{}, fmt.Errorf("failed to create write lock file:%w", err)
@@ -129,8 +129,8 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 	return MetaData{
 		CurrentStateSnapshot:     currentSnapshot,
 		HistorySnapshot:          historySnapshot,
-		CurrentStateSnapshotPath: filepath.Join(b.snapshotsCopyToPath, currentSnapshot.CompressedFileName()),
-		HistorySnapshotPath:      filepath.Join(b.snapshotsCopyToPath, historySnapshot.CompressedFileName()),
+		CurrentStateSnapshotPath: filepath.Join(b.absSnapshotsCopyToPath, currentSnapshot.CompressedFileName()),
+		HistorySnapshotPath:      filepath.Join(b.absSnapshotsCopyToPath, historySnapshot.CompressedFileName()),
 		DatabaseVersion:          dbMetaData.DatabaseVersion,
 	}, nil
 }
@@ -210,8 +210,8 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 	currentSnapshot CurrentState,
 	historySnapshot History,
 ) (err error) {
-	uncompressedCurrentDataDir := filepath.Join(b.snapshotsCopyToPath, currentSnapshot.UncompressedDataDir())
-	uncompressedHistoryDataDir := filepath.Join(b.snapshotsCopyToPath, historySnapshot.UncompressedDataDir())
+	uncompressedCurrentDataDir := filepath.Join(b.absSnapshotsCopyToPath, currentSnapshot.UncompressedDataDir())
+	uncompressedHistoryDataDir := filepath.Join(b.absSnapshotsCopyToPath, historySnapshot.UncompressedDataDir())
 
 	defer func() {
 		// Calling rollback on a committed transaction has no effect, hence we can rollback in defer to ensure
@@ -235,8 +235,8 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 
 	start := time.Now()
 	b.log.Infof("copying all table data....")
-	allCopySQL := append(currentSnapshot.GetCopySQL(dbMetaData, b.snapshotsCopyToPath),
-		historySnapshot.GetCopySQL(dbMetaData, b.snapshotsCopyToPath)...)
+	allCopySQL := append(currentSnapshot.GetCopySQL(dbMetaData, b.absSnapshotsCopyToPath),
+		historySnapshot.GetCopySQL(dbMetaData, b.absSnapshotsCopyToPath)...)
 	rowsCopied, err := copyTableData(ctx, copyDataTx, allCopySQL)
 	if err != nil {
 		return fmt.Errorf("failed to copy table data:%w", err)
@@ -249,7 +249,7 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 
 	b.log.Infof("compressing current state snapshot data")
 
-	compressedCurrentStateFile := filepath.Join(b.snapshotsCopyToPath, currentSnapshot.CompressedFileName())
+	compressedCurrentStateFile := filepath.Join(b.absSnapshotsCopyToPath, currentSnapshot.CompressedFileName())
 	compressedCurrentStateByteCount, err := fsutil.TarAndCompressDirWithDeterministicHeader(uncompressedCurrentDataDir, compressedCurrentStateFile, dbMetaData.DatabaseVersion)
 	if err != nil {
 		return fmt.Errorf("failed to compress snapshot:%w", err)
@@ -257,7 +257,7 @@ func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaDat
 	b.log.Infof("compressed current state snapshot data size: %dB", compressedCurrentStateByteCount)
 
 	b.log.Infof("compressing history data")
-	compressedHistoryStateFile := filepath.Join(b.snapshotsCopyToPath, historySnapshot.CompressedFileName())
+	compressedHistoryStateFile := filepath.Join(b.absSnapshotsCopyToPath, historySnapshot.CompressedFileName())
 	compressedHistoryByteCount, err := fsutil.TarAndCompressDirWithDeterministicHeader(uncompressedHistoryDataDir, compressedHistoryStateFile, dbMetaData.DatabaseVersion)
 	if err != nil {
 		return fmt.Errorf("failed to compress history snapshot:%w", err)

@@ -33,7 +33,7 @@ type LoadLog interface {
 }
 
 func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStateSnapshot CurrentState,
-	contiguousHistory []History, snapshotsCopyFromPath string, connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
+	contiguousHistory []History, relSnapshotsCopyFromPath string, connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (LoadResult, error) {
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, b.connPool)
 	if err != nil {
@@ -81,7 +81,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 	dbVersionToHistorySegments := map[int64][]History{}
 
 	for _, history := range contiguousHistory {
-		historySegmentDbVersion, err := fsutil.GetHistorySegmentDatabaseVersion(filepath.Join(snapshotsCopyFromPath, history.CompressedFileName()))
+		historySegmentDbVersion, err := fsutil.GetHistorySegmentDatabaseVersion(filepath.Join(relSnapshotsCopyFromPath, history.CompressedFileName()))
 		if err != nil {
 			return LoadResult{}, fmt.Errorf("failed to get history segment database version: %w", err)
 		}
@@ -117,7 +117,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 
 		log.Infof("loading all history segments with database version: %d", targetDatabaseVersion)
 		rowsCopied, err := b.loadHistorySegments(ctx, log, dbVersionToHistorySegments[targetDatabaseVersion], withIndexesAndOrderTriggers,
-			snapshotsCopyFromPath, dbMetaData, historyTableLastTimestampMap)
+			relSnapshotsCopyFromPath, dbMetaData, historyTableLastTimestampMap)
 		if err != nil {
 			return LoadResult{}, fmt.Errorf("failed to load history segments: %w", err)
 		}
@@ -125,7 +125,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		totalRowsCopied += rowsCopied
 	}
 
-	rowsCopied, err := b.loadCurrentState(ctx, log, currentStateSnapshot, dbMetaData, snapshotsCopyFromPath,
+	rowsCopied, err := b.loadCurrentState(ctx, log, currentStateSnapshot, dbMetaData, relSnapshotsCopyFromPath,
 		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to load current state: %w", err)
@@ -147,7 +147,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 }
 
 func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, currentStateSnapshot CurrentState,
-	dbMetaData DatabaseMetadata, snapshotsCopyFromPath string, withIndexesAndOrderTriggers bool,
+	dbMetaData DatabaseMetadata, relSnapshotsCopyFromPath string, withIndexesAndOrderTriggers bool,
 	historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
 	tx, err := b.connPool.Begin(ctx)
@@ -173,7 +173,7 @@ func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, currentStat
 		return 0, fmt.Errorf("failed to truncate current state tables: %w", err)
 	}
 
-	rowsCopied, err := loadSnapshot(ctx, tx, log, currentStateSnapshot, snapshotsCopyFromPath, dbMetaData,
+	rowsCopied, err := b.loadSnapshot(ctx, tx, log, currentStateSnapshot, relSnapshotsCopyFromPath, dbMetaData,
 		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
 	if err != nil {
 		return 0, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
@@ -199,7 +199,7 @@ func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, currentStat
 }
 
 func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historySegments []History, withIndexesAndOrderTriggers bool,
-	snapshotsCopyFromPath string, dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
+	relSnapshotsCopyFromPath string, dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
 	tx, err := b.connPool.Begin(ctx)
 	if err != nil {
@@ -222,7 +222,7 @@ func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historyS
 
 	var totalRowsCopied int64
 	for _, history := range historySegments {
-		rowsCopied, err := loadSnapshot(ctx, tx, log, history, snapshotsCopyFromPath, dbMetaData, withIndexesAndOrderTriggers, historyTableLastTimestampMap)
+		rowsCopied, err := b.loadSnapshot(ctx, tx, log, history, relSnapshotsCopyFromPath, dbMetaData, withIndexesAndOrderTriggers, historyTableLastTimestampMap)
 		if err != nil {
 			return 0, fmt.Errorf("failed to load history segment %s: %w", history, err)
 		}
@@ -301,11 +301,11 @@ type compressedFileMapping interface {
 	CompressedFileName() string
 }
 
-func loadSnapshot(ctx context.Context, vegaDbConn sqlstore.Connection, loadLog LoadLog, snapshotData compressedFileMapping, snapshotsCopyFromPath string,
+func (b *Service) loadSnapshot(ctx context.Context, vegaDbConn sqlstore.Connection, loadLog LoadLog, snapshotData compressedFileMapping, relSnapshotsCopyFromPath string,
 	dbMetaData DatabaseMetadata, withIndexesAndOrderTriggers bool, historyTableLastTimestamps map[string]time.Time,
 ) (int64, error) {
-	compressedFilePath := filepath.Join(snapshotsCopyFromPath, snapshotData.CompressedFileName())
-	decompressedFilesDestination := filepath.Join(snapshotsCopyFromPath, snapshotData.UncompressedDataDir())
+	compressedFilePath := filepath.Join(relSnapshotsCopyFromPath, snapshotData.CompressedFileName())
+	decompressedFilesDestination := filepath.Join(relSnapshotsCopyFromPath, snapshotData.UncompressedDataDir())
 	defer func() {
 		_ = os.RemoveAll(compressedFilePath)
 		_ = os.RemoveAll(decompressedFilesDestination)
@@ -320,7 +320,7 @@ func loadSnapshot(ctx context.Context, vegaDbConn sqlstore.Connection, loadLog L
 	loadLog.Infof("copying %s into database", snapshotData.UncompressedDataDir())
 	startTime := time.Now()
 	rowsCopied, err := copyDataIntoDatabase(ctx, vegaDbConn, decompressedFilesDestination,
-		filepath.Join(snapshotsCopyFromPath, snapshotData.UncompressedDataDir()), dbMetaData,
+		filepath.Join(b.absSnapshotsCopyFromPath, snapshotData.UncompressedDataDir()), dbMetaData,
 		withIndexesAndOrderTriggers, historyTableLastTimestamps)
 	if err != nil {
 		return 0, fmt.Errorf("failed to copy uncompressed data into the database %s : %w", snapshotData.UncompressedDataDir(), err)
