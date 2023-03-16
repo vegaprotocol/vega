@@ -195,12 +195,21 @@ func verifyNetworkParameters(r *reporter, nps map[string]string, overwriteParame
 func verifyGenesis(r *reporter, bs []byte) string {
 	// Unmarshal to get appstate
 	g := struct {
-		AppState json.RawMessage `json:"app_state"`
+		AppState        json.RawMessage `json:"app_state"`
+		ConsensusParams struct {
+			Block struct {
+				TimeIotaMs string `json:"time_iota_ms"`
+			} `json:"block"`
+		} `json:"consensus_params"`
 	}{}
 
 	if err := json.Unmarshal(bs, &g); err != nil {
 		r.Err("unable to unmarshal genesis file, %v", err)
 		return ""
+	}
+
+	if g.ConsensusParams.Block.TimeIotaMs != "1" {
+		r.Err("consensus_params.block.time_iota_ms must be 1")
 	}
 
 	appstate := &appState{}
