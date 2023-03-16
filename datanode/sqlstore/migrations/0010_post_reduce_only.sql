@@ -59,26 +59,26 @@ CREATE OR REPLACE VIEW orders_current_versions AS (
    SELECT DISTINCT ON (id, version) * FROM orders ORDER BY id, version DESC, vega_time DESC
 );
 
-CREATE OR REPLACE VIEW orders_current_desc
+CREATE VIEW orders_current_desc
  AS
 SELECT DISTINCT ON (orders.created_at, orders.id) *
 FROM orders
 ORDER BY orders.created_at DESC, orders.id, orders.vega_time DESC, orders.seq_num DESC;
 
 
-CREATE OR REPLACE VIEW orders_current_desc_by_market
+CREATE VIEW orders_current_desc_by_market
  AS
 SELECT DISTINCT ON (orders.created_at, orders.market_id, orders.id) *
 FROM orders
 ORDER BY orders.created_at DESC, orders.market_id, orders.id, orders.vega_time DESC, orders.seq_num DESC;
 
-CREATE OR REPLACE VIEW orders_current_desc_by_party
+CREATE VIEW orders_current_desc_by_party
 AS
 SELECT DISTINCT ON (orders.created_at, orders.party_id, orders.id) *
         FROM orders
         ORDER BY orders.created_at DESC, orders.party_id, orders.id, orders.vega_time DESC, orders.seq_num DESC;
 
-CREATE OR REPLACE VIEW orders_current_desc_by_reference
+CREATE VIEW orders_current_desc_by_reference
 AS
 SELECT DISTINCT ON (orders.created_at, orders.reference, orders.id) *
         FROM orders
