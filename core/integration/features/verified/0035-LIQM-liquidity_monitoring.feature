@@ -276,9 +276,17 @@ Feature: Test liquidity monitoring
       | id  | party          | market    | commitment amount | status           |
       | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | STATUS_CANCELLED |
 
-     And the parties should have the following position changes for market "ETH/DEC21":
+    And the parties should have the following position changes for market "ETH/DEC21":
       | party          | status                        |
       | lp2Bdistressed | POSITION_STATUS_ORDERS_CLOSED |
+
+    And the parties should have the following account balances:
+      | party          | asset | market id | margin | general |
+      | lp2Bdistressed | ETH   | ETH/DEC21 | 0      | 99      |
+
+    And the parties should have the following margin levels:
+      | party          | market id | maintenance | search | initial | release |
+      | lp2Bdistressed | ETH/DEC21 | 0           | 0      | 0       | 0       |
 
     When the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC21" should be:
