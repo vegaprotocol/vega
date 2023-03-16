@@ -31,7 +31,7 @@ const (
                        size, remaining, time_in_force, type, status,
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
-                       tx_hash, vega_time, seq_num`
+                       tx_hash, vega_time, seq_num, post_only, reduce_only`
 
 	ordersFilterDateColumn = "vega_time"
 

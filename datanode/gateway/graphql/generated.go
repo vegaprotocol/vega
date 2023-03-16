@@ -1081,7 +1081,9 @@ type ComplexityRoot struct {
 		Market             func(childComplexity int) int
 		Party              func(childComplexity int) int
 		PeggedOrder        func(childComplexity int) int
+		PostOnly           func(childComplexity int) int
 		Price              func(childComplexity int) int
+		ReduceOnly         func(childComplexity int) int
 		Reference          func(childComplexity int) int
 		RejectionReason    func(childComplexity int) int
 		Remaining          func(childComplexity int) int
@@ -6237,12 +6239,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.PeggedOrder(childComplexity), true
 
+	case "Order.postOnly":
+		if e.complexity.Order.PostOnly == nil {
+			break
+		}
+
+		return e.complexity.Order.PostOnly(childComplexity), true
+
 	case "Order.price":
 		if e.complexity.Order.Price == nil {
 			break
 		}
 
 		return e.complexity.Order.Price(childComplexity), true
+
+	case "Order.reduceOnly":
+		if e.complexity.Order.ReduceOnly == nil {
+			break
+		}
+
+		return e.complexity.Order.ReduceOnly(childComplexity), true
 
 	case "Order.reference":
 		if e.complexity.Order.Reference == nil {
@@ -24760,6 +24776,10 @@ func (ec *executionContext) fieldContext_LiquidityOrderReference_order(ctx conte
 				return ec.fieldContext_Order_peggedOrder(ctx, field)
 			case "liquidityProvision":
 				return ec.fieldContext_Order_liquidityProvision(ctx, field)
+			case "postOnly":
+				return ec.fieldContext_Order_postOnly(ctx, field)
+			case "reduceOnly":
+				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -38676,6 +38696,88 @@ func (ec *executionContext) fieldContext_Order_liquidityProvision(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Order_postOnly(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_postOnly(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostOnly, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Order_postOnly(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_reduceOnly(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_reduceOnly(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReduceOnly, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Order_reduceOnly(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OrderConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.OrderConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OrderConnection_edges(ctx, field)
 	if err != nil {
@@ -38851,6 +38953,10 @@ func (ec *executionContext) fieldContext_OrderEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Order_peggedOrder(ctx, field)
 			case "liquidityProvision":
 				return ec.fieldContext_Order_liquidityProvision(ctx, field)
+			case "postOnly":
+				return ec.fieldContext_Order_postOnly(ctx, field)
+			case "reduceOnly":
+				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -47773,6 +47879,10 @@ func (ec *executionContext) fieldContext_Query_orderByID(ctx context.Context, fi
 				return ec.fieldContext_Order_peggedOrder(ctx, field)
 			case "liquidityProvision":
 				return ec.fieldContext_Order_liquidityProvision(ctx, field)
+			case "postOnly":
+				return ec.fieldContext_Order_postOnly(ctx, field)
+			case "reduceOnly":
+				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -47868,6 +47978,10 @@ func (ec *executionContext) fieldContext_Query_orderByReference(ctx context.Cont
 				return ec.fieldContext_Order_peggedOrder(ctx, field)
 			case "liquidityProvision":
 				return ec.fieldContext_Order_liquidityProvision(ctx, field)
+			case "postOnly":
+				return ec.fieldContext_Order_postOnly(ctx, field)
+			case "reduceOnly":
+				return ec.fieldContext_Order_reduceOnly(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -71100,6 +71214,14 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 				return innerFunc(ctx)
 
 			})
+		case "postOnly":
+
+			out.Values[i] = ec._Order_postOnly(ctx, field, obj)
+
+		case "reduceOnly":
+
+			out.Values[i] = ec._Order_reduceOnly(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

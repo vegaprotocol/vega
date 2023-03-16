@@ -226,6 +226,11 @@ message Order {
   PeggedOrder pegged_order = 18;
   // Is this order created as part of a liquidity provision, will be empty if not.
   string liquidity_provision_id = 19;
+  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only
+  bool post_only = 20;
+  // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
+  // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
+  bool reduce_only = 21;
 }
 
 // Used when cancelling an order
@@ -358,8 +363,12 @@ enum OrderError {
   ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER = 46;
   // An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS = 47;
-	// Unable to submit pegged order, temporarily too many pegged orders across all markets
+  // Unable to submit pegged order, temporarily too many pegged orders across all markets
   ORDER_ERROR_TOO_MANY_PEGGED_ORDERS = 48;
+  // The post order would trade
+  ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE = 49;
+  // The post order would trade
+  ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION = 50;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)

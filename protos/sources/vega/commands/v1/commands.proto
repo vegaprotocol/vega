@@ -55,6 +55,11 @@ message OrderSubmission {
   // Used to specify the details for a pegged order
   // - See `PeggedOrder`
   vega.PeggedOrder pegged_order = 9;
+  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only
+  bool post_only = 10;
+  // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
+  // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
+  bool reduce_only = 11;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega

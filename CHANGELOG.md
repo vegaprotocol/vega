@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [7834](https://github.com/vegaprotocol/vega/issues/7834) - Support TLS connection for gRPC endpoints in wallet when prefixed with `tls://`
+- [7851](https://github.com/vegaprotocol/vega/issues/7851) - Implement post only and reduce only orders
 
 ### 🐛 Fixes
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
@@ -35,7 +36,7 @@
 - [7681](https://github.com/vegaprotocol/vega/issues/7681) - Remove unnecessary `protobuf` marshalling in event pipeline
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
 - [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
-- [7532](https://github.com/vegaprotocol/vega/issues/7532) - Load network history in a transaction 
+- [7532](https://github.com/vegaprotocol/vega/issues/7532) - Load network history in a transaction
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
 - [7792](https://github.com/vegaprotocol/vega/issues/7792) - An attempt to import a network when the `url` is to `github` and not the raw file contents is caught early with a suggested `url`

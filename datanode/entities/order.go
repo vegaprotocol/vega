@@ -54,6 +54,8 @@ type Order struct {
 	TxHash          TxHash
 	VegaTime        time.Time
 	SeqNum          uint64
+	PostOnly        bool
+	ReduceOnly      bool
 }
 
 func (o Order) ToProto() *vega.Order {
@@ -90,6 +92,8 @@ func (o Order) ToProto() *vega.Order {
 		BatchId:              uint64(o.BatchID),
 		PeggedOrder:          peggedOrder,
 		LiquidityProvisionId: hex.EncodeToString(o.LpID),
+		PostOnly:             o.PostOnly,
+		ReduceOnly:           o.ReduceOnly,
 	}
 	return &vo
 }
@@ -170,6 +174,8 @@ func OrderFromProto(po *vega.Order, seqNum uint64, txHash TxHash) (Order, error)
 		ExpiresAt:       NanosToPostgresTimestamp(po.ExpiresAt),
 		SeqNum:          seqNum,
 		TxHash:          txHash,
+		PostOnly:        po.PostOnly,
+		ReduceOnly:      po.ReduceOnly,
 	}
 
 	return o, nil
@@ -191,7 +197,7 @@ func (o Order) ToRow() []interface{} {
 		o.Size, o.Remaining, o.TimeInForce, o.Type, o.Status,
 		o.Reference, o.Reason, o.Version, o.PeggedOffset, o.BatchID,
 		o.PeggedReference, o.LpID, o.CreatedAt, o.UpdatedAt, o.ExpiresAt,
-		o.TxHash, o.VegaTime, o.SeqNum,
+		o.TxHash, o.VegaTime, o.SeqNum, o.PostOnly, o.ReduceOnly,
 	}
 }
 
@@ -200,7 +206,7 @@ var OrderColumns = []string{
 	"size", "remaining", "time_in_force", "type", "status",
 	"reference", "reason", "version", "pegged_offset", "batch_id",
 	"pegged_reference", "lp_id", "created_at", "updated_at", "expires_at",
-	"tx_hash", "vega_time", "seq_num",
+	"tx_hash", "vega_time", "seq_num", "post_only", "reduce_only",
 }
 
 type OrderCursor struct {
