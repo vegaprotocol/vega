@@ -175,6 +175,11 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
 }
 
+// ProposalDetail returns the Proposal detail resolver.
+func (r *VegaResolverRoot) ProposalDetail() ProposalDetailResolver {
+	return (*proposalDetailResolver)(r)
+}
+
 // NodeSignature ...
 func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
 	return (*myNodeSignatureResolver)(r)
@@ -373,6 +378,18 @@ func (r *VegaResolverRoot) EpochRewardSummary() EpochRewardSummaryResolver {
 
 func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
 	return (*orderFilterResolver)(r)
+}
+
+func (r *VegaResolverRoot) LedgerEntry() LedgerEntryResolver {
+	return (*ledgerEntryResolver)(r)
+}
+
+func (r *VegaResolverRoot) ERC20MultiSigSignerAddedBundle() ERC20MultiSigSignerAddedBundleResolver {
+	return (*erc20MultiSigSignerAddedBundleResolver)(r)
+}
+
+func (r *VegaResolverRoot) ERC20MultiSigSignerRemovedBundle() ERC20MultiSigSignerRemovedBundleResolver {
+	return (*erc20MultiSigSignerRemovedBundleResolver)(r)
 }
 
 // RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
@@ -657,14 +674,7 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 
 	for _, edge := range res.Bundles.Edges {
 		edges = append(edges, &ERC20MultiSigSignerAddedBundleEdge{
-			Node: &ERC20MultiSigSignerAddedBundle{
-				NewSigner:  edge.Node.NewSigner,
-				Submitter:  edge.Node.Submitter,
-				Nonce:      edge.Node.Nonce,
-				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
-				Signatures: edge.Node.Signatures,
-				EpochSeq:   edge.Node.EpochSeq,
-			},
+			Node:   edge.Node,
 			Cursor: edge.Cursor,
 		})
 	}
@@ -691,14 +701,7 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 
 	for _, edge := range res.Bundles.Edges {
 		edges = append(edges, &ERC20MultiSigSignerRemovedBundleEdge{
-			Node: &ERC20MultiSigSignerRemovedBundle{
-				OldSigner:  edge.Node.OldSigner,
-				Submitter:  edge.Node.Submitter,
-				Nonce:      edge.Node.Nonce,
-				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
-				Signatures: edge.Node.Signatures,
-				EpochSeq:   edge.Node.EpochSeq,
-			},
+			Node:   edge.Node,
 			Cursor: edge.Cursor,
 		})
 	}
@@ -2896,6 +2899,17 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 	}
 
 	return resp.Markets, nil
+}
+
+func (r *myQueryResolver) TransactionEntities(ctx context.Context, txHash string) (*v2.ListTransactionEntitiesResponse, error) {
+	resp, err := r.tradingDataClientV2.ListTransactionEntities(ctx, &v2.ListTransactionEntitiesRequest{
+		TransactionHash: txHash,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (r *myQueryResolver) PartiesConnection(ctx context.Context, partyID *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {

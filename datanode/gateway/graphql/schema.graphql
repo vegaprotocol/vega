@@ -694,6 +694,8 @@ type Query {
     filter: PositionsFilter,
     pagination: Pagination
   ): PositionConnection
+
+  transactionEntities(txHash: String!): TransactionEntities!
 }
 
 "All the states a transfer can transition between"
@@ -1008,6 +1010,27 @@ type Node {
   name: String!
 
   # The URL of an avatar
+  avatarUrl: String
+}
+
+type NodeBasic {
+  "The node URL eg n01.vega.xyz"
+  id: ID!
+  "Public key of the node operator"
+  pubkey: String!
+  "Tendermint public key of the node"
+  tmPubkey: String!
+  "Ethereum public key of the node"
+  ethereumAddress: String!
+  "URL from which you can get more info about the node."
+  infoUrl: String!
+  "Country code for the location of the node"
+  location: String!
+  "Validator status of the node"
+  status: NodeStatus!
+  "he name of the node"
+  name: String!
+  "The URL of an avatar"
   avatarUrl: String
 }
 
@@ -3463,6 +3486,35 @@ type Proposal {
   requiredLpParticipation: String
 }
 
+type ProposalDetail {
+  "Proposal ID that is filled by Vega once proposal reaches the network"
+  id: ID
+  "A UUID reference to aid tracking proposals on Vega"
+  reference: String!
+  "Party that prepared the proposal"
+  party: Party!
+  "State of the proposal"
+  state: ProposalState!
+  "RFC3339Nano time and date when the proposal reached Vega network"
+  datetime: Timestamp!
+  "Terms of the proposal"
+  terms: ProposalTerms!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
+  "Why the proposal was rejected by the core"
+  rejectionReason: ProposalRejectionReason
+  "Error details of the rejectionReason"
+  errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Required liquidity provider equity like share majority for this proposal to succeed"
+  requiredLpMajority: String
+  "Required liquidity provider equity like share participation for this proposal to succeed"
+  requiredLpParticipation: String
+}
+
 type ProposalVotes {
   "Yes votes cast for this proposal"
   yes: ProposalVoteSide!
@@ -4557,4 +4609,35 @@ for each type in the child objects below.
 """
 type DataSourceDefinition {
   sourceType: DataSourceKind!
+}
+
+type TransactionEntities {
+  accounts: [AccountEvent]
+  orders: [Order]
+  positions: [Position]
+  ledgerEntries: [LedgerEntry]
+  balanceChanges: [AccountBalance]
+  transfers: [Transfer]
+  votes: [Vote]
+  erc20MultiSigSignerAddedBundles: [ERC20MultiSigSignerAddedBundle]
+  erc20MultiSigSignerRemovedBundles: [ERC20MultiSigSignerRemovedBundle]
+  trades: [Trade]
+  oracleSpecs: [OracleSpec]
+  oracleData: [OracleData]
+  markets: [Market]
+  parties: [Party]
+  marginLevels: [MarginLevels]
+  rewards: [Reward]
+  deposits: [Deposit]
+  withdrawals: [Withdrawal]
+  assets: [Asset]
+  liquidityProvisions: [LiquidityProvision]
+  proposals: [ProposalDetail]
+  delegations: [Delegation]
+  nodes: [NodeBasic]
+  nodeSignatures: [NodeSignature]
+  networkParameters: [NetworkParameter]
+  keyRotations: [KeyRotation]
+  ethereumKeyRotations: [EthereumKeyRotation]
+  protocolUpgradeProposals: [ProtocolUpgradeProposal]
 }
