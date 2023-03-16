@@ -12,7 +12,7 @@
 - [7834](https://github.com/vegaprotocol/vega/issues/7834) - Support TLS connection for gRPC endpoints in wallet when prefixed with `tls://`
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
 
 
 ## 0.69.0

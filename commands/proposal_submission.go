@@ -660,14 +660,14 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		if len(t.Conditions) != 0 {
 			for j, condition := range t.Conditions {
 				if len(condition.Value) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].value", parentProperty, name, j), ErrIsRequired)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
 				}
 				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsRequired)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
 				}
 
 				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsNotValid)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
 				}
 			}
 		}
