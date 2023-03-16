@@ -450,13 +450,17 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 	return s
 }
 
-func (s *DataSourceDefinition) IsExternal() bool {
-	switch s.SourceType.oneOfProto().(type) {
-	case *vegapb.DataSourceDefinition_External:
-		return true
+func (s *DataSourceDefinition) IsExternal() (bool, error) {
+	if s.SourceType != nil {
+		switch s.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinition_External:
+			return true, nil
+		}
+
+		return false, nil
 	}
 
-	return false
+	return false, errors.New("unknown type of data source provided")
 }
 
 func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() *vegapb.DataSourceSpecConfigurationTime {
