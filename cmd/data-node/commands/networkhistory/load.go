@@ -107,7 +107,8 @@ func (cmd *loadCmd) Execute(args []string) error {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), false)
+	networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+		false, cmd.Config.MaxMemoryPercent)
 	if err != nil {
 		return fmt.Errorf("failed to create network history store:%w", err)
 	}

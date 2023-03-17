@@ -118,7 +118,7 @@ func createStore(t *testing.T, historyRetentionBlockSpan int64, chainID string, 
 	cfg.HistoryRetentionBlockSpan = historyRetentionBlockSpan
 	snapshotsDir := t.TempDir()
 
-	s, err := store.New(context.Background(), log, chainID, cfg, networkhistoryHome, false)
+	s, err := store.New(context.Background(), log, chainID, cfg, networkhistoryHome, false, 33)
 	require.NoError(t, err)
 	return s, snapshotsDir
 }

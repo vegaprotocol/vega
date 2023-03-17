@@ -14,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dustin/go-humanize"
+	"github.com/ipfs/kubo/core/node/libp2p/fd"
+	"github.com/pbnjay/memory"
+
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -125,7 +129,9 @@ type Store struct {
 // issue when running tests as we only have one IPFS node instance when running datanode.
 var plugins *loader.PluginLoader
 
-func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, networkHistoryHome string, wipeOnStartup bool) (*Store, error) {
+func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, networkHistoryHome string,
+	wipeOnStartup bool, maxMemoryPercent uint8,
+) (*Store, error) {
 	if log.IsDebug() {
 		ipfslogging.SetDebugLogging()
 	}
@@ -184,7 +190,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 
 	p.swarmKeySeed = cfg.GetSwarmKeySeed(log, chainID)
 
-	p.ipfsNode, p.ipfsRepo, p.swarmKey, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKeySeed)
+	p.ipfsNode, p.ipfsRepo, p.swarmKey, err = createIpfsNode(ctx, log, p.ipfsPath, ipfsCfg, p.swarmKeySeed, maxMemoryPercent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ipfs node:%w", err)
 	}
@@ -838,19 +844,23 @@ func generateSwarmKeyFile(swarmKeySeed string, repoPath string) (string, error) 
 	return swarmKey, nil
 }
 
-func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*core.IpfsNode, repo.Repo, error) {
+func createNode(ctx context.Context, log *logging.Logger, repoPath string, maxMemoryPercent uint8) (*core.IpfsNode, repo.Repo, error) {
 	repo, err := fsrepo.Open(repoPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to open ipfs repo:%w", err)
 	}
 
 	// Construct the node
-
 	nodeOptions := &core.BuildCfg{
 		Online:    true,
 		Permanent: true,
 		Routing:   libp2p.DHTOption, // This option sets the node to be a full DHT node (both fetching and storing DHT Records)
 		Repo:      repo,
+	}
+
+	err = setLibP2PResourceManagerLimits(repo, maxMemoryPercent)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to set libp2p resource manager limits:%w", err)
 	}
 
 	node, err := core.NewNode(ctx, nodeOptions)
@@ -862,6 +872,37 @@ func createNode(ctx context.Context, log *logging.Logger, repoPath string) (*cor
 
 	// Attach the Core API to the constructed node
 	return node, repo, nil
+}
+
+// The LibP2P Resource manager protects the IPFS node from malicious and non-malicious attacks, the limits used to enforce
+// these protections are based on the max memory and max file descriptor limits set in the swarms resource manager config.
+// This method overrides the defaults and sets limits that we consider sensible in the context of a data-node.
+func setLibP2PResourceManagerLimits(repo repo.Repo, maxMemoryPercent uint8) error {
+	cfg, err := repo.Config()
+	if err != nil {
+		return fmt.Errorf("failed to get repo config:%w", err)
+	}
+
+	// Set the maximum to a quarter of the data-nodes max memory
+	maxMemoryString := humanize.Bytes(uint64(float64(memory.TotalMemory()) * (float64(maxMemoryPercent) / (4 * 100))))
+	cfg.Swarm.ResourceMgr.MaxMemory = config.NewOptionalString(maxMemoryString)
+
+	// Set the maximum to a quarter of the systems available file descriptors
+	maxFileDescriptors := int64(fd.GetNumFDs()) / 4
+	fdBytes, err := json.Marshal(&maxFileDescriptors)
+	if err != nil {
+		return fmt.Errorf("failed to marshal max file descriptors:%w", err)
+	}
+
+	fdOptionalInteger := config.OptionalInteger{}
+	err = fdOptionalInteger.UnmarshalJSON(fdBytes)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal max file descriptors:%w", err)
+	}
+
+	cfg.Swarm.ResourceMgr.MaxFileDescriptors = &fdOptionalInteger
+
+	return nil
 }
 
 func printSwarmAddrs(node *core.IpfsNode, log *logging.Logger) {
@@ -895,7 +936,7 @@ func printSwarmAddrs(node *core.IpfsNode, log *logging.Logger) {
 }
 
 func createIpfsNode(ctx context.Context, log *logging.Logger, repoPath string,
-	cfg *config.Config, swarmKeySeed string,
+	cfg *config.Config, swarmKeySeed string, maxMemoryPercent uint8,
 ) (*core.IpfsNode, repo.Repo, string, error) {
 	// Only inits the repo if it does not already exist
 	err := fsrepo.Init(repoPath, cfg)
@@ -914,7 +955,7 @@ func createIpfsNode(ctx context.Context, log *logging.Logger, repoPath string,
 		return nil, nil, "", fmt.Errorf("failed to generate swarm key file:%w", err)
 	}
 
-	node, repo, err := createNode(ctx, log, repoPath)
+	node, repo, err := createNode(ctx, log, repoPath, maxMemoryPercent)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("failed to create node: %w", err)
 	}

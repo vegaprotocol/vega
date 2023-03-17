@@ -319,7 +319,7 @@ func TestMain(t *testing.M) {
 
 		storeLog := logging.NewTestLogger()
 		storeLog.SetLevel(logging.InfoLevel)
-		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, false)
+		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, false, 33)
 		if err != nil {
 			panic(err)
 		}
