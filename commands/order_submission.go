@@ -19,6 +19,10 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		return errs.FinalAddForProperty("order_submission", ErrIsRequired)
 	}
 
+	if len(cmd.Reference) > ReferenceMaxLen {
+		errs.AddForProperty("order_submission.reference", ErrReferenceTooLong)
+	}
+
 	if len(cmd.MarketId) == 0 {
 		errs.AddForProperty("order_submission.market_id", ErrIsRequired)
 	} else if !IsVegaPubkey(cmd.MarketId) {
