@@ -330,16 +330,29 @@ func InProgressFileName(chainID string, height int64) string {
 	return fmt.Sprintf("%s-%d.snapshotinprogress", chainID, height)
 }
 
-func copyTableData(ctx context.Context, tx pgx.Tx, copySQL []string) (int64, error) {
-	var numRowsCopied int64
-	for _, sql := range copySQL {
-		tag, err := tx.Exec(ctx, sql)
-		numRowsCopied += tag.RowsAffected()
-
+func copyTableData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql) (int64, error) {
+	var totalRowsCopied int64
+	for _, tableSql := range copySQL {
+		numRowsCopied, err := executeCopy(ctx, tx, tableSql)
 		if err != nil {
-			return 0, fmt.Errorf("failed to execute copy %s: %w", sql, err)
+			return 0, fmt.Errorf("failed to execute copy: %w", err)
 		}
+		totalRowsCopied += numRowsCopied
 	}
 
-	return numRowsCopied, nil
+	return totalRowsCopied, nil
+}
+
+func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql) (int64, error) {
+	defer metrics.StartNetworkHistoryCopy(tableSql.metaData.Name)()
+
+	tag, err := tx.Exec(ctx, tableSql.copySql)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute copy sql %s: %w", tableSql.copySql, err)
+	}
+
+	rowsCopied := tag.RowsAffected()
+	metrics.NetworkHistoryRowsCopied(tableSql.metaData.Name, rowsCopied)
+
+	return rowsCopied, nil
 }

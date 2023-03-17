@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [7862](https://github.com/vegaprotocol/vega/issues/7862) - Add per table statistics for network history segment creation 
 - [7834](https://github.com/vegaprotocol/vega/issues/7834) - Support TLS connection for gRPC endpoints in wallet when prefixed with `tls://`
 - [7851](https://github.com/vegaprotocol/vega/issues/7851) - Implement post only and reduce only orders
 - [7768](https://github.com/vegaprotocol/vega/issues/7768) - Set sensible defaults for the IPFS resource manager 
