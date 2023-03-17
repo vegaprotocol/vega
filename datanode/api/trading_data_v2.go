@@ -1753,8 +1753,12 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	partyID := entities.PartyID(ptr.UnBox(req.PartyId))
 	marketID := entities.MarketID(ptr.UnBox(req.MarketId))
 	reference := ptr.UnBox(req.Reference)
+	live := false
+	if req.Live != nil {
+		live = *req.Live
+	}
 
-	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, pagination)
+	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, live, pagination)
 	if err != nil {
 		return nil, formatE(ErrLiquidityProvisionServiceGet, errors.Wrapf(err,
 			"partyID: %s, marketID: %s, reference: %s", partyID, marketID, reference))
