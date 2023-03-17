@@ -52,12 +52,13 @@ type Service struct {
 func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHome string, connPool *pgxpool.Pool,
 	chainID string,
 	snapshotService *snapshot.Service, datanodeGrpcAPIPort int,
-	snapshotsCopyFromDir, snapshotsCopyToDir string,
+	snapshotsCopyFromDir, snapshotsCopyToDir string, maxMemoryPercent uint8,
 ) (*Service, error) {
 	storeLog := log.Named("store")
 	storeLog.SetLevel(cfg.Level.Get())
 
-	networkHistoryStore, err := store.New(ctx, storeLog, chainID, cfg.Store, networkHistoryHome, bool(cfg.WipeOnStartup))
+	networkHistoryStore, err := store.New(ctx, storeLog, chainID, cfg.Store, networkHistoryHome,
+		bool(cfg.WipeOnStartup), maxMemoryPercent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create network history store:%w", err)
 	}
