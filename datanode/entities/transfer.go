@@ -169,6 +169,9 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		transfer.TransferType = OneOff
 		if v.OneOff != nil {
 			deliverOn := time.Unix(v.OneOff.DeliverOn, 0)
+			if deliverOn.After(time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)) {
+				return nil, fmt.Errorf("timestamp '%v' is very far in the future (should be whole seconds)", v.OneOff.DeliverOn)
+			}
 			transfer.DeliverOn = &deliverOn
 		}
 	case *eventspb.Transfer_Recurring:

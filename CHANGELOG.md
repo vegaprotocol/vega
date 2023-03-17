@@ -18,7 +18,7 @@
 ### 🐛 Fixes
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
 - [7871](https://github.com/vegaprotocol/vega/issues/7871) - Bad `SQL` generated when paginating reward summaries
-
+- [7877](https://github.com/vegaprotocol/vega/issues/7877) - Fail early if invalid timestamp found in transfer
 
 ## 0.69.0
 
