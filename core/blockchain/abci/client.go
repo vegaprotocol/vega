@@ -14,14 +14,18 @@ package abci
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"os"
+	"sync"
 	"time"
 
+	cmtjson "github.com/tendermint/tendermint/libs/json"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/tendermint/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -29,6 +33,9 @@ var ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
 
 type Client struct {
 	tmclt *tmclihttp.HTTP
+
+	mu           sync.Mutex
+	genesisCache *tmtypes.GenesisDoc
 }
 
 func NewClient(addr string) (*Client, error) {
@@ -73,20 +80,20 @@ func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (*tmct
 
 // GetGenesisTime retrieves the genesis time from the blockchain.
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
-	res, err := c.tmclt.Genesis(ctx)
+	genDoc, err := c.getGenesis(ctx)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return res.Genesis.GenesisTime.UTC(), nil
+	return genDoc.GenesisTime.UTC(), nil
 }
 
 // GetChainID retrieves the chainID from the blockchain.
 func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
-	res, err := c.tmclt.Genesis(ctx)
+	genDoc, err := c.getGenesis(ctx)
 	if err != nil {
 		return "", err
 	}
-	return res.Genesis.ChainID, nil
+	return genDoc.ChainID, nil
 }
 
 // GetStatus returns the current status of the chain.
@@ -122,15 +129,15 @@ func (c *Client) Validators(ctx context.Context, height *int64) ([]*tmtypes.Vali
 }
 
 func (c *Client) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
-	res, err := c.tmclt.Genesis(ctx)
+	genDoc, err := c.getGenesis(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return res.Genesis, nil
+	return genDoc, nil
 }
 
 func (c *Client) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, error) {
-	gen, err := c.Genesis(ctx)
+	gen, err := c.getGenesis(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -187,4 +194,49 @@ func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) er
 
 func (c *Client) Start() error {
 	return nil // Nothing to do for this client type.
+}
+
+func (c *Client) getGenesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+	c.mu.Lock()
+	if c.genesisCache == nil {
+		var err error
+		if c.genesisCache, err = c.cacheGenesis(ctx); err != nil {
+			return nil, err
+		}
+	}
+	c.mu.Unlock()
+
+	return c.genesisCache, nil
+}
+
+func (c *Client) cacheGenesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+	var (
+		res = &tmctypes.ResultGenesisChunk{
+			TotalChunks: 1, // just default to startup our for loop
+		}
+		buf []byte
+		err error
+	)
+
+	for i := 0; i < res.TotalChunks; i++ {
+		res, err = c.tmclt.GenesisChunked(ctx, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		decoded, err := base64.StdEncoding.DecodeString(res.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		buf = append(buf, decoded...)
+	}
+
+	genDoc := types.GenesisDoc{}
+	err = cmtjson.Unmarshal(buf, &genDoc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &genDoc, nil
 }
