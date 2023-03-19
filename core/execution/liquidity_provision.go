@@ -723,12 +723,7 @@ func (m *Market) amendLiquidityProvision(
 func (m *Market) amendLiquidityProvisionAuction(
 	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
-	// first try to get the indicative uncrossing price from the book
-	price := m.matching.GetIndicativePrice()
-	if price.IsZero() {
-		// here it is 0 so we will use the mark price
-		price = m.getLastTradedPrice()
-	}
+	price := m.getMarketObservable(num.UintZero())
 
 	// now let's check if we are still at 0, if yes, it means we are in the
 	// third condition from before, no price available, we just accept the
