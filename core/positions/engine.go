@@ -138,10 +138,10 @@ func (e *Engine) Hash() []byte {
 		}
 
 		// Add bytes for VWBuy and VWSell here
-		b := p.VWBuy().Bytes()
+		b := p.BuySumProduct().Bytes()
 		copy(output[i:], b[:])
 		i += 32
-		s := p.VWBuy().Bytes()
+		s := p.SellSumProduct().Bytes()
 		copy(output[i:], s[:])
 		i += 32
 	}
@@ -179,7 +179,7 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 
-	pos.RegisterOrder(order)
+	pos.RegisterOrder(e.log, order)
 	e.positionUpdated(ctx, pos)
 	return pos
 }
@@ -216,7 +216,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 // party in the trade (whether it be buyer or seller). This could be incorporated into the Update
 // function, but we know when we're adding network trades, and having this check every time is
 // wasteful, and would only serve to add complexity to the Update func, and slow it down.
-func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
+func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
 	// there's only 1 position
 	var (
 		ok  bool
@@ -236,9 +236,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 				logging.Int64("potential-buy", pos.buy),
 				logging.Trade(*trade))
 		}
-
-		// potential buy pos is smaller now
-		pos.buy -= int64(trade.Size)
+		pos.size += size
 	} else {
 		pos, ok = e.positions[trade.Seller]
 		if !ok {
@@ -252,13 +250,11 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 				logging.Int64("potential-sell", pos.sell),
 				logging.Trade(*trade))
 		}
-
-		// potential sell pos is smaller now
-		pos.sell -= int64(trade.Size)
 		// size is negative in case of a sale
-		size = -size
+		pos.size -= size
 	}
-	pos.size += size
+
+	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
 
 	e.positionUpdated(ctx, pos)
 	cpy := pos.Clone()
@@ -266,7 +262,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
-func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
+func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition {
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
 		e.log.Panic("could not find buyer position",
@@ -300,9 +296,16 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 	buyer.size += int64(trade.Size)
 	seller.size -= int64(trade.Size)
 
-	// Update potential positions. Potential positions decrease for both buyer and seller.
-	buyer.buy -= int64(trade.Size)
-	seller.sell -= int64(trade.Size)
+	aggressive := buyer
+	passive := seller
+	if aggressiveOrder.Side == types.SideSell {
+		aggressive = seller
+		passive = buyer
+	}
+
+	// Update potential positions & vwaps. Potential positions decrease for both buyer and seller.
+	aggressive.UpdateOnOrderChange(e.log, aggressiveOrder.Side, aggressiveOrder.Price, trade.Size, false)
+	passive.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
