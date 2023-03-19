@@ -24,6 +24,8 @@ type MarketPosition interface {
 	Buy() int64
 	Sell() int64
 	Price() *num.Uint
+	BuySumProduct() *num.Uint
+	SellSumProduct() *num.Uint
 	VWBuy() *num.Uint
 	VWSell() *num.Uint
 }
