@@ -64,13 +64,13 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	// calculate margins without order positions
 	ml := e.calculateMargins(m, markPrice, rf, false, true)
 	// now add the margin levels for orders
-	long, short := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor), num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
+	long, short := m.BuySumProduct().ToDecimal().Div(e.positionFactor), m.SellSumProduct().ToDecimal().Div(e.positionFactor)
 	var lMargin, sMargin num.Decimal
 	if long.IsPositive() {
-		lMargin = long.Mul(rf.Long.Mul(m.VWBuy().ToDecimal()))
+		lMargin = long.Mul(rf.Long)
 	}
 	if short.IsPositive() {
-		sMargin = short.Mul(rf.Short.Mul(m.VWSell().ToDecimal()))
+		sMargin = short.Mul(rf.Short)
 	}
 	// add buy/sell order margins to the margin requirements
 	if lMargin.GreaterThan(sMargin) {
@@ -116,7 +116,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				err       error
 			)
 			if auction {
-				exitPrice = e.ob.GetIndicativePrice()
+				noExit = true
 			} else {
 				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
 				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideBuy)
@@ -127,19 +127,18 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 							logging.Error(err))
 					}
 				}
+				slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 			}
-			slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 		}
 
 		bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
+		minV := mPriceDec.Mul(e.linearSlippageFactor.Mul(slippageVolume).Add(e.quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume))))
 		if auction {
-			marginMaintenanceLng = slippageVolume.Add(bDec).Mul(rf.Long).Mul(mPriceDec)
-		} else {
-			slip := slippagePerUnit.ToDecimal().Mul(slippageVolume)
-			if negSlippage {
-				slip = slip.Mul(num.DecimalFromInt64(-1))
+			marginMaintenanceLng = minV.Add(slippageVolume.Mul(mPriceDec.Mul(rf.Long)))
+			if withPotentialBuyAndSell {
+				marginMaintenanceLng = marginMaintenanceLng.Add(bDec.Mul(rf.Long).Mul(mPriceDec))
 			}
-
+		} else {
 			// 	maintenance_margin_long_open_position =
 			//  	max(
 			// 			min(
@@ -160,8 +159,12 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			//		mark_price * (slippage_volume * market.linearSlippageFactor + slippage_volume^2 * market.quadraticSlippageFactor),
 			//		0
 			//	) + slippage_volume * [quantitative_model.risk_factors_long] . [ Product.value(market_observable) ]
-			minV := mPriceDec.Mul(e.linearSlippageFactor.Mul(slippageVolume).Add(e.quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume))))
+
 			if !noExit {
+				slip := slippagePerUnit.ToDecimal().Mul(slippageVolume)
+				if negSlippage {
+					slip = slip.Mul(num.DecimalFromInt64(-1))
+				}
 				minV = num.MinD(
 					slip,
 					minV,
@@ -190,7 +193,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				err       error
 			)
 			if auction {
-				exitPrice = e.ob.GetIndicativePrice()
+				noExit = true
 			} else {
 				// convert back into vol * 10^pdp
 				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
@@ -202,15 +205,21 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 							logging.Error(err))
 					}
 				}
+				// exitPrice - markPrice == -1*(markPrice - exitPrice)
+				slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
+				// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 			}
-			// exitPrice - markPrice == -1*(markPrice - exitPrice)
-			slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
-			// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 		}
-
 		sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
+		absSlippageVolume := slippageVolume.Abs()
+		linearSlippage := absSlippageVolume.Mul(e.linearSlippageFactor)
+		quadraticSlipage := absSlippageVolume.Mul(absSlippageVolume).Mul(e.quadraticSlippageFactor)
+		minV := mPriceDec.Mul(linearSlippage.Add(quadraticSlipage))
 		if auction {
-			marginMaintenanceSht = slippageVolume.Abs().Add(sDec).Mul(rf.Short).Mul(mPriceDec)
+			marginMaintenanceSht = minV.Add(absSlippageVolume.Mul(mPriceDec.Mul(rf.Short)))
+			if withPotentialBuyAndSell {
+				marginMaintenanceSht = marginMaintenanceSht.Add(sDec.Mul(rf.Short).Mul(mPriceDec))
+			}
 		} else {
 			// maintenance_margin_short_open_position =
 			// 		max(
@@ -231,10 +240,6 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			//		) + abs(slippage_volume) * [ quantitative_model.risk_factors_short ] . [ Product.value(market_observable) ]
 			//
 			// maintenance_margin_short_open_orders = abs(sell_orders) * [ quantitative_model.risk_factors_short ] . [ Product.value(market_observable) ]
-			absSlippageVolume := slippageVolume.Abs()
-			linearSlippage := absSlippageVolume.Mul(e.linearSlippageFactor)
-			quadraticSlipage := absSlippageVolume.Mul(absSlippageVolume).Mul(e.quadraticSlippageFactor)
-			minV := mPriceDec.Mul(linearSlippage.Add(quadraticSlipage))
 			if !noExit {
 				minV = num.MinD(
 					absSlippageVolume.Mul(slippagePerUnit.ToDecimal()),
