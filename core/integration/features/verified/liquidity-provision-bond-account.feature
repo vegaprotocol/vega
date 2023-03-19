@@ -83,7 +83,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 253354   | 50000 |
       | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
-      | party2 | USD   | ETH/MAR22 | 51630  | 99948370 |       |
+      | party2 | USD   | ETH/MAR22 | 51680  | 99948320 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial |

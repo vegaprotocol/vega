@@ -66,11 +66,11 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
+      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
+      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
     When the opening auction period ends for market "ETH/DEC19"
     Then the following trades should be executed:
       | buyer  | price | size | seller |
@@ -132,11 +132,11 @@ Feature: Set up a market, create indiciative price different to actual opening a
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
+      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
+      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
     # moves forwards several blocks
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
@@ -213,11 +213,11 @@ Feature: Set up a market, create indiciative price different to actual opening a
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
+      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
+      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
     When the opening auction period ends for market "ETH/DEC19"
     ## We're seeing these events twice for some reason
     Then the following trades should be executed:
@@ -301,11 +301,11 @@ Feature: Set up a market, create indiciative price different to actual opening a
       | party2 | ETH/DEC19 | sell | 3      | 3000  | 0                | TYPE_LIMIT | TIF_GFA | t2-s-3    |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
+      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
+      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
     # values before uint
     #| party1 | BTC   | ETH/DEC19 | 30241  | 99969759 |
     When the opening auction period ends for market "ETH/DEC19"
