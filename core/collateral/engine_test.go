@@ -2719,6 +2719,7 @@ func (m marketPositionFake) VWBuy() *num.Uint {
 	}
 	return num.UintZero().Div(num.NewUint(uint64(m.buy)), m.buySumProduct)
 }
+
 func (m marketPositionFake) VWSell() *num.Uint {
 	if m.sell == 0 {
 		return num.UintZero()

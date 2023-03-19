@@ -166,7 +166,7 @@ func (p MarketPosition) Price() *num.Uint {
 	return num.UintZero()
 }
 
-// BuySumProduct - get sum of size * price of party's buy orders
+// BuySumProduct - get sum of size * price of party's buy orders.
 func (p MarketPosition) BuySumProduct() *num.Uint {
 	if p.buySumProduct != nil {
 		return p.buySumProduct.Clone()
@@ -174,7 +174,7 @@ func (p MarketPosition) BuySumProduct() *num.Uint {
 	return num.UintZero()
 }
 
-// SellSumProduct - get sum of size * price of party's sell orders
+// SellSumProduct - get sum of size * price of party's sell orders.
 func (p MarketPosition) SellSumProduct() *num.Uint {
 	if p.sellSumProduct != nil {
 		return p.sellSumProduct.Clone()
