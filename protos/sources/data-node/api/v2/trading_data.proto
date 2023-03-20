@@ -2112,8 +2112,10 @@ message ListLiquidityProvisionsRequest {
     optional string party_id = 2;
     // The reference of the liquidity provision
     optional string reference = 3;
+    // The indicator if the listed liquidity provision orders will include live orders or not
+    optional bool live = 4;
     // Optional pagination information to limit the data that is returned
-    optional Pagination pagination = 4;
+    optional Pagination pagination = 5;
 }
 
 // Response from listing liquidity provisions
