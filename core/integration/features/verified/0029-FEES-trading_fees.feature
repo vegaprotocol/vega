@@ -891,7 +891,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 5772   | 4238    |
+      | trader3a | ETH   | ETH/DEC21 | 6494   | 3516    |
       | trader4  | ETH   | ETH/DEC21 | 9259   | 708     |
 
     And the market data for the market "ETH/DEC21" should be:
@@ -929,7 +929,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader4  | ETH   | ETH/DEC21 | 10093  | 586     |
-      | trader3a | ETH   | ETH/DEC21 | 5503   | 3791    |
+      | trader3a | ETH   | ETH/DEC21 | 5780   | 3514    |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
@@ -1179,10 +1179,10 @@ Feature: Fees calculations
       | party    | asset | amount    |
       | aux1     | ETH   | 100000000 |
       | aux2     | ETH   | 100000000 |
-      | trader3a | ETH   | 5000      |
-      | trader4  | ETH   | 5261      |
-      | tradera3 | ETH   | 100000000 |
-      | tradera4 | ETH   | 100000000 |
+      | trader3a | ETH   | 5173      |
+      | trader4  | ETH   | 5432      |
+      | trader5  | ETH   | 100000000 |
+      | trader6  | ETH   | 100000000 |
 
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1202,11 +1202,11 @@ Feature: Fees calculations
 
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | tradera3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | tradera4 | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader5 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader6 | ETH/DEC21 | sell | 3      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
     And the following trades should be executed:
-      | buyer    | price | size | seller   |
-      | tradera3 | 1002  | 3    | tradera4 |
+      | buyer   | price | size | seller   |
+      | trader5 | 1002  | 3    | trader6 |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:

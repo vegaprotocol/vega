@@ -88,8 +88,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42093820 | 452906180 |
-      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
-      | party2 | USD   | ETH/MAR22 | 222394   | 99777606  |
+      | party1 | USD   | ETH/MAR22 | 49860    | 99950140  |
+      | party2 | USD   | ETH/MAR22 | 222421   | 99777579  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -145,8 +145,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 10525590 | 484474410 |
-      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
-      | party2 | USD   | ETH/MAR22 | 222394   | 99777606  |
+      | party1 | USD   | ETH/MAR22 | 49860    | 99950140  |
+      | party2 | USD   | ETH/MAR22 | 222421   | 99777579  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

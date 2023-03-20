@@ -131,11 +131,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			}
 		}
 
-		bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
 		minV := mPriceDec.Mul(e.linearSlippageFactor.Mul(slippageVolume).Add(e.quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume))))
 		if auction {
 			marginMaintenanceLng = minV.Add(slippageVolume.Mul(mPriceDec.Mul(rf.Long)))
 			if withPotentialBuyAndSell {
+				bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
 				marginMaintenanceLng = marginMaintenanceLng.Add(bDec.Mul(rf.Long).Mul(mPriceDec))
 			}
 		} else {
@@ -174,6 +174,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				num.DecimalZero(),
 				minV,
 			).Add(slippageVolume.Mul(rf.Long).Mul(mPriceDec))
+			bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
 			maintenanceMarginLongOpenOrders := bDec.Mul(rf.Long).Mul(mPriceDec)
 			marginMaintenanceLng = maintenanceMarginLongOpenPosition.Add(maintenanceMarginLongOpenOrders)
 		}
@@ -210,7 +211,6 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 			}
 		}
-		sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 		absSlippageVolume := slippageVolume.Abs()
 		linearSlippage := absSlippageVolume.Mul(e.linearSlippageFactor)
 		quadraticSlipage := absSlippageVolume.Mul(absSlippageVolume).Mul(e.quadraticSlippageFactor)
@@ -218,6 +218,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		if auction {
 			marginMaintenanceSht = minV.Add(absSlippageVolume.Mul(mPriceDec.Mul(rf.Short)))
 			if withPotentialBuyAndSell {
+				sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 				marginMaintenanceSht = marginMaintenanceSht.Add(sDec.Mul(rf.Short).Mul(mPriceDec))
 			}
 		} else {
@@ -250,6 +251,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 				num.DecimalZero(),
 				minV,
 			).Add(absSlippageVolume.Mul(mPriceDec).Mul(rf.Short))
+			sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
 			maintenanceMarginShortOpenOrders := sDec.Abs().Mul(mPriceDec).Mul(rf.Short)
 			marginMaintenanceSht = maintenanceMarginShortOpenPosition.Add(maintenanceMarginShortOpenOrders)
 		}
