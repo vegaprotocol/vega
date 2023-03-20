@@ -831,11 +831,11 @@ func (t testPos) Price() *num.Uint {
 }
 
 func (t testPos) BuySumProduct() *num.Uint {
-	return num.NewUint(t.sellSumProduct)
+	return num.NewUint(t.buySumProduct)
 }
 
 func (t testPos) SellSumProduct() *num.Uint {
-	return num.NewUint(t.buySumProduct)
+	return num.NewUint(t.sellSumProduct)
 }
 
 func (t testPos) VWBuy() *num.Uint {
