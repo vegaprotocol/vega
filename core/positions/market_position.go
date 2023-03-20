@@ -185,8 +185,8 @@ func (p MarketPosition) SellSumProduct() *num.Uint {
 // VWBuy - get volume weighted buy price for unmatched buy orders.
 func (p MarketPosition) VWBuy() *num.Uint {
 	if p.buySumProduct != nil && p.buy != 0 {
-		ret := p.buySumProduct.Clone()
-		return ret.Div(ret, num.NewUint(uint64(p.buy)))
+		vol := num.NewUint(uint64(p.buy))
+		return vol.Div(p.buySumProduct, vol)
 	}
 	return num.UintZero()
 }
@@ -194,8 +194,8 @@ func (p MarketPosition) VWBuy() *num.Uint {
 // VWSell - get volume weighted sell price for unmatched sell orders.
 func (p MarketPosition) VWSell() *num.Uint {
 	if p.sellSumProduct != nil && p.sell != 0 {
-		ret := p.sellSumProduct.Clone()
-		return ret.Div(ret, num.NewUint(uint64(p.sell)))
+		vol := num.NewUint(uint64(p.sell))
+		return vol.Div(p.sellSumProduct, vol)
 	}
 	return num.UintZero()
 }
