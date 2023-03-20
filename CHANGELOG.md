@@ -3,7 +3,8 @@
 ## Unreleased 0.70.0
 
 ### 🚨 Breaking changes
-- [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else. 
+- [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else.
+- [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions` and add a `live` option
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -20,6 +21,7 @@
 ### 🐛 Fixes
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
 - [7871](https://github.com/vegaprotocol/vega/issues/7871) - Bad `SQL` generated when paginating reward summaries
+- [7880](https://github.com/vegaprotocol/vega/issues/7880) - Update volume-weighted average price party's of open orders after a trade
 
 
 ## 0.69.0
@@ -82,7 +84,6 @@
 - [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
 - [7786](https://github.com/vegaprotocol/vega/issues/7786) - Fix validation of order amendments (check for negative pegged offset)
 - [7750](https://github.com/vegaprotocol/vega/issues/7750) - Fix not all paths cleanly close network history index store.
-- [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions`
 - [7805](https://github.com/vegaprotocol/vega/issues/7805) - Fix re-announcing node in the same epoch kills data node.
 - [7820](https://github.com/vegaprotocol/vega/issues/7820) - Remove the check for past date in limits engine
 - [7822](https://github.com/vegaprotocol/vega/issues/7822) - Fix get last epoch query
