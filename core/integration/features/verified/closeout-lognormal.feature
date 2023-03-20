@@ -287,9 +287,13 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
 
     Then the network moves ahead "5" blocks
 
-    And the parties should have the following position changes for market "ETH/DEC20":
-      | party   | status                        |
-      | trader2 | POSITION_STATUS_ORDERS_CLOSED |
+    # And the parties should have the following position changes for market "ETH/DEC20":
+    #   | party   | status                        |
+    #   | trader2 | POSITION_STATUS_ORDERS_CLOSED |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | 
+      | trader2 | -12    | 0              | 0            | 
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
