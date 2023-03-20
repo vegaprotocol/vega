@@ -31,7 +31,7 @@ import (
 )
 
 func fillTestPositions(e *positions.SnapshotEngine) {
-	orders := []types.Order{
+	orders := []*types.Order{
 		{
 			Party:     "test_party_1",
 			Side:      types.SideBuy,
@@ -46,39 +46,47 @@ func fillTestPositions(e *positions.SnapshotEngine) {
 			Remaining: uint64(200),
 			Price:     num.UintZero(),
 		},
-		{
-			Party:     "test_party_3",
-			Side:      types.SideBuy,
-			Size:      uint64(300),
-			Remaining: uint64(300),
-			Price:     num.UintZero(),
-		},
-		{
-			Party:     "test_party_1",
-			Side:      types.SideSell,
-			Size:      uint64(1000),
-			Remaining: uint64(1000),
-			Price:     num.UintZero(),
-		},
 	}
 
+	matchingPrice := num.NewUint(10000)
+	tradeSize := uint64(15)
+	passiveOrder := &types.Order{
+		ID:        "buy_order_id",
+		Party:     "test_party_3",
+		Side:      types.SideBuy,
+		Size:      tradeSize,
+		Remaining: tradeSize,
+		Price:     matchingPrice,
+	}
+
+	aggresiveOrder := &types.Order{
+		ID:        "sell_order_id",
+		Party:     "test_party_1",
+		Side:      types.SideSell,
+		Size:      tradeSize,
+		Remaining: tradeSize,
+		Price:     matchingPrice,
+	}
+
+	orders = append(orders, passiveOrder, aggresiveOrder)
+
 	for _, order := range orders {
-		e.RegisterOrder(context.TODO(), &order)
+		e.RegisterOrder(context.TODO(), order)
 	}
 
 	trade := types.Trade{
 		Type:      types.TradeTypeDefault,
 		ID:        "trade_id",
 		MarketID:  "market_id",
-		Price:     num.NewUint(10000),
-		Size:      uint64(15),
-		Buyer:     "test_party_3",
-		Seller:    "test_party_1",
-		BuyOrder:  "buy_order_id",
-		SellOrder: "sell_order_id",
+		Price:     matchingPrice,
+		Size:      tradeSize,
+		Buyer:     passiveOrder.Party,
+		Seller:    aggresiveOrder.Party,
+		BuyOrder:  passiveOrder.ID,
+		SellOrder: aggresiveOrder.ID,
 		Timestamp: time.Now().Unix(),
 	}
-	e.Update(context.Background(), &trade)
+	e.Update(context.Background(), &trade, passiveOrder, aggresiveOrder)
 }
 
 func TestSnapshotSaveAndLoad(t *testing.T) {

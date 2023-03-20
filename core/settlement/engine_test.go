@@ -801,10 +801,10 @@ func (te *testEngine) Finish() {
 
 // Quick mock implementation of the events.MarketPosition interface.
 type testPos struct {
-	party           string
-	size, buy, sell int64
-	price           *num.Uint
-	vwBuy, vwSell   uint64
+	party                         string
+	size, buy, sell               int64
+	price                         *num.Uint
+	buySumProduct, sellSumProduct uint64
 }
 
 func (t testPos) Party() string {
@@ -830,12 +830,26 @@ func (t testPos) Price() *num.Uint {
 	return t.price
 }
 
+func (t testPos) BuySumProduct() *num.Uint {
+	return num.NewUint(t.buySumProduct)
+}
+
+func (t testPos) SellSumProduct() *num.Uint {
+	return num.NewUint(t.sellSumProduct)
+}
+
 func (t testPos) VWBuy() *num.Uint {
-	return num.NewUint(t.vwBuy)
+	if t.buy == 0 {
+		return num.UintZero()
+	}
+	return num.NewUint(t.buySumProduct / uint64(t.buy))
 }
 
 func (t testPos) VWSell() *num.Uint {
-	return num.NewUint(t.vwSell)
+	if t.sell == 0 {
+		return num.UintZero()
+	}
+	return num.NewUint(t.sellSumProduct / uint64(t.sell))
 }
 
 func (t testPos) ClearPotentials() {}

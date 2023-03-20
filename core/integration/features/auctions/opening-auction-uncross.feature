@@ -32,11 +32,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 11200       | 12320  | 13440   | 15680   |
-      | party2 | ETH/DEC19 | 10900       | 11990  | 13080   | 15260   |
+      | party2 | ETH/DEC19 | 10901       | 11991  | 13081   | 15261   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general  |
       | party1 | BTC   | ETH/DEC19 | 13440  | 99986560 |
-      | party2 | BTC   | ETH/DEC19 | 13080  | 99986920 |
+      | party2 | BTC   | ETH/DEC19 | 13081  | 99986919 |
     When the parties withdraw the following assets:
       | party  | asset | amount   |
       | party1 | BTC   | 99949760 |
@@ -44,7 +44,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | BTC   | ETH/DEC19 | 13440  | 36800   |
-      | party2 | BTC   | ETH/DEC19 | 13080  | 35600   |
+      | party2 | BTC   | ETH/DEC19 | 13081  | 35599   |
     Then the opening auction period ends for market "ETH/DEC19"
     And the following trades should be executed:
       | buyer  | price | size | seller |
