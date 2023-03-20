@@ -32,10 +32,8 @@ import (
 var ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
 
 type Client struct {
-	tmclt *tmclihttp.HTTP
-
-	mu           sync.Mutex
-	genesisCache *tmtypes.GenesisDoc
+	tmclt      *tmclihttp.HTTP
+	genesisDoc *cachedGenesisDoc
 }
 
 func NewClient(addr string) (*Client, error) {
@@ -80,7 +78,7 @@ func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (*tmct
 
 // GetGenesisTime retrieves the genesis time from the blockchain.
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
-	genDoc, err := c.getGenesis(ctx)
+	genDoc, err := c.genesisDoc.Get(ctx, c.tmclt)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -89,7 +87,7 @@ func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 
 // GetChainID retrieves the chainID from the blockchain.
 func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
-	genDoc, err := c.getGenesis(ctx)
+	genDoc, err := c.genesisDoc.Get(ctx, c.tmclt)
 	if err != nil {
 		return "", err
 	}
@@ -129,7 +127,7 @@ func (c *Client) Validators(ctx context.Context, height *int64) ([]*tmtypes.Vali
 }
 
 func (c *Client) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
-	genDoc, err := c.getGenesis(ctx)
+	genDoc, err := c.genesisDoc.Get(ctx, c.tmclt)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +135,7 @@ func (c *Client) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
 }
 
 func (c *Client) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, error) {
-	gen, err := c.getGenesis(ctx)
+	gen, err := c.genesisDoc.Get(ctx, c.tmclt)
 	if err != nil {
 		return nil, err
 	}
@@ -196,11 +194,25 @@ func (c *Client) Start() error {
 	return nil // Nothing to do for this client type.
 }
 
-func (c *Client) getGenesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+type cachedGenesisDoc struct {
+	mu           sync.Mutex
+	genesisCache *tmtypes.GenesisDoc
+}
+
+func newCachedGenesisDoc() *cachedGenesisDoc {
+	return &cachedGenesisDoc{}
+}
+
+func (c *cachedGenesisDoc) Get(
+	ctx context.Context,
+	clt interface {
+		GenesisChunked(context.Context, uint) (*tmctypes.ResultGenesisChunk, error)
+	},
+) (*tmtypes.GenesisDoc, error) {
 	c.mu.Lock()
 	if c.genesisCache == nil {
 		var err error
-		if c.genesisCache, err = c.cacheGenesis(ctx); err != nil {
+		if c.genesisCache, err = c.cacheGenesis(ctx, clt); err != nil {
 			return nil, err
 		}
 	}
@@ -209,7 +221,12 @@ func (c *Client) getGenesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
 	return c.genesisCache, nil
 }
 
-func (c *Client) cacheGenesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+func (c *cachedGenesisDoc) cacheGenesis(
+	ctx context.Context,
+	clt interface {
+		GenesisChunked(context.Context, uint) (*tmctypes.ResultGenesisChunk, error)
+	},
+) (*tmtypes.GenesisDoc, error) {
 	var (
 		res = &tmctypes.ResultGenesisChunk{
 			TotalChunks: 1, // just default to startup our for loop
@@ -219,7 +236,7 @@ func (c *Client) cacheGenesis(ctx context.Context) (*tmtypes.GenesisDoc, error) 
 	)
 
 	for i := 0; i < res.TotalChunks; i++ {
-		res, err = c.tmclt.GenesisChunked(ctx, 0)
+		res, err = clt.GenesisChunked(ctx, 0)
 		if err != nil {
 			return nil, err
 		}
