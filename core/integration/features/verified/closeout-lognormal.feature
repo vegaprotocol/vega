@@ -268,6 +268,10 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
       | auxiliary2 | ETH/DEC20 | buy  | 12      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2    | ETH/DEC20 | sell | 12      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
 
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4623         | 400            | 13            |
+
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search     | initial    | release    |
       | trader2 | ETH/DEC20 | 1560000427  | 2340000640 | 3120000854 | 4680001281 |
