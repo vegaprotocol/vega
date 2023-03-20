@@ -208,7 +208,8 @@ type PayloadExecutionMarkets struct {
 }
 
 type PayloadStakingAccounts struct {
-	StakingAccounts *StakingAccounts
+	StakingAccounts         *StakingAccounts
+	PendingStakeTotalSupply *StakeTotalSupply
 }
 
 type PayloadStakeVerifierDeposited struct {
@@ -1939,15 +1940,24 @@ func (*PayloadLimitState) Namespace() SnapshotNamespace {
 }
 
 func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
+	var psts *StakeTotalSupply
+	if sa.StakingAccounts.PendingStakeTotalSupply != nil {
+		psts, _ = StakeTotalSupplyFromProto(sa.StakingAccounts.PendingStakeTotalSupply)
+	}
 	return &PayloadStakingAccounts{
-		StakingAccounts: StakingAccountsFromProto(sa.StakingAccounts),
+		StakingAccounts:         StakingAccountsFromProto(sa.StakingAccounts),
+		PendingStakeTotalSupply: psts,
 	}
 }
 
 func (p PayloadStakingAccounts) IntoProto() *snapshot.Payload_StakingAccounts {
-	return &snapshot.Payload_StakingAccounts{
+	sa := &snapshot.Payload_StakingAccounts{
 		StakingAccounts: p.StakingAccounts.IntoProto(),
 	}
+	if p.PendingStakeTotalSupply != nil {
+		sa.StakingAccounts.PendingStakeTotalSupply = p.PendingStakeTotalSupply.IntoProto()
+	}
+	return sa
 }
 
 func (*PayloadStakingAccounts) isPayload() {}

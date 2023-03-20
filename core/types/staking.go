@@ -48,7 +48,7 @@ type StakeTotalSupply struct {
 
 func (s *StakeTotalSupply) IntoProto() *vgproto.StakeTotalSupply {
 	return &vgproto.StakeTotalSupply{
-		TokenAddress: s.TokenAddress,
+		TokenAddress: crypto.EthereumChecksumAddress(s.TokenAddress),
 		TotalSupply:  s.TotalSupply.String(),
 	}
 }
