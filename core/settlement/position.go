@@ -96,6 +96,14 @@ func (n npos) Price() *num.Uint {
 	return n.price.Clone()
 }
 
+func (npos) BuySumProduct() *num.Uint {
+	return num.UintZero()
+}
+
+func (npos) SellSumProduct() *num.Uint {
+	return num.UintZero()
+}
+
 func (npos) VWBuy() *num.Uint {
 	return num.UintZero()
 }

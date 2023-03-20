@@ -66,8 +66,8 @@ type testMargin struct {
 	margin          uint64
 	general         uint64
 	market          string
-	vwBuy           uint64
-	vwSell          uint64
+	buySumProduct   uint64
+	sellSumProduct  uint64
 	marginShortFall uint64
 }
 
@@ -823,12 +823,26 @@ func (m testMargin) Size() int64 {
 	return m.size
 }
 
+func (m testMargin) BuySumProduct() *num.Uint {
+	return num.NewUint(m.buySumProduct)
+}
+
+func (m testMargin) SellSumProduct() *num.Uint {
+	return num.NewUint(m.sellSumProduct)
+}
+
 func (m testMargin) VWBuy() *num.Uint {
-	return num.NewUint(m.vwBuy)
+	if m.buy == 0 {
+		num.UintZero()
+	}
+	return num.UintZero().Div(m.BuySumProduct(), num.NewUint(uint64(m.buy)))
 }
 
 func (m testMargin) VWSell() *num.Uint {
-	return num.NewUint(m.vwSell)
+	if m.sell == 0 {
+		num.UintZero()
+	}
+	return num.UintZero().Div(m.SellSumProduct(), num.NewUint(uint64(m.sell)))
 }
 
 func (m testMargin) ClearPotentials() {}
