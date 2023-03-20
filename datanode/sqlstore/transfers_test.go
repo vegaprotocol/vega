@@ -298,7 +298,7 @@ func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 		Reference:       "Ref1",
 		Status:          eventspb.Transfer_STATUS_PENDING,
 		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
+		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
 	}
 
 	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
@@ -317,7 +317,7 @@ func testTransfersUpdatesInDifferentBlocks(t *testing.T) {
 		Reference:       "Ref2",
 		Status:          eventspb.Transfer_STATUS_DONE,
 		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
+		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
 	}
 	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(ctx, transfer)
@@ -352,7 +352,7 @@ func testTransfersUpdateInSameBlock(t *testing.T) {
 		Reference:       "Ref1",
 		Status:          eventspb.Transfer_STATUS_PENDING,
 		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
+		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
 	}
 
 	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
@@ -370,7 +370,7 @@ func testTransfersUpdateInSameBlock(t *testing.T) {
 		Reference:       "Ref2",
 		Status:          eventspb.Transfer_STATUS_DONE,
 		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
+		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
 	}
 	transfer, _ = entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)
 	transfers.Upsert(ctx, transfer)
@@ -405,7 +405,7 @@ func testTransfersAddAndRetrieveOneOffTransfer(t *testing.T) {
 		Reference:       "Ref1",
 		Status:          eventspb.Transfer_STATUS_PENDING,
 		Timestamp:       block.VegaTime.UnixNano(),
-		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.Unix()}},
+		Kind:            &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: deliverOn.UnixNano()}},
 	}
 
 	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, generateTxHash(), block.VegaTime, accounts)

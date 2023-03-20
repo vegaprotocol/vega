@@ -82,7 +82,7 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 
 	switch t.TransferType {
 	case OneOff:
-		proto.Kind = &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: t.DeliverOn.Unix()}}
+		proto.Kind = &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: t.DeliverOn.UnixNano()}}
 	case Recurring:
 
 		recurringTransfer := &eventspb.RecurringTransfer{
@@ -168,7 +168,7 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 	case *eventspb.Transfer_OneOff:
 		transfer.TransferType = OneOff
 		if v.OneOff != nil {
-			deliverOn := time.Unix(v.OneOff.DeliverOn, 0)
+			deliverOn := time.Unix(0, v.OneOff.DeliverOn)
 			transfer.DeliverOn = &deliverOn
 		}
 	case *eventspb.Transfer_Recurring:

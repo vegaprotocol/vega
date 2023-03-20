@@ -124,7 +124,7 @@ func (o *OneOffTransfer) IsValid() error {
 func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 	var deliverOn *time.Time
 	if t := p.GetOneOff().GetDeliverOn(); t > 0 {
-		d := time.Unix(t, 0)
+		d := time.Unix(0, t)
 		deliverOn = &d
 	}
 
@@ -172,7 +172,7 @@ func (o *OneOffTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 	if o.DeliverOn != nil {
 		out.Kind = &eventspb.Transfer_OneOff{
 			OneOff: &eventspb.OneOffTransfer{
-				DeliverOn: o.DeliverOn.Unix(),
+				DeliverOn: o.DeliverOn.UnixNano(),
 			},
 		}
 	}
@@ -296,7 +296,7 @@ func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, e
 func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
 	var t *time.Time
 	if tf.GetOneOff().GetDeliverOn() > 0 {
-		tmpt := time.Unix(tf.GetOneOff().GetDeliverOn(), 0)
+		tmpt := time.Unix(0, tf.GetOneOff().GetDeliverOn())
 		t = &tmpt
 	}
 
