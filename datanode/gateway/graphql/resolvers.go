@@ -382,13 +382,13 @@ func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
 
 type protocolUpgradeProposalResolver VegaResolverRoot
 
-func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
+func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
 	return fmt.Sprintf("%d", obj.UpgradeBlockHeight), nil
 }
 
 type coreDataSnapshotResolver VegaResolverRoot
 
-func (r *coreDataSnapshotResolver) BlockHeight(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
+func (r *coreDataSnapshotResolver) BlockHeight(_ context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
 	return fmt.Sprintf("%d", obj.BlockHeight), nil
 }
 
@@ -398,7 +398,7 @@ func (r *coreDataSnapshotResolver) VegaCoreVersion(ctx context.Context, obj *eve
 
 type epochRewardSummaryResolver VegaResolverRoot
 
-func (r *epochRewardSummaryResolver) RewardType(ctx context.Context, obj *vega.EpochRewardSummary) (vega.AccountType, error) {
+func (r *epochRewardSummaryResolver) RewardType(_ context.Context, obj *vega.EpochRewardSummary) (vega.AccountType, error) {
 	accountType, ok := vega.AccountType_value[obj.RewardType]
 	if !ok {
 		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("Unknown account type %v", obj.RewardType)
@@ -407,7 +407,7 @@ func (r *epochRewardSummaryResolver) RewardType(ctx context.Context, obj *vega.E
 	return vega.AccountType(accountType), nil
 }
 
-func (r *epochRewardSummaryResolver) Epoch(ctx context.Context, obj *vega.EpochRewardSummary) (int, error) {
+func (r *epochRewardSummaryResolver) Epoch(_ context.Context, obj *vega.EpochRewardSummary) (int, error) {
 	return int(obj.Epoch), nil
 }
 
@@ -423,11 +423,11 @@ func (r *transactionResultResolver) Error(ctx context.Context, tr *eventspb.Tran
 
 type accountUpdateResolver VegaResolverRoot
 
-func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
+func (r *accountUpdateResolver) AssetID(_ context.Context, obj *v2.AccountBalance) (string, error) {
 	return obj.Asset, nil
 }
 
-func (r *accountUpdateResolver) PartyID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
+func (r *accountUpdateResolver) PartyID(_ context.Context, obj *v2.AccountBalance) (string, error) {
 	return obj.Owner, nil
 }
 
@@ -438,7 +438,7 @@ func (r *VegaResolverRoot) AggregatedLedgerEntry() AggregatedLedgerEntryResolver
 	return (*aggregatedLedgerEntriesResolver)(r)
 }
 
-func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntry) (int64, error) {
+func (r *aggregatedLedgerEntriesResolver) VegaTime(_ context.Context, obj *v2.AggregatedLedgerEntry) (int64, error) {
 	return obj.Timestamp, nil
 }
 
@@ -461,21 +461,21 @@ func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*typ
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
-func (r *myDepositResolver) Party(ctx context.Context, obj *types.Deposit) (*types.Party, error) {
+func (r *myDepositResolver) Party(_ context.Context, obj *types.Deposit) (*types.Party, error) {
 	if len(obj.PartyId) <= 0 {
 		return nil, errors.New("missing party ID")
 	}
 	return &types.Party{Id: obj.PartyId}, nil
 }
 
-func (r *myDepositResolver) CreatedTimestamp(ctx context.Context, obj *types.Deposit) (string, error) {
+func (r *myDepositResolver) CreatedTimestamp(_ context.Context, obj *types.Deposit) (string, error) {
 	if obj.CreatedTimestamp == 0 {
 		return "", errors.New("invalid timestamp")
 	}
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedTimestamp)), nil
 }
 
-func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.Deposit) (*string, error) {
+func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Deposit) (*string, error) {
 	if obj.CreditedTimestamp == 0 {
 		return nil, nil
 	}
@@ -916,8 +916,9 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 
 func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*types.Order, error) {
 	req := &v2.ListOrdersRequest{
-		Reference: &reference,
-		Filter:    &v2.OrderFilter{},
+		Filter: &v2.OrderFilter{
+			Reference: &reference,
+		},
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, req)
 	if err != nil {
@@ -1153,7 +1154,7 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 
 type myNodeSignatureResolver VegaResolverRoot
 
-func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb.NodeSignature) (*string, error) {
+func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.NodeSignature) (*string, error) {
 	sig := base64.StdEncoding.EncodeToString(obj.Sig)
 	return &sig, nil
 }
@@ -1311,19 +1312,27 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 	return res.MarginLevels, nil
 }
 
-func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string,
-) (*v2.OrderConnection, error) {
-	if party == nil {
-		return nil, errors.New("party is required")
-	}
+func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination, filter *OrderByMarketIdsFilter) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
-		PartyId:    &party.Id,
 		Pagination: pagination,
-		DateRange:  dateRange,
-		Filter:     filter,
-		MarketId:   marketID,
+		Filter: &v2.OrderFilter{
+			PartyIds: []string{party.Id},
+		},
 	}
+
+	if filter != nil {
+		req.Filter.MarketIds = filter.MarketIds
+		if filter.Order != nil {
+			req.Filter.Statuses = filter.Order.Statuses
+			req.Filter.Types = filter.Order.Types
+			req.Filter.TimeInForces = filter.Order.TimeInForces
+			req.Filter.ExcludeLiquidity = filter.Order.ExcludeLiquidity
+			req.Filter.Reference = filter.Order.Reference
+			req.Filter.DateRange = filter.Order.DateRange
+			req.Filter.LiveOnly = filter.Order.LiveOnly
+		}
+	}
+
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -1543,23 +1552,23 @@ func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.Ma
 
 type myOrderUpdateResolver VegaResolverRoot
 
-func (r *myOrderUpdateResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Price(_ context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myOrderUpdateResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Size(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderUpdateResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Remaining(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderUpdateResolver) CreatedAt(ctx context.Context, obj *types.Order) (int64, error) {
+func (r *myOrderUpdateResolver) CreatedAt(_ context.Context, obj *types.Order) (int64, error) {
 	return obj.CreatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int64, error) {
+func (r *myOrderUpdateResolver) UpdatedAt(_ context.Context, obj *types.Order) (*int64, error) {
 	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
 		t := obj.UpdatedAt
@@ -1568,11 +1577,11 @@ func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order)
 	return updatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Version(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderUpdateResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+func (r *myOrderUpdateResolver) ExpiresAt(_ context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1592,7 +1601,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*v
 	return o.Reason, nil
 }
 
-func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Price(_ context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
 }
 
@@ -1600,19 +1609,19 @@ func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Size(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Remaining(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (int64, error) {
+func (r *myOrderResolver) CreatedAt(_ context.Context, obj *types.Order) (int64, error) {
 	return obj.CreatedAt, nil
 }
 
-func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int64, error) {
+func (r *myOrderResolver) UpdatedAt(_ context.Context, obj *types.Order) (*int64, error) {
 	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
 		t := obj.UpdatedAt
@@ -1621,11 +1630,11 @@ func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int
 	return updatedAt, nil
 }
 
-func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Version(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+func (r *myOrderResolver) ExpiresAt(_ context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1646,7 +1655,7 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types.Party, error) {
+func (r *myOrderResolver) Party(_ context.Context, order *types.Order) (*types.Party, error) {
 	if order == nil {
 		return nil, errors.New("nil order")
 	}
@@ -1656,7 +1665,7 @@ func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types
 	return &types.Party{Id: order.PartyId}, nil
 }
 
-func (r *myOrderResolver) PeggedOrder(ctx context.Context, order *types.Order) (*types.PeggedOrder, error) {
+func (r *myOrderResolver) PeggedOrder(_ context.Context, order *types.Order) (*types.PeggedOrder, error) {
 	return order.PeggedOrder, nil
 }
 
@@ -1692,15 +1701,15 @@ func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) Price(_ context.Context, obj *types.Trade) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) Size(_ context.Context, obj *types.Trade) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (int64, error) {
+func (r *myTradeResolver) CreatedAt(_ context.Context, obj *types.Trade) (int64, error) {
 	return obj.Timestamp, nil
 }
 
@@ -1736,12 +1745,12 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 	return res.Party, nil
 }
 
-func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+func (r *myTradeResolver) BuyerAuctionBatch(_ context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.BuyerAuctionBatch)
 	return &i, nil
 }
 
-func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+func (r *myTradeResolver) BuyerFee(_ context.Context, obj *types.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
 		InfrastructureFee: "0",
@@ -1755,12 +1764,12 @@ func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*Trad
 	return &fee, nil
 }
 
-func (r *myTradeResolver) SellerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+func (r *myTradeResolver) SellerAuctionBatch(_ context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.SellerAuctionBatch)
 	return &i, nil
 }
 
-func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+func (r *myTradeResolver) SellerFee(_ context.Context, obj *types.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
 		InfrastructureFee: "0",
@@ -1807,15 +1816,15 @@ func (m *myDataSourceSpecConfigurationResolver) Signers(_ context.Context, obj *
 
 type myPriceLevelResolver VegaResolverRoot
 
-func (r *myPriceLevelResolver) Price(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) Price(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) Volume(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
-func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) NumberOfOrders(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
 
@@ -1823,11 +1832,11 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 
 type positionUpdateResolver VegaResolverRoot
 
-func (r *positionUpdateResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+func (r *positionUpdateResolver) OpenVolume(_ context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+func (r *positionUpdateResolver) UpdatedAt(_ context.Context, obj *types.Position) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
@@ -1836,7 +1845,7 @@ func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Posit
 	return updatedAt, nil
 }
 
-func (r *positionUpdateResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+func (r *positionUpdateResolver) LossSocializationAmount(_ context.Context, obj *types.Position) (string, error) {
 	return obj.LossSocialisationAmount, nil
 }
 
@@ -1848,7 +1857,7 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+func (r *myPositionResolver) UpdatedAt(_ context.Context, obj *types.Position) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
@@ -1857,23 +1866,23 @@ func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position)
 	return updatedAt, nil
 }
 
-func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) OpenVolume(_ context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) RealisedPnl(_ context.Context, obj *types.Position) (string, error) {
 	return obj.RealisedPnl, nil
 }
 
-func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) UnrealisedPnl(_ context.Context, obj *types.Position) (string, error) {
 	return obj.UnrealisedPnl, nil
 }
 
-func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) AverageEntryPrice(_ context.Context, obj *types.Position) (string, error) {
 	return obj.AverageEntryPrice, nil
 }
 
-func (r *myPositionResolver) LossSocializationAmount(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) LossSocializationAmount(_ context.Context, obj *types.Position) (string, error) {
 	return obj.LossSocialisationAmount, nil
 }
 
@@ -1917,7 +1926,9 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 	ch := make(chan *types.Delegation)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("delegations: stream closed", logging.Error(err))
+			}
 			close(ch)
 		}()
 		for {
@@ -1960,7 +1971,9 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 	ch := make(chan *types.Reward)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("rewards: stream closed", logging.Error(err))
+			}
 			close(ch)
 		}()
 		for {
@@ -2003,7 +2016,9 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 	ch := make(chan *types.MarginLevels)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("margin levels: stream closed", logging.Error(err))
+			}
 			close(ch)
 		}()
 		for {
@@ -2067,11 +2082,13 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	c := make(chan []*v2.AccountBalance)
-	data := []*v2.AccountBalance{}
+	var accounts []*v2.AccountBalance
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("accounts: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2086,16 +2103,16 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 			}
 
 			// empty slice, but preserve cap to avoid excessive reallocation
-			data = data[:0]
+			accounts = accounts[:0]
 			if snapshot := a.GetSnapshot(); snapshot != nil {
-				data = append(data, snapshot.Accounts...)
+				accounts = append(accounts, snapshot.Accounts...)
 			}
 
 			if updates := a.GetUpdates(); updates != nil {
-				data = append(data, updates.Accounts...)
+				accounts = append(accounts, updates.Accounts...)
 			}
 			select {
-			case c <- data:
+			case c <- accounts:
 				r.log.Debug("accounts: data sent")
 			case <-ctx.Done():
 				r.log.Error("accounts: stream closed")
@@ -2110,22 +2127,26 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []*types.Order, error) {
-	req := &v2.ObserveOrdersRequest{
-		MarketId: market,
-		PartyId:  party,
+func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*types.Order, error) {
+	req := &v2.ObserveOrdersRequest{}
+	if filter != nil {
+		req.MarketIds = filter.MarketIds
+		req.PartyIds = filter.PartyIds
 	}
+
 	stream, err := r.tradingDataClientV2.ObserveOrders(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	c := make(chan []*types.Order)
-	data := []*types.Order{}
+	var orders []*types.Order
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2138,15 +2159,15 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			data = data[:0]
+			orders = orders[:0]
 			if snapshot := o.GetSnapshot(); snapshot != nil {
-				data = append(data, snapshot.Orders...)
+				orders = append(orders, snapshot.Orders...)
 			}
 			if updates := o.GetUpdates(); updates != nil {
-				data = append(data, updates.Orders...)
+				orders = append(orders, updates.Orders...)
 			}
 			select {
-			case c <- data:
+			case c <- orders:
 				r.log.Debug("orders: data sent")
 			case <-ctx.Done():
 				r.log.Error("orders: stream closed")
@@ -2175,7 +2196,9 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2215,11 +2238,13 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	}
 
 	c := make(chan []*types.Position)
-	data := []*types.Position{}
+	var positions []*types.Position
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("positions: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2232,16 +2257,16 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
-			data = data[:0]
+			positions = positions[:0]
 			if snapshot := t.GetSnapshot(); snapshot != nil {
-				data = append(data, snapshot.Positions...)
+				positions = append(positions, snapshot.Positions...)
 			}
 
 			if updates := t.GetUpdates(); updates != nil {
-				data = append(data, updates.Positions...)
+				positions = append(positions, updates.Positions...)
 			}
 			select {
-			case c <- data:
+			case c <- positions:
 				r.log.Debug("positions: data sent")
 			case <-ctx.Done():
 				r.log.Error("positions: stream closed")
@@ -2294,7 +2319,9 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 	c := make(chan *v2.Candle)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("candles: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2344,12 +2371,14 @@ func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-c
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("governance (all): failed to close stream", logging.Error(err))
+			}
 			close(output)
 		}()
-		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
+		for proposals, err := stream.Recv(); !isStreamClosed(err, r.log); proposals, err = stream.Recv() {
 			select {
-			case output <- data.Data:
+			case output <- proposals.Data:
 				r.log.Debug("governance (all): data sent")
 			case <-ctx.Done():
 				r.log.Error("governance (all): stream closed")
@@ -2374,12 +2403,14 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("governance (party): stream close failed", logging.Error(err))
+			}
 			close(output)
 		}()
-		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
+		for proposals, err := stream.Recv(); !isStreamClosed(err, r.log); proposals, err = stream.Recv() {
 			select {
-			case output <- data.Data:
+			case output <- proposals.Data:
 				r.log.Debug("governance (party): data sent")
 			case <-ctx.Done():
 				r.log.Error("governance (party): stream closed")
@@ -2411,16 +2442,18 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("votes (proposal): stream close failed", logging.Error(err))
+			}
 			close(output)
 		}()
 		for {
-			data, err := stream.Recv()
+			votes, err := stream.Recv()
 			if isStreamClosed(err, r.log) {
 				break
 			}
 			select {
-			case output <- ProposalVoteFromProto(data.Vote):
+			case output <- ProposalVoteFromProto(votes.Vote):
 				r.log.Debug("votes (proposal): data sent")
 			case <-ctx.Done():
 				r.log.Error("votes (proposal): stream closed")
@@ -2445,16 +2478,18 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("votes (party): failed to close stream", logging.Error(err))
+			}
 			close(output)
 		}()
 		for {
-			data, err := stream.Recv()
+			votes, err := stream.Recv()
 			if isStreamClosed(err, r.log) {
 				break
 			}
 			select {
-			case output <- ProposalVoteFromProto(data.Vote):
+			case output <- ProposalVoteFromProto(votes.Vote):
 				r.log.Debug("votes (party): data sent")
 			case <-ctx.Done():
 				r.log.Error("votes (party): stream closed")
@@ -2519,7 +2554,9 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("Event bus stream close error", logging.Error(err))
+			}
 			close(out)
 		}()
 
@@ -2537,7 +2574,7 @@ func (r *mySubscriptionResolver) busEvents(ctx context.Context, stream v2.Tradin
 	sCtx := stream.Context()
 	for {
 		// receive batch
-		data, err := stream.Recv()
+		batch, err := stream.Recv()
 		if isStreamClosed(err, r.log) {
 			return
 		}
@@ -2546,7 +2583,7 @@ func (r *mySubscriptionResolver) busEvents(ctx context.Context, stream v2.Tradin
 			return
 		}
 		select {
-		case out <- busEventFromProto(data.Events...):
+		case out <- busEventFromProto(batch.Events...):
 			r.log.Debug("bus events: data sent")
 		case <-ctx.Done():
 			r.log.Debug("bus events: stream closed")
@@ -2565,7 +2602,7 @@ func (r *mySubscriptionResolver) busEventsWithBatch(ctx context.Context, batchSi
 	}
 	for {
 		// receive batch
-		data, err := stream.Recv()
+		batch, err := stream.Recv()
 		if isStreamClosed(err, r.log) {
 			return
 		}
@@ -2574,7 +2611,7 @@ func (r *mySubscriptionResolver) busEventsWithBatch(ctx context.Context, batchSi
 			return
 		}
 		select {
-		case out <- busEventFromProto(data.Events...):
+		case out <- busEventFromProto(batch.Events...):
 			r.log.Debug("bus events: data sent")
 		case <-ctx.Done():
 			r.log.Debug("bus events: stream closed")
@@ -2605,7 +2642,9 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("liquidity provisions: failed to close stream", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2852,13 +2891,9 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 	return resp.Markets, nil
 }
 
-func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {
-	var partyID string
-	if id != nil {
-		partyID = *id
-	}
+func (r *myQueryResolver) PartiesConnection(ctx context.Context, partyID *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {
 	resp, err := r.tradingDataClientV2.ListParties(ctx, &v2.ListPartiesRequest{
-		PartyId:    partyID,
+		PartyId:    ptr.UnBox(partyID),
 		Pagination: pagination,
 	})
 	if err != nil {

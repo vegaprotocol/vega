@@ -3,6 +3,7 @@
 ## Unreleased 0.70.0
 
 ### 🚨 Breaking changes
+- [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter. 
 - [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else. 
 
 ### 🗑️ Deprecation
