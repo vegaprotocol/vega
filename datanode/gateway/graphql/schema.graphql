@@ -3487,7 +3487,7 @@ type Proposal {
 }
 
 type ProposalDetail {
-  "Proposal ID that is filled by Vega once proposal reaches the network"
+  "Proposal ID that is provided by Vega once proposal reaches the network"
   id: ID
   "A UUID reference to aid tracking proposals on Vega"
   reference: String!
