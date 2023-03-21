@@ -3495,7 +3495,7 @@ type ProposalDetail {
   party: Party!
   "State of the proposal"
   state: ProposalState!
-  "RFC3339Nano time and date when the proposal reached Vega network"
+  "RFC3339Nano time and date when the proposal reached the Vega network"
   datetime: Timestamp!
   "Terms of the proposal"
   terms: ProposalTerms!
