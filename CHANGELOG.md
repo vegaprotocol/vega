@@ -19,6 +19,7 @@
 - [7670](https://github.com/vegaprotocol/vega/issues/7670) - Removes the need for the buffered event source to hold a large buffer of sequence numbers
 - [7904](https://github.com/vegaprotocol/vega/issues/7904) - Add a default system test template for integration tests
 - [7894](https://github.com/vegaprotocol/vega/issues/7894) - Use slippage cap when market is in auction mode
+- [7939](https://github.com/vegaprotocol/vega/issues/7939) - Split `orders` table into `orders_inital` and `order_changes`
 
 ### 🐛 Fixes
 - [7910](https://github.com/vegaprotocol/vega/issues/7910) - Store heartbeats in the checkpoint so that validator sets do not reorder unexpectedly after loading

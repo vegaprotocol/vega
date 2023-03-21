@@ -93,7 +93,7 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		query := fmt.Sprintf("SELECT %s FROM orders_current_versions WHERE id=$1 and version=$2", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID, version)
 	} else {
-		query := fmt.Sprintf("SELECT %s FROM orders_current_desc WHERE id=$1", sqlOrderColumns)
+		query := fmt.Sprintf("SELECT %s FROM orders_current WHERE id=$1", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
 
@@ -223,29 +223,20 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func currentView(party, market, reference *string, liveOnly bool, p entities.CursorPagination) (string, bool, error) {
+func currentView(liveOnly bool, p entities.CursorPagination) (string, bool, error) {
 	if !p.NewestFirst {
 		return "", false, fmt.Errorf("oldest first order query is not currently supported")
 	}
 	if liveOnly {
 		return "orders_live", false, nil
 	}
-	if reference != nil {
-		return "orders_current_desc_by_reference", true, nil
-	}
-	if party != nil {
-		return "orders_current_desc_by_party", true, nil
-	}
-	if market != nil {
-		return "orders_current_desc_by_market", true, nil
-	}
-	return "orders_current_desc", true, nil
+	return "orders_current", true, nil
 }
 
 func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
 	dateRange entities.DateRange, orderFilter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
-	table, alreadyOrdered, err := currentView(party, market, reference, liveOnly, p)
+	table, alreadyOrdered, err := currentView(liveOnly, p)
 	if err != nil {
 		return nil, entities.PageInfo{}, err
 	}

@@ -57,7 +57,8 @@ var defaultRetentionPolicies = map[RetentionPeriod][]RetentionPolicy{
 		{HypertableOrCaggName: "conflated_balances", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "delegations", DataRetentionPeriod: "7 days"},
 		{HypertableOrCaggName: "ledger", DataRetentionPeriod: "6 months"},
-		{HypertableOrCaggName: "orders", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "order_updates", DataRetentionPeriod: "1 month"},
+		{HypertableOrCaggName: "orders_initial", DataRetentionPeriod: "100 years"}, // Deleted by separate job when no longer referenced in order_updates
 		{HypertableOrCaggName: "trades", DataRetentionPeriod: "1 year"},
 		{HypertableOrCaggName: "trades_candle_1_minute", DataRetentionPeriod: "1 month"},
 		{HypertableOrCaggName: "trades_candle_5_minutes", DataRetentionPeriod: "1 month"},
