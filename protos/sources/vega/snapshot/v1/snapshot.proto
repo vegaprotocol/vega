@@ -635,6 +635,7 @@ message PendingERC20MultisigControlSignature {
   string nonce = 3;
   uint64 epoch_seq = 4;
   bool added = 5;
+  string submitter_address = 6;
 }
 
 message ValidatorState {

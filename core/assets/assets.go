@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	"code.vegaprotocol.io/vega/core/assets/erc20"
@@ -42,6 +43,7 @@ type ERC20BridgeView interface {
 
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
+	OfferSignatures(kind types.NodeSignatureKind, f func(id string) []byte)
 }
 
 type Service struct {
@@ -223,6 +225,30 @@ func (s *Service) IsEnabled(assetID string) bool {
 	defer s.amu.RUnlock()
 	_, ok := s.assets[assetID]
 	return ok
+}
+
+func (e *Service) OnTick(ctx context.Context, _ time.Time) {
+	e.notary.OfferSignatures(types.NodeSignatureKindAssetNew, e.offerERC20NotarySignatures)
+}
+
+func (s *Service) offerERC20NotarySignatures(id string) []byte {
+	if s.isValidator {
+		return nil
+	}
+
+	pa, err := s.Get(id)
+	if err != nil {
+		s.log.Panic("unable to find asset", logging.AssetID(id))
+	}
+
+	asset, _ := pa.ERC20()
+	_, signature, err := asset.SignListAsset()
+	if err != nil {
+		s.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
+			logging.Error(err))
+	}
+
+	return signature
 }
 
 func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDetails) (*Asset, error) {

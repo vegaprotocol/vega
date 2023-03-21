@@ -49,11 +49,12 @@ type Signatures interface {
 }
 
 type signatureData struct {
-	NodeID     string
-	EthAddress string
-	Nonce      *num.Uint
-	EpochSeq   uint64
-	Added      bool
+	NodeID           string
+	EthAddress       string
+	Nonce            *num.Uint
+	EpochSeq         uint64
+	Added            bool
+	SubmitterAddress string
 }
 
 type ERC20Signatures struct {
@@ -104,6 +105,49 @@ type NodeIDAddress struct {
 	NodeID           string
 	EthAddress       string
 	SubmitterAddress string
+}
+
+func (s *ERC20Signatures) OnTick(ctx context.Context, _ time.Time) {
+	s.notary.OfferSignatures(types.NodeSignatureKindERC20MultiSigSignerAdded, s.offerValidatorAddedSignatures)
+	s.notary.OfferSignatures(types.NodeSignatureKindERC20MultiSigSignerRemoved, s.offerValidatorRemovedSignatures)
+}
+
+func (s *ERC20Signatures) offerValidatorAddedSignatures(id string) []byte {
+	if s.isValidatorSetup {
+		return nil
+	}
+
+	sd, ok := s.pendingSignatures[id]
+	if !ok {
+		s.log.Panic("unable to find pending signature", logging.String("signatureID", id))
+	}
+
+	signature, err := s.multisig.AddSigner(sd.EthAddress, sd.SubmitterAddress, sd.Nonce)
+	if err != nil {
+		s.log.Panic("could not sign remove signer event, wallet not configured properly",
+			logging.Error(err))
+	}
+
+	return signature.Message.Bytes()
+}
+
+func (s *ERC20Signatures) offerValidatorRemovedSignatures(id string) []byte {
+	if s.isValidatorSetup {
+		return nil
+	}
+
+	sd, ok := s.pendingSignatures[id]
+	if !ok {
+		s.log.Panic("unable to find pending signature", logging.String("signatureID", id))
+	}
+
+	signature, err := s.multisig.RemoveSigner(sd.EthAddress, sd.SubmitterAddress, sd.Nonce)
+	if err != nil {
+		s.log.Panic("could not sign remove signer event, wallet not configured properly",
+			logging.Error(err))
+	}
+
+	return signature.Message.Bytes()
 }
 
 func (s *ERC20Signatures) getSignatureData(nodeID string, added bool) []*signatureData {
@@ -195,11 +239,12 @@ func (s *ERC20Signatures) PrepareValidatorSignatures(ctx context.Context, valida
 
 	for _, signer := range validators {
 		d := &signatureData{
-			NodeID:     signer.NodeID,
-			EthAddress: signer.EthAddress,
-			Nonce:      s.lastNonce.Clone(),
-			EpochSeq:   epochSeq,
-			Added:      added,
+			NodeID:           signer.NodeID,
+			EthAddress:       signer.EthAddress,
+			Nonce:            s.lastNonce.Clone(),
+			EpochSeq:         epochSeq,
+			Added:            added,
+			SubmitterAddress: signer.SubmitterAddress,
 		}
 		s.lastNonce.AddUint64(s.lastNonce, 1)
 

@@ -25,11 +25,12 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 	for e, data := range s.pendingSignatures {
 		pending = append(pending,
 			&snapshot.PendingERC20MultisigControlSignature{
-				NodeId:          data.NodeID,
-				Nonce:           data.Nonce.String(),
-				EthereumAddress: e,
-				Added:           data.Added,
-				EpochSeq:        data.EpochSeq,
+				NodeId:           data.NodeID,
+				Nonce:            data.Nonce.String(),
+				EthereumAddress:  e,
+				Added:            data.Added,
+				EpochSeq:         data.EpochSeq,
+				SubmitterAddress: data.SubmitterAddress,
 			},
 		)
 	}
@@ -56,11 +57,12 @@ func (s *ERC20Signatures) RestorePendingSignatures(sigs *snapshot.ToplogySignatu
 			s.log.Panic("Uint string not save/restored properly", logging.String("nonce", data.Nonce))
 		}
 		sd := &signatureData{
-			Nonce:      nonce,
-			NodeID:     data.NodeId,
-			EthAddress: data.EthereumAddress,
-			EpochSeq:   data.EpochSeq,
-			Added:      data.Added,
+			Nonce:            nonce,
+			NodeID:           data.NodeId,
+			EthAddress:       data.EthereumAddress,
+			EpochSeq:         data.EpochSeq,
+			Added:            data.Added,
+			SubmitterAddress: data.SubmitterAddress,
 		}
 		s.pendingSignatures[data.EthereumAddress] = sd
 	}
