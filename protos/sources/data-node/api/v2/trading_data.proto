@@ -2292,7 +2292,7 @@ message NodeBasic {
     string id = 1;
     // Node operator's public key
     string pub_key = 2;
-    // Public key of Tendermint
+    // Tendermint public key of the node
     string tm_pub_key = 3;
     // Ethereum public key of the node
     string ethereum_address = 4;
