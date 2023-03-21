@@ -304,7 +304,7 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/dgraph-io/ristretto v0.0.3-0.20200630154024-f66de99634de // indirect
 	github.com/dgryski/go-farm v0.0.0-20190423205320-6a90982ecee2 // indirect
-	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/dustin/go-humanize v1.0.0
 	github.com/elastic/go-licenser v0.3.1 // indirect
 	github.com/elastic/go-sysinfo v1.1.1 // indirect
 	github.com/elastic/go-windows v1.0.0 // indirect
