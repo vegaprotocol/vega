@@ -216,12 +216,13 @@ Feature: Trader amends his orders
       | party | reference   | price | size delta | expiration date      | tif     | error                                                   |
       | myboi | myboi-ref-1 | 2     | 0          | 2019-11-30T00:00:00Z | TIF_GTT | OrderError: ExpiryAt field must not be before CreatedAt |
 
-Scenario: Amending expiry time of an active GTT order to a past time whilst also simultaneously amending the price of the order will cause the order to immediately expire with the order details updated to reflect the order details requiring amendment 
+Scenario: Amending expiry time of an active GTT order to a past time whilst also simultaneously amending the price of the order will cause the order to immediately expire with the order details updated to reflect the order details requiring amendment (0004-AMND-029)
+    Given time is updated to "2019-11-30T00:00:00Z"
     Given the parties deposit on asset's general account the following amount:
-      | party | asset | amount |
+      | party   | asset | amount |
       | trader1 | BTC   | 10000  |
-      | aux   | BTC   | 100000 |
-      | aux2  | BTC   | 100000 |
+      | aux     | BTC   | 100000 |
+      | aux2    | BTC   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -233,16 +234,29 @@ Scenario: Amending expiry time of an active GTT order to a past time whilst also
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
+    When time is updated to "2019-11-30T00:00:04Z"
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | expires in | reference   |
       | trader1 | ETH/DEC19 | sell | 3      | 1000  | 0                | TYPE_LIMIT | TIF_GTT | 3600       |GTT-ref-1 |
-     
 
     And the parties amend the following orders:
-      | party   | reference  | price | size delta | expiration date      | tif     | error                                                   |
-      | trader1 | GTT-ref-1  | 1002  | 0          | 2019-11-30T00:00:00Z | TIF_GTT | OrderError: ExpiryAt field must not be before CreatedAt |
+      | party   | reference  | price | size delta | expiration date      | tif     | 
+      | trader1 | GTT-ref-1  | 1002  | 0          | 2019-11-30T00:00:05Z| TIF_GTT | 
+
+    # And the parties amend the following orders:
+    #   | party   | reference  | price | size delta | expiration date      | tif     | error                                                   |
+    #   | trader1 | GTT-ref-1  | 1002  | 0          | 2020-11-30T00:00:00Z | TIF_GTT | OrderError: ExpiryAt field must not be before CreatedAt |
 
     Then debug orders
+
+    Then the network moves ahead "140" blocks
+
+     And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1000  | 0      |
+      | sell | 1002  | 3      |
+      | sell | 10001 | 1      |
+
 
 
     
