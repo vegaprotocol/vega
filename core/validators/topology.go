@@ -255,6 +255,10 @@ func (t *Topology) OnEpochLengthUpdate(ctx context.Context, l time.Duration) err
 	return nil
 }
 
+func (t *Topology) OnTick(ctx context.Context, tm time.Time) {
+	t.signatures.OnTick(ctx, tm)
+}
+
 // SetNotary this is not good, the topology depends on the notary
 // which in return also depends on the topology... Luckily they
 // do not require recursive calls as for each calls are one offs...

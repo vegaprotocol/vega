@@ -46,6 +46,7 @@ type Signatures interface {
 	ClearStaleSignatures()
 	SerialisePendingSignatures() *snapshot.ToplogySignatures
 	RestorePendingSignatures(*snapshot.ToplogySignatures)
+	OnTick(ctx context.Context, _ time.Time)
 }
 
 type signatureData struct {
@@ -419,5 +420,9 @@ func (n *noopSignatures) SerialisePendingSignatures() *snapshot.ToplogySignature
 }
 
 func (n *noopSignatures) RestorePendingSignatures(*snapshot.ToplogySignatures) {
+	n.log.Error("noopSignatures implementation in use in production")
+}
+
+func (n *noopSignatures) OnTick(ctx context.Context, tm time.Time) {
 	n.log.Error("noopSignatures implementation in use in production")
 }
