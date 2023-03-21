@@ -549,6 +549,11 @@ func (m *Market) GetMarketData() types.MarketData {
 	for _, b := range bounds {
 		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		m.priceToMarketPrecision(b.MinValidPrice)
+
+		rp, _ := num.UintFromDecimal(b.ReferencePrice)
+		m.priceToMarketPrecision(rp)
+		b.ReferencePrice = num.DecimalFromUint(rp)
+
 		if m.priceFactor.NEQ(one) {
 			b.MinValidPrice.AddSum(one) // ceil
 		}
