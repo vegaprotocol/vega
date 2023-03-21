@@ -222,6 +222,7 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
       | party   | asset | amount |
       | trader1 | BTC   | 10000  |
       | trader2 | BTC   | 10000  |
+      | trader3 | BTC   | 10000  |
       | aux     | BTC   | 100000 |
       | aux2    | BTC   | 100000 |
 
@@ -252,6 +253,42 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
       | side | price | volume |
       | sell | 1000  | 0      |
       | sell | 1002  | 3      |
+      | sell | 10001 | 1      |
+
+    When time is updated to "2020-01-30T10:00:00Z"
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | expires in | reference   |
+      | trader2 | ETH/DEC19 | sell | 5      | 1005  | 0                | TYPE_LIMIT | TIF_GTT | 3600       |GTT-ref-2 |
+    # trader2 amend expiration date only
+    And the parties amend the following orders:
+      | party   | reference  | price | size delta | expiration date      | tif     | 
+      | trader2 | GTT-ref-2  | 1005  | 0          | 2020-01-30T10:00:01Z | TIF_GTT | 
+
+    When time is updated to "2020-01-30T12:00:01Z"
+
+    # potential bug, order at price 1005 should have expired  
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1000  | 0      |
+      | sell | 1002  | 3      |
+      | sell | 1005  | 5      |
+      | sell | 10001 | 1      |
+
+    When time is updated to "2020-01-30T12:01:01Z"
+
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | expires in | reference   |
+      | trader3 | ETH/DEC19 | sell | 6      | 1006  | 0                | TYPE_LIMIT | TIF_GTT | 3600       |GTT-ref-3 |
+
+    When time is updated to "2020-02-01T12:00:01Z"
+
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1000  | 0      |
+      | sell | 1002  | 3      |
+      | sell | 1005  | 5      |
+      | sell | 1006  | 6      |
       | sell | 10001 | 1      |
 
    
