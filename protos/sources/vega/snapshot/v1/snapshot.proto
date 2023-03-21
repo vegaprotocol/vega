@@ -10,6 +10,7 @@ import "vega/governance.proto";
 import "vega/events/v1/events.proto";
 import "vega/checkpoint/v1/checkpoint.proto";
 import "vega/data/v1/data.proto";
+import "vega/chain_events.proto";
 
 enum Format {
   // Default value, always invalid
@@ -287,6 +288,7 @@ message StakingAccount {
 message StakingAccounts {
   repeated StakingAccount accounts = 1;
   string staking_asset_total_supply = 2;
+  vega.StakeTotalSupply pending_stake_total_supply = 3;
 }
 
 message MatchingBook {

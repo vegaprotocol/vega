@@ -22,6 +22,7 @@
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
 - [7871](https://github.com/vegaprotocol/vega/issues/7871) - Bad `SQL` generated when paginating reward summaries
 - [7880](https://github.com/vegaprotocol/vega/issues/7880) - Update volume-weighted average price party's of open orders after a trade
+- [7883](https://github.com/vegaprotocol/vega/issues/7883) - Fix snapshot issue with witness on accounting
 
 
 ## 0.69.0
