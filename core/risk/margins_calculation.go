@@ -78,27 +78,22 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		var (
 			slippageVolume  = num.MaxD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.UintZero()
+			noExit          = true
 			negSlippage     bool
-			noExit          bool
 		)
 		if slippageVolume.IsPositive() {
-			var (
-				exitPrice *num.Uint
-				err       error
-			)
-			if auction {
-				noExit = true
-			} else {
+			if !auction {
 				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
-				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideBuy)
+				exitPrice, err := e.ob.GetCloseoutPrice(svol.Uint64(), types.SideBuy)
 				if err != nil {
-					noExit = true
 					if e.log.IsDebug() {
 						e.log.Debug("got non critical error from GetCloseoutPrice for Buy side",
 							logging.Error(err))
 					}
+				} else {
+					noExit = false
+					slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 				}
-				slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
 			}
 		}
 
@@ -141,13 +136,15 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 					minV,
 				)
 			}
-			maintenanceMarginLongOpenPosition := num.MaxD(
+			marginMaintenanceLng = num.MaxD(
 				num.DecimalZero(),
 				minV,
 			).Add(slippageVolume.Mul(rf.Long).Mul(mPriceDec))
-			bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
-			maintenanceMarginLongOpenOrders := bDec.Mul(rf.Long).Mul(mPriceDec)
-			marginMaintenanceLng = maintenanceMarginLongOpenPosition.Add(maintenanceMarginLongOpenOrders)
+			if withPotentialBuyAndSell {
+				bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
+				maintenanceMarginLongOpenOrders := bDec.Mul(rf.Long).Mul(mPriceDec)
+				marginMaintenanceLng = marginMaintenanceLng.Add(maintenanceMarginLongOpenOrders)
+			}
 		}
 	}
 	// calculate margin maintenance short only if riskiest is < 0
@@ -156,30 +153,25 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		var (
 			slippageVolume  = num.MinD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.UintZero()
-			noExit          = false
+			noExit          = true
 		)
 		// slippageVolume would be negative we abs it in the next phase
 		if slippageVolume.IsNegative() {
-			var (
-				exitPrice *num.Uint
-				err       error
-			)
-			if auction {
-				noExit = true
-			} else {
+			if !auction {
 				// convert back into vol * 10^pdp
 				svol, _ := num.UintFromDecimal(slippageVolume.Abs().Mul(e.positionFactor))
-				exitPrice, err = e.ob.GetCloseoutPrice(svol.Uint64(), types.SideSell)
+				exitPrice, err := e.ob.GetCloseoutPrice(svol.Uint64(), types.SideSell)
 				if err != nil {
-					noExit = true
 					if e.log.IsDebug() {
 						e.log.Debug("got non critical error from GetCloseoutPrice for Sell side",
 							logging.Error(err))
 					}
+				} else {
+					noExit = false
+					// exitPrice - markPrice == -1*(markPrice - exitPrice)
+					slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
+					// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 				}
-				// exitPrice - markPrice == -1*(markPrice - exitPrice)
-				slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
-				// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
 			}
 		}
 		absSlippageVolume := slippageVolume.Abs()
@@ -218,13 +210,15 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 					minV,
 				)
 			}
-			maintenanceMarginShortOpenPosition := num.MaxD(
+			marginMaintenanceSht = num.MaxD(
 				num.DecimalZero(),
 				minV,
 			).Add(absSlippageVolume.Mul(mPriceDec).Mul(rf.Short))
-			sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
-			maintenanceMarginShortOpenOrders := sDec.Abs().Mul(mPriceDec).Mul(rf.Short)
-			marginMaintenanceSht = maintenanceMarginShortOpenPosition.Add(maintenanceMarginShortOpenOrders)
+			if withPotentialBuyAndSell {
+				sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
+				maintenanceMarginShortOpenOrders := sDec.Abs().Mul(mPriceDec).Mul(rf.Short)
+				marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
+			}
 		}
 	}
 
