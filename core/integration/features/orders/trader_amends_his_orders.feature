@@ -216,6 +216,7 @@ Feature: Trader amends his orders
       | party | reference   | price | size delta | expiration date      | tif     | error                                                   |
       | myboi | myboi-ref-1 | 2     | 0          | 2019-11-30T00:00:00Z | TIF_GTT | OrderError: ExpiryAt field must not be before CreatedAt |
 
+@AmendBug
 Scenario: 008 Amending expiry time of an active GTT order to a past time whilst also simultaneously amending the price of the order will cause the order to immediately expire with the order details updated to reflect the order details requiring amendment (0004-AMND-029)
     Given time is updated to "2019-11-30T00:00:00Z"
     Given the parties deposit on asset's general account the following amount:
@@ -282,6 +283,7 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
       | trader3 | ETH/DEC19 | sell | 6      | 1006  | 0                | TYPE_LIMIT | TIF_GTT | 3600       |GTT-ref-3 |
 
     When time is updated to "2020-02-01T12:00:01Z"
+    Then debug orders
 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
