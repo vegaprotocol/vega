@@ -1028,7 +1028,7 @@ type NodeBasic {
   location: String!
   "Validator status of the node"
   status: NodeStatus!
-  "he name of the node"
+  "The name of the node operator"
   name: String!
   "The URL of an avatar"
   avatarUrl: String
