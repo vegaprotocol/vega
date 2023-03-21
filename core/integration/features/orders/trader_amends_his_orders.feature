@@ -246,10 +246,14 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
     And the parties amend the following orders:
       | party   | reference  | price | size delta | expiration date      | tif     | 
       | trader1 | GTT-ref-1  | 1002  | 0          | 2019-11-30T00:00:05Z | TIF_GTT | 
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1000  | 0      |
+      | sell | 1002  | 3      |
+      | sell | 10001 | 1      |
 
     When time is updated to "2020-01-30T00:00:00Z"
-
-    # potential bug, order at price 1002 should have expired  
+ 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 1000  | 0      |
@@ -265,14 +269,16 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
     And the parties amend the following orders:
       | party   | reference  | price | size delta | expiration date      | tif     | 
       | trader2 | GTT-ref-2  | 1005  | 0          | 2020-01-30T10:00:01Z | TIF_GTT | 
-
-    When time is updated to "2020-01-30T12:00:01Z"
-
-    # potential bug, order at price 1005 should have expired  
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 1000  | 0      |
-      | sell | 1002  | 0      |
+      | sell | 1005  | 5      |
+      | sell | 10001 | 1      |
+    When time is updated to "2020-01-30T12:00:01Z"
+ 
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1000  | 0      |
       | sell | 1005  | 0      |
       | sell | 10001 | 1      |
 
@@ -282,13 +288,15 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
       | party   | market id | side | volume | price | resulting trades | type       | tif     | expires in | reference   |
       | trader3 | ETH/DEC19 | sell | 6      | 1006  | 0                | TYPE_LIMIT | TIF_GTT | 3600       |GTT-ref-3 |
 
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1006  | 6      |
+      | sell | 10001 | 1      |
+
     When time is updated to "2020-02-01T12:00:01Z"
 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
-      | sell | 1000  | 0      |
-      | sell | 1002  | 0      |
-      | sell | 1005  | 0      |
       | sell | 1006  | 0      |
       | sell | 10001 | 1      |
 
