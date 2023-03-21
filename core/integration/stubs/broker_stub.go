@@ -13,6 +13,7 @@
 package stubs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -20,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/broker"
 
 	"code.vegaprotocol.io/vega/core/events"
+	vtypes "code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -362,17 +364,19 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 	if len(batch) == 0 {
 		return nil
 	}
-	last := map[string]types.Order{}
+	last := map[string]*vtypes.Order{}
 	ret := make([]events.Order, 0, len(batch))
 	for _, e := range batch {
+		var o *vtypes.Order
 		switch et := e.(type) {
 		case *events.Order:
-			last[et.ID] = *et
+			o, _ = vtypes.OrderFromProto(et.Order())
 			ret = append(ret, *et)
 		case events.Order:
+			o, _ = vtypes.OrderFromProto(et.Order())
 			ret = append(ret, et)
-			last[et.ID] = et
 		}
+		last[o.ID] = o
 	}
 	expired := b.GetBatch(events.ExpiredOrdersEvent)
 	for _, e := range expired {
@@ -386,7 +390,8 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 		for _, id := range ids {
 			if o, ok := last[id]; ok {
 				o.Status = types.Order_STATUS_EXPIRED
-				ret = append(ret, o)
+				fe := events.NewOrderEvent(context.Background(), o)
+				ret = append(ret, *fe)
 			}
 		}
 	}
