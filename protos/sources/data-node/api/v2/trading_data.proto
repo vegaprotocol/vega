@@ -2304,7 +2304,7 @@ message NodeBasic {
     vega.NodeStatus status = 13;
     // Node name
     string name = 17;
-    // Avatar url
+    // Avatar URL
     string avatar_url = 18;
 }
 
