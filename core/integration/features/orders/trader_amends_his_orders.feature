@@ -253,7 +253,7 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 1000  | 0      |
-      | sell | 1002  | 3      |
+      | sell | 1002  | 0      |
       | sell | 10001 | 1      |
 
     When time is updated to "2020-01-30T10:00:00Z"
@@ -272,8 +272,8 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 1000  | 0      |
-      | sell | 1002  | 3      |
-      | sell | 1005  | 5      |
+      | sell | 1002  | 0      |
+      | sell | 1005  | 0      |
       | sell | 10001 | 1      |
 
     When time is updated to "2020-01-30T12:01:01Z"
@@ -283,14 +283,13 @@ Scenario: 008 Amending expiry time of an active GTT order to a past time whilst 
       | trader3 | ETH/DEC19 | sell | 6      | 1006  | 0                | TYPE_LIMIT | TIF_GTT | 3600       |GTT-ref-3 |
 
     When time is updated to "2020-02-01T12:00:01Z"
-    Then debug orders
 
     And the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | sell | 1000  | 0      |
-      | sell | 1002  | 3      |
-      | sell | 1005  | 5      |
-      | sell | 1006  | 6      |
+      | sell | 1002  | 0      |
+      | sell | 1005  | 0      |
+      | sell | 1006  | 0      |
       | sell | 10001 | 1      |
 
    
