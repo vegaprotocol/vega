@@ -38,6 +38,7 @@ var (
 	defaultLogNormalRiskModelFileNames = []string{
 		"defaults/risk-model/log-normal/default-log-normal-risk-model.json",
 		"defaults/risk-model/log-normal/default-st-risk-model.json",
+		"defaults/risk-model/log-normal/closeout-st-risk-model.json",
 	}
 )
 
