@@ -60,27 +60,6 @@ func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFac
 	ml.CollateralReleaseLevel.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.release, mtl), exp))
 }
 
-func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor) *types.MarginLevels {
-	// calculate margins without order positions
-	ml := e.calculateMargins(m, markPrice, rf, false, true)
-	// now add the margin levels for orders
-	long, short := m.BuySumProduct().ToDecimal().Div(e.positionFactor), m.SellSumProduct().ToDecimal().Div(e.positionFactor)
-	var lMargin, sMargin num.Decimal
-	if long.IsPositive() {
-		lMargin = long.Mul(rf.Long)
-	}
-	if short.IsPositive() {
-		sMargin = short.Mul(rf.Short)
-	}
-	// add buy/sell order margins to the margin requirements
-	if lMargin.GreaterThan(sMargin) {
-		addMarginLevels(ml, lMargin, e.scalingFactorsUint)
-	} else {
-		addMarginLevels(ml, sMargin, e.scalingFactorsUint)
-	}
-	return ml
-}
-
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool) *types.MarginLevels {
@@ -135,8 +114,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		if auction {
 			marginMaintenanceLng = minV.Add(slippageVolume.Mul(mPriceDec.Mul(rf.Long)))
 			if withPotentialBuyAndSell {
-				bDec := num.DecimalFromInt64(m.Buy()).Div(e.positionFactor)
-				marginMaintenanceLng = marginMaintenanceLng.Add(bDec.Mul(rf.Long).Mul(mPriceDec))
+				maintenanceMarginLongOpenOrders := m.BuySumProduct().ToDecimal().Div(e.positionFactor).Mul(rf.Long)
+				marginMaintenanceLng = marginMaintenanceLng.Add(maintenanceMarginLongOpenOrders)
 			}
 		} else {
 			// 	maintenance_margin_long_open_position =
@@ -218,8 +197,8 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		if auction {
 			marginMaintenanceSht = minV.Add(absSlippageVolume.Mul(mPriceDec.Mul(rf.Short)))
 			if withPotentialBuyAndSell {
-				sDec := num.DecimalFromInt64(m.Sell()).Div(e.positionFactor)
-				marginMaintenanceSht = marginMaintenanceSht.Add(sDec.Mul(rf.Short).Mul(mPriceDec))
+				maintenanceMarginShortOpenOrders := m.SellSumProduct().ToDecimal().Div(e.positionFactor).Mul(rf.Short)
+				marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
 			}
 		} else {
 			// maintenance_margin_short_open_position =

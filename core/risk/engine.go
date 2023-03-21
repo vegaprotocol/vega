@@ -244,7 +244,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
 	for _, evt := range evts {
-		levels := e.calculateAuctionMargins(evt, price, rFactors)
+		levels := e.calculateMargins(evt, price, rFactors, true, true)
 		if levels == nil {
 			continue
 		}
@@ -300,7 +300,7 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if !e.as.InAuction() || e.as.CanLeave() {
 		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 	} else {
-		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
+		margins = e.calculateMargins(evt, markPrice, *e.factors, true, true)
 	}
 	// no margins updates, nothing to do then
 	if margins == nil {
@@ -421,7 +421,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		if !e.as.InAuction() || e.as.CanLeave() {
 			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, true, true)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -514,7 +514,7 @@ func (e *Engine) ExpectMargins(
 		if !e.as.InAuction() || e.as.CanLeave() {
 			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, true, true)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {

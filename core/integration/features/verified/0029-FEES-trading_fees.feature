@@ -891,7 +891,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 6494   | 3516    |
+      | trader3a | ETH   | ETH/DEC21 | 6493   | 3517    |
       | trader4  | ETH   | ETH/DEC21 | 9259   | 708     |
 
     And the market data for the market "ETH/DEC21" should be:
@@ -929,7 +929,7 @@ Feature: Fees calculations
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader4  | ETH   | ETH/DEC21 | 10093  | 586     |
-      | trader3a | ETH   | ETH/DEC21 | 5780   | 3514    |
+      | trader3a | ETH   | ETH/DEC21 | 5779   | 3515    |
 
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             |
