@@ -52,14 +52,6 @@ func newMarginLevels(maintenance num.Decimal, scalingFactors *scalingFactorsUint
 	}
 }
 
-func addMarginLevels(ml *types.MarginLevels, maintenance num.Decimal, scalingFactors *scalingFactorsUint) {
-	mtl, _ := num.UintFromDecimal(maintenance.Ceil())
-	ml.MaintenanceMargin.AddSum(mtl)
-	ml.SearchLevel.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.search, mtl), exp))
-	ml.InitialMargin.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.initial, mtl), exp))
-	ml.CollateralReleaseLevel.AddSum(num.UintZero().Div(num.UintZero().Mul(scalingFactors.release, mtl), exp))
-}
-
 // Implementation of the margin calculator per specs:
 // https://github.com/vegaprotocol/product/blob/master/specs/0019-margin-calculator.md
 func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types.RiskFactor, withPotentialBuyAndSell, auction bool) *types.MarginLevels {
