@@ -2290,7 +2290,7 @@ message ObserveDelegationsResponse {
 message NodeBasic {
     // The node ID (wallet ID)
     string id = 1;
-    // Pub key of the node operator
+    // Node operator's public key
     string pub_key = 2;
     // Public key of Tendermint
     string tm_pub_key = 3;
