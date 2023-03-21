@@ -1014,7 +1014,7 @@ type Node {
 }
 
 type NodeBasic {
-  "The node URL eg n01.vega.xyz"
+  "The node URL, for example n01.vega.xyz"
   id: ID!
   "Public key of the node operator"
   pubkey: String!
