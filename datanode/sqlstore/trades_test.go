@@ -127,7 +127,6 @@ func TestStorageGetByTxHash(t *testing.T) {
 	assert.Equal(t, 1, len(trades))
 	assert.Equal(t, insertedTrades[2].ID.String(), trades[0].ID.String())
 	assert.Equal(t, insertedTrades[2].TxHash, trades[0].TxHash)
-
 }
 
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
