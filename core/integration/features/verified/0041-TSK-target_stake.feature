@@ -175,13 +175,13 @@ Feature: Target stake
       | 90         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 135          | 2000           | 10            |
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type        | tif     |
       | tt_2  | ETH/DEC21 | buy  | 10     | 0     | 1                | TYPE_MARKET | TIF_FOK |
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 90         | 110               | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 165          | 2000           | 0             |
+      | 110        | 110               | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 165          | 2000           | 0             |
     And the liquidity fee factor should be "0.002" for the market "ETH/DEC21"
 
     # O is now the last recorded open interest so target stake should drop to 0
@@ -237,7 +237,7 @@ Feature: Target stake
     Then the network moves ahead "1" blocks
 
     # Trader 3 closes out 20
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_3  | ETH/DEC21 | sell | 20     | 90    | 1                | TYPE_LIMIT | TIF_GTC | tt_2_1    |
 
@@ -245,7 +245,7 @@ Feature: Target stake
     # target_stake = 90 x 60 x 1.5 x 0.1 = 810
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 110        | 90                | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
+      | 90         | 90                | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 810          | 2000           | 40            |
 
     # T0 + 10s
     Then the network moves ahead "10" blocks
@@ -257,10 +257,10 @@ Feature: Target stake
     # target_stake = 90 x 40 x 1.5 x 0.1 = 540
     And the target stake should be "540" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_1  | ETH/DEC21 | buy  | 100    | 110   | 1                | TYPE_LIMIT | TIF_GTC | lp_1_0    |
-    Then the mark price should be "90" for the market "ETH/DEC21"
+    Then the mark price should be "110" for the market "ETH/DEC21"
 
     # max_io=10+20+30-20+100=140
     # target_stake = 110 x 140 x 1.5 x 0.1=2310
@@ -276,7 +276,7 @@ Feature: Target stake
     # target_stake = 110 x 140 x 1 x 0.1 =1540
     And the target stake should be "1540" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+    When the parties place the following orders with ticks:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | tt_1  | ETH/DEC21 | buy  | 30     | 110   | 1                | TYPE_LIMIT | TIF_GTC | tt_1_0    |
 
