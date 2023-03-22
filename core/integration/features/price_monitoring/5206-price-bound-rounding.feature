@@ -60,7 +60,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake           | supplied stake          | open interest |
-      | 977142640  | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524332417800000000 | 39050000000000000000000 | 2             |
+      | 977142640  | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524331312000000000 | 39050000000000000000000 | 2             |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price     | resulting trades | type       | tif     |
@@ -109,7 +109,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
 
     And the market data for the market "ETH/DEC20" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake           | supplied stake          | open interest |
-      | 977142640  | 977142641         | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524332417800000000 | 39050000000000000000000 | 2             |
+      | 977142640  | 977142641         | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524331312000000000 | 39050000000000000000000 | 2             |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price     | resulting trades | type       | tif     |

@@ -1709,7 +1709,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	if len(conf.Trades) == 0 {
 		return orderUpdates
 	}
-	// Calculate and set current mark price
 	m.setLastTradedPrice(conf.Trades[len(conf.Trades)-1])
 
 	// Insert all trades resulted from the executed order

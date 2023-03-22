@@ -3130,9 +3130,10 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
+	lpprov := "lpprov"
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
-	addAccountWithAmount(tm, "lpprov", 10000000)
+	addAccountWithAmount(tm, lpprov, 10000000)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -3170,7 +3171,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 			newLiquidityOrder(types.PeggedReferenceMid, 15, 23),
 		},
 	}
-	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, lpprov, vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.now = now
@@ -3243,7 +3244,6 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationSell.Trades))
 
-	// TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,
@@ -3283,7 +3283,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 
 	lp = &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(2000),
+		CommitmentAmount: num.NewUint(2475),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
@@ -3300,12 +3300,23 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	// this will make current target stake returns 2475
 	err = tm.market.TSCalc().RecordOpenInterest(10, now)
 	require.NoError(t, err)
+	md := tm.market.GetMarketData()
+	require.Equal(t, "2475", md.TargetStake)
+	require.Equal(t, "502475", md.SuppliedStake)
 
-	// by set a very low commitment we should fail
+	// Cancel the provision by other LP
+	lpc := &types.LiquidityProvisionCancellation{
+		MarketID: lp.MarketID,
+	}
+	require.NoError(t, tm.market.CancelLiquidityProvision(ctx, lpc, lpprov))
+	md = tm.market.GetMarketData()
+	require.Equal(t, "2475", md.TargetStake)
+	require.Equal(t, "2475", md.SuppliedStake)
 
+	// amending below current target stake not allowed
 	lpa := &types.LiquidityProvisionAmendment{
 		MarketID:         lp.MarketID,
-		CommitmentAmount: num.NewUint(1),
+		CommitmentAmount: num.NewUint(2474),
 		Fee:              lp.Fee,
 		Buys:             lp.Buys,
 		Sells:            lp.Sells,
@@ -3314,18 +3325,8 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		tm.market.AmendLiquidityProvision(ctx, lpa, party1, vgcrypto.RandomHash()),
 	)
 
-	// 2000 + 600 should be enough to get us on top of the
-	// target stake
-	lpa.CommitmentAmount = num.NewUint(2000 + 600)
-	require.NoError(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, party1, vgcrypto.RandomHash()),
-	)
-	// mktD := tm.market.GetMarketData()
-	// fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
-
-	// 2600 - 125 should be enough to get just at the required stake
-	// Don't know why, but the target stake is now vastly different
-	lpa.CommitmentAmount = num.NewUint(1249650)
+	// amending just above current target stake is fine
+	lpa.CommitmentAmount = num.NewUint(2476)
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(ctx, lpa, party1, vgcrypto.RandomHash()),
 	)
@@ -3344,7 +3345,6 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	addAccount(t, tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,
