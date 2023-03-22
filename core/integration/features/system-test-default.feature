@@ -72,46 +72,77 @@ Feature: Basic feature-file matching the system-test setup like for like
   @SystemTestBase
   Scenario: Funding insurance pool balance by closing a trader out - note this scenario is a template. It does not actually close out the trader, it's just the first steps from the system test. With this scenario, we can check margin requirements before and after MTM settlement
     Given the parties deposit on asset's general account the following amount:
-      | party           | asset | amount                     |
-      | party1          | ETH   | 10000000000000000000000000 |
-      | party2          | ETH   | 10000000000000000000000000 |
-      | designatedloser | ETH   | 18000000000000000000000    |
+      | party           | asset | amount                      |
+      | traderB         | ETH   | 100000000000000000000000000 |
+      | traderS         | ETH   | 100000000000000000000000000 |
+      | designatedloser | ETH   | 190000000000000000000000    |
+      | lpprov          | ETH   | 10000000000000000000000000  |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC20 | 3905000000000000  | 0.3 | buy  | BID              | 2          | 1      | submission |
       | lp1 | lpprov | ETH/DEC20 | 3905000000000000  | 0.3 | sell | ASK              | 13         | 1      | submission |
     And the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | trader1 | ETH/DEC20 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
-      | trader1 | ETH/DEC20 | buy  | 5      | 900    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-2    |
-      | trader1 | ETH/DEC20 | buy  | 1      | 100    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-3    |
-      | trader2 | ETH/DEC20 | sell | 5      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
-      | trader2 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
-      | trader2 | ETH/DEC20 | sell | 5      | 951    | 0                | TYPE_LIMIT | TIF_GTC | t2-s-3    |
+      | traderB | ETH/DEC20 | buy  | 1      | 100    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-3    |
+      | traderB | ETH/DEC20 | buy  | 5      | 900    | 0                | TYPE_LIMIT | TIF_GTC | t1-b-2    |
+      | traderB | ETH/DEC20 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
+      | traderS | ETH/DEC20 | sell | 5      | 951    | 0                | TYPE_LIMIT | TIF_GTC | t2-s-3    |
+      | traderS | ETH/DEC20 | sell | 5      | 1200   | 0                | TYPE_LIMIT | TIF_GTC | t2-s-1    |
+      | traderS | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
+      
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake  | supplied stake   | open interest |
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 2380805600000 | 3905000000000000 | 5             |
 
+    Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | buy  | 100   | 1      |
+      | buy  | 899   | 8688   |
+      | buy  | 900   | 5      |
+      | sell | 1200  | 5      |
+      | sell | 1201  | 6503   |
+      | sell | 100000| 1      |
     # Now place orders to cause designatedloser party to be distressed
     When the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | party1          | ETH/DEC20 | sell | 1      | 960   | 0                | TYPE_LIMIT | TIF_GTC | p1-s-1    |
-      | party2          | ETH/DEC20 | buy  | 1      | 950   | 0                | TYPE_LIMIT | TIF_GTC | p1-b-1    |
-      | designatedloser | ETH/DEC20 | buy  | 450    | 960   | 1                | TYPE_LIMIT | TIF_GTC | dl-b-1    |
+      | traderS         | ETH/DEC20 | sell | 450    | 980   | 0                | TYPE_LIMIT | TIF_GTC | p1-s-1    |
+      | traderB         | ETH/DEC20 | buy  | 1      | 980   | 1                | TYPE_LIMIT | TIF_GTC | p1-b-1    |
+    
+      Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | buy  | 100   | 1      |
+      | buy  | 899   | 8688   |
+      | buy  | 900   | 5      |
+      | buy  | 1     | 0      |
+      | sell | 980   | 449    |
+      | sell | 981   | 7962   |
+      | sell | 1200  | 5      |
+      | sell | 1201  | 0      |
+      | sell | 100000| 1      |
+
+    When the parties place the following orders:
+      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedloser | ETH/DEC20 | buy  | 450    | 980   | 1                | TYPE_LIMIT | TIF_GTC | dl-b-1    |
+
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | traderS | -5     | 0              | 0            |
+      | traderB | 5      | 0              | 0            |
+      | lpprov  | 0      | 0              | 0            |
     Then the parties should have the following account balances:
       | party           | asset | market id | margin         | general                 |
-      | designatedloser | ETH   | ETH/DEC20 | 17753938373119 | 17999999982216781626881 |
+      | designatedloser | ETH   | ETH/DEC20 | 17826700415631 | 189999999968752689584369 |
     And the parties should have the following margin levels:
       | party           | market id | maintenance    | search         | initial        | release        |
-      | designatedloser | ETH/DEC20 | 14794948644266 | 16274443508692 | 17753938373119 | 20712928101972 |
+      | designatedloser | ETH/DEC20 | 14855583679693 | 16341142047662 | 17826700415631 | 20797817151570 |
     When the network moves ahead "1" blocks
     Then the parties should have the following account balances:
       | party           | asset | market id | margin         | general                 |
-      | designatedloser | ETH   | ETH/DEC20 | 17753938373119 | 17999999982216781626881 |
+      | designatedloser | ETH   | ETH/DEC20 | 17826700415631 | 189999999968752689584369 |
     And the parties should have the following margin levels:
       | party           | market id | maintenance    | search         | initial        | release        |
-      | designatedloser | ETH/DEC20 | 14552408502557 | 16007649352812 | 17462890203068 | 20373371903579 |
+      | designatedloser | ETH/DEC20 | 14900383679693 | 16390422047662 | 17880460415631 | 20860537151570 |
     Then debug detailed orderbook volumes for market "ETH/DEC20"
     And debug orders
     And debug detailed orderbook volumes for market "ETH/DEC20"
