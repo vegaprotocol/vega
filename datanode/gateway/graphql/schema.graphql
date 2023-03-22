@@ -1022,7 +1022,7 @@ type NodeBasic {
   tmPubkey: String!
   "Ethereum public key of the node"
   ethereumAddress: String!
-  "URL from which you can get more info about the node"
+  "URL that provides more information about the node"
   infoUrl: String!
   "Country code for the location of the node"
   location: String!
