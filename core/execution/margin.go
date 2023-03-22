@@ -98,7 +98,8 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 }
 
 func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) []events.Risk {
-	price := m.getCurrentMarkPrice()
+	// price := m.getCurrentMarkPrice()
+	price := m.getLastTradedPrice()
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	margins := make([]events.Margin, 0, len(pos))
@@ -129,7 +130,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	if err != nil {
 		return nil, nil, err
 	}
-	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order.Price))
+	risk, closed := m.risk.UpdateMarginAuction(ctx, []events.Margin{e}, m.getMarketObservable(order.Price.Clone()))
 	if len(closed) > 0 {
 		// this order would take party below maintenance -> stop here
 		return nil, nil, ErrMarginCheckInsufficient
@@ -138,7 +139,7 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 }
 
 func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
-	price := m.getMarketObservable(order.Price)
+	price := m.getMarketObservable(order.Price.Clone())
 	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	pos, err := m.collateral.GetPartyMargin(mpos, asset, mID)
