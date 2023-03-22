@@ -40,7 +40,7 @@ func TestSignVerifyAnnounceNode(t *testing.T) {
 		Id:              nodeWallets.Vega.ID().Hex(),
 		VegaPubKey:      nodeWallets.Vega.PubKey().Hex(),
 		VegaPubKeyIndex: nodeWallets.Vega.Index(),
-		ChainPubKey:     "some tm key",
+		ChainPubKey:     "794AFpbqJvHF711mhAK3fvSLnoXuuiig2ecrdeSJ/bk=",
 		EthereumAddress: nodeWallets.Ethereum.PubKey().Hex(),
 		FromEpoch:       1,
 		InfoUrl:         "www.some.com",
