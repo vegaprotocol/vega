@@ -26,6 +26,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTendermintKey(t *testing.T) {
+	notBase64 := "170ffakjde"
+	require.Error(t, validators.VerifyTendermintKey(notBase64))
+
+	validKey := "794AFpbqJvHF711mhAK3fvSLnoXuuiig2ecrdeSJ/bk="
+	require.NoError(t, validators.VerifyTendermintKey(validKey))
+}
+
 func TestSignVerifyAnnounceNode(t *testing.T) {
 	nodeWallets := createTestNodeWallets(t)
 	cmd := commandspb.AnnounceNode{
