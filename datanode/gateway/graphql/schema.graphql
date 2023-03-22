@@ -4621,29 +4621,29 @@ type Entities {
   orders: [Order]
   "List of positions created by the transaction hash"
   positions: [Position]
-  "List of ledgerEntries created by the transaction hash"
+  "List of ledger entries created by the transaction hash"
   ledgerEntries: [LedgerEntry]
-  "List of balanceChanges created by the transaction hash"
+  "List of balance changes created by the transaction hash"
   balanceChanges: [AccountBalance]
   "List of transfers created by the transaction hash"
   transfers: [Transfer]
   "List of votes created by the transaction hash"
   votes: [Vote]
-  "List of erc20MultiSigSignerAddedBundles created by the transaction hash"
+  "List of ERC-20 multisig signer added bundles created by the transaction hash"
   erc20MultiSigSignerAddedBundles: [ERC20MultiSigSignerAddedBundle]
-  "List of erc20MultiSigSignerRemovedBundles created by the transaction hash"
+  "List of ERC-20 multisig signer removed bundles created by the transaction hash"
   erc20MultiSigSignerRemovedBundles: [ERC20MultiSigSignerRemovedBundle]
   "List of trades created by the transaction hash"
   trades: [Trade]
-  "List of oracleSpecs created by the transaction hash"
+  "List of oracle specs created by the transaction hash"
   oracleSpecs: [OracleSpec]
-  "List of oracleData created by the transaction hash"
+  "List of oracle data created by the transaction hash"
   oracleData: [OracleData]
   "List of markets created by the transaction hash"
   markets: [Market]
   "List of parties created by the transaction hash"
   parties: [Party]
-  "List of marginLevels created by the transaction hash"
+  "List of margin levels created by the transaction hash"
   marginLevels: [MarginLevels]
   "List of rewards created by the transaction hash"
   rewards: [Reward]
@@ -4653,7 +4653,7 @@ type Entities {
   withdrawals: [Withdrawal]
   "List of assets created by the transaction hash"
   assets: [Asset]
-  "List of liquidityProvisions created by the transaction hash"
+  "List of liquidity provisions created by the transaction hash"
   liquidityProvisions: [LiquidityProvision]
   "List of proposals created by the transaction hash"
   proposals: [ProposalDetail]
@@ -4661,14 +4661,14 @@ type Entities {
   delegations: [Delegation]
   "List of nodes created by the transaction hash"
   nodes: [NodeBasic]
-  "List of nodeSignatures created by the transaction hash"
+  "List of node signatures created by the transaction hash"
   nodeSignatures: [NodeSignature]
-  "List of networkParameters created by the transaction hash"
+  "List of network parameters created by the transaction hash"
   networkParameters: [NetworkParameter]
-  "List of keyRotations created by the transaction hash"
+  "List of key rotations created by the transaction hash"
   keyRotations: [KeyRotation]
-  "List of ethereumKeyRotations created by the transaction hash"
+  "List of ethereum key rotations created by the transaction hash"
   ethereumKeyRotations: [EthereumKeyRotation]
-  "List of protocolUpgradeProposals created by the transaction hash"
+  "List of protocol upgrade proposals created by the transaction hash"
   protocolUpgradeProposals: [ProtocolUpgradeProposal]
 }
