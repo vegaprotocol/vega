@@ -65,10 +65,16 @@ func filterAccountsQuery(af entities.AccountFilter, includeVegaTime bool) (strin
 	return query, args, nil
 }
 
-func accountBalancesQuery() string {
+func currentAccountBalancesQuery() string {
 	return `SELECT ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type,
 			current_balances.balance, current_balances.tx_hash, current_balances.vega_time
 			FROM ACCOUNTS JOIN current_balances ON ACCOUNTS.id = current_balances.account_id `
+}
+
+func accountBalancesQuery() string {
+	return `SELECT ACCOUNTS.id, ACCOUNTS.party_id, ACCOUNTS.asset_id, ACCOUNTS.market_id, ACCOUNTS.type,
+			balances.balance, balances.tx_hash, balances.vega_time
+			FROM ACCOUNTS JOIN balances ON ACCOUNTS.id = balances.account_id `
 }
 
 func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{}, error) {
@@ -117,7 +123,7 @@ func filterAccountBalancesQuery(af entities.AccountFilter) (string, []interface{
 		where = fmt.Sprintf(`%s%sACCOUNTS.market_id=ANY(%s)`, where, and, nextBindVar(&args, marketIDs))
 	}
 
-	query := accountBalancesQuery()
+	query := currentAccountBalancesQuery()
 
 	if where != "" {
 		query = fmt.Sprintf("%s WHERE %s", query, where)

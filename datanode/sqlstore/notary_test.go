@@ -131,15 +131,17 @@ func testSignatureGetByTx(t *testing.T) {
 	require.NoError(t, ns.Add(ctx, signature))
 
 	signature2 := getTestNodeSignature(t, ctx, bs, "deadbaef", "iamsig")
-	require.NoError(t, ns.Add(ctx, signature))
+	require.NoError(t, ns.Add(ctx, signature2))
 
 	signatures, err := ns.GetByTxHash(ctx, signature.TxHash)
 	require.NoError(t, err)
-	require.Equal(t, signature, signatures[0])
+	require.Len(t, signatures, 1)
+	require.Equal(t, *signature, signatures[0])
 
 	signatures, err = ns.GetByTxHash(ctx, signature2.TxHash)
 	require.NoError(t, err)
-	require.Equal(t, signature2, signatures[0])
+	require.Len(t, signatures, 1)
+	require.Equal(t, *signature2, signatures[0])
 }
 
 func TestNodeSignaturePagination(t *testing.T) {
