@@ -192,8 +192,8 @@ Feature: Basic feature-file matching the system-test setup like for like
   Scenario: 002 Funding insurance pool balance by closing a trader out - note this scenario is a template. It does not actually close out the trader, it's just the first steps from the system test. With this scenario, we can check margin requirements before and after MTM settlement
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount                     |
-      | party1          | ETH   | 10000000000000000000000000 |
-      | party2          | ETH   | 10000000000000000000000000 |
+      | trader1         | ETH   | 10000000000000000000000000 |
+      | trader2         | ETH   | 10000000000000000000000000 |
       | designatedloser | ETH   | 18000000000000000000000    |
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
