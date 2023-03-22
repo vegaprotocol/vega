@@ -53,9 +53,15 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | sell | ASK              | 500        | 20     | submission |
       | lp1 | party0 | ETH/MAR22 | 5000000           | 0   | buy  | BID              | 500        | 20     | amendment  |
 
+    # party1 :=  buy order volume * vwap * rf_long  = (900  + 990  + 50 * 1000) * 0.8007282079844139 =  41549.786712311237271
+    # party2 := sell order volume * vwap * rf_short = (1100 + 1010 + 50 * 1000) * 3.556903591579342  = 185350.246157199511620
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | initial  |
+      | party1 | ETH/MAR22 | 41550       | 49860    |
+      | party2 | ETH/MAR22 | 185351      | 222421   |
+
     When the opening auction period ends for market "ETH/MAR22"
     Then the auction ends with a traded volume of "50" at a price of "1000"
-    # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
     And the insurance pool balance should be "0" for the market "ETH/MAR22"
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -88,8 +94,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 42093820 | 452906180 |
-      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
-      | party2 | USD   | ETH/MAR22 | 222394   | 99777606  |
+      | party1 | USD   | ETH/MAR22 | 49860    | 99950140  |
+      | party2 | USD   | ETH/MAR22 | 222421   | 99777579  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -145,8 +151,8 @@ Feature: check the impact from change of market parameter: market.liquidity.stak
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general   |
       | party0 | USD   | ETH/MAR22 | 10525590 | 484474410 |
-      | party1 | USD   | ETH/MAR22 | 49815    | 99950185  |
-      | party2 | USD   | ETH/MAR22 | 222394   | 99777606  |
+      | party1 | USD   | ETH/MAR22 | 49860    | 99950140  |
+      | party2 | USD   | ETH/MAR22 | 222421   | 99777579  |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |

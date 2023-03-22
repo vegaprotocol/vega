@@ -18,6 +18,7 @@
 - [7829](https://github.com/vegaprotocol/vega/issues/7829) - Get precision for reference price from price monitoring bounds when getting market data
 - [7670](https://github.com/vegaprotocol/vega/issues/7670) - Removes the need for the buffered event source to hold a large buffer of sequence numbers
 - [7904](https://github.com/vegaprotocol/vega/issues/7904) - Add a default system test template for integration tests
+- [7894](https://github.com/vegaprotocol/vega/issues/7894) - Use slippage cap when market is in auction mode
 
 ### 🐛 Fixes
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
@@ -25,6 +26,7 @@
 - [7880](https://github.com/vegaprotocol/vega/issues/7880) - Update volume-weighted average price party's of open orders after a trade
 - [7883](https://github.com/vegaprotocol/vega/issues/7883) - Fix snapshot issue with witness on accounting
 - [7921](https://github.com/vegaprotocol/vega/issues/7921) - Fix streams batches
+- [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
 
 
 ## 0.69.0

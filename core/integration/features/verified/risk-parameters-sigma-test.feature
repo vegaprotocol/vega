@@ -86,8 +86,8 @@ Feature: test risk model parameter sigma
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                     | bond      |
       | party0 | USD   | ETH/MAR53 | 74999925000000 | 499999999999924999975000000 | 100000000 |
-      | party1 | USD   | ETH/MAR53 | 148            | 4999999852                  |           |
-      | party2 | USD   | ETH/MAR53 | 164999835      | 4835000165                  |           |
+      | party1 | USD   | ETH/MAR53 | 150            | 4999999850                  |           |
+      | party2 | USD   | ETH/MAR53 | 179999820      | 4820000180                  |           |
 
     # mentainance margin level for LP: 10*22580646*999999=2.258e14
     # initial  margin level for LP: 10*22580646*999999 *1.5=3.38e14
@@ -141,8 +141,8 @@ Feature: test risk model parameter sigma
     And the parties should have the following account balances:
       | party  | asset | market id | margin   | general                     | bond     |
       | party0 | USD   | ETH/MAR0  | 41041689 | 499999999999999999948958311 | 10000000 |
-      | party1 | USD   | ETH/MAR0  | 1189     | 4999998811                  |          |
-      | party2 | USD   | ETH/MAR0  | 6397     | 4999993603                  |          |
+      | party1 | USD   | ETH/MAR0  | 1201     | 4999998799                  |          |
+      | party2 | USD   | ETH/MAR0  | 6403     | 4999993597                  |          |
 
     # mentainance margin level for LP: 181819*100*3.5569036=6.47e7
     # initial  margin level for LP: 181819*100*3.5569036 *1.2=9.7e7
