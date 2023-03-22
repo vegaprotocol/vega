@@ -15,6 +15,7 @@ package validators
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"sort"
@@ -29,6 +30,8 @@ import (
 	"github.com/cenkalti/backoff"
 	ecrypto "github.com/ethereum/go-ethereum/crypto"
 )
+
+var ErrHeartbeatHasExpired = errors.New("heartbeat received after expiry")
 
 // validatorHeartbeatTracker keeps track of heartbeat transactions and their results.
 type validatorHeartbeatTracker struct {
@@ -67,6 +70,11 @@ func (t *Topology) ProcessValidatorHeartbeat(ctx context.Context, vh *commandspb
 		node = t.validators[vh.NodeId]
 		hash = validator.heartbeatTracker.expectedNextHash
 	)
+
+	if hash != vh.Message {
+		// the heartbeat came in too late, we're already waiting for another one
+		return ErrHeartbeatHasExpired
+	}
 
 	vegas, err := hex.DecodeString(vh.GetVegaSignature().Value)
 	if err != nil {
@@ -202,6 +210,7 @@ func (t *Topology) prepareHeartbeat(blockHash string) *commandspb.ValidatorHeart
 			Value: hex.EncodeToString(ethereumSignature),
 			Algo:  signer.Algo(),
 		},
+		Message: blockHash,
 	}
 }
 

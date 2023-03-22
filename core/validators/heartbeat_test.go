@@ -73,6 +73,16 @@ func TestCheckAndExpireStaleHeartbeats(t *testing.T) {
 	top.checkAndExpireStaleHeartbeats()
 	require.Equal(t, 1, top.validators["node1"].heartbeatTracker.blockIndex)
 	require.Equal(t, "", top.validators["node1"].heartbeatTracker.expectedNextHash)
+
+	// set up a new expected heartbeat and pretend the old one arrived again
+	cmd := &commandspb.ValidatorHeartbeat{
+		NodeId:  "node1",
+		Message: "abcde",
+	}
+	top.validators["node1"].heartbeatTracker.expectedNextHash = "abcdeagain"
+	top.validators["node1"].heartbeatTracker.expectedNexthashSince = now
+	require.Error(t, ErrHeartbeatHasExpired, top.ProcessValidatorHeartbeat(context.Background(), cmd, nil, nil))
+	require.Equal(t, "abcdeagain", top.validators["node1"].heartbeatTracker.expectedNextHash)
 }
 
 func TestProcessValidatorHeartbeat(t *testing.T) {

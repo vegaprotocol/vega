@@ -16,6 +16,8 @@ message ValidatorHeartbeat {
   Signature ethereum_signature = 2;
   // Signature from the validator made using the vega wallet
   Signature vega_signature = 3;
+  // Message which has been signed
+  string message = 4;
 }
 
 // Used to announce a node as a new pending validator
