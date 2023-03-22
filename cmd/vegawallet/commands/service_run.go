@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -35,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/muesli/cancelreader"
 	"golang.org/x/term"
 
 	"github.com/spf13/cobra"
@@ -267,14 +269,12 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return err
 	}
 
-	receptionChan := make(chan interactor.Interaction, 100)
-	responseChan := make(chan interactor.Interaction, 100)
+	receptionChanForParking := make(chan interactor.Interaction, 1000)
 	closer.Add(func() {
-		close(receptionChan)
-		close(responseChan)
+		close(receptionChanForParking)
 	})
 
-	seqInteractor := interactor.NewSequentialInteractor(jobRunner.Ctx(), receptionChan, responseChan)
+	seqInteractor := interactor.NewParallelInteractor(jobRunner.Ctx(), receptionChanForParking)
 
 	connectionsManager, err := connections.NewManager(serviceV2.NewStdTime(), walletStore, tokenStore, sessionStore, seqInteractor)
 	if err != nil {
@@ -296,14 +296,23 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	cliLog.Info("Starting HTTP service", zap.String("url", rc.ServiceURL))
 	p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(rc.ServiceURL).NextSection())
 
+	receptionChanForFrontend := make(chan interactor.Interaction, 1000)
+	closer.Add(func() {
+		close(receptionChanForFrontend)
+	})
+
+	jobRunner.Go(func(jobCtx context.Context) {
+		startInteractionParking(cliLog, jobCtx, receptionChanForParking, receptionChanForFrontend)
+	})
+
 	jobRunner.Go(func(jobCtx context.Context) {
 		for {
 			select {
 			case <-jobCtx.Done():
-				cliLog.Info("Stop listening to incoming interactions")
+				cliLog.Info("Stop listening to incoming interactions in front-end")
 				return
-			case interaction := <-receptionChan:
-				handleAPIv2Request(interaction, responseChan, f.EnableAutomaticConsent, p)
+			case interaction := <-receptionChanForFrontend:
+				handleAPIv2Request(jobCtx, interaction, f.EnableAutomaticConsent, p)
 			case consentRequest := <-consentRequests:
 				handleAPIv1Request(consentRequest, cliLog, p, sentTransactions)
 			}
@@ -371,9 +380,7 @@ func waitUntilInterruption(ctx context.Context, cliLog *zap.Logger, p *printer.I
 		close(gracefulStop)
 	}()
 
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-	signal.Notify(gracefulStop, syscall.SIGQUIT)
+	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	for {
 		select {
@@ -429,7 +436,7 @@ func handleAPIv1Request(consentRequest serviceV1.ConsentRequest, log *zap.Logger
 	}
 }
 
-func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- interactor.Interaction, enableAutomaticConsent bool, p *printer.InteractivePrinter) {
+func handleAPIv2Request(ctx context.Context, interaction interactor.Interaction, enableAutomaticConsent bool, p *printer.InteractivePrinter) {
 	switch data := interaction.Data.(type) {
 	case interactor.InteractionSessionBegan:
 		p.Print(p.String().NextLine())
@@ -438,7 +445,11 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 	case interactor.RequestWalletConnectionReview:
 		p.Print(p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" wants to connect to your wallet.").NextLine())
 		var connectionApproval string
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you approve connecting your wallet to this application?"), p)
+		approved, err := yesOrNo(ctx, data.ControlCh, p.String().QuestionMark().Text("Do you approve connecting your wallet to this application?"), p)
+		if err != nil {
+			p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+			return
+		}
 		if approved {
 			p.Print(p.String().CheckMark().Text("Connection approved.").NextLine())
 			connectionApproval = string(preferences.ApprovedOnlyThisTime)
@@ -446,7 +457,7 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			p.Print(p.String().CrossMark().Text("Connection rejected.").NextLine())
 			connectionApproval = string(preferences.RejectedOnlyThisTime)
 		}
-		responseChan <- interactor.Interaction{
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.WalletConnectionDecisionName,
 			Data: interactor.WalletConnectionDecision{
@@ -459,8 +470,12 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			str.ListItem().Text("- ").InfoText(w).NextLine()
 		}
 		p.Print(str)
-		selectedWallet := readInput(p.String().QuestionMark().Text("Which wallet do you want to use? "), p, data.AvailableWallets)
-		responseChan <- interactor.Interaction{
+		selectedWallet, err := readInput(ctx, data.ControlCh, p.String().QuestionMark().Text("Which wallet do you want to use? "), p, data.AvailableWallets)
+		if err != nil {
+			p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+			return
+		}
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.SelectedWalletName,
 			Data: interactor.SelectedWallet{
@@ -472,8 +487,12 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			str := p.String().BlueArrow().Text(data.Reason).NextLine()
 			p.Print(str)
 		}
-		passphrase := readPassphrase(p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(data.Wallet).Text("\": "), p)
-		responseChan <- interactor.Interaction{
+		passphrase, err := readPassphrase(ctx, data.ControlCh, p.String().BlueArrow().Text("Enter the passphrase for the wallet \"").InfoText(data.Wallet).Text("\": "), p)
+		if err != nil {
+			p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+			return
+		}
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.EnteredPassphraseName,
 			Data: interactor.EnteredPassphrase{
@@ -517,13 +536,17 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			str.ListItem().Text("- ").InfoText(perm).Text(": ").InfoText(access).NextLine()
 		}
 		p.Print(str)
-		approved := yesOrNo(p.String().QuestionMark().Text("Do you want to grant these permissions?"), p)
+		approved, err := yesOrNo(ctx, data.ControlCh, p.String().QuestionMark().Text("Do you want to grant these permissions?"), p)
+		if err != nil {
+			p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+			return
+		}
 		if approved {
 			p.Print(p.String().CheckMark().Text("Permissions update approved.").NextLine())
 		} else {
 			p.Print(p.String().CrossMark().Text("Permissions update rejected.").NextLine())
 		}
-		responseChan <- interactor.Interaction{
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.DecisionName,
 			Data: interactor.Decision{
@@ -538,15 +561,22 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
 		approved := true
-		if !enableAutomaticConsent {
-			approved = yesOrNo(p.String().QuestionMark().Text("Do you want to send this transaction?"), p)
-		}
-		if approved {
-			p.Print(p.String().CheckMark().Text("Sending approved.").NextLine())
+		if enableAutomaticConsent {
+			p.Print(p.String().CheckMark().Text("Sending automatically approved.").NextLine())
 		} else {
-			p.Print(p.String().CrossMark().Text("Sending rejected.").NextLine())
+			a, err := yesOrNo(ctx, data.ControlCh, p.String().QuestionMark().Text("Do you want to send this transaction?"), p)
+			if err != nil {
+				p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+				return
+			}
+			approved = a
+			if approved {
+				p.Print(p.String().CheckMark().Text("Sending approved.").NextLine())
+			} else {
+				p.Print(p.String().CrossMark().Text("Sending rejected.").NextLine())
+			}
 		}
-		responseChan <- interactor.Interaction{
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.DecisionName,
 			Data: interactor.Decision{
@@ -561,15 +591,22 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
 		approved := true
-		if !enableAutomaticConsent {
-			approved = yesOrNo(p.String().QuestionMark().Text("Do you want to sign this transaction?"), p)
-		}
-		if approved {
-			p.Print(p.String().CheckMark().Text("Signing approved.").NextLine())
+		if enableAutomaticConsent {
+			p.Print(p.String().CheckMark().Text("Signing automatically approved.").NextLine())
 		} else {
-			p.Print(p.String().CrossMark().Text("Signing rejected.").NextLine())
+			a, err := yesOrNo(ctx, data.ControlCh, p.String().QuestionMark().Text("Do you want to sign this transaction?"), p)
+			if err != nil {
+				p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+				return
+			}
+			approved = a
+			if approved {
+				p.Print(p.String().CheckMark().Text("Signing approved.").NextLine())
+			} else {
+				p.Print(p.String().CrossMark().Text("Signing rejected.").NextLine())
+			}
 		}
-		responseChan <- interactor.Interaction{
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.DecisionName,
 			Data: interactor.Decision{
@@ -584,15 +621,22 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 		str.InfoText(fmtCmd).NextLine()
 		p.Print(str)
 		approved := true
-		if !enableAutomaticConsent {
-			approved = yesOrNo(p.String().QuestionMark().Text("Do you allow the network to check this transaction?"), p)
-		}
-		if approved {
-			p.Print(p.String().CheckMark().Text("Checking approved.").NextLine())
+		if enableAutomaticConsent {
+			p.Print(p.String().CheckMark().Text("Checking automatically approved.").NextLine())
 		} else {
-			p.Print(p.String().CrossMark().Text("Checking rejected.").NextLine())
+			a, err := yesOrNo(ctx, data.ControlCh, p.String().QuestionMark().Text("Do you allow the network to check this transaction?"), p)
+			if err != nil {
+				p.Print(p.String().CrossMark().DangerText(err.Error()).NextLine())
+				return
+			}
+			approved = a
+			if approved {
+				p.Print(p.String().CheckMark().Text("Checking approved.").NextLine())
+			} else {
+				p.Print(p.String().CrossMark().Text("Checking rejected.").NextLine())
+			}
 		}
-		responseChan <- interactor.Interaction{
+		data.ResponseCh <- interactor.Interaction{
 			TraceID: interaction.TraceID,
 			Name:    interactor.DecisionName,
 			Data: interactor.Decision{
@@ -616,50 +660,116 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 	}
 }
 
-func readInput(question *printer.FormattedString, p *printer.InteractivePrinter, options []string) string {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		p.Print(question)
-		answer, err := reader.ReadString('\n')
-		if err != nil {
-			panic(fmt.Errorf("could not read input: %w", err))
-		}
+func readInput(ctx context.Context, controlCh chan error, question *printer.FormattedString, p *printer.InteractivePrinter, options []string) (string, error) {
+	inputCh := make(chan string)
+	defer close(inputCh)
 
-		answer = strings.Trim(answer, " \r\n\t")
+	reader, err := cancelreader.NewReader(os.Stdin)
+	if err != nil {
+		return "", fmt.Errorf("could not initialize the input reader: %w", err)
+	}
+	defer reader.Cancel()
 
-		if len(options) == 0 {
-			return answer
-		}
-		for _, option := range options {
-			if answer == option {
-				return answer
+	go func() {
+		for {
+			p.Print(question)
+
+			answer, err := readString(reader)
+			if err != nil {
+				return
+			}
+
+			if len(options) == 0 {
+				inputCh <- answer
+				return
+			}
+			for _, option := range options {
+				if answer == option {
+					inputCh <- answer
+					return
+				}
+			}
+			if len(answer) > 0 {
+				p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("%q is not a valid option", answer)).NextLine())
 			}
 		}
-		p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("%q is not a valid option", answer)).NextLine())
+	}()
+
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case err := <-controlCh:
+		reader.Cancel()
+		return "", err
+	case input := <-inputCh:
+		return input, nil
 	}
 }
 
-func yesOrNo(question *printer.FormattedString, p *printer.InteractivePrinter) bool {
-	question.Text(" (yes/no) ")
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		p.Print(question)
-		answer, err := reader.ReadString('\n')
-		if err != nil {
-			panic(fmt.Errorf("could not read input: %w", err))
+func yesOrNo(ctx context.Context, controlCh <-chan error, question *printer.FormattedString, p *printer.InteractivePrinter) (bool, error) {
+	choiceCh := make(chan bool)
+	defer close(choiceCh)
+
+	reader, err := cancelreader.NewReader(os.Stdin)
+	if err != nil {
+		return false, fmt.Errorf("could not initialize the input reader: %w", err)
+	}
+	defer reader.Cancel()
+
+	go func() {
+		question.Text(" (yes/no) ")
+
+		for {
+			p.Print(question)
+
+			answer, err := readString(reader)
+			if err != nil {
+				return
+			}
+
+			switch answer {
+			case "yes", "y":
+				choiceCh <- true
+				return
+			case "no", "n":
+				choiceCh <- false
+				return
+			default:
+				if len(answer) > 0 {
+					p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("%q is not a valid answer, enter \"yes\" or \"no\"\n", answer)))
+				}
+			}
 		}
+	}()
 
-		answer = strings.ToLower(strings.Trim(answer, " \r\n\t"))
+	select {
+	case <-ctx.Done():
+		return false, ctx.Err()
+	case err := <-controlCh:
+		reader.Cancel()
+		return false, err
+	case choice, ok := <-choiceCh:
+		return ok && choice, nil
+	}
+}
 
-		switch answer {
-		case "yes", "y":
-			return true
-		case "no", "n":
-			return false
-		default:
-			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("%q is not a valid answer, enter \"yes\" or \"no\"\n", answer)))
+func readString(reader cancelreader.CancelReader) (string, error) {
+	var line string
+	for {
+		var input [1024]byte
+		_, err := reader.Read(input[:])
+		if err != nil {
+			return "", err
+		}
+		index := bytes.IndexByte(input[:], '\n')
+		line += string(input[:index])
+		if index != -1 {
+			break
 		}
 	}
+
+	line = strings.ToLower(strings.Trim(line, " \r\n\t"))
+	return line, nil
 }
 
 // ensureNotRunningInMsys verifies if the underlying shell is not running on
@@ -675,12 +785,133 @@ func ensureNotRunningInMsys() error {
 	return nil
 }
 
-func readPassphrase(question *printer.FormattedString, p *printer.InteractivePrinter) string {
-	p.Print(question)
-	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
-	if err != nil {
-		panic(fmt.Errorf("could not read passphrase: %w", err))
+func readPassphrase(ctx context.Context, controlCh chan error, question *printer.FormattedString, p *printer.InteractivePrinter) (string, error) {
+	inputCh := make(chan string)
+	defer close(inputCh)
+
+	// We cannot interrupt cleanly an on-going password read. So, at least, we
+	// ensure it can stop on the next password attempt.
+	shouldStop := atomic.Bool{}
+	waitForExitInput := make(chan interface{})
+
+	go func() {
+		for {
+			p.Print(question)
+			passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				panic(fmt.Errorf("could not read passphrase: %w", err))
+			}
+			p.Print(p.String().NextLine())
+			if shouldStop.Load() {
+				close(waitForExitInput)
+				return
+			}
+			if len(passphrase) > 0 {
+				inputCh <- string(passphrase)
+				return
+			}
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case err := <-controlCh:
+		shouldStop.Store(true)
+		<-waitForExitInput
+		return "", err
+	case input := <-inputCh:
+		return input, nil
 	}
-	p.Print(p.String().NextLine())
-	return string(passphrase)
+}
+
+func startInteractionParking(log *zap.Logger, ctx context.Context, inboundCh <-chan interactor.Interaction, outboundCh chan<- interactor.Interaction) {
+	sessionsOrder := []string{}
+	parkedInteractionSessions := map[string]chan interactor.Interaction{}
+
+	defer func() {
+		for _, iChan := range parkedInteractionSessions {
+			close(iChan)
+		}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info("Stop listening to incoming interactions in parking")
+			return
+		case interaction, ok := <-inboundCh:
+			if !ok {
+				return
+			}
+
+			if len(sessionsOrder) == 0 {
+				sessionsOrder = append(sessionsOrder, interaction.TraceID)
+			}
+
+			// If the interaction we receive is from the session currently
+			// handled in the frontend, we transmit it immediately.
+			if sessionsOrder[0] == interaction.TraceID {
+				outboundCh <- interaction
+				// If this is the last interaction for the current session, we
+				// free up the resources and transmit the next session to the UI.
+				if _, ok := interaction.Data.(interactor.InteractionSessionEnded); ok {
+					sessionsOrder = switchToNextSession(sessionsOrder, parkedInteractionSessions, outboundCh)
+				}
+			} else {
+				// If not, then we park it until the current session end.
+				parkedSessionCh, ok := parkedInteractionSessions[interaction.TraceID]
+				if !ok {
+					// First time we see this session, we track it.
+					parkedSessionCh = make(chan interactor.Interaction, 100)
+					parkedInteractionSessions[interaction.TraceID] = parkedSessionCh
+					sessionsOrder = append(sessionsOrder, interaction.TraceID)
+				}
+				parkedSessionCh <- interaction
+			}
+		}
+	}
+}
+
+func switchToNextSession(sessionsOrder []string, parkedInteractionSessions map[string]chan interactor.Interaction, outboundCh chan<- interactor.Interaction) []string {
+	// Pop this session out the queue, and move onto the next
+	// session.
+	sessionsOrder = sessionsOrder[1:]
+
+	if len(sessionsOrder) == 0 {
+		return sessionsOrder
+	}
+
+	currentSessionCh := parkedInteractionSessions[sessionsOrder[0]]
+	hasInteractionsToSend := true
+	for hasInteractionsToSend {
+		select {
+		case currentSessionInteraction, ok := <-currentSessionCh:
+			if !ok {
+				hasInteractionsToSend = false
+				break
+			}
+			outboundCh <- currentSessionInteraction
+			if _, ok := currentSessionInteraction.Data.(interactor.InteractionSessionEnded); ok {
+				// We remove the session and its interactions buffer from the
+				// parked ones, because the next interactions we will receive
+				// for that session will be transmitted immediately.
+				close(currentSessionCh)
+				delete(parkedInteractionSessions, sessionsOrder[0])
+
+				// The session is already finished, move to the next until we
+				// transmitted all parked session or until a session is ongoing.
+				return switchToNextSession(sessionsOrder, parkedInteractionSessions, outboundCh)
+			}
+		default:
+			hasInteractionsToSend = false
+		}
+	}
+
+	// We remove the session and its interactions buffer from the
+	// parked ones, because the next interactions we will receive
+	// for that session will be transmitted immediately.
+	close(currentSessionCh)
+	delete(parkedInteractionSessions, sessionsOrder[0])
+	return sessionsOrder
 }

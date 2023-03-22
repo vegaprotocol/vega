@@ -35,10 +35,11 @@ type ClientSignTransactionResult struct {
 }
 
 type ClientSignTransaction struct {
-	walletStore  WalletStore
-	interactor   Interactor
-	nodeSelector node.Selector
-	spam         SpamHandler
+	walletStore       WalletStore
+	interactor        Interactor
+	nodeSelector      node.Selector
+	spam              SpamHandler
+	requestController *RequestController
 }
 
 func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -73,6 +74,12 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, InvalidParams(errs)
 	}
 
+	iAmDone, err := h.requestController.IsPublicKeyAlreadyInUse(params.PublicKey)
+	if err != nil {
+		return nil, RequestNotPermittedError(err)
+	}
+	defer iAmDone()
+
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow, 2); err != nil {
 		return nil, RequestNotPermittedError(err)
 	}
@@ -91,6 +98,8 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		if !approved {
 			return nil, UserRejectionError(ErrUserRejectedSigningOfTransaction)
 		}
+	} else {
+		h.interactor.Log(ctx, traceID, InfoLog, fmt.Sprintf("Trying to sign the transaction: %v", request.String()))
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
@@ -199,11 +208,12 @@ func validateSignTransactionParams(rawParams jsonrpc.Params) (ClientParsedSignTr
 	}, nil
 }
 
-func NewClientSignTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, proofOfWork SpamHandler) *ClientSignTransaction {
+func NewClientSignTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, proofOfWork SpamHandler, requestController *RequestController) *ClientSignTransaction {
 	return &ClientSignTransaction{
-		walletStore:  walletStore,
-		interactor:   interactor,
-		nodeSelector: nodeSelector,
-		spam:         proofOfWork,
+		walletStore:       walletStore,
+		interactor:        interactor,
+		nodeSelector:      nodeSelector,
+		spam:              proofOfWork,
+		requestController: requestController,
 	}
 }

@@ -3,35 +3,24 @@ package interactor
 import (
 	"context"
 	"errors"
-	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/wallet/api"
 )
 
-var ErrRequestAlreadyBeingProcessed = errors.New("a request is already being processed")
+var ErrTooManyRequests = errors.New("there are too many requests")
 
-// SequentialInteractor is built to handle one request at a time.
-// Concurrent requests are not supported and will result in errors.
-type SequentialInteractor struct {
+// ParallelInteractor is built to handle multiple requests at a time.
+type ParallelInteractor struct {
 	// userCtx is the context used to listen to the user-side cancellation
 	// requests. It interrupts the wait on responses.
 	userCtx context.Context
 
-	receptionChan chan<- Interaction
-	responseChan  <-chan Interaction
-
-	isProcessingRequest atomic.Bool
+	outboundCh chan<- Interaction
 }
 
-func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, traceID string, workflow api.WorkflowType, numberOfSteps uint8) error {
-	// We reject all incoming request as long as there is a request being
-	// processed.
-	if !i.isProcessingRequest.CompareAndSwap(false, true) {
-		return ErrRequestAlreadyBeingProcessed
-	}
-
-	i.receptionChan <- Interaction{
+func (i *ParallelInteractor) NotifyInteractionSessionBegan(_ context.Context, traceID string, workflow api.WorkflowType, numberOfSteps uint8) error {
+	interaction := Interaction{
 		TraceID: traceID,
 		Name:    InteractionSessionBeganName,
 		Data: InteractionSessionBegan{
@@ -40,25 +29,28 @@ func (i *SequentialInteractor) NotifyInteractionSessionBegan(_ context.Context, 
 		},
 	}
 
-	return nil
+	select {
+	case i.outboundCh <- interaction:
+		return nil
+	default:
+		return ErrTooManyRequests
+	}
 }
 
-func (i *SequentialInteractor) NotifyInteractionSessionEnded(_ context.Context, traceID string) {
-	i.receptionChan <- Interaction{
+func (i *ParallelInteractor) NotifyInteractionSessionEnded(_ context.Context, traceID string) {
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    InteractionSessionEndedName,
 		Data:    InteractionSessionEnded{},
 	}
-
-	i.isProcessingRequest.Swap(false)
 }
 
-func (i *SequentialInteractor) NotifyError(ctx context.Context, traceID string, t api.ErrorType, err error) {
+func (i *ParallelInteractor) NotifyError(ctx context.Context, traceID string, t api.ErrorType, err error) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
 
-	i.receptionChan <- Interaction{
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    ErrorOccurredName,
 		Data: ErrorOccurred{
@@ -68,12 +60,12 @@ func (i *SequentialInteractor) NotifyError(ctx context.Context, traceID string, 
 	}
 }
 
-func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID string, stepNumber uint8, txHash, deserializedInputData, tx string, sentAt time.Time, host string) {
+func (i *ParallelInteractor) NotifySuccessfulTransaction(ctx context.Context, traceID string, stepNumber uint8, txHash, deserializedInputData, tx string, sentAt time.Time, host string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
 
-	i.receptionChan <- Interaction{
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    TransactionSucceededName,
 		Data: TransactionSucceeded{
@@ -89,12 +81,12 @@ func (i *SequentialInteractor) NotifySuccessfulTransaction(ctx context.Context, 
 	}
 }
 
-func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, traceID string, stepNumber uint8, deserializedInputData, tx string, err error, sentAt time.Time, host string) {
+func (i *ParallelInteractor) NotifyFailedTransaction(ctx context.Context, traceID string, stepNumber uint8, deserializedInputData, tx string, err error, sentAt time.Time, host string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
 
-	i.receptionChan <- Interaction{
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    TransactionFailedName,
 		Data: TransactionFailed{
@@ -110,12 +102,12 @@ func (i *SequentialInteractor) NotifyFailedTransaction(ctx context.Context, trac
 	}
 }
 
-func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string, stepNumber uint8, message string) {
+func (i *ParallelInteractor) NotifySuccessfulRequest(ctx context.Context, traceID string, stepNumber uint8, message string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
 
-	i.receptionChan <- Interaction{
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestSucceededName,
 		Data: RequestSucceeded{
@@ -125,12 +117,12 @@ func (i *SequentialInteractor) NotifySuccessfulRequest(ctx context.Context, trac
 	}
 }
 
-func (i *SequentialInteractor) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
+func (i *ParallelInteractor) Log(ctx context.Context, traceID string, t api.LogType, msg string) {
 	if err := ctx.Err(); err != nil {
 		return
 	}
 
-	i.receptionChan <- Interaction{
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    LogName,
 		Data: Log{
@@ -140,21 +132,29 @@ func (i *SequentialInteractor) Log(ctx context.Context, traceID string, t api.Lo
 	}
 }
 
-func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context, traceID string, stepNumber uint8, hostname string) (string, error) {
+func (i *ParallelInteractor) RequestWalletConnectionReview(ctx context.Context, traceID string, stepNumber uint8, hostname string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestWalletConnectionReviewName,
 		Data: RequestWalletConnectionReview{
 			Hostname:   hostname,
 			StepNumber: stepNumber,
+			ResponseCh: responseCh,
+			ControlCh:  controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, WalletConnectionDecisionName)
+	interaction, err := i.waitForResponse(ctx, traceID, WalletConnectionDecisionName, responseCh, controlCh)
 	if err != nil {
 		return "", err
 	}
@@ -167,22 +167,30 @@ func (i *SequentialInteractor) RequestWalletConnectionReview(ctx context.Context
 	return decision.ConnectionApproval, nil
 }
 
-func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, traceID string, stepNumber uint8, hostname string, availableWallets []string) (string, error) {
+func (i *ParallelInteractor) RequestWalletSelection(ctx context.Context, traceID string, stepNumber uint8, hostname string, availableWallets []string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestWalletSelectionName,
 		Data: RequestWalletSelection{
 			Hostname:         hostname,
 			AvailableWallets: availableWallets,
 			StepNumber:       stepNumber,
+			ResponseCh:       responseCh,
+			ControlCh:        controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, SelectedWalletName)
+	interaction, err := i.waitForResponse(ctx, traceID, SelectedWalletName, responseCh, controlCh)
 	if err != nil {
 		return "", err
 	}
@@ -195,22 +203,30 @@ func (i *SequentialInteractor) RequestWalletSelection(ctx context.Context, trace
 	return selectedWallet.Wallet, nil
 }
 
-func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet, reason string) (string, error) {
+func (i *ParallelInteractor) RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet, reason string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestPassphraseName,
 		Data: RequestPassphrase{
 			Wallet:     wallet,
 			Reason:     reason,
 			StepNumber: stepNumber,
+			ResponseCh: responseCh,
+			ControlCh:  controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, EnteredPassphraseName)
+	interaction, err := i.waitForResponse(ctx, traceID, EnteredPassphraseName, responseCh, controlCh)
 	if err != nil {
 		return "", err
 	}
@@ -222,12 +238,18 @@ func (i *SequentialInteractor) RequestPassphrase(ctx context.Context, traceID st
 	return enteredPassphrase.Passphrase, nil
 }
 
-func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet string, perms map[string]string) (bool, error) {
+func (i *ParallelInteractor) RequestPermissionsReview(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet string, perms map[string]string) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestPermissionsReviewName,
 		Data: RequestPermissionsReview{
@@ -235,10 +257,12 @@ func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, tra
 			Wallet:      wallet,
 			Permissions: perms,
 			StepNumber:  stepNumber,
+			ResponseCh:  responseCh,
+			ControlCh:   controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName, responseCh, controlCh)
 	if err != nil {
 		return false, err
 	}
@@ -250,12 +274,18 @@ func (i *SequentialInteractor) RequestPermissionsReview(ctx context.Context, tra
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+func (i *ParallelInteractor) RequestTransactionReviewForSending(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestTransactionReviewForSendingName,
 		Data: RequestTransactionReviewForSending{
@@ -265,10 +295,12 @@ func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Co
 			Transaction: transaction,
 			ReceivedAt:  receivedAt,
 			StepNumber:  stepNumber,
+			ResponseCh:  responseCh,
+			ControlCh:   controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName, responseCh, controlCh)
 	if err != nil {
 		return false, err
 	}
@@ -280,12 +312,18 @@ func (i *SequentialInteractor) RequestTransactionReviewForSending(ctx context.Co
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+func (i *ParallelInteractor) RequestTransactionReviewForSigning(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestTransactionReviewForSigningName,
 		Data: RequestTransactionReviewForSigning{
@@ -295,10 +333,12 @@ func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Co
 			Transaction: transaction,
 			ReceivedAt:  receivedAt,
 			StepNumber:  stepNumber,
+			ResponseCh:  responseCh,
+			ControlCh:   controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName, responseCh, controlCh)
 	if err != nil {
 		return false, err
 	}
@@ -310,12 +350,18 @@ func (i *SequentialInteractor) RequestTransactionReviewForSigning(ctx context.Co
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) RequestTransactionReviewForChecking(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
+func (i *ParallelInteractor) RequestTransactionReviewForChecking(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error) {
 	if err := ctx.Err(); err != nil {
 		return false, api.ErrRequestInterrupted
 	}
 
-	i.receptionChan <- Interaction{
+	responseCh := make(chan Interaction, 1)
+	defer close(responseCh)
+
+	controlCh := make(chan error, 1)
+	defer close(controlCh)
+
+	i.outboundCh <- Interaction{
 		TraceID: traceID,
 		Name:    RequestTransactionReviewForCheckingName,
 		Data: RequestTransactionReviewForChecking{
@@ -325,10 +371,12 @@ func (i *SequentialInteractor) RequestTransactionReviewForChecking(ctx context.C
 			Transaction: transaction,
 			ReceivedAt:  receivedAt,
 			StepNumber:  stepNumber,
+			ResponseCh:  responseCh,
+			ControlCh:   controlCh,
 		},
 	}
 
-	interaction, err := i.waitForResponse(ctx, traceID, DecisionName)
+	interaction, err := i.waitForResponse(ctx, traceID, DecisionName, responseCh, controlCh)
 	if err != nil {
 		return false, err
 	}
@@ -340,16 +388,17 @@ func (i *SequentialInteractor) RequestTransactionReviewForChecking(ctx context.C
 	return approval.Approved, nil
 }
 
-func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID string, expectedResponseName InteractionName) (Interaction, error) {
+func (i *ParallelInteractor) waitForResponse(ctx context.Context, traceID string, expectedResponseName InteractionName, responseCh <-chan Interaction, controlCh chan<- error) (Interaction, error) {
 	var response Interaction
 	running := true
 	for running {
 		select {
 		case <-ctx.Done():
+			controlCh <- api.ErrRequestInterrupted
 			return Interaction{}, api.ErrRequestInterrupted
 		case <-i.userCtx.Done():
 			return Interaction{}, api.ErrUserCloseTheConnection
-		case r := <-i.responseChan:
+		case r := <-responseCh:
 			response = r
 			running = false
 		}
@@ -370,15 +419,11 @@ func (i *SequentialInteractor) waitForResponse(ctx context.Context, traceID stri
 	return response, nil
 }
 
-func NewSequentialInteractor(userCtx context.Context, receptionChan chan<- Interaction, responseChan <-chan Interaction) *SequentialInteractor {
-	i := &SequentialInteractor{
-		userCtx:             userCtx,
-		receptionChan:       receptionChan,
-		responseChan:        responseChan,
-		isProcessingRequest: atomic.Bool{},
+func NewParallelInteractor(userCtx context.Context, outboundCh chan<- Interaction) *ParallelInteractor {
+	i := &ParallelInteractor{
+		userCtx:    userCtx,
+		outboundCh: outboundCh,
 	}
-
-	i.isProcessingRequest.Swap(false)
 
 	return i
 }

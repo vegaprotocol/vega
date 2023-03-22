@@ -73,6 +73,7 @@ require (
 	github.com/libp2p/go-libp2p v0.27.3
 	github.com/machinebox/graphql v0.2.2
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/muesli/cancelreader v0.2.2
 	github.com/muesli/termenv v0.11.0
 	github.com/multiformats/go-multiaddr v0.9.0
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220317090546-adb2f9614b17

@@ -9,11 +9,7 @@ import (
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
 )
 
-var (
-	ErrPartyBanned       = errors.New("the network's spam rules has banned this key from submitting the transaction")
-	ErrPartyBannedPoW    = errors.New("the network's spam rules has banned this key from submitting all transaction")
-	ErrPartyWillBeBanned = errors.New("submitting this transaction will cause this key to be temporarily banned by the the network")
-)
+var ErrPartyWillBeBanned = errors.New("submitting this transaction will cause this key to be temporarily banned by the the network")
 
 type Handler struct {
 	// chainID to the counter for transactions sent.

@@ -40,10 +40,11 @@ type ClientSendTransactionResult struct {
 }
 
 type ClientSendTransaction struct {
-	walletStore  WalletStore
-	interactor   Interactor
-	nodeSelector node.Selector
-	spam         SpamHandler
+	walletStore       WalletStore
+	interactor        Interactor
+	nodeSelector      node.Selector
+	spam              SpamHandler
+	requestController *RequestController
 }
 
 func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -79,6 +80,12 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, InvalidParams(errs)
 	}
 
+	iAmDone, err := h.requestController.IsPublicKeyAlreadyInUse(params.PublicKey)
+	if err != nil {
+		return nil, RequestNotPermittedError(err)
+	}
+	defer iAmDone()
+
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow, 2); err != nil {
 		return nil, RequestNotPermittedError(err)
 	}
@@ -97,6 +104,8 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		if !approved {
 			return nil, UserRejectionError(ErrUserRejectedSendingOfTransaction)
 		}
+	} else {
+		h.interactor.Log(ctx, traceID, InfoLog, fmt.Sprintf("Trying to send the transaction: %v", request.String()))
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
@@ -254,11 +263,12 @@ func validateSendTransactionParams(rawParams jsonrpc.Params) (ClientParsedSendTr
 	}, nil
 }
 
-func NewClientSendTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler) *ClientSendTransaction {
+func NewClientSendTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler, requestController *RequestController) *ClientSendTransaction {
 	return &ClientSendTransaction{
-		walletStore:  walletStore,
-		interactor:   interactor,
-		nodeSelector: nodeSelector,
-		spam:         pow,
+		walletStore:       walletStore,
+		interactor:        interactor,
+		nodeSelector:      nodeSelector,
+		spam:              pow,
+		requestController: requestController,
 	}
 }
