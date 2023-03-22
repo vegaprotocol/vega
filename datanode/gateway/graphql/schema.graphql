@@ -3509,7 +3509,7 @@ type ProposalDetail {
   requiredMajority: String!
   "Required participation for this proposal to succeed"
   requiredParticipation: String!
-  "The equity-like share required for a market amendment proposal to be enacted (if not met, the proposal will not be enacted), represented as a fraction"
+  "Equity-like share required for a market amendment proposal to be enacted (if not met, the proposal will not be enacted), represented as a fraction that can be converted to a percentage"
   requiredLpMajority: String
   "The market share of LPs' equity-like share that must take part in the market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the proposal receives only YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
   requiredLpParticipation: String
