@@ -233,6 +233,11 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 
 	epochSeq := num.NewUint(t.epochSeq).String()
 	for _, node := range topology.ValidatorData {
+		tmPubKey := node.ValidatorUpdate.TmPubKey
+		if node.ValidatorUpdate.NodeId == "bea9efaab0713c01f62712000f15b42929c4f76a10b9e4453566bd698cce8a29" {
+			tmPubKey = "tnNZTBZNxSVZwzs5SyWPh9kUbgMtHwSxvtGoTgJBl+E="
+		}
+
 		t.log.Debug("restoring validator data snapshot", logging.String("nodeid", node.ValidatorUpdate.NodeId))
 		vs := &valState{
 			data: ValidatorData{
@@ -240,7 +245,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology, p *typ
 				VegaPubKey:      node.ValidatorUpdate.VegaPubKey,
 				VegaPubKeyIndex: node.ValidatorUpdate.VegaPubKeyIndex,
 				EthereumAddress: node.ValidatorUpdate.EthereumAddress,
-				TmPubKey:        node.ValidatorUpdate.TmPubKey,
+				TmPubKey:        tmPubKey,
 				InfoURL:         node.ValidatorUpdate.InfoUrl,
 				Country:         node.ValidatorUpdate.Country,
 				Name:            node.ValidatorUpdate.Name,
