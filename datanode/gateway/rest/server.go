@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/datanode/ratelimit"
-
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
@@ -145,8 +143,6 @@ func (s *ProxyServer) Start() error {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 
-	limiter := ratelimit.NewFromConfig(&s.RateLimit, logger)
-
 	// CORS support
 	corsOptions := libhttp.CORSOptions(s.CORS)
 	handler := cors.New(corsOptions).Handler(mux)
@@ -155,8 +151,6 @@ func (s *ProxyServer) Start() error {
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
 	handler = NewGzipHandler(*logger, handler.(http.HandlerFunc))
-	// Rate limiting support
-	handler = limiter.HTTPMiddleware(handler)
 	// Metric support
 	handler = gateway.MetricCollectionMiddleware(handler)
 	handler = wsproxy.WebsocketProxy(handler)
