@@ -516,5 +516,5 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ERC20MultiSigSignerRemovedBundle
   NodeBasic:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeBasic
-  TransactionEntities:
-    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ListTransactionEntitiesResponse
+  Entities:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ListEntitiesResponse

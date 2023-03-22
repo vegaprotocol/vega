@@ -76,8 +76,8 @@ var (
 	ErrorInvalidAssetID = newInvalidArgumentError("invalid asset ID")
 	// ErrMissingNodeID is returned when the node ID is missing from the request.
 	ErrMissingNodeID = newInvalidArgumentError("missing node id")
-	// ErrOracleServiceSpecID is returned when there was no data foind for the given ID.
-	ErrOracleServiceGetSpec = errors.New("failed retrieve data for oracle spec")
+	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
+	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")
 	// ErrERC20InvalidTokenContractAddress is returned when the ERC20 token contract address is invalid.
 	ErrERC20InvalidTokenContractAddress = errors.New("invalid erc20 token contract address")
 	ErrSendingGRPCHeader                = errors.New("failed to send header")

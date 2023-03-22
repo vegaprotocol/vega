@@ -2901,8 +2901,8 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 	return resp.Markets, nil
 }
 
-func (r *myQueryResolver) TransactionEntities(ctx context.Context, txHash string) (*v2.ListTransactionEntitiesResponse, error) {
-	resp, err := r.tradingDataClientV2.ListTransactionEntities(ctx, &v2.ListTransactionEntitiesRequest{
+func (r *myQueryResolver) Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error) {
+	resp, err := r.tradingDataClientV2.ListEntities(ctx, &v2.ListEntitiesRequest{
 		TransactionHash: txHash,
 	})
 	if err != nil {

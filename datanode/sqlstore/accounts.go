@@ -64,6 +64,9 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 }
 
 func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (entities.Account, error) {
+	as.cacheLock.Lock()
+	defer as.cacheLock.Unlock()
+
 	// It's possible that in-between releasing the read lock and obtaining the write lock that the account has been
 	// added to cache, so we need to check here and return the cached account if that's the case.
 	if account, ok := as.idToAccount[accountID]; ok {

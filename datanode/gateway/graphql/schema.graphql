@@ -695,7 +695,7 @@ type Query {
     pagination: Pagination
   ): PositionConnection
 
-  transactionEntities(txHash: String!): TransactionEntities!
+  entities(txHash: String!): Entities!
 }
 
 "All the states a transfer can transition between"
@@ -4611,33 +4611,64 @@ type DataSourceDefinition {
   sourceType: DataSourceKind!
 }
 
-type TransactionEntities {
+"""
+A list of all entities created by transaction hash
+"""
+type Entities {
+  "A list of accounts created by the transaction hash"
   accounts: [AccountEvent]
+  "A list of orders created by the transaction hash"
   orders: [Order]
+  "A list of positions created by the transaction hash"
   positions: [Position]
+  "A list of ledgerEntries created by the transaction hash"
   ledgerEntries: [LedgerEntry]
+  "A list of balanceChanges created by the transaction hash"
   balanceChanges: [AccountBalance]
+  "A list of transfers created by the transaction hash"
   transfers: [Transfer]
+  "A list of votes created by the transaction hash"
   votes: [Vote]
+  "A list of erc20MultiSigSignerAddedBundles created by the transaction hash"
   erc20MultiSigSignerAddedBundles: [ERC20MultiSigSignerAddedBundle]
+  "A list of erc20MultiSigSignerRemovedBundles created by the transaction hash"
   erc20MultiSigSignerRemovedBundles: [ERC20MultiSigSignerRemovedBundle]
+  "A list of trades created by the transaction hash"
   trades: [Trade]
+  "A list of oracleSpecs created by the transaction hash"
   oracleSpecs: [OracleSpec]
+  "A list of oracleData created by the transaction hash"
   oracleData: [OracleData]
+  "A list of markets created by the transaction hash"
   markets: [Market]
+  "A list of parties created by the transaction hash"
   parties: [Party]
+  "A list of marginLevels created by the transaction hash"
   marginLevels: [MarginLevels]
+  "A list of rewards created by the transaction hash"
   rewards: [Reward]
+  "A list of deposits created by the transaction hash"
   deposits: [Deposit]
+  "A list of withdrawals created by the transaction hash"
   withdrawals: [Withdrawal]
+  "A list of assets created by the transaction hash"
   assets: [Asset]
+  "A list of liquidityProvisions created by the transaction hash"
   liquidityProvisions: [LiquidityProvision]
+  "A list of proposals created by the transaction hash"
   proposals: [ProposalDetail]
+  "A list of delegations created by the transaction hash"
   delegations: [Delegation]
+  "A list of nodes created by the transaction hash"
   nodes: [NodeBasic]
+  "A list of nodeSignatures created by the transaction hash"
   nodeSignatures: [NodeSignature]
+  "A list of networkParameters created by the transaction hash"
   networkParameters: [NetworkParameter]
+  "A list of keyRotations created by the transaction hash"
   keyRotations: [KeyRotation]
+  "A list of ethereumKeyRotations created by the transaction hash"
   ethereumKeyRotations: [EthereumKeyRotation]
+  "A list of protocolUpgradeProposals created by the transaction hash"
   protocolUpgradeProposals: [ProtocolUpgradeProposal]
 }

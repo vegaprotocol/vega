@@ -494,7 +494,10 @@ service TradingDataService {
     // Response contains the bootstrap peers
     rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse);
 
-    rpc ListTransactionEntities(ListTransactionEntitiesRequest) returns (ListTransactionEntitiesResponse);
+    // All entities list
+    //
+    // List all entities created by transaction hash
+    rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
 
     // Ping
     //
@@ -2288,7 +2291,7 @@ message ObserveDelegationsResponse {
 
 // Represents a basic node without any epoch specific details like delegations, staking, rewards etc.
 message NodeBasic {
-    // The node ID (wallet ID)
+    // The node ID
     string id = 1;
     // Node operator's public key
     string pub_key = 2;
@@ -2831,11 +2834,11 @@ message NetworkHistoryBootstrapPeersResponse {
     repeated string bootstrap_peers = 1;
 }
 
-message ListTransactionEntitiesRequest {
+message ListEntitiesRequest {
     string transaction_hash = 1;
 }
 
-message ListTransactionEntitiesResponse {
+message ListEntitiesResponse {
     repeated vega.Account accounts = 1;
     repeated vega.Order orders = 2;
     repeated vega.Position positions = 3;

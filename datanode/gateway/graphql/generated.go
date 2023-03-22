@@ -458,6 +458,37 @@ type ComplexityRoot struct {
 		Address func(childComplexity int) int
 	}
 
+	Entities struct {
+		Accounts                          func(childComplexity int) int
+		Assets                            func(childComplexity int) int
+		BalanceChanges                    func(childComplexity int) int
+		Delegations                       func(childComplexity int) int
+		Deposits                          func(childComplexity int) int
+		Erc20MultiSigSignerAddedBundles   func(childComplexity int) int
+		Erc20MultiSigSignerRemovedBundles func(childComplexity int) int
+		EthereumKeyRotations              func(childComplexity int) int
+		KeyRotations                      func(childComplexity int) int
+		LedgerEntries                     func(childComplexity int) int
+		LiquidityProvisions               func(childComplexity int) int
+		MarginLevels                      func(childComplexity int) int
+		Markets                           func(childComplexity int) int
+		NetworkParameters                 func(childComplexity int) int
+		NodeSignatures                    func(childComplexity int) int
+		Nodes                             func(childComplexity int) int
+		OracleData                        func(childComplexity int) int
+		OracleSpecs                       func(childComplexity int) int
+		Orders                            func(childComplexity int) int
+		Parties                           func(childComplexity int) int
+		Positions                         func(childComplexity int) int
+		Proposals                         func(childComplexity int) int
+		ProtocolUpgradeProposals          func(childComplexity int) int
+		Rewards                           func(childComplexity int) int
+		Trades                            func(childComplexity int) int
+		Transfers                         func(childComplexity int) int
+		Votes                             func(childComplexity int) int
+		Withdrawals                       func(childComplexity int) int
+	}
+
 	Epoch struct {
 		DelegationsConnection func(childComplexity int, partyID *string, nodeID *string, pagination *v2.Pagination) int
 		ID                    func(childComplexity int) int
@@ -1391,6 +1422,7 @@ type ComplexityRoot struct {
 		CoreSnapshots                      func(childComplexity int, pagination *v2.Pagination) int
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		Entities                           func(childComplexity int, txHash string) int
 		Epoch                              func(childComplexity int, id *string) int
 		EpochRewardSummaries               func(childComplexity int, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
@@ -1430,7 +1462,6 @@ type ComplexityRoot struct {
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
 		Statistics                         func(childComplexity int) int
-		TransactionEntities                func(childComplexity int, txHash string) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
 		Withdrawals                        func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -1682,37 +1713,6 @@ type ComplexityRoot struct {
 		SellerID           func(childComplexity int) int
 		Size               func(childComplexity int) int
 		Type               func(childComplexity int) int
-	}
-
-	TransactionEntities struct {
-		Accounts                          func(childComplexity int) int
-		Assets                            func(childComplexity int) int
-		BalanceChanges                    func(childComplexity int) int
-		Delegations                       func(childComplexity int) int
-		Deposits                          func(childComplexity int) int
-		Erc20MultiSigSignerAddedBundles   func(childComplexity int) int
-		Erc20MultiSigSignerRemovedBundles func(childComplexity int) int
-		EthereumKeyRotations              func(childComplexity int) int
-		KeyRotations                      func(childComplexity int) int
-		LedgerEntries                     func(childComplexity int) int
-		LiquidityProvisions               func(childComplexity int) int
-		MarginLevels                      func(childComplexity int) int
-		Markets                           func(childComplexity int) int
-		NetworkParameters                 func(childComplexity int) int
-		NodeSignatures                    func(childComplexity int) int
-		Nodes                             func(childComplexity int) int
-		OracleData                        func(childComplexity int) int
-		OracleSpecs                       func(childComplexity int) int
-		Orders                            func(childComplexity int) int
-		Parties                           func(childComplexity int) int
-		Positions                         func(childComplexity int) int
-		Proposals                         func(childComplexity int) int
-		ProtocolUpgradeProposals          func(childComplexity int) int
-		Rewards                           func(childComplexity int) int
-		Trades                            func(childComplexity int) int
-		Transfers                         func(childComplexity int) int
-		Votes                             func(childComplexity int) int
-		Withdrawals                       func(childComplexity int) int
 	}
 
 	TransactionResult struct {
@@ -2269,7 +2269,7 @@ type QueryResolver interface {
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 	Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error)
-	TransactionEntities(ctx context.Context, txHash string) (*v2.ListTransactionEntitiesResponse, error)
+	Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error)
 }
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -3655,6 +3655,202 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ETHAddress.Address(childComplexity), true
+
+	case "Entities.accounts":
+		if e.complexity.Entities.Accounts == nil {
+			break
+		}
+
+		return e.complexity.Entities.Accounts(childComplexity), true
+
+	case "Entities.assets":
+		if e.complexity.Entities.Assets == nil {
+			break
+		}
+
+		return e.complexity.Entities.Assets(childComplexity), true
+
+	case "Entities.balanceChanges":
+		if e.complexity.Entities.BalanceChanges == nil {
+			break
+		}
+
+		return e.complexity.Entities.BalanceChanges(childComplexity), true
+
+	case "Entities.delegations":
+		if e.complexity.Entities.Delegations == nil {
+			break
+		}
+
+		return e.complexity.Entities.Delegations(childComplexity), true
+
+	case "Entities.deposits":
+		if e.complexity.Entities.Deposits == nil {
+			break
+		}
+
+		return e.complexity.Entities.Deposits(childComplexity), true
+
+	case "Entities.erc20MultiSigSignerAddedBundles":
+		if e.complexity.Entities.Erc20MultiSigSignerAddedBundles == nil {
+			break
+		}
+
+		return e.complexity.Entities.Erc20MultiSigSignerAddedBundles(childComplexity), true
+
+	case "Entities.erc20MultiSigSignerRemovedBundles":
+		if e.complexity.Entities.Erc20MultiSigSignerRemovedBundles == nil {
+			break
+		}
+
+		return e.complexity.Entities.Erc20MultiSigSignerRemovedBundles(childComplexity), true
+
+	case "Entities.ethereumKeyRotations":
+		if e.complexity.Entities.EthereumKeyRotations == nil {
+			break
+		}
+
+		return e.complexity.Entities.EthereumKeyRotations(childComplexity), true
+
+	case "Entities.keyRotations":
+		if e.complexity.Entities.KeyRotations == nil {
+			break
+		}
+
+		return e.complexity.Entities.KeyRotations(childComplexity), true
+
+	case "Entities.ledgerEntries":
+		if e.complexity.Entities.LedgerEntries == nil {
+			break
+		}
+
+		return e.complexity.Entities.LedgerEntries(childComplexity), true
+
+	case "Entities.liquidityProvisions":
+		if e.complexity.Entities.LiquidityProvisions == nil {
+			break
+		}
+
+		return e.complexity.Entities.LiquidityProvisions(childComplexity), true
+
+	case "Entities.marginLevels":
+		if e.complexity.Entities.MarginLevels == nil {
+			break
+		}
+
+		return e.complexity.Entities.MarginLevels(childComplexity), true
+
+	case "Entities.markets":
+		if e.complexity.Entities.Markets == nil {
+			break
+		}
+
+		return e.complexity.Entities.Markets(childComplexity), true
+
+	case "Entities.networkParameters":
+		if e.complexity.Entities.NetworkParameters == nil {
+			break
+		}
+
+		return e.complexity.Entities.NetworkParameters(childComplexity), true
+
+	case "Entities.nodeSignatures":
+		if e.complexity.Entities.NodeSignatures == nil {
+			break
+		}
+
+		return e.complexity.Entities.NodeSignatures(childComplexity), true
+
+	case "Entities.nodes":
+		if e.complexity.Entities.Nodes == nil {
+			break
+		}
+
+		return e.complexity.Entities.Nodes(childComplexity), true
+
+	case "Entities.oracleData":
+		if e.complexity.Entities.OracleData == nil {
+			break
+		}
+
+		return e.complexity.Entities.OracleData(childComplexity), true
+
+	case "Entities.oracleSpecs":
+		if e.complexity.Entities.OracleSpecs == nil {
+			break
+		}
+
+		return e.complexity.Entities.OracleSpecs(childComplexity), true
+
+	case "Entities.orders":
+		if e.complexity.Entities.Orders == nil {
+			break
+		}
+
+		return e.complexity.Entities.Orders(childComplexity), true
+
+	case "Entities.parties":
+		if e.complexity.Entities.Parties == nil {
+			break
+		}
+
+		return e.complexity.Entities.Parties(childComplexity), true
+
+	case "Entities.positions":
+		if e.complexity.Entities.Positions == nil {
+			break
+		}
+
+		return e.complexity.Entities.Positions(childComplexity), true
+
+	case "Entities.proposals":
+		if e.complexity.Entities.Proposals == nil {
+			break
+		}
+
+		return e.complexity.Entities.Proposals(childComplexity), true
+
+	case "Entities.protocolUpgradeProposals":
+		if e.complexity.Entities.ProtocolUpgradeProposals == nil {
+			break
+		}
+
+		return e.complexity.Entities.ProtocolUpgradeProposals(childComplexity), true
+
+	case "Entities.rewards":
+		if e.complexity.Entities.Rewards == nil {
+			break
+		}
+
+		return e.complexity.Entities.Rewards(childComplexity), true
+
+	case "Entities.trades":
+		if e.complexity.Entities.Trades == nil {
+			break
+		}
+
+		return e.complexity.Entities.Trades(childComplexity), true
+
+	case "Entities.transfers":
+		if e.complexity.Entities.Transfers == nil {
+			break
+		}
+
+		return e.complexity.Entities.Transfers(childComplexity), true
+
+	case "Entities.votes":
+		if e.complexity.Entities.Votes == nil {
+			break
+		}
+
+		return e.complexity.Entities.Votes(childComplexity), true
+
+	case "Entities.withdrawals":
+		if e.complexity.Entities.Withdrawals == nil {
+			break
+		}
+
+		return e.complexity.Entities.Withdrawals(childComplexity), true
 
 	case "Epoch.delegationsConnection":
 		if e.complexity.Epoch.DelegationsConnection == nil {
@@ -7741,6 +7937,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Deposits(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.entities":
+		if e.complexity.Query.Entities == nil {
+			break
+		}
+
+		args, err := ec.field_Query_entities_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Entities(childComplexity, args["txHash"].(string)), true
+
 	case "Query.epoch":
 		if e.complexity.Query.Epoch == nil {
 			break
@@ -8178,18 +8386,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Statistics(childComplexity), true
-
-	case "Query.transactionEntities":
-		if e.complexity.Query.TransactionEntities == nil {
-			break
-		}
-
-		args, err := ec.field_Query_transactionEntities_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.TransactionEntities(childComplexity, args["txHash"].(string)), true
 
 	case "Query.transfersConnection":
 		if e.complexity.Query.TransfersConnection == nil {
@@ -9396,202 +9592,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TradeUpdate.Type(childComplexity), true
-
-	case "TransactionEntities.accounts":
-		if e.complexity.TransactionEntities.Accounts == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Accounts(childComplexity), true
-
-	case "TransactionEntities.assets":
-		if e.complexity.TransactionEntities.Assets == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Assets(childComplexity), true
-
-	case "TransactionEntities.balanceChanges":
-		if e.complexity.TransactionEntities.BalanceChanges == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.BalanceChanges(childComplexity), true
-
-	case "TransactionEntities.delegations":
-		if e.complexity.TransactionEntities.Delegations == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Delegations(childComplexity), true
-
-	case "TransactionEntities.deposits":
-		if e.complexity.TransactionEntities.Deposits == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Deposits(childComplexity), true
-
-	case "TransactionEntities.erc20MultiSigSignerAddedBundles":
-		if e.complexity.TransactionEntities.Erc20MultiSigSignerAddedBundles == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Erc20MultiSigSignerAddedBundles(childComplexity), true
-
-	case "TransactionEntities.erc20MultiSigSignerRemovedBundles":
-		if e.complexity.TransactionEntities.Erc20MultiSigSignerRemovedBundles == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Erc20MultiSigSignerRemovedBundles(childComplexity), true
-
-	case "TransactionEntities.ethereumKeyRotations":
-		if e.complexity.TransactionEntities.EthereumKeyRotations == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.EthereumKeyRotations(childComplexity), true
-
-	case "TransactionEntities.keyRotations":
-		if e.complexity.TransactionEntities.KeyRotations == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.KeyRotations(childComplexity), true
-
-	case "TransactionEntities.ledgerEntries":
-		if e.complexity.TransactionEntities.LedgerEntries == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.LedgerEntries(childComplexity), true
-
-	case "TransactionEntities.liquidityProvisions":
-		if e.complexity.TransactionEntities.LiquidityProvisions == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.LiquidityProvisions(childComplexity), true
-
-	case "TransactionEntities.marginLevels":
-		if e.complexity.TransactionEntities.MarginLevels == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.MarginLevels(childComplexity), true
-
-	case "TransactionEntities.markets":
-		if e.complexity.TransactionEntities.Markets == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Markets(childComplexity), true
-
-	case "TransactionEntities.networkParameters":
-		if e.complexity.TransactionEntities.NetworkParameters == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.NetworkParameters(childComplexity), true
-
-	case "TransactionEntities.nodeSignatures":
-		if e.complexity.TransactionEntities.NodeSignatures == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.NodeSignatures(childComplexity), true
-
-	case "TransactionEntities.nodes":
-		if e.complexity.TransactionEntities.Nodes == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Nodes(childComplexity), true
-
-	case "TransactionEntities.oracleData":
-		if e.complexity.TransactionEntities.OracleData == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.OracleData(childComplexity), true
-
-	case "TransactionEntities.oracleSpecs":
-		if e.complexity.TransactionEntities.OracleSpecs == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.OracleSpecs(childComplexity), true
-
-	case "TransactionEntities.orders":
-		if e.complexity.TransactionEntities.Orders == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Orders(childComplexity), true
-
-	case "TransactionEntities.parties":
-		if e.complexity.TransactionEntities.Parties == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Parties(childComplexity), true
-
-	case "TransactionEntities.positions":
-		if e.complexity.TransactionEntities.Positions == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Positions(childComplexity), true
-
-	case "TransactionEntities.proposals":
-		if e.complexity.TransactionEntities.Proposals == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Proposals(childComplexity), true
-
-	case "TransactionEntities.protocolUpgradeProposals":
-		if e.complexity.TransactionEntities.ProtocolUpgradeProposals == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.ProtocolUpgradeProposals(childComplexity), true
-
-	case "TransactionEntities.rewards":
-		if e.complexity.TransactionEntities.Rewards == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Rewards(childComplexity), true
-
-	case "TransactionEntities.trades":
-		if e.complexity.TransactionEntities.Trades == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Trades(childComplexity), true
-
-	case "TransactionEntities.transfers":
-		if e.complexity.TransactionEntities.Transfers == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Transfers(childComplexity), true
-
-	case "TransactionEntities.votes":
-		if e.complexity.TransactionEntities.Votes == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Votes(childComplexity), true
-
-	case "TransactionEntities.withdrawals":
-		if e.complexity.TransactionEntities.Withdrawals == nil {
-			break
-		}
-
-		return e.complexity.TransactionEntities.Withdrawals(childComplexity), true
 
 	case "TransactionResult.error":
 		if e.complexity.TransactionResult.Error == nil {
@@ -11031,6 +11031,21 @@ func (ec *executionContext) field_Query_deposits_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_entities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("txHash"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["txHash"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_epochRewardSummaries_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -11865,21 +11880,6 @@ func (ec *executionContext) field_Query_protocolUpgradeProposals_args(ctx contex
 		}
 	}
 	args["pagination"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_transactionEntities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["txHash"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("txHash"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["txHash"] = arg0
 	return args, nil
 }
 
@@ -20611,6 +20611,1686 @@ func (ec *executionContext) fieldContext_ETHAddress_address(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_accounts(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_accounts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Accounts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Account)
+	fc.Result = res
+	return ec.marshalOAccountEvent2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_accounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "balance":
+				return ec.fieldContext_AccountEvent_balance(ctx, field)
+			case "asset":
+				return ec.fieldContext_AccountEvent_asset(ctx, field)
+			case "type":
+				return ec.fieldContext_AccountEvent_type(ctx, field)
+			case "market":
+				return ec.fieldContext_AccountEvent_market(ctx, field)
+			case "party":
+				return ec.fieldContext_AccountEvent_party(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountEvent", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_orders(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_orders(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Orders, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Order)
+	fc.Result = res
+	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_orders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Order_id(ctx, field)
+			case "price":
+				return ec.fieldContext_Order_price(ctx, field)
+			case "timeInForce":
+				return ec.fieldContext_Order_timeInForce(ctx, field)
+			case "side":
+				return ec.fieldContext_Order_side(ctx, field)
+			case "market":
+				return ec.fieldContext_Order_market(ctx, field)
+			case "size":
+				return ec.fieldContext_Order_size(ctx, field)
+			case "remaining":
+				return ec.fieldContext_Order_remaining(ctx, field)
+			case "party":
+				return ec.fieldContext_Order_party(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Order_createdAt(ctx, field)
+			case "expiresAt":
+				return ec.fieldContext_Order_expiresAt(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
+			case "reference":
+				return ec.fieldContext_Order_reference(ctx, field)
+			case "tradesConnection":
+				return ec.fieldContext_Order_tradesConnection(ctx, field)
+			case "type":
+				return ec.fieldContext_Order_type(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_Order_rejectionReason(ctx, field)
+			case "version":
+				return ec.fieldContext_Order_version(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Order_updatedAt(ctx, field)
+			case "peggedOrder":
+				return ec.fieldContext_Order_peggedOrder(ctx, field)
+			case "liquidityProvision":
+				return ec.fieldContext_Order_liquidityProvision(ctx, field)
+			case "postOnly":
+				return ec.fieldContext_Order_postOnly(ctx, field)
+			case "reduceOnly":
+				return ec.fieldContext_Order_reduceOnly(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_positions(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_positions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Positions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Position)
+	fc.Result = res
+	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_positions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "market":
+				return ec.fieldContext_Position_market(ctx, field)
+			case "party":
+				return ec.fieldContext_Position_party(ctx, field)
+			case "openVolume":
+				return ec.fieldContext_Position_openVolume(ctx, field)
+			case "realisedPNL":
+				return ec.fieldContext_Position_realisedPNL(ctx, field)
+			case "unrealisedPNL":
+				return ec.fieldContext_Position_unrealisedPNL(ctx, field)
+			case "averageEntryPrice":
+				return ec.fieldContext_Position_averageEntryPrice(ctx, field)
+			case "lossSocializationAmount":
+				return ec.fieldContext_Position_lossSocializationAmount(ctx, field)
+			case "positionStatus":
+				return ec.fieldContext_Position_positionStatus(ctx, field)
+			case "marginsConnection":
+				return ec.fieldContext_Position_marginsConnection(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Position_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_ledgerEntries(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_ledgerEntries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LedgerEntries, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.LedgerEntry)
+	fc.Result = res
+	return ec.marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLedgerEntry(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_ledgerEntries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "fromAccountId":
+				return ec.fieldContext_LedgerEntry_fromAccountId(ctx, field)
+			case "toAccountId":
+				return ec.fieldContext_LedgerEntry_toAccountId(ctx, field)
+			case "amount":
+				return ec.fieldContext_LedgerEntry_amount(ctx, field)
+			case "type":
+				return ec.fieldContext_LedgerEntry_type(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_LedgerEntry_timestamp(ctx, field)
+			case "fromAccountBalance":
+				return ec.fieldContext_LedgerEntry_fromAccountBalance(ctx, field)
+			case "toAccountBalance":
+				return ec.fieldContext_LedgerEntry_toAccountBalance(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LedgerEntry", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_balanceChanges(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_balanceChanges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BalanceChanges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.AccountBalance)
+	fc.Result = res
+	return ec.marshalOAccountBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountBalance(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_balanceChanges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "balance":
+				return ec.fieldContext_AccountBalance_balance(ctx, field)
+			case "asset":
+				return ec.fieldContext_AccountBalance_asset(ctx, field)
+			case "type":
+				return ec.fieldContext_AccountBalance_type(ctx, field)
+			case "market":
+				return ec.fieldContext_AccountBalance_market(ctx, field)
+			case "party":
+				return ec.fieldContext_AccountBalance_party(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AccountBalance", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_transfers(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_transfers(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Transfers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.Transfer)
+	fc.Result = res
+	return ec.marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_transfers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Transfer_id(ctx, field)
+			case "from":
+				return ec.fieldContext_Transfer_from(ctx, field)
+			case "fromAccountType":
+				return ec.fieldContext_Transfer_fromAccountType(ctx, field)
+			case "to":
+				return ec.fieldContext_Transfer_to(ctx, field)
+			case "toAccountType":
+				return ec.fieldContext_Transfer_toAccountType(ctx, field)
+			case "asset":
+				return ec.fieldContext_Transfer_asset(ctx, field)
+			case "amount":
+				return ec.fieldContext_Transfer_amount(ctx, field)
+			case "reference":
+				return ec.fieldContext_Transfer_reference(ctx, field)
+			case "status":
+				return ec.fieldContext_Transfer_status(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_Transfer_timestamp(ctx, field)
+			case "kind":
+				return ec.fieldContext_Transfer_kind(ctx, field)
+			case "reason":
+				return ec.fieldContext_Transfer_reason(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Transfer", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_votes(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_votes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Votes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Vote)
+	fc.Result = res
+	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_votes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "value":
+				return ec.fieldContext_Vote_value(ctx, field)
+			case "party":
+				return ec.fieldContext_Vote_party(ctx, field)
+			case "datetime":
+				return ec.fieldContext_Vote_datetime(ctx, field)
+			case "proposalId":
+				return ec.fieldContext_Vote_proposalId(ctx, field)
+			case "governanceTokenBalance":
+				return ec.fieldContext_Vote_governanceTokenBalance(ctx, field)
+			case "governanceTokenWeight":
+				return ec.fieldContext_Vote_governanceTokenWeight(ctx, field)
+			case "equityLikeShareWeight":
+				return ec.fieldContext_Vote_equityLikeShareWeight(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Vote", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_erc20MultiSigSignerAddedBundles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Erc20MultiSigSignerAddedBundles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.ERC20MultiSigSignerAddedBundle)
+	fc.Result = res
+	return ec.marshalOERC20MultiSigSignerAddedBundle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐERC20MultiSigSignerAddedBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "newSigner":
+				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_newSigner(ctx, field)
+			case "submitter":
+				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_submitter(ctx, field)
+			case "nonce":
+				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_nonce(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_timestamp(ctx, field)
+			case "signatures":
+				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_signatures(ctx, field)
+			case "epochSeq":
+				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_epochSeq(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ERC20MultiSigSignerAddedBundle", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_erc20MultiSigSignerRemovedBundles(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_erc20MultiSigSignerRemovedBundles(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Erc20MultiSigSignerRemovedBundles, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.ERC20MultiSigSignerRemovedBundle)
+	fc.Result = res
+	return ec.marshalOERC20MultiSigSignerRemovedBundle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐERC20MultiSigSignerRemovedBundle(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_erc20MultiSigSignerRemovedBundles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "oldSigner":
+				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_oldSigner(ctx, field)
+			case "submitter":
+				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_submitter(ctx, field)
+			case "nonce":
+				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_nonce(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_timestamp(ctx, field)
+			case "signatures":
+				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_signatures(ctx, field)
+			case "epochSeq":
+				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_epochSeq(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ERC20MultiSigSignerRemovedBundle", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_trades(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_trades(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trades, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Trade)
+	fc.Result = res
+	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_trades(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Trade_id(ctx, field)
+			case "market":
+				return ec.fieldContext_Trade_market(ctx, field)
+			case "buyOrder":
+				return ec.fieldContext_Trade_buyOrder(ctx, field)
+			case "sellOrder":
+				return ec.fieldContext_Trade_sellOrder(ctx, field)
+			case "buyer":
+				return ec.fieldContext_Trade_buyer(ctx, field)
+			case "seller":
+				return ec.fieldContext_Trade_seller(ctx, field)
+			case "aggressor":
+				return ec.fieldContext_Trade_aggressor(ctx, field)
+			case "price":
+				return ec.fieldContext_Trade_price(ctx, field)
+			case "size":
+				return ec.fieldContext_Trade_size(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Trade_createdAt(ctx, field)
+			case "type":
+				return ec.fieldContext_Trade_type(ctx, field)
+			case "buyerFee":
+				return ec.fieldContext_Trade_buyerFee(ctx, field)
+			case "sellerFee":
+				return ec.fieldContext_Trade_sellerFee(ctx, field)
+			case "buyerAuctionBatch":
+				return ec.fieldContext_Trade_buyerAuctionBatch(ctx, field)
+			case "sellerAuctionBatch":
+				return ec.fieldContext_Trade_sellerAuctionBatch(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Trade", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_oracleSpecs(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_oracleSpecs(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleSpecs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.OracleSpec)
+	fc.Result = res
+	return ec.marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpec(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_oracleSpecs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "dataSourceSpec":
+				return ec.fieldContext_OracleSpec_dataSourceSpec(ctx, field)
+			case "dataConnection":
+				return ec.fieldContext_OracleSpec_dataConnection(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OracleSpec", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_oracleData(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_oracleData(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OracleData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.OracleData)
+	fc.Result = res
+	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_oracleData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "externalData":
+				return ec.fieldContext_OracleData_externalData(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OracleData", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_markets(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_markets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Markets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Market)
+	fc.Result = res
+	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_markets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Market_id(ctx, field)
+			case "fees":
+				return ec.fieldContext_Market_fees(ctx, field)
+			case "tradableInstrument":
+				return ec.fieldContext_Market_tradableInstrument(ctx, field)
+			case "decimalPlaces":
+				return ec.fieldContext_Market_decimalPlaces(ctx, field)
+			case "positionDecimalPlaces":
+				return ec.fieldContext_Market_positionDecimalPlaces(ctx, field)
+			case "openingAuction":
+				return ec.fieldContext_Market_openingAuction(ctx, field)
+			case "priceMonitoringSettings":
+				return ec.fieldContext_Market_priceMonitoringSettings(ctx, field)
+			case "liquidityMonitoringParameters":
+				return ec.fieldContext_Market_liquidityMonitoringParameters(ctx, field)
+			case "tradingMode":
+				return ec.fieldContext_Market_tradingMode(ctx, field)
+			case "state":
+				return ec.fieldContext_Market_state(ctx, field)
+			case "proposal":
+				return ec.fieldContext_Market_proposal(ctx, field)
+			case "ordersConnection":
+				return ec.fieldContext_Market_ordersConnection(ctx, field)
+			case "accountsConnection":
+				return ec.fieldContext_Market_accountsConnection(ctx, field)
+			case "tradesConnection":
+				return ec.fieldContext_Market_tradesConnection(ctx, field)
+			case "depth":
+				return ec.fieldContext_Market_depth(ctx, field)
+			case "candlesConnection":
+				return ec.fieldContext_Market_candlesConnection(ctx, field)
+			case "data":
+				return ec.fieldContext_Market_data(ctx, field)
+			case "liquidityProvisionsConnection":
+				return ec.fieldContext_Market_liquidityProvisionsConnection(ctx, field)
+			case "marketTimestamps":
+				return ec.fieldContext_Market_marketTimestamps(ctx, field)
+			case "riskFactors":
+				return ec.fieldContext_Market_riskFactors(ctx, field)
+			case "lpPriceRange":
+				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_parties(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_parties(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Parties, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Party)
+	fc.Result = res
+	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_parties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Party_id(ctx, field)
+			case "ordersConnection":
+				return ec.fieldContext_Party_ordersConnection(ctx, field)
+			case "tradesConnection":
+				return ec.fieldContext_Party_tradesConnection(ctx, field)
+			case "accountsConnection":
+				return ec.fieldContext_Party_accountsConnection(ctx, field)
+			case "positionsConnection":
+				return ec.fieldContext_Party_positionsConnection(ctx, field)
+			case "marginsConnection":
+				return ec.fieldContext_Party_marginsConnection(ctx, field)
+			case "proposalsConnection":
+				return ec.fieldContext_Party_proposalsConnection(ctx, field)
+			case "votesConnection":
+				return ec.fieldContext_Party_votesConnection(ctx, field)
+			case "withdrawalsConnection":
+				return ec.fieldContext_Party_withdrawalsConnection(ctx, field)
+			case "depositsConnection":
+				return ec.fieldContext_Party_depositsConnection(ctx, field)
+			case "liquidityProvisionsConnection":
+				return ec.fieldContext_Party_liquidityProvisionsConnection(ctx, field)
+			case "delegationsConnection":
+				return ec.fieldContext_Party_delegationsConnection(ctx, field)
+			case "stakingSummary":
+				return ec.fieldContext_Party_stakingSummary(ctx, field)
+			case "rewardsConnection":
+				return ec.fieldContext_Party_rewardsConnection(ctx, field)
+			case "rewardSummaries":
+				return ec.fieldContext_Party_rewardSummaries(ctx, field)
+			case "transfersConnection":
+				return ec.fieldContext_Party_transfersConnection(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_marginLevels(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_marginLevels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarginLevels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.MarginLevels)
+	fc.Result = res
+	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_marginLevels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "market":
+				return ec.fieldContext_MarginLevels_market(ctx, field)
+			case "asset":
+				return ec.fieldContext_MarginLevels_asset(ctx, field)
+			case "party":
+				return ec.fieldContext_MarginLevels_party(ctx, field)
+			case "maintenanceLevel":
+				return ec.fieldContext_MarginLevels_maintenanceLevel(ctx, field)
+			case "searchLevel":
+				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
+			case "initialLevel":
+				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
+			case "collateralReleaseLevel":
+				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_rewards(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_rewards(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rewards, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Reward)
+	fc.Result = res
+	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_rewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "asset":
+				return ec.fieldContext_Reward_asset(ctx, field)
+			case "marketId":
+				return ec.fieldContext_Reward_marketId(ctx, field)
+			case "rewardType":
+				return ec.fieldContext_Reward_rewardType(ctx, field)
+			case "party":
+				return ec.fieldContext_Reward_party(ctx, field)
+			case "epoch":
+				return ec.fieldContext_Reward_epoch(ctx, field)
+			case "amount":
+				return ec.fieldContext_Reward_amount(ctx, field)
+			case "percentageOfTotal":
+				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
+			case "receivedAt":
+				return ec.fieldContext_Reward_receivedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_deposits(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_deposits(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deposits, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Deposit)
+	fc.Result = res
+	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_deposits(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Deposit_id(ctx, field)
+			case "party":
+				return ec.fieldContext_Deposit_party(ctx, field)
+			case "amount":
+				return ec.fieldContext_Deposit_amount(ctx, field)
+			case "asset":
+				return ec.fieldContext_Deposit_asset(ctx, field)
+			case "status":
+				return ec.fieldContext_Deposit_status(ctx, field)
+			case "createdTimestamp":
+				return ec.fieldContext_Deposit_createdTimestamp(ctx, field)
+			case "creditedTimestamp":
+				return ec.fieldContext_Deposit_creditedTimestamp(ctx, field)
+			case "txHash":
+				return ec.fieldContext_Deposit_txHash(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Deposit", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_withdrawals(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_withdrawals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Withdrawals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Withdrawal)
+	fc.Result = res
+	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_withdrawals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Withdrawal_id(ctx, field)
+			case "party":
+				return ec.fieldContext_Withdrawal_party(ctx, field)
+			case "amount":
+				return ec.fieldContext_Withdrawal_amount(ctx, field)
+			case "asset":
+				return ec.fieldContext_Withdrawal_asset(ctx, field)
+			case "status":
+				return ec.fieldContext_Withdrawal_status(ctx, field)
+			case "ref":
+				return ec.fieldContext_Withdrawal_ref(ctx, field)
+			case "createdTimestamp":
+				return ec.fieldContext_Withdrawal_createdTimestamp(ctx, field)
+			case "withdrawnTimestamp":
+				return ec.fieldContext_Withdrawal_withdrawnTimestamp(ctx, field)
+			case "txHash":
+				return ec.fieldContext_Withdrawal_txHash(ctx, field)
+			case "details":
+				return ec.fieldContext_Withdrawal_details(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Withdrawal", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_assets(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_assets(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Assets, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Asset)
+	fc.Result = res
+	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_assets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Asset_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Asset_name(ctx, field)
+			case "symbol":
+				return ec.fieldContext_Asset_symbol(ctx, field)
+			case "decimals":
+				return ec.fieldContext_Asset_decimals(ctx, field)
+			case "quantum":
+				return ec.fieldContext_Asset_quantum(ctx, field)
+			case "source":
+				return ec.fieldContext_Asset_source(ctx, field)
+			case "status":
+				return ec.fieldContext_Asset_status(ctx, field)
+			case "infrastructureFeeAccount":
+				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
+			case "globalRewardPoolAccount":
+				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
+			case "takerFeeRewardAccount":
+				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
+			case "makerFeeRewardAccount":
+				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
+			case "lpFeeRewardAccount":
+				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
+			case "marketProposerRewardAccount":
+				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_liquidityProvisions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LiquidityProvisions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.LiquidityProvision)
+	fc.Result = res
+	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_liquidityProvisions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LiquidityProvision_id(ctx, field)
+			case "party":
+				return ec.fieldContext_LiquidityProvision_party(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_LiquidityProvision_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_LiquidityProvision_updatedAt(ctx, field)
+			case "market":
+				return ec.fieldContext_LiquidityProvision_market(ctx, field)
+			case "commitmentAmount":
+				return ec.fieldContext_LiquidityProvision_commitmentAmount(ctx, field)
+			case "fee":
+				return ec.fieldContext_LiquidityProvision_fee(ctx, field)
+			case "sells":
+				return ec.fieldContext_LiquidityProvision_sells(ctx, field)
+			case "buys":
+				return ec.fieldContext_LiquidityProvision_buys(ctx, field)
+			case "version":
+				return ec.fieldContext_LiquidityProvision_version(ctx, field)
+			case "status":
+				return ec.fieldContext_LiquidityProvision_status(ctx, field)
+			case "reference":
+				return ec.fieldContext_LiquidityProvision_reference(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LiquidityProvision", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_proposals(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_proposals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Proposals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Proposal)
+	fc.Result = res
+	return ec.marshalOProposalDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_proposals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ProposalDetail_id(ctx, field)
+			case "reference":
+				return ec.fieldContext_ProposalDetail_reference(ctx, field)
+			case "party":
+				return ec.fieldContext_ProposalDetail_party(ctx, field)
+			case "state":
+				return ec.fieldContext_ProposalDetail_state(ctx, field)
+			case "datetime":
+				return ec.fieldContext_ProposalDetail_datetime(ctx, field)
+			case "terms":
+				return ec.fieldContext_ProposalDetail_terms(ctx, field)
+			case "rationale":
+				return ec.fieldContext_ProposalDetail_rationale(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_ProposalDetail_rejectionReason(ctx, field)
+			case "errorDetails":
+				return ec.fieldContext_ProposalDetail_errorDetails(ctx, field)
+			case "requiredMajority":
+				return ec.fieldContext_ProposalDetail_requiredMajority(ctx, field)
+			case "requiredParticipation":
+				return ec.fieldContext_ProposalDetail_requiredParticipation(ctx, field)
+			case "requiredLpMajority":
+				return ec.fieldContext_ProposalDetail_requiredLpMajority(ctx, field)
+			case "requiredLpParticipation":
+				return ec.fieldContext_ProposalDetail_requiredLpParticipation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProposalDetail", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_delegations(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_delegations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Delegations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.Delegation)
+	fc.Result = res
+	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_delegations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "amount":
+				return ec.fieldContext_Delegation_amount(ctx, field)
+			case "party":
+				return ec.fieldContext_Delegation_party(ctx, field)
+			case "node":
+				return ec.fieldContext_Delegation_node(ctx, field)
+			case "epoch":
+				return ec.fieldContext_Delegation_epoch(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Delegation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_nodes(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Nodes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.NodeBasic)
+	fc.Result = res
+	return ec.marshalONodeBasic2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeBasic(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_NodeBasic_id(ctx, field)
+			case "pubkey":
+				return ec.fieldContext_NodeBasic_pubkey(ctx, field)
+			case "tmPubkey":
+				return ec.fieldContext_NodeBasic_tmPubkey(ctx, field)
+			case "ethereumAddress":
+				return ec.fieldContext_NodeBasic_ethereumAddress(ctx, field)
+			case "infoUrl":
+				return ec.fieldContext_NodeBasic_infoUrl(ctx, field)
+			case "location":
+				return ec.fieldContext_NodeBasic_location(ctx, field)
+			case "status":
+				return ec.fieldContext_NodeBasic_status(ctx, field)
+			case "name":
+				return ec.fieldContext_NodeBasic_name(ctx, field)
+			case "avatarUrl":
+				return ec.fieldContext_NodeBasic_avatarUrl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeBasic", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_nodeSignatures(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_nodeSignatures(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodeSignatures, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v11.NodeSignature)
+	fc.Result = res
+	return ec.marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_nodeSignatures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_NodeSignature_id(ctx, field)
+			case "signature":
+				return ec.fieldContext_NodeSignature_signature(ctx, field)
+			case "kind":
+				return ec.fieldContext_NodeSignature_kind(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodeSignature", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_networkParameters(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_networkParameters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NetworkParameters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.NetworkParameter)
+	fc.Result = res
+	return ec.marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_networkParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_NetworkParameter_key(ctx, field)
+			case "value":
+				return ec.fieldContext_NetworkParameter_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NetworkParameter", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_keyRotations(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_keyRotations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KeyRotations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.KeyRotation)
+	fc.Result = res
+	return ec.marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_keyRotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "nodeId":
+				return ec.fieldContext_KeyRotation_nodeId(ctx, field)
+			case "oldPubKey":
+				return ec.fieldContext_KeyRotation_oldPubKey(ctx, field)
+			case "newPubKey":
+				return ec.fieldContext_KeyRotation_newPubKey(ctx, field)
+			case "blockHeight":
+				return ec.fieldContext_KeyRotation_blockHeight(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KeyRotation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_ethereumKeyRotations(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_ethereumKeyRotations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthereumKeyRotations, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.EthereumKeyRotation)
+	fc.Result = res
+	return ec.marshalOEthereumKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_ethereumKeyRotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "nodeId":
+				return ec.fieldContext_EthereumKeyRotation_nodeId(ctx, field)
+			case "oldAddress":
+				return ec.fieldContext_EthereumKeyRotation_oldAddress(ctx, field)
+			case "newAddress":
+				return ec.fieldContext_EthereumKeyRotation_newAddress(ctx, field)
+			case "blockHeight":
+				return ec.fieldContext_EthereumKeyRotation_blockHeight(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EthereumKeyRotation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Entities_protocolUpgradeProposals(ctx context.Context, field graphql.CollectedField, obj *v2.ListEntitiesResponse) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entities_protocolUpgradeProposals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProtocolUpgradeProposals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.ProtocolUpgradeEvent)
+	fc.Result = res
+	return ec.marshalOProtocolUpgradeProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐProtocolUpgradeEvent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entities_protocolUpgradeProposals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entities",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "upgradeBlockHeight":
+				return ec.fieldContext_ProtocolUpgradeProposal_upgradeBlockHeight(ctx, field)
+			case "vegaReleaseTag":
+				return ec.fieldContext_ProtocolUpgradeProposal_vegaReleaseTag(ctx, field)
+			case "approvers":
+				return ec.fieldContext_ProtocolUpgradeProposal_approvers(ctx, field)
+			case "status":
+				return ec.fieldContext_ProtocolUpgradeProposal_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ProtocolUpgradeProposal", field.Name)
 		},
 	}
 	return fc, nil
@@ -50356,8 +52036,8 @@ func (ec *executionContext) fieldContext_Query_positions(ctx context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_transactionEntities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_transactionEntities(ctx, field)
+func (ec *executionContext) _Query_entities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_entities(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -50370,7 +52050,7 @@ func (ec *executionContext) _Query_transactionEntities(ctx context.Context, fiel
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TransactionEntities(rctx, fc.Args["txHash"].(string))
+		return ec.resolvers.Query().Entities(rctx, fc.Args["txHash"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -50382,12 +52062,12 @@ func (ec *executionContext) _Query_transactionEntities(ctx context.Context, fiel
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*v2.ListTransactionEntitiesResponse)
+	res := resTmp.(*v2.ListEntitiesResponse)
 	fc.Result = res
-	return ec.marshalNTransactionEntities2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListTransactionEntitiesResponse(ctx, field.Selections, res)
+	return ec.marshalNEntities2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListEntitiesResponse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_transactionEntities(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_entities(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -50396,63 +52076,63 @@ func (ec *executionContext) fieldContext_Query_transactionEntities(ctx context.C
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "accounts":
-				return ec.fieldContext_TransactionEntities_accounts(ctx, field)
+				return ec.fieldContext_Entities_accounts(ctx, field)
 			case "orders":
-				return ec.fieldContext_TransactionEntities_orders(ctx, field)
+				return ec.fieldContext_Entities_orders(ctx, field)
 			case "positions":
-				return ec.fieldContext_TransactionEntities_positions(ctx, field)
+				return ec.fieldContext_Entities_positions(ctx, field)
 			case "ledgerEntries":
-				return ec.fieldContext_TransactionEntities_ledgerEntries(ctx, field)
+				return ec.fieldContext_Entities_ledgerEntries(ctx, field)
 			case "balanceChanges":
-				return ec.fieldContext_TransactionEntities_balanceChanges(ctx, field)
+				return ec.fieldContext_Entities_balanceChanges(ctx, field)
 			case "transfers":
-				return ec.fieldContext_TransactionEntities_transfers(ctx, field)
+				return ec.fieldContext_Entities_transfers(ctx, field)
 			case "votes":
-				return ec.fieldContext_TransactionEntities_votes(ctx, field)
+				return ec.fieldContext_Entities_votes(ctx, field)
 			case "erc20MultiSigSignerAddedBundles":
-				return ec.fieldContext_TransactionEntities_erc20MultiSigSignerAddedBundles(ctx, field)
+				return ec.fieldContext_Entities_erc20MultiSigSignerAddedBundles(ctx, field)
 			case "erc20MultiSigSignerRemovedBundles":
-				return ec.fieldContext_TransactionEntities_erc20MultiSigSignerRemovedBundles(ctx, field)
+				return ec.fieldContext_Entities_erc20MultiSigSignerRemovedBundles(ctx, field)
 			case "trades":
-				return ec.fieldContext_TransactionEntities_trades(ctx, field)
+				return ec.fieldContext_Entities_trades(ctx, field)
 			case "oracleSpecs":
-				return ec.fieldContext_TransactionEntities_oracleSpecs(ctx, field)
+				return ec.fieldContext_Entities_oracleSpecs(ctx, field)
 			case "oracleData":
-				return ec.fieldContext_TransactionEntities_oracleData(ctx, field)
+				return ec.fieldContext_Entities_oracleData(ctx, field)
 			case "markets":
-				return ec.fieldContext_TransactionEntities_markets(ctx, field)
+				return ec.fieldContext_Entities_markets(ctx, field)
 			case "parties":
-				return ec.fieldContext_TransactionEntities_parties(ctx, field)
+				return ec.fieldContext_Entities_parties(ctx, field)
 			case "marginLevels":
-				return ec.fieldContext_TransactionEntities_marginLevels(ctx, field)
+				return ec.fieldContext_Entities_marginLevels(ctx, field)
 			case "rewards":
-				return ec.fieldContext_TransactionEntities_rewards(ctx, field)
+				return ec.fieldContext_Entities_rewards(ctx, field)
 			case "deposits":
-				return ec.fieldContext_TransactionEntities_deposits(ctx, field)
+				return ec.fieldContext_Entities_deposits(ctx, field)
 			case "withdrawals":
-				return ec.fieldContext_TransactionEntities_withdrawals(ctx, field)
+				return ec.fieldContext_Entities_withdrawals(ctx, field)
 			case "assets":
-				return ec.fieldContext_TransactionEntities_assets(ctx, field)
+				return ec.fieldContext_Entities_assets(ctx, field)
 			case "liquidityProvisions":
-				return ec.fieldContext_TransactionEntities_liquidityProvisions(ctx, field)
+				return ec.fieldContext_Entities_liquidityProvisions(ctx, field)
 			case "proposals":
-				return ec.fieldContext_TransactionEntities_proposals(ctx, field)
+				return ec.fieldContext_Entities_proposals(ctx, field)
 			case "delegations":
-				return ec.fieldContext_TransactionEntities_delegations(ctx, field)
+				return ec.fieldContext_Entities_delegations(ctx, field)
 			case "nodes":
-				return ec.fieldContext_TransactionEntities_nodes(ctx, field)
+				return ec.fieldContext_Entities_nodes(ctx, field)
 			case "nodeSignatures":
-				return ec.fieldContext_TransactionEntities_nodeSignatures(ctx, field)
+				return ec.fieldContext_Entities_nodeSignatures(ctx, field)
 			case "networkParameters":
-				return ec.fieldContext_TransactionEntities_networkParameters(ctx, field)
+				return ec.fieldContext_Entities_networkParameters(ctx, field)
 			case "keyRotations":
-				return ec.fieldContext_TransactionEntities_keyRotations(ctx, field)
+				return ec.fieldContext_Entities_keyRotations(ctx, field)
 			case "ethereumKeyRotations":
-				return ec.fieldContext_TransactionEntities_ethereumKeyRotations(ctx, field)
+				return ec.fieldContext_Entities_ethereumKeyRotations(ctx, field)
 			case "protocolUpgradeProposals":
-				return ec.fieldContext_TransactionEntities_protocolUpgradeProposals(ctx, field)
+				return ec.fieldContext_Entities_protocolUpgradeProposals(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type TransactionEntities", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type Entities", field.Name)
 		},
 	}
 	defer func() {
@@ -50462,7 +52142,7 @@ func (ec *executionContext) fieldContext_Query_transactionEntities(ctx context.C
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_transactionEntities_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_entities_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -58546,1682 +60226,6 @@ func (ec *executionContext) fieldContext_TradeUpdate_sellerAuctionBatch(ctx cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_accounts(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_accounts(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Accounts, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Account)
-	fc.Result = res
-	return ec.marshalOAccountEvent2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_accounts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "balance":
-				return ec.fieldContext_AccountEvent_balance(ctx, field)
-			case "asset":
-				return ec.fieldContext_AccountEvent_asset(ctx, field)
-			case "type":
-				return ec.fieldContext_AccountEvent_type(ctx, field)
-			case "market":
-				return ec.fieldContext_AccountEvent_market(ctx, field)
-			case "party":
-				return ec.fieldContext_AccountEvent_party(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AccountEvent", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_orders(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_orders(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Orders, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Order)
-	fc.Result = res
-	return ec.marshalOOrder2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOrder(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_orders(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Order_id(ctx, field)
-			case "price":
-				return ec.fieldContext_Order_price(ctx, field)
-			case "timeInForce":
-				return ec.fieldContext_Order_timeInForce(ctx, field)
-			case "side":
-				return ec.fieldContext_Order_side(ctx, field)
-			case "market":
-				return ec.fieldContext_Order_market(ctx, field)
-			case "size":
-				return ec.fieldContext_Order_size(ctx, field)
-			case "remaining":
-				return ec.fieldContext_Order_remaining(ctx, field)
-			case "party":
-				return ec.fieldContext_Order_party(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Order_createdAt(ctx, field)
-			case "expiresAt":
-				return ec.fieldContext_Order_expiresAt(ctx, field)
-			case "status":
-				return ec.fieldContext_Order_status(ctx, field)
-			case "reference":
-				return ec.fieldContext_Order_reference(ctx, field)
-			case "tradesConnection":
-				return ec.fieldContext_Order_tradesConnection(ctx, field)
-			case "type":
-				return ec.fieldContext_Order_type(ctx, field)
-			case "rejectionReason":
-				return ec.fieldContext_Order_rejectionReason(ctx, field)
-			case "version":
-				return ec.fieldContext_Order_version(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Order_updatedAt(ctx, field)
-			case "peggedOrder":
-				return ec.fieldContext_Order_peggedOrder(ctx, field)
-			case "liquidityProvision":
-				return ec.fieldContext_Order_liquidityProvision(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_positions(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_positions(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Positions, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Position)
-	fc.Result = res
-	return ec.marshalOPosition2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐPosition(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_positions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "market":
-				return ec.fieldContext_Position_market(ctx, field)
-			case "party":
-				return ec.fieldContext_Position_party(ctx, field)
-			case "openVolume":
-				return ec.fieldContext_Position_openVolume(ctx, field)
-			case "realisedPNL":
-				return ec.fieldContext_Position_realisedPNL(ctx, field)
-			case "unrealisedPNL":
-				return ec.fieldContext_Position_unrealisedPNL(ctx, field)
-			case "averageEntryPrice":
-				return ec.fieldContext_Position_averageEntryPrice(ctx, field)
-			case "lossSocializationAmount":
-				return ec.fieldContext_Position_lossSocializationAmount(ctx, field)
-			case "positionStatus":
-				return ec.fieldContext_Position_positionStatus(ctx, field)
-			case "marginsConnection":
-				return ec.fieldContext_Position_marginsConnection(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_Position_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Position", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_ledgerEntries(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_ledgerEntries(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LedgerEntries, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.LedgerEntry)
-	fc.Result = res
-	return ec.marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLedgerEntry(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_ledgerEntries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "fromAccountId":
-				return ec.fieldContext_LedgerEntry_fromAccountId(ctx, field)
-			case "toAccountId":
-				return ec.fieldContext_LedgerEntry_toAccountId(ctx, field)
-			case "amount":
-				return ec.fieldContext_LedgerEntry_amount(ctx, field)
-			case "type":
-				return ec.fieldContext_LedgerEntry_type(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_LedgerEntry_timestamp(ctx, field)
-			case "fromAccountBalance":
-				return ec.fieldContext_LedgerEntry_fromAccountBalance(ctx, field)
-			case "toAccountBalance":
-				return ec.fieldContext_LedgerEntry_toAccountBalance(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type LedgerEntry", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_balanceChanges(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_balanceChanges(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.BalanceChanges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v2.AccountBalance)
-	fc.Result = res
-	return ec.marshalOAccountBalance2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐAccountBalance(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_balanceChanges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "balance":
-				return ec.fieldContext_AccountBalance_balance(ctx, field)
-			case "asset":
-				return ec.fieldContext_AccountBalance_asset(ctx, field)
-			case "type":
-				return ec.fieldContext_AccountBalance_type(ctx, field)
-			case "market":
-				return ec.fieldContext_AccountBalance_market(ctx, field)
-			case "party":
-				return ec.fieldContext_AccountBalance_party(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type AccountBalance", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_transfers(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_transfers(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Transfers, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v1.Transfer)
-	fc.Result = res
-	return ec.marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_transfers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Transfer_id(ctx, field)
-			case "from":
-				return ec.fieldContext_Transfer_from(ctx, field)
-			case "fromAccountType":
-				return ec.fieldContext_Transfer_fromAccountType(ctx, field)
-			case "to":
-				return ec.fieldContext_Transfer_to(ctx, field)
-			case "toAccountType":
-				return ec.fieldContext_Transfer_toAccountType(ctx, field)
-			case "asset":
-				return ec.fieldContext_Transfer_asset(ctx, field)
-			case "amount":
-				return ec.fieldContext_Transfer_amount(ctx, field)
-			case "reference":
-				return ec.fieldContext_Transfer_reference(ctx, field)
-			case "status":
-				return ec.fieldContext_Transfer_status(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_Transfer_timestamp(ctx, field)
-			case "kind":
-				return ec.fieldContext_Transfer_kind(ctx, field)
-			case "reason":
-				return ec.fieldContext_Transfer_reason(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Transfer", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_votes(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_votes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Votes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Vote)
-	fc.Result = res
-	return ec.marshalOVote2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐVote(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_votes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "value":
-				return ec.fieldContext_Vote_value(ctx, field)
-			case "party":
-				return ec.fieldContext_Vote_party(ctx, field)
-			case "datetime":
-				return ec.fieldContext_Vote_datetime(ctx, field)
-			case "proposalId":
-				return ec.fieldContext_Vote_proposalId(ctx, field)
-			case "governanceTokenBalance":
-				return ec.fieldContext_Vote_governanceTokenBalance(ctx, field)
-			case "governanceTokenWeight":
-				return ec.fieldContext_Vote_governanceTokenWeight(ctx, field)
-			case "equityLikeShareWeight":
-				return ec.fieldContext_Vote_equityLikeShareWeight(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Vote", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_erc20MultiSigSignerAddedBundles(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Erc20MultiSigSignerAddedBundles, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v2.ERC20MultiSigSignerAddedBundle)
-	fc.Result = res
-	return ec.marshalOERC20MultiSigSignerAddedBundle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐERC20MultiSigSignerAddedBundle(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_erc20MultiSigSignerAddedBundles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "newSigner":
-				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_newSigner(ctx, field)
-			case "submitter":
-				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_submitter(ctx, field)
-			case "nonce":
-				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_nonce(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_timestamp(ctx, field)
-			case "signatures":
-				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_signatures(ctx, field)
-			case "epochSeq":
-				return ec.fieldContext_ERC20MultiSigSignerAddedBundle_epochSeq(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ERC20MultiSigSignerAddedBundle", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_erc20MultiSigSignerRemovedBundles(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_erc20MultiSigSignerRemovedBundles(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Erc20MultiSigSignerRemovedBundles, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v2.ERC20MultiSigSignerRemovedBundle)
-	fc.Result = res
-	return ec.marshalOERC20MultiSigSignerRemovedBundle2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐERC20MultiSigSignerRemovedBundle(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_erc20MultiSigSignerRemovedBundles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "oldSigner":
-				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_oldSigner(ctx, field)
-			case "submitter":
-				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_submitter(ctx, field)
-			case "nonce":
-				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_nonce(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_timestamp(ctx, field)
-			case "signatures":
-				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_signatures(ctx, field)
-			case "epochSeq":
-				return ec.fieldContext_ERC20MultiSigSignerRemovedBundle_epochSeq(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ERC20MultiSigSignerRemovedBundle", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_trades(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_trades(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Trades, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Trade)
-	fc.Result = res
-	return ec.marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐTrade(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_trades(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Trade_id(ctx, field)
-			case "market":
-				return ec.fieldContext_Trade_market(ctx, field)
-			case "buyOrder":
-				return ec.fieldContext_Trade_buyOrder(ctx, field)
-			case "sellOrder":
-				return ec.fieldContext_Trade_sellOrder(ctx, field)
-			case "buyer":
-				return ec.fieldContext_Trade_buyer(ctx, field)
-			case "seller":
-				return ec.fieldContext_Trade_seller(ctx, field)
-			case "aggressor":
-				return ec.fieldContext_Trade_aggressor(ctx, field)
-			case "price":
-				return ec.fieldContext_Trade_price(ctx, field)
-			case "size":
-				return ec.fieldContext_Trade_size(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_Trade_createdAt(ctx, field)
-			case "type":
-				return ec.fieldContext_Trade_type(ctx, field)
-			case "buyerFee":
-				return ec.fieldContext_Trade_buyerFee(ctx, field)
-			case "sellerFee":
-				return ec.fieldContext_Trade_sellerFee(ctx, field)
-			case "buyerAuctionBatch":
-				return ec.fieldContext_Trade_buyerAuctionBatch(ctx, field)
-			case "sellerAuctionBatch":
-				return ec.fieldContext_Trade_sellerAuctionBatch(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Trade", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_oracleSpecs(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_oracleSpecs(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OracleSpecs, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.OracleSpec)
-	fc.Result = res
-	return ec.marshalOOracleSpec2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleSpec(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_oracleSpecs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "dataSourceSpec":
-				return ec.fieldContext_OracleSpec_dataSourceSpec(ctx, field)
-			case "dataConnection":
-				return ec.fieldContext_OracleSpec_dataConnection(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OracleSpec", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_oracleData(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_oracleData(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OracleData, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.OracleData)
-	fc.Result = res
-	return ec.marshalOOracleData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐOracleData(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_oracleData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "externalData":
-				return ec.fieldContext_OracleData_externalData(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OracleData", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_markets(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_markets(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Markets, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Market)
-	fc.Result = res
-	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_markets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Market_id(ctx, field)
-			case "fees":
-				return ec.fieldContext_Market_fees(ctx, field)
-			case "tradableInstrument":
-				return ec.fieldContext_Market_tradableInstrument(ctx, field)
-			case "decimalPlaces":
-				return ec.fieldContext_Market_decimalPlaces(ctx, field)
-			case "positionDecimalPlaces":
-				return ec.fieldContext_Market_positionDecimalPlaces(ctx, field)
-			case "openingAuction":
-				return ec.fieldContext_Market_openingAuction(ctx, field)
-			case "priceMonitoringSettings":
-				return ec.fieldContext_Market_priceMonitoringSettings(ctx, field)
-			case "liquidityMonitoringParameters":
-				return ec.fieldContext_Market_liquidityMonitoringParameters(ctx, field)
-			case "tradingMode":
-				return ec.fieldContext_Market_tradingMode(ctx, field)
-			case "state":
-				return ec.fieldContext_Market_state(ctx, field)
-			case "proposal":
-				return ec.fieldContext_Market_proposal(ctx, field)
-			case "ordersConnection":
-				return ec.fieldContext_Market_ordersConnection(ctx, field)
-			case "accountsConnection":
-				return ec.fieldContext_Market_accountsConnection(ctx, field)
-			case "tradesConnection":
-				return ec.fieldContext_Market_tradesConnection(ctx, field)
-			case "depth":
-				return ec.fieldContext_Market_depth(ctx, field)
-			case "candlesConnection":
-				return ec.fieldContext_Market_candlesConnection(ctx, field)
-			case "data":
-				return ec.fieldContext_Market_data(ctx, field)
-			case "liquidityProvisionsConnection":
-				return ec.fieldContext_Market_liquidityProvisionsConnection(ctx, field)
-			case "marketTimestamps":
-				return ec.fieldContext_Market_marketTimestamps(ctx, field)
-			case "riskFactors":
-				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
-			case "linearSlippageFactor":
-				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
-			case "quadraticSlippageFactor":
-				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_parties(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_parties(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Parties, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Party)
-	fc.Result = res
-	return ec.marshalOParty2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_parties(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Party_id(ctx, field)
-			case "ordersConnection":
-				return ec.fieldContext_Party_ordersConnection(ctx, field)
-			case "tradesConnection":
-				return ec.fieldContext_Party_tradesConnection(ctx, field)
-			case "accountsConnection":
-				return ec.fieldContext_Party_accountsConnection(ctx, field)
-			case "positionsConnection":
-				return ec.fieldContext_Party_positionsConnection(ctx, field)
-			case "marginsConnection":
-				return ec.fieldContext_Party_marginsConnection(ctx, field)
-			case "proposalsConnection":
-				return ec.fieldContext_Party_proposalsConnection(ctx, field)
-			case "votesConnection":
-				return ec.fieldContext_Party_votesConnection(ctx, field)
-			case "withdrawalsConnection":
-				return ec.fieldContext_Party_withdrawalsConnection(ctx, field)
-			case "depositsConnection":
-				return ec.fieldContext_Party_depositsConnection(ctx, field)
-			case "liquidityProvisionsConnection":
-				return ec.fieldContext_Party_liquidityProvisionsConnection(ctx, field)
-			case "delegationsConnection":
-				return ec.fieldContext_Party_delegationsConnection(ctx, field)
-			case "stakingSummary":
-				return ec.fieldContext_Party_stakingSummary(ctx, field)
-			case "rewardsConnection":
-				return ec.fieldContext_Party_rewardsConnection(ctx, field)
-			case "rewardSummaries":
-				return ec.fieldContext_Party_rewardSummaries(ctx, field)
-			case "transfersConnection":
-				return ec.fieldContext_Party_transfersConnection(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Party", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_marginLevels(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_marginLevels(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MarginLevels, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.MarginLevels)
-	fc.Result = res
-	return ec.marshalOMarginLevels2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarginLevels(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_marginLevels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "market":
-				return ec.fieldContext_MarginLevels_market(ctx, field)
-			case "asset":
-				return ec.fieldContext_MarginLevels_asset(ctx, field)
-			case "party":
-				return ec.fieldContext_MarginLevels_party(ctx, field)
-			case "maintenanceLevel":
-				return ec.fieldContext_MarginLevels_maintenanceLevel(ctx, field)
-			case "searchLevel":
-				return ec.fieldContext_MarginLevels_searchLevel(ctx, field)
-			case "initialLevel":
-				return ec.fieldContext_MarginLevels_initialLevel(ctx, field)
-			case "collateralReleaseLevel":
-				return ec.fieldContext_MarginLevels_collateralReleaseLevel(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_MarginLevels_timestamp(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MarginLevels", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_rewards(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_rewards(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Rewards, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Reward)
-	fc.Result = res
-	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_rewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "asset":
-				return ec.fieldContext_Reward_asset(ctx, field)
-			case "marketId":
-				return ec.fieldContext_Reward_marketId(ctx, field)
-			case "rewardType":
-				return ec.fieldContext_Reward_rewardType(ctx, field)
-			case "party":
-				return ec.fieldContext_Reward_party(ctx, field)
-			case "epoch":
-				return ec.fieldContext_Reward_epoch(ctx, field)
-			case "amount":
-				return ec.fieldContext_Reward_amount(ctx, field)
-			case "percentageOfTotal":
-				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
-			case "receivedAt":
-				return ec.fieldContext_Reward_receivedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_deposits(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_deposits(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Deposits, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Deposit)
-	fc.Result = res
-	return ec.marshalODeposit2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDeposit(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_deposits(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Deposit_id(ctx, field)
-			case "party":
-				return ec.fieldContext_Deposit_party(ctx, field)
-			case "amount":
-				return ec.fieldContext_Deposit_amount(ctx, field)
-			case "asset":
-				return ec.fieldContext_Deposit_asset(ctx, field)
-			case "status":
-				return ec.fieldContext_Deposit_status(ctx, field)
-			case "createdTimestamp":
-				return ec.fieldContext_Deposit_createdTimestamp(ctx, field)
-			case "creditedTimestamp":
-				return ec.fieldContext_Deposit_creditedTimestamp(ctx, field)
-			case "txHash":
-				return ec.fieldContext_Deposit_txHash(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Deposit", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_withdrawals(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_withdrawals(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Withdrawals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Withdrawal)
-	fc.Result = res
-	return ec.marshalOWithdrawal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐWithdrawal(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_withdrawals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Withdrawal_id(ctx, field)
-			case "party":
-				return ec.fieldContext_Withdrawal_party(ctx, field)
-			case "amount":
-				return ec.fieldContext_Withdrawal_amount(ctx, field)
-			case "asset":
-				return ec.fieldContext_Withdrawal_asset(ctx, field)
-			case "status":
-				return ec.fieldContext_Withdrawal_status(ctx, field)
-			case "ref":
-				return ec.fieldContext_Withdrawal_ref(ctx, field)
-			case "createdTimestamp":
-				return ec.fieldContext_Withdrawal_createdTimestamp(ctx, field)
-			case "withdrawnTimestamp":
-				return ec.fieldContext_Withdrawal_withdrawnTimestamp(ctx, field)
-			case "txHash":
-				return ec.fieldContext_Withdrawal_txHash(ctx, field)
-			case "details":
-				return ec.fieldContext_Withdrawal_details(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Withdrawal", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_assets(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_assets(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Assets, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Asset)
-	fc.Result = res
-	return ec.marshalOAsset2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_assets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Asset_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Asset_name(ctx, field)
-			case "symbol":
-				return ec.fieldContext_Asset_symbol(ctx, field)
-			case "decimals":
-				return ec.fieldContext_Asset_decimals(ctx, field)
-			case "quantum":
-				return ec.fieldContext_Asset_quantum(ctx, field)
-			case "source":
-				return ec.fieldContext_Asset_source(ctx, field)
-			case "status":
-				return ec.fieldContext_Asset_status(ctx, field)
-			case "infrastructureFeeAccount":
-				return ec.fieldContext_Asset_infrastructureFeeAccount(ctx, field)
-			case "globalRewardPoolAccount":
-				return ec.fieldContext_Asset_globalRewardPoolAccount(ctx, field)
-			case "takerFeeRewardAccount":
-				return ec.fieldContext_Asset_takerFeeRewardAccount(ctx, field)
-			case "makerFeeRewardAccount":
-				return ec.fieldContext_Asset_makerFeeRewardAccount(ctx, field)
-			case "lpFeeRewardAccount":
-				return ec.fieldContext_Asset_lpFeeRewardAccount(ctx, field)
-			case "marketProposerRewardAccount":
-				return ec.fieldContext_Asset_marketProposerRewardAccount(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Asset", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_liquidityProvisions(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_liquidityProvisions(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LiquidityProvisions, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.LiquidityProvision)
-	fc.Result = res
-	return ec.marshalOLiquidityProvision2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLiquidityProvision(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_liquidityProvisions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_LiquidityProvision_id(ctx, field)
-			case "party":
-				return ec.fieldContext_LiquidityProvision_party(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_LiquidityProvision_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_LiquidityProvision_updatedAt(ctx, field)
-			case "market":
-				return ec.fieldContext_LiquidityProvision_market(ctx, field)
-			case "commitmentAmount":
-				return ec.fieldContext_LiquidityProvision_commitmentAmount(ctx, field)
-			case "fee":
-				return ec.fieldContext_LiquidityProvision_fee(ctx, field)
-			case "sells":
-				return ec.fieldContext_LiquidityProvision_sells(ctx, field)
-			case "buys":
-				return ec.fieldContext_LiquidityProvision_buys(ctx, field)
-			case "version":
-				return ec.fieldContext_LiquidityProvision_version(ctx, field)
-			case "status":
-				return ec.fieldContext_LiquidityProvision_status(ctx, field)
-			case "reference":
-				return ec.fieldContext_LiquidityProvision_reference(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type LiquidityProvision", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_proposals(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_proposals(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Proposals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Proposal)
-	fc.Result = res
-	return ec.marshalOProposalDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐProposal(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_proposals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ProposalDetail_id(ctx, field)
-			case "reference":
-				return ec.fieldContext_ProposalDetail_reference(ctx, field)
-			case "party":
-				return ec.fieldContext_ProposalDetail_party(ctx, field)
-			case "state":
-				return ec.fieldContext_ProposalDetail_state(ctx, field)
-			case "datetime":
-				return ec.fieldContext_ProposalDetail_datetime(ctx, field)
-			case "terms":
-				return ec.fieldContext_ProposalDetail_terms(ctx, field)
-			case "rationale":
-				return ec.fieldContext_ProposalDetail_rationale(ctx, field)
-			case "rejectionReason":
-				return ec.fieldContext_ProposalDetail_rejectionReason(ctx, field)
-			case "errorDetails":
-				return ec.fieldContext_ProposalDetail_errorDetails(ctx, field)
-			case "requiredMajority":
-				return ec.fieldContext_ProposalDetail_requiredMajority(ctx, field)
-			case "requiredParticipation":
-				return ec.fieldContext_ProposalDetail_requiredParticipation(ctx, field)
-			case "requiredLpMajority":
-				return ec.fieldContext_ProposalDetail_requiredLpMajority(ctx, field)
-			case "requiredLpParticipation":
-				return ec.fieldContext_ProposalDetail_requiredLpParticipation(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ProposalDetail", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_delegations(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_delegations(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Delegations, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.Delegation)
-	fc.Result = res
-	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_delegations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "amount":
-				return ec.fieldContext_Delegation_amount(ctx, field)
-			case "party":
-				return ec.fieldContext_Delegation_party(ctx, field)
-			case "node":
-				return ec.fieldContext_Delegation_node(ctx, field)
-			case "epoch":
-				return ec.fieldContext_Delegation_epoch(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Delegation", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_nodes(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_nodes(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Nodes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v2.NodeBasic)
-	fc.Result = res
-	return ec.marshalONodeBasic2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐNodeBasic(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_NodeBasic_id(ctx, field)
-			case "pubkey":
-				return ec.fieldContext_NodeBasic_pubkey(ctx, field)
-			case "tmPubkey":
-				return ec.fieldContext_NodeBasic_tmPubkey(ctx, field)
-			case "ethereumAddress":
-				return ec.fieldContext_NodeBasic_ethereumAddress(ctx, field)
-			case "infoUrl":
-				return ec.fieldContext_NodeBasic_infoUrl(ctx, field)
-			case "location":
-				return ec.fieldContext_NodeBasic_location(ctx, field)
-			case "status":
-				return ec.fieldContext_NodeBasic_status(ctx, field)
-			case "name":
-				return ec.fieldContext_NodeBasic_name(ctx, field)
-			case "avatarUrl":
-				return ec.fieldContext_NodeBasic_avatarUrl(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeBasic", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_nodeSignatures(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_nodeSignatures(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NodeSignatures, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v11.NodeSignature)
-	fc.Result = res
-	return ec.marshalONodeSignature2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋcommandsᚋv1ᚐNodeSignature(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_nodeSignatures(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_NodeSignature_id(ctx, field)
-			case "signature":
-				return ec.fieldContext_NodeSignature_signature(ctx, field)
-			case "kind":
-				return ec.fieldContext_NodeSignature_kind(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodeSignature", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_networkParameters(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_networkParameters(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NetworkParameters, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.NetworkParameter)
-	fc.Result = res
-	return ec.marshalONetworkParameter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐNetworkParameter(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_networkParameters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "key":
-				return ec.fieldContext_NetworkParameter_key(ctx, field)
-			case "value":
-				return ec.fieldContext_NetworkParameter_value(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NetworkParameter", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_keyRotations(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_keyRotations(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.KeyRotations, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v1.KeyRotation)
-	fc.Result = res
-	return ec.marshalOKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐKeyRotation(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_keyRotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "nodeId":
-				return ec.fieldContext_KeyRotation_nodeId(ctx, field)
-			case "oldPubKey":
-				return ec.fieldContext_KeyRotation_oldPubKey(ctx, field)
-			case "newPubKey":
-				return ec.fieldContext_KeyRotation_newPubKey(ctx, field)
-			case "blockHeight":
-				return ec.fieldContext_KeyRotation_blockHeight(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type KeyRotation", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_ethereumKeyRotations(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_ethereumKeyRotations(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EthereumKeyRotations, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v1.EthereumKeyRotation)
-	fc.Result = res
-	return ec.marshalOEthereumKeyRotation2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_ethereumKeyRotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "nodeId":
-				return ec.fieldContext_EthereumKeyRotation_nodeId(ctx, field)
-			case "oldAddress":
-				return ec.fieldContext_EthereumKeyRotation_oldAddress(ctx, field)
-			case "newAddress":
-				return ec.fieldContext_EthereumKeyRotation_newAddress(ctx, field)
-			case "blockHeight":
-				return ec.fieldContext_EthereumKeyRotation_blockHeight(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EthereumKeyRotation", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _TransactionEntities_protocolUpgradeProposals(ctx context.Context, field graphql.CollectedField, obj *v2.ListTransactionEntitiesResponse) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_TransactionEntities_protocolUpgradeProposals(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProtocolUpgradeProposals, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*v1.ProtocolUpgradeEvent)
-	fc.Result = res
-	return ec.marshalOProtocolUpgradeProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐProtocolUpgradeEvent(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_TransactionEntities_protocolUpgradeProposals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "TransactionEntities",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "upgradeBlockHeight":
-				return ec.fieldContext_ProtocolUpgradeProposal_upgradeBlockHeight(ctx, field)
-			case "vegaReleaseTag":
-				return ec.fieldContext_ProtocolUpgradeProposal_vegaReleaseTag(ctx, field)
-			case "approvers":
-				return ec.fieldContext_ProtocolUpgradeProposal_approvers(ctx, field)
-			case "status":
-				return ec.fieldContext_ProtocolUpgradeProposal_status(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ProtocolUpgradeProposal", field.Name)
 		},
 	}
 	return fc, nil
@@ -68913,6 +68917,139 @@ func (ec *executionContext) _ETHAddress(ctx context.Context, sel ast.SelectionSe
 		case "address":
 
 			out.Values[i] = ec._ETHAddress_address(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var entitiesImplementors = []string{"Entities"}
+
+func (ec *executionContext) _Entities(ctx context.Context, sel ast.SelectionSet, obj *v2.ListEntitiesResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, entitiesImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Entities")
+		case "accounts":
+
+			out.Values[i] = ec._Entities_accounts(ctx, field, obj)
+
+		case "orders":
+
+			out.Values[i] = ec._Entities_orders(ctx, field, obj)
+
+		case "positions":
+
+			out.Values[i] = ec._Entities_positions(ctx, field, obj)
+
+		case "ledgerEntries":
+
+			out.Values[i] = ec._Entities_ledgerEntries(ctx, field, obj)
+
+		case "balanceChanges":
+
+			out.Values[i] = ec._Entities_balanceChanges(ctx, field, obj)
+
+		case "transfers":
+
+			out.Values[i] = ec._Entities_transfers(ctx, field, obj)
+
+		case "votes":
+
+			out.Values[i] = ec._Entities_votes(ctx, field, obj)
+
+		case "erc20MultiSigSignerAddedBundles":
+
+			out.Values[i] = ec._Entities_erc20MultiSigSignerAddedBundles(ctx, field, obj)
+
+		case "erc20MultiSigSignerRemovedBundles":
+
+			out.Values[i] = ec._Entities_erc20MultiSigSignerRemovedBundles(ctx, field, obj)
+
+		case "trades":
+
+			out.Values[i] = ec._Entities_trades(ctx, field, obj)
+
+		case "oracleSpecs":
+
+			out.Values[i] = ec._Entities_oracleSpecs(ctx, field, obj)
+
+		case "oracleData":
+
+			out.Values[i] = ec._Entities_oracleData(ctx, field, obj)
+
+		case "markets":
+
+			out.Values[i] = ec._Entities_markets(ctx, field, obj)
+
+		case "parties":
+
+			out.Values[i] = ec._Entities_parties(ctx, field, obj)
+
+		case "marginLevels":
+
+			out.Values[i] = ec._Entities_marginLevels(ctx, field, obj)
+
+		case "rewards":
+
+			out.Values[i] = ec._Entities_rewards(ctx, field, obj)
+
+		case "deposits":
+
+			out.Values[i] = ec._Entities_deposits(ctx, field, obj)
+
+		case "withdrawals":
+
+			out.Values[i] = ec._Entities_withdrawals(ctx, field, obj)
+
+		case "assets":
+
+			out.Values[i] = ec._Entities_assets(ctx, field, obj)
+
+		case "liquidityProvisions":
+
+			out.Values[i] = ec._Entities_liquidityProvisions(ctx, field, obj)
+
+		case "proposals":
+
+			out.Values[i] = ec._Entities_proposals(ctx, field, obj)
+
+		case "delegations":
+
+			out.Values[i] = ec._Entities_delegations(ctx, field, obj)
+
+		case "nodes":
+
+			out.Values[i] = ec._Entities_nodes(ctx, field, obj)
+
+		case "nodeSignatures":
+
+			out.Values[i] = ec._Entities_nodeSignatures(ctx, field, obj)
+
+		case "networkParameters":
+
+			out.Values[i] = ec._Entities_networkParameters(ctx, field, obj)
+
+		case "keyRotations":
+
+			out.Values[i] = ec._Entities_keyRotations(ctx, field, obj)
+
+		case "ethereumKeyRotations":
+
+			out.Values[i] = ec._Entities_ethereumKeyRotations(ctx, field, obj)
+
+		case "protocolUpgradeProposals":
+
+			out.Values[i] = ec._Entities_protocolUpgradeProposals(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -78190,7 +78327,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "transactionEntities":
+		case "entities":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -78199,7 +78336,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_transactionEntities(ctx, field)
+				res = ec._Query_entities(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -80528,139 +80665,6 @@ func (ec *executionContext) _TradeUpdate(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var transactionEntitiesImplementors = []string{"TransactionEntities"}
-
-func (ec *executionContext) _TransactionEntities(ctx context.Context, sel ast.SelectionSet, obj *v2.ListTransactionEntitiesResponse) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, transactionEntitiesImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TransactionEntities")
-		case "accounts":
-
-			out.Values[i] = ec._TransactionEntities_accounts(ctx, field, obj)
-
-		case "orders":
-
-			out.Values[i] = ec._TransactionEntities_orders(ctx, field, obj)
-
-		case "positions":
-
-			out.Values[i] = ec._TransactionEntities_positions(ctx, field, obj)
-
-		case "ledgerEntries":
-
-			out.Values[i] = ec._TransactionEntities_ledgerEntries(ctx, field, obj)
-
-		case "balanceChanges":
-
-			out.Values[i] = ec._TransactionEntities_balanceChanges(ctx, field, obj)
-
-		case "transfers":
-
-			out.Values[i] = ec._TransactionEntities_transfers(ctx, field, obj)
-
-		case "votes":
-
-			out.Values[i] = ec._TransactionEntities_votes(ctx, field, obj)
-
-		case "erc20MultiSigSignerAddedBundles":
-
-			out.Values[i] = ec._TransactionEntities_erc20MultiSigSignerAddedBundles(ctx, field, obj)
-
-		case "erc20MultiSigSignerRemovedBundles":
-
-			out.Values[i] = ec._TransactionEntities_erc20MultiSigSignerRemovedBundles(ctx, field, obj)
-
-		case "trades":
-
-			out.Values[i] = ec._TransactionEntities_trades(ctx, field, obj)
-
-		case "oracleSpecs":
-
-			out.Values[i] = ec._TransactionEntities_oracleSpecs(ctx, field, obj)
-
-		case "oracleData":
-
-			out.Values[i] = ec._TransactionEntities_oracleData(ctx, field, obj)
-
-		case "markets":
-
-			out.Values[i] = ec._TransactionEntities_markets(ctx, field, obj)
-
-		case "parties":
-
-			out.Values[i] = ec._TransactionEntities_parties(ctx, field, obj)
-
-		case "marginLevels":
-
-			out.Values[i] = ec._TransactionEntities_marginLevels(ctx, field, obj)
-
-		case "rewards":
-
-			out.Values[i] = ec._TransactionEntities_rewards(ctx, field, obj)
-
-		case "deposits":
-
-			out.Values[i] = ec._TransactionEntities_deposits(ctx, field, obj)
-
-		case "withdrawals":
-
-			out.Values[i] = ec._TransactionEntities_withdrawals(ctx, field, obj)
-
-		case "assets":
-
-			out.Values[i] = ec._TransactionEntities_assets(ctx, field, obj)
-
-		case "liquidityProvisions":
-
-			out.Values[i] = ec._TransactionEntities_liquidityProvisions(ctx, field, obj)
-
-		case "proposals":
-
-			out.Values[i] = ec._TransactionEntities_proposals(ctx, field, obj)
-
-		case "delegations":
-
-			out.Values[i] = ec._TransactionEntities_delegations(ctx, field, obj)
-
-		case "nodes":
-
-			out.Values[i] = ec._TransactionEntities_nodes(ctx, field, obj)
-
-		case "nodeSignatures":
-
-			out.Values[i] = ec._TransactionEntities_nodeSignatures(ctx, field, obj)
-
-		case "networkParameters":
-
-			out.Values[i] = ec._TransactionEntities_networkParameters(ctx, field, obj)
-
-		case "keyRotations":
-
-			out.Values[i] = ec._TransactionEntities_keyRotations(ctx, field, obj)
-
-		case "ethereumKeyRotations":
-
-			out.Values[i] = ec._TransactionEntities_ethereumKeyRotations(ctx, field, obj)
-
-		case "protocolUpgradeProposals":
-
-			out.Values[i] = ec._TransactionEntities_protocolUpgradeProposals(ctx, field, obj)
-
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var transactionResultImplementors = []string{"TransactionResult", "Event"}
 
 func (ec *executionContext) _TransactionResult(ctx context.Context, sel ast.SelectionSet, obj *v1.TransactionResult) graphql.Marshaler {
@@ -82857,6 +82861,20 @@ func (ec *executionContext) marshalNERC20SetAssetLimitsBundle2ᚖcodeᚗvegaprot
 	return ec._ERC20SetAssetLimitsBundle(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNEntities2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListEntitiesResponse(ctx context.Context, sel ast.SelectionSet, v v2.ListEntitiesResponse) graphql.Marshaler {
+	return ec._Entities(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEntities2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListEntitiesResponse(ctx context.Context, sel ast.SelectionSet, v *v2.ListEntitiesResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Entities(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEpoch2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐEpoch(ctx context.Context, sel ast.SelectionSet, v vega.Epoch) graphql.Marshaler {
 	return ec._Epoch(ctx, sel, &v)
 }
@@ -84856,20 +84874,6 @@ func (ec *executionContext) marshalNTradeUpdate2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._TradeUpdate(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNTransactionEntities2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListTransactionEntitiesResponse(ctx context.Context, sel ast.SelectionSet, v v2.ListTransactionEntitiesResponse) graphql.Marshaler {
-	return ec._TransactionEntities(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNTransactionEntities2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListTransactionEntitiesResponse(ctx context.Context, sel ast.SelectionSet, v *v2.ListTransactionEntitiesResponse) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._TransactionEntities(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {

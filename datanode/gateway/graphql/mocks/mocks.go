@@ -1120,6 +1120,26 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListERC20MultiSigSignerRem
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListERC20MultiSigSignerRemovedBundles", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListERC20MultiSigSignerRemovedBundles), varargs...)
 }
 
+// ListEntities mocks base method.
+func (m *MockTradingDataServiceClientV2) ListEntities(arg0 context.Context, arg1 *v2.ListEntitiesRequest, arg2 ...grpc.CallOption) (*v2.ListEntitiesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListEntities", varargs...)
+	ret0, _ := ret[0].(*v2.ListEntitiesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListEntities indicates an expected call of ListEntities.
+func (mr *MockTradingDataServiceClientV2MockRecorder) ListEntities(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEntities", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListEntities), varargs...)
+}
+
 // ListEpochRewardSummaries mocks base method.
 func (m *MockTradingDataServiceClientV2) ListEpochRewardSummaries(arg0 context.Context, arg1 *v2.ListEpochRewardSummariesRequest, arg2 ...grpc.CallOption) (*v2.ListEpochRewardSummariesResponse, error) {
 	m.ctrl.T.Helper()
@@ -1558,26 +1578,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListTrades(arg0, arg1 inte
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTrades", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListTrades), varargs...)
-}
-
-// ListTransactionEntities mocks base method.
-func (m *MockTradingDataServiceClientV2) ListTransactionEntities(arg0 context.Context, arg1 *v2.ListTransactionEntitiesRequest, arg2 ...grpc.CallOption) (*v2.ListTransactionEntitiesResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListTransactionEntities", varargs...)
-	ret0, _ := ret[0].(*v2.ListTransactionEntitiesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListTransactionEntities indicates an expected call of ListTransactionEntities.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ListTransactionEntities(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransactionEntities", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListTransactionEntities), varargs...)
 }
 
 // ListTransfers mocks base method.

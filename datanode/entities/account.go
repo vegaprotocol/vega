@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -46,9 +47,9 @@ func (a Account) ToProto() *vega.Account {
 
 func (a Account) ToAccountDetailsProto() *vega.AccountDetails {
 	return &vega.AccountDetails{
-		Owner:    toPointer(a.PartyID.String()),
+		Owner:    ptr.From(a.PartyID.String()),
 		AssetId:  a.AssetID.String(),
-		MarketId: toPointer(a.MarketID.String()),
+		MarketId: ptr.From(a.MarketID.String()),
 		Type:     a.Type,
 	}
 }

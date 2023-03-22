@@ -3141,11 +3141,8 @@ func (t *tradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingR
 	return &v2.PingResponse{}, nil
 }
 
-func (t *tradingDataServiceV2) ListTransactionEntities(
-	ctx context.Context,
-	req *v2.ListTransactionEntitiesRequest,
-) (*v2.ListTransactionEntitiesResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("ListTransactionEntities")()
+func (t *tradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEntitiesRequest) (*v2.ListEntitiesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListEntities")()
 
 	txHash := entities.TxHash(req.GetTransactionHash())
 
@@ -3266,7 +3263,7 @@ func (t *tradingDataServiceV2) ListTransactionEntities(
 		return nil, err
 	}
 
-	return &v2.ListTransactionEntitiesResponse{
+	return &v2.ListEntitiesResponse{
 		Accounts:                          <-accounts,
 		Orders:                            <-orders,
 		Positions:                         <-positions,
