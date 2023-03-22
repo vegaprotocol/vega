@@ -24,10 +24,12 @@
 - [7910](https://github.com/vegaprotocol/vega/issues/7910) - Store heartbeats in the checkpoint so that validator sets do not reorder unexpectedly after loading
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
 - [7871](https://github.com/vegaprotocol/vega/issues/7871) - Bad `SQL` generated when paginating reward summaries
+- [7908](https://github.com/vegaprotocol/vega/issues/7908) - Expired `heartbeats` no longer invalidate subsequent `heartbeats`
 - [7880](https://github.com/vegaprotocol/vega/issues/7880) - Update volume-weighted average price party's of open orders after a trade
 - [7883](https://github.com/vegaprotocol/vega/issues/7883) - Fix snapshot issue with witness on accounting
 - [7921](https://github.com/vegaprotocol/vega/issues/7921) - Fix streams batches
 - [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
+
 
 
 ## 0.69.0
