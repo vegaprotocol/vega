@@ -783,7 +783,7 @@ func (m *Market) blockEnd(ctx context.Context) {
 			m.releaseExcessMargin(ctx, closedWithoutLP...)
 		}
 		// last traded price should not reflect the closeout trades
-		m.lastTradedPrice = m.getCurrentMarkPrice()
+		m.lastTradedPrice = mp.Clone()
 	}
 	m.releaseExcessMargin(ctx, m.position.Positions()...)
 	// send position events
@@ -1749,8 +1749,9 @@ func (m *Market) confirmMTM(
 	ctx context.Context, skipMargin bool,
 ) {
 	// now let's get the transfers for MTM settlement
-	evts := m.position.UpdateMarkPrice(m.getCurrentMarkPrice())
-	settle := m.settlement.SettleMTM(ctx, m.getCurrentMarkPrice(), evts)
+	mp := m.getCurrentMarkPrice()
+	evts := m.position.UpdateMarkPrice(mp)
+	settle := m.settlement.SettleMTM(ctx, mp, evts)
 	orderUpdates := []*types.Order{}
 
 	// Only process collateral and risk once per order, not for every trade
@@ -3490,7 +3491,7 @@ func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
 			return ip
 		}
 		// we don't have an indicative price yet so we use the supplied price
-		return fallbackPrice.Clone()
+		return fallbackPrice
 	}
 	return m.getCurrentMarkPrice()
 }
