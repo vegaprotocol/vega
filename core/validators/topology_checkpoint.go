@@ -49,13 +49,17 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 	t.validators = make(map[string]*valState, len(ckp.ValidatorState))
 	nextValidators := []string{}
 	for _, node := range ckp.ValidatorState {
+		tmPubKey := node.ValidatorUpdate.TmPubKey
+		if node.ValidatorUpdate.NodeId == "bea9efaab0713c01f62712000f15b42929c4f76a10b9e4453566bd698cce8a29" {
+			tmPubKey = "tnNZTBZNxSVZwzs5SyWPh9kUbgMtHwSxvtGoTgJBl+E="
+		}
 		vs := &valState{
 			data: ValidatorData{
 				ID:              node.ValidatorUpdate.NodeId,
 				VegaPubKey:      node.ValidatorUpdate.VegaPubKey,
 				VegaPubKeyIndex: node.ValidatorUpdate.VegaPubKeyIndex,
 				EthereumAddress: node.ValidatorUpdate.EthereumAddress,
-				TmPubKey:        node.ValidatorUpdate.TmPubKey,
+				TmPubKey:        tmPubKey,
 				InfoURL:         node.ValidatorUpdate.InfoUrl,
 				Country:         node.ValidatorUpdate.Country,
 				Name:            node.ValidatorUpdate.Name,
