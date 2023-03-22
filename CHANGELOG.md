@@ -3,23 +3,32 @@
 ## Unreleased 0.70.0
 
 ### 🚨 Breaking changes
-- [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter. 
+- [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter.
+- [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else.
+- [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions` and add a `live` option
 - [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else. 
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
-- [7862](https://github.com/vegaprotocol/vega/issues/7862) - Add per table statistics for network history segment creation 
+- [7862](https://github.com/vegaprotocol/vega/issues/7862) - Add per table statistics for network history segment creation
 - [7834](https://github.com/vegaprotocol/vega/issues/7834) - Support TLS connection for gRPC endpoints in wallet when prefixed with `tls://`
 - [7851](https://github.com/vegaprotocol/vega/issues/7851) - Implement post only and reduce only orders
-- [7768](https://github.com/vegaprotocol/vega/issues/7768) - Set sensible defaults for the IPFS resource manager 
+- [7768](https://github.com/vegaprotocol/vega/issues/7768) - Set sensible defaults for the IPFS resource manager
 - [7863](https://github.com/vegaprotocol/vega/issues/7863) - Rework positions indexes so that snapshot creation does not slow down
-- [7670](https://github.com/vegaprotocol/vega/issues/7670) - Removes the need for the buffered event source to hold a large buffer of sequence numbers 
+- [7829](https://github.com/vegaprotocol/vega/issues/7829) - Get precision for reference price from price monitoring bounds when getting market data
+- [7670](https://github.com/vegaprotocol/vega/issues/7670) - Removes the need for the buffered event source to hold a large buffer of sequence numbers
+- [7904](https://github.com/vegaprotocol/vega/issues/7904) - Add a default system test template for integration tests
+- [7894](https://github.com/vegaprotocol/vega/issues/7894) - Use slippage cap when market is in auction mode
 
 ### 🐛 Fixes
 - [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
 - [7871](https://github.com/vegaprotocol/vega/issues/7871) - Bad `SQL` generated when paginating reward summaries
+- [7880](https://github.com/vegaprotocol/vega/issues/7880) - Update volume-weighted average price party's of open orders after a trade
+- [7883](https://github.com/vegaprotocol/vega/issues/7883) - Fix snapshot issue with witness on accounting
+- [7921](https://github.com/vegaprotocol/vega/issues/7921) - Fix streams batches
+- [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
 
 
 ## 0.69.0
@@ -82,7 +91,6 @@
 - [7765](https://github.com/vegaprotocol/vega/issues/7765) - Assure pegged order won't get deployed with insufficient margin
 - [7786](https://github.com/vegaprotocol/vega/issues/7786) - Fix validation of order amendments (check for negative pegged offset)
 - [7750](https://github.com/vegaprotocol/vega/issues/7750) - Fix not all paths cleanly close network history index store.
-- [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions`
 - [7805](https://github.com/vegaprotocol/vega/issues/7805) - Fix re-announcing node in the same epoch kills data node.
 - [7820](https://github.com/vegaprotocol/vega/issues/7820) - Remove the check for past date in limits engine
 - [7822](https://github.com/vegaprotocol/vega/issues/7822) - Fix get last epoch query

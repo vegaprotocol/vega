@@ -80,7 +80,7 @@ Feature: Check that bond slashing works with non-default asset decimals, market 
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 240854   | 50000 |
       | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
-      | party2 | USD   | ETH/MAR22 | 51688  | 99948312 |       |
+      | party2 | USD   | ETH/MAR22 | 51690  | 99948310 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial |

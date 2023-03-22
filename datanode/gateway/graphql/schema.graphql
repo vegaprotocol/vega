@@ -1788,6 +1788,8 @@ type Market {
    liquidityProvisionsConnection(
      "An optional party ID"
      partyId: ID
+     "An optional live flag to determine whether to list only live LPs or not"
+     live: Boolean
      "Pagination information"
      pagination: Pagination
   ): LiquidityProvisionsConnection
@@ -2023,6 +2025,8 @@ type Party {
     marketId: ID
     "An optional reference"
     reference: String
+    "An optional live flag to determine whether to list only live LPs or not"
+    live: Boolean
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection

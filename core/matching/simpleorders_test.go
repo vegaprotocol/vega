@@ -720,10 +720,10 @@ func TestOrderBookSimple_simpleWashTradePartiallyFilledThenStoppedDifferentPrice
 }
 
 type MarketPos struct {
-	size, buy, sell int64
-	party           string
-	price           *num.Uint
-	vwBuy, vwSell   *num.Uint
+	size, buy, sell               int64
+	party                         string
+	price                         *num.Uint
+	buySumProduct, sellSumProduct *num.Uint
 }
 
 func (m MarketPos) Party() string {
@@ -749,16 +749,30 @@ func (m MarketPos) Price() *num.Uint {
 	return num.UintZero()
 }
 
+func (m MarketPos) BuySumProduct() *num.Uint {
+	if m.buySumProduct != nil {
+		return m.buySumProduct
+	}
+	return num.UintZero()
+}
+
+func (m MarketPos) SellSumProduct() *num.Uint {
+	if m.sellSumProduct != nil {
+		return m.sellSumProduct
+	}
+	return num.UintZero()
+}
+
 func (m MarketPos) VWBuy() *num.Uint {
-	if m.vwBuy != nil {
-		return m.vwBuy
+	if m.buySumProduct != nil && m.buy != 0 {
+		return num.UintZero().Div(m.buySumProduct.Clone(), num.NewUint(uint64(m.buy)))
 	}
 	return num.UintZero()
 }
 
 func (m MarketPos) VWSell() *num.Uint {
-	if m.vwSell != nil {
-		return m.vwSell
+	if m.sellSumProduct != nil && m.sell != 0 {
+		return num.UintZero().Div(m.sellSumProduct.Clone(), num.NewUint(uint64(m.sell)))
 	}
 	return num.UintZero()
 }

@@ -28,6 +28,7 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
 	market *types.Market,
 	party *string,
+	live *bool,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
 	var pid string
@@ -40,9 +41,15 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 		marketID = market.Id
 	}
 
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
 	req := v2.ListLiquidityProvisionsRequest{
 		PartyId:    &pid,
 		MarketId:   &marketID,
+		Live:       &l,
 		Pagination: pagination,
 	}
 
