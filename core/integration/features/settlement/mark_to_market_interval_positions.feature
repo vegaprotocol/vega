@@ -15,9 +15,9 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
       | 1.2           | 1.5            | 2              |
 
     And the markets:
-      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | default-eth-for-future | 1e0                    | 0                         |
-      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1     | default-eth-for-future | 1e0                    | 0                         |
+      | id        | quote name | asset | risk model                | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none       | default-eth-for-future | 1e0                    | 0                         |
+      | ETH/DEC20 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e0                    | 0                         |
 
     And the following network parameters are set:
       | name                                    | value |
@@ -310,3 +310,136 @@ Feature: Check position tracking matches expected behaviour with MTM intervals. 
     Then the parties should have the following account balances:
       | party           | asset | market id | margin | general |
       | designatedLoser | USD   | ETH/DEC20 | 0      | 0       |
+
+  Scenario: 003, settlement works correctly when party enters and leaves within one MTM window
+    Given the markets are updated:
+      | id        | linear slippage factor | quadratic slippage factor | lp price range |
+      | ETH/DEC19 | 1e0                    | 0                         | 2              |
+    And the parties deposit on asset's general account the following amount:
+      | party            | asset | amount        |
+      | aux              | USD   | 1000000000000 |
+      | aux2             | USD   | 1000000000000 |
+      | lp               | USD   | 1000000000000 |
+      | buyer            | USD   |       1000000 |
+      | seller           | USD   |       1000000 |
+      | party1           | USD   |       1000000 |
+      | party2           | USD   |       1000000 |
+    And the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 10s   |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lp     | ETH/DEC19 | 9000              | 0.0 | sell | ASK              | 50         | 100    | amendment  |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+    And the opening auction period ends for market "ETH/DEC19"
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            |
+      | 150        | TRADING_MODE_CONTINUOUS |
+
+    When the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer  | ETH/DEC19 | buy  |     6 |    90 | 0                | TYPE_LIMIT | TIF_GTC |
+ 
+    And the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer  | ETH/DEC19 | buy  |     9  |    95 | 0                | TYPE_LIMIT | TIF_GTC |
+    
+    And the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | buyer  | ETH/DEC19 | buy  |      5 |   100 | 0                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell |     11 |    90 | 2                | TYPE_LIMIT | TIF_FOK |
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            |
+      | 150        | TRADING_MODE_CONTINUOUS |
+    And the following trades should be executed:
+      | buyer  | price | size | seller |
+      | buyer  |   100 |    5 | party1 | 
+      | buyer  |    95 |    6 | party1 | 
+     
+    When the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC19 | sell |      9 |    87 | 2                | TYPE_LIMIT | TIF_FOK|
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | buyer  |    95 |    3 | party2 | 
+      | buyer  |    90 |    6 | party2 | 
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance |
+      | party1 | ETH/DEC19 |         805 |
+      | party2 | ETH/DEC19 |         659 |
+
+    When the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | seller | ETH/DEC19 | sell |     8  |    90 | 0                | TYPE_LIMIT | TIF_GTC |
+      | seller | ETH/DEC19 | sell |     7  |    85 | 0                | TYPE_LIMIT | TIF_GTC |
+      | seller | ETH/DEC19 | sell |     6  |    80 | 0                | TYPE_LIMIT | TIF_GTC |
+    And the network moves ahead "1" blocks
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | buy  |     11 |    90 | 2                | TYPE_LIMIT | TIF_FOK |
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party1 |    80 |    6 | seller | 
+      | party1 |    85 |    5 | seller | 
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            |
+      | 150        | TRADING_MODE_CONTINUOUS |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC19 |      0 | 1000000 |
+      | party2 | USD   | ETH/DEC19 |    988 |  999012 |
+  
+    # Go to next MTM window
+    When the network moves ahead "5" blocks
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC19 |      0 | 1000165 |
+      | party2 | USD   | ETH/DEC19 |    601 |  999459 |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 |  0     |              0 |          165 |
+      | party2 | -9     |             60 |            0 |
+    And the market data for the market "ETH/DEC19" should be:
+      | mark price | trading mode            |
+      | 85        | TRADING_MODE_CONTINUOUS |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC19 | buy  |      9 |    90 | 2                | TYPE_LIMIT | TIF_FOK |
+    Then the following trades should be executed:
+      | buyer  | price | size | seller |
+      | party2 |    85 |    2 | seller | 
+      | party2 |    90 |    7 | seller | 
+
+    # Go to next MTM window
+    When the network moves ahead "9" blocks
+    # party1 gains: 100*5+95*6-80*6-85*5=165
+    # party2 gains:  95*3+90*6-85*2-90*7=25
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC19 |      0 | 1000165 |
+      | party2 | USD   | ETH/DEC19 |      0 | 1000025 |
+      | buyer  | USD   | ETH/DEC19 |   3479 |  996426 |
+      | seller | USD   | ETH/DEC19 |   2674 |  997231 |
+    And the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 |      0 |              0 |          165 |
+      | party2 |      0 |              0 |           25 |
+      | buyer  |     20 |            -95 |            0 |
+      | seller |    -20 |            -95 |            0 |
