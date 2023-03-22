@@ -87,7 +87,9 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 			p.buy -= iSizeChange
 		}
 		if p.buy == 0 && !p.buySumProduct.IsZero() {
-			log.Panic("Non-zero buy sum-product with no buy orders")
+			log.Panic("Non-zero buy sum-product with no buy orders",
+				logging.PartyID(p.partyID),
+				logging.BigUint("buy-sum-product", p.buySumProduct))
 		}
 		return
 	}
@@ -106,7 +108,9 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 		p.sell -= iSizeChange
 	}
 	if p.sell == 0 && !p.sellSumProduct.IsZero() {
-		log.Panic("Non-zero sell sum-product with no sell orders")
+		log.Panic("Non-zero sell sum-product with no sell orders",
+			logging.PartyID(p.partyID),
+			logging.BigUint("sell-sum-product", p.sellSumProduct))
 	}
 }
 
