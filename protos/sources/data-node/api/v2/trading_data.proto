@@ -2299,7 +2299,7 @@ message NodeBasic {
     string tm_pub_key = 3;
     // Ethereum public key of the node
     string ethereum_address = 4;
-    // URL that provides more info on the node
+    // URL that provides more information about the node
     string info_url = 5;
     // Country code for the location of the node
     string location = 6;
