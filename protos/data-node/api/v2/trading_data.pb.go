@@ -12090,7 +12090,7 @@ type NodeBasic struct {
 	TmPubKey string `protobuf:"bytes,3,opt,name=tm_pub_key,json=tmPubKey,proto3" json:"tm_pub_key,omitempty"`
 	// Ethereum public key of the node
 	EthereumAddress string `protobuf:"bytes,4,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
-	// URL that provides more info on the node
+	// URL that provides more information about the node
 	InfoUrl string `protobuf:"bytes,5,opt,name=info_url,json=infoUrl,proto3" json:"info_url,omitempty"`
 	// Country code for the location of the node
 	Location string `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
