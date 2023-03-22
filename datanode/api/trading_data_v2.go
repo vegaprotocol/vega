@@ -21,10 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"golang.org/x/sync/errgroup"
-
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
