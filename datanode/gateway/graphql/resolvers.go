@@ -1251,6 +1251,7 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
 	party *types.Party,
 	market, ref *string,
+	live *bool,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
 	var partyID string
@@ -1267,10 +1268,16 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 		refID = *ref
 	}
 
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
 	req := v2.ListLiquidityProvisionsRequest{
 		PartyId:    &partyID,
 		MarketId:   &mid,
 		Reference:  &refID,
+		Live:       &l,
 		Pagination: pagination,
 	}
 
