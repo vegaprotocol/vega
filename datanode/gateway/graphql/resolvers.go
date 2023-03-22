@@ -2157,10 +2157,10 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Debug("orders: data sent")
 			case <-ctx.Done():
 				r.log.Error("orders: stream closed")
-				break
+				return
 			case <-sCtx.Done():
 				r.log.Error("orders: stream closed by server")
-				break
+				return
 			}
 		}
 	}()

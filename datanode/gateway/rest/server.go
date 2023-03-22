@@ -99,7 +99,12 @@ func (s *ProxyServer) Start() error {
 		runtime.WithOutgoingHeaderMatcher(func(s string) (string, bool) { return s, true }),
 	)
 
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	opts := []grpc.DialOption{
+		grpc.WithInsecure(),
+		// 20MB, this is in bytes
+		// not the greatest soluton, it x5 the default value.
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024 * 1024 * 20)),
+	}
 	if err := vegaprotoapi.RegisterCoreServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
