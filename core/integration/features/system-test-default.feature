@@ -125,11 +125,27 @@ Feature: Basic feature-file matching the system-test setup like for like
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedloser | ETH/DEC20 | buy  | 450    | 980   | 1                | TYPE_LIMIT | TIF_GTC | dl-b-1    |
 
+   Then the order book should have the following volumes for market "ETH/DEC20":
+      | side | price | volume |
+      | buy  | 979   | 7978   |
+      | buy  | 980   | 1      |
+      | buy  | 899   | 0      |
+      | buy  | 900   | 5      |
+      | buy  | 100   | 1      |
+      | buy  | 1     | 0      |
+      | sell | 980   | 0      |
+      | sell | 981   | 0      |
+      | sell | 1200  | 5      |
+      | sell | 1201  | 6503   |
+      | sell | 100000| 1      |
+
+Then debug orders
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl |
-      | traderS | -5     | 0              | 0            |
-      | traderB | 5      | 0              | 0            |
-      | lpprov  | 0      | 0              | 0            |
+      | party            | volume | unrealised pnl | realised pnl |
+      | traderS          | -5     | 0              | 0            |
+      | traderB          | 5      | 0              | 0            |
+      | lpprov           | 0      | 0              | 0            |
+      # | designatedloser  | 0      | 0              | 0            |
     Then the parties should have the following account balances:
       | party           | asset | market id | margin         | general                 |
       | designatedloser | ETH   | ETH/DEC20 | 17826700415631 | 189999999968752689584369 |
