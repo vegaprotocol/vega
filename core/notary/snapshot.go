@@ -127,6 +127,10 @@ func (n *SnapshotNotary) OfferSignatures(
 		if k.kind != kind {
 			continue
 		}
+		if v.signature != nil {
+			continue
+		}
+
 		if signature := f(k.id); signature != nil {
 			v.signature = signature
 		}

@@ -25,12 +25,11 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 	for e, data := range s.pendingSignatures {
 		pending = append(pending,
 			&snapshot.PendingERC20MultisigControlSignature{
-				NodeId:           data.NodeID,
-				Nonce:            data.Nonce.String(),
-				EthereumAddress:  e,
-				Added:            data.Added,
-				EpochSeq:         data.EpochSeq,
-				SubmitterAddress: data.SubmitterAddress,
+				NodeId:          data.NodeID,
+				Nonce:           data.Nonce.String(),
+				EthereumAddress: e,
+				Added:           data.Added,
+				EpochSeq:        data.EpochSeq,
 			},
 		)
 	}
@@ -38,11 +37,17 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 		return pending[i].EthereumAddress < pending[j].EthereumAddress
 	})
 
-	issued := make([]string, 0, len(s.issuedSignatures))
-	for i := range s.issuedSignatures {
-		issued = append(issued, i)
+	issued := make([]*snapshot.IssuedERC20MultisigControlSignature, 0, len(s.issuedSignatures))
+	for resID, data := range s.issuedSignatures {
+		issued = append(issued, &snapshot.IssuedERC20MultisigControlSignature{
+			ResourceId:       resID,
+			EthereumAddress:  data.EthAddress,
+			SubmitterAddress: data.SubmitterAddress,
+		})
 	}
-	sort.Strings(issued)
+	sort.SliceStable(issued, func(i, j int) bool {
+		return issued[i].EthereumAddress < issued[j].EthereumAddress
+	})
 
 	return &snapshot.ToplogySignatures{
 		PendingSignatures: pending,
@@ -57,17 +62,19 @@ func (s *ERC20Signatures) RestorePendingSignatures(sigs *snapshot.ToplogySignatu
 			s.log.Panic("Uint string not save/restored properly", logging.String("nonce", data.Nonce))
 		}
 		sd := &signatureData{
-			Nonce:            nonce,
-			NodeID:           data.NodeId,
-			EthAddress:       data.EthereumAddress,
-			EpochSeq:         data.EpochSeq,
-			Added:            data.Added,
-			SubmitterAddress: data.SubmitterAddress,
+			Nonce:      nonce,
+			NodeID:     data.NodeId,
+			EthAddress: data.EthereumAddress,
+			EpochSeq:   data.EpochSeq,
+			Added:      data.Added,
 		}
 		s.pendingSignatures[data.EthereumAddress] = sd
 	}
 
-	for _, i := range sigs.IssuedSignatures {
-		s.issuedSignatures[i] = struct{}{}
+	for _, data := range sigs.IssuedSignatures {
+		s.issuedSignatures[data.ResourceId] = issuedSignature{
+			EthAddress:       data.EthereumAddress,
+			SubmitterAddress: data.SubmitterAddress,
+		}
 	}
 }

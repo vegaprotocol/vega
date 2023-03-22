@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sort"
 	"time"
 
@@ -46,15 +47,24 @@ type Signatures interface {
 	ClearStaleSignatures()
 	SerialisePendingSignatures() *snapshot.ToplogySignatures
 	RestorePendingSignatures(*snapshot.ToplogySignatures)
-	OnTick(ctx context.Context, _ time.Time)
+	OfferSignatures()
 }
 
 type signatureData struct {
-	NodeID           string
+	NodeID     string
+	EthAddress string
+	Nonce      *num.Uint
+	EpochSeq   uint64
+	Added      bool
+}
+
+type issuedSignature struct {
 	EthAddress       string
-	Nonce            *num.Uint
-	EpochSeq         uint64
-	Added            bool
+	SubmitterAddress string
+}
+
+type signatureWithSubmitter struct {
+	signatureData
 	SubmitterAddress string
 }
 
@@ -69,7 +79,7 @@ type ERC20Signatures struct {
 
 	// stored nonce's etc. to be able to generate signatures to remove/add an ethereum address from the multisig bundle
 	pendingSignatures map[string]*signatureData
-	issuedSignatures  map[string]struct{}
+	issuedSignatures  map[string]issuedSignature
 }
 
 func NewSignatures(
@@ -88,7 +98,7 @@ func NewSignatures(
 		broker:            broker,
 		isValidatorSetup:  isValidatorSetup,
 		pendingSignatures: map[string]*signatureData{},
-		issuedSignatures:  map[string]struct{}{},
+		issuedSignatures:  map[string]issuedSignature{},
 	}
 	if isValidatorSetup {
 		s.multisig = bridges.NewERC20MultiSigControl(nw.GetEthereum())
@@ -108,22 +118,43 @@ type NodeIDAddress struct {
 	SubmitterAddress string
 }
 
-func (s *ERC20Signatures) OnTick(ctx context.Context, _ time.Time) {
+func (s *ERC20Signatures) OfferSignatures() {
 	s.notary.OfferSignatures(types.NodeSignatureKindERC20MultiSigSignerAdded, s.offerValidatorAddedSignatures)
 	s.notary.OfferSignatures(types.NodeSignatureKindERC20MultiSigSignerRemoved, s.offerValidatorRemovedSignatures)
 }
 
-func (s *ERC20Signatures) offerValidatorAddedSignatures(id string) []byte {
+func (s *ERC20Signatures) getSignatureWithSubmitterByResID(resID string) (*signatureWithSubmitter, error) {
+	is, ok := s.issuedSignatures[resID]
+	if !ok {
+		return nil, fmt.Errorf("unable to find issued signature with resource id %q", resID)
+	}
+
+	sd, ok := s.pendingSignatures[is.EthAddress]
+	if !ok {
+		return nil, fmt.Errorf("unable to find pending signature by ethereum address %q", is.EthAddress)
+	}
+
+	return &signatureWithSubmitter{
+		signatureData:    *sd,
+		SubmitterAddress: is.SubmitterAddress,
+	}, nil
+}
+
+func (s *ERC20Signatures) offerValidatorAddedSignatures(resID string) []byte {
 	if s.isValidatorSetup {
 		return nil
 	}
 
-	sd, ok := s.pendingSignatures[id]
-	if !ok {
-		s.log.Panic("unable to find pending signature", logging.String("signatureID", id))
+	sig, err := s.getSignatureWithSubmitterByResID(resID)
+	if err != nil {
+		s.log.Panic("unable to find signature", logging.Error(err))
 	}
 
-	signature, err := s.multisig.AddSigner(sd.EthAddress, sd.SubmitterAddress, sd.Nonce)
+	if !sig.Added {
+		s.log.Panic("expected added signature but got removed signature instead", logging.String("ethereumAddress", sig.EthAddress))
+	}
+
+	signature, err := s.multisig.AddSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
 	if err != nil {
 		s.log.Panic("could not sign remove signer event, wallet not configured properly",
 			logging.Error(err))
@@ -132,17 +163,21 @@ func (s *ERC20Signatures) offerValidatorAddedSignatures(id string) []byte {
 	return signature.Message.Bytes()
 }
 
-func (s *ERC20Signatures) offerValidatorRemovedSignatures(id string) []byte {
+func (s *ERC20Signatures) offerValidatorRemovedSignatures(resID string) []byte {
 	if s.isValidatorSetup {
 		return nil
 	}
 
-	sd, ok := s.pendingSignatures[id]
-	if !ok {
-		s.log.Panic("unable to find pending signature", logging.String("signatureID", id))
+	sig, err := s.getSignatureWithSubmitterByResID(resID)
+	if err != nil {
+		s.log.Panic("unable to find signature", logging.Error(err))
 	}
 
-	signature, err := s.multisig.RemoveSigner(sd.EthAddress, sd.SubmitterAddress, sd.Nonce)
+	if sig.Added {
+		s.log.Panic("expected removed signature but got added signature instead", logging.String("ethereumAddress", sig.EthAddress))
+	}
+
+	signature, err := s.multisig.RemoveSigner(sig.EthAddress, sig.SubmitterAddress, sig.Nonce.Clone())
 	if err != nil {
 		s.log.Panic("could not sign remove signer event, wallet not configured properly",
 			logging.Error(err))
@@ -240,12 +275,11 @@ func (s *ERC20Signatures) PrepareValidatorSignatures(ctx context.Context, valida
 
 	for _, signer := range validators {
 		d := &signatureData{
-			NodeID:           signer.NodeID,
-			EthAddress:       signer.EthAddress,
-			Nonce:            s.lastNonce.Clone(),
-			EpochSeq:         epochSeq,
-			Added:            added,
-			SubmitterAddress: signer.SubmitterAddress,
+			NodeID:     signer.NodeID,
+			EthAddress: signer.EthAddress,
+			Nonce:      s.lastNonce.Clone(),
+			EpochSeq:   epochSeq,
+			Added:      added,
 		}
 		s.lastNonce.AddUint64(s.lastNonce, 1)
 
@@ -300,7 +334,10 @@ func (s *ERC20Signatures) EmitValidatorAddedSignatures(ctx context.Context, subm
 		))
 
 		// store that we issued it for this submitter
-		s.issuedSignatures[resid] = struct{}{}
+		s.issuedSignatures[resid] = issuedSignature{
+			EthAddress:       pending.EthAddress,
+			SubmitterAddress: submitter,
+		}
 	}
 	s.broker.SendBatch(evts)
 	return nil
@@ -358,7 +395,10 @@ func (s *ERC20Signatures) EmitValidatorRemovedSignatures(ctx context.Context, su
 		))
 
 		// store that we issued it for this submitter
-		s.issuedSignatures[resid] = struct{}{}
+		s.issuedSignatures[resid] = issuedSignature{
+			EthAddress:       pending.EthAddress,
+			SubmitterAddress: submitter,
+		}
 	}
 	s.broker.SendBatch(evts)
 	return nil
@@ -423,6 +463,6 @@ func (n *noopSignatures) RestorePendingSignatures(*snapshot.ToplogySignatures) {
 	n.log.Error("noopSignatures implementation in use in production")
 }
 
-func (n *noopSignatures) OnTick(ctx context.Context, tm time.Time) {
+func (n *noopSignatures) OfferSignatures() {
 	n.log.Error("noopSignatures implementation in use in production")
 }

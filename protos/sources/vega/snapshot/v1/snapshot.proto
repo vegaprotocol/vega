@@ -626,7 +626,7 @@ message Topology {
 
 message ToplogySignatures {
   repeated PendingERC20MultisigControlSignature pending_signatures = 1;
-  repeated string issued_signatures = 2;
+  repeated IssuedERC20MultisigControlSignature issued_signatures = 2;
 }
 
 message PendingERC20MultisigControlSignature {
@@ -635,7 +635,12 @@ message PendingERC20MultisigControlSignature {
   string nonce = 3;
   uint64 epoch_seq = 4;
   bool added = 5;
-  string submitter_address = 6;
+}
+
+message IssuedERC20MultisigControlSignature {
+  string resource_id = 1;
+  string ethereum_address = 2;
+  string submitter_address = 3;
 }
 
 message ValidatorState {
