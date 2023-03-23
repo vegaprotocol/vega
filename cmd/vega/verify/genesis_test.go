@@ -224,8 +224,14 @@ func getFileFromAppstate(t *testing.T, gs genesis.State) string {
 	testFile := filepath.Join(t.TempDir(), "genesistest.json")
 
 	genesis := struct {
-		AppState genesis.State `json:"app_state"`
+		AppState        genesis.State `json:"app_state"`
+		ConsensusParams struct {
+			Block struct {
+				TimeIotaMs string `json:"time_iota_ms"`
+			} `json:"block"`
+		} `json:"consensus_params"`
 	}{AppState: gs}
+	genesis.ConsensusParams.Block.TimeIotaMs = "1"
 	// marshall it
 	file, _ := json.MarshalIndent(genesis, "", " ")
 

@@ -549,6 +549,11 @@ func (m *Market) GetMarketData() types.MarketData {
 	for _, b := range bounds {
 		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		m.priceToMarketPrecision(b.MinValidPrice)
+
+		rp, _ := num.UintFromDecimal(b.ReferencePrice)
+		m.priceToMarketPrecision(rp)
+		b.ReferencePrice = num.DecimalFromUint(rp)
+
 		if m.priceFactor.NEQ(one) {
 			b.MinValidPrice.AddSum(one) // ceil
 		}
@@ -906,12 +911,15 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 }
 
 func (m *Market) unregisterAndReject(ctx context.Context, order *types.Order, err error) error {
+	// in case the order was reduce only
+	order.ClearUpExtraRemaining()
+
 	_ = m.position.UnregisterOrder(ctx, order)
 	order.UpdatedAt = m.timeService.GetTimeNow().UnixNano()
 	order.Status = types.OrderStatusRejected
 	if oerr, ok := types.IsOrderError(err); ok {
 		// the order wasn't invalid, so stopped is a better status, rather than rejected.
-		if oerr == types.OrderErrorNonPersistentOrderOutOfPriceBounds {
+		if types.IsStoppingOrder(oerr) {
 			order.Status = types.OrderStatusStopped
 		}
 		order.Reason = oerr
@@ -1301,7 +1309,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// now check if all buy/sell/size are 0
-		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || !pos.VWBuy().IsZero() || !pos.VWSell().IsZero() {
+		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 {
 			// position is not 0, nothing to release surely
 			continue
 		}
@@ -1448,8 +1456,23 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 	// Register order as potential positions
 	pos := m.position.RegisterOrder(ctx, order)
 
+	// in case we have an IOC order, that would work but need to be stopped because
+	// it'd be flipping the position of the party
+	// first check if we have a reduce only order and make sure it can go through
+	if order.ReduceOnly {
+		reduce, extraSize := pos.OrderReducesOnlyExposure(order)
+		// if we are not reducing, or if the position flips on a FOK, we short-circuit here.
+		// in the case of a IOC, the order will be stopped once we reach 0
+		if !reduce || (order.TimeInForce == types.OrderTimeInForceFOK && extraSize > 0) {
+			return nil, nil, m.unregisterAndReject(
+				ctx, order, types.ErrReduceOnlyOrderWouldNotReducePosition)
+		}
+		// keep track of the eventual reduce only size
+		order.ReduceOnlyAdjustRemaining(extraSize)
+	}
+
 	// Perform check and allocate margin unless the order is (partially) closing the party position
-	if !pos.OrderReducesExposure(order) {
+	if !order.ReduceOnly && !pos.OrderReducesExposure(order) {
 		if err := m.checkMarginForOrder(ctx, pos, order); err != nil {
 			if m.log.GetLevel() <= logging.DebugLevel {
 				m.log.Debug("Unable to check/add margin for party",
@@ -1503,6 +1526,17 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		return nil, nil, m.unregisterAndReject(ctx, order, err)
 	}
 
+	// this is no op for non reduce-only orders
+	order.ClearUpExtraRemaining()
+
+	// this means our reduce-only order (IOC) have been stopped
+	// from trading to the point it would flip the position,
+	// and successfully reduced the position to 0.
+	// set the status to Stopped then.
+	if order.ReduceOnly && order.Remaining > 0 {
+		order.Status = types.OrderStatusStopped
+	}
+
 	// if the order is not staying in the book, then we remove it
 	// from the potential positions
 	if order.IsFinished() && order.Remaining > 0 {
@@ -1526,6 +1560,11 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 	if err != nil {
 		return nil, err
 	}
+
+	if order.PostOnly && len(trades) > 0 {
+		return nil, types.OrderErrorPostOnlyOrderWouldTrade
+	}
+
 	persistent := true
 	switch order.TimeInForce {
 	case types.OrderTimeInForceFOK, types.OrderTimeInForceGFN, types.OrderTimeInForceIOC:
@@ -1682,7 +1721,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
-		m.position.Update(ctx, trade)
+		m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order)
 
 		// Record open interest change
 		if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
@@ -2030,7 +2069,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
-			m.position.UpdateNetwork(ctx, trade)
+			m.position.UpdateNetwork(ctx, trade, confirmation.PassiveOrdersAffected[idx])
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), now); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -2237,7 +2276,7 @@ func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *ty
 		pos.UnregisterOrder(m.log, existingOrder)
 	}
 
-	pos.RegisterOrder(amendedOrder)
+	pos.RegisterOrder(m.log, amendedOrder)
 
 	// we are just checking here if we can pass the margin calls.
 	_, _, err := m.calcMargins(ctx, pos, amendedOrder)
@@ -2455,9 +2494,9 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 			logging.Error(err))
 	}
 
+	_ = m.position.UnregisterOrder(ctx, order)
 	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	_ = m.position.UnregisterOrder(ctx, order)
 	m.releaseMarginExcess(ctx, order.Party)
 	return order
 }

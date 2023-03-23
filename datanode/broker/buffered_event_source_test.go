@@ -166,7 +166,6 @@ func Test_FileBufferedEventSource_BufferingDisabledWhenEventsPerFileIsZero(t *te
 	fb, err := NewBufferedEventSource(ctx, logging.NewTestLogger(), BufferedEventSourceConfig{
 		EventsPerFile:         0,
 		SendChannelBufferSize: 1000,
-		MaxBufferedEvents:     10000,
 	}, eventSource, path, archivePath)
 
 	assert.NoError(t, err)
@@ -200,7 +199,6 @@ func Test_FileBufferedEventSource_ErrorSentOnPathError(t *testing.T) {
 	fb, err := NewBufferedEventSource(ctx, logging.NewTestLogger(), BufferedEventSourceConfig{
 		EventsPerFile:         10,
 		SendChannelBufferSize: 0,
-		MaxBufferedEvents:     10000,
 	}, eventSource, "thepaththatdoesntexist", "")
 
 	assert.NoError(t, err)
@@ -227,7 +225,6 @@ func Test_FileBufferedEventSource_ErrorsArePassedThrough(t *testing.T) {
 	fb, err := NewBufferedEventSource(ctx, logging.NewTestLogger(), BufferedEventSourceConfig{
 		EventsPerFile:         10,
 		SendChannelBufferSize: 0,
-		MaxBufferedEvents:     10000,
 	}, eventSource, path, archivePath)
 
 	assert.NoError(t, err)
@@ -254,7 +251,6 @@ func Test_FileBufferedEventSource_EventsAreBufferedAndPassedThrough(t *testing.T
 	fb, err := NewBufferedEventSource(ctx, logging.NewTestLogger(), BufferedEventSourceConfig{
 		EventsPerFile:         10,
 		SendChannelBufferSize: 0,
-		MaxBufferedEvents:     10000,
 	}, eventSource, path, archivePath)
 
 	assert.NoError(t, err)
@@ -290,7 +286,6 @@ func Test_FileBufferedEventSource_RollsBufferFiles(t *testing.T) {
 	fb, err := NewBufferedEventSource(ctx, logging.NewTestLogger(), BufferedEventSourceConfig{
 		EventsPerFile:         eventsPerFile,
 		SendChannelBufferSize: 0,
-		MaxBufferedEvents:     10000,
 	}, eventSource, path, archivePath)
 
 	assert.NoError(t, err)

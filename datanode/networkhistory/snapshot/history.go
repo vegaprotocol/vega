@@ -38,8 +38,8 @@ func (h History) CompressedFileName() string {
 	return fmt.Sprintf("%s-%d-%d-%s.tar.gz", h.ChainID, h.HeightFrom, h.HeightTo, historySnapshotTypeIdentifier)
 }
 
-func (h History) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []string {
-	var copySQL []string
+func (h History) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []TableCopySql {
+	var copySQL []TableCopySql
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if dbMetaData.TableNameToMetaData[tableName].Hypertable {
 			partitionColumn := dbMetaData.TableNameToMetaData[tableName].PartitionColumn
@@ -49,7 +49,7 @@ func (h History) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath s
 				partitionColumn,
 				h.HeightFrom,
 				meta.SortOrder, snapshotFile)
-			copySQL = append(copySQL, hyperTableCopySQL)
+			copySQL = append(copySQL, TableCopySql{meta, hyperTableCopySQL})
 		}
 	}
 

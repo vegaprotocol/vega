@@ -17,6 +17,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
+	"code.vegaprotocol.io/vega/libs/slice"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -30,8 +31,7 @@ type orderStore interface {
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
-	ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
-		dateRange entities.DateRange, filter entities.OrderFilter) ([]entities.Order, entities.PageInfo, error)
+	ListOrders(ctx context.Context, p entities.CursorPagination, filter entities.OrderFilter) ([]entities.Order, entities.PageInfo, error)
 }
 
 type Order struct {
@@ -46,12 +46,12 @@ func NewOrder(store orderStore, log *logging.Logger) *Order {
 	}
 }
 
-func (o *Order) ObserveOrders(ctx context.Context, retries int, market *string, party *string, includeLiquidity bool) (<-chan []entities.Order, uint64) {
+func (o *Order) ObserveOrders(ctx context.Context, retries int, markets []string, parties []string, includeLiquidity bool) (<-chan []entities.Order, uint64) {
 	ch, ref := o.observer.Observe(ctx,
 		retries,
 		func(o entities.Order) bool {
-			marketOk := market == nil || o.MarketID.String() == *market
-			partyOk := party == nil || o.PartyID.String() == *party
+			marketOk := slice.Contains(markets, o.MarketID.String())
+			partyOk := slice.Contains(parties, o.PartyID.String())
 			liqOrder := (o.LpID != nil && includeLiquidity) || !includeLiquidity
 			return marketOk && partyOk && liqOrder
 		})
@@ -87,10 +87,9 @@ func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	return o.store.GetLiveOrders(ctx)
 }
 
-func (o *Order) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool,
-	p entities.CursorPagination, dateRange entities.DateRange, filter entities.OrderFilter,
+func (o *Order) ListOrders(ctx context.Context, p entities.CursorPagination, filter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
-	return o.store.ListOrders(ctx, party, market, reference, liveOnly, p, dateRange, filter)
+	return o.store.ListOrders(ctx, p, filter)
 }
 
 func (o *Order) ListOrderVersions(ctx context.Context, orderID string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {

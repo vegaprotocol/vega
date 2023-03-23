@@ -244,7 +244,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	// for now, we can assume a single asset for all events
 	rFactors := *e.factors
 	for _, evt := range evts {
-		levels := e.calculateAuctionMargins(evt, price, rFactors)
+		levels := e.calculateMargins(evt, price, rFactors, true, true)
 		if levels == nil {
 			continue
 		}
@@ -295,13 +295,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 	if evt == nil {
 		return nil, nil, nil
 	}
+	auction := e.as.InAuction() && !e.as.CanLeave()
+	margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction)
 
-	var margins *types.MarginLevels
-	if !e.as.InAuction() || e.as.CanLeave() {
-		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
-	} else {
-		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
-	}
 	// no margins updates, nothing to do then
 	if margins == nil {
 		return nil, nil, nil
@@ -417,12 +413,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 			continue
 		}
 		// channel is closed, and we've got a nil interface
-		var margins *types.MarginLevels
-		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
-		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
-		}
+		auction := e.as.InAuction() && !e.as.CanLeave()
+		margins := e.calculateMargins(evt, markPrice, *e.factors, true, auction)
+
 		// no margins updates, nothing to do then
 		if margins == nil {
 			continue
@@ -509,13 +502,9 @@ func (e *Engine) ExpectMargins(
 ) (okMargins []events.Margin, distressedPositions []events.Margin) {
 	okMargins = make([]events.Margin, 0, len(evts)/2)
 	distressedPositions = make([]events.Margin, 0, len(evts)/2)
+	auction := e.as.InAuction() && !e.as.CanLeave()
 	for _, evt := range evts {
-		var margins *types.MarginLevels
-		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false)
-		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
-		}
+		margins := e.calculateMargins(evt, markPrice, *e.factors, false, auction)
 		// no margins updates, nothing to do then
 		if margins == nil {
 			okMargins = append(okMargins, evt)

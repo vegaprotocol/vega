@@ -18,8 +18,8 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
+	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
-	vega "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type myMarketResolver VegaResolverRoot
@@ -28,6 +28,7 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
 	market *types.Market,
 	party *string,
+	live *bool,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
 	var pid string
@@ -40,9 +41,15 @@ func (r *myMarketResolver) LiquidityProvisionsConnection(
 		marketID = market.Id
 	}
 
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
 	req := v2.ListLiquidityProvisionsRequest{
 		PartyId:    &pid,
 		MarketId:   &marketID,
+		Live:       &l,
 		Pagination: pagination,
 	}
 
@@ -67,14 +74,30 @@ func (r *myMarketResolver) Data(ctx context.Context, market *types.Market) (*typ
 	return res.MarketData, nil
 }
 
-func (r *myMarketResolver) OrdersConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter,
+func (r *myMarketResolver) OrdersConnection(
+	ctx context.Context,
+	market *types.Market,
+	pagination *v2.Pagination,
+	filter *OrderByPartyIdsFilter,
 ) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
-		MarketId:   &market.Id,
-		DateRange:  dateRange,
 		Pagination: pagination,
-		Filter:     filter,
+		Filter: &v2.OrderFilter{
+			MarketIds: []string{market.Id},
+		},
+	}
+
+	if filter != nil {
+		req.Filter.PartyIds = filter.PartyIds
+		if filter.Order != nil {
+			req.Filter.Statuses = filter.Order.Statuses
+			req.Filter.Types = filter.Order.Types
+			req.Filter.TimeInForces = filter.Order.TimeInForces
+			req.Filter.ExcludeLiquidity = filter.Order.ExcludeLiquidity
+			req.Filter.Reference = filter.Order.Reference
+			req.Filter.DateRange = filter.Order.DateRange
+			req.Filter.LiveOnly = filter.Order.LiveOnly
+		}
 	}
 
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
@@ -90,6 +113,7 @@ func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.M
 	req := v2.ListTradesRequest{
 		MarketId:   &market.Id,
 		Pagination: pagination,
+		DateRange:  dateRange,
 	}
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
@@ -158,26 +182,26 @@ func (r *myMarketResolver) AccountsConnection(ctx context.Context, market *types
 	return res.Accounts, nil
 }
 
-func (r *myMarketResolver) DecimalPlaces(ctx context.Context, obj *types.Market) (int, error) {
+func (r *myMarketResolver) DecimalPlaces(_ context.Context, obj *types.Market) (int, error) {
 	return int(obj.DecimalPlaces), nil
 }
 
-func (r *myMarketResolver) PositionDecimalPlaces(ctx context.Context, obj *types.Market) (int, error) {
+func (r *myMarketResolver) PositionDecimalPlaces(_ context.Context, obj *types.Market) (int, error) {
 	return int(obj.PositionDecimalPlaces), nil
 }
 
-func (r *myMarketResolver) OpeningAuction(ctx context.Context, obj *types.Market) (*AuctionDuration, error) {
+func (r *myMarketResolver) OpeningAuction(_ context.Context, obj *types.Market) (*AuctionDuration, error) {
 	return &AuctionDuration{
 		DurationSecs: int(obj.OpeningAuction.Duration),
 		Volume:       int(obj.OpeningAuction.Volume),
 	}, nil
 }
 
-func (r *myMarketResolver) PriceMonitoringSettings(ctx context.Context, obj *types.Market) (*PriceMonitoringSettings, error) {
+func (r *myMarketResolver) PriceMonitoringSettings(_ context.Context, obj *types.Market) (*PriceMonitoringSettings, error) {
 	return PriceMonitoringSettingsFromProto(obj.PriceMonitoringSettings)
 }
 
-func (r *myMarketResolver) LiquidityMonitoringParameters(ctx context.Context, obj *types.Market) (*LiquidityMonitoringParameters, error) {
+func (r *myMarketResolver) LiquidityMonitoringParameters(_ context.Context, obj *types.Market) (*LiquidityMonitoringParameters, error) {
 	return &LiquidityMonitoringParameters{
 		TargetStakeParameters: &TargetStakeParameters{
 			TimeWindow:    int(obj.LiquidityMonitoringParameters.TargetStakeParameters.TimeWindow),

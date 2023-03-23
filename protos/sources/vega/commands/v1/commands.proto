@@ -55,6 +55,11 @@ message OrderSubmission {
   // Used to specify the details for a pegged order
   // - See `PeggedOrder`
   vega.PeggedOrder pegged_order = 9;
+  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only
+  bool post_only = 10;
+  // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
+  // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
+  bool reduce_only = 11;
 }
 
 // An order cancellation is a request to cancel an existing order on Vega
@@ -213,7 +218,7 @@ message Transfer {
 
 // Specific details for a one off transfer
 message OneOffTransfer {
-  // A unix timestamp in seconds. Time at which the
+  // A unix timestamp in nanoseconds. Time at which the
   // transfer should be delivered into the To account
   int64 deliver_on = 1;
 }

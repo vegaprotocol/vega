@@ -463,6 +463,22 @@ type OffsetPagination struct {
 	Descending bool `json:"descending"`
 }
 
+type OrderByMarketAndPartyIdsFilter struct {
+	Order     *v2.OrderFilter `json:"order"`
+	MarketIds []string        `json:"marketIds"`
+	PartyIds  []string        `json:"partyIds"`
+}
+
+type OrderByMarketIdsFilter struct {
+	Order     *v2.OrderFilter `json:"order"`
+	MarketIds []string        `json:"marketIds"`
+}
+
+type OrderByPartyIdsFilter struct {
+	Order    *v2.OrderFilter `json:"order"`
+	PartyIds []string        `json:"partyIds"`
+}
+
 // An estimate of the fee to be paid by the order
 type OrderEstimate struct {
 	// The estimated fee if the order was to trade

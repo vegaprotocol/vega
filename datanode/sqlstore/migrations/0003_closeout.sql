@@ -10,7 +10,7 @@ ALTER TABLE positions
 UPDATE positions SET
   loss_socialisation_amount = ABS(loss) - adjustment,
   distressed_status = 'POSITION_STATUS_UNSPECIFIED';
-  
+
 
 ALTER TABLE positions
   ALTER COLUMN loss_socialisation_amount   SET NOT NULL,

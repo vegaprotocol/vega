@@ -22,6 +22,11 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	vfmt "code.vegaprotocol.io/vega/libs/fmt"
@@ -186,6 +191,37 @@ func (s *SubscriptionRateLimiter) WithSubscriptionRateLimiter(next http.Handler)
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *SubscriptionRateLimiter) WithGrpcInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context,
+		req interface{},
+		_ *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp interface{}, err error) {
+		// Fish out IP address from context
+		addr, ok := contextutil.RemoteIPAddrFromContext(ctx)
+		if !ok {
+			// If we don't have an IP we can't rate limit
+			return handler(ctx, req)
+		}
+
+		ip, _, err := net.SplitHostPort(addr)
+		if err != nil {
+			ip = addr
+		}
+		if err := s.Inc(ip); err != nil {
+			s.log.Error("client reached max subscription allowed",
+				logging.Error(err))
+			// write error
+			return nil, status.Error(codes.ResourceExhausted, "client reached max subscription allowed")
+		}
+		defer func() {
+			s.Dec(ip)
+		}()
+
+		return handler(ctx, req)
+	}
 }
 
 func getIP(r *http.Request) (string, error) {

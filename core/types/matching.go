@@ -43,6 +43,28 @@ type Order struct {
 	BatchID              uint64
 	PeggedOrder          *PeggedOrder
 	LiquidityProvisionID string
+	PostOnly             bool
+	ReduceOnly           bool
+	extraRemaining       uint64
+}
+
+func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
+	if !o.ReduceOnly {
+		panic("order.ReduceOnlyAdjustSize shall be call only on reduce-only orders")
+	}
+
+	o.extraRemaining = extraSize
+	o.Remaining -= extraSize
+}
+
+func (o *Order) ClearUpExtraRemaining() {
+	// ignore for non reduce only
+	if !o.ReduceOnly {
+		return
+	}
+
+	o.Remaining += o.extraRemaining
+	o.extraRemaining = 0
 }
 
 func (o Order) IntoSubmission() *OrderSubmission {
@@ -54,6 +76,8 @@ func (o Order) IntoSubmission() *OrderSubmission {
 		ExpiresAt:   o.ExpiresAt,
 		Type:        o.Type,
 		Reference:   o.Reference,
+		PostOnly:    o.PostOnly,
+		ReduceOnly:  o.ReduceOnly,
 	}
 	if o.Price != nil {
 		sub.Price = o.Price.Clone()
@@ -85,7 +109,7 @@ func (o Order) Clone() *Order {
 
 func (o Order) String() string {
 	return fmt.Sprintf(
-		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s)",
+		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v)",
 		o.ID,
 		o.MarketID,
 		o.Party,
@@ -106,6 +130,8 @@ func (o Order) String() string {
 		o.ExpiresAt,
 		uintPointerToString(o.OriginalPrice),
 		reflectPointerToString(o.PeggedOrder),
+		o.PostOnly,
+		o.ReduceOnly,
 	)
 }
 
@@ -153,6 +179,8 @@ func (o *Order) IntoProto() *proto.Order {
 		BatchId:              o.BatchID,
 		PeggedOrder:          pegged,
 		LiquidityProvisionId: o.LiquidityProvisionID,
+		PostOnly:             o.PostOnly,
+		ReduceOnly:           o.ReduceOnly,
 	}
 }
 
@@ -197,6 +225,8 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		BatchID:              o.BatchId,
 		PeggedOrder:          pegged,
 		LiquidityProvisionID: o.LiquidityProvisionId,
+		PostOnly:             o.PostOnly,
+		ReduceOnly:           o.ReduceOnly,
 	}, nil
 }
 
@@ -601,7 +631,9 @@ const (
 	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds.
 	OrderErrorNonPersistentOrderOutOfPriceBounds OrderError = proto.OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
 	// Unable to submit pegged order, temporarily too many pegged orders across all markets.
-	OrderErrorTooManyPeggedOrders OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
+	OrderErrorTooManyPeggedOrders                   OrderError = proto.OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
+	OrderErrorPostOnlyOrderWouldTrade               OrderError = proto.OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
+	OrderErrorReduceOnlyOrderWouldNotReducePosition OrderError = proto.OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION
 )
 
 var (
@@ -627,9 +659,17 @@ var (
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderErrorSellCannotReferenceBestBidPrice
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderErrorOffsetMustBeGreaterThanZero
 	ErrTooManyPeggedOrders                         = OrderErrorTooManyPeggedOrders
+	ErrPostOnlyOrderWouldTrade                     = OrderErrorPostOnlyOrderWouldTrade
+	ErrReduceOnlyOrderWouldNotReducePosition       = OrderErrorReduceOnlyOrderWouldNotReducePosition
 )
 
 func IsOrderError(err error) (OrderError, bool) {
 	oerr, ok := err.(OrderError)
 	return oerr, ok
+}
+
+func IsStoppingOrder(o OrderError) bool {
+	return o == OrderErrorNonPersistentOrderOutOfPriceBounds ||
+		o == ErrPostOnlyOrderWouldTrade ||
+		o == ErrReduceOnlyOrderWouldNotReducePosition
 }

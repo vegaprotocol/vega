@@ -124,7 +124,8 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 	}
 
 	query = fmt.Sprintf("%s %s GROUP BY epoch_id, asset_id, market_id, reward_type", query, where)
-	query, _, err = PaginateQuery[entities.EpochRewardSummaryCursor](query, []interface{}{}, rewardsOrdering, pagination)
+	query = fmt.Sprintf("WITH subquery AS (%s) SELECT * FROM subquery", query)
+	query, args, err = PaginateQuery[entities.EpochRewardSummaryCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

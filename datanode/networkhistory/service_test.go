@@ -319,7 +319,7 @@ func TestMain(t *testing.M) {
 
 		storeLog := logging.NewTestLogger()
 		storeLog.SetLevel(logging.InfoLevel)
-		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, false)
+		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, false, 33)
 		if err != nil {
 			panic(err)
 		}
@@ -379,12 +379,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmUp5j5wfc7kRCQ1UGbX8KQZhG1UN63p3cJw9JdLN5tJfZ", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmSX4cMeRLbBizPnYDpb5eih7azS9so6AMKqsYpKa7hqDF", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmW2QCLDSUfDG3nVxtYDxX59rDx1mS2y3AjNx9EHQTjooa", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmT69ehyJsDSgJf4ELqmMz5RikPBnyJePw8JdncnpfeKER", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmNRvNPYPooAqNiGVHmrbo8Ez4fRwpHRsNefL1XtwBV8y9", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "Qma5YPrL5Q7jH8T5nSxTggA4PUg3u7H5ZDurF24pzKZFZV", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmRWABNcctWKmPnFMjGf9wB2gvYaDU7KgS3xUkQf7hVUen", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "Qma1zmfXjWizS5txgkGKkEsYh8mEeuW6dSHejQwJxH6TnT", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmUyzixo4QVyCHPExidDzZ9wLoiwJk69Nnw24e821SgL8W", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmdaGpwdEcCgiDYSNqxApavmhtZkbckid4stw6j3ahvGrk", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmNnPCfirYT8yBsUinBmtNZkyQ7s9NkkxDw2aUfXVJqWHM", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmT3tu4wtBvemnZRLtsmfRbVrbHabtKnH1mS3ZUiYgQE6N", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {

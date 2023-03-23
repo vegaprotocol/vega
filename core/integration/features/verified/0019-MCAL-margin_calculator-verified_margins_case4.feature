@@ -1,4 +1,4 @@
-Feature: CASE-4: Trader submits short order that will trade - new formula & high exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-007)
+Feature: CASE-4: Trader submits short order that will trade - new formula & high exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-0016)
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
