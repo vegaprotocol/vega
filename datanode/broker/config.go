@@ -59,7 +59,7 @@ func NewDefaultConfig() Config {
 			EventsPerFile:           10_000_000,
 			SendChannelBufferSize:   10_000,
 			Archive:                 true,
-			ArchiveMaximumSizeBytes: 10_000_000_000,
+			ArchiveMaximumSizeBytes: 1_000_000_000,
 		},
 		EventBusClientBufferSize: 100000,
 	}
