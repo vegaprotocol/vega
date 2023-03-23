@@ -664,24 +664,24 @@ message OrderFilter {
     repeated vega.Order.TimeInForce time_in_forces = 3;
     // Indicator if liquidity provision orders should be included or not in the list
     bool exclude_liquidity = 4;
+    // List of party IDs to filter on
+    repeated string party_ids = 5;
+    // List of market IDs to filter on
+    repeated string market_ids = 6;
+    // Reference
+    optional string reference = 7;
+    // The date range of the orders being listed
+    optional DateRange date_range = 8;
+    // Indicator for listing only live orders, if set to true
+    optional bool live_only = 9;
 }
 
 // A request that is sent when executing a query for a list of orders
 message ListOrdersRequest {
-    // Party identifier
-    optional string party_id = 1;
-    // Market identifier
-    optional string market_id = 2;
-    // Reference
-    optional string reference = 3;
     // Optional pagination control
-    optional Pagination pagination = 4;
-    // Indicator for listing only live orders, if set to true
-    optional bool live_only = 5;
-    // The date range of the orders being listed
-    optional DateRange date_range = 6;
+    optional Pagination pagination = 2;
     // The order filter contains all filtering conditions and values that are applied to the orders listing
-    optional OrderFilter filter = 7;
+    optional OrderFilter filter = 5;
 }
 
 // A response that is received from the query to list orders
@@ -714,9 +714,9 @@ message ObserveOrdersRequest {
     // Both filters can be combined
 
     // Market identifier
-    optional string market_id = 1;
+    repeated string market_ids = 1;
     // Party identifier
-    optional string party_id = 2;
+    repeated string party_ids = 2;
     // Exclude liquidity
     optional bool exclude_liquidity = 3;
 }

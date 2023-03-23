@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
@@ -82,7 +83,7 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 	return orders, err
 }
 
-// GetByOrderId returns the last update of the order with the given ID.
+// GetOrder returns the last update of the order with the given ID.
 func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int32) (entities.Order, error) {
 	var err error
 	order := entities.Order{}
@@ -223,51 +224,43 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func currentView(party, market, reference *string, liveOnly bool, p entities.CursorPagination) (string, bool, error) {
+func currentView(f entities.OrderFilter, p entities.CursorPagination) (string, bool, error) {
 	if !p.NewestFirst {
 		return "", false, fmt.Errorf("oldest first order query is not currently supported")
 	}
-	if liveOnly {
+	if f.LiveOnly {
 		return "orders_live", false, nil
 	}
-	if reference != nil {
+	if f.Reference != nil {
 		return "orders_current_desc_by_reference", true, nil
 	}
-	if party != nil {
+	if len(f.PartyIDs) > 0 {
 		return "orders_current_desc_by_party", true, nil
 	}
-	if market != nil {
+	if len(f.MarketIDs) > 0 {
 		return "orders_current_desc_by_market", true, nil
 	}
 	return "orders_current_desc", true, nil
 }
 
-func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
-	dateRange entities.DateRange, orderFilter entities.OrderFilter,
+func (os *Orders) ListOrders(
+	ctx context.Context,
+	p entities.CursorPagination,
+	orderFilter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
-	table, alreadyOrdered, err := currentView(party, market, reference, liveOnly, p)
+	table, alreadyOrdered, err := currentView(orderFilter, p)
 	if err != nil {
 		return nil, entities.PageInfo{}, err
 	}
 
-	var filters []filter
-	if party != nil {
-		filters = append(filters, filter{"party_id", entities.PartyID(*party)})
-	}
+	bind := make([]interface{}, 0, len(orderFilter.PartyIDs)+len(orderFilter.MarketIDs)+1)
+	where := strings.Builder{}
+	where.WriteString("WHERE 1=1 ")
 
-	if market != nil {
-		filters = append(filters, filter{"market_id", entities.MarketID(*market)})
-	}
+	whereStr, args := applyOrderFilter(where.String(), bind, orderFilter)
 
-	if reference != nil {
-		filters = append(filters, filter{"reference", *reference})
-	}
-
-	where, args := buildWhereClause(filters...)
-	where, args = applyOrderFilter(where, args, orderFilter)
-
-	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, where)
-	query, args = filterDateRange(query, ordersFilterDateColumn, dateRange, args...)
+	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, whereStr)
+	query, args = filterDateRange(query, ordersFilterDateColumn, ptr.UnBox(orderFilter.DateRange), args...)
 
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 
@@ -285,34 +278,36 @@ func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p en
 	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p, true)
 }
 
-type filter struct {
-	colName string
-	value   any
-}
-
-func buildWhereClause(filters ...filter) (string, []any) {
-	whereBuilder := strings.Builder{}
-	var args []any
-	filterNum := 0
-	for _, filter := range filters {
-		if filter.value != nil {
-			filterNum++
-			if filterNum == 1 {
-				whereBuilder.WriteString(fmt.Sprintf("WHERE %s = $1", filter.colName))
-				args = append(args, filter.value)
-			} else {
-				whereBuilder.WriteString(fmt.Sprintf(" AND %s = $%d", filter.colName, filterNum))
-				args = append(args, filter.value)
-			}
-		}
-	}
-
-	return whereBuilder.String(), args
-}
-
 func applyOrderFilter(whereClause string, args []any, filter entities.OrderFilter) (string, []any) {
 	if filter.ExcludeLiquidity {
 		whereClause += " AND COALESCE(lp_id, '') = ''"
+	}
+
+	if len(filter.PartyIDs) > 0 {
+		parties := strings.Builder{}
+		for i, party := range filter.PartyIDs {
+			if i > 0 {
+				parties.WriteString(",")
+			}
+			parties.WriteString(nextBindVar(&args, entities.PartyID(party)))
+		}
+		whereClause += fmt.Sprintf(" AND party_id IN (%s)", parties.String())
+	}
+
+	if len(filter.MarketIDs) > 0 {
+		markets := strings.Builder{}
+		for i, market := range filter.MarketIDs {
+			if i > 0 {
+				markets.WriteString(",")
+			}
+			markets.WriteString(nextBindVar(&args, entities.MarketID(market)))
+		}
+		whereClause += fmt.Sprintf(" AND market_id IN (%s)", markets.String())
+	}
+
+	if filter.Reference != nil {
+		args = append(args, filter.Reference)
+		whereClause += fmt.Sprintf(" AND reference = $%d", len(args))
 	}
 
 	if len(filter.Statuses) > 0 {

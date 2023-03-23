@@ -257,7 +257,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
 
-	orders, err := marketResolver.OrdersConnection(ctx, market, nil, nil, nil)
+	orders, err := marketResolver.OrdersConnection(ctx, market, nil, nil)
 	assert.NotNil(t, orders)
 	assert.Nil(t, err)
 	assert.Len(t, orders.Edges, 2)
@@ -321,6 +321,6 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 }
 
 func (t *testResolver) Finish() {
-	t.log.Sync()
+	_ = t.log.Sync()
 	t.ctrl.Finish()
 }

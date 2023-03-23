@@ -1775,10 +1775,7 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	partyID := entities.PartyID(ptr.UnBox(req.PartyId))
 	marketID := entities.MarketID(ptr.UnBox(req.MarketId))
 	reference := ptr.UnBox(req.Reference)
-	live := false
-	if req.Live != nil {
-		live = *req.Live
-	}
+	live := ptr.UnBox(req.Live)
 
 	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, live, pagination)
 	if err != nil {
@@ -2029,22 +2026,23 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 
 	var filter entities.OrderFilter
 	if req.Filter != nil {
+		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
 		filter = entities.OrderFilter{
-			// TODO: would it make sense to include partyID, marketID, reference, liveOnly and dataRange in the filter?
 			Statuses:         req.Filter.Statuses,
 			Types:            req.Filter.Types,
 			TimeInForces:     req.Filter.TimeInForces,
+			Reference:        req.Filter.Reference,
 			ExcludeLiquidity: req.Filter.ExcludeLiquidity,
+			LiveOnly:         ptr.UnBox(req.Filter.LiveOnly),
+			PartyIDs:         req.Filter.PartyIds,
+			MarketIDs:        req.Filter.MarketIds,
+			DateRange:        &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
 		}
 	}
 
-	dateRange := entities.DateRangeFromProto(req.DateRange)
-
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, req.Reference, ptr.UnBox(req.LiveOnly),
-		pagination, dateRange, filter)
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, pagination, filter)
 	if err != nil {
-		return nil, formatE(ErrOrderServiceGetOrders, errors.Wrapf(err, "partyID: %s, marketID: %s, reference: %s",
-			ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId), ptr.UnBox(req.Reference)))
+		return nil, formatE(ErrOrderServiceGetOrders, err)
 	}
 
 	edges, err := makeEdges[*v2.OrderEdge](orders)
@@ -2104,7 +2102,7 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
 		return formatE(err)
 	}
-	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId, ptr.UnBox(req.ExcludeLiquidity))
+	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketIds, req.PartyIds, ptr.UnBox(req.ExcludeLiquidity))
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -2131,8 +2129,11 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 }
 
 func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{NewestFirst: true},
-		entities.DateRange{}, entities.OrderFilter{})
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, entities.CursorPagination{NewestFirst: true}, entities.OrderFilter{
+		MarketIDs:        req.MarketIds,
+		PartyIDs:         req.PartyIds,
+		ExcludeLiquidity: ptr.UnBox(req.ExcludeLiquidity),
+	})
 	if err != nil {
 		return errors.Wrap(err, "fetching orders initial image")
 	}
