@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/datanode/metrics"
+
 	"github.com/jackc/pgx/v4"
 )
 
@@ -38,6 +40,7 @@ type simpleEntity interface {
 }
 
 func (b *ListBatcher[T]) Add(entity T) {
+	metrics.IncrementBatcherAddedEntities(b.tableName)
 	b.pending = append(b.pending, entity)
 }
 
@@ -66,5 +69,7 @@ func (b *ListBatcher[T]) Flush(ctx context.Context, connection Connection) ([]T,
 
 	flushed := b.pending
 	b.pending = b.pending[:0]
+
+	metrics.BatcherFlushedEntitiesAdd(b.tableName, len(rows))
 	return flushed, nil
 }
