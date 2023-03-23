@@ -4,11 +4,13 @@ Feature: Basic feature-file matching the system-test setup like for like
     Given the following assets are registered:
       | id  | decimal places |
       | ETH | 18             |
+      | USD | 0              |
 
     And the markets:
       | id        | quote name | asset | risk model             | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places |
       | ETH/DEC19 | ETH        | ETH   | default-st-risk-model  | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       |
       | ETH/DEC20 | ETH        | ETH   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 5              | 5                       |
+      | ETH/DEC21 | ETH        | USD   | closeout-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 0.1                    | 0                         | 0              | 0                       |
     And the following network parameters are set:
       | name                                          | value |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
@@ -39,7 +41,7 @@ Feature: Basic feature-file matching the system-test setup like for like
 
 
   @SystemTestBase
-  Scenario: Create a new market and leave opening auction in the same way the system tests do
+  Scenario: 001 Create a new market and leave opening auction in the same way the system tests do
     # the amount ought to be 390,500.000,000,000,000,000,000
     Given the following network parameters are set:
       | name                                          | value |
@@ -70,7 +72,7 @@ Feature: Basic feature-file matching the system-test setup like for like
     And debug detailed orderbook volumes for market "ETH/DEC19"
 
   @SystemTestBase
-  Scenario: Funding insurance pool balance by closing a trader out - note this scenario is a template. It does not actually close out the trader, it's just the first steps from the system test. With this scenario, we can check margin requirements before and after MTM settlement
+  Scenario: 002 Funding insurance pool balance by closing a trader out - note this scenario is a template. It does not actually close out the trader, it's just the first steps from the system test. With this scenario, we can check margin requirements before and after MTM settlement
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount                     |
       | party1          | ETH   | 10000000000000000000000000 |
@@ -115,3 +117,62 @@ Feature: Basic feature-file matching the system-test setup like for like
     Then debug detailed orderbook volumes for market "ETH/DEC20"
     And debug orders
     And debug detailed orderbook volumes for market "ETH/DEC20"
+
+@SystemTestBase
+  Scenario: 003 Funding insurance pool 
+    Given the parties deposit on asset's general account the following amount:
+      | party            | asset | amount       |
+      | lpprov           | USD   | 10000000000  |
+      | aux1             | USD   | 1000000      |
+      | aux2             | USD   | 1000000      |
+      | sellSideProvider | USD   | 200000000000 |
+      | buySideProvider  | USD   | 200000000000 |
+      | designatedloser  | USD   | 33000         |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC21 | 390500  | 0.3 | buy  | BID              | 2          | 100      | submission |
+      | lp1 | lpprov | ETH/DEC21 | 390500  | 0.3 | sell | ASK              | 13         | 100      | submission |
+        Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1   | ETH/DEC21 | buy  | 400    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1   | ETH/DEC21 | sell | 300    | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1   | ETH/DEC21 | buy  | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC21 | sell | 1      | 150   | 0                | TYPE_LIMIT | TIF_GTC |
+    When the opening auction period ends for market "ETH/DEC21"
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | target stake  | supplied stake   | open interest |
+      | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 731 | 390500 | 1             |
+
+    # Now place orders to cause designatedloser party to be distressed
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | sellSideProvider | ETH/DEC21 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | buySideProvider  | ETH/DEC21 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | designatedloser  | ETH/DEC21 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-loser-1     |
+
+    Then the parties should have the following margin levels:
+      | party            | market id | maintenance | search | initial | release |
+      | designatedloser | ETH/DEC21 | 19004       | 20904  | 22804   | 26605   |
+       Then the parties should have the following account balances:
+      | party            | asset | market id | margin | general |
+      | designatedloser | USD   | ETH/DEC21 | 19732  | 0       |
+
+    Then the parties cancel the following orders:
+      | party           | reference      |
+      | buySideProvider | buy-provider-1 |
+    When the parties place the following orders with ticks:
+      | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
+      | buySideProvider | ETH/DEC21 | buy  | 290    | 120   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
+
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | sellSideProvider | ETH/DEC21 | sell | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | buySideProvider  | ETH/DEC21 | buy  | 1      | 140   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    And the network moves ahead "1" blocks
+    And the insurance pool balance should be "417" for the market "ETH/DEC21"
+
+
+   
