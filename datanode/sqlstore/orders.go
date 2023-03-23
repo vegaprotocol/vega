@@ -149,7 +149,9 @@ func (os *Orders) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 
 // GetByReference returns the last update of orders with the specified user-suppled reference.
 func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return os.ListOrders(ctx, nil, nil, &reference, false, p, entities.DateRange{}, entities.OrderFilter{})
+	return os.ListOrders(ctx, p, entities.OrderFilter{
+		Reference: &reference,
+	})
 }
 
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
