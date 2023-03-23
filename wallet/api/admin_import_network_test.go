@@ -25,6 +25,7 @@ func TestAdminImportNetwork(t *testing.T) {
 	t.Run("Importing a network with no name fails", testImportingWithNoNameFails)
 	t.Run("Importing a network from a valid file with name in config works", testImportingWithNameInConfig)
 	t.Run("Importing a network with a github url suggests better alternative", testImportNetworkWithURL)
+	t.Run("Importing a network with a content that is not TOML fails with a user friendly message", testImportNetworkWithNotTOMLContentFailsWithFriendlyMessage)
 }
 
 func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
@@ -274,6 +275,53 @@ func testImportNetworkWithURL(t *testing.T) {
 			if tc.suggestion != "" {
 				require.Contains(t, errorDetails.Data, tc.suggestion)
 			}
+		})
+	}
+}
+
+func testImportNetworkWithNotTOMLContentFailsWithFriendlyMessage(t *testing.T) {
+	// given
+	ctx := context.Background()
+	d := t.TempDir()
+
+	// setup
+	handler := newImportNetworkHandler(t)
+
+	tcs := []struct {
+		name           string
+		content        []byte
+		identifiedType string
+	}{
+		{
+			name:           "when HTML",
+			content:        []byte("<!DOCTYPE html><html></html>"),
+			identifiedType: "HTML",
+		}, {
+			name:           "when JSON",
+			content:        []byte("{\"type\":\"JSON\"}"),
+			identifiedType: "JSON",
+		}, {
+			name:           "when JSON",
+			content:        []byte("{\"type\":\"JSON\"}"),
+			identifiedType: "JSON",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			filePath := filepath.Join(d + "tmp.toml")
+			err := os.WriteFile(filePath, tc.content, 0o644)
+			require.NoError(tt, err)
+
+			// when
+			result, errorDetails := handler.handle(tt, ctx, api.AdminImportNetworkParams{
+				URL: api.FileSchemePrefix + filePath,
+			})
+
+			// then
+			require.NotNil(tt, errorDetails)
+			assert.Equal(tt, fmt.Sprintf("could not read the network configuration at %q: the content looks like it contains %s, be sure your file has TOML formatting", filePath, tc.identifiedType), errorDetails.Data)
+			assert.Empty(tt, result)
 		})
 	}
 }
