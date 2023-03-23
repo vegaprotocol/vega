@@ -18,7 +18,7 @@ var (
 	GitHash = "unknown"
 
 	// Version specifies the version used to build the application.
-	Version = "v0.53.0"
+	Version = "v0.53.2"
 )
 
 func IsUnreleased() bool {
