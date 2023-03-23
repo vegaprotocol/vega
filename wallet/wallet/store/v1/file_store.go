@@ -462,7 +462,7 @@ func (s *FileStore) lockWalletIfUnlocked(name string) {
 func (s *FileStore) startFilesWatcher() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("could not start the token store watcher: %w", err)
+		return fmt.Errorf("could not start the wallets watcher: %w", err)
 	}
 
 	s.watcher = watcher

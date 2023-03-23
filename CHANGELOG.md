@@ -7,6 +7,7 @@
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
+- [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
 
 ## 0.70.2
 
