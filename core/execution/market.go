@@ -743,7 +743,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	return m.closed
 }
 
-func (m *Market) blockEnd(ctx context.Context) {
+// BlockEnd notifies the market of the end of the block.
+func (m *Market) BlockEnd(ctx context.Context) {
 	defer m.onTxProcessed()
 
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
@@ -1123,7 +1124,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 
-	// Send an event bus update
+	previousMarkPrice := m.getCurrentMarkPrice()
+	// set the mark price here so that margins checks for special orders use the correct value
+	m.markPrice = m.getLastTradedPrice()
+
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
@@ -1134,10 +1138,12 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		// now that we've left the auction and all the orders have been unparked,
 		// we can mark all positions using the margin calculation method appropriate
 		// for non-auction mode and carry out any closeouts if need be
-		m.markPrice = m.getLastTradedPrice()
 		m.confirmMTM(ctx, false)
 		// set next MTM
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+	} else {
+		// revert to old mark price if we're not leaving the auction after all
+		m.markPrice = previousMarkPrice
 	}
 }
 
