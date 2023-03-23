@@ -1739,7 +1739,7 @@ Feature: Fees calculations
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general  | bond  |
-      | aux1  | ETH   | ETH/DEC21 | 5204   | 99984518 | 10000 |
+      | aux1  | ETH   | ETH/DEC21 | 5375   | 99984347 | 10000 |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |

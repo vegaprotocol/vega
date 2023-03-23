@@ -794,7 +794,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 func (e *Engine) BlockEnd(ctx context.Context) {
 	for _, mkt := range e.marketsCpy {
-		mkt.blockEnd(ctx)
+		mkt.BlockEnd(ctx)
 	}
 }
 
