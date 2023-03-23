@@ -227,8 +227,8 @@ func (s *Service) IsEnabled(assetID string) bool {
 	return ok
 }
 
-func (e *Service) OnTick(ctx context.Context, _ time.Time) {
-	e.notary.OfferSignatures(types.NodeSignatureKindAssetNew, e.offerERC20NotarySignatures)
+func (s *Service) OnTick(ctx context.Context, _ time.Time) {
+	s.notary.OfferSignatures(types.NodeSignatureKindAssetNew, s.offerERC20NotarySignatures)
 }
 
 func (s *Service) offerERC20NotarySignatures(id string) []byte {
