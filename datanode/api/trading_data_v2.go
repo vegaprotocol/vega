@@ -1790,7 +1790,7 @@ func (t *tradingDataServiceV2) ObserveLiquidityProvisions(req *v2.ObserveLiquidi
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, req.PartyId, req.MarketId)
+	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Liquidity Provisions subscriber - new rpc stream", logging.Uint64("ref", ref))
