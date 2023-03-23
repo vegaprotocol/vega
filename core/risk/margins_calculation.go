@@ -79,7 +79,6 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 			slippageVolume  = num.MaxD(openVolume, num.DecimalZero())
 			slippagePerUnit = num.UintZero()
 			noExit          = true
-			negSlippage     bool
 		)
 		if slippageVolume.IsPositive() {
 			if !auction {
@@ -92,7 +91,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 					}
 				} else {
 					noExit = false
-					slippagePerUnit, negSlippage = num.UintZero().Delta(markPrice, exitPrice)
+					var negative bool
+					slippagePerUnit, negative = num.UintZero().Delta(markPrice, exitPrice)
+					if negative {
+						slippagePerUnit = num.UintZero()
+					}
 				}
 			}
 		}
@@ -128,9 +131,6 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 
 			if !noExit {
 				slip := slippagePerUnit.ToDecimal().Mul(slippageVolume)
-				if negSlippage {
-					slip = slip.Mul(num.DecimalFromInt64(-1))
-				}
 				minV = num.MinD(
 					slip,
 					minV,
@@ -168,9 +168,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 					}
 				} else {
 					noExit = false
-					// exitPrice - markPrice == -1*(markPrice - exitPrice)
-					slippagePerUnit, _ = num.UintZero().Delta(exitPrice, markPrice) // we don't care about neg/pos, we're using Abs() anyway
-					// slippagePerUnit = -1 * (markPrice - int64(exitPrice))
+					var negative bool
+					slippagePerUnit, negative = num.UintZero().Delta(exitPrice, markPrice)
+					if negative {
+						slippagePerUnit = num.UintZero()
+					}
 				}
 			}
 		}

@@ -63,7 +63,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
       | party2 | t2-s-3    | STATUS_FILLED    |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party2 | BTC   | ETH/DEC19 | 47040  | 1640    |
+      | party2 | BTC   | ETH/DEC19 | 9600   | 39080   |
       | party1 | BTC   | ETH/DEC19 | 48960  | 1280    |
 
   Scenario: Uncross auction via order amendment
