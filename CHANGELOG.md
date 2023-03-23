@@ -14,6 +14,7 @@
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7899](https://github.com/vegaprotocol/vega/issues/7899) - Fixes inconsistency in the `HTTP` status codes returned when rate limited
+- [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
 
 
 ## 0.70.0
