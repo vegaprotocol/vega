@@ -64,7 +64,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 
 	faucetSvc, err := faucet.NewService(log, vegaPaths, *faucetCfg, pass)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not initialise the faucet service: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(opts.ctx)
