@@ -1181,7 +1181,9 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	defer cancel()
 
 	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
-		return formatE(ErrPositionServiceSendSnapshot, err)
+		if !errors.Is(err, entities.ErrNotFound) {
+			return formatE(ErrPositionServiceSendSnapshot, err)
+		}
 	}
 
 	positionsChan, ref := t.positionService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId))
