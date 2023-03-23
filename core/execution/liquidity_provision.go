@@ -790,7 +790,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	// now we register all these orders as potential positions
 	// which we will use to calculate the margin just after
 	for _, order := range orders {
-		pos.RegisterOrder(order)
+		pos.RegisterOrder(m.log, order)
 	}
 
 	// then calculate the margins,
@@ -875,7 +875,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 
 	// then add all the newly created ones
 	for _, v := range orders {
-		pos.RegisterOrder(v)
+		pos.RegisterOrder(m.log, v)
 	}
 
 	// now we calculate the margin as if we were submitting these orders

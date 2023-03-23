@@ -18,6 +18,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	libhttp "code.vegaprotocol.io/vega/libs/http"
@@ -89,17 +90,52 @@ func (s *ProxyServer) Start() error {
 
 	restAddr := net.JoinHostPort(s.REST.IP, strconv.Itoa(s.REST.Port))
 	grpcAddr := net.JoinHostPort(s.Node.IP, strconv.Itoa(s.Node.Port))
-	jsonPB := &JSONPb{
-		EmitDefaults: true,
-		OrigName:     false,
-	}
 
 	mux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, jsonPB),
+		// this is a settings specially made for websockets
+		runtime.WithMarshalerOption("application/json+stream", &JSONPb{
+			EnumsAsInts:  true,
+			EmitDefaults: false,
+			OrigName:     false,
+		}),
+		// prettified, just for JonRay
+		// append ?pretty to any query to make it... pretty
+		runtime.WithMarshalerOption("application/json+pretty", &JSONPb{
+			EnumsAsInts:  false,
+			EmitDefaults: true,
+			OrigName:     false,
+			Indent:       " ",
+		}),
+		// default for REST request
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &JSONPb{
+			EmitDefaults: true,
+			OrigName:     false,
+		}),
+
 		runtime.WithOutgoingHeaderMatcher(func(s string) (string, bool) { return s, true }),
 	)
 
-	opts := []grpc.DialOption{grpc.WithInsecure()}
+	opts := []grpc.DialOption{
+		grpc.WithInsecure(),
+		// 20MB, this is in bytes
+		// not the greatest soluton, it x5 the default value.
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024 * 1024 * 20)),
+	}
+
+	marshalW := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// if we are dealing with a stream, let's add some header to use the proper marshaller
+			if strings.HasPrefix(r.URL.Path, "/api/v2/stream/") {
+				r.Header.Set("Accept", "application/json+stream")
+			} else if _, ok := r.URL.Query()["pretty"]; ok {
+				// checking Values as map[string][]string also catches ?pretty and ?pretty=
+				// r.URL.Query().Get("pretty") would not.
+				r.Header.Set("Accept", "application/json+pretty")
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
+
 	if err := vegaprotoapi.RegisterCoreServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
@@ -110,6 +146,7 @@ func (s *ProxyServer) Start() error {
 	// CORS support
 	corsOptions := libhttp.CORSOptions(s.CORS)
 	handler := cors.New(corsOptions).Handler(mux)
+	handler = marshalW(handler)
 	handler = healthCheckMiddleware(handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support

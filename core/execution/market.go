@@ -549,6 +549,11 @@ func (m *Market) GetMarketData() types.MarketData {
 	for _, b := range bounds {
 		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		m.priceToMarketPrecision(b.MinValidPrice)
+
+		rp, _ := num.UintFromDecimal(b.ReferencePrice)
+		m.priceToMarketPrecision(rp)
+		b.ReferencePrice = num.DecimalFromUint(rp)
+
 		if m.priceFactor.NEQ(one) {
 			b.MinValidPrice.AddSum(one) // ceil
 		}
@@ -1304,7 +1309,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// now check if all buy/sell/size are 0
-		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 || !pos.VWBuy().IsZero() || !pos.VWSell().IsZero() {
+		if pos.Buy() != 0 || pos.Sell() != 0 || pos.Size() != 0 {
 			// position is not 0, nothing to release surely
 			continue
 		}
@@ -1716,7 +1721,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
-		m.position.Update(ctx, trade)
+		m.position.Update(ctx, trade, conf.PassiveOrdersAffected[idx], conf.Order)
 
 		// Record open interest change
 		if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), m.timeService.GetTimeNow()); err != nil {
@@ -2064,7 +2069,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 
 			// Update positions - this is a special trade involving the network as party
 			// so rather than checking this every time we call Update, call special UpdateNetwork
-			m.position.UpdateNetwork(ctx, trade)
+			m.position.UpdateNetwork(ctx, trade, confirmation.PassiveOrdersAffected[idx])
 			if err := m.tsCalc.RecordOpenInterest(m.position.GetOpenInterest(), now); err != nil {
 				m.log.Debug("unable record open interest",
 					logging.String("market-id", m.GetID()),
@@ -2271,7 +2276,7 @@ func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *ty
 		pos.UnregisterOrder(m.log, existingOrder)
 	}
 
-	pos.RegisterOrder(amendedOrder)
+	pos.RegisterOrder(m.log, amendedOrder)
 
 	// we are just checking here if we can pass the margin calls.
 	_, _, err := m.calcMargins(ctx, pos, amendedOrder)
@@ -2489,9 +2494,9 @@ func (m *Market) parkOrder(ctx context.Context, orderID string) *types.Order {
 			logging.Error(err))
 	}
 
+	_ = m.position.UnregisterOrder(ctx, order)
 	m.peggedOrders.Park(order)
 	m.broker.Send(events.NewOrderEvent(ctx, order))
-	_ = m.position.UnregisterOrder(ctx, order)
 	m.releaseMarginExcess(ctx, order.Party)
 	return order
 }

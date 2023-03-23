@@ -108,7 +108,7 @@ Feature: test negative PDP (position decimal places)
             | party  | asset | market id | margin | general  | bond  |
             | party0 | ETH   | USD/DEC22 | 632133 | 4332298  | 35569 |
             | party1 | ETH   | USD/DEC22 | 1778   | 99998222 |      |
-            | party2 | ETH   | USD/DEC22 | 6830   | 99993170 |      |
+            | party2 | ETH   | USD/DEC22 | 7042   | 99992958 |      |
 
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |
@@ -167,7 +167,7 @@ Feature: test negative PDP (position decimal places)
             | party  | asset | market id | margin | general  | bond  |
             | party0 | ETH   | USD/DEC22 | 632133 | 4332298  | 35569 |
             | party1 | ETH   | USD/DEC22 | 1678   | 99998223 |       |
-            | party2 | ETH   | USD/DEC22 | 6930   | 99993170 |       |
+            | party2 | ETH   | USD/DEC22 | 7142   | 99992958 |       |
         # Margin_maintenance_party0 = max(1481*10*3.5569036*9,1206*10*0.801225765*9)=474100
         And the parties should have the following margin levels:
             | party  | market id | maintenance | search | initial | release |

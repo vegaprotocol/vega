@@ -22,13 +22,11 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
-
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
-
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -52,7 +50,7 @@ var defaultPaginationV2 = entities.OffsetPagination{
 }
 
 // When returning an 'initial image' snapshot, how many updates to batch into each page.
-var snapshotPageSize = 500
+var snapshotPageSize = 50
 
 type tradingDataServiceV2 struct {
 	v2.UnimplementedTradingDataServiceServer
@@ -155,10 +153,18 @@ func (t *tradingDataServiceV2) ObserveAccounts(req *v2.ObserveAccountsRequest, s
 		for i := 0; i < len(accounts); i++ {
 			protos[i] = accounts[i].ToProto()
 		}
-		updates := &v2.AccountUpdates{Accounts: protos}
-		responseUpdates := &v2.ObserveAccountsResponse_Updates{Updates: updates}
-		response := &v2.ObserveAccountsResponse{Response: responseUpdates}
-		return srv.Send(response)
+		batches := batch(protos, snapshotPageSize)
+
+		for _, batch := range batches {
+			updates := &v2.AccountUpdates{Accounts: batch}
+			responseUpdates := &v2.ObserveAccountsResponse_Updates{Updates: updates}
+			response := &v2.ObserveAccountsResponse{Response: responseUpdates}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending accounts updates")
+			}
+		}
+
+		return nil
 	})
 }
 
@@ -1031,11 +1037,20 @@ func (t *tradingDataServiceV2) ObserveTrades(req *v2.ObserveTradesRequest, srv v
 	}
 
 	return observeBatch(ctx, t.log, "Trade", tradesChan, ref, func(trades []*entities.Trade) error {
-		out := make([]*vega.Trade, 0, len(trades))
+		protos := make([]*vega.Trade, 0, len(trades))
 		for _, v := range trades {
-			out = append(out, v.ToProto())
+			protos = append(protos, v.ToProto())
 		}
-		return srv.Send(&v2.ObserveTradesResponse{Trades: out})
+
+		batches := batch(protos, snapshotPageSize)
+
+		for _, batch := range batches {
+			response := &v2.ObserveTradesResponse{Trades: batch}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending trades updates")
+			}
+		}
+		return nil
 	})
 }
 
@@ -1194,10 +1209,17 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 		for i := 0; i < len(positions); i++ {
 			protos[i] = positions[i].ToProto()
 		}
-		updates := &v2.PositionUpdates{Positions: protos}
-		responseUpdates := &v2.ObservePositionsResponse_Updates{Updates: updates}
-		response := &v2.ObservePositionsResponse{Response: responseUpdates}
-		return srv.Send(response)
+		batches := batch(protos, snapshotPageSize)
+		for _, batch := range batches {
+			updates := &v2.PositionUpdates{Positions: batch}
+			responseUpdates := &v2.ObservePositionsResponse_Updates{Updates: updates}
+			response := &v2.ObservePositionsResponse{Response: responseUpdates}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending initial positions")
+			}
+		}
+
+		return nil
 	})
 }
 
@@ -1753,8 +1775,9 @@ func (t *tradingDataServiceV2) ListLiquidityProvisions(ctx context.Context, req 
 	partyID := entities.PartyID(ptr.UnBox(req.PartyId))
 	marketID := entities.MarketID(ptr.UnBox(req.MarketId))
 	reference := ptr.UnBox(req.Reference)
+	live := ptr.UnBox(req.Live)
 
-	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, pagination)
+	lps, pageInfo, err := t.liquidityProvisionService.Get(ctx, partyID, marketID, reference, live, pagination)
 	if err != nil {
 		return nil, formatE(ErrLiquidityProvisionServiceGet, errors.Wrapf(err,
 			"partyID: %s, marketID: %s, reference: %s", partyID, marketID, reference))
@@ -1784,16 +1807,22 @@ func (t *tradingDataServiceV2) ObserveLiquidityProvisions(req *v2.ObserveLiquidi
 	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, req.PartyId, req.MarketId)
 
 	if t.log.GetLevel() == logging.DebugLevel {
-		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
+		t.log.Debug("Liquidity Provisions subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
-	return observeBatch(ctx, t.log, "Order", lpCh, ref, func(lps []entities.LiquidityProvision) error {
+	return observeBatch(ctx, t.log, "LiquidityProvision", lpCh, ref, func(lps []entities.LiquidityProvision) error {
 		protos := make([]*vega.LiquidityProvision, 0, len(lps))
 		for _, v := range lps {
 			protos = append(protos, v.ToProto())
 		}
-		response := &v2.ObserveLiquidityProvisionsResponse{LiquidityProvisions: protos}
-		return srv.Send(response)
+		batches := batch(protos, snapshotPageSize)
+		for _, batch := range batches {
+			response := &v2.ObserveLiquidityProvisionsResponse{LiquidityProvisions: batch}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending liquidity provisions updates")
+			}
+		}
+		return nil
 	})
 }
 
@@ -1997,22 +2026,23 @@ func (t *tradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 
 	var filter entities.OrderFilter
 	if req.Filter != nil {
+		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
 		filter = entities.OrderFilter{
-			// TODO: would it make sense to include partyID, marketID, reference, liveOnly and dataRange in the filter?
 			Statuses:         req.Filter.Statuses,
 			Types:            req.Filter.Types,
 			TimeInForces:     req.Filter.TimeInForces,
+			Reference:        req.Filter.Reference,
 			ExcludeLiquidity: req.Filter.ExcludeLiquidity,
+			LiveOnly:         ptr.UnBox(req.Filter.LiveOnly),
+			PartyIDs:         req.Filter.PartyIds,
+			MarketIDs:        req.Filter.MarketIds,
+			DateRange:        &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
 		}
 	}
 
-	dateRange := entities.DateRangeFromProto(req.DateRange)
-
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, req.Reference, ptr.UnBox(req.LiveOnly),
-		pagination, dateRange, filter)
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, pagination, filter)
 	if err != nil {
-		return nil, formatE(ErrOrderServiceGetOrders, errors.Wrapf(err, "partyID: %s, marketID: %s, reference: %s",
-			ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId), ptr.UnBox(req.Reference)))
+		return nil, formatE(ErrOrderServiceGetOrders, err)
 	}
 
 	edges, err := makeEdges[*v2.OrderEdge](orders)
@@ -2072,7 +2102,7 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
 		return formatE(err)
 	}
-	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketId, req.PartyId, ptr.UnBox(req.ExcludeLiquidity))
+	ordersChan, ref := t.orderService.ObserveOrders(ctx, t.config.StreamRetries, req.MarketIds, req.PartyIds, ptr.UnBox(req.ExcludeLiquidity))
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Orders subscriber - new rpc stream", logging.Uint64("ref", ref))
@@ -2083,16 +2113,27 @@ func (t *tradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v
 		for _, v := range orders {
 			protos = append(protos, v.ToProto())
 		}
-		updates := &v2.OrderUpdates{Orders: protos}
-		responseUpdates := &v2.ObserveOrdersResponse_Updates{Updates: updates}
-		response := &v2.ObserveOrdersResponse{Response: responseUpdates}
-		return srv.Send(response)
+
+		batches := batch(protos, snapshotPageSize)
+
+		for _, batch := range batches {
+			updates := &v2.OrderUpdates{Orders: batch}
+			responseUpdates := &v2.ObserveOrdersResponse_Updates{Updates: updates}
+			response := &v2.ObserveOrdersResponse{Response: responseUpdates}
+			if err := srv.Send(response); err != nil {
+				return errors.Wrap(err, "sending orders updates")
+			}
+		}
+		return nil
 	})
 }
 
 func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
-	orders, pageInfo, err := t.orderService.ListOrders(ctx, req.PartyId, req.MarketId, nil, true, entities.CursorPagination{NewestFirst: true},
-		entities.DateRange{}, entities.OrderFilter{})
+	orders, pageInfo, err := t.orderService.ListOrders(ctx, entities.CursorPagination{NewestFirst: true}, entities.OrderFilter{
+		MarketIDs:        req.MarketIds,
+		PartyIDs:         req.PartyIds,
+		ExcludeLiquidity: ptr.UnBox(req.ExcludeLiquidity),
+	})
 	if err != nil {
 		return errors.Wrap(err, "fetching orders initial image")
 	}
@@ -2107,13 +2148,14 @@ func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.O
 	}
 
 	batches := batch(protos, snapshotPageSize)
+
 	for i, batch := range batches {
 		isLast := i == len(batches)-1
 		positionList := &v2.OrderSnapshotPage{Orders: batch, LastPage: isLast}
 		responseSnapshot := &v2.ObserveOrdersResponse_Snapshot{Snapshot: positionList}
 		response := &v2.ObserveOrdersResponse{Response: responseSnapshot}
 		if err := srv.Send(response); err != nil {
-			return errors.Wrap(err, "sending account balance initial image")
+			return errors.Wrap(err, "sending orders initial image")
 		}
 	}
 	return nil

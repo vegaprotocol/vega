@@ -760,11 +760,11 @@ type ComplexityRoot struct {
 		Id                            func(childComplexity int) int
 		LinearSlippageFactor          func(childComplexity int) int
 		LiquidityMonitoringParameters func(childComplexity int) int
-		LiquidityProvisionsConnection func(childComplexity int, partyID *string, pagination *v2.Pagination) int
+		LiquidityProvisionsConnection func(childComplexity int, partyID *string, live *bool, pagination *v2.Pagination) int
 		LpPriceRange                  func(childComplexity int) int
 		MarketTimestamps              func(childComplexity int) int
 		OpeningAuction                func(childComplexity int) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) int
+		OrdersConnection              func(childComplexity int, pagination *v2.Pagination, filter *OrderByPartyIdsFilter) int
 		PositionDecimalPlaces         func(childComplexity int) int
 		PriceMonitoringSettings       func(childComplexity int) int
 		Proposal                      func(childComplexity int) int
@@ -1146,9 +1146,9 @@ type ComplexityRoot struct {
 		DelegationsConnection         func(childComplexity int, nodeID *string, pagination *v2.Pagination) int
 		DepositsConnection            func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Id                            func(childComplexity int) int
-		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, pagination *v2.Pagination) int
+		LiquidityProvisionsConnection func(childComplexity int, marketID *string, reference *string, live *bool, pagination *v2.Pagination) int
 		MarginsConnection             func(childComplexity int, marketID *string, pagination *v2.Pagination) int
-		OrdersConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string) int
+		OrdersConnection              func(childComplexity int, pagination *v2.Pagination, filter *OrderByMarketIdsFilter) int
 		PositionsConnection           func(childComplexity int, market *string, pagination *v2.Pagination) int
 		ProposalsConnection           func(childComplexity int, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) int
 		RewardSummaries               func(childComplexity int, assetID *string) int
@@ -1571,7 +1571,7 @@ type ComplexityRoot struct {
 		MarketsData         func(childComplexity int, marketIds []string) int
 		MarketsDepth        func(childComplexity int, marketIds []string) int
 		MarketsDepthUpdate  func(childComplexity int, marketIds []string) int
-		Orders              func(childComplexity int, marketID *string, partyID *string) int
+		Orders              func(childComplexity int, filter *OrderByMarketAndPartyIdsFilter) int
 		Positions           func(childComplexity int, partyID *string, marketID *string) int
 		Proposals           func(childComplexity int, partyID *string) int
 		Rewards             func(childComplexity int, assetID *string, partyID *string) int
@@ -1934,13 +1934,13 @@ type MarketResolver interface {
 	LiquidityMonitoringParameters(ctx context.Context, obj *vega.Market) (*LiquidityMonitoringParameters, error)
 
 	Proposal(ctx context.Context, obj *vega.Market) (*vega.GovernanceData, error)
-	OrdersConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Market, pagination *v2.Pagination, filter *OrderByPartyIdsFilter) (*v2.OrderConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	Depth(ctx context.Context, obj *vega.Market, maxDepth *int) (*vega.MarketDepth, error)
 	CandlesConnection(ctx context.Context, obj *vega.Market, since string, to *string, interval vega.Interval, pagination *v2.Pagination) (*v2.CandleDataConnection, error)
 	Data(ctx context.Context, obj *vega.Market) (*vega.MarketData, error)
-	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, partyID *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Market, partyID *string, live *bool, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 
 	RiskFactors(ctx context.Context, obj *vega.Market) (*vega.RiskFactor, error)
 }
@@ -2071,7 +2071,7 @@ type OrderUpdateResolver interface {
 	Version(ctx context.Context, obj *vega.Order) (string, error)
 }
 type PartyResolver interface {
-	OrdersConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination, filter *v2.OrderFilter, marketID *string) (*v2.OrderConnection, error)
+	OrdersConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination, filter *OrderByMarketIdsFilter) (*v2.OrderConnection, error)
 	TradesConnection(ctx context.Context, obj *vega.Party, marketID *string, dataRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error)
 	AccountsConnection(ctx context.Context, obj *vega.Party, marketID *string, assetID *string, typeArg *vega.AccountType, pagination *v2.Pagination) (*v2.AccountsConnection, error)
 	PositionsConnection(ctx context.Context, obj *vega.Party, market *string, pagination *v2.Pagination) (*v2.PositionConnection, error)
@@ -2080,7 +2080,7 @@ type PartyResolver interface {
 	VotesConnection(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*ProposalVoteConnection, error)
 	WithdrawalsConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
 	DepositsConnection(ctx context.Context, obj *vega.Party, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
-	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
+	LiquidityProvisionsConnection(ctx context.Context, obj *vega.Party, marketID *string, reference *string, live *bool, pagination *v2.Pagination) (*v2.LiquidityProvisionsConnection, error)
 	DelegationsConnection(ctx context.Context, obj *vega.Party, nodeID *string, pagination *v2.Pagination) (*v2.DelegationsConnection, error)
 	StakingSummary(ctx context.Context, obj *vega.Party, pagination *v2.Pagination) (*StakingSummary, error)
 	RewardsConnection(ctx context.Context, obj *vega.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error)
@@ -2249,7 +2249,7 @@ type SubscriptionResolver interface {
 	MarketsData(ctx context.Context, marketIds []string) (<-chan []*vega.MarketData, error)
 	MarketsDepth(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepth, error)
 	MarketsDepthUpdate(ctx context.Context, marketIds []string) (<-chan []*vega.MarketDepthUpdate, error)
-	Orders(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Order, error)
+	Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*vega.Order, error)
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.Position, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
 	Rewards(ctx context.Context, assetID *string, partyID *string) (<-chan *vega.Reward, error)
@@ -4796,7 +4796,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["partyId"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Market.LiquidityProvisionsConnection(childComplexity, args["partyId"].(*string), args["live"].(*bool), args["pagination"].(*v2.Pagination)), true
 
 	case "Market.lpPriceRange":
 		if e.complexity.Market.LpPriceRange == nil {
@@ -4829,7 +4829,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Market.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter)), true
+		return e.complexity.Market.OrdersConnection(childComplexity, args["pagination"].(*v2.Pagination), args["filter"].(*OrderByPartyIdsFilter)), true
 
 	case "Market.positionDecimalPlaces":
 		if e.complexity.Market.PositionDecimalPlaces == nil {
@@ -6598,7 +6598,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["marketId"].(*string), args["reference"].(*string), args["pagination"].(*v2.Pagination)), true
+		return e.complexity.Party.LiquidityProvisionsConnection(childComplexity, args["marketId"].(*string), args["reference"].(*string), args["live"].(*bool), args["pagination"].(*v2.Pagination)), true
 
 	case "Party.marginsConnection":
 		if e.complexity.Party.MarginsConnection == nil {
@@ -6622,7 +6622,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.OrdersConnection(childComplexity, args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination), args["filter"].(*v2.OrderFilter), args["marketId"].(*string)), true
+		return e.complexity.Party.OrdersConnection(childComplexity, args["pagination"].(*v2.Pagination), args["filter"].(*OrderByMarketIdsFilter)), true
 
 	case "Party.positionsConnection":
 		if e.complexity.Party.PositionsConnection == nil {
@@ -8769,7 +8769,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Orders(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
+		return e.complexity.Subscription.Orders(childComplexity, args["filter"].(*OrderByMarketAndPartyIdsFilter)), true
 
 	case "Subscription.positions":
 		if e.complexity.Subscription.Positions == nil {
@@ -9662,6 +9662,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDateRange,
 		ec.unmarshalInputLedgerEntryFilter,
 		ec.unmarshalInputOffsetPagination,
+		ec.unmarshalInputOrderByMarketAndPartyIdsFilter,
+		ec.unmarshalInputOrderByMarketIdsFilter,
+		ec.unmarshalInputOrderByPartyIdsFilter,
 		ec.unmarshalInputOrderFilter,
 		ec.unmarshalInputPagination,
 		ec.unmarshalInputPositionsFilter,
@@ -9888,48 +9891,48 @@ func (ec *executionContext) field_Market_liquidityProvisionsConnection_args(ctx 
 		}
 	}
 	args["partyId"] = arg0
-	var arg1 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+	var arg1 *bool
+	if tmp, ok := rawArgs["live"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("live"))
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg1
+	args["live"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
 func (ec *executionContext) field_Market_ordersConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *v2.DateRange
-	if tmp, ok := rawArgs["dateRange"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
-		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["dateRange"] = arg0
-	var arg1 *v2.Pagination
+	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg1
-	var arg2 *v2.OrderFilter
+	args["pagination"] = arg0
+	var arg1 *OrderByPartyIdsFilter
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg2, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		arg1, err = ec.unmarshalOOrderByPartyIdsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderByPartyIdsFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["filter"] = arg2
+	args["filter"] = arg1
 	return args, nil
 }
 
@@ -10131,15 +10134,24 @@ func (ec *executionContext) field_Party_liquidityProvisionsConnection_args(ctx c
 		}
 	}
 	args["reference"] = arg1
-	var arg2 *v2.Pagination
-	if tmp, ok := rawArgs["pagination"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+	var arg2 *bool
+	if tmp, ok := rawArgs["live"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("live"))
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg2
+	args["live"] = arg2
+	var arg3 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg3, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg3
 	return args, nil
 }
 
@@ -10170,42 +10182,24 @@ func (ec *executionContext) field_Party_marginsConnection_args(ctx context.Conte
 func (ec *executionContext) field_Party_ordersConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *v2.DateRange
-	if tmp, ok := rawArgs["dateRange"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
-		arg0, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["dateRange"] = arg0
-	var arg1 *v2.Pagination
+	var arg0 *v2.Pagination
 	if tmp, ok := rawArgs["pagination"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
-		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		arg0, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["pagination"] = arg1
-	var arg2 *v2.OrderFilter
+	args["pagination"] = arg0
+	var arg1 *OrderByMarketIdsFilter
 	if tmp, ok := rawArgs["filter"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
-		arg2, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, tmp)
+		arg1, err = ec.unmarshalOOrderByMarketIdsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderByMarketIdsFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["filter"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg3, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["marketId"] = arg3
+	args["filter"] = arg1
 	return args, nil
 }
 
@@ -11766,24 +11760,15 @@ func (ec *executionContext) field_Subscription_marketsDepth_args(ctx context.Con
 func (ec *executionContext) field_Subscription_orders_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+	var arg0 *OrderByMarketAndPartyIdsFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOOrderByMarketAndPartyIdsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderByMarketAndPartyIdsFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -28434,7 +28419,7 @@ func (ec *executionContext) _Market_ordersConnection(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter))
+		return ec.resolvers.Market().OrdersConnection(rctx, obj, fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*OrderByPartyIdsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28834,7 +28819,7 @@ func (ec *executionContext) _Market_liquidityProvisionsConnection(ctx context.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, fc.Args["partyId"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Market().LiquidityProvisionsConnection(rctx, obj, fc.Args["partyId"].(*string), fc.Args["live"].(*bool), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40177,7 +40162,7 @@ func (ec *executionContext) _Party_ordersConnection(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*v2.OrderFilter), fc.Args["marketId"].(*string))
+		return ec.resolvers.Party().OrdersConnection(rctx, obj, fc.Args["pagination"].(*v2.Pagination), fc.Args["filter"].(*OrderByMarketIdsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -40699,7 +40684,7 @@ func (ec *executionContext) _Party_liquidityProvisionsConnection(ctx context.Con
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, fc.Args["marketId"].(*string), fc.Args["reference"].(*string), fc.Args["pagination"].(*v2.Pagination))
+		return ec.resolvers.Party().LiquidityProvisionsConnection(rctx, obj, fc.Args["marketId"].(*string), fc.Args["reference"].(*string), fc.Args["live"].(*bool), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -54276,7 +54261,7 @@ func (ec *executionContext) _Subscription_orders(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Orders(rctx, fc.Args["marketId"].(*string), fc.Args["partyId"].(*string))
+		return ec.resolvers.Subscription().Orders(rctx, fc.Args["filter"].(*OrderByMarketAndPartyIdsFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -62413,6 +62398,122 @@ func (ec *executionContext) unmarshalInputOffsetPagination(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputOrderByMarketAndPartyIdsFilter(ctx context.Context, obj interface{}) (OrderByMarketAndPartyIdsFilter, error) {
+	var it OrderByMarketAndPartyIdsFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"order", "marketIds", "partyIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "order":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			it.Order, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "marketIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+			it.MarketIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "partyIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyIds"))
+			it.PartyIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputOrderByMarketIdsFilter(ctx context.Context, obj interface{}) (OrderByMarketIdsFilter, error) {
+	var it OrderByMarketIdsFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"order", "marketIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "order":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			it.Order, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "marketIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+			it.MarketIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputOrderByPartyIdsFilter(ctx context.Context, obj interface{}) (OrderByPartyIdsFilter, error) {
+	var it OrderByPartyIdsFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"order", "partyIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "order":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			it.Order, err = ec.unmarshalOOrderFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderFilter(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "partyIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyIds"))
+			it.PartyIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputOrderFilter(ctx context.Context, obj interface{}) (v2.OrderFilter, error) {
 	var it v2.OrderFilter
 	asMap := map[string]interface{}{}
@@ -62420,7 +62521,7 @@ func (ec *executionContext) unmarshalInputOrderFilter(ctx context.Context, obj i
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"status", "types", "timeInForce", "excludeLiquidity"}
+	fieldsInOrder := [...]string{"status", "types", "timeInForce", "dateRange", "excludeLiquidity"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -62455,6 +62556,14 @@ func (ec *executionContext) unmarshalInputOrderFilter(ctx context.Context, obj i
 				return it, err
 			}
 			if err = ec.resolvers.OrderFilter().TimeInForce(ctx, &it, data); err != nil {
+				return it, err
+			}
+		case "dateRange":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+			it.DateRange, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, v)
+			if err != nil {
 				return it, err
 			}
 		case "excludeLiquidity":
@@ -83276,6 +83385,30 @@ func (ec *executionContext) marshalOOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋp
 		return graphql.Null
 	}
 	return ec._Order(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOOrderByMarketAndPartyIdsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderByMarketAndPartyIdsFilter(ctx context.Context, v interface{}) (*OrderByMarketAndPartyIdsFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOrderByMarketAndPartyIdsFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOOrderByMarketIdsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderByMarketIdsFilter(ctx context.Context, v interface{}) (*OrderByMarketIdsFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOrderByMarketIdsFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOOrderByPartyIdsFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐOrderByPartyIdsFilter(ctx context.Context, v interface{}) (*OrderByPartyIdsFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputOrderByPartyIdsFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOOrderConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐOrderConnection(ctx context.Context, sel ast.SelectionSet, v *v2.OrderConnection) graphql.Marshaler {

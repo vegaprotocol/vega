@@ -103,10 +103,8 @@ type Subscription {
 
   "Subscribe to orders updates"
   orders(
-    "ID of the market from which you want orders updates"
-    marketId: ID
-    "ID of the party from which you want orders updates"
-    partyId: ID
+    "Filter orders"
+    filter: OrderByMarketAndPartyIdsFilter
   ): [OrderUpdate!]
 
   "Subscribe to the positions updates"
@@ -1744,12 +1742,10 @@ type Market {
 
   "Orders on a market"
   ordersConnection(
-    "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
     "Filter orders"
-    filter: OrderFilter
+    filter: OrderByPartyIdsFilter
   ): OrderConnection
 
   "Get account for a party or market"
@@ -1792,6 +1788,8 @@ type Market {
    liquidityProvisionsConnection(
      "An optional party ID"
      partyId: ID
+     "An optional live flag to determine whether to list only live LPs or not"
+     live: Boolean
      "Pagination information"
      pagination: Pagination
   ): LiquidityProvisionsConnection
@@ -1951,14 +1949,10 @@ type Party {
 
   "Orders relating to a party"
   ordersConnection(
-    "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
-    dateRange: DateRange
     "Pagination information"
     pagination: Pagination
     "Filter orders"
-    filter: OrderFilter
-    "Market ID to limit the results to"
-    marketId: ID
+    filter: OrderByMarketIdsFilter
   ): OrderConnection
 
   tradesConnection(
@@ -2031,6 +2025,8 @@ type Party {
     marketId: ID
     "An optional reference"
     reference: String
+    "An optional live flag to determine whether to list only live LPs or not"
+    live: Boolean
     "Optional Pagination information"
     pagination: Pagination
   ): LiquidityProvisionsConnection
@@ -4027,7 +4023,25 @@ input OrderFilter {
   status: [OrderStatus!]
   types: [OrderType!]
   timeInForce: [OrderTimeInForce!]
+  "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+  dateRange: DateRange
   excludeLiquidity: Boolean
+}
+
+input OrderByPartyIdsFilter {
+  order: OrderFilter
+  partyIds: [ID!]
+}
+
+input OrderByMarketIdsFilter {
+  order: OrderFilter
+  marketIds: [ID!]
+}
+
+input OrderByMarketAndPartyIdsFilter {
+  order: OrderFilter
+  marketIds: [ID!]
+  partyIds: [ID!]
 }
 
 "Connection type for retrieving cursor-based paginated order information"

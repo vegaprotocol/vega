@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
@@ -58,6 +59,12 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 		EthereumAddress: "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
 	}
 	acc.AddEvent(ctx, evt)
+	acc.tsvc.EXPECT().GetTimeNow().AnyTimes()
+	acc.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	acc.Accounting.ProcessStakeTotalSupply(context.Background(), &types.StakeTotalSupply{
+		TokenAddress: crypto.RandomHash(),
+		TotalSupply:  num.NewUint(100),
+	})
 
 	// Check state has change now an event as been added
 	s2, _, err := acc.GetState(allKey)
@@ -77,11 +84,11 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 
 	// Load it in anc check that the accounts and their balances have returned
 	snapAcc.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
+	snapAcc.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).AnyTimes()
 	provs, err := snapAcc.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 	require.Nil(t, provs)
 	require.Equal(t, acc.GetAllAvailableBalances(), snapAcc.GetAllAvailableBalances())
-
 	s3, _, err := snapAcc.GetState(allKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(s2, s3))
