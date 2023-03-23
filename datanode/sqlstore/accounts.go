@@ -64,6 +64,10 @@ func (as *Accounts) Add(ctx context.Context, a *entities.Account) error {
 }
 
 func (as *Accounts) GetByID(ctx context.Context, accountID entities.AccountID) (entities.Account, error) {
+	if account, ok := as.getAccountFromCache(accountID); ok {
+		return account, nil
+	}
+
 	as.cacheLock.Lock()
 	defer as.cacheLock.Unlock()
 
