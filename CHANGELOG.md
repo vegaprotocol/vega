@@ -30,6 +30,7 @@
 - [7883](https://github.com/vegaprotocol/vega/issues/7883) - Fix snapshot issue with witness on accounting
 - [7921](https://github.com/vegaprotocol/vega/issues/7921) - Fix streams batches
 - [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
+- [7940](https://github.com/vegaprotocol/vega/issues/7940) - Enhance validation of tendermint public keys
 
 
 

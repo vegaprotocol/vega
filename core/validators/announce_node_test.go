@@ -27,6 +27,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTendermintKey(t *testing.T) {
+	notBase64 := "170ffakjde"
+	require.Error(t, validators.VerifyTendermintKey(notBase64))
+
+	validKey := "794AFpbqJvHF711mhAK3fvSLnoXuuiig2ecrdeSJ/bk="
+	require.NoError(t, validators.VerifyTendermintKey(validKey))
+}
+
 func TestSignVerifyAnnounceNode(t *testing.T) {
 	cmd := createSignedAnnounceCommand(t)
 	require.NoError(t, validators.VerifyAnnounceNode(cmd))
@@ -51,7 +59,7 @@ func createSignedAnnounceCommand(t *testing.T) *commandspb.AnnounceNode {
 		Id:              nodeWallets.Vega.ID().Hex(),
 		VegaPubKey:      nodeWallets.Vega.PubKey().Hex(),
 		VegaPubKeyIndex: nodeWallets.Vega.Index(),
-		ChainPubKey:     "some tm key",
+		ChainPubKey:     "794AFpbqJvHF711mhAK3fvSLnoXuuiig2ecrdeSJ/bk=",
 		EthereumAddress: nodeWallets.Ethereum.PubKey().Hex(),
 		FromEpoch:       1,
 		InfoUrl:         "www.some.com",
