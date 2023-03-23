@@ -1,14 +1,26 @@
 # Changelog
 
-## Unreleased 0.70.0
+## Unreleased 0.71.0
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
+
+
+## 0.70.0
 
 ### 🚨 Breaking changes
 - [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter.
 - [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else.
 - [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions` and add a `live` option
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 - [7862](https://github.com/vegaprotocol/vega/issues/7862) - Add per table statistics for network history segment creation
@@ -20,6 +32,7 @@
 - [7670](https://github.com/vegaprotocol/vega/issues/7670) - Removes the need for the buffered event source to hold a large buffer of sequence numbers
 - [7904](https://github.com/vegaprotocol/vega/issues/7904) - Add a default system test template for integration tests
 - [7894](https://github.com/vegaprotocol/vega/issues/7894) - Use slippage cap when market is in auction mode
+- [7923](https://github.com/vegaprotocol/vega/issues/7923) - Subscription rate limiter is enabled on `gRPC` and `REST` subscriptions
 
 ### 🐛 Fixes
 - [7910](https://github.com/vegaprotocol/vega/issues/7910) - Store heartbeats in the checkpoint so that validator sets do not reorder unexpectedly after loading

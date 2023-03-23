@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/gateway"
+
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
@@ -352,10 +354,13 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		lis = tpcLis
 	}
 
+	subscriptionRateLimiter := gateway.NewSubscriptionRateLimiter(g.log, g.Config.MaxSubscriptionPerClient)
+
 	rateLimit := ratelimit.NewFromConfig(&g.RateLimit, g.log)
 	intercept := grpc.ChainUnaryInterceptor(
 		remoteAddrInterceptor(g.log),
 		headersInterceptor(g.blockService.GetLastBlock, g.log),
+		subscriptionRateLimiter.WithGrpcInterceptor(),
 		rateLimit.GRPCInterceptor,
 	)
 
