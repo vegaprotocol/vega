@@ -26,13 +26,13 @@ type (
 )
 
 type Account struct {
+	VegaTime time.Time
 	ID       AccountID
 	PartyID  PartyID
 	AssetID  AssetID
 	MarketID MarketID
-	Type     vega.AccountType
 	TxHash   TxHash
-	VegaTime time.Time
+	Type     vega.AccountType
 }
 
 func (a Account) ToProto() *vega.Account {

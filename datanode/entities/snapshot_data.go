@@ -22,11 +22,11 @@ import (
 )
 
 type CoreSnapshotData struct {
-	BlockHeight     uint64
+	VegaTime        time.Time
 	BlockHash       string
 	VegaCoreVersion string
 	TxHash          TxHash
-	VegaTime        time.Time
+	BlockHeight     uint64
 }
 
 func CoreSnapshotDataFromProto(s *eventspb.CoreSnapshotData, txHash TxHash, vegaTime time.Time) CoreSnapshotData {
@@ -66,9 +66,9 @@ func (s CoreSnapshotData) ToProtoEdge(_ ...any) (*v2.CoreSnapshotEdge, error) {
 
 type CoreSnapshotDataCursor struct {
 	VegaTime        time.Time
-	BlockHeight     uint64
 	BlockHash       string
 	VegaCoreVersion string
+	BlockHeight     uint64
 }
 
 func (sc CoreSnapshotDataCursor) String() string {

@@ -63,21 +63,21 @@ type _Proposal struct{}
 type ProposalID = ID[_Proposal]
 
 type Proposal struct {
-	ID                      ProposalID
-	Reference               string
-	PartyID                 PartyID
-	State                   ProposalState
-	Rationale               ProposalRationale
-	Terms                   ProposalTerms
-	Reason                  ProposalError
-	ErrorDetails            string
 	ProposalTime            time.Time
 	VegaTime                time.Time
-	RequiredMajority        num.Decimal
-	RequiredParticipation   num.Decimal
 	RequiredLPMajority      *num.Decimal
 	RequiredLPParticipation *num.Decimal
+	Rationale               ProposalRationale
+	Terms                   ProposalTerms
+	ID                      ProposalID
+	ErrorDetails            string
 	TxHash                  TxHash
+	PartyID                 PartyID
+	RequiredMajority        num.Decimal
+	RequiredParticipation   num.Decimal
+	Reference               string
+	State                   ProposalState
+	Reason                  ProposalError
 }
 
 func (p Proposal) ToProto() *vega.Proposal {
@@ -221,9 +221,9 @@ func (pt *ProposalTerms) UnmarshalJSON(b []byte) error {
 }
 
 type ProposalCursor struct {
-	State    ProposalState `json:"state"`
 	VegaTime time.Time     `json:"vega_time"`
 	ID       ProposalID    `json:"id"`
+	State    ProposalState `json:"state"`
 }
 
 func (pc ProposalCursor) String() string {

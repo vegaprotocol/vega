@@ -4,10 +4,10 @@ import v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 // RewardSummaryFilter is the filter for the reward summary.
 type RewardSummaryFilter struct {
-	AssetIDs  []AssetID
-	MarketIDs []MarketID
 	FromEpoch *uint64
 	ToEpoch   *uint64
+	AssetIDs  []AssetID
+	MarketIDs []MarketID
 }
 
 // RewardSummaryFilterFromProto converts a protobuf v2.RewardSummaryFilter to an entities.RewardSummaryFilter.

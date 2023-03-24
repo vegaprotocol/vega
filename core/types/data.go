@@ -171,10 +171,10 @@ func DataSourceSpecBindingForFutureFromProto(o *vegapb.DataSourceSpecToFutureBin
 type DataSourceSpecStatus = vegapb.DataSourceSpec_Status
 
 type DataSourceSpec struct {
+	Data      *DataSourceDefinition
 	ID        string
 	CreatedAt int64
 	UpdatedAt int64
-	Data      *DataSourceDefinition
 	Status    DataSourceSpecStatus
 }
 
@@ -239,9 +239,9 @@ func (s DataSourceSpecSigners) String() string {
 }
 
 type DataSourceSpecPropertyKey struct {
+	NumberDecimalPlaces *uint64
 	Name                string
 	Type                DataSourceSpecPropertyKeyType
-	NumberDecimalPlaces *uint64
 }
 
 func (k DataSourceSpecPropertyKey) String() string {

@@ -35,11 +35,11 @@ var (
 type EthereumConfig struct {
 	chainID          string
 	networkID        string
-	confirmations    uint64
 	collateralBridge EthereumContract
 	multiSigControl  EthereumContract
 	stakingBridge    EthereumContract
 	vestingBridge    EthereumContract
+	confirmations    uint64
 }
 
 func EthereumConfigFromUntypedProto(v interface{}) (*EthereumConfig, error) {

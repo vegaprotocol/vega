@@ -20,14 +20,14 @@ import (
 )
 
 type Epoch struct {
-	ID         int64
 	StartTime  time.Time
 	ExpireTime time.Time
-	EndTime    *time.Time
-	TxHash     TxHash
 	VegaTime   time.Time
+	EndTime    *time.Time
 	FirstBlock *int64
 	LastBlock  *int64
+	TxHash     TxHash
+	ID         int64
 }
 
 func (e *Epoch) ToProto() *vega.Epoch {

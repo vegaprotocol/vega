@@ -78,8 +78,8 @@ func NewUpdateAssetFromProto(p *vegapb.ProposalTerms_UpdateAsset) (*ProposalTerm
 }
 
 type UpdateAsset struct {
-	AssetID string
 	Changes *AssetDetailsUpdate
+	AssetID string
 }
 
 func (a *UpdateAsset) GetChanges() *AssetDetailsUpdate {
@@ -133,9 +133,9 @@ func (a UpdateAsset) Validate() (ProposalError, error) {
 }
 
 type AssetDetailsUpdate struct {
-	Quantum num.Decimal
 	//	*AssetDetailsUpdateERC20
-	Source isAssetDetailsUpdate
+	Source  isAssetDetailsUpdate
+	Quantum num.Decimal
 }
 
 func (a AssetDetailsUpdate) String() string {

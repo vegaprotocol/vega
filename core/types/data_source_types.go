@@ -32,8 +32,8 @@ type DataSourceSpecConditionOperator = datapb.Condition_Operator
 
 // DataSourceSpecCondition mirrors datapb.Condition type.
 type DataSourceSpecCondition struct {
-	Operator DataSourceSpecConditionOperator
 	Value    string
+	Operator DataSourceSpecConditionOperator
 }
 
 func (c DataSourceSpecCondition) isDataSourceType() {}

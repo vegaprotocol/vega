@@ -28,18 +28,18 @@ type _Withdrawal struct{}
 type WithdrawalID = ID[_Withdrawal]
 
 type Withdrawal struct {
+	CreatedTimestamp   time.Time
+	WithdrawnTimestamp time.Time
+	VegaTime           time.Time
+	Ext                WithdrawExt
 	ID                 WithdrawalID
 	PartyID            PartyID
 	Amount             decimal.Decimal
 	Asset              AssetID
-	Status             WithdrawalStatus
 	Ref                string
 	ForeignTxHash      string
-	CreatedTimestamp   time.Time
-	WithdrawnTimestamp time.Time
-	Ext                WithdrawExt
 	TxHash             TxHash
-	VegaTime           time.Time
+	Status             WithdrawalStatus
 }
 
 func WithdrawalFromProto(withdrawal *vega.Withdrawal, txHash TxHash, vegaTime time.Time) (*Withdrawal, error) {

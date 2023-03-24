@@ -20,10 +20,10 @@ import (
 )
 
 type NetworkParameter struct {
+	VegaTime time.Time
 	Key      string
 	Value    string
 	TxHash   TxHash
-	VegaTime time.Time
 }
 
 func (np NetworkParameter) ToProto() *vega.NetworkParameter {

@@ -129,9 +129,9 @@ const (
 )
 
 type RawChunk struct {
-	Nr     uint32
 	Data   []byte
 	Height uint64
+	Nr     uint32
 	Format SnapshotFormat
 }
 

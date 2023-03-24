@@ -47,8 +47,8 @@ func (d Delegation) IntoProto() *vega.Delegation {
 }
 
 type Delegate struct {
-	NodeID string
 	Amount *num.Uint
+	NodeID string
 }
 
 func (d Delegate) IntoProto() *commandspb.DelegateSubmission {

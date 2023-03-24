@@ -24,15 +24,15 @@ import (
 )
 
 type Vote struct {
+	InitialTime                 time.Time // First vote for this party/proposal
+	VegaTime                    time.Time // Time of last vote update
 	PartyID                     PartyID
 	ProposalID                  ProposalID
-	Value                       VoteValue
 	TotalGovernanceTokenBalance decimal.Decimal
 	TotalGovernanceTokenWeight  decimal.Decimal
 	TotalEquityLikeShareWeight  decimal.Decimal
-	InitialTime                 time.Time // First vote for this party/proposal
 	TxHash                      TxHash
-	VegaTime                    time.Time // Time of last vote update
+	Value                       VoteValue
 }
 
 func (v Vote) ToProto() *vega.Vote {
@@ -94,8 +94,8 @@ func (v Vote) Cursor() *Cursor {
 }
 
 type VoteCursor struct {
-	PartyID  PartyID   `json:"party_id"`
 	VegaTime time.Time `json:"vega_time"`
+	PartyID  PartyID   `json:"party_id"`
 }
 
 func (vc VoteCursor) String() string {

@@ -31,29 +31,29 @@ type _Order struct{}
 type OrderID = ID[_Order]
 
 type Order struct {
-	ID              OrderID
+	VegaTime        time.Time
+	ExpiresAt       time.Time
+	UpdatedAt       time.Time
+	CreatedAt       time.Time
+	PeggedOffset    decimal.Decimal
 	MarketID        MarketID
 	PartyID         PartyID
-	Side            Side
 	Price           decimal.Decimal
-	Size            int64
-	Remaining       int64
-	TimeInForce     OrderTimeInForce
-	Type            OrderType
-	Status          OrderStatus
+	TxHash          TxHash
+	ID              OrderID
 	Reference       string
-	Reason          OrderError
+	LpID            []byte
+	Remaining       int64
+	Size            int64
+	SeqNum          uint64
 	Version         int32
-	PeggedOffset    decimal.Decimal
 	BatchID         int32
 	PeggedReference PeggedReference
-	LpID            []byte
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	ExpiresAt       time.Time
-	TxHash          TxHash
-	VegaTime        time.Time
-	SeqNum          uint64
+	Reason          OrderError
+	Status          OrderStatus
+	Type            OrderType
+	TimeInForce     OrderTimeInForce
+	Side            Side
 	PostOnly        bool
 	ReduceOnly      bool
 }
@@ -182,9 +182,9 @@ func OrderFromProto(po *vega.Order, seqNum uint64, txHash TxHash) (Order, error)
 }
 
 type OrderKey struct {
+	VegaTime time.Time
 	ID       OrderID
 	Version  int32
-	VegaTime time.Time
 }
 
 func (o Order) Key() OrderKey {
@@ -211,8 +211,8 @@ var OrderColumns = []string{
 
 type OrderCursor struct {
 	CreatedAt time.Time `json:"createdAt"`
-	ID        OrderID   `json:"id"`
 	VegaTime  time.Time `json:"vegaTime"`
+	ID        OrderID   `json:"id"`
 }
 
 func (oc *OrderCursor) Parse(cursorString string) error {

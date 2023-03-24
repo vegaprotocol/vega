@@ -62,16 +62,16 @@ const (
 )
 
 type TransferBase struct {
+	Timestamp       time.Time
+	Amount          *num.Uint
 	ID              string
 	From            string
-	FromAccountType AccountType
 	To              string
-	ToAccountType   AccountType
 	Asset           string
-	Amount          *num.Uint
 	Reference       string
+	FromAccountType AccountType
+	ToAccountType   AccountType
 	Status          TransferStatus
-	Timestamp       time.Time
 }
 
 func (t *TransferBase) IsValid() error {
@@ -182,10 +182,10 @@ func (o *OneOffTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 
 type RecurringTransfer struct {
 	*TransferBase
-	StartEpoch       uint64
 	EndEpoch         *uint64
-	Factor           num.Decimal
 	DispatchStrategy *vegapb.DispatchStrategy
+	Factor           num.Decimal
+	StartEpoch       uint64
 }
 
 func (r *RecurringTransfer) IsValid() error {
@@ -243,9 +243,9 @@ func (r *RecurringTransfer) IntoEvent(reason *string) *eventspb.Transfer {
 // Just a wrapper, use the Kind on a
 // switch to access the proper value.
 type TransferFunds struct {
-	Kind      TransferCommandKind
 	OneOff    *OneOffTransfer
 	Recurring *RecurringTransfer
+	Kind      TransferCommandKind
 }
 
 func NewTransferFromProto(id, from string, tf *commandspb.Transfer) (*TransferFunds, error) {

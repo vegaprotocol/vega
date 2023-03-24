@@ -111,13 +111,10 @@ func (n NewMarket) String() string {
 }
 
 type NewMarketConfiguration struct {
+	RiskParameters                newRiskParams
 	Instrument                    *InstrumentConfiguration
-	DecimalPlaces                 uint64
-	PositionDecimalPlaces         int64
-	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                newRiskParams
 	LpPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
@@ -133,6 +130,9 @@ type NewMarketConfiguration struct {
 	//	*NewMarketConfiguration_Continuous
 	//	*NewMarketConfiguration_Discrete
 	// TradingMode          isNewMarketConfiguration_TradingMode `protobuf_oneof:"trading_mode"`
+	Metadata              []string
+	DecimalPlaces         uint64
+	PositionDecimalPlaces int64
 }
 
 func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
@@ -386,10 +386,10 @@ func (i InstrumentConfigurationFuture) Asset() string {
 }
 
 type InstrumentConfiguration struct {
-	Name string
-	Code string
 	// *InstrumentConfigurationFuture
 	Product instrumentConfigurationProduct
+	Name    string
+	Code    string
 }
 
 func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
@@ -461,11 +461,11 @@ func (i InstrumentConfigurationFuture) icpIntoProto() interface{} {
 func (InstrumentConfigurationFuture) isInstrumentConfigurationProduct() {}
 
 type FutureProduct struct {
-	SettlementAsset                     string
-	QuoteName                           string
 	DataSourceSpecForSettlementData     DataSourceDefinition
 	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	SettlementAsset                     string
+	QuoteName                           string
 }
 
 func (f FutureProduct) IntoProto() *vegapb.FutureProduct {

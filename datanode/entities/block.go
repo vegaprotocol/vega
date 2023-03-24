@@ -28,8 +28,8 @@ type TimeUpdateEvent interface {
 
 type Block struct {
 	VegaTime time.Time
-	Height   int64
 	Hash     []byte
+	Height   int64
 }
 
 func BlockFromTimeUpdate(te TimeUpdateEvent) (*Block, error) {

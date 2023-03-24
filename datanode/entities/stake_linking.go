@@ -28,20 +28,20 @@ type _StakeLinking struct{}
 type StakeLinkingID = ID[_StakeLinking]
 
 type StakeLinking struct {
-	ID                 StakeLinkingID
-	StakeLinkingType   StakeLinkingType
+	FinalizedAt        time.Time
+	VegaTime           time.Time
 	EthereumTimestamp  time.Time
 	PartyID            PartyID
 	Amount             decimal.Decimal
-	StakeLinkingStatus StakeLinkingStatus
-	FinalizedAt        time.Time
+	ID                 StakeLinkingID
 	ForeignTxHash      string
+	EthereumAddress    string
+	TxHash             TxHash
 	ForeignBlockHeight int64
 	ForeignBlockTime   int64
 	LogIndex           int64
-	EthereumAddress    string
-	TxHash             TxHash
-	VegaTime           time.Time
+	StakeLinkingStatus StakeLinkingStatus
+	StakeLinkingType   StakeLinkingType
 }
 
 func StakeLinkingFromProto(stake *eventspb.StakeLinking, txHash TxHash, vegaTime time.Time) (*StakeLinking, error) {

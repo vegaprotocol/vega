@@ -22,12 +22,12 @@ import (
 )
 
 type KeyRotation struct {
+	VegaTime    time.Time
 	NodeID      NodeID
 	OldPubKey   VegaPublicKey
 	NewPubKey   VegaPublicKey
-	BlockHeight uint64
 	TxHash      TxHash
-	VegaTime    time.Time
+	BlockHeight uint64
 }
 
 func KeyRotationFromProto(kr *eventspb.KeyRotation, txHash TxHash, vegaTime time.Time) (*KeyRotation, error) {

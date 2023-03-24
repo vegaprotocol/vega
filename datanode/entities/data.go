@@ -25,18 +25,18 @@ import (
 )
 
 type Property struct {
+	NumberDecimalPlaces *uint64
 	Name                string
 	Value               string
-	NumberDecimalPlaces *uint64
 }
 
 type Data struct {
+	BroadcastAt    time.Time
+	VegaTime       time.Time
+	TxHash         TxHash
 	Signers        Signers
 	Data           []Property
 	MatchedSpecIds [][]byte // pgx automatically handles [][]byte to Postgres ByteaArray mappings
-	BroadcastAt    time.Time
-	TxHash         TxHash
-	VegaTime       time.Time
 	SeqNum         uint64
 }
 

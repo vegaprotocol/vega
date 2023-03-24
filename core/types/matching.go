@@ -23,29 +23,29 @@ import (
 )
 
 type Order struct {
+	Price                *num.Uint
+	OriginalPrice        *num.Uint
+	PeggedOrder          *PeggedOrder
 	ID                   string
 	MarketID             string
 	Party                string
-	Side                 Side
-	Price                *num.Uint
-	OriginalPrice        *num.Uint
-	Size                 uint64
-	Remaining            uint64
-	TimeInForce          OrderTimeInForce
-	Type                 OrderType
-	CreatedAt            int64
-	Status               OrderStatus
-	ExpiresAt            int64
-	Reference            string
-	Reason               OrderError
-	UpdatedAt            int64
-	Version              uint64
-	BatchID              uint64
-	PeggedOrder          *PeggedOrder
 	LiquidityProvisionID string
+	Reference            string
+	CreatedAt            int64
+	UpdatedAt            int64
+	extraRemaining       uint64
+	Size                 uint64
+	ExpiresAt            int64
+	Remaining            uint64
+	BatchID              uint64
+	Version              uint64
+	Type                 OrderType
+	Reason               OrderError
+	Status               OrderStatus
+	Side                 Side
+	TimeInForce          OrderTimeInForce
 	PostOnly             bool
 	ReduceOnly           bool
-	extraRemaining       uint64
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -276,8 +276,8 @@ func (o *Order) HasTraded() bool {
 }
 
 type PeggedOrder struct {
-	Reference PeggedReference
 	Offset    *num.Uint
+	Reference PeggedReference
 }
 
 func (p PeggedOrder) Clone() *PeggedOrder {
@@ -350,22 +350,22 @@ func (o *OrderCancellationConfirmation) IntoProto() *proto.OrderCancellationConf
 }
 
 type Trade struct {
-	ID                 string
-	MarketID           string
-	Price              *num.Uint
-	MarketPrice        *num.Uint
-	Size               uint64
-	Buyer              string
-	Seller             string
-	Aggressor          Side
-	BuyOrder           string
-	SellOrder          string
-	Timestamp          int64
-	Type               TradeType
 	BuyerFee           *Fee
 	SellerFee          *Fee
+	Price              *num.Uint
+	MarketPrice        *num.Uint
+	BuyOrder           string
+	Buyer              string
+	Seller             string
+	ID                 string
+	SellOrder          string
+	MarketID           string
+	Timestamp          int64
+	Size               uint64
 	BuyerAuctionBatch  uint64
 	SellerAuctionBatch uint64
+	Aggressor          Side
+	Type               TradeType
 }
 
 func (t *Trade) SetIDs(tradeID string, aggressive, passive *Order) {

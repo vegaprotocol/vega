@@ -48,10 +48,10 @@ const (
 )
 
 type Asset struct {
-	// Internal identifier of the asset
-	ID string
 	// Name of the asset (e.g: Great British Pound)
 	Details *AssetDetails
+	// Internal identifier of the asset
+	ID string
 	// Status of the asset
 	Status AssetStatus
 }
@@ -107,13 +107,13 @@ func AssetFromProto(p *proto.Asset) (*Asset, error) {
 }
 
 type AssetDetails struct {
-	Name     string
-	Symbol   string
-	Decimals uint64
-	Quantum  num.Decimal
 	//	*AssetDetailsBuiltinAsset
 	//	*AssetDetailsErc20
-	Source isAssetDetails
+	Source   isAssetDetails
+	Name     string
+	Symbol   string
+	Quantum  num.Decimal
+	Decimals uint64
 }
 
 func (a AssetDetails) String() string {
@@ -377,9 +377,9 @@ func AssetDetailsERC20FromProto(p *proto.AssetDetails_Erc20) (*AssetDetailsErc20
 
 // An ERC20 token based asset, living on the ethereum network.
 type ERC20 struct {
-	ContractAddress   string
 	LifetimeLimit     *num.Uint
 	WithdrawThreshold *num.Uint
+	ContractAddress   string
 }
 
 func (e ERC20) DeepClone() *ERC20 {

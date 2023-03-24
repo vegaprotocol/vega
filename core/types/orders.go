@@ -48,13 +48,13 @@ func (p PriceLevels) IntoProto() []*proto.PriceLevel {
 }
 
 type OrderAmendment struct {
+	Price           *num.Uint
+	ExpiresAt       *int64 // timestamp
+	PeggedOffset    *num.Uint
 	OrderID         string
 	MarketID        string
-	Price           *num.Uint
 	SizeDelta       int64
-	ExpiresAt       *int64 // timestamp
 	TimeInForce     OrderTimeInForce
-	PeggedOffset    *num.Uint
 	PeggedReference PeggedReference
 }
 

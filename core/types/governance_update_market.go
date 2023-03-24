@@ -77,8 +77,8 @@ func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) (*ProposalTerms
 }
 
 type UpdateMarket struct {
-	MarketID string
 	Changes  *UpdateMarketConfiguration
+	MarketID string
 }
 
 func (n UpdateMarket) String() string {
@@ -117,14 +117,14 @@ type updateRiskParams interface {
 }
 
 type UpdateMarketConfiguration struct {
+	RiskParameters                updateRiskParams
 	Instrument                    *UpdateInstrumentConfiguration
-	Metadata                      []string
 	PriceMonitoringParameters     *PriceMonitoringParameters
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	RiskParameters                updateRiskParams
 	LpPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
+	Metadata                      []string
 }
 
 func (n UpdateMarketConfiguration) String() string {
@@ -256,9 +256,9 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 }
 
 type UpdateInstrumentConfiguration struct {
-	Code string
 	// *UpdateInstrumentConfigurationFuture
 	Product updateInstrumentConfigurationProduct
+	Code    string
 }
 
 func (i UpdateInstrumentConfiguration) DeepClone() *UpdateInstrumentConfiguration {
@@ -350,10 +350,10 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 }
 
 type UpdateFutureProduct struct {
-	QuoteName                           string
 	DataSourceSpecForSettlementData     DataSourceDefinition
 	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	QuoteName                           string
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {

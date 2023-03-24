@@ -27,27 +27,25 @@ var ErrMarketDataIntegerOverflow = errors.New("integer overflow encountered when
 
 // MarketData represents a market data record that is stored in the SQL database.
 type MarketData struct {
-	// Mark price, as an integer, for example `123456` is a correctly
-	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	MarkPrice decimal.Decimal
+	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
+	SyntheticTime time.Time
+	// NextMarkToMarket is the next timestamp when the market wil be marked to market
+	NextMarkToMarket time.Time
+	// Vega Block time at which the data was received from Vega Node
+	VegaTime time.Time
+	// Targeted stake for the given market
+	TargetStake decimal.Decimal
+	// Available stake for the given market
+	SuppliedStake decimal.Decimal
+	// Highest price on the order book for buy orders not including pegged orders
+	BestStaticBidPrice decimal.Decimal
 	// Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	BestBidPrice decimal.Decimal
-	// Aggregated volume being bid at the best bid price
-	BestBidVolume uint64
-	// Aggregated volume being bid at the best bid price
-	BestOfferPrice decimal.Decimal
-	// Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
-	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	BestOfferVolume uint64
-	// Highest price on the order book for buy orders not including pegged orders
-	BestStaticBidPrice decimal.Decimal
-	// Total volume at the best static bid price excluding pegged orders
-	BestStaticBidVolume uint64
 	// Lowest price on the order book for sell orders not including pegged orders
 	BestStaticOfferPrice decimal.Decimal
-	// Total volume at the best static offer price excluding pegged orders
-	BestStaticOfferVolume uint64
+	// Transaction which caused this update
+	TxHash TxHash
 	// Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
 	MidPrice decimal.Decimal
@@ -55,49 +53,51 @@ type MarketData struct {
 	StaticMidPrice decimal.Decimal
 	// Market identifier for the data
 	Market MarketID
-	// The sum of the size of all positions greater than 0 on the market
-	OpenInterest uint64
-	// Time in seconds until the end of the auction (0 if currently not in auction period)
-	AuctionEnd int64
-	// Time until next auction (used in FBA's) - currently always 0
-	AuctionStart int64
+	// Aggregated volume being bid at the best bid price
+	BestOfferPrice decimal.Decimal
+	// the market value proxy
+	MarketValueProxy string
+	// Mark price, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	MarkPrice decimal.Decimal
 	// Indicative price (zero if not in auction)
 	IndicativePrice decimal.Decimal
-	// Indicative volume (zero if not in auction)
-	IndicativeVolume uint64
+	// When a market auction is extended, this field indicates what caused the extension
+	ExtensionTrigger string
 	// The current trading mode for the market
 	MarketTradingMode string
 	// The current trading mode for the market
 	MarketState string
 	// When a market is in an auction trading mode, this field indicates what triggered the auction
 	AuctionTrigger string
-	// When a market auction is extended, this field indicates what caused the extension
-	ExtensionTrigger string
-	// Targeted stake for the given market
-	TargetStake decimal.Decimal
-	// Available stake for the given market
-	SuppliedStake decimal.Decimal
 	// One or more price monitoring bounds for the current timestamp
 	PriceMonitoringBounds []*types.PriceMonitoringBounds
-	// the market value proxy
-	MarketValueProxy string
 	// the equity like share of liquidity fee for each liquidity provider
 	LiquidityProviderFeeShares []*types.LiquidityProviderFeeShare
-	// A synthetic time created which is the sum of vega_time + (seq num * Microsecond)
-	SyntheticTime time.Time
-	// Transaction which caused this update
-	TxHash TxHash
-	// Vega Block time at which the data was received from Vega Node
-	VegaTime time.Time
+	// Indicative volume (zero if not in auction)
+	IndicativeVolume uint64
+	// Time until next auction (used in FBA's) - currently always 0
+	AuctionStart int64
+	// Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	BestOfferVolume uint64
+	// Time in seconds until the end of the auction (0 if currently not in auction period)
+	AuctionEnd int64
+	// The sum of the size of all positions greater than 0 on the market
+	OpenInterest uint64
+	// Total volume at the best static offer price excluding pegged orders
+	BestStaticOfferVolume uint64
+	// Aggregated volume being bid at the best bid price
+	BestBidVolume uint64
 	// SeqNum is the order in which the market data was received in the block
 	SeqNum uint64
-	// NextMarkToMarket is the next timestamp when the market wil be marked to market
-	NextMarkToMarket time.Time
+	// Total volume at the best static bid price excluding pegged orders
+	BestStaticBidVolume uint64
 }
 
 type PriceMonitoringTrigger struct {
-	Horizon          uint64          `json:"horizon"`
 	Probability      decimal.Decimal `json:"probability"`
+	Horizon          uint64          `json:"horizon"`
 	AuctionExtension uint64          `json:"auctionExtension"`
 }
 

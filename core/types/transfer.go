@@ -21,8 +21,8 @@ import (
 )
 
 type FinancialAmount struct {
-	Asset  string
 	Amount *num.Uint
+	Asset  string
 }
 
 func (f *FinancialAmount) Clone() *FinancialAmount {
@@ -32,11 +32,11 @@ func (f *FinancialAmount) Clone() *FinancialAmount {
 }
 
 type Transfer struct {
-	Owner     string
 	Amount    *FinancialAmount
-	Type      TransferType
 	MinAmount *num.Uint
+	Owner     string
 	Market    string
+	Type      TransferType
 }
 
 func (t *Transfer) Clone() *Transfer {

@@ -136,12 +136,12 @@ const (
 )
 
 type ProposalSubmission struct {
-	// Proposal reference
-	Reference string
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
 	Terms *ProposalTerms
 	// Rationale behind the proposal change.
 	Rationale *ProposalRationale
+	// Proposal reference
+	Reference string
 }
 
 func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
@@ -187,19 +187,19 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*Proposal
 }
 
 type Proposal struct {
-	ID                      string
-	Reference               string
-	Party                   string
-	State                   ProposalState
-	Timestamp               int64
 	Terms                   *ProposalTerms
 	Rationale               *ProposalRationale
-	Reason                  ProposalError
-	ErrorDetails            string
 	RequiredMajority        num.Decimal
+	Party                   string
+	Reference               string
+	ErrorDetails            string
+	ID                      string
 	RequiredParticipation   num.Decimal
 	RequiredLPMajority      num.Decimal
 	RequiredLPParticipation num.Decimal
+	Timestamp               int64
+	State                   ProposalState
+	Reason                  ProposalError
 }
 
 func (p *Proposal) IsMarketUpdate() bool {
@@ -396,14 +396,14 @@ func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale 
 }
 
 type ProposalTerms struct {
-	ClosingTimestamp    int64
-	EnactmentTimestamp  int64
-	ValidationTimestamp int64
 	// *ProposalTermsUpdateMarket
 	// *ProposalTermsNewMarket
 	// *ProposalTermsUpdateNetworkParameter
 	// *ProposalTermsNewAsset
-	Change proposalTerm
+	Change              proposalTerm
+	ClosingTimestamp    int64
+	EnactmentTimestamp  int64
+	ValidationTimestamp int64
 }
 
 func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {

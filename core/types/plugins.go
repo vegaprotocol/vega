@@ -18,19 +18,19 @@ import (
 )
 
 type Position struct {
+	// Average entry price for the position, the price is an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	AverageEntryPrice *num.Uint
 	// Market identifier
 	MarketID string
 	// Party identifier
 	PartyID string
-	// Open volume for the position, value is signed +ve for long and -ve for short
-	OpenVolume int64
 	// Realised profit and loss for the position, value is signed +ve for long and -ve for short
 	RealisedPnl num.Decimal
 	// Unrealised profit and loss for the position, value is signed +ve for long and -ve for short
 	UnrealisedPnl num.Decimal
-	// Average entry price for the position, the price is an integer, for example `123456` is a correctly
-	// formatted price of `1.23456` assuming market configured to 5 decimal places
-	AverageEntryPrice *num.Uint
+	// Open volume for the position, value is signed +ve for long and -ve for short
+	OpenVolume int64
 	// Timestamp for the latest time the position was updated
 	UpdatedAt int64
 }

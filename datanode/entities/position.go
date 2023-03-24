@@ -49,26 +49,26 @@ type settleMarket interface {
 }
 
 type Position struct {
-	MarketID                MarketID
-	PartyID                 PartyID
-	OpenVolume              int64
-	RealisedPnl             decimal.Decimal
-	UnrealisedPnl           decimal.Decimal
-	AverageEntryPrice       decimal.Decimal
-	AverageEntryMarketPrice decimal.Decimal
-	Loss                    decimal.Decimal // what the party lost because of loss socialization
-	Adjustment              decimal.Decimal // what a party was missing which triggered loss socialization
-	TxHash                  TxHash
-	VegaTime                time.Time
-	// keep track of trades that haven't been settled as separate fields
-	// these will be zeroed out once we process settlement events
-	PendingOpenVolume              int64
+	VegaTime                       time.Time
+	Adjustment                     decimal.Decimal // what a party was missing which triggered loss socialization
+	AverageEntryPrice              decimal.Decimal
+	TxHash                         TxHash
+	UnrealisedPnl                  decimal.Decimal
+	PartyID                        PartyID
+	AverageEntryMarketPrice        decimal.Decimal
+	Loss                           decimal.Decimal // what the party lost because of loss socialization
+	LossSocialisationAmount        decimal.Decimal
+	RealisedPnl                    decimal.Decimal
+	PendingAverageEntryMarketPrice decimal.Decimal
+	MarketID                       MarketID
 	PendingRealisedPnl             decimal.Decimal
 	PendingUnrealisedPnl           decimal.Decimal
 	PendingAverageEntryPrice       decimal.Decimal
-	PendingAverageEntryMarketPrice decimal.Decimal
-	LossSocialisationAmount        decimal.Decimal
-	DistressedStatus               PositionStatus
+	OpenVolume                     int64
+	// keep track of trades that haven't been settled as separate fields
+	// these will be zeroed out once we process settlement events
+	PendingOpenVolume int64
+	DistressedStatus  PositionStatus
 }
 
 func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
@@ -273,9 +273,9 @@ func updateVWAP(vwap num.Decimal, volume int64, addVolume int64, addPrice *num.U
 }
 
 type PositionKey struct {
+	VegaTime time.Time
 	MarketID MarketID
 	PartyID  PartyID
-	VegaTime time.Time
 }
 
 func (p Position) Cursor() *Cursor {

@@ -42,8 +42,8 @@ const (
 )
 
 type StakeTotalSupply struct {
-	TokenAddress string
 	TotalSupply  *num.Uint
+	TokenAddress string
 }
 
 func (s *StakeTotalSupply) IntoProto() *vgproto.StakeTotalSupply {
@@ -77,18 +77,18 @@ func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, 
 }
 
 type StakeLinking struct {
-	ID              string
-	Type            StakeLinkingType
-	TS              int64
-	Party           string
 	Amount          *num.Uint
-	Status          StakeLinkingStatus
-	FinalizedAt     int64
+	ID              string
+	Party           string
 	TxHash          string
+	EthereumAddress string
+	TS              int64
+	FinalizedAt     int64
 	BlockHeight     uint64
 	BlockTime       int64
 	LogIndex        uint64
-	EthereumAddress string
+	Type            StakeLinkingType
+	Status          StakeLinkingStatus
 }
 
 func (s StakeLinking) Hash() string {
@@ -154,14 +154,14 @@ func StakeLinkingFromProto(sl *eventspb.StakeLinking) *StakeLinking {
 }
 
 type StakeDeposited struct {
-	BlockNumber, LogIndex uint64
-	TxID                  string // hash
+	Amount *num.Uint
+	TxID   string // hash
 
-	ID              string
-	VegaPubKey      string
-	EthereumAddress string
-	Amount          *num.Uint
-	BlockTime       int64
+	ID                    string
+	VegaPubKey            string
+	EthereumAddress       string
+	BlockNumber, LogIndex uint64
+	BlockTime             int64
 }
 
 func StakeDepositedFromProto(
@@ -220,14 +220,14 @@ func (s StakeDeposited) String() string {
 }
 
 type StakeRemoved struct {
-	BlockNumber, LogIndex uint64
-	TxID                  string // hash
+	Amount *num.Uint
+	TxID   string // hash
 
-	ID              string
-	VegaPubKey      string
-	EthereumAddress string
-	Amount          *num.Uint
-	BlockTime       int64
+	ID                    string
+	VegaPubKey            string
+	EthereumAddress       string
+	BlockNumber, LogIndex uint64
+	BlockTime             int64
 }
 
 func StakeRemovedFromProto(

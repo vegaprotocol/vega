@@ -13,8 +13,8 @@ type EpochRewardSummary struct {
 	AssetID    AssetID
 	MarketID   MarketID
 	RewardType string
-	EpochID    uint64
 	Amount     num.Decimal
+	EpochID    uint64
 }
 
 func (r *EpochRewardSummary) ToProto() *vega.EpochRewardSummary {
@@ -47,11 +47,11 @@ func (r EpochRewardSummary) ToProtoEdge(_ ...any) (*v2.EpochRewardSummaryEdge, e
 }
 
 type EpochRewardSummaryCursor struct {
-	EpochID    uint64 `json:"epoch_id"`
 	AssetID    string `json:"asset_id"`
 	MarketID   string `json:"market_id"`
 	RewardType string `json:"reward_type"`
 	Amount     string `json:"amount"`
+	EpochID    uint64 `json:"epoch_id"`
 }
 
 func (rc EpochRewardSummaryCursor) String() string {

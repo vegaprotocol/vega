@@ -24,15 +24,15 @@ import (
 
 type LedgerEntry struct {
 	LedgerEntryTime    time.Time
+	VegaTime           time.Time
+	TransferTime       time.Time
 	FromAccountID      AccountID `db:"account_from_id"`
 	ToAccountID        AccountID `db:"account_to_id"`
 	Quantity           decimal.Decimal
 	TxHash             TxHash
-	VegaTime           time.Time
-	TransferTime       time.Time
-	Type               LedgerMovementType
 	FromAccountBalance decimal.Decimal `db:"account_from_balance"`
 	ToAccountBalance   decimal.Decimal `db:"account_to_balance"`
+	Type               LedgerMovementType
 }
 
 var LedgerEntryColumns = []string{

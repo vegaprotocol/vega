@@ -58,29 +58,29 @@ func (o OrderCancellation) String() string {
 }
 
 type OrderSubmission struct {
-	// Market identifier for the order, required field
-	MarketID string
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
 	// required field for limit orders, however it is not required for market orders
 	Price *num.Uint
+	// Used to specify the details for a pegged order
+	PeggedOrder *PeggedOrder
+	// Market identifier for the order, required field
+	MarketID string
+	// Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
+	// set internally by the node to return a unique reference identifier for the order submission
+	Reference string
 	// Size for the order, for example, in a futures market the size equals the number of contracts, cannot be negative
 	Size uint64
+	// Timestamp for when the order will expire, in nanoseconds since the epoch,
+	ExpiresAt int64
 	// Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field
 	Side proto.Side
 	// Time in force indicates how long an order will remain active before it is executed or expires, required field
 	TimeInForce proto.Order_TimeInForce
-	// Timestamp for when the order will expire, in nanoseconds since the epoch,
-	ExpiresAt int64
 	// Type for the order, required field
-	Type proto.Order_Type
-	// Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
-	// set internally by the node to return a unique reference identifier for the order submission
-	Reference string
-	// Used to specify the details for a pegged order
-	PeggedOrder *PeggedOrder
-	PostOnly    bool
-	ReduceOnly  bool
+	Type       proto.Order_Type
+	PostOnly   bool
+	ReduceOnly bool
 }
 
 func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
@@ -173,10 +173,10 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 type WithdrawSubmission struct {
 	// The amount to be withdrawn
 	Amount *num.Uint
-	// The asset we want to withdraw
-	Asset string
 	// Foreign chain specifics
 	Ext *WithdrawExt
+	// The asset we want to withdraw
+	Asset string
 }
 
 func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {

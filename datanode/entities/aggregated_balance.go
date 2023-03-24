@@ -27,12 +27,12 @@ import (
 // querying, you requested grouping by one of the corresponding fields.
 type AggregatedBalance struct {
 	VegaTime  time.Time
-	Balance   decimal.Decimal
 	AccountID *AccountID
 	PartyID   *PartyID
 	AssetID   *AssetID
 	MarketID  *MarketID
 	Type      *types.AccountType
+	Balance   decimal.Decimal
 }
 
 // NewAggregatedBalanceFromValues returns a new AggregatedBalance from a list of values as returned

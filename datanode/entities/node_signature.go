@@ -27,11 +27,11 @@ type _NodeSignature struct{}
 type NodeSignatureID = ID[_NodeSignature]
 
 type NodeSignature struct {
+	VegaTime   time.Time
 	ResourceID NodeSignatureID
+	TxHash     TxHash
 	Sig        []byte
 	Kind       NodeSignatureKind
-	TxHash     TxHash
-	VegaTime   time.Time
 }
 
 // packNodeSignatures packs a list signatures into the form form:

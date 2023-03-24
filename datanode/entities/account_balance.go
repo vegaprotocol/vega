@@ -22,10 +22,10 @@ import (
 )
 
 type AccountBalance struct {
-	*Account
-	Balance  decimal.Decimal
-	TxHash   TxHash
 	VegaTime time.Time
+	*Account
+	Balance decimal.Decimal
+	TxHash  TxHash
 }
 
 func (ab AccountBalance) ToProto() *v2.AccountBalance {
@@ -46,8 +46,8 @@ func (ab AccountBalance) ToProtoEdge(_ ...any) (*v2.AccountEdge, error) {
 }
 
 type AccountBalanceKey struct {
-	AccountID AccountID
 	VegaTime  time.Time
+	AccountID AccountID
 }
 
 func (ab AccountBalance) Key() AccountBalanceKey {

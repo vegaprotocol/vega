@@ -27,17 +27,17 @@ type _Asset struct{}
 type AssetID = ID[_Asset]
 
 type Asset struct {
+	VegaTime          time.Time
 	ID                AssetID
 	Name              string
 	Symbol            string
-	Decimals          int
 	Quantum           decimal.Decimal
 	Source            string
 	ERC20Contract     string
 	TxHash            TxHash
-	VegaTime          time.Time
 	LifetimeLimit     decimal.Decimal
 	WithdrawThreshold decimal.Decimal
+	Decimals          int
 	Status            AssetStatus
 }
 

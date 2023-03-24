@@ -26,6 +26,6 @@ type PartyContibutionScore struct {
 type MarketContributionScore struct {
 	Asset  string
 	Market string
-	Metric proto.DispatchMetric
 	Score  num.Decimal
+	Metric proto.DispatchMetric
 }

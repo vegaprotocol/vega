@@ -26,8 +26,8 @@ type Balance struct {
 }
 
 type BalanceKey struct {
-	AccountID AccountID
 	VegaTime  time.Time
+	AccountID AccountID
 }
 
 func (b Balance) Key() BalanceKey {

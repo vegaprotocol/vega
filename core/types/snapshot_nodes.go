@@ -27,25 +27,26 @@ import (
 )
 
 type Snapshot struct {
-	Format SnapshotFormat
-	Height uint64    // the block-height of the snapshot
-	Hash   []byte    // the hash of the snapshot (the root hash of the AVL tree)
-	Meta   *Metadata // the AVL tree metadata
+	Meta *Metadata // the AVL tree metadata
+	Hash []byte    // the hash of the snapshot (the root hash of the AVL tree)
 	// Metadata []byte     // the above metadata serialised
 	Nodes []*Payload // the snapshot payloads in the tree (always leaf nodes)
 
-	// Chunk stuff
-	Chunks     uint32
 	DataChunks []*Chunk
 	ByteChunks [][]byte
-	ChunksSeen uint32
+	Height     uint64 // the block-height of the snapshot
 	byteLen    int
+	Format     SnapshotFormat
+
+	// Chunk stuff
+	Chunks     uint32
+	ChunksSeen uint32
 }
 
 type Metadata struct {
-	Version     int64       // the version of the AVL tree
 	NodeHashes  []*NodeHash // he nodes of the AVL tree ordered such that it can be imported with identical shape
 	ChunkHashes []string
+	Version     int64 // the version of the AVL tree
 }
 
 // NodeHash contains the data for a node in the IAVL, without its value, but the values hash instead.
@@ -64,8 +65,8 @@ type Chunk struct {
 
 type Payload struct {
 	Data    isPayload
-	raw     []byte // access to the raw data for chunking
 	treeKey string
+	raw     []byte // access to the raw data for chunking
 }
 
 type isPayload interface {
@@ -195,8 +196,8 @@ type PartySettledPosition struct {
 
 type SettlementTrade struct {
 	Price, MarketPrice *num.Uint
-	Size, NewSize      int64
 	Party              string
+	Size, NewSize      int64
 }
 
 type PayloadMatchingBook struct {
@@ -241,13 +242,13 @@ type PayloadTopology struct {
 }
 
 type Topology struct {
+	Signatures                     *snapshot.ToplogySignatures
+	ValidatorPerformance           *snapshot.ValidatorPerformance
 	ValidatorData                  []*snapshot.ValidatorState
 	ChainValidators                []string
 	PendingPubKeyRotations         []*snapshot.PendingKeyRotation
 	PendingEthereumKeyRotations    []*snapshot.PendingEthereumKeyRotation
 	UnresolvedEthereumKeyRotations []*snapshot.PendingEthereumKeyRotation
-	Signatures                     *snapshot.ToplogySignatures
-	ValidatorPerformance           *snapshot.ValidatorPerformance
 }
 
 type PayloadFloatingPointConsensus struct {
@@ -302,12 +303,12 @@ type PayloadProtocolUpgradeProposals struct {
 }
 
 type MatchingBook struct {
+	LastTradedPrice *num.Uint
 	MarketID        string
 	Buy             []*Order
 	Sell            []*Order
-	LastTradedPrice *num.Uint
-	Auction         bool
 	BatchID         uint64
+	Auction         bool
 }
 
 type ExecutionMarkets struct {
@@ -315,42 +316,42 @@ type ExecutionMarkets struct {
 }
 
 type ExecMarket struct {
-	Market                     *Market
+	LastBestAsk                *num.Uint
 	PriceMonitor               *PriceMonitor
 	AuctionState               *AuctionState
 	PeggedOrders               *PeggedOrdersState
-	ExpiringOrders             []*Order
+	SettlementData             *num.Numeric
 	LastBestBid                *num.Uint
-	LastBestAsk                *num.Uint
+	LastTradedPrice            *num.Uint
 	LastMidBid                 *num.Uint
 	LastMidAsk                 *num.Uint
-	LastMarketValueProxy       num.Decimal
-	LastEquityShareDistributed int64
+	FeeSplitter                *FeeSplitter
+	Market                     *Market
 	EquityShare                *EquityShare
 	CurrentMarkPrice           *num.Uint
-	LastTradedPrice            *num.Uint
-	ShortRiskFactor            num.Decimal
 	LongRiskFactor             num.Decimal
-	RiskFactorConsensusReached bool
-	FeeSplitter                *FeeSplitter
-	SettlementData             *num.Numeric
-	NextMTM                    int64
+	ShortRiskFactor            num.Decimal
+	LastMarketValueProxy       num.Decimal
+	ExpiringOrders             []*Order
 	Parties                    []string
+	LastEquityShareDistributed int64
+	NextMTM                    int64
+	RiskFactorConsensusReached bool
 	Closed                     bool
 }
 
 type PriceMonitor struct {
-	Initialised                 bool
-	FPHorizons                  []*KeyDecimalPair
 	Now                         time.Time
 	Update                      time.Time
+	PriceRangeCacheTime         time.Time
+	RefPriceCacheTime           time.Time
+	FPHorizons                  []*KeyDecimalPair
 	Bounds                      []*PriceBound
 	PriceRangeCache             []*PriceRangeCache
-	PriceRangeCacheTime         time.Time
 	PricesNow                   []*CurrentPrice
 	PricesPast                  []*PastPrice
 	RefPriceCache               []*KeyDecimalPair
-	RefPriceCacheTime           time.Time
+	Initialised                 bool
 	PriceBoundsConsensusReached bool
 }
 
@@ -365,10 +366,10 @@ type PastPrice struct {
 }
 
 type PriceBound struct {
-	Active     bool
+	Trigger    *PriceMonitoringTrigger
 	UpFactor   num.Decimal
 	DownFactor num.Decimal
-	Trigger    *PriceMonitoringTrigger
+	Active     bool
 }
 
 type PriceRangeCache struct {
@@ -383,8 +384,8 @@ type PriceRange struct {
 }
 
 type KeyDecimalPair struct {
-	Key int64
 	Val num.Decimal
+	Key int64
 }
 
 type PeggedOrdersState struct {
@@ -392,14 +393,14 @@ type PeggedOrdersState struct {
 }
 
 type AuctionState struct {
+	Begin              time.Time
+	End                *AuctionDuration
 	Mode               MarketTradingMode
 	DefaultMode        MarketTradingMode
 	Trigger            AuctionTrigger
-	Begin              time.Time
-	End                *AuctionDuration
+	Extension          AuctionTrigger
 	Start              bool
 	Stop               bool
-	Extension          AuctionTrigger
 	ExtensionEventSent bool
 }
 
@@ -411,30 +412,30 @@ type FeeSplitter struct {
 }
 
 type EpochState struct {
-	Seq                  uint64
 	StartTime            time.Time
 	ExpireTime           time.Time
+	Seq                  uint64
 	ReadyToStartNewEpoch bool
 	ReadyToEndEpoch      bool
 }
 
 type LimitState struct {
+	ProposeMarketEnabledFrom time.Time
+	ProposeAssetEnabledFrom  time.Time
 	BlockCount               uint32
 	CanProposeMarket         bool
 	CanProposeAsset          bool
 	GenesisLoaded            bool
 	ProposeMarketEnabled     bool
 	ProposeAssetEnabled      bool
-	ProposeMarketEnabledFrom time.Time
-	ProposeAssetEnabledFrom  time.Time
 }
 
 type EquityShare struct {
 	Mvp                 num.Decimal
 	PMvp                num.Decimal
 	R                   num.Decimal
-	OpeningAuctionEnded bool
 	Lps                 []*EquityShareLP
+	OpeningAuctionEnded bool
 }
 
 type EquityShareLP struct {
@@ -468,8 +469,8 @@ type BankingWithdrawals struct {
 }
 
 type RWithdrawal struct {
-	Ref        string
 	Withdrawal *Withdrawal
+	Ref        string
 }
 
 type BankingDeposits struct {
@@ -477,8 +478,8 @@ type BankingDeposits struct {
 }
 
 type BDeposit struct {
-	ID      string
 	Deposit *Deposit
+	ID      string
 }
 
 type BankingSeen struct {
@@ -491,16 +492,16 @@ type BankingAssetActions struct {
 }
 
 type AssetAction struct {
-	ID                      string
-	State                   uint32
-	Asset                   string
-	BlockNumber             uint64
-	TxIndex                 uint64
-	Hash                    string
 	BuiltinD                *BuiltinAssetDeposit
 	Erc20D                  *ERC20Deposit
 	Erc20AL                 *ERC20AssetList
 	ERC20AssetLimitsUpdated *ERC20AssetLimitsUpdated
+	ID                      string
+	Asset                   string
+	Hash                    string
+	BlockNumber             uint64
+	TxIndex                 uint64
+	State                   uint32
 	BridgeStopped           bool
 	BridgeResume            bool
 }
@@ -518,10 +519,10 @@ type CollateralAssets struct {
 }
 
 type AppState struct {
-	Height  uint64
 	Block   string
-	Time    int64
 	ChainID string
+	Height  uint64
+	Time    int64
 }
 
 type NetParams struct {
@@ -566,15 +567,15 @@ type MarketPositions struct {
 }
 
 type MarketPosition struct {
-	PartyID                       string
-	Size, Buy, Sell               int64
 	Price                         *num.Uint
 	BuySumProduct, SellSumProduct *num.Uint
+	PartyID                       string
+	Size, Buy, Sell               int64
 }
 
 type StakingAccounts struct {
-	Accounts                []*StakingAccount
 	StakingAssetTotalSupply *num.Uint
+	Accounts                []*StakingAccount
 }
 
 type StakingAccount struct {
@@ -585,9 +586,9 @@ type StakingAccount struct {
 
 type NotarySigs struct {
 	ID   string
-	Kind int32
 	Node string
 	Sig  string
+	Kind int32
 }
 
 type Notary struct {
@@ -3074,8 +3075,8 @@ func (s StakingAccount) IntoProto() *snapshot.StakingAccount {
 }
 
 type PartyTokenBalance struct {
-	Party   string
 	Balance *num.Uint
+	Party   string
 }
 
 type PartyProposalVoteCount struct {
@@ -3115,13 +3116,13 @@ type SimpleSpamPolicy struct {
 }
 
 type VoteSpamPolicy struct {
+	MinVotingTokensFactor   *num.Uint
 	PartyProposalVoteCount  []*PartyProposalVoteCount
 	BannedParty             []*BannedParty
 	RecentBlocksRejectStats []*BlockRejectStats
 	CurrentBlockIndex       uint64
 	LastIncreaseBlock       uint64
 	CurrentEpochSeq         uint64
-	MinVotingTokensFactor   *num.Uint
 }
 
 func PayloadSimpleSpamPolicyFromProto(ssp *snapshot.Payload_SimpleSpamPolicy) *PayloadSimpleSpamPolicy {
@@ -3344,22 +3345,22 @@ type RewardsPendingPayouts struct {
 }
 
 type ScheduledRewardsPayout struct {
-	PayoutTime    int64
 	RewardsPayout []*RewardsPayout
+	PayoutTime    int64
 }
 
 type RewardsPayout struct {
+	TotalReward  *num.Uint
 	FromAccount  string
 	Asset        string
-	PartyAmounts []*RewardsPartyAmount
-	TotalReward  *num.Uint
 	EpochSeq     string
+	PartyAmounts []*RewardsPartyAmount
 	Timestamp    int64
 }
 
 type RewardsPartyAmount struct {
-	Party  string
 	Amount *num.Uint
+	Party  string
 }
 
 func PayloadRewardPayoutFromProto(rpp *snapshot.Payload_RewardsPendingPayouts) *PayloadRewardsPayout {

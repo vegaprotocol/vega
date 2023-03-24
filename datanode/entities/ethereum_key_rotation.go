@@ -22,12 +22,12 @@ import (
 )
 
 type EthereumKeyRotation struct {
+	VegaTime    time.Time
 	NodeID      NodeID
 	OldAddress  EthereumAddress
 	NewAddress  EthereumAddress
-	BlockHeight uint64
 	TxHash      TxHash
-	VegaTime    time.Time
+	BlockHeight uint64
 	SeqNum      uint64
 }
 

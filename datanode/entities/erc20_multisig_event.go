@@ -39,15 +39,15 @@ type _ERC20MultiSigSignerEvent struct{}
 type ERC20MultiSigSignerEventID = ID[_ERC20MultiSigSignerEvent]
 
 type ERC20MultiSigSignerEvent struct {
+	VegaTime     time.Time
 	ID           ERC20MultiSigSignerEventID
 	ValidatorID  NodeID
 	SignerChange EthereumAddress
 	Submitter    EthereumAddress
 	Nonce        string
 	TxHash       TxHash
-	VegaTime     time.Time
-	EpochID      int64
 	Event        ERC20MultiSigSignerEventType
+	EpochID      int64
 }
 
 func (e ERC20MultiSigSignerEvent) Cursor() *Cursor {

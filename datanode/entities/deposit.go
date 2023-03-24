@@ -27,16 +27,16 @@ type _Deposit struct{}
 type DepositID = ID[_Deposit]
 
 type Deposit struct {
+	CreditedTimestamp time.Time
+	CreatedTimestamp  time.Time
+	VegaTime          time.Time
 	ID                DepositID
-	Status            DepositStatus
 	PartyID           PartyID
 	Asset             AssetID
 	Amount            decimal.Decimal
 	ForeignTxHash     string
-	CreditedTimestamp time.Time
-	CreatedTimestamp  time.Time
 	TxHash            TxHash
-	VegaTime          time.Time
+	Status            DepositStatus
 }
 
 func DepositFromProto(deposit *vega.Deposit, txHash TxHash, vegaTime time.Time) (*Deposit, error) {

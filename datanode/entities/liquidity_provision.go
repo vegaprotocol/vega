@@ -45,20 +45,20 @@ func (l *LiquidityOrderReference) DecodeBinary(_ *pgtype.ConnInfo, src []byte) e
 }
 
 type LiquidityProvision struct {
-	ID               LiquidityProvisionID
-	PartyID          PartyID
-	CreatedAt        time.Time
 	UpdatedAt        time.Time
+	VegaTime         time.Time
+	CreatedAt        time.Time
+	Fee              decimal.Decimal
 	MarketID         MarketID
 	CommitmentAmount decimal.Decimal
-	Fee              decimal.Decimal
+	ID               LiquidityProvisionID
+	Reference        string
+	TxHash           TxHash
+	PartyID          PartyID
 	Sells            []LiquidityOrderReference
 	Buys             []LiquidityOrderReference
 	Version          int64
 	Status           LiquidityProvisionStatus
-	Reference        string
-	TxHash           TxHash
-	VegaTime         time.Time
 }
 
 func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, txHash TxHash, vegaTime time.Time) (LiquidityProvision, error) {
@@ -133,8 +133,8 @@ func (lp LiquidityProvision) ToProto() *vega.LiquidityProvision {
 }
 
 type LiquidityProvisionKey struct {
-	ID       LiquidityProvisionID
 	VegaTime time.Time
+	ID       LiquidityProvisionID
 }
 
 func (lp LiquidityProvision) Key() LiquidityProvisionKey {

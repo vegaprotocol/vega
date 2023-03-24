@@ -22,12 +22,12 @@ import (
 )
 
 type ProtocolUpgradeProposal struct {
-	UpgradeBlockHeight uint64
-	VegaReleaseTag     string
-	Approvers          []string
-	Status             ProtocolUpgradeProposalStatus
-	TxHash             TxHash
 	VegaTime           time.Time
+	VegaReleaseTag     string
+	TxHash             TxHash
+	Approvers          []string
+	UpgradeBlockHeight uint64
+	Status             ProtocolUpgradeProposalStatus
 }
 
 func ProtocolUpgradeProposalFromProto(p *eventspb.ProtocolUpgradeEvent, txHash TxHash, vegaTime time.Time) ProtocolUpgradeProposal {
@@ -69,8 +69,8 @@ func (p ProtocolUpgradeProposal) ToProtoEdge(_ ...any) (*v2.ProtocolUpgradePropo
 
 type ProtocolUpgradeProposalCursor struct {
 	VegaTime           time.Time
-	UpgradeBlockHeight uint64
 	VegaReleaseTag     string
+	UpgradeBlockHeight uint64
 }
 
 func (pc ProtocolUpgradeProposalCursor) String() string {

@@ -101,6 +101,6 @@ type PropertyKey struct {
 }
 
 type Condition struct {
-	Operator v1.Condition_Operator
 	Value    string
+	Operator v1.Condition_Operator
 }

@@ -24,14 +24,14 @@ import (
 )
 
 type MarginLevels struct {
+	Timestamp              time.Time
+	VegaTime               time.Time
 	AccountID              AccountID
 	MaintenanceMargin      decimal.Decimal
 	SearchLevel            decimal.Decimal
 	InitialMargin          decimal.Decimal
 	CollateralReleaseLevel decimal.Decimal
-	Timestamp              time.Time
 	TxHash                 TxHash
-	VegaTime               time.Time
 }
 
 func MarginLevelsFromProto(ctx context.Context, margin *vega.MarginLevels, accountSource AccountSource, txHash TxHash, vegaTime time.Time) (MarginLevels, error) {
@@ -141,8 +141,8 @@ func (ml MarginLevels) ToProtoEdge(input ...any) (*v2.MarginEdge, error) {
 }
 
 type MarginLevelsKey struct {
-	AccountID AccountID
 	VegaTime  time.Time
+	AccountID AccountID
 }
 
 func (ml MarginLevels) Key() MarginLevelsKey {

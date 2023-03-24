@@ -30,23 +30,23 @@ type _Market struct{}
 type MarketID = ID[_Market]
 
 type Market struct {
-	ID                            MarketID
-	TxHash                        TxHash
 	VegaTime                      time.Time
-	InstrumentID                  string
-	TradableInstrument            TradableInstrument
-	DecimalPlaces                 int
-	Fees                          Fees
-	OpeningAuction                AuctionDuration
 	PriceMonitoringSettings       PriceMonitoringSettings
-	LiquidityMonitoringParameters LiquidityMonitoringParameters
-	TradingMode                   MarketTradingMode
-	State                         MarketState
-	MarketTimestamps              MarketTimestamps
-	PositionDecimalPlaces         int
-	LpPriceRange                  string
-	LinearSlippageFactor          *decimal.Decimal
+	TradableInstrument            TradableInstrument
+	Fees                          Fees
 	QuadraticSlippageFactor       *decimal.Decimal
+	LinearSlippageFactor          *decimal.Decimal
+	InstrumentID                  string
+	TxHash                        TxHash
+	ID                            MarketID
+	LpPriceRange                  string
+	LiquidityMonitoringParameters LiquidityMonitoringParameters
+	MarketTimestamps              MarketTimestamps
+	OpeningAuction                AuctionDuration
+	PositionDecimalPlaces         int
+	DecimalPlaces                 int
+	State                         MarketState
+	TradingMode                   MarketTradingMode
 }
 
 type MarketCursor struct {

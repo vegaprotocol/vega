@@ -25,16 +25,16 @@ import (
 )
 
 type Reward struct {
+	Timestamp      time.Time
+	VegaTime       time.Time
 	PartyID        PartyID
 	AssetID        AssetID
 	MarketID       MarketID
-	EpochID        int64
 	Amount         decimal.Decimal
-	PercentOfTotal float64
 	RewardType     string
-	Timestamp      time.Time
 	TxHash         TxHash
-	VegaTime       time.Time
+	EpochID        int64
+	PercentOfTotal float64
 	SeqNum         uint64
 }
 

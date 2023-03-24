@@ -30,13 +30,13 @@ const (
 )
 
 type SignerEvent struct {
-	BlockNumber, LogIndex uint64
-	TxHash                string
+	TxHash string
 
-	ID        string
-	Address   string
-	Nonce     string
-	BlockTime int64
+	ID                    string
+	Address               string
+	Nonce                 string
+	BlockNumber, LogIndex uint64
+	BlockTime             int64
 
 	Kind SignerEventKind
 }
@@ -133,13 +133,13 @@ func SignerEventFromSignerRemovedProto(
 }
 
 type SignerThresholdSetEvent struct {
-	BlockNumber, LogIndex uint64
-	TxHash                string
+	TxHash string
 
-	ID        string
-	Threshold uint32
-	Nonce     string
-	BlockTime int64
+	ID                    string
+	Nonce                 string
+	BlockNumber, LogIndex uint64
+	BlockTime             int64
+	Threshold             uint32
 }
 
 func (s SignerThresholdSetEvent) Hash() string {

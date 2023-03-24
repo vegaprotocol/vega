@@ -22,11 +22,11 @@ import (
 )
 
 type Checkpoint struct {
+	VegaTime    time.Time
 	Hash        string
 	BlockHash   string
-	BlockHeight int64
 	TxHash      TxHash
-	VegaTime    time.Time
+	BlockHeight int64
 	SeqNum      uint64
 }
 

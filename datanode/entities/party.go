@@ -26,9 +26,9 @@ type _Party struct{}
 type PartyID = ID[_Party]
 
 type Party struct {
+	VegaTime *time.Time // Can be NULL for built-in party 'network'
 	ID       PartyID
 	TxHash   TxHash
-	VegaTime *time.Time // Can be NULL for built-in party 'network'
 }
 
 func PartyFromProto(pp *types.Party, txHash TxHash) Party {

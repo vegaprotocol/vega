@@ -28,28 +28,28 @@ type _Trade struct{}
 type TradeID = ID[_Trade]
 
 type Trade struct {
-	SyntheticTime           time.Time
-	TxHash                  TxHash
 	VegaTime                time.Time
-	SeqNum                  uint64
+	SyntheticTime           time.Time
+	BuyerInfrastructureFee  decimal.Decimal
+	TxHash                  TxHash
 	ID                      TradeID
 	MarketID                MarketID
 	Price                   decimal.Decimal
-	Size                    uint64
+	SellerLiquidityFee      decimal.Decimal
 	Buyer                   PartyID
 	Seller                  PartyID
-	Aggressor               Side
+	SellerInfrastructureFee decimal.Decimal
 	BuyOrder                OrderID
 	SellOrder               OrderID
-	Type                    TradeType
-	BuyerMakerFee           decimal.Decimal
-	BuyerInfrastructureFee  decimal.Decimal
-	BuyerLiquidityFee       decimal.Decimal
 	SellerMakerFee          decimal.Decimal
-	SellerInfrastructureFee decimal.Decimal
-	SellerLiquidityFee      decimal.Decimal
+	BuyerMakerFee           decimal.Decimal
+	BuyerLiquidityFee       decimal.Decimal
+	SeqNum                  uint64
+	Size                    uint64
 	BuyerAuctionBatch       uint64
 	SellerAuctionBatch      uint64
+	Type                    TradeType
+	Aggressor               Side
 }
 
 func (t Trade) ToProto() *vega.Trade {

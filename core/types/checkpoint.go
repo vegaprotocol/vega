@@ -73,11 +73,11 @@ type Checkpoint struct {
 }
 
 type DelegationEntry struct {
+	Amount     *num.Uint
 	Party      string
 	Node       string
-	Amount     *num.Uint
-	Undelegate bool
 	EpochSeq   uint64
+	Undelegate bool
 }
 
 type DelegateCP struct {

@@ -141,16 +141,16 @@ const (
 )
 
 type Withdrawal struct {
+	// Amount The amount to be withdrawn
+	Amount *num.Uint
+	// Ext Foreign chain specifics
+	Ext *WithdrawExt
 	// ID Unique identifier for the withdrawal
 	ID string
 	// PartyID Unique party identifier of the user initiating the withdrawal
 	PartyID string
-	// Amount The amount to be withdrawn
-	Amount *num.Uint
 	// Asset The asset we want to withdraw funds from
 	Asset string
-	// Status The status of the withdrawal
-	Status WithdrawalStatus
 	// Ref The reference which is used by the foreign chain
 	// to refer to this withdrawal
 	Ref string
@@ -160,8 +160,8 @@ type Withdrawal struct {
 	CreationDate int64
 	// WithdrawalDate Timestamp for when the withdrawal was finalised by the network
 	WithdrawalDate int64
-	// Ext Foreign chain specifics
-	Ext *WithdrawExt
+	// Status The status of the withdrawal
+	Status WithdrawalStatus
 }
 
 func (w *Withdrawal) IntoProto() *vegapb.Withdrawal {
@@ -210,22 +210,22 @@ const (
 
 // Deposit represent a deposit on to the Vega network.
 type Deposit struct {
+	// Amount The amount to be deposited
+	Amount *num.Uint
 	// ID Unique identifier for the deposit
 	ID string
-	// Status of the deposit
-	Status DepositStatus
 	// Party identifier of the user initiating the deposit
 	PartyID string
 	// Asset The Vega asset targeted by this deposit
 	Asset string
-	// Amount The amount to be deposited
-	Amount *num.Uint
 	// TxHash The hash of the transaction from the foreign chain
 	TxHash string
 	// Timestamp for when the Vega account was updated with the deposit
 	CreditDate int64
 	// Timestamp for when the deposit was created on the Vega network
 	CreationDate int64
+	// Status of the deposit
+	Status DepositStatus
 }
 
 func (d *Deposit) IntoProto() *vegapb.Deposit {
@@ -298,12 +298,12 @@ func (c ChainEventERC20) String() string {
 }
 
 type BuiltinAssetDeposit struct {
+	// The amount to be deposited
+	Amount *num.Uint
 	// A Vega network internal asset identifier
 	VegaAssetID string
 	// A Vega party identifier (pub-key)
 	PartyID string
-	// The amount to be deposited
-	Amount *num.Uint
 }
 
 func NewBuiltinAssetDepositFromProto(p *vegapb.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
@@ -344,12 +344,12 @@ func (b BuiltinAssetDeposit) GetVegaAssetID() string {
 }
 
 type BuiltinAssetWithdrawal struct {
+	// The amount to be withdrawn
+	Amount *num.Uint
 	// A Vega network internal asset identifier
 	VegaAssetID string
 	// A Vega network party identifier (pub-key)
 	PartyID string
-	// The amount to be withdrawn
-	Amount *num.Uint
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *vegapb.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
@@ -535,10 +535,6 @@ func (b BuiltinAssetEventWithdrawal) oneOfProto() interface{} {
 }
 
 type ERC20Event struct {
-	// Index of the transaction
-	Index uint64
-	// The block in which the transaction was added
-	Block uint64
 	// The action
 	//
 	// Types that are valid to be assigned to Action:
@@ -550,6 +546,10 @@ type ERC20Event struct {
 	//	*ERC20BridgeStopped
 	//	*ERC20BridgeRemoved
 	Action erc20EventAction
+	// Index of the transaction
+	Index uint64
+	// The block in which the transaction was added
+	Block uint64
 }
 
 type erc20EventAction interface {
@@ -838,14 +838,14 @@ func (e ERC20EventDeposit) IntoProto() *vegapb.ERC20Event_Deposit {
 }
 
 type ERC20Deposit struct {
+	// The amount to be deposited
+	Amount *num.Uint
 	// The vega network internal identifier of the asset
 	VegaAssetID string
 	// The Ethereum wallet that initiated the deposit
 	SourceEthereumAddress string
 	// The Vega party identifier (pub-key) which is the target of the deposit
 	TargetPartyID string
-	// The amount to be deposited
-	Amount *num.Uint
 }
 
 func NewERC20DepositFromProto(p *vegapb.ERC20Deposit) (*ERC20Deposit, error) {
@@ -917,10 +917,10 @@ func (e ERC20EventAssetLimitsUpdated) IntoProto() *vegapb.ERC20Event_AssetLimits
 }
 
 type ERC20AssetLimitsUpdated struct {
-	VegaAssetID           string
-	SourceEthereumAddress string
 	LifetimeLimits        *num.Uint
 	WithdrawThreshold     *num.Uint
+	VegaAssetID           string
+	SourceEthereumAddress string
 }
 
 func NewERC20AssetLimitsUpdatedFromProto(p *vegapb.ERC20AssetLimitsUpdated) *ERC20AssetLimitsUpdated {

@@ -30,33 +30,33 @@ type _Node struct{}
 type NodeID = ID[_Node]
 
 type Node struct {
-	ID                NodeID
-	PubKey            VegaPublicKey       `db:"vega_pub_key"`
-	TmPubKey          TendermintPublicKey `db:"tendermint_pub_key"`
-	EthereumAddress   EthereumAddress
-	InfoURL           string
+	VegaTime          time.Time
+	RankingScore      *RankingScore `json:""`
+	RewardScore       *RewardScore  `json:""`
+	EpochData         EpochData
 	Location          string
-	Status            NodeStatus
+	StakedByOperator  decimal.Decimal
+	PubKey            VegaPublicKey `db:"vega_pub_key"`
 	Name              string
 	AvatarURL         string
 	TxHash            TxHash
-	VegaTime          time.Time
-	StakedByOperator  decimal.Decimal
+	InfoURL           string
+	ID                NodeID
 	StakedByDelegates decimal.Decimal
 	StakedTotal       decimal.Decimal
 	MaxIntendedStake  decimal.Decimal
 	PendingStake      decimal.Decimal
-	EpochData         EpochData
-	Delegations       []Delegation  `json:""`
-	RewardScore       *RewardScore  `json:""`
-	RankingScore      *RankingScore `json:""`
+	EthereumAddress   EthereumAddress
+	TmPubKey          TendermintPublicKey `db:"tendermint_pub_key"`
+	Delegations       []Delegation        `json:""`
+	Status            NodeStatus
 }
 
 type ValidatorUpdateAux struct {
-	Added           bool
+	TxHash          TxHash
 	EpochSeq        uint64
 	VegaPubKeyIndex uint32
-	TxHash          TxHash
+	Added           bool
 }
 
 type EpochData struct {
@@ -64,15 +64,15 @@ type EpochData struct {
 }
 
 type RewardScore struct {
-	RawValidatorScore   decimal.Decimal     `json:"raw_validator_score"`
-	PerformanceScore    decimal.Decimal     `json:"performance_score"`
-	MultisigScore       decimal.Decimal     `json:"multisig_score"`
-	ValidatorScore      decimal.Decimal     `json:"validator_score"`
-	NormalisedScore     decimal.Decimal     `json:"normalised_score"`
-	ValidatorNodeStatus ValidatorNodeStatus `json:"validator_node_status,string"`
-	TxHash              TxHash              `json:"tx_hash"`
-	VegaTime            time.Time           `json:"vega_time"`
+	VegaTime            time.Time       `json:"vega_time"`
+	RawValidatorScore   decimal.Decimal `json:"raw_validator_score"`
+	PerformanceScore    decimal.Decimal `json:"performance_score"`
+	MultisigScore       decimal.Decimal `json:"multisig_score"`
+	ValidatorScore      decimal.Decimal `json:"validator_score"`
+	NormalisedScore     decimal.Decimal `json:"normalised_score"`
+	TxHash              TxHash          `json:"tx_hash"`
 	EpochSeq            uint64
+	ValidatorNodeStatus ValidatorNodeStatus `json:"validator_node_status,string"`
 }
 
 type RewardScoreAux struct {
@@ -81,15 +81,15 @@ type RewardScoreAux struct {
 }
 
 type RankingScore struct {
-	StakeScore       decimal.Decimal     `json:"stake_score"`
-	PerformanceScore decimal.Decimal     `json:"performance_score"`
+	VegaTime         time.Time       `json:"vega_time"`
+	StakeScore       decimal.Decimal `json:"stake_score"`
+	PerformanceScore decimal.Decimal `json:"performance_score"`
+	RankingScore     decimal.Decimal `json:"ranking_score"`
+	TxHash           TxHash          `json:"tx_hash"`
+	EpochSeq         uint64
 	PreviousStatus   ValidatorNodeStatus `json:"previous_status,string"`
 	Status           ValidatorNodeStatus `json:",string"`
 	VotingPower      uint32              `json:"voting_power"`
-	RankingScore     decimal.Decimal     `json:"ranking_score"`
-	TxHash           TxHash              `json:"tx_hash"`
-	VegaTime         time.Time           `json:"vega_time"`
-	EpochSeq         uint64
 }
 
 type RankingScoreAux struct {
@@ -98,22 +98,22 @@ type RankingScoreAux struct {
 }
 
 type NodeSet struct {
-	Total    uint32
-	Inactive uint32
 	Promoted []string
 	Demoted  []string
+	Total    uint32
+	Inactive uint32
 	Maximum  uint32
 }
 
 type NodeData struct {
+	VegaTime        time.Time
 	StakedTotal     decimal.Decimal
-	TotalNodes      uint32
-	InactiveNodes   uint32
 	TendermintNodes NodeSet
 	ErsatzNodes     NodeSet
 	PendingNodes    NodeSet
 	Uptime          float64
-	VegaTime        time.Time
+	TotalNodes      uint32
+	InactiveNodes   uint32
 }
 
 func NodeFromValidatorUpdateEvent(evt eventspb.ValidatorUpdate, txHash TxHash, vegaTime time.Time) (Node, ValidatorUpdateAux, error) {

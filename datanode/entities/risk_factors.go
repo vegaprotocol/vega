@@ -22,11 +22,11 @@ import (
 )
 
 type RiskFactor struct {
+	VegaTime time.Time
 	MarketID MarketID
 	Short    decimal.Decimal
 	Long     decimal.Decimal
 	TxHash   TxHash
-	VegaTime time.Time
 }
 
 func RiskFactorFromProto(factor *vega.RiskFactor, txHash TxHash, vegaTime time.Time) (*RiskFactor, error) {

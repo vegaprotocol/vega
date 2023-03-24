@@ -19,15 +19,15 @@ import (
 )
 
 type NetworkLimits struct {
-	TxHash                   TxHash
 	VegaTime                 time.Time
+	ProposeMarketEnabledFrom time.Time
+	ProposeAssetEnabledFrom  time.Time
+	TxHash                   TxHash
 	CanProposeMarket         bool
 	CanProposeAsset          bool
 	ProposeMarketEnabled     bool
 	ProposeAssetEnabled      bool
 	GenesisLoaded            bool
-	ProposeMarketEnabledFrom time.Time
-	ProposeAssetEnabledFrom  time.Time
 }
 
 func NetworkLimitsFromProto(vn *vega.NetworkLimits, txHash TxHash) NetworkLimits {

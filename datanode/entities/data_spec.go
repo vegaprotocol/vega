@@ -67,24 +67,24 @@ type DataSourceSpecConfiguration struct {
 }
 
 type DataSourceSpec struct {
-	ID        SpecID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Data      *DataSourceDefinition
-	Status    DataSourceSpecStatus
-	TxHash    TxHash
 	VegaTime  time.Time
+	Data      *DataSourceDefinition
+	ID        SpecID
+	TxHash    TxHash
+	Status    DataSourceSpecStatus
 }
 
 type DataSourceSpecRaw struct {
-	ID        SpecID
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	VegaTime  time.Time
+	ID        SpecID
+	TxHash    TxHash
 	Signers   Signers
 	Filters   []Filter
 	Status    DataSourceSpecStatus
-	TxHash    TxHash
-	VegaTime  time.Time
 }
 
 func DataSourceSpecFromProto(spec *vegapb.DataSourceSpec, txHash TxHash, vegaTime time.Time) (*DataSourceSpec, error) {

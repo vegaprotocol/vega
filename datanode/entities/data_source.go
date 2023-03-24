@@ -17,9 +17,9 @@ type DataSourceDefinitionInternal struct {
 }
 
 type DataSourceDefinition struct {
-	Type     int
 	External *DataSourceDefinitionExternal
 	Internal *DataSourceDefinitionInternal
+	Type     int
 }
 
 func (s *DataSourceDefinition) GetSigners() []*v1.Signer {

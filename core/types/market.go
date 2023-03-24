@@ -338,11 +338,11 @@ func (i InstrumentFuture) String() string {
 }
 
 type Future struct {
-	SettlementAsset                     string
-	QuoteName                           string
 	DataSourceSpecForSettlementData     *DataSourceSpec
 	DataSourceSpecForTradingTermination *DataSourceSpec
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
+	SettlementAsset                     string
+	QuoteName                           string
 }
 
 func FutureFromProto(f *proto.Future) *Future {
@@ -416,13 +416,13 @@ type iProto interface {
 }
 
 type Instrument struct {
+	// Types that are valid to be assigned to Product:
+	//	*InstrumentFuture
+	Product  iProto
+	Metadata *InstrumentMetadata
 	ID       string
 	Code     string
 	Name     string
-	Metadata *InstrumentMetadata
-	// Types that are valid to be assigned to Product:
-	//	*InstrumentFuture
-	Product iProto
 }
 
 func InstrumentFromProto(i *proto.Instrument) *Instrument {
@@ -488,35 +488,35 @@ func (i Instrument) String() string {
 }
 
 type MarketData struct {
-	MarkPrice                 *num.Uint
+	IndicativePrice           *num.Uint
 	LastTradedPrice           *num.Uint
 	BestBidPrice              *num.Uint
-	BestBidVolume             uint64
+	MarkPrice                 *num.Uint
 	BestOfferPrice            *num.Uint
-	BestOfferVolume           uint64
-	BestStaticBidPrice        *num.Uint
-	BestStaticBidVolume       uint64
-	BestStaticOfferPrice      *num.Uint
-	BestStaticOfferVolume     uint64
-	MidPrice                  *num.Uint
 	StaticMidPrice            *num.Uint
-	Market                    string
-	Timestamp                 int64
-	OpenInterest              uint64
-	AuctionEnd                int64
-	AuctionStart              int64
-	IndicativePrice           *num.Uint
-	IndicativeVolume          uint64
-	MarketTradingMode         MarketTradingMode
-	MarketState               MarketState
-	Trigger                   AuctionTrigger
-	ExtensionTrigger          AuctionTrigger
-	TargetStake               string
+	BestStaticBidPrice        *num.Uint
+	MidPrice                  *num.Uint
+	BestStaticOfferPrice      *num.Uint
 	SuppliedStake             string
-	PriceMonitoringBounds     []*PriceMonitoringBounds
 	MarketValueProxy          string
+	Market                    string
+	TargetStake               string
+	PriceMonitoringBounds     []*PriceMonitoringBounds
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
+	OpenInterest              uint64
+	BestStaticBidVolume       uint64
+	AuctionEnd                int64
+	IndicativeVolume          uint64
+	AuctionStart              int64
 	NextMTM                   int64
+	BestBidVolume             uint64
+	BestOfferVolume           uint64
+	Timestamp                 int64
+	BestStaticOfferVolume     uint64
+	MarketTradingMode         MarketTradingMode
+	ExtensionTrigger          AuctionTrigger
+	Trigger                   AuctionTrigger
+	MarketState               MarketState
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -620,22 +620,23 @@ func (m MarketData) String() string {
 }
 
 type Market struct {
-	ID                            string
+	PriceMonitoringSettings       *PriceMonitoringSettings
 	TradableInstrument            *TradableInstrument
-	DecimalPlaces                 uint64
-	PositionDecimalPlaces         int64
+	MarketTimestamps              *MarketTimestamps
+	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	Fees                          *Fees
 	OpeningAuction                *AuctionDuration
-	PriceMonitoringSettings       *PriceMonitoringSettings
-	LiquidityMonitoringParameters *LiquidityMonitoringParameters
-	LPPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
+	LPPriceRange                  num.Decimal
+	ID                            string
 	QuadraticSlippageFactor       num.Decimal
 
-	TradingMode      MarketTradingMode
-	State            MarketState
-	MarketTimestamps *MarketTimestamps
-	asset            string
+	asset                 string
+	PositionDecimalPlaces int64
+	DecimalPlaces         uint64
+
+	TradingMode MarketTradingMode
+	State       MarketState
 }
 
 func MarketFromProto(mkt *proto.Market) (*Market, error) {

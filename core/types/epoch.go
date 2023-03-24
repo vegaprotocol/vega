@@ -23,14 +23,14 @@ import (
 )
 
 type Epoch struct {
-	// Unique identifier that increases by one each epoch
-	Seq uint64
 	// What time did this epoch start
 	StartTime time.Time
 	// What time should this epoch end
 	ExpireTime time.Time
 	// What time did it actually end
 	EndTime time.Time
+	// Unique identifier that increases by one each epoch
+	Seq uint64
 	// What action took place
 	Action proto.EpochAction
 }

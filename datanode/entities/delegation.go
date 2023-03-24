@@ -25,12 +25,12 @@ import (
 )
 
 type Delegation struct {
+	VegaTime time.Time
 	PartyID  PartyID         `json:"party_id"`
 	NodeID   NodeID          `json:"node_id"`
-	EpochID  int64           `json:"epoch_id"`
 	Amount   decimal.Decimal `json:"amount"`
 	TxHash   TxHash
-	VegaTime time.Time
+	EpochID  int64 `json:"epoch_id"`
 	SeqNum   uint64
 }
 

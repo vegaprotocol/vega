@@ -34,24 +34,24 @@ type _Transfer struct{}
 type TransferID = ID[_Transfer]
 
 type Transfer struct {
-	ID                  TransferID
-	TxHash              TxHash
 	VegaTime            time.Time
-	FromAccountID       AccountID
-	ToAccountID         AccountID
-	AssetID             AssetID
-	Amount              decimal.Decimal
-	Reference           string
-	Status              TransferStatus
-	TransferType        TransferType
 	DeliverOn           *time.Time
-	StartEpoch          *uint64
-	EndEpoch            *uint64
-	Factor              *decimal.Decimal
-	DispatchMetric      *vega.DispatchMetric
-	DispatchMetricAsset *string
-	DispatchMarkets     []string
 	Reason              *string
+	DispatchMetricAsset *string
+	DispatchMetric      *vega.DispatchMetric
+	Factor              *decimal.Decimal
+	EndEpoch            *uint64
+	StartEpoch          *uint64
+	ToAccountID         AccountID
+	Reference           string
+	Amount              decimal.Decimal
+	AssetID             AssetID
+	ID                  TransferID
+	FromAccountID       AccountID
+	TxHash              TxHash
+	DispatchMarkets     []string
+	TransferType        TransferType
+	Status              TransferStatus
 }
 
 func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*eventspb.Transfer, error) {

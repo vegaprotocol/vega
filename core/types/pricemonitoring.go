@@ -206,9 +206,9 @@ func (ts PriceMonitoringTriggers) String() string {
 }
 
 type PriceMonitoringTrigger struct {
-	Horizon          int64
 	HorizonDec       num.Decimal
 	Probability      num.Decimal
+	Horizon          int64
 	AuctionExtension int64
 }
 

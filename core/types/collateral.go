@@ -141,11 +141,11 @@ func (a Accounts) IntoProto() []*proto.Account {
 }
 
 type TransferRequest struct {
-	FromAccount []*Account
-	ToAccount   []*Account
 	Amount      *num.Uint
 	MinAmount   *num.Uint
 	Asset       string
+	FromAccount []*Account
+	ToAccount   []*Account
 	// Reference   string
 	Type TransferType
 }
@@ -213,10 +213,10 @@ type LedgerEntry struct {
 	FromAccount        *AccountDetails
 	ToAccount          *AccountDetails
 	Amount             *num.Uint
-	Type               TransferType
-	Timestamp          int64
 	FromAccountBalance *num.Uint
 	ToAccountBalance   *num.Uint
+	Timestamp          int64
+	Type               TransferType
 }
 
 func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {

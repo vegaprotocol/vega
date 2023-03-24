@@ -26,9 +26,9 @@ type LogNormalModelParams struct {
 }
 
 type LogNormalRiskModel struct {
+	Params                *LogNormalModelParams
 	RiskAversionParameter num.Decimal
 	Tau                   num.Decimal
-	Params                *LogNormalModelParams
 }
 
 func (l LogNormalModelParams) IntoProto() *proto.LogNormalModelParams {

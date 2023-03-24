@@ -224,10 +224,10 @@ func validatePagination(pagination CursorPagination) error {
 }
 
 type PageInfo struct {
-	HasNextPage     bool
-	HasPreviousPage bool
 	StartCursor     string
 	EndCursor       string
+	HasNextPage     bool
+	HasPreviousPage bool
 }
 
 func (p PageInfo) ToProto() *v2.PageInfo {
