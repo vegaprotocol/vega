@@ -80,7 +80,7 @@ Feature: Test liquidity monitoring
     # verify that we don't enter liquidity auction immediately despite liquidity being undersuplied
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 1000           | 30            |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3000         | 1000           | 30            |
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |

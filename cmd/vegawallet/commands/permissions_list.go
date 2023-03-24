@@ -30,7 +30,7 @@ type ListPermissionsHandler func(api.AdminListPermissionsParams) (api.AdminListP
 
 func NewCmdListPermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminListPermissionsParams) (api.AdminListPermissionsResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminListPermissionsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

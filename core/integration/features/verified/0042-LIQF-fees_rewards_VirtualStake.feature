@@ -327,7 +327,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5205         | 9000           | 52            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5200         | 9000           | 52            |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:

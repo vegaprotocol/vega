@@ -51,7 +51,7 @@ type isolateKeyResult struct {
 
 func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminIsolateKeyParams) (isolateKeyResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return isolateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}

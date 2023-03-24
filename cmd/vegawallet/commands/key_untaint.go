@@ -33,7 +33,7 @@ type UntaintKeyHandler func(api.AdminUntaintKeyParams) error
 
 func NewCmdUntaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminUntaintKeyParams) error {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

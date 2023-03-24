@@ -1181,7 +1181,9 @@ func (t *tradingDataServiceV2) ObservePositions(req *v2.ObservePositionsRequest,
 	defer cancel()
 
 	if err := t.sendPositionsSnapshot(ctx, req, srv); err != nil {
-		return formatE(ErrPositionServiceSendSnapshot, err)
+		if !errors.Is(err, entities.ErrNotFound) {
+			return formatE(ErrPositionServiceSendSnapshot, err)
+		}
 	}
 
 	positionsChan, ref := t.positionService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.PartyId), ptr.UnBox(req.MarketId))
@@ -1790,7 +1792,7 @@ func (t *tradingDataServiceV2) ObserveLiquidityProvisions(req *v2.ObserveLiquidi
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, req.PartyId, req.MarketId)
+	lpCh, ref := t.liquidityProvisionService.ObserveLiquidityProvisions(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Liquidity Provisions subscriber - new rpc stream", logging.Uint64("ref", ref))

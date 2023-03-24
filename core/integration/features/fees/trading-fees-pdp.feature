@@ -410,11 +410,6 @@ Feature: Fees calculations
       | 1000       | 1002              | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-
-
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 200  | trader4 |
       | trader3b | 1002  | 100  | trader4 |
@@ -451,6 +446,11 @@ Feature: Fees calculations
       | trader3b | ETH   | ETH/DEC21 | 240    | 9766    |
       | trader4  | ETH   | ETH/DEC21 | 480    | 743     |
 
+    Then the network moves ahead "1" blocks
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | last traded price | trading mode            |
+      | 1002       | 1002              | TRADING_MODE_CONTINUOUS |
+
     # Placing second set of orders
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -469,16 +469,13 @@ Feature: Fees calculations
 
     # matching the order now
     Then the following trades should be executed:
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 200  | trader4 |
 
-    # checking if continuous mode still exists
+     # checking if continuous mode still exists
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            |
-      | 1000       | 1002              | TRADING_MODE_CONTINUOUS |
+      | 1002       | 1002              | TRADING_MODE_CONTINUOUS |
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
@@ -1058,7 +1055,6 @@ Feature: Fees calculations
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
 
-    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 100           |
@@ -1374,7 +1370,6 @@ Feature: Fees calculations
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 10     | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 10     | amendment |
 
-    #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 100           |

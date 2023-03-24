@@ -63,7 +63,7 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 	handler := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

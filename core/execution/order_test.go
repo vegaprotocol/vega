@@ -3056,10 +3056,11 @@ func TestPeggedOrderCancelledWhenPartyCannotAffordTheMarginOnceDeployed(t *testi
 	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
 
 	bestBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 10)
+	matchingPrice := uint64(2000)
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty1, 1, 10000),
-		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 2000),
-		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty1, 1, 2000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, matchingPrice),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty1, 1, matchingPrice),
 	}
 	bestBidConf, err := tm.market.SubmitOrder(ctx, bestBid)
 	require.NoError(t, err)
@@ -3090,6 +3091,7 @@ func TestPeggedOrderCancelledWhenPartyCannotAffordTheMarginOnceDeployed(t *testi
 	md := tm.market.GetMarketData()
 	require.NotNil(t, md)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	require.Equal(t, num.NewUint(matchingPrice), md.MarkPrice)
 
 	assert.Equal(t, confirmationPeggedBuy.Order.Status, types.OrderStatusCancelled)
 	assert.Equal(t, confirmationPeggedSell.Order.Status, types.OrderStatusCancelled)
