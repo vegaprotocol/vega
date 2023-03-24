@@ -1975,11 +1975,11 @@ message GetLastTradeResponse {
 // Request to list trades
 message ListTradesRequest {
     // Market ID for which to list trades for, if provided.
-    optional string market_id = 1;
+    repeated string market_ids = 1;
     // Order ID for which to list trades for, if provided.
-    optional string order_id = 2;
+    repeated string order_ids = 2;
     // Party ID for which to list trades for, if provided.
-    optional string party_id = 3;
+    repeated string party_ids = 3;
     // Pagination control.
     optional Pagination pagination = 4;
     // Date range for the listing, if provided.

@@ -942,7 +942,19 @@ func tradesToProto(trades []entities.Trade) []*vega.Trade {
 	return protoTrades
 }
 
-// ListTrades lists trades by.
+type filterableIDs interface {
+	entities.MarketID | entities.PartyID | entities.OrderID
+}
+
+func toEntityIDs[T filterableIDs](ids []string) []T {
+	entityIDs := make([]T, len(ids))
+	for i := range ids {
+		entityIDs[i] = T(ids[i])
+	}
+	return entityIDs
+}
+
+// ListTrades lists trades by using a cursor based pagination model.
 func (t *TradingDataServiceV2) ListTrades(ctx context.Context, req *v2.ListTradesRequest) (*v2.ListTradesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTradesV2")()
 
@@ -953,9 +965,9 @@ func (t *TradingDataServiceV2) ListTrades(ctx context.Context, req *v2.ListTrade
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	trades, pageInfo, err := t.tradeService.List(ctx,
-		entities.MarketID(req.GetMarketId()),
-		entities.PartyID(req.GetPartyId()),
-		entities.OrderID(req.GetOrderId()),
+		toEntityIDs[entities.MarketID](req.GetMarketIds()),
+		toEntityIDs[entities.PartyID](req.GetPartyIds()),
+		toEntityIDs[entities.OrderID](req.GetOrderIds()),
 		pagination,
 		dateRange)
 	if err != nil {

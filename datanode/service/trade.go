@@ -54,13 +54,13 @@ func (t *Trade) Add(trade *entities.Trade) error {
 }
 
 func (t *Trade) List(ctx context.Context,
-	marketID entities.MarketID,
-	partyID entities.PartyID,
-	orderID entities.OrderID,
+	marketIDs []entities.MarketID,
+	partyIDs []entities.PartyID,
+	orderIDs []entities.OrderID,
 	pagination entities.CursorPagination,
 	dateRange entities.DateRange,
 ) ([]entities.Trade, entities.PageInfo, error) {
-	return t.store.List(ctx, marketID, partyID, orderID, pagination, dateRange)
+	return t.store.List(ctx, marketIDs, partyIDs, orderIDs, pagination, dateRange)
 }
 
 func (t *Trade) GetLastTradeByMarket(ctx context.Context, market string) ([]entities.Trade, error) {

@@ -618,6 +618,13 @@ type TradeSettlement struct {
 	Price string `json:"price"`
 }
 
+// Filter to apply to the trade connection query
+type TradesFilter struct {
+	PartyIds  []string `json:"partyIds"`
+	MarketIds []string `json:"marketIds"`
+	OrderIds  []string `json:"orderIds"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }

@@ -65,6 +65,7 @@
 - [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter.
 - [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else.
 - [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions` and add a `live` option
+- [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated TradesConnection `GraphQL` sub-queries in favour of a Trades root query with a filter parameter. This requires a change in the underlying `gRPC` request message.
 
 ### 🛠 Improvements
 - [7862](https://github.com/vegaprotocol/vega/issues/7862) - Add per table statistics for network history segment creation

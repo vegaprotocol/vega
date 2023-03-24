@@ -379,6 +379,9 @@ type Query {
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
+  "List core snapshots"
+  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
+
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
@@ -390,8 +393,17 @@ type Query {
     pagination: Pagination,
   ): DepositsConnection
 
+  "Fetch all entities for a given transaction hash"
+  entities(txHash: String!): Entities!
+
   "Get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: ID): Epoch!
+
+  "List reward summary per epoch by asset, market, reward type"
+  epochRewardSummaries(
+    filter: RewardSummaryFilter,
+    pagination: Pagination
+  ): EpochRewardSummaryConnection
 
   "Get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
   erc20ListAssetBundle(
@@ -594,6 +606,12 @@ type Query {
   "An entity that is trading on the Vega network"
   party("ID of a party" id: ID!): Party
 
+  "Fetch all positions"
+  positions(
+    filter: PositionsFilter,
+    pagination: Pagination
+  ): PositionConnection
+
   "A governance proposal located by either its ID or reference. If both are set, ID is used."
   proposal(
     "Optionally, locate proposal by its ID"
@@ -618,17 +636,16 @@ type Query {
   "List protocol upgrade proposals, optionally filtering on status or approver"
   protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
 
-  "List core snapshots"
-  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
-
-  "List reward summary per epoch by asset, market, reward type"
-  epochRewardSummaries(
-    filter: RewardSummaryFilter,
-    pagination: Pagination
-  ): EpochRewardSummaryConnection
-
   "Get statistics about the Vega node"
   statistics: Statistics!
+
+  trades(
+    filter: TradesFilter
+    "Optional Pagination information"
+    pagination: Pagination
+    "Date range to fetch trades between"
+    dateRange: DateRange
+  ): TradeConnection
 
   "Get a list of all transfers for a public key"
   transfersConnection(
@@ -650,14 +667,6 @@ type Query {
     "Pagination options"
     pagination: Pagination,
   ): WithdrawalsConnection
-
-  "Fetch all positions"
-  positions(
-    filter: PositionsFilter,
-    pagination: Pagination
-  ): PositionConnection
-
-  entities(txHash: String!): Entities!
 }
 
 "All the states a transfer can transition between"
@@ -1746,7 +1755,7 @@ type Market {
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection
+  ): TradeConnection @deprecated(reason: "Use root trades query instead")
 
   "Current depth on the order book for this market"
   depth(
@@ -1947,7 +1956,7 @@ type Party {
     dataRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection
+  ): TradeConnection @deprecated(reason: "Use root trades query instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2249,7 +2258,7 @@ type Order {
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): TradeConnection
+  ): TradeConnection @deprecated(reason: "Use root trades query instead")
 
   "The order type"
   type: OrderType
@@ -3985,6 +3994,13 @@ type TradeEdge {
   node: Trade!
   "The cursor for this trade"
   cursor: String!
+}
+
+"Filter to apply to the trade connection query"
+input TradesFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
+  orderIds: [ID!]
 }
 
 "Connection type for retrieving cursor-based paginated trade information"

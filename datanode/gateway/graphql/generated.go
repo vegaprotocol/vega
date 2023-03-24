@@ -1461,6 +1461,7 @@ type ComplexityRoot struct {
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
 		Statistics                         func(childComplexity int) int
+		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
 		Withdrawals                        func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
@@ -2220,9 +2221,12 @@ type ProtocolUpgradeProposalResolver interface {
 type QueryResolver interface {
 	Asset(ctx context.Context, id string) (*vega.Asset, error)
 	AssetsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.AssetsConnection, error)
+	CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
+	Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
+	EpochRewardSummaries(ctx context.Context, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
 	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
 	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
 	Erc20MultiSigSignerRemovedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerRemovedConnection, error)
@@ -2254,18 +2258,16 @@ type QueryResolver interface {
 	OrderVersionsConnection(ctx context.Context, orderID *string, pagination *v2.Pagination) (*v2.OrderConnection, error)
 	PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error)
 	Party(ctx context.Context, id string) (*vega.Party, error)
+	Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error)
 	Proposal(ctx context.Context, id *string, reference *string) (*vega.GovernanceData, error)
 	ProposalsConnection(ctx context.Context, proposalType *v2.ListGovernanceDataRequest_Type, inState *vega.Proposal_State, pagination *v2.Pagination) (*v2.GovernanceDataConnection, error)
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
-	CoreSnapshots(ctx context.Context, pagination *v2.Pagination) (*v2.CoreSnapshotConnection, error)
-	EpochRewardSummaries(ctx context.Context, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
 	Statistics(ctx context.Context) (*v13.Statistics, error)
+	Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
 	Withdrawals(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.WithdrawalsConnection, error)
-	Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error)
-	Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error)
 }
 type RankingScoreResolver interface {
 	VotingPower(ctx context.Context, obj *vega.RankingScore) (string, error)
@@ -8369,6 +8371,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
+	case "Query.trades":
+		if e.complexity.Query.Trades == nil {
+			break
+		}
+
+		args, err := ec.field_Query_trades_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Trades(childComplexity, args["filter"].(*TradesFilter), args["pagination"].(*v2.Pagination), args["dateRange"].(*v2.DateRange)), true
+
 	case "Query.transfersConnection":
 		if e.complexity.Query.TransfersConnection == nil {
 			break
@@ -10073,6 +10087,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPagination,
 		ec.unmarshalInputPositionsFilter,
 		ec.unmarshalInputRewardSummaryFilter,
+		ec.unmarshalInputTradesFilter,
 	)
 	first := true
 
@@ -11777,6 +11792,39 @@ func (ec *executionContext) field_Query_protocolUpgradeProposals_args(ctx contex
 		}
 	}
 	args["pagination"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *TradesFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOTradesFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradesFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg1, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg1
+	var arg2 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg2, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg2
 	return args, nil
 }
 
@@ -48863,6 +48911,64 @@ func (ec *executionContext) fieldContext_Query_assetsConnection(ctx context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_coreSnapshots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_coreSnapshots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CoreSnapshots(rctx, fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.CoreSnapshotConnection)
+	fc.Result = res
+	return ec.marshalOCoreSnapshotConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCoreSnapshotConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_coreSnapshots(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_CoreSnapshotConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_CoreSnapshotConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CoreSnapshotConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_coreSnapshots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_deposit(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_deposit(ctx, field)
 	if err != nil {
@@ -48991,6 +49097,119 @@ func (ec *executionContext) fieldContext_Query_deposits(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_entities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_entities(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Entities(rctx, fc.Args["txHash"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.ListEntitiesResponse)
+	fc.Result = res
+	return ec.marshalNEntities2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListEntitiesResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_entities(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "accounts":
+				return ec.fieldContext_Entities_accounts(ctx, field)
+			case "orders":
+				return ec.fieldContext_Entities_orders(ctx, field)
+			case "positions":
+				return ec.fieldContext_Entities_positions(ctx, field)
+			case "ledgerEntries":
+				return ec.fieldContext_Entities_ledgerEntries(ctx, field)
+			case "balanceChanges":
+				return ec.fieldContext_Entities_balanceChanges(ctx, field)
+			case "transfers":
+				return ec.fieldContext_Entities_transfers(ctx, field)
+			case "votes":
+				return ec.fieldContext_Entities_votes(ctx, field)
+			case "erc20MultiSigSignerAddedBundles":
+				return ec.fieldContext_Entities_erc20MultiSigSignerAddedBundles(ctx, field)
+			case "erc20MultiSigSignerRemovedBundles":
+				return ec.fieldContext_Entities_erc20MultiSigSignerRemovedBundles(ctx, field)
+			case "trades":
+				return ec.fieldContext_Entities_trades(ctx, field)
+			case "oracleSpecs":
+				return ec.fieldContext_Entities_oracleSpecs(ctx, field)
+			case "oracleData":
+				return ec.fieldContext_Entities_oracleData(ctx, field)
+			case "markets":
+				return ec.fieldContext_Entities_markets(ctx, field)
+			case "parties":
+				return ec.fieldContext_Entities_parties(ctx, field)
+			case "marginLevels":
+				return ec.fieldContext_Entities_marginLevels(ctx, field)
+			case "rewards":
+				return ec.fieldContext_Entities_rewards(ctx, field)
+			case "deposits":
+				return ec.fieldContext_Entities_deposits(ctx, field)
+			case "withdrawals":
+				return ec.fieldContext_Entities_withdrawals(ctx, field)
+			case "assets":
+				return ec.fieldContext_Entities_assets(ctx, field)
+			case "liquidityProvisions":
+				return ec.fieldContext_Entities_liquidityProvisions(ctx, field)
+			case "proposals":
+				return ec.fieldContext_Entities_proposals(ctx, field)
+			case "delegations":
+				return ec.fieldContext_Entities_delegations(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Entities_nodes(ctx, field)
+			case "nodeSignatures":
+				return ec.fieldContext_Entities_nodeSignatures(ctx, field)
+			case "networkParameters":
+				return ec.fieldContext_Entities_networkParameters(ctx, field)
+			case "keyRotations":
+				return ec.fieldContext_Entities_keyRotations(ctx, field)
+			case "ethereumKeyRotations":
+				return ec.fieldContext_Entities_ethereumKeyRotations(ctx, field)
+			case "protocolUpgradeProposals":
+				return ec.fieldContext_Entities_protocolUpgradeProposals(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Entities", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_entities_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_epoch(ctx, field)
 	if err != nil {
@@ -49050,6 +49269,64 @@ func (ec *executionContext) fieldContext_Query_epoch(ctx context.Context, field 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_epoch_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_epochRewardSummaries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_epochRewardSummaries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EpochRewardSummaries(rctx, fc.Args["filter"].(*v2.RewardSummaryFilter), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.EpochRewardSummaryConnection)
+	fc.Result = res
+	return ec.marshalOEpochRewardSummaryConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_epochRewardSummaries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_EpochRewardSummaryConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_EpochRewardSummaryConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EpochRewardSummaryConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_epochRewardSummaries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -51066,6 +51343,64 @@ func (ec *executionContext) fieldContext_Query_party(ctx context.Context, field 
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_positions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_positions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Positions(rctx, fc.Args["filter"].(*v2.PositionsFilter), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PositionConnection)
+	fc.Result = res
+	return ec.marshalOPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_positions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_PositionConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_PositionConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PositionConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_positions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_proposal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_proposal(ctx, field)
 	if err != nil {
@@ -51309,122 +51644,6 @@ func (ec *executionContext) fieldContext_Query_protocolUpgradeProposals(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_coreSnapshots(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_coreSnapshots(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CoreSnapshots(rctx, fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*v2.CoreSnapshotConnection)
-	fc.Result = res
-	return ec.marshalOCoreSnapshotConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐCoreSnapshotConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_coreSnapshots(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_CoreSnapshotConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_CoreSnapshotConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type CoreSnapshotConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_coreSnapshots_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_epochRewardSummaries(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_epochRewardSummaries(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().EpochRewardSummaries(rctx, fc.Args["filter"].(*v2.RewardSummaryFilter), fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*v2.EpochRewardSummaryConnection)
-	fc.Result = res
-	return ec.marshalOEpochRewardSummaryConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐEpochRewardSummaryConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_epochRewardSummaries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_EpochRewardSummaryConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_EpochRewardSummaryConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EpochRewardSummaryConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_epochRewardSummaries_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_statistics(ctx, field)
 	if err != nil {
@@ -51521,6 +51740,64 @@ func (ec *executionContext) fieldContext_Query_statistics(ctx context.Context, f
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Statistics", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_trades(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_trades(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Trades(rctx, fc.Args["filter"].(*TradesFilter), fc.Args["pagination"].(*v2.Pagination), fc.Args["dateRange"].(*v2.DateRange))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*v2.TradeConnection)
+	fc.Result = res
+	return ec.marshalOTradeConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐTradeConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_trades(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_TradeConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_TradeConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TradeConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_trades_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -51709,177 +51986,6 @@ func (ec *executionContext) fieldContext_Query_withdrawals(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_withdrawals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_positions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_positions(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Positions(rctx, fc.Args["filter"].(*v2.PositionsFilter), fc.Args["pagination"].(*v2.Pagination))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*v2.PositionConnection)
-	fc.Result = res
-	return ec.marshalOPositionConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPositionConnection(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_positions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "edges":
-				return ec.fieldContext_PositionConnection_edges(ctx, field)
-			case "pageInfo":
-				return ec.fieldContext_PositionConnection_pageInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type PositionConnection", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_positions_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_entities(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_entities(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Entities(rctx, fc.Args["txHash"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*v2.ListEntitiesResponse)
-	fc.Result = res
-	return ec.marshalNEntities2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐListEntitiesResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_entities(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "accounts":
-				return ec.fieldContext_Entities_accounts(ctx, field)
-			case "orders":
-				return ec.fieldContext_Entities_orders(ctx, field)
-			case "positions":
-				return ec.fieldContext_Entities_positions(ctx, field)
-			case "ledgerEntries":
-				return ec.fieldContext_Entities_ledgerEntries(ctx, field)
-			case "balanceChanges":
-				return ec.fieldContext_Entities_balanceChanges(ctx, field)
-			case "transfers":
-				return ec.fieldContext_Entities_transfers(ctx, field)
-			case "votes":
-				return ec.fieldContext_Entities_votes(ctx, field)
-			case "erc20MultiSigSignerAddedBundles":
-				return ec.fieldContext_Entities_erc20MultiSigSignerAddedBundles(ctx, field)
-			case "erc20MultiSigSignerRemovedBundles":
-				return ec.fieldContext_Entities_erc20MultiSigSignerRemovedBundles(ctx, field)
-			case "trades":
-				return ec.fieldContext_Entities_trades(ctx, field)
-			case "oracleSpecs":
-				return ec.fieldContext_Entities_oracleSpecs(ctx, field)
-			case "oracleData":
-				return ec.fieldContext_Entities_oracleData(ctx, field)
-			case "markets":
-				return ec.fieldContext_Entities_markets(ctx, field)
-			case "parties":
-				return ec.fieldContext_Entities_parties(ctx, field)
-			case "marginLevels":
-				return ec.fieldContext_Entities_marginLevels(ctx, field)
-			case "rewards":
-				return ec.fieldContext_Entities_rewards(ctx, field)
-			case "deposits":
-				return ec.fieldContext_Entities_deposits(ctx, field)
-			case "withdrawals":
-				return ec.fieldContext_Entities_withdrawals(ctx, field)
-			case "assets":
-				return ec.fieldContext_Entities_assets(ctx, field)
-			case "liquidityProvisions":
-				return ec.fieldContext_Entities_liquidityProvisions(ctx, field)
-			case "proposals":
-				return ec.fieldContext_Entities_proposals(ctx, field)
-			case "delegations":
-				return ec.fieldContext_Entities_delegations(ctx, field)
-			case "nodes":
-				return ec.fieldContext_Entities_nodes(ctx, field)
-			case "nodeSignatures":
-				return ec.fieldContext_Entities_nodeSignatures(ctx, field)
-			case "networkParameters":
-				return ec.fieldContext_Entities_networkParameters(ctx, field)
-			case "keyRotations":
-				return ec.fieldContext_Entities_keyRotations(ctx, field)
-			case "ethereumKeyRotations":
-				return ec.fieldContext_Entities_ethereumKeyRotations(ctx, field)
-			case "protocolUpgradeProposals":
-				return ec.fieldContext_Entities_protocolUpgradeProposals(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Entities", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_entities_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -65508,6 +65614,50 @@ func (ec *executionContext) unmarshalInputRewardSummaryFilter(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTradesFilter(ctx context.Context, obj interface{}) (TradesFilter, error) {
+	var it TradesFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"partyIds", "marketIds", "orderIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "partyIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyIds"))
+			it.PartyIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "marketIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+			it.MarketIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "orderIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderIds"))
+			it.OrderIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -76886,6 +77036,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "coreSnapshots":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_coreSnapshots(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "deposit":
 			field := field
 
@@ -76926,6 +77096,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "entities":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_entities(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "epoch":
 			field := field
 
@@ -76939,6 +77132,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "epochRewardSummaries":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_epochRewardSummaries(ctx, field)
 				return res
 			}
 
@@ -77611,6 +77824,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "positions":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_positions(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "proposal":
 			field := field
 
@@ -77691,46 +77924,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "coreSnapshots":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_coreSnapshots(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "epochRewardSummaries":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_epochRewardSummaries(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "statistics":
 			field := field
 
@@ -77744,6 +77937,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "trades":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_trades(ctx, field)
 				return res
 			}
 
@@ -77804,49 +78017,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_withdrawals(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "positions":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_positions(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "entities":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_entities(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -89139,6 +89309,14 @@ func (ec *executionContext) marshalOTradeUpdate2ᚕᚖcodeᚗvegaprotocolᚗio�
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOTradesFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradesFilter(ctx context.Context, v interface{}) (*TradesFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputTradesFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v []*v1.Transfer) graphql.Marshaler {
