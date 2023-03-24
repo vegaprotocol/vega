@@ -1815,8 +1815,6 @@ func (m *Market) confirmMTM(
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
 	}
-	// release any excess if needed
-	// m.releaseExcessMargin(ctx, pos...)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
@@ -2088,7 +2086,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 
 	m.confirmMTM(ctx, false)
-	m.recheckMargin(ctx, m.position.Positions())
 
 	return orderUpdates, nil
 }
