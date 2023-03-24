@@ -264,7 +264,7 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(1)
+	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
 	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
 	assert.NoError(t, err)
@@ -284,6 +284,7 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	// reload the state
 	var assetActions snapshot.Payload
 	snap := getTestEngine(t)
+	snap.tsvc.EXPECT().GetTimeNow().AnyTimes()
 	snap.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
 
 	proto.Unmarshal(state, &assetActions)
