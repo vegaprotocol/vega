@@ -22,16 +22,16 @@ import (
 
 // MarketPosition represents the position of a party inside a market.
 type MarketPosition struct {
+	price *num.Uint
+
+	// sum of size*price for party's buy/sell orders
+	buySumProduct, sellSumProduct *num.Uint
+
+	partyID string
 	// Actual volume
 	size int64
 	// Potential volume (orders not yet accepted/rejected)
 	buy, sell int64
-
-	partyID string
-	price   *num.Uint
-
-	// sum of size*price for party's buy/sell orders
-	buySumProduct, sellSumProduct *num.Uint
 }
 
 func NewMarketPosition(party string) *MarketPosition {
