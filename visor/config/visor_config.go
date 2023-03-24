@@ -37,7 +37,7 @@ const (
 
 type Asset struct {
 	// description: Name of the asset on Github.
-	AssetName string `toml:"assset_name"`
+	AssetName string `toml:"asset_name"`
 	/*
 		description: |
 			Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
@@ -85,7 +85,7 @@ example:
 			repository = "vega"
 			[autoInstall.assets]
 				[autoInstall.assets.vega]
-					assset_name = "vega-darwin-amd64.zip"
+					asset_name = "vega-darwin-amd64.zip"
 					binary_name = "vega"
 */
 type AutoInstallConfig struct {
@@ -111,7 +111,7 @@ type AutoInstallConfig struct {
 			value: |
 				[autoInstall.assets]
 					[autoInstall.assets.vega]
-						assset_name = "vega-darwin-amd64.zip"
+						asset_name = "vega-darwin-amd64.zip"
 						binary_name = "vega"
 	*/
 	Assets AssetsConfig `toml:"assets"`
@@ -194,7 +194,7 @@ type VisorConfigFile struct {
 					repository = "vega"
 					[autoInstall.assets]
 						[autoInstall.assets.vega]
-							assset_name = "vega-darwin-amd64.zip"
+							asset_name = "vega-darwin-amd64.zip"
 							binary_name = "vega"
 
 	*/
