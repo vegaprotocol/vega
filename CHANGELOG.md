@@ -15,6 +15,8 @@
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7899](https://github.com/vegaprotocol/vega/issues/7899) - Fixes inconsistency in the `HTTP` status codes returned when rate limited
 - [7962](https://github.com/vegaprotocol/vega/issues/7962) - Set `isValidator` when loading from a checkpoint
+- [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
+- [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
 
 
 ## 0.70.0

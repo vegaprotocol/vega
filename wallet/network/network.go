@@ -54,7 +54,7 @@ func (n *Network) EnsureCanConnectGRPCNode() error {
 func GetNetwork(store Store, name string) (*Network, error) {
 	exists, err := store.NetworkExists(name)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't verify network existence: %w", err)
+		return nil, fmt.Errorf("couldn't verify network exists: %w", err)
 	}
 	if !exists {
 		return nil, NewDoesNotExistError(name)

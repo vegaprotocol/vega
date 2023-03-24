@@ -49,6 +49,7 @@ func testInitialisingStoreSucceeds(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, s)
+	s.Close()
 }
 
 func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
@@ -591,6 +592,9 @@ func newTestFileStore(t *testing.T, walletsDir string) *storev1.FileStore {
 	if err != nil {
 		t.Fatalf("couldn't initialise store: %v", err)
 	}
+	t.Cleanup(func() {
+		s.Close()
+	})
 
 	return s
 }
