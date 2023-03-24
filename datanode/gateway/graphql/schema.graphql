@@ -146,9 +146,9 @@ type MarginLevels {
   party: Party!
   "Minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
-  "If the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
+  "If the margin is between maintenance and search, the network will initiate a collateral search, expressed as unsigned integer"
   searchLevel: String!
-  "This is the minimum margin required for a party to place a new order on the network (unsigned integer)"
+  "This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer"
   initialLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into

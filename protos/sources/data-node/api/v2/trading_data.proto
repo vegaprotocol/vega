@@ -1087,7 +1087,7 @@ message ObservePositionsRequest {
   optional string market_id = 2;
 }
 
-// Response that is received from a positions subscription request
+// Response received from a positions subscription request
 message ObservePositionsResponse {
   oneof response {
     // An 'initial image' snapshot containing current positions.

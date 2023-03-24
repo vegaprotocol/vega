@@ -2378,7 +2378,7 @@ func (x *ObservePositionsRequest) GetMarketId() string {
 	return ""
 }
 
-// Response that is received from a positions subscription request
+// Response received from a positions subscription request
 type ObservePositionsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
