@@ -92,6 +92,19 @@ func (ps *Proposals) GetByReference(ctx context.Context, ref string) (entities.P
 	return p, ps.wrapE(pgxscan.Get(ctx, ps.Connection, &p, query, ref))
 }
 
+func (ps *Proposals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error) {
+	defer metrics.StartSQLQuery("Proposals", "GetByTxHash")()
+
+	var proposals []entities.Proposal
+	query := `SELECT * FROM proposals WHERE tx_hash=$1`
+	err := pgxscan.Select(ctx, ps.Connection, &proposals, query, txHash)
+	if err != nil {
+		return nil, ps.wrapE(err)
+	}
+
+	return proposals, nil
+}
+
 func getOpenStateProposalsQuery(inState *entities.ProposalState, conditions []string, pagination entities.CursorPagination,
 	pc *entities.ProposalCursor, pageForward bool, args ...interface{},
 ) (string, []interface{}, error) {

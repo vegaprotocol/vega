@@ -41,7 +41,7 @@ func KeyRotationFromProto(kr *eventspb.KeyRotation, txHash TxHash, vegaTime time
 	}, nil
 }
 
-func (kr *KeyRotation) ToProto() *eventspb.KeyRotation {
+func (kr KeyRotation) ToProto() *eventspb.KeyRotation {
 	return &eventspb.KeyRotation{
 		NodeId:      kr.NodeID.String(),
 		OldPubKey:   kr.OldPubKey.String(),

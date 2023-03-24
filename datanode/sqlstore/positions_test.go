@@ -34,6 +34,7 @@ func addTestPosition(t *testing.T,
 	party entities.Party,
 	volume int64,
 	block entities.Block,
+	txHash entities.TxHash,
 ) entities.Position {
 	t.Helper()
 	pos := entities.NewEmptyPosition(market.ID, party.ID)
@@ -50,6 +51,7 @@ func addTestPosition(t *testing.T,
 	pos.PendingAverageEntryMarketPrice = decimal.New(0, 0)
 	pos.Adjustment = decimal.New(0, 0)
 	pos.Loss = decimal.New(0, 0)
+	pos.TxHash = txHash
 	err := ps.Add(ctx, pos)
 	require.NoError(t, err)
 	return pos
@@ -85,11 +87,11 @@ func TestPosition(t *testing.T) {
 	party1 := addTestParty(t, ctx, qs, block1)
 	party2 := addTestParty(t, ctx, qs, block1)
 
-	pos1a := addTestPosition(t, ctx, ps, market1, party1, 100, block1)
-	pos1b := addTestPosition(t, ctx, ps, market1, party1, 200, block1)
+	pos1a := addTestPosition(t, ctx, ps, market1, party1, 100, block1, txHashFromString("pos_1a"))
+	pos1b := addTestPosition(t, ctx, ps, market1, party1, 200, block1, txHashFromString("pos_1b"))
 
-	pos2 := addTestPosition(t, ctx, ps, market1, party2, 300, block2)
-	pos3 := addTestPosition(t, ctx, ps, market2, party1, 400, block2)
+	pos2 := addTestPosition(t, ctx, ps, market1, party2, 300, block2, txHashFromString("pos_2"))
+	pos3 := addTestPosition(t, ctx, ps, market2, party1, 400, block2, txHashFromString("pos_3"))
 
 	_, err := ps.Flush(ctx)
 	require.NoError(t, err)
@@ -99,8 +101,8 @@ func TestPosition(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Add some new positions
-	pos1c := addTestPosition(t, ctx, ps, market1, party1, 200, block3)
-	pos4 := addTestPosition(t, ctx, ps, market2, party2, 500, block3)
+	pos1c := addTestPosition(t, ctx, ps, market1, party1, 200, block3, txHashFromString("pos_1c"))
+	pos4 := addTestPosition(t, ctx, ps, market2, party2, 500, block3, txHashFromString("pos_4"))
 	ps.Flush(ctx)
 
 	t.Run("GetAll", func(t *testing.T) {
@@ -131,6 +133,13 @@ func TestPosition(t *testing.T) {
 		assert.True(t, expected.Equal(actual))
 	})
 
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := pos4
+		actual, err := ps.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assert.True(t, expected.Equal(actual[0]))
+	})
+
 	t.Run("GetBadMarketAndParty", func(t *testing.T) {
 		_, err := ps.GetByMarketAndParty(ctx, market2.ID.String(), "ffff")
 		assert.ErrorIs(t, err, entities.ErrNotFound)
@@ -148,7 +157,7 @@ func setupPositionPaginationData(t *testing.T, ctx context.Context, bs *sqlstore
 			party := entities.Party{ID: entities.PartyID(fmt.Sprintf("deadbeef%02d", j)), VegaTime: &block.VegaTime}
 			err := pts.Add(ctx, party)
 			require.NoError(t, err)
-			position := addTestPosition(t, ctx, ps, market, party, int64(i), block)
+			position := addTestPosition(t, ctx, ps, market, party, int64(i), block, defaultTxHash)
 			positions = append(positions, position)
 			blockTime = blockTime.Add(time.Minute)
 		}

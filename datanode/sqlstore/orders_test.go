@@ -14,6 +14,7 @@ package sqlstore_test
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"testing"
@@ -33,7 +34,7 @@ import (
 
 func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block entities.Block, party entities.Party, market entities.Market, reference string,
 	side types.Side, timeInForce types.OrderTimeInForce, orderType types.OrderType, status types.OrderStatus,
-	price, size, remaining int64, seqNum uint64, version int32, lpID []byte, createdAt time.Time,
+	price, size, remaining int64, seqNum uint64, version int32, lpID []byte, createdAt time.Time, txHash entities.TxHash,
 ) entities.Order {
 	t.Helper()
 	order := entities.Order{
@@ -57,6 +58,7 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		ExpiresAt:       time.Now().Add(10 * time.Second).Truncate(time.Microsecond),
 		VegaTime:        block.VegaTime,
 		SeqNum:          seqNum,
+		TxHash:          txHash,
 	}
 
 	err := os.Add(order)
@@ -65,6 +67,12 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 }
 
 const numTestOrders = 30
+
+var defaultTxHash = txHashFromString("")
+
+func txHashFromString(s string) entities.TxHash {
+	return entities.TxHash(hex.EncodeToString([]byte(s)))
+}
 
 func TestOrders(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
@@ -116,6 +124,7 @@ func TestOrders(t *testing.T) {
 			version,
 			nil,
 			block.VegaTime,
+			txHashFromString(fmt.Sprintf("tx_hash_%d", i)),
 		)
 		orders[i] = order
 
@@ -188,6 +197,13 @@ func TestOrders(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, fetchedOrder, updatedOrders[i])
 		}
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		fetchedOrders, err := os.GetByTxHash(ctx, txHashFromString("tx_hash_1"))
+		require.NoError(t, err)
+		assert.Len(t, fetchedOrders, 1)
+		assert.Equal(t, fetchedOrders[0], updatedOrders[1])
 	})
 
 	t.Run("GetAllVersionsByOrderID", func(t *testing.T) {
@@ -382,7 +398,7 @@ func generateTestOrders(t *testing.T, ctx context.Context, blocks []entities.Blo
 		}
 		ref := fmt.Sprintf("reference-%d", i)
 		orders[i] = addTestOrder(t, os, to.id, to.block, to.party, to.market, ref, to.side,
-			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1), nil, to.createdAt)
+			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1), nil, to.createdAt, defaultTxHash)
 	}
 
 	return orders
@@ -793,7 +809,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, ctx context.Context, st
 		}
 		cursors[i] = entities.NewCursor(orderCursor.String())
 		orders[i] = addTestOrder(t, stores.os, order.id, order.block, order.party, order.market, order.reference, order.side, order.timeInForce,
-			order.orderType, order.status, order.price, order.size, order.remaining, seqNum, order.version, order.lpID, order.createdAt)
+			order.orderType, order.status, order.price, order.size, order.remaining, seqNum, order.version, order.lpID, order.createdAt, defaultTxHash)
 	}
 
 	// Make sure we flush the batcher and write the orders to the database

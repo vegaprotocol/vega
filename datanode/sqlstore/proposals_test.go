@@ -56,6 +56,7 @@ func addTestProposal(
 		RequiredParticipation:   num.MustDecimalFromString("0.7"),
 		RequiredLPMajority:      nil,
 		RequiredLPParticipation: nil,
+		TxHash:                  generateTxHash(),
 	}
 	ps.Add(ctx, p)
 	return p
@@ -109,6 +110,18 @@ func TestProposals(t *testing.T) {
 		actual, err := propStore.GetByID(ctx, prop1ID)
 		require.NoError(t, err)
 		assertProposalMatch(t, expected, actual)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := prop1
+		actual, err := propStore.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual[0])
+
+		expected = prop2
+		actual, err = propStore.GetByTxHash(ctx, expected.TxHash)
+		require.NoError(t, err)
+		assertProposalMatch(t, expected, actual[0])
 	})
 
 	t.Run("GetByReference", func(t *testing.T) {

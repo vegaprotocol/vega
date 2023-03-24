@@ -35,7 +35,7 @@ type Vote struct {
 	VegaTime                    time.Time // Time of last vote update
 }
 
-func (v *Vote) ToProto() *vega.Vote {
+func (v Vote) ToProto() *vega.Vote {
 	return &vega.Vote{
 		PartyId:                     v.PartyID.String(),
 		ProposalId:                  v.ProposalID.String(),

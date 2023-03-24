@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -21,6 +22,10 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
+
+type NotaryService interface {
+	GetByResourceID(ctx context.Context, id string, pagination CursorPagination) ([]NodeSignature, PageInfo, error)
+}
 
 type ERC20MultiSigSignerEventType string
 
@@ -144,6 +149,22 @@ func (e ERC20MultiSigSignerAddedEvent) ToProto() *eventspb.ERC20MultiSigSignerAd
 	}
 }
 
+func (e ERC20MultiSigSignerAddedEvent) ToDataNodeApiV2Proto(ctx context.Context, notaryService NotaryService) (*v2.ERC20MultiSigSignerAddedBundle, error) {
+	signatures, _, err := notaryService.GetByResourceID(ctx, e.ID.String(), CursorPagination{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.ERC20MultiSigSignerAddedBundle{
+		NewSigner:  e.SignerChange.String(),
+		Submitter:  e.Submitter.String(),
+		Nonce:      e.Nonce,
+		Timestamp:  e.VegaTime.UnixNano(),
+		Signatures: PackNodeSignatures(signatures),
+		EpochSeq:   strconv.FormatInt(e.EpochID, 10),
+	}, nil
+}
+
 func (e ERC20MultiSigSignerAddedEvent) ToProtoEdge(_ ...any) (*v2.ERC20MultiSigSignerAddedEdge, error) {
 	return &v2.ERC20MultiSigSignerAddedEdge{
 		Node:   e.ToProto(),
@@ -173,6 +194,22 @@ func (e ERC20MultiSigSignerRemovedEvent) ToProto() *eventspb.ERC20MultiSigSigner
 		Nonce:               e.Nonce,
 		EpochSeq:            strconv.FormatInt(e.EpochID, 10),
 	}
+}
+
+func (e ERC20MultiSigSignerRemovedEvent) ToDataNodeApiV2Proto(ctx context.Context, notaryService NotaryService) (*v2.ERC20MultiSigSignerRemovedBundle, error) {
+	signatures, _, err := notaryService.GetByResourceID(ctx, e.ID.String(), CursorPagination{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.ERC20MultiSigSignerRemovedBundle{
+		OldSigner:  e.SignerChange.String(),
+		Submitter:  e.Submitter.String(),
+		Nonce:      e.Nonce,
+		Timestamp:  e.VegaTime.UnixNano(),
+		Signatures: PackNodeSignatures(signatures),
+		EpochSeq:   strconv.FormatInt(e.EpochID, 10),
+	}, nil
 }
 
 func (e ERC20MultiSigSignerRemovedEvent) ToProtoEdge(_ ...any) (*v2.ERC20MultiSigSignerRemovedEdge, error) {

@@ -101,6 +101,20 @@ func (as *Accounts) GetAll(ctx context.Context) ([]entities.Account, error) {
 	return accounts, err
 }
 
+func (as *Accounts) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Account, error) {
+	accounts := []entities.Account{}
+	defer metrics.StartSQLQuery("Accounts", "GetByTxHash")()
+
+	err := pgxscan.Select(
+		ctx,
+		as.Connection,
+		&accounts,
+		`SELECT id, party_id, asset_id, market_id, type, tx_hash, vega_time FROM accounts WHERE tx_hash=$1`,
+		txHash,
+	)
+	return accounts, err
+}
+
 // Obtain will either fetch or create an account in the database.
 // If an account with matching party/asset/market/type does not exist in the database, create one.
 // If an account already exists, fetch that one.
@@ -225,4 +239,18 @@ func (as *Accounts) QueryBalances(ctx context.Context,
 
 	pagedAccountBalances, pageInfo := entities.PageEntities[*v2.AccountEdge](accountBalances, pagination)
 	return pagedAccountBalances, pageInfo, nil
+}
+
+func (as *Accounts) GetBalancesByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.AccountBalance, error) {
+	balances := []entities.AccountBalance{}
+	defer metrics.StartSQLQuery("Accounts", "GetBalancesByTxHash")()
+
+	err := pgxscan.Select(
+		ctx,
+		as.Connection,
+		&balances,
+		fmt.Sprintf("%s WHERE balances.tx_hash=$1", accountBalancesQuery()),
+		txHash,
+	)
+	return balances, err
 }

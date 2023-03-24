@@ -230,6 +230,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalRationale
   ProposalTerms:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalTerms
+  ProposalDetail:
+    model: code.vegaprotocol.io/vega/protos/vega.Proposal
   NewMarket:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarket
   NewAsset:
@@ -506,3 +508,13 @@ models:
   PositionStatus:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PositionStatus
+  LedgerEntry:
+    model: code.vegaprotocol.io/vega/protos/vega.LedgerEntry
+  ERC20MultiSigSignerAddedBundle:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ERC20MultiSigSignerAddedBundle
+  ERC20MultiSigSignerRemovedBundle:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ERC20MultiSigSignerRemovedBundle
+  NodeBasic:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeBasic
+  Entities:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ListEntitiesResponse

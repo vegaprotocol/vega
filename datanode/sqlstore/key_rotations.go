@@ -78,6 +78,19 @@ func (store *KeyRotations) GetAllPubKeyRotations(ctx context.Context, pagination
 	return keyRotations, pageInfo, nil
 }
 
+func (store *KeyRotations) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.KeyRotation, error) {
+	defer metrics.StartSQLQuery("KeyRotations", "GetByTxHash")()
+
+	var keyRotations []entities.KeyRotation
+	query := `SELECT * FROM key_rotations WHERE tx_hash = $1`
+
+	if err := pgxscan.Select(ctx, store.Connection, &keyRotations, query, txHash); err != nil {
+		return nil, fmt.Errorf("failed to retrieve key rotations: %w", err)
+	}
+
+	return keyRotations, nil
+}
+
 func (store *KeyRotations) GetPubKeyRotationsPerNode(ctx context.Context, nodeID string, pagination entities.CursorPagination) ([]entities.KeyRotation, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("KeyRotations", "GetPubKeyRotationsPerNode")()
 	var pageInfo entities.PageInfo

@@ -38,7 +38,7 @@ func PartyFromProto(pp *types.Party, txHash TxHash) Party {
 	}
 }
 
-func (p *Party) ToProto() *types.Party {
+func (p Party) ToProto() *types.Party {
 	return &types.Party{Id: p.ID.String()}
 }
 

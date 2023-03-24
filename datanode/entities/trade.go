@@ -52,7 +52,7 @@ type Trade struct {
 	SellerAuctionBatch      uint64
 }
 
-func (t *Trade) ToProto() *vega.Trade {
+func (t Trade) ToProto() *vega.Trade {
 	return &vega.Trade{
 		Id:        t.ID.String(),
 		MarketId:  t.MarketID.String(),

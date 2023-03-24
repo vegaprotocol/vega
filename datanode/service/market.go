@@ -23,6 +23,7 @@ import (
 type MarketStore interface {
 	Upsert(ctx context.Context, market *entities.Market) error
 	GetByID(ctx context.Context, marketID string) (entities.Market, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error)
 	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error)
 }
 
@@ -61,6 +62,10 @@ func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {
 	return m.store.GetByID(ctx, marketID)
+}
+
+func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error) {
+	return m.store.GetByTxHash(ctx, txHash)
 }
 
 func (m *Markets) GetMarketScalingFactor(ctx context.Context, marketID string) (num.Decimal, bool) {

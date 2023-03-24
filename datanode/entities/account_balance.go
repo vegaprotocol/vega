@@ -28,7 +28,7 @@ type AccountBalance struct {
 	VegaTime time.Time
 }
 
-func (ab *AccountBalance) ToProto() *v2.AccountBalance {
+func (ab AccountBalance) ToProto() *v2.AccountBalance {
 	return &v2.AccountBalance{
 		Owner:    ab.PartyID.String(),
 		Balance:  ab.Balance.String(),

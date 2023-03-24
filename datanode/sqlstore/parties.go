@@ -75,6 +75,18 @@ func (ps *Parties) GetByID(ctx context.Context, id string) (entities.Party, erro
 	return a, ps.wrapE(err)
 }
 
+func (ps *Parties) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Party, error) {
+	defer metrics.StartSQLQuery("Parties", "GetByTxHash")()
+
+	var parties []entities.Party
+	err := pgxscan.Select(ctx, ps.Connection, &parties, `SELECT id, tx_hash, vega_time FROM parties WHERE tx_hash=$1`, txHash)
+	if err != nil {
+		return nil, ps.wrapE(err)
+	}
+
+	return parties, nil
+}
+
 func (ps *Parties) GetAll(ctx context.Context) ([]entities.Party, error) {
 	parties := []entities.Party{}
 	defer metrics.StartSQLQuery("Parties", "GetAll")()

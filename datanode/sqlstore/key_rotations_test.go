@@ -12,6 +12,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestKeyRotationsGetByTx(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	ks, keyRotations := setKeyRotationStoreTest(t, ctx)
+
+	got, err := ks.GetByTxHash(ctx, keyRotations[0].TxHash)
+	require.NoError(t, err)
+	want := []entities.KeyRotation{keyRotations[0]}
+	assert.Equal(t, want, got)
+
+	got, err = ks.GetByTxHash(ctx, keyRotations[1].TxHash)
+	require.NoError(t, err)
+	want = []entities.KeyRotation{keyRotations[1]}
+	assert.Equal(t, want, got)
+}
+
 func TestKeyRotationsCursorPagination(t *testing.T) {
 	t.Run("should return all key rotations if no pagination is specified", testKeyRotationPaginationNoPagination)
 	t.Run("should return first page of key rotations if first is provided", testKeyRotationPaginationFirstPage)
@@ -507,6 +524,7 @@ func setKeyRotationStoreTest(t *testing.T, ctx context.Context) (*sqlstore.KeyRo
 				NewPubKey:   entities.VegaPublicKey(fmt.Sprintf("cafed00d%02d", j+2)),
 				BlockHeight: uint64((i * 10) + j + 1),
 				VegaTime:    block.VegaTime,
+				TxHash:      generateTxHash(),
 			}
 			if err := ks.Upsert(ctx, &kr); err != nil {
 				t.Fatalf("creating key rotation test data: %v", err)
