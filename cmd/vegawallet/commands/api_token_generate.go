@@ -36,7 +36,7 @@ func NewCmdGenerateAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(f GenerateAPITokenFlags, params connections.GenerateAPITokenParams) (connections.Token, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths)
+		walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths, false)
 		if err != nil {
 			return "", fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

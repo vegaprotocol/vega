@@ -30,7 +30,7 @@ type ListKeysHandler func(api.AdminListKeysParams) (api.AdminListKeysResult, err
 
 func NewCmdListKeys(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminListKeysParams) (api.AdminListKeysResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminListKeysResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

@@ -30,7 +30,7 @@ type ListWalletsHandler func() (api.AdminListWalletsResult, error)
 
 func NewCmdListWallets(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func() (api.AdminListWalletsResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminListWalletsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

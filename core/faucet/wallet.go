@@ -58,7 +58,7 @@ func GenerateWallet(vegaPaths paths.Paths, passphrase string) (*WalletGeneration
 		return nil, fmt.Errorf("could not get directory for %s: %w", paths.FaucetWalletsDataHome, err)
 	}
 
-	store, err := storev1.InitialiseStore(walletsHome)
+	store, err := storev1.InitialiseStore(walletsHome, false)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise faucet wallet store at %s: %w", walletsHome, err)
 	}
@@ -102,7 +102,7 @@ func loadWallet(vegaPaths paths.Paths, walletName, passphrase string) (*faucetWa
 		return nil, fmt.Errorf("could not get directory for %q: %w", paths.FaucetWalletsDataHome, err)
 	}
 
-	store, err := storev1.InitialiseStore(walletsHome)
+	store, err := storev1.InitialiseStore(walletsHome, false)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialise faucet wallet store at %q: %w", walletsHome, err)
 	}
