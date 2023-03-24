@@ -16,6 +16,7 @@
 - [7899](https://github.com/vegaprotocol/vega/issues/7899) - Fixes inconsistency in the `HTTP` status codes returned when rate limited
 - [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
 - [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
+- [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
 
 
 ## 0.70.0

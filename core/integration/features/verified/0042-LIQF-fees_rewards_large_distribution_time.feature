@@ -109,8 +109,8 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | lp1    | USD   | ETH/MAR22 | 2400   | 999987212 | 10000 |
+      | party1 | USD   | ETH/MAR22 | 1200   | 99998805  |       |
       | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     Then the order book should have the following volumes for market "ETH/MAR22":
@@ -125,7 +125,7 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 2870   | 999986742 |
+      | lp1   | USD   | ETH/MAR22 | 2400   | 999987212 |
 
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"

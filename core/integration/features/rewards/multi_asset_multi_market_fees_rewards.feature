@@ -238,7 +238,7 @@ Feature: Fees rewards with multiple markets and assets
     Then "lp2" should have general account balance of "5999995630" for asset "ETH"
 
     Then "party1" should have general account balance of "299955604" for asset "BTC"
-    Then "party2" should have general account balance of "299949367" for asset "BTC"
+    Then "party2" should have general account balance of "299949871" for asset "BTC"
     Then "lp1" should have general account balance of "2999990841" for asset "BTC"
     Then "lp2" should have general account balance of "2999997067" for asset "BTC"
 
