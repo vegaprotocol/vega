@@ -63,6 +63,7 @@
 - [7904](https://github.com/vegaprotocol/vega/issues/7904) - Add a default system test template for integration tests
 - [7894](https://github.com/vegaprotocol/vega/issues/7894) - Use slippage cap when market is in auction mode
 - [7923](https://github.com/vegaprotocol/vega/issues/7923) - Subscription rate limiter is enabled on `gRPC` and `REST` subscriptions
+- [7864](https://github.com/vegaprotocol/vega/issues/7864) - Add event indicating distressed parties that are still holding an active position.
 
 ### 🐛 Fixes
 - [7910](https://github.com/vegaprotocol/vega/issues/7910) - Store heartbeats in the checkpoint so that validator sets do not reorder unexpectedly after loading

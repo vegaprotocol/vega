@@ -16,6 +16,7 @@ import (
 	"context"
 	"sync"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/types"
@@ -59,6 +60,21 @@ type LSE interface {
 	Timestamp() int64
 }
 
+// DOC DistressedOrdersClosedEvent.
+type DOC interface {
+	events.Event
+	MarketID() string
+	Parties() []string
+}
+
+// DPE DistressedPositionsEvent.
+type DPE interface {
+	events.Event
+	MarketID() string
+	DistressedParties() []string
+	SafeParties() []string
+}
+
 // Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
@@ -88,9 +104,49 @@ func (p *Positions) Push(evts ...events.Event) {
 			p.updateSettleDestressed(te)
 		case LSE:
 			p.applyLossSocialization(te)
+		case DOC:
+			p.applyDistressedOrders(te)
+		case DPE:
+			p.applyDistressedPositions(te)
 		}
 	}
 	p.mu.Unlock()
+}
+
+func (p *Positions) applyDistressedPositions(e DPE) {
+	marketID := e.MarketID()
+	partyPos, ok := p.data[marketID]
+	if !ok {
+		return
+	}
+	for _, party := range e.DistressedParties() {
+		if pos, ok := partyPos[party]; ok {
+			pos.state = vega.PositionStatus_POSITION_STATUS_DISTRESSED
+			partyPos[party] = pos
+		}
+	}
+	for _, party := range e.SafeParties() {
+		if pos, ok := partyPos[party]; ok {
+			pos.state = vega.PositionStatus_POSITION_STATUS_UNSPECIFIED
+			partyPos[party] = pos
+		}
+	}
+	p.data[marketID] = partyPos
+}
+
+func (p *Positions) applyDistressedOrders(e DOC) {
+	marketID, parties := e.MarketID(), e.Parties()
+	partyPos, ok := p.data[marketID]
+	if !ok {
+		return
+	}
+	for _, party := range parties {
+		if pos, ok := partyPos[party]; ok {
+			pos.state = vega.PositionStatus_POSITION_STATUS_ORDERS_CLOSED
+			partyPos[party] = pos
+		}
+	}
+	p.data[marketID] = partyPos
 }
 
 func (p *Positions) applyLossSocialization(e LSE) {
@@ -149,6 +205,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	calc.UnrealisedPnlFP = num.DecimalZero()
 	calc.AverageEntryPriceFP = num.DecimalZero()
 	calc.Position.UpdatedAt = e.Timestamp()
+	calc.state = vega.PositionStatus_POSITION_STATUS_CLOSED_OUT
 	p.data[mID][tID] = calc
 }
 
@@ -167,6 +224,19 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	return &pos.Position, nil
 }
 
+func (p *Positions) GetStateByMarketAndParty(market, party string) (vega.PositionStatus, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	mp, ok := p.data[market]
+	if !ok {
+		return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, nil
+	}
+	if pos, ok := mp[party]; ok {
+		return pos.state, nil
+	}
+	return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, nil
+}
+
 // GetPositionsByParty get all positions for a given party.
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
@@ -183,6 +253,19 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 		// return nil, ErrPartyNotFound
 	}
 	return positions, nil
+}
+
+func (p *Positions) GetPositionStatesByParty(party string) ([]vega.PositionStatus, error) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	// max 1 state per market
+	states := make([]vega.PositionStatus, 0, len(p.data))
+	for _, parties := range p.data {
+		if pos, ok := parties[party]; ok {
+			states = append(states, pos.state)
+		}
+	}
+	return states, nil
 }
 
 // GetAllPositions returns all positions, across markets.
@@ -299,6 +382,7 @@ type Position struct {
 	loss num.Decimal
 	// what a party was missing which triggered loss socialization
 	adjustment num.Decimal
+	state      vega.PositionStatus
 }
 
 func seToProto(e SE) Position {
@@ -325,5 +409,7 @@ func (p *Positions) Types() []events.Type {
 		events.SettlePositionEvent,
 		events.SettleDistressedEvent,
 		events.LossSocializationEvent,
+		events.DistressedOrdersClosedEvent,
+		events.DistressedPositionsEvent,
 	}
 }
