@@ -39,7 +39,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
+	if err := goose.Up(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
 	return nil

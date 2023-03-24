@@ -23,6 +23,27 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+type Store interface {
+	Stop()
+	GetSwarmKey() string
+	GetSwarmKeySeed() string
+	GetLocalNode() (store.IpfsNode, error)
+	GetConnectedPeers() []store.PeerConnection
+	ResetIndex() error
+	GetPeerID() string
+	ConnectedToPeer(peerIDStr string) (bool, error)
+	AddSnapshotData(ctx context.Context, historySnapshot snapshot.History, currentState snapshot.CurrentState,
+		sourceDir string,
+	) (err error)
+	GetHighestBlockHeightEntry() (store.SegmentIndexEntry, error)
+	ListAllIndexEntriesOldestFirst() ([]store.SegmentIndexEntry, error)
+	CopySnapshotDataIntoDir(ctx context.Context, toHeight int64, targetDir string) (currentStateSnapshot snapshot.CurrentState,
+		historySnapshot snapshot.History, err error,
+	)
+	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, targetFile string) error
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
+}
+
 type Segment interface {
 	GetFromHeight() int64
 	GetToHeight() int64
@@ -37,7 +58,7 @@ type Service struct {
 	connPool *pgxpool.Pool
 
 	snapshotService *snapshot.Service
-	store           *store.Store
+	store           Store
 
 	chainID string
 
@@ -68,7 +89,7 @@ func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHom
 
 func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
 	snapshotService *snapshot.Service,
-	networkHistoryStore *store.Store, datanodeGrpcAPIPort int,
+	networkHistoryStore Store, datanodeGrpcAPIPort int,
 	snapshotsCopyFromPath, snapshotsCopyToPath string,
 ) (*Service, error) {
 	s := &Service{

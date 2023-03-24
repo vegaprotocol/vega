@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jackc/pgx/v4"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot/mutex"
@@ -21,13 +23,13 @@ type Service struct {
 	createSnapshotLock       mutex.CtxMutex
 	absSnapshotsCopyFromPath string
 	absSnapshotsCopyToPath   string
-	migrateSchemaToVersion   func(version int64) error
+	migrateSchemaToVersion   func(tx pgx.Tx, version int64) error
 }
 
 func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
 	snapshotsCopyFromPath string,
 	snapshotsCopyToPath string,
-	migrateDatabaseToVersion func(version int64) error,
+	migrateDatabaseToVersion func(tx pgx.Tx, version int64) error,
 ) (*Service, error) {
 	var err error
 	// As these paths are passed to postgres, they need to be absolute as it will likely have

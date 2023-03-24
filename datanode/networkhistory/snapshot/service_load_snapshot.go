@@ -8,6 +8,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"code.vegaprotocol.io/vega/logging"
 
 	"go.uber.org/zap"
@@ -96,18 +98,25 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		return dbVersionsAsc[i] < dbVersionsAsc[j]
 	})
 
+	txForLoad, err := b.connPool.Begin(ctx)
+	if err != nil {
+		return LoadResult{}, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	// Rollback on a committed transaction has no effect
+	defer func() { _ = txForLoad.Rollback(ctx) }()
+
 	for _, targetDatabaseVersion := range dbVersionsAsc {
 		if dbMetaData.DatabaseVersion != targetDatabaseVersion {
 			currentDatabaseVersion := dbMetaData.DatabaseVersion
 			log.Info("migrating database", logging.Int64("current database version", currentDatabaseVersion), logging.Int64("target database version", targetDatabaseVersion))
 
-			err := b.migrateSchemaToVersion(targetDatabaseVersion)
+			err := b.migrateSchemaToVersion(txForLoad, targetDatabaseVersion)
 			if err != nil {
 				return LoadResult{}, fmt.Errorf("failed to migrate schema to version %d: %w", targetDatabaseVersion, err)
 			}
 
 			// After migration update the database meta-data
-			dbMetaData, err = NewDatabaseMetaData(ctx, b.connPool)
+			dbMetaData, err = NewDatabaseMetaData(ctx, txForLoad)
 			if err != nil {
 				return LoadResult{}, fmt.Errorf("failed to get database meta data after database migration: %w", err)
 			}
@@ -116,7 +125,7 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		}
 
 		log.Infof("loading all history segments with database version: %d", targetDatabaseVersion)
-		rowsCopied, err := b.loadHistorySegments(ctx, log, dbVersionToHistorySegments[targetDatabaseVersion], withIndexesAndOrderTriggers,
+		rowsCopied, err := b.loadHistorySegments(ctx, log, txForLoad, dbVersionToHistorySegments[targetDatabaseVersion], withIndexesAndOrderTriggers,
 			relSnapshotsCopyFromPath, dbMetaData, historyTableLastTimestampMap)
 		if err != nil {
 			return LoadResult{}, fmt.Errorf("failed to load history segments: %w", err)
@@ -125,13 +134,18 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 		totalRowsCopied += rowsCopied
 	}
 
-	rowsCopied, err := b.loadCurrentState(ctx, log, currentStateSnapshot, dbMetaData, relSnapshotsCopyFromPath,
+	rowsCopied, err := b.loadCurrentState(ctx, log, txForLoad, currentStateSnapshot, dbMetaData, relSnapshotsCopyFromPath,
 		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to load current state: %w", err)
 	}
 
 	totalRowsCopied += rowsCopied
+
+	err = txForLoad.Commit(ctx)
+	if err != nil {
+		return LoadResult{}, fmt.Errorf("failed to commit transaction: %w", err)
+	}
 
 	err = b.recreateAllContinuousAggregateData(ctx, b.connPool)
 	log.Infof("recreating continuous aggregate data")
@@ -146,17 +160,10 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 	}, nil
 }
 
-func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, currentStateSnapshot CurrentState,
+func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, tx pgx.Tx, currentStateSnapshot CurrentState,
 	dbMetaData DatabaseMetadata, relSnapshotsCopyFromPath string, withIndexesAndOrderTriggers bool,
 	historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
-	tx, err := b.connPool.Begin(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	// Rollback on a committed transaction has no effect
-	defer func() { _ = tx.Rollback(ctx) }()
-
 	constraintsSQL, err := removeConstraints(ctx, tx, log)
 	if err != nil {
 		return 0, fmt.Errorf("failed to remove constraints: %w", err)
@@ -191,23 +198,12 @@ func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, currentStat
 		return 0, fmt.Errorf("failed to restore all constraints: %w", err)
 	}
 
-	err = tx.Commit(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to commit transaction: %w", err)
-	}
 	return rowsCopied, nil
 }
 
-func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historySegments []History, withIndexesAndOrderTriggers bool,
+func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, tx pgx.Tx, historySegments []History, withIndexesAndOrderTriggers bool,
 	relSnapshotsCopyFromPath string, dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
 ) (int64, error) {
-	tx, err := b.connPool.Begin(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	// Rollback on a committed transaction has no effect
-	defer func() { _ = tx.Rollback(ctx) }()
-
 	constraintsSQL, err := removeConstraints(ctx, tx, log)
 	if err != nil {
 		return 0, fmt.Errorf("failed to remove constraints: %w", err)
@@ -239,11 +235,6 @@ func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historyS
 	err = restoreAllConstraints(ctx, tx, removedConstraintsAndIndexes.createConstraintsSQL)
 	if err != nil {
 		return 0, fmt.Errorf("failed to restore all constraints: %w", err)
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return totalRowsCopied, nil
@@ -557,7 +548,7 @@ func copyTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata,
 func copyCurrentStateTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata, vegaDbConn sqlstore.Connection, snapshotFilePath string) (int64, error) {
 	tag, err := vegaDbConn.Exec(ctx, fmt.Sprintf(`copy %s from '%s'`, tableMetaData.Name, snapshotFilePath))
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy data into current state table: %w", err)
+		return 0, fmt.Errorf("failed to copy data into current state table %s: %w", tableMetaData.Name, err)
 	}
 
 	return tag.RowsAffected(), nil
@@ -577,7 +568,7 @@ func copyHistoryTableDataIntoDatabase(ctx context.Context, tableMetaData TableMe
 
 	tag, err := vegaDbConn.Exec(ctx, copyQuery)
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy data into hyper-table: %w", err)
+		return 0, fmt.Errorf("failed to copy data into hyper-table %s: %w", tableMetaData.Name, err)
 	}
 
 	return tag.RowsAffected(), nil

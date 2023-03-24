@@ -11,7 +11,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type DatabaseMetadata struct {
@@ -37,28 +36,28 @@ type HypertablePartitionColumns struct {
 	ColumnName     string
 }
 
-func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseMetadata, error) {
-	dbVersion, err := getDBVersion(ctx, connPool)
+func NewDatabaseMetaData(ctx context.Context, conn sqlstore.Connection) (DatabaseMetadata, error) {
+	dbVersion, err := getDBVersion(ctx, conn)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get database version: %w", err)
 	}
 
-	tableNames, err := sqlstore.GetAllTableNames(ctx, connPool)
+	tableNames, err := sqlstore.GetAllTableNames(ctx, conn)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get names of tables to copy:%w", err)
 	}
 
-	tableNameToSortOrder, err := getTableSortOrders(ctx, connPool)
+	tableNameToSortOrder, err := getTableSortOrders(ctx, conn)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get table sort orders:%w", err)
 	}
 
-	hyperTableNames, err := getHyperTableNames(ctx, connPool)
+	hyperTableNames, err := getHyperTableNames(ctx, conn)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get hyper table names:%w", err)
 	}
 
-	hypertablePartitionColumns, err := getHyperTablePartitionColumns(ctx, connPool)
+	hypertablePartitionColumns, err := getHyperTablePartitionColumns(ctx, conn)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get hyper table partition columns:%w", err)
 	}
@@ -96,7 +95,7 @@ func (d DatabaseMetadata) GetHistoryTableNames() []string {
 	return result
 }
 
-func getTableSortOrders(ctx context.Context, conn *pgxpool.Pool) (map[string]string, error) {
+func getTableSortOrders(ctx context.Context, conn sqlstore.Connection) (map[string]string, error) {
 	var primaryKeyIndexes []IndexInfo
 	err := pgxscan.Select(ctx, conn, &primaryKeyIndexes,
 		`select tablename, Indexname, Indexdef from pg_indexes where schemaname ='public' and Indexname like '%_pkey' order by tablename`)
@@ -118,7 +117,7 @@ func getTableSortOrders(ctx context.Context, conn *pgxpool.Pool) (map[string]str
 	return tableNameToSortOrder, nil
 }
 
-func getHyperTableNames(ctx context.Context, conn *pgxpool.Pool) (map[string]bool, error) {
+func getHyperTableNames(ctx context.Context, conn sqlstore.Connection) (map[string]bool, error) {
 	tableNameRows, err := conn.Query(ctx, "SELECT hypertable_name FROM timescaledb_information.hypertables")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Hypertable names:%w", err)
@@ -136,7 +135,7 @@ func getHyperTableNames(ctx context.Context, conn *pgxpool.Pool) (map[string]boo
 	return result, nil
 }
 
-func getHyperTablePartitionColumns(ctx context.Context, conn *pgxpool.Pool) (map[string]string, error) {
+func getHyperTablePartitionColumns(ctx context.Context, conn sqlstore.Connection) (map[string]string, error) {
 	var partitionColumns []HypertablePartitionColumns
 	err := pgxscan.Select(ctx, conn, &partitionColumns,
 		`select hypertable_name, column_name from timescaledb_information.dimensions where hypertable_schema='public' and dimension_number=1`)
@@ -154,7 +153,7 @@ func getHyperTablePartitionColumns(ctx context.Context, conn *pgxpool.Pool) (map
 // getDBVersion copied from the goose library and modified to support using a pre-allocated connection. It's worth noting
 // that this method also has the side effect of creating the goose version table if it does not exist as per the original
 // goose code.
-func getDBVersion(ctx context.Context, conn *pgxpool.Pool) (int64, error) {
+func getDBVersion(ctx context.Context, conn sqlstore.Connection) (int64, error) {
 	version, err := ensureDBVersion(ctx, conn)
 	if err != nil {
 		return -1, err
@@ -164,7 +163,7 @@ func getDBVersion(ctx context.Context, conn *pgxpool.Pool) (int64, error) {
 }
 
 // ensureDBVersion copied from the goose library and modified to support using a pre-allocated connection.
-func ensureDBVersion(ctx context.Context, conn *pgxpool.Pool) (int64, error) {
+func ensureDBVersion(ctx context.Context, conn sqlstore.Connection) (int64, error) {
 	rows, err := dbVersionQuery(ctx, conn)
 	if err != nil {
 		return 0, createVersionTable(ctx, conn)
@@ -212,7 +211,7 @@ func ensureDBVersion(ctx context.Context, conn *pgxpool.Pool) (int64, error) {
 }
 
 // dbVersionQuery copied from the goose library and modified to support using a pre-allocated connection.
-func dbVersionQuery(ctx context.Context, conn *pgxpool.Pool) (pgx.Rows, error) {
+func dbVersionQuery(ctx context.Context, conn sqlstore.Connection) (pgx.Rows, error) {
 	rows, err := conn.Query(ctx, fmt.Sprintf("SELECT version_id, is_applied from %s ORDER BY id DESC", goose.TableName()))
 	if err != nil {
 		return nil, err
@@ -222,7 +221,7 @@ func dbVersionQuery(ctx context.Context, conn *pgxpool.Pool) (pgx.Rows, error) {
 }
 
 // createVersionTable copied from the goose library and modified to support using a pre-allocated connection.
-func createVersionTable(ctx context.Context, conn *pgxpool.Pool) error {
+func createVersionTable(ctx context.Context, conn sqlstore.Connection) error {
 	txn, err := conn.Begin(ctx)
 	if err != nil {
 		return err

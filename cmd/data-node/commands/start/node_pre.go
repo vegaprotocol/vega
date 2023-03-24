@@ -18,6 +18,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"github.com/cenkalti/backoff"
@@ -330,8 +332,9 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
 		networkHistoryPool, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(tx pgx.Tx, version int64) error {
+			if err = sqlstore.MigrateToSchemaVersionUsingTransaction(preNetworkHistoryLog, tx, bool(l.conf.SQLStore.VerboseMigration),
+				version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
 			}
 			return nil

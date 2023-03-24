@@ -100,7 +100,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	defer db.Close()
 
 	log.Info("Checking database version and migrating sql schema to latest version, please wait...")
-	if err = goose.Up(db, SQLMigrationsDir); err != nil {
+	if err = goose.Up(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
 	log.Info("Sql schema migration completed successfully")
@@ -108,12 +108,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	return nil
 }
 
-func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
-	goose.SetBaseFS(fs)
-	goose.SetLogger(log.Named("db migration").GooseLogger())
-	goose.SetVerbose(bool(config.VerboseMigration))
-	goose.SetVerbose(true)
-
+func MigrateToSchemaVersionUsingSqlConfig(log *logging.Logger, config Config, version int64, fs fs.FS) error {
 	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get pool config:%w", err)
@@ -122,8 +117,23 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, f
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
+	gooseConnection := goose.SqlDbToGooseAdapter{Conn: db}
+
+	return migrateToSchemaVersion(log, gooseConnection, bool(config.VerboseMigration), version, fs)
+}
+
+func MigrateToSchemaVersionUsingTransaction(log *logging.Logger, tx pgx.Tx, verbose bool, version int64, fs fs.FS) error {
+	gooseConnection := PgxTxToGooseConnectionAdapter{Conn: tx}
+	return migrateToSchemaVersion(log, gooseConnection, verbose, version, fs)
+}
+
+func migrateToSchemaVersion(log *logging.Logger, connection goose.Connection, verbose bool, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetVerbose(verbose)
+
 	log.Infof("Checking database version and migrating sql schema to version %d, please wait...", version)
-	if err = goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+	if err := goose.UpTo(connection, SQLMigrationsDir, version); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
 	log.Info("Sql schema migration completed successfully")
@@ -146,7 +156,7 @@ func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs 
 	defer db.Close()
 
 	log.Info("Checking database version and reverting sql schema to version 0, please wait...")
-	if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
+	if err := goose.DownTo(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir, 0); err != nil {
 		return fmt.Errorf("failed to goose down the schema to version 0: %w", err)
 	}
 	log.Info("Sql schema migration completed successfully")
@@ -168,20 +178,20 @@ func WipeDatabaseAndMigrateSchemaToVersion(log *logging.Logger, config Connectio
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
-	currentVersion, err := goose.GetDBVersion(db)
+	currentVersion, err := goose.GetDBVersion(goose.SqlDbToGooseAdapter{Conn: db})
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Wiping database and migrating schema to version %d", version)
 	if currentVersion > 0 {
-		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
+		if err := goose.DownTo(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir, 0); err != nil {
 			return fmt.Errorf("failed to goose down the schema: %w", err)
 		}
 	}
 
 	if version > 0 {
-		if err := goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+		if err := goose.UpTo(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir, version); err != nil {
 			return fmt.Errorf("failed to goose up the schema: %w", err)
 		}
 	}
@@ -204,19 +214,19 @@ func WipeDatabaseAndMigrateSchemaToLatestVersion(log *logging.Logger, config Con
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
-	currentVersion, err := goose.GetDBVersion(db)
+	currentVersion, err := goose.GetDBVersion(goose.SqlDbToGooseAdapter{Conn: db})
 	if err != nil {
 		return err
 	}
 
 	log.Info("Wiping database and migrating schema to latest version")
 	if currentVersion > 0 {
-		if err := goose.DownTo(db, SQLMigrationsDir, 0); err != nil {
+		if err := goose.DownTo(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir, 0); err != nil {
 			return fmt.Errorf("failed to goose down the schema: %w", err)
 		}
 	}
 
-	if err := goose.Up(db, SQLMigrationsDir); err != nil {
+	if err := goose.Up(goose.SqlDbToGooseAdapter{Conn: db}, SQLMigrationsDir); err != nil {
 		return fmt.Errorf("failed to goose up the schema: %w", err)
 	}
 	log.Info("Sql schema migration completed successfully")

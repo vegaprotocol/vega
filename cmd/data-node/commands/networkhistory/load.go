@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v4"
+
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 
 	"go.uber.org/zap"
@@ -94,8 +96,9 @@ func (cmd *loadCmd) Execute(args []string) error {
 
 	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.NetworkHistory.Snapshot, connPool,
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(log, cmd.Config.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(tx pgx.Tx, version int64) error {
+			if err = sqlstore.MigrateToSchemaVersionUsingTransaction(log, tx, bool(cmd.Config.SQLStore.VerboseMigration),
+				version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
 			}
 			return nil

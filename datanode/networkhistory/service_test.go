@@ -17,6 +17,10 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
+
+	"github.com/jackc/pgx/v4"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
@@ -1010,7 +1014,90 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
 }
 
-func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, rootSegmentID string, numBlocksToFetch int64) (int64, error) {
+func TestFailedLoadOverSchemaUpdateBoundaryLeavesNodeInConsistentState(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	log := logging.NewTestLogger()
+
+	networkHistoryStore.ResetIndex()
+	corruptStore := networkHistoryStoreWithCorruptData{Store: networkHistoryStore, dataCorruptionFx: func(currentStateSnapshot snapshot.CurrentState,
+		historySnapshot snapshot.History, targetDir string,
+	) error {
+		if historySnapshot.HeightTo == 4000 {
+			compressedFileName := filepath.Join(targetDir, historySnapshot.CompressedFileName())
+			historySegmentDbVersion, err := fsutil.GetHistorySegmentDatabaseVersion(compressedFileName)
+			require.NoError(t, err)
+			extractDir := filepath.Join(t.TempDir(), "history")
+			err = fsutil.DecompressAndUntarFile(compressedFileName, extractDir)
+			require.NoError(t, err)
+			os.WriteFile(filepath.Join(extractDir, "orders"), []byte("someoldguffthatllbreakit"), os.ModePerm)
+			fsutil.TarAndCompressDirWithDeterministicHeader(extractDir, compressedFileName, historySegmentDbVersion)
+		}
+
+		return nil
+	}}
+
+	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+
+	snapshotCopyFromPath := t.TempDir()
+	snapshotCopyToPath := t.TempDir()
+	snapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+
+	ctxWithCancel, cancelFn := context.WithCancel(ctx)
+
+	evtSource := newTestEventSourceWithProtocolUpdateMessage()
+
+	pus := service.NewProtocolUpgrade(nil, log)
+	puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
+		toHeight int64,
+	) error {
+		return nil
+	})
+
+	// Run events to height 1800
+
+	broker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
+			if lastCommittedBlockHeight == 1800 {
+				cancelFn()
+			}
+		},
+		evtSource, puh)
+	require.NoError(t, err)
+
+	err = broker.Receive(ctxWithCancel)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		require.NoError(t, err)
+	}
+
+	dbSummaryAtHeight1800 := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+
+	// Now restore the node to height 4000
+
+	fetched, err := fetchBlocks(ctx, log, corruptStore, goldenSourceHistorySegment[4000].HistorySegmentID, 3000)
+	require.NoError(t, err)
+	require.Equal(t, int64(3000), fetched)
+
+	snapshotCopyFromPath = t.TempDir()
+	snapshotCopyToPath = t.TempDir()
+
+	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, corruptStore, snapshotCopyFromPath, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
+
+	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
+		sqlConfig.ConnectionConfig, false, false)
+	require.Error(t, err)
+
+	dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+	assertTableSummariesAreEqual(t, dbSummaryAtHeight1800.currentTableSummaries, dbSummary.currentTableSummaries)
+	assertTableSummariesAreEqual(t, dbSummaryAtHeight1800.historyTableSummaries, dbSummary.historyTableSummaries)
+}
+
+func fetchBlocks(ctx context.Context, log *logging.Logger, st networkhistory.Store, rootSegmentID string, numBlocksToFetch int64) (int64, error) {
 	var err error
 	var fetched int64
 	for i := 0; i < 5; i++ {
@@ -1033,7 +1120,7 @@ func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, root
 	return 0, fmt.Errorf("failed to fetch blocks:%w", err)
 }
 
-func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputSnapshotService *snapshot.Service, store *store.Store,
+func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputSnapshotService *snapshot.Service, store networkhistory.Store,
 	snapshotCopyFromPath, snapshotCopyToPath string,
 ) *networkhistory.Service {
 	cfg := networkhistory.NewDefaultConfig()
@@ -1119,7 +1206,7 @@ func setupSnapshotServiceWithNetworkParamFunc(snapshotCopyFromPath string, snaps
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
 
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		networkHistoryConnPool, snapshotCopyFromPath, snapshotCopyToPath, migrateDatabase)
+		networkHistoryConnPool, snapshotCopyFromPath, snapshotCopyToPath, migrateDatabaseWithTx)
 	if err != nil {
 		panic(err)
 	}
@@ -1486,8 +1573,19 @@ func migrateDatabase(version int64) error {
 	db := stdlib.OpenDB(*poolConfig.ConnConfig)
 	defer db.Close()
 
+	connection := goose.SqlDbToGooseAdapter{Conn: db}
+
+	return migrateWithConnection(version, connection)
+}
+
+func migrateDatabaseWithTx(tx pgx.Tx, version int64) error {
+	connection := sqlstore.PgxTxToGooseConnectionAdapter{Conn: tx}
+	return migrateWithConnection(version, connection)
+}
+
+func migrateWithConnection(version int64, connection goose.Connection) error {
 	goose.SetBaseFS(nil)
-	err = goose.UpTo(db, filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), version)
+	err := goose.UpTo(connection, filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), version)
 	if err != nil {
 		return fmt.Errorf("failed to migrate up to version %d:%w", version, err)
 	}
@@ -1525,4 +1623,22 @@ func newTestEventSourceWithProtocolUpdateMessage() *TestEventSource {
 		panic(err)
 	}
 	return evtSource
+}
+
+type networkHistoryStoreWithCorruptData struct {
+	networkhistory.Store
+	dataCorruptionFx func(currentStateSnapshot snapshot.CurrentState, historySnapshot snapshot.History, targetDir string) error
+}
+
+func (n networkHistoryStoreWithCorruptData) CopySnapshotDataIntoDir(ctx context.Context, toHeight int64, targetDir string) (currentStateSnapshot snapshot.CurrentState, historySnapshot snapshot.History, err error) {
+	current, history, err := n.Store.CopySnapshotDataIntoDir(ctx, toHeight, targetDir)
+	if err == nil {
+		if n.dataCorruptionFx != nil {
+			err = n.dataCorruptionFx(current, history, targetDir)
+			if err != nil {
+				return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to corrupt data: %w", err)
+			}
+		}
+	}
+	return current, history, err
 }

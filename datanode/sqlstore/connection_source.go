@@ -42,6 +42,7 @@ type Connection interface {
 	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
 	CopyFrom(ctx context.Context, tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error)
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
+	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
 type ConnectionSource struct {
@@ -260,6 +261,16 @@ func (t *delegatingConnection) QueryFunc(ctx context.Context, sql string, args [
 		return conn.QueryFunc(ctx, sql, args, scans, f)
 	}
 	return t.pool.QueryFunc(ctx, sql, args, scans, f)
+}
+
+func (t *delegatingConnection) Begin(ctx context.Context) (pgx.Tx, error) {
+	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		return tx.Begin(ctx)
+	}
+	if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
+		return conn.Begin(ctx)
+	}
+	return t.pool.Begin(ctx)
 }
 
 func CreateConnectionPool(conf ConnectionConfig) (*pgxpool.Pool, error) {
