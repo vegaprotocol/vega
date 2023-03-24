@@ -115,7 +115,7 @@ const (
 	rejectedState
 )
 
-var defaultValidationDuration = 2 * time.Hour
+var defaultValidationDuration = 30 * 24 * time.Hour
 
 type Engine struct {
 	cfg            Config
