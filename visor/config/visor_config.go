@@ -211,11 +211,12 @@ func parseAndValidateVisorConfigFile(path string) (*VisorConfigFile, error) {
 }
 
 type VisorConfig struct {
-	mut        sync.RWMutex
-	configPath string
-	homePath   string
-	data       *VisorConfigFile
-	log        *logging.Logger
+	mut         sync.RWMutex
+	configPath  string
+	homePath    string
+	hasDataNode bool
+	data        *VisorConfigFile
+	log         *logging.Logger
 }
 
 func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
@@ -260,6 +261,18 @@ func NewVisorConfig(log *logging.Logger, homePath string) (*VisorConfig, error) 
 	}, nil
 }
 
+// if visor currently runs data node but the new auto install config is configured without data node
+func (pc *VisorConfig) missingAutoInstallDataNodeConfig(conf AutoInstallConfig) bool {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	if !pc.hasDataNode || !conf.Enabled {
+		return false
+	}
+
+	return conf.Assets.DataNode == nil || conf.Assets.DataNode.AssetName == ""
+}
+
 func (pc *VisorConfig) reload() error {
 	pc.log.Info("Reloading config")
 	dataFile, err := parseAndValidateVisorConfigFile(pc.configPath)
@@ -267,16 +280,28 @@ func (pc *VisorConfig) reload() error {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
+	if pc.missingAutoInstallDataNodeConfig(dataFile.AutoInstall) {
+		pc.log.Warn("Data node asset is not configured in the updated auto install config for Visor running data node. Please configure the data node asset to ensure a successful upgrade in the future. Failure to do so may result in upgrade failure.")
+	}
+
 	pc.mut.Lock()
-	pc.data.UpgradeFolders = dataFile.UpgradeFolders
+	pc.data.MaxNumberOfFirstConnectionRetries = dataFile.MaxNumberOfFirstConnectionRetries
 	pc.data.MaxNumberOfRestarts = dataFile.MaxNumberOfRestarts
 	pc.data.RestartsDelaySeconds = dataFile.RestartsDelaySeconds
-	pc.data.MaxNumberOfFirstConnectionRetries = dataFile.MaxNumberOfFirstConnectionRetries
+	pc.data.StopSignalTimeoutSeconds = dataFile.StopSignalTimeoutSeconds
+	pc.data.UpgradeFolders = dataFile.UpgradeFolders
+	pc.data.AutoInstall = dataFile.AutoInstall
 	pc.mut.Unlock()
 
 	pc.log.Info("Reloading config success")
 
 	return nil
+}
+
+func (pc *VisorConfig) SetHasDataNode(hasDataNode bool) {
+	pc.mut.Lock()
+	pc.hasDataNode = hasDataNode
+	pc.mut.Unlock()
 }
 
 func (pc *VisorConfig) WatchForUpdate(ctx context.Context) error {

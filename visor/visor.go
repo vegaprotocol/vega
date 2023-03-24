@@ -105,6 +105,8 @@ func (v *Visor) Run(ctx context.Context) error {
 			return fmt.Errorf("failed to parse run config: %w", err)
 		}
 
+		v.conf.SetHasDataNode(runConf.DataNode != nil)
+
 		client := v.clientFactory.GetClient(
 			runConf.Vega.RCP.SocketPath,
 			runConf.Vega.RCP.HTTPPath,
@@ -177,7 +179,7 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Preparing upgrade")
 
 				if err := binRunner.Stop(); err != nil {
-					v.log.Info("failed to stop binaries, resorting to force kill", logging.Error(err))
+					v.log.Info("Failed to stop binaries, resorting to force kill", logging.Error(err))
 					if err := binRunner.Kill(); err != nil {
 						return fmt.Errorf("failed to force kill the running processes: %w", err)
 					}
