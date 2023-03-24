@@ -172,6 +172,19 @@ func (ts *Trades) GetByOrderID(ctx context.Context, order string, market *string
 	return ts.queryTradesWithMarketFilter(ctx, query, args, market, pagination)
 }
 
+func (ts *Trades) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error) {
+	defer metrics.StartSQLQuery("Trades", "GetByTxHash")()
+	query := `SELECT * from trades WHERE tx_hash=$1`
+
+	var trades []entities.Trade
+	err := pgxscan.Select(ctx, ts.Connection, &trades, query, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("querying trades: %w", err)
+	}
+
+	return trades, nil
+}
+
 func (ts *Trades) queryTradesWithMarketFilter(ctx context.Context, query string, args []interface{}, market *string, p entities.OffsetPagination) ([]entities.Trade, error) {
 	if market != nil && *market != "" {
 		marketID := nextBindVar(&args, entities.MarketID(*market))

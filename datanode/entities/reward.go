@@ -43,7 +43,7 @@ func (r Reward) String() string {
 		r.EpochID, r.PartyID, r.AssetID, r.Amount)
 }
 
-func (r *Reward) ToProto() *vega.Reward {
+func (r Reward) ToProto() *vega.Reward {
 	protoReward := vega.Reward{
 		PartyId:           r.PartyID.String(),
 		AssetId:           r.AssetID.String(),

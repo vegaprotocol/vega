@@ -65,7 +65,7 @@ func (dm *DecimalMatrix) withinTolerance(other *DecimalMatrix, tolerance num.Dec
 }
 
 // ToProto converts the state variable value to protobuf.
-func (dm *DecimalMatrix) ToProto() *vega.StateVarValue {
+func (dm DecimalMatrix) ToProto() *vega.StateVarValue {
 	rows := make([]*vega.VectorValue, 0, len(dm.Val))
 	for _, fvi := range dm.Val {
 		fviAsString := make([]string, 0, len(fvi))

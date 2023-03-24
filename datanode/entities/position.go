@@ -184,7 +184,7 @@ func (p *Position) UpdateWithSettleMarket(e settleMarket) {
 	p.syncPending()
 }
 
-func (p *Position) ToProto() *vega.Position {
+func (p Position) ToProto() *vega.Position {
 	var timestamp int64
 	if !p.VegaTime.IsZero() {
 		timestamp = p.VegaTime.UnixNano()

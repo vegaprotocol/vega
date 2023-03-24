@@ -84,6 +84,18 @@ func (ls *Ledger) GetAll(ctx context.Context) ([]entities.LedgerEntry, error) {
 	return ledgerEntries, err
 }
 
+func (ls *Ledger) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LedgerEntry, error) {
+	ledgerEntries := []entities.LedgerEntry{}
+	defer metrics.StartSQLQuery("Ledger", "GetByTxHash")()
+
+	err := pgxscan.Select(ctx, ls.Connection, &ledgerEntries, `
+		SELECT ledger_entry_time, account_from_id, account_to_id, quantity, tx_hash, vega_time, transfer_time, type, account_from_balance, account_to_balance
+		FROM ledger WHERE tx_hash=$1`,
+		txHash,
+	)
+	return ledgerEntries, err
+}
+
 // This query requests and sums number of the ledger entries of a given subset of accounts, specified via the 'filter' argument.
 // It returns a timeseries (implemented as a list of AggregateLedgerEntry structs), with a row for every time
 // the summed ledger entries of the set of specified accounts changes.

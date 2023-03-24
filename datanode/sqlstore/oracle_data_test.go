@@ -29,6 +29,7 @@ import (
 func TestOracleData(t *testing.T) {
 	t.Run("Add should insert oracle data", testAddOracleData)
 	t.Run("GetOracleDataBySpecID should return all data where matched spec ids contains the provided id", testGetOracleDataBySpecID)
+	t.Run("GetByTxHash", testGetOracleDataByTxHash)
 }
 
 func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, sqlstore.Connection) {
@@ -91,6 +92,47 @@ func testGetOracleDataBySpecID(t *testing.T) {
 	got, _, err := od.GetOracleDataBySpecID(ctx, "deadbeef02", entities.OffsetPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(got))
+}
+
+func testGetOracleDataByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, od, conn := setupOracleDataTest(t)
+
+	var rowCount int
+	err := conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	testTime := time.Now()
+	dataProtos := getTestOracleData()
+
+	datas := make([]entities.OracleData, 0, len(dataProtos))
+	for i, proto := range dataProtos {
+		block := addTestBlockForTime(t, ctx, bs, testTime)
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
+		require.NoError(t, err)
+		err = od.Add(ctx, data)
+		require.NoError(t, err)
+		testTime = testTime.Add(time.Minute)
+
+		datas = append(datas, *data)
+	}
+
+	err = conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, len(dataProtos), rowCount)
+
+	foundData, err := od.GetByTxHash(ctx, datas[0].ExternalData.Data.TxHash)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(foundData))
+	assert.Equal(t, datas[0].ExternalData.Data, foundData[0].ExternalData.Data)
+
+	foundData2, err := od.GetByTxHash(ctx, datas[1].ExternalData.Data.TxHash)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(foundData2))
+	assert.Equal(t, datas[1].ExternalData.Data, foundData2[0].ExternalData.Data)
 }
 
 func getTestOracleData() []*vegapb.OracleData {

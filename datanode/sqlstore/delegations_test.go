@@ -41,6 +41,7 @@ func addTestDelegation(t *testing.T, ctx context.Context, ds *sqlstore.Delegatio
 		Amount:   decimal.NewFromInt(100),
 		VegaTime: block.VegaTime,
 		SeqNum:   seqNum,
+		TxHash:   generateTxHash(),
 	}
 	err := ds.Add(ctx, r)
 	require.NoError(t, err)
@@ -96,6 +97,18 @@ func TestDelegations(t *testing.T) {
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Delegation{delegation1, delegation2, delegation3, delegation4, delegation5}
 		actual, err := ds.GetAll(ctx)
+		require.NoError(t, err)
+		assertDelegationsMatch(t, expected, actual)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := []entities.Delegation{delegation1}
+		actual, err := ds.GetByTxHash(ctx, delegation1.TxHash)
+		require.NoError(t, err)
+		assertDelegationsMatch(t, expected, actual)
+
+		expected = []entities.Delegation{delegation2}
+		actual, err = ds.GetByTxHash(ctx, delegation2.TxHash)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})

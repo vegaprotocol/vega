@@ -30,7 +30,7 @@ type KeyValueBundle struct {
 }
 
 // ToProto converts KevValueBundle into proto.
-func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
+func (kvb KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 	res := make([]*vega.KeyValueBundle, 0, len(kvb.KVT))
 	for _, kvt := range kvb.KVT {
 		res = append(res, &vega.KeyValueBundle{

@@ -66,6 +66,20 @@ func (ds *Delegations) GetAll(ctx context.Context) ([]entities.Delegation, error
 	return delegations, err
 }
 
+func (ds *Delegations) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Delegation, error) {
+	defer metrics.StartSQLQuery("Delegations", "GetByTxHash")()
+
+	var delegations []entities.Delegation
+	query := `SELECT * FROM delegations WHERE tx_hash = $1`
+
+	err := pgxscan.Select(ctx, ds.Connection, &delegations, query, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return delegations, nil
+}
+
 func (ds *Delegations) Get(ctx context.Context,
 	partyIDHex *string,
 	nodeIDHex *string,

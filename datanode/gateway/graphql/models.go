@@ -202,24 +202,9 @@ type Erc20 struct {
 
 func (Erc20) IsAssetSource() {}
 
-type ERC20MultiSigSignerAddedBundle struct {
-	// The ethereum address of the signer to be added
-	NewSigner string `json:"newSigner"`
-	// The ethereum address of the submitter
-	Submitter string `json:"submitter"`
-	// The nonce used in the signing operation
-	Nonce string `json:"nonce"`
-	// Unix-nano timestamp for when the validator was added
-	Timestamp string `json:"timestamp"`
-	// The bundle of signatures from current validators to sign in the new signer
-	Signatures string `json:"signatures"`
-	// The epoch in which the validator was added
-	EpochSeq string `json:"epochSeq"`
-}
-
 type ERC20MultiSigSignerAddedBundleEdge struct {
-	Node   *ERC20MultiSigSignerAddedBundle `json:"node"`
-	Cursor string                          `json:"cursor"`
+	Node   *v2.ERC20MultiSigSignerAddedBundle `json:"node"`
+	Cursor string                             `json:"cursor"`
 }
 
 // Response for the signature bundle to add a particular validator to the signer list of the multisig contract
@@ -228,24 +213,9 @@ type ERC20MultiSigSignerAddedConnection struct {
 	PageInfo *v2.PageInfo                          `json:"pageInfo"`
 }
 
-type ERC20MultiSigSignerRemovedBundle struct {
-	// The ethereum address of the signer to be removed
-	OldSigner string `json:"oldSigner"`
-	// The ethereum address of the submitter
-	Submitter string `json:"submitter"`
-	// The nonce used in the signing operation
-	Nonce string `json:"nonce"`
-	// Unix-nano timestamp for when the validator was added
-	Timestamp string `json:"timestamp"`
-	// The bundle of signatures from current validators to sign in the new signer
-	Signatures string `json:"signatures"`
-	// The epoch in which the validator was removed
-	EpochSeq string `json:"epochSeq"`
-}
-
 type ERC20MultiSigSignerRemovedBundleEdge struct {
-	Node   *ERC20MultiSigSignerRemovedBundle `json:"node"`
-	Cursor string                            `json:"cursor"`
+	Node   *v2.ERC20MultiSigSignerRemovedBundle `json:"node"`
+	Cursor string                               `json:"cursor"`
 }
 
 // Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
@@ -346,23 +316,6 @@ type ExternalData struct {
 // by the OracleSpec
 type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
-}
-
-type LedgerEntry struct {
-	// Account from which the asset was taken
-	FromAccountID *vega.AccountDetails `json:"fromAccountId"`
-	// Account to which the balance was transferred
-	ToAccountID *vega.AccountDetails `json:"toAccountId"`
-	// The amount transferred
-	Amount string `json:"amount"`
-	// Type of ledger entry
-	Type vega.TransferType `json:"type"`
-	// RFC3339Nano time at which the transfer was made
-	Timestamp int64 `json:"timestamp"`
-	// Sender account balance after the transfer
-	FromAccountBalance string `json:"fromAccountBalance"`
-	// Receiver account balance after the transfer
-	ToAccountBalance string `json:"toAccountBalance"`
 }
 
 // Configuration of a market liquidity monitoring parameters
@@ -688,7 +641,7 @@ type TransferBalance struct {
 
 type TransferResponse struct {
 	// The ledger entries and balances resulting from a transfer request
-	Transfers []*LedgerEntry `json:"transfers"`
+	Transfers []*vega.LedgerEntry `json:"transfers"`
 	// The balances of accounts involved in the transfer
 	Balances []*TransferBalance `json:"balances"`
 }

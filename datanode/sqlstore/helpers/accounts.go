@@ -32,6 +32,30 @@ func AddTestAccount(t *testing.T,
 	return account
 }
 
+func AddTestAccountWithTxHash(t *testing.T,
+	ctx context.Context,
+	accountStore *sqlstore.Accounts,
+	party entities.Party,
+	asset entities.Asset,
+	accountType types.AccountType,
+	block entities.Block,
+	txHash entities.TxHash,
+) entities.Account {
+	t.Helper()
+	account := entities.Account{
+		PartyID:  party.ID,
+		AssetID:  asset.ID,
+		MarketID: entities.MarketID(GenerateID()),
+		Type:     accountType,
+		VegaTime: block.VegaTime,
+		TxHash:   txHash,
+	}
+
+	err := accountStore.Add(ctx, &account)
+	require.NoError(t, err)
+	return account
+}
+
 func AddTestAccountWithMarketAndType(t *testing.T,
 	ctx context.Context,
 	accountStore *sqlstore.Accounts,

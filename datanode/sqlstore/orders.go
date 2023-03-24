@@ -134,6 +134,26 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	return orders, os.wrapE(err)
 }
 
+func (os *Orders) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByTxHash")()
+
+	orders := []entities.Order{}
+	query := fmt.Sprintf(`SELECT %s FROM orders WHERE tx_hash=$1`, sqlOrderColumns)
+
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("querying orders: %w", err)
+	}
+	return orders, nil
+}
+
+// GetByReference returns the last update of orders with the specified user-suppled reference.
+func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+	return os.ListOrders(ctx, p, entities.OrderFilter{
+		Reference: &reference,
+	})
+}
+
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
 // incrementing the version field) of a given order id.
 func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {

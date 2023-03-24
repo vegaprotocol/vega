@@ -29,6 +29,7 @@ type orderStore interface {
 	GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error)
 	GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error)
 	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
 	ListOrders(ctx context.Context, p entities.CursorPagination, filter entities.OrderFilter) ([]entities.Order, entities.PageInfo, error)
@@ -81,6 +82,14 @@ func (o *Order) GetOrder(ctx context.Context, orderID string, version *int32) (e
 
 func (o *Order) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
 	return o.store.GetByMarketAndID(ctx, marketIDstr, orderIDs)
+}
+
+func (o *Order) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error) {
+	return o.store.GetByTxHash(ctx, txHash)
+}
+
+func (o *Order) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
+	return o.store.GetAllVersionsByOrderID(ctx, id, p)
 }
 
 func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {

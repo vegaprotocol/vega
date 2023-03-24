@@ -64,7 +64,20 @@ func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagi
 	}
 }
 
-func parseScannedDataToOracleData(scanned []entities.Data) []entities.OracleData {
+func (od *OracleData) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.OracleData, error) {
+	defer metrics.StartSQLQuery("OracleData", "GetByTxHash")()
+
+	var data []entities.Data
+	query := fmt.Sprintf(`SELECT %s FROM oracle_data WHERE tx_hash = $1`, sqlOracleDataColumns)
+	err := pgxscan.Select(ctx, od.Connection, &data, query, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return scannedDataToOracleData(data), nil
+}
+
+func scannedDataToOracleData(scanned []entities.Data) []entities.OracleData {
 	oracleData := []entities.OracleData{}
 	if len(scanned) > 0 {
 		for _, s := range scanned {
@@ -104,7 +117,7 @@ func getOracleDataBySpecIDOffsetPagination(ctx context.Context, conn Connection,
 	defer metrics.StartSQLQuery("OracleData", "GetBySpecID")()
 	err := pgxscan.Select(ctx, conn, &data, query, bindVars...)
 
-	oracleData = parseScannedDataToOracleData(data)
+	oracleData = scannedDataToOracleData(data)
 	return oracleData, pageInfo, err
 }
 
@@ -135,7 +148,7 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 		return oracleData, pageInfo, err
 	}
 
-	oracleData = parseScannedDataToOracleData(data)
+	oracleData = scannedDataToOracleData(data)
 
 	oracleData, pageInfo = entities.PageEntities[*v2.OracleDataEdge](oracleData, pagination)
 	return oracleData, pageInfo, nil
@@ -169,7 +182,7 @@ order by vega_time desc, matched_spec_id`, selectOracleData())
 	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
 	err := pgxscan.Select(ctx, conn, &data, query, bindVars...)
 
-	oracleData = parseScannedDataToOracleData(data)
+	oracleData = scannedDataToOracleData(data)
 	return oracleData, pageInfo, err
 }
 
@@ -197,7 +210,7 @@ func listOracleDataCursorPagination(ctx context.Context, conn Connection, pagina
 		return oracleData, pageInfo, err
 	}
 
-	oracleData = parseScannedDataToOracleData(data)
+	oracleData = scannedDataToOracleData(data)
 	oracleData, pageInfo = entities.PageEntities[*v2.OracleDataEdge](oracleData, pagination)
 	return oracleData, pageInfo, nil
 }

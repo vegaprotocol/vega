@@ -14,18 +14,27 @@ package entities
 
 import "google.golang.org/protobuf/proto"
 
-type PagedEntity[T proto.Message] interface {
-	Market | Party | Trade | Order | MarginLevels | MarketData | Reward | Candle | Deposit |
+type Entities interface {
+	Market | Party | Trade | Order | MarketData | Reward | Candle | Deposit |
 		Withdrawal | Asset | OracleSpec | OracleData | Position | LiquidityProvision | Vote |
-		Transfer | AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
+		AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
 		StakeLinking | NodeSignature | KeyRotation | ERC20MultiSigSignerAddedEvent |
 		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance | AggregatedLedgerEntry |
 		ProtocolUpgradeProposal | CoreSnapshotData | EpochRewardSummary
+}
+
+type PagedEntity[T proto.Message] interface {
+	Entities | Transfer | MarginLevels
 
 	// ToProtoEdge may need some optional arguments in order to generate the proto, for example margin levels
 	// requires an account source. This is not ideal, but we can come back to this later if a better solution can be found.
 	ToProtoEdge(...any) (T, error)
 	Cursor() *Cursor
+}
+
+type ProtoEntity[T proto.Message] interface {
+	Entities | Account | NodeBasic
+	ToProto() T
 }
 
 func PageEntities[T proto.Message, U PagedEntity[T]](items []U, pagination CursorPagination) ([]U, PageInfo) {

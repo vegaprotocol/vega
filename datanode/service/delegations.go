@@ -24,6 +24,7 @@ type delegationStore interface {
 	Add(ctx context.Context, d entities.Delegation) error
 	GetAll(ctx context.Context) ([]entities.Delegation, error)
 	Get(ctx context.Context, partyID *string, nodeID *string, epoch *int64, p entities.Pagination) ([]entities.Delegation, entities.PageInfo, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Delegation, error)
 }
 
 type Delegation struct {
@@ -49,6 +50,10 @@ func (d *Delegation) Add(ctx context.Context, delegation entities.Delegation) er
 
 func (d *Delegation) GetAll(ctx context.Context) ([]entities.Delegation, error) {
 	return d.store.GetAll(ctx)
+}
+
+func (d *Delegation) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Delegation, error) {
+	return d.store.GetByTxHash(ctx, txHash)
 }
 
 func (d *Delegation) Get(ctx context.Context, partyID *string, nodeID *string, epoch *int64, p entities.Pagination) ([]entities.Delegation, entities.PageInfo, error) {

@@ -91,6 +91,23 @@ func (w *Withdrawals) GetByID(ctx context.Context, withdrawalID string) (entitie
 	return withdrawal, w.wrapE(pgxscan.Get(ctx, w.Connection, &withdrawal, query, entities.WithdrawalID(withdrawalID)))
 }
 
+func (w *Withdrawals) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Withdrawal, error) {
+	defer metrics.StartSQLQuery("Withdrawals", "GetByTxHash")()
+
+	var withdrawals []entities.Withdrawal
+	query := `SELECT id, party_id, amount, asset, status, ref,
+				foreign_tx_hash, created_timestamp, withdrawn_timestamp,
+				ext, tx_hash, vega_time
+		FROM withdrawals WHERE tx_hash = $1`
+
+	err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, txHash)
+	if err != nil {
+		return nil, w.wrapE(err)
+	}
+
+	return withdrawals, nil
+}
+
 func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly bool, pagination entities.Pagination, dateRange entities.DateRange) (
 	[]entities.Withdrawal, entities.PageInfo, error,
 ) {
