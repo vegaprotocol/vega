@@ -32,8 +32,8 @@ func NewBookCache() BookCache {
 }
 
 type cachedUint struct {
-	valid bool
 	value *num.Uint
+	valid bool
 }
 
 type cachedUint64 struct {

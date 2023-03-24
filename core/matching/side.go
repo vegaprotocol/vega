@@ -30,10 +30,10 @@ var ErrPriceNotFound = errors.New("price-volume pair not found")
 
 // OrderBookSide represent a side of the book, either Sell or Buy.
 type OrderBookSide struct {
-	side types.Side
-	log  *logging.Logger
+	log *logging.Logger
 	// Config
 	levels []*PriceLevel
+	side   types.Side
 }
 
 func (s *OrderBookSide) Hash() []byte {

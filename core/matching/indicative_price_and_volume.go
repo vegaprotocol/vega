@@ -21,19 +21,20 @@ import (
 )
 
 type IndicativePriceAndVolume struct {
-	log    *logging.Logger
-	levels []ipvPriceLevel
-
-	// this is just used to avoid allocations
-	buf []CumulativeVolumeLevel
+	log *logging.Logger
 
 	// keep track of previouses {min/max}Price
 	// and if orders has been add in the book
 	// with a price in the range
 	lastMinPrice, lastMaxPrice *num.Uint
-	lastMaxTradable            uint64
-	lastCumulativeVolumes      []CumulativeVolumeLevel
-	needsUpdate                bool
+	levels                     []ipvPriceLevel
+
+	// this is just used to avoid allocations
+	buf []CumulativeVolumeLevel
+
+	lastCumulativeVolumes []CumulativeVolumeLevel
+	lastMaxTradable       uint64
+	needsUpdate           bool
 }
 
 type ipvPriceLevel struct {

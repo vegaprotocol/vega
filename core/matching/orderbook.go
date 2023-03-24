@@ -40,29 +40,31 @@ var (
 
 // OrderBook represents the book holding all orders in the system.
 type OrderBook struct {
-	log *logging.Logger
-	Config
+	ordersByID        map[string]*types.Order
+	peggedCountNotify func(int64)
+	log               *logging.Logger
+	ordersPerParty    map[string]map[string]struct{}
+	buy               *OrderBookSide
+	sell              *OrderBookSide
+	lastTradedPrice   *num.Uint
+	lpOrdersPerParty  map[string]map[string]struct{}
 
-	cfgMu                    *sync.Mutex
-	marketID                 string
-	buy                      *OrderBookSide
-	sell                     *OrderBookSide
-	lastTradedPrice          *num.Uint
-	latestTimestamp          int64
-	ordersByID               map[string]*types.Order
-	ordersPerParty           map[string]map[string]struct{}
-	auction                  bool
-	batchID                  uint64
-	indicativePriceAndVolume *IndicativePriceAndVolume
-	snapshot                 *types.PayloadMatchingBook
-	stopped                  bool // if true then we should stop creating snapshots
+	cfgMu *sync.Mutex
 
 	// we keep track here of which type of orders are in the orderbook so we can quickly
 	// find an order of a certain type. These get updated when orders are added or removed from the book.
-	peggedOrders      map[string]struct{}
-	lpOrdersPerParty  map[string]map[string]struct{}
-	peggedOrdersCount uint64
-	peggedCountNotify func(int64)
+	peggedOrders             map[string]struct{}
+	snapshot                 *types.PayloadMatchingBook
+	indicativePriceAndVolume *IndicativePriceAndVolume
+	marketID                 string
+	batchID                  uint64
+	latestTimestamp          int64
+	peggedOrdersCount        uint64
+	Config
+
+	auction bool
+	stopped bool // if true then we should stop creating snapshots
+
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
