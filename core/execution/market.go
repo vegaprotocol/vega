@@ -762,7 +762,7 @@ func (m *Market) blockEnd(ctx context.Context) {
 	}
 	t := m.timeService.GetTimeNow()
 	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
-		m.markPrice = mp.Clone()
+		m.markPrice = mp
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 		if hasTraded {
 			// only MTM if we have traded
@@ -1129,7 +1129,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		// now that we've left the auction and all the orders have been unparked,
 		// we can mark all positions using the margin calculation method appropriate
 		// for non-auction mode and carry out any closeouts if need be
-		m.markPrice = m.getLastTradedPrice().Clone()
+		m.markPrice = m.getLastTradedPrice()
 		m.confirmMTM(ctx, false)
 		// set next MTM
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
@@ -1709,8 +1709,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	if len(conf.Trades) == 0 {
 		return orderUpdates
 	}
-	// Calculate and set current mark price
-	m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
+	m.setLastTradedPrice(conf.Trades[len(conf.Trades)-1])
 
 	// Insert all trades resulted from the executed order
 	tradeEvts := make([]events.Event, 0, len(conf.Trades))
@@ -1749,9 +1748,9 @@ func (m *Market) confirmMTM(
 	ctx context.Context, skipMargin bool,
 ) {
 	// now let's get the transfers for MTM settlement
-	markPrice := m.getLastTradedPrice()
-	evts := m.position.UpdateMarkPrice(markPrice)
-	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
+	mp := m.getCurrentMarkPrice()
+	evts := m.position.UpdateMarkPrice(mp)
+	settle := m.settlement.SettleMTM(ctx, mp, evts)
 	orderUpdates := []*types.Order{}
 
 	// Only process collateral and risk once per order, not for every trade
@@ -1816,8 +1815,6 @@ func (m *Market) confirmMTM(
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
 	}
-	// release any excess if needed
-	// m.releaseExcessMargin(ctx, pos...)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
@@ -2089,7 +2086,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 
 	m.confirmMTM(ctx, false)
-	m.recheckMargin(ctx, m.position.Positions())
 
 	return orderUpdates, nil
 }
@@ -2283,10 +2279,7 @@ func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *ty
 	return err
 }
 
-func (m *Market) setMarkPrice(trade *types.Trade) {
-	// The current mark price calculation is simply the last trade
-	// in the future this will use varying logic based on market config
-	// the responsibility for calculation could be elsewhere for testability
+func (m *Market) setLastTradedPrice(trade *types.Trade) {
 	m.lastTradedPrice = trade.Price.Clone()
 }
 
@@ -2311,7 +2304,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getLastTradedPrice())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getCurrentMarkPrice())
 	if len(riskUpdates) == 0 {
 		return nil
 	}
@@ -3195,7 +3188,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 }
 
 func (m *Market) getTargetStake() *num.Uint {
-	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getLastTradedPrice())
+	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
@@ -3269,7 +3262,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 			}()
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
-			m.markPrice = mp.Clone()
+			m.markPrice = mp
 			m.confirmMTM(ctx, true)
 		}
 		m.mkt.State = types.MarketStateTradingTerminated
@@ -3461,18 +3454,6 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	return nil
 }
 
-// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
-func (m *Market) getReferencePrice() *num.Uint {
-	if !m.as.InAuction() {
-		return m.getLastTradedPrice()
-	}
-	ip := m.matching.GetIndicativePrice() // can be zero
-	if ip.IsZero() {
-		return m.getLastTradedPrice()
-	}
-	return ip
-}
-
 // GetTotalOrderBookLevelCount returns the total number of levels in the order book.
 func (m *Market) GetTotalOrderBookLevelCount() uint64 {
 	return m.matching.GetOrderBookLevelCount()
@@ -3496,4 +3477,43 @@ func (m *Market) GetTotalLPShapeCount() uint64 {
 // we use this in a banch of places so let's inform it from here in case we want to modify it in the future.
 func (m *Market) minValidPrice() *num.Uint {
 	return m.priceFactor
+}
+
+// getMarketObservable returns current mark price once market is out of opening auction, during opening auction the indicative uncrossing price is returned.
+func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
+	// during opening auction we don't have a last traded price, so we use the indicative price instead
+	if m.as.IsOpeningAuction() {
+		if ip := m.matching.GetIndicativePrice(); !ip.IsZero() {
+			return ip
+		}
+		// we don't have an indicative price yet so we use the supplied price
+		return fallbackPrice
+	}
+	return m.getCurrentMarkPrice()
+}
+
+// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
+func (m *Market) getReferencePrice() *num.Uint {
+	if !m.as.InAuction() {
+		return m.getCurrentMarkPrice()
+	}
+	ip := m.matching.GetIndicativePrice() // can be zero
+	if ip.IsZero() {
+		return m.getCurrentMarkPrice()
+	}
+	return ip
+}
+
+func (m *Market) getCurrentMarkPrice() *num.Uint {
+	if m.markPrice == nil {
+		return num.UintZero()
+	}
+	return m.markPrice.Clone()
+}
+
+func (m *Market) getLastTradedPrice() *num.Uint {
+	if m.lastTradedPrice == nil {
+		return num.UintZero()
+	}
+	return m.lastTradedPrice.Clone()
 }

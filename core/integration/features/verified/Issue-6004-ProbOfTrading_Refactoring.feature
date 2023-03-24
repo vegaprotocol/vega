@@ -71,7 +71,7 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
 
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
-      | TRADING_MODE_CONTINUOUS | 50000          | 186562       |
+      | TRADING_MODE_CONTINUOUS | 50000          | 188871       |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
@@ -79,7 +79,7 @@ Feature: test probability of trading used in LP vol when best bid/ask is changin
 
     Then the market data for the market "ETH/MAR22" should be:
       | trading mode            | supplied stake | target stake |
-      | TRADING_MODE_CONTINUOUS | 50000          | 196049       |
+      | TRADING_MODE_CONTINUOUS | 50000          | 198475       |
 
   Scenario: 002, market starts with a low best bid price 1 (ProbTrading is large), and then best bid goes to 899; test of the new ProbTrading is reasonable, and LP is not distressed; 0038-OLIQ-002
 
