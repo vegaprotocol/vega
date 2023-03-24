@@ -261,7 +261,6 @@ func NewVisorConfig(log *logging.Logger, homePath string) (*VisorConfig, error) 
 	}, nil
 }
 
-// if visor currently runs data node but the new auto install config is configured without data node
 func (pc *VisorConfig) missingAutoInstallDataNodeConfig(conf AutoInstallConfig) bool {
 	pc.mut.RLock()
 	defer pc.mut.RUnlock()
