@@ -55,7 +55,7 @@ type ValidatorTopology interface {
 	Len() int
 	IsValidator() bool
 	SelfVegaPubKey() string
-	AllNodeIDs() []string
+	AllVegaPubKeys() []string
 	IsValidatorVegaPubKey(string) bool
 	IsTendermintValidator(string) bool
 }
@@ -351,7 +351,10 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			if !checkPass {
 				votesReceived := []string{}
 				votesMissing := []string{}
-				for _, k := range w.top.AllNodeIDs() {
+				for _, k := range w.top.AllVegaPubKeys() {
+					if !w.top.IsTendermintValidator(k) {
+						continue
+					}
 					if _, ok := v.votes[k]; ok {
 						votesReceived = append(votesReceived, k)
 						continue

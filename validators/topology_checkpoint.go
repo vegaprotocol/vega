@@ -79,6 +79,14 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 			validatorPower: node.ValidatorPower,
 			rankingScore:   node.RankingScore,
 		}
+
+		// this node is started and expect to be a validator
+		// but so far we haven't seen ourselves as validators for
+		// this network.
+		if t.isValidatorSetup && !t.isValidator {
+			t.checkValidatorDataWithSelfWallets(t.validators[node.ValidatorUpdate.NodeId].data)
+		}
+
 		if t.validators[node.ValidatorUpdate.NodeId].validatorPower > 0 {
 			nextValidators = append(nextValidators, node.ValidatorUpdate.NodeId)
 		}

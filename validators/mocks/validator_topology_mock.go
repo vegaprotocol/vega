@@ -33,18 +33,18 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 	return m.recorder
 }
 
-// AllNodeIDs mocks base method.
-func (m *MockValidatorTopology) AllNodeIDs() []string {
+// AllVegaPubKeys mocks base method.
+func (m *MockValidatorTopology) AllVegaPubKeys() []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AllNodeIDs")
+	ret := m.ctrl.Call(m, "AllVegaPubKeys")
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// AllNodeIDs indicates an expected call of AllNodeIDs.
-func (mr *MockValidatorTopologyMockRecorder) AllNodeIDs() *gomock.Call {
+// AllVegaPubKeys indicates an expected call of AllVegaPubKeys.
+func (mr *MockValidatorTopologyMockRecorder) AllVegaPubKeys() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllNodeIDs", reflect.TypeOf((*MockValidatorTopology)(nil).AllNodeIDs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllVegaPubKeys", reflect.TypeOf((*MockValidatorTopology)(nil).AllVegaPubKeys))
 }
 
 // IsTendermintValidator mocks base method.
