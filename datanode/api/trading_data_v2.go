@@ -26,6 +26,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"code.vegaprotocol.io/vega/core/risk"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -2557,17 +2559,94 @@ func (t *TradingDataServiceV2) estimateMargin(
 
 	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
 		Mul(f).Mul(priceD).Div(mdpd)
-	// now we use the risk factors
+
+	return implyMarginLevels(maintenanceMargin, mkt.TradableInstrument.MarginCalculator.ScalingFactors, rParty, rMarket, asset), nil
+}
+
+func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.ScalingFactors, partyId, marketId, asset string) *vega.MarginLevels {
 	return &vega.MarginLevels{
-		PartyId:                rParty,
-		MarketId:               mktProto.GetId(),
+		PartyId:                partyId,
+		MarketId:               marketId,
 		Asset:                  asset,
 		Timestamp:              0,
 		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.CollateralRelease)).Round(0).String(),
+	}
+}
+
+func (t *tradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimateMarginRequest) (*v2.EstimateMarginResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin SQL")()
+
+	margin, err := t.estimateMargin(
+		ctx, req.Side, req.Type, req.MarketId, req.PartyId, req.Price, req.Size)
+	if err != nil {
+		return nil, formatE(ErrEstimateMargin, errors.Wrapf(err,
+			"marketID: %s, partyID: %s, price: %s, size: %d", req.MarketId, req.PartyId, req.Price, req.Size))
+	}
+
+	return &v2.EstimateMarginResponse{
+		MarginLevels: margin,
 	}, nil
+}
+
+func (t *tradingDataServiceV2) estimatePosition(
+	ctx context.Context,
+	market string,
+	openVolume int64,
+	buys, sells uint64,
+	buySumProduct, sellSumProduct num.Decimal,
+) (*vega.MarginLevels, *vega.MarginLevels, error) {
+	// first get the risk factors and market data (marketdata->markprice)
+	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, market)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "getting risk factors: %s", market)
+	}
+
+	mkt, err := t.marketService.GetByID(ctx, market)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "getting market: %s", market)
+	}
+
+	mktData, err := t.marketDataService.GetMarketDataByID(ctx, market)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "getting market data: %s", market)
+	}
+
+	mktProto := mkt.ToProto()
+
+	asset, err := mktProto.GetAsset()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "getting asset from market")
+	}
+
+	marketObservable, err := num.DecimalFromString(mktData.MarkPrice.String())
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "parsing mark price: %s", mktData.MarkPrice.String())
+	}
+
+	auction := mktData.AuctionEnd > 0
+	if auction && mktData.MarketTradingMode == types.MarketTradingModeOpeningAuction.String() {
+		marketObservable = mktData.IndicativePrice
+	}
+
+	positionFactor := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	linearSlippageFactor, err := num.DecimalFromString(mktProto.LinearSlippageFactor)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "parsing linear slippage factor: %s", mktProto.LinearSlippageFactor)
+	}
+	quadraticSlippageFactor, err := num.DecimalFromString(mktProto.QuadraticSlippageFactor)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "parsing quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor)
+	}
+
+	min := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, int64(buys), int64(sells), buySumProduct, sellSumProduct, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, auction)
+	max := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, int64(buys), int64(sells), buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, auction)
+
+	return implyMarginLevels(min, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", market, asset), implyMarginLevels(max, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", market, asset), nil
 }
 
 // ListNetworkParameters returns a list of network parameters.
