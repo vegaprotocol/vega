@@ -22,7 +22,7 @@
 - [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
 - [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
-- [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install config is missing assets config
+- [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
 
 
 ## 0.70.0
