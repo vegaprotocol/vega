@@ -54,7 +54,7 @@ type CreateWalletHandler func(api.AdminCreateWalletParams) (createWalletResult, 
 
 func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminCreateWalletParams) (createWalletResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return createWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

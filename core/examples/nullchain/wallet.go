@@ -38,7 +38,7 @@ type Wallet struct {
 }
 
 func NewWallet(root, passphrase string) *Wallet {
-	store, err := storev1.InitialiseStore(root)
+	store, err := storev1.InitialiseStore(root, false)
 	if err != nil {
 		panic(fmt.Errorf("could not initialise the wallet store: %w", err))
 	}
