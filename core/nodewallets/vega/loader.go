@@ -43,7 +43,7 @@ func InitialiseWalletLoader(vegaPaths paths.Paths) (*WalletLoader, error) {
 
 func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, error) {
 	data := map[string]string{}
-	store, err := storev1.InitialiseStore(l.walletHome)
+	store, err := storev1.InitialiseStore(l.walletHome, false)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -72,7 +72,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 }
 
 func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
-	store, err := storev1.InitialiseStore(l.walletHome)
+	store, err := storev1.InitialiseStore(l.walletHome, false)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 		return nil, nil, err
 	}
 
-	destStore, err := storev1.InitialiseStore(l.walletHome)
+	destStore, err := storev1.InitialiseStore(l.walletHome, false)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't initialise destination wallet store: %w", err)
 	}
@@ -117,7 +117,7 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 }
 
 func importSourceWallet(ctx context.Context, sourcePath string, sourceWalletName string, passphrase string) (wallet.Wallet, error) {
-	sourceStore, err := storev1.InitialiseStore(sourcePath)
+	sourceStore, err := storev1.InitialiseStore(sourcePath, false)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise source wallet store: %w", err)
 	}

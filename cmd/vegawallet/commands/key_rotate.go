@@ -33,7 +33,7 @@ type RotateKeyHandler func(api.AdminRotateKeyParams) (api.AdminRotateKeyResult, 
 
 func NewCmdRotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminRotateKeyParams) (api.AdminRotateKeyResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminRotateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}

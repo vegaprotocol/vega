@@ -44,7 +44,7 @@ type AnnotateKeyHandler func(api.AdminAnnotateKeyParams) (api.AdminAnnotateKeyRe
 
 func NewCmdAnnotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminAnnotateKeyParams) (api.AdminAnnotateKeyResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminAnnotateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
