@@ -51,8 +51,8 @@ func (o *Order) ObserveOrders(ctx context.Context, retries int, markets []string
 	ch, ref := o.observer.Observe(ctx,
 		retries,
 		func(o entities.Order) bool {
-			marketOk := slice.Contains(markets, o.MarketID.String())
-			partyOk := slice.Contains(parties, o.PartyID.String())
+			marketOk := len(markets) == 0 || slice.Contains(markets, o.MarketID.String())
+			partyOk := len(parties) == 0 || slice.Contains(parties, o.PartyID.String())
 			liqOrder := (o.LpID != nil && includeLiquidity) || !includeLiquidity
 			return marketOk && partyOk && liqOrder
 		})
