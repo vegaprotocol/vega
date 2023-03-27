@@ -639,6 +639,7 @@ type Query {
   "Get statistics about the Vega node"
   statistics: Statistics!
 
+  "Get a list of all trades and apply any given filters to the results"
   trades(
     filter: TradesFilter
     "Optional Pagination information"
