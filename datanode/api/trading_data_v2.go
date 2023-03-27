@@ -2577,21 +2577,12 @@ func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.Scali
 }
 
 func (t *tradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimateMarginRequest) (*v2.EstimateMarginResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("EstimateMargin SQL")()
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition SQL")()
 
-	margin, err := t.estimateMargin(
-		ctx, req.Side, req.Type, req.MarketId, req.PartyId, req.Price, req.Size)
-	if err != nil {
-		return nil, formatE(ErrEstimateMargin, errors.Wrapf(err,
-			"marketID: %s, partyID: %s, price: %s, size: %d", req.MarketId, req.PartyId, req.Price, req.Size))
-	}
-
-	return &v2.EstimateMarginResponse{
-		MarginLevels: margin,
-	}, nil
+	return nil, errors.New("not implemented")
 }
 
-func (t *tradingDataServiceV2) estimatePosition(
+func (t *tradingDataServiceV2) calcualtePositionMarginRange(
 	ctx context.Context,
 	market string,
 	openVolume int64,
