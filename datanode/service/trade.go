@@ -15,6 +15,8 @@ package service
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/slice"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
@@ -79,18 +81,10 @@ func (t *Trade) Observe(ctx context.Context, retries int, marketIDs []string, pa
 				return true
 			}
 
-			for _, m := range marketIDs {
-				if m == trade.MarketID.String() {
-					return true
-				}
-			}
+			marketsOk := slice.Contains(marketIDs, trade.MarketID.String())
+			partiesOk := slice.Contains(partyIDs, trade.Buyer.String()) || slice.Contains(partyIDs, trade.Seller.String())
 
-			for _, p := range partyIDs {
-				if p == trade.Buyer.String() || p == trade.Seller.String() {
-					return true
-				}
-			}
-			return false
+			return marketsOk && partiesOk
 		})
 	return ch, ref
 }
