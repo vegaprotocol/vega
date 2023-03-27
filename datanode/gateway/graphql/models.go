@@ -625,6 +625,12 @@ type TradesFilter struct {
 	OrderIds  []string `json:"orderIds"`
 }
 
+// Filter to apply to the trade subscription request
+type TradesSubscriptionFilter struct {
+	PartyIds  []string `json:"partyIds"`
+	MarketIds []string `json:"marketIds"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }

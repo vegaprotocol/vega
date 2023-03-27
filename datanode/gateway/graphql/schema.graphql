@@ -115,10 +115,8 @@ type Subscription {
 
   "Subscribe to the trades updates"
   trades(
-    "ID of the market from which you want trades updates"
-    marketId: ID
-    "ID of the party from which you want trades updates"
-    partyId: ID
+    "Filter to apply to trades"
+    filter: TradesSubscriptionFilter!
   ): [TradeUpdate!]
 
   "Subscribe to votes, either by proposal ID or party ID"
@@ -1756,7 +1754,7 @@ type Market {
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection @deprecated(reason: "Use root trades query instead")
+  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
 
   "Current depth on the order book for this market"
   depth(
@@ -1957,7 +1955,7 @@ type Party {
     dataRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection @deprecated(reason: "Use root trades query instead")
+  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2259,7 +2257,7 @@ type Order {
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): TradeConnection @deprecated(reason: "Use root trades query instead")
+  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
 
   "The order type"
   type: OrderType
@@ -3995,6 +3993,12 @@ type TradeEdge {
   node: Trade!
   "The cursor for this trade"
   cursor: String!
+}
+
+"Filter to apply to the trade subscription request"
+input TradesSubscriptionFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
 }
 
 "Filter to apply to the trade connection query"

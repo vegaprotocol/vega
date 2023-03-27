@@ -1637,7 +1637,7 @@ type ComplexityRoot struct {
 		Orders              func(childComplexity int, filter *OrderByMarketAndPartyIdsFilter) int
 		Positions           func(childComplexity int, partyID *string, marketID *string) int
 		Proposals           func(childComplexity int, partyID *string) int
-		Trades              func(childComplexity int, marketID *string, partyID *string) int
+		Trades              func(childComplexity int, filter TradesSubscriptionFilter) int
 		Votes               func(childComplexity int, proposalID *string, partyID *string) int
 	}
 
@@ -2334,7 +2334,7 @@ type SubscriptionResolver interface {
 	Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*vega.Order, error)
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.Position, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
-	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Trade, error)
+	Trades(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*vega.Trade, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 }
 type TradableInstrumentResolver interface {
@@ -9236,7 +9236,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Trades(childComplexity, args["marketId"].(*string), args["partyId"].(*string)), true
+		return e.complexity.Subscription.Trades(childComplexity, args["filter"].(TradesSubscriptionFilter)), true
 
 	case "Subscription.votes":
 		if e.complexity.Subscription.Votes == nil {
@@ -10088,6 +10088,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputPositionsFilter,
 		ec.unmarshalInputRewardSummaryFilter,
 		ec.unmarshalInputTradesFilter,
+		ec.unmarshalInputTradesSubscriptionFilter,
 	)
 	first := true
 
@@ -12197,24 +12198,15 @@ func (ec *executionContext) field_Subscription_proposals_args(ctx context.Contex
 func (ec *executionContext) field_Subscription_trades_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["marketId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketId"))
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+	var arg0 TradesSubscriptionFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalNTradesSubscriptionFilter2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradesSubscriptionFilter(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["marketId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
+	args["filter"] = arg0
 	return args, nil
 }
 
@@ -57572,7 +57564,7 @@ func (ec *executionContext) _Subscription_trades(ctx context.Context, field grap
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Trades(rctx, fc.Args["marketId"].(*string), fc.Args["partyId"].(*string))
+		return ec.resolvers.Subscription().Trades(rctx, fc.Args["filter"].(TradesSubscriptionFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -65649,6 +65641,42 @@ func (ec *executionContext) unmarshalInputTradesFilter(ctx context.Context, obj 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderIds"))
 			it.OrderIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTradesSubscriptionFilter(ctx context.Context, obj interface{}) (TradesSubscriptionFilter, error) {
+	var it TradesSubscriptionFilter
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"partyIds", "marketIds"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "partyIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyIds"))
+			it.PartyIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "marketIds":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketIds"))
+			it.MarketIds, err = ec.unmarshalOID2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -84539,6 +84567,11 @@ func (ec *executionContext) marshalNTradeUpdate2ᚖcodeᚗvegaprotocolᚗioᚋve
 		return graphql.Null
 	}
 	return ec._TradeUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTradesSubscriptionFilter2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTradesSubscriptionFilter(ctx context.Context, v interface{}) (TradesSubscriptionFilter, error) {
+	res, err := ec.unmarshalInputTradesSubscriptionFilter(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {

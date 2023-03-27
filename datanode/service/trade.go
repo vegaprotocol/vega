@@ -71,12 +71,26 @@ func (t *Trade) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]enti
 	return t.store.GetByTxHash(ctx, txHash)
 }
 
-func (t *Trade) Observe(ctx context.Context, retries int, marketID *string, partyID *string) (<-chan []*entities.Trade, uint64) {
+func (t *Trade) Observe(ctx context.Context, retries int, marketIDs []string, partyIDs []string) (<-chan []*entities.Trade, uint64) {
 	ch, ref := t.observer.Observe(ctx,
 		retries,
 		func(trade *entities.Trade) bool {
-			return (marketID == nil || *marketID == trade.MarketID.String()) &&
-				(partyID == nil || *partyID == trade.Buyer.String() || *partyID == trade.Seller.String())
+			if len(marketIDs) == 0 && len(partyIDs) == 0 {
+				return true
+			}
+
+			for _, m := range marketIDs {
+				if m == trade.MarketID.String() {
+					return true
+				}
+			}
+
+			for _, p := range partyIDs {
+				if p == trade.Buyer.String() || p == trade.Seller.String() {
+					return true
+				}
+			}
+			return false
 		})
 	return ch, ref
 }

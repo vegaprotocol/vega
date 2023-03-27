@@ -1974,11 +1974,11 @@ message GetLastTradeResponse {
 
 // Request to list trades
 message ListTradesRequest {
-    // Market ID for which to list trades for, if provided.
+    // List of Market IDs for which to list trades for, if provided.
     repeated string market_ids = 1;
-    // Order ID for which to list trades for, if provided.
+    // List of Order IDs for which to list trades for, if provided.
     repeated string order_ids = 2;
-    // Party ID for which to list trades for, if provided.
+    // List of Party ID for which to list trades for, if provided.
     repeated string party_ids = 3;
     // Pagination control.
     optional Pagination pagination = 4;
@@ -2016,10 +2016,10 @@ message ObserveTradesRequest {
     // If party identifier is given, trades from that party will be returned on the stream
     // Both filters can be combined.
 
-    // Market ID.
-    optional string market_id = 1;
-    // Party ID.
-    optional string party_id = 2;
+    // List of Market ID to filter by.
+    repeated string market_id = 1;
+    // List of Party IDs to filter by.
+    repeated string party_id = 2;
 }
 
 // A stream of trades

@@ -2124,10 +2124,10 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
+func (r *mySubscriptionResolver) Trades(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*types.Trade, error) {
 	req := &v2.ObserveTradesRequest{
-		MarketId: market,
-		PartyId:  party,
+		MarketId: filter.MarketIds,
+		PartyId:  filter.PartyIds,
 	}
 	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
 	if err != nil {
