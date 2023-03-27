@@ -77,12 +77,10 @@ func (t *Trade) Observe(ctx context.Context, retries int, marketIDs []string, pa
 	ch, ref := t.observer.Observe(ctx,
 		retries,
 		func(trade *entities.Trade) bool {
-			if len(marketIDs) == 0 && len(partyIDs) == 0 {
-				return true
-			}
-
-			marketsOk := slice.Contains(marketIDs, trade.MarketID.String())
-			partiesOk := slice.Contains(partyIDs, trade.Buyer.String()) || slice.Contains(partyIDs, trade.Seller.String())
+			// match market filter if any, or if no filter is provided
+			marketsOk := len(marketIDs) == 0 || slice.Contains(marketIDs, trade.MarketID.String())
+			// match party filter if any, or if no filter is provided
+			partiesOk := len(partyIDs) == 0 || slice.Contains(partyIDs, trade.Buyer.String()) || slice.Contains(partyIDs, trade.Seller.String())
 
 			return marketsOk && partiesOk
 		})
