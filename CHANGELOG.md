@@ -19,7 +19,7 @@
 
 ### 🐛 Fixes
 - [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
-
+- [8001](https://github.com/vegaprotocol/vega/issues/8001) - Fix issues with order subscriptions
 
 ## 0.70.0
 

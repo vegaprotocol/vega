@@ -2133,6 +2133,7 @@ func (t *tradingDataServiceV2) sendOrdersSnapshot(ctx context.Context, req *v2.O
 		MarketIDs:        req.MarketIds,
 		PartyIDs:         req.PartyIds,
 		ExcludeLiquidity: ptr.UnBox(req.ExcludeLiquidity),
+		LiveOnly:         true,
 	})
 	if err != nil {
 		return errors.Wrap(err, "fetching orders initial image")
