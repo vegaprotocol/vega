@@ -50,6 +50,7 @@
 - [7921](https://github.com/vegaprotocol/vega/issues/7921) - Fix streams batches
 - [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
 - [7940](https://github.com/vegaprotocol/vega/issues/7940) - Enhance validation of tendermint public keys
+- [7981](https://github.com/vegaprotocol/vega/issues/7981) - Ensure LP order events are not sent when nothing changes
 
 
 
