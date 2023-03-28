@@ -18,8 +18,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -942,6 +945,65 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	// this function is called both for interval checkpoints and withdrawal checkpoints
 	event := events.NewCheckpointEvent(app.blockCtx, cpt)
 	app.broker.Send(event)
+	return app.removeOldCheckpoints()
+}
+
+func (app *App) removeOldCheckpoints() error {
+	cpDirPath, err := app.vegaPaths.CreateStatePathFor(paths.StatePath(paths.CheckpointStateHome.String()))
+	if err != nil {
+		return fmt.Errorf("couldn't get checkpoints directory: %w", err)
+	}
+
+	files, err := ioutil.ReadDir(cpDirPath)
+	if err != nil {
+		return fmt.Errorf("could not open open the checkpoint directory: %w", err)
+	}
+
+	// we assume that the files in this directory are only
+	// from the checkpoints
+	// and always keep the last 20, so return if we have less than that
+	if len(files) <= 20 {
+		return nil
+	}
+
+	oldest := app.stats.Height()
+	toRemove := ""
+	for _, file := range files {
+		// checkpoint have the following format:
+		// 20230322173929-12140156-d833359cb648eb315b4d3f9ccaa5092bd175b2f72a9d44783377ca5d7a2ec965.cp
+		// which is:
+		// time-block-hash.cp
+		// we split and should have the block in splitted[1]
+		splitted := strings.Split(file.Name(), "-")
+		if len(splitted) != 3 {
+			app.log.Error("weird checkpoint file name", logging.String("checkpoint-file", file.Name()))
+			// weird file, keep going
+			continue
+		}
+		block, err := strconv.ParseInt(splitted[1], 10, 64)
+		if err != nil {
+			app.log.Error("could not parse block number", logging.Error(err), logging.String("checkpoint-file", file.Name()))
+			continue
+		}
+
+		if uint64(block) < oldest {
+			oldest = uint64(block)
+			toRemove = file.Name()
+		}
+	}
+
+	if len(toRemove) > 0 {
+		finalPath := filepath.Join(cpDirPath, toRemove)
+		if err := os.Remove(finalPath); err != nil {
+			app.log.Error("could not remove old checkpoint file",
+				logging.Error(err),
+				logging.String("checkpoint-file", finalPath),
+			)
+		}
+		// just return an error, not much we can do
+		return nil
+	}
+
 	return nil
 }
 
