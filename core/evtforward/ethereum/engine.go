@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	engineLogger = "engine"
+	engineLogger      = "engine"
+	maxEthereumBlocks = 300 // an hour worth of blocks?
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Forwarder
@@ -132,39 +133,53 @@ func (e *Engine) Start() {
 	})
 }
 
+func issueFilteringRequest(from, to uint64) (ok bool, actualTo uint64) {
+	if from > to {
+		return false, 0
+	}
+	return true, min(from+maxEthereumBlocks, to)
+}
+
+func min(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func (e *Engine) gatherEvents(ctx context.Context) {
 	currentHeight := e.filterer.CurrentHeight(ctx)
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.nextCollateralBlockNumber <= currentHeight {
-		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.nextCollateralBlockNumber, currentHeight); ok {
+		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextCollateralBlockNumber = currentHeight + 1
+		e.nextCollateralBlockNumber = nextHeight + 1
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.shouldFilterStakingBridge && e.nextStakingBlockNumber <= currentHeight {
-		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.nextStakingBlockNumber, currentHeight); e.shouldFilterStakingBridge && ok {
+		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextStakingBlockNumber = currentHeight + 1
+		e.nextStakingBlockNumber = nextHeight + 1
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.shouldFilterVestingBridge && e.nextVestingBlockNumber <= currentHeight {
-		e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.nextVestingBlockNumber, currentHeight); e.shouldFilterVestingBridge && ok {
+		e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextVestingBlockNumber = currentHeight + 1
+		e.nextVestingBlockNumber = nextHeight + 1
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.nextMultiSigControlBlockNumber <= currentHeight {
-		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.nextMultiSigControlBlockNumber, currentHeight); ok {
+		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextMultiSigControlBlockNumber = currentHeight + 1
+		e.nextMultiSigControlBlockNumber = nextHeight + 1
 	}
 }
 
