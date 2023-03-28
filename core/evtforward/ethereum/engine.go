@@ -159,27 +159,27 @@ func (e *Engine) gatherEvents(ctx context.Context) {
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if ok, nextHeight := issueFilteringRequest(e.nextStakingBlockNumber, currentHeight); e.shouldFilterStakingBridge && ok {
-		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if e.shouldFilterStakingBridge && e.nextStakingBlockNumber <= currentHeight {
+		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextStakingBlockNumber = nextHeight + 1
+		e.nextStakingBlockNumber = currentHeight + 1
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if ok, nextHeight := issueFilteringRequest(e.nextVestingBlockNumber, currentHeight); e.shouldFilterVestingBridge && ok {
-		e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if e.shouldFilterVestingBridge && e.nextVestingBlockNumber <= currentHeight {
+		e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextVestingBlockNumber = nextHeight + 1
+		e.nextVestingBlockNumber = currentHeight + 1
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if ok, nextHeight := issueFilteringRequest(e.nextMultiSigControlBlockNumber, currentHeight); ok {
-		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
+	if e.nextMultiSigControlBlockNumber <= currentHeight {
+		e.filterer.FilterMultisigControlEvents(ctx, e.nextMultiSigControlBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextMultiSigControlBlockNumber = nextHeight + 1
+		e.nextMultiSigControlBlockNumber = currentHeight + 1
 	}
 }
 
