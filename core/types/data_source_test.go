@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"errors"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -171,4 +172,45 @@ func TestGetFilters(t *testing.T) {
 			assert.Equal(t, 0, len(filters))
 		})
 	})
+}
+
+func TestIsExternal(t *testing.T) {
+	dsDef := &types.DataSourceDefinition{
+		SourceType: &types.DataSourceDefinitionExternalx{
+			External: &types.DataSourceDefinitionExternal{
+				SourceType: &types.DataSourceDefinitionExternalOracle{
+					Oracle: &types.DataSourceSpecConfiguration{},
+				},
+			},
+		},
+	}
+
+	res, err := dsDef.IsExternal()
+	assert.NoError(t, err)
+	assert.True(t, res)
+
+	dsDef = &types.DataSourceDefinition{
+		SourceType: &types.DataSourceDefinitionInternalx{
+			Internal: &types.DataSourceDefinitionInternal{
+				SourceType: &types.DataSourceDefinitionInternalTime{
+					Time: &types.DataSourceSpecConfigurationTime{
+						Conditions: []*types.DataSourceSpecCondition{},
+					},
+				},
+			},
+		},
+	}
+
+	res, err = dsDef.IsExternal()
+	assert.NoError(t, err)
+	assert.False(t, res)
+
+	dsDef = &types.DataSourceDefinition{
+		SourceType: nil,
+	}
+
+	res, _ = dsDef.IsExternal()
+
+	assert.Error(t, errors.New("unknown type of data source provided"))
+	assert.False(t, res)
 }
