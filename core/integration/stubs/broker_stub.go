@@ -13,6 +13,7 @@
 package stubs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -20,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/broker"
 
 	"code.vegaprotocol.io/vega/core/events"
+	vtypes "code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -215,8 +217,28 @@ func (b *BrokerStub) GetTransfers(mutable bool) []*types.LedgerEntry {
 
 func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
+	exp := b.GetImmBatch(events.ExpiredOrdersEvent)
 	if len(batch) == 0 {
 		return nil, nil
+	}
+	expForMarket := map[string]struct{}{}
+	for _, e := range exp {
+		switch et := e.(type) {
+		case *events.ExpiredOrders:
+			if !et.IsMarket(market) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				expForMarket[oid] = struct{}{}
+			}
+		case events.ExpiredOrders:
+			if !et.IsMarket(market) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				expForMarket[oid] = struct{}{}
+			}
+		}
 	}
 
 	// first get all active orders
@@ -245,7 +267,10 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 
 	// now we have all active orders, let's build both sides
 	sell, buy = map[string]uint64{}, map[string]uint64{}
-	for _, v := range activeOrders {
+	for id, v := range activeOrders {
+		if _, ok := expForMarket[id]; ok {
+			continue
+		}
 		if v.Side == types.Side_SIDE_BUY {
 			buy[v.Price] = buy[v.Price] + v.Remaining
 			continue
@@ -339,13 +364,35 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 	if len(batch) == 0 {
 		return nil
 	}
+	last := map[string]*vtypes.Order{}
 	ret := make([]events.Order, 0, len(batch))
 	for _, e := range batch {
+		var o *vtypes.Order
 		switch et := e.(type) {
 		case *events.Order:
+			o, _ = vtypes.OrderFromProto(et.Order())
 			ret = append(ret, *et)
 		case events.Order:
+			o, _ = vtypes.OrderFromProto(et.Order())
 			ret = append(ret, et)
+		}
+		last[o.ID] = o
+	}
+	expired := b.GetBatch(events.ExpiredOrdersEvent)
+	for _, e := range expired {
+		var ids []string
+		switch et := e.(type) {
+		case *events.ExpiredOrders:
+			ids = et.OrderIDs()
+		case events.ExpiredOrders:
+			ids = et.OrderIDs()
+		}
+		for _, id := range ids {
+			if o, ok := last[id]; ok {
+				o.Status = types.Order_STATUS_EXPIRED
+				fe := events.NewOrderEvent(context.Background(), o)
+				ret = append(ret, *fe)
+			}
 		}
 	}
 	return ret
