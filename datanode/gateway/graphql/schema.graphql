@@ -115,6 +115,14 @@ type Subscription {
 
   "Subscribe to the trades updates"
   trades(
+    "ID of the market from which you want trades updates"
+    marketId: ID
+    "ID of the party from which you want trades updates"
+    partyId: ID
+  ): [TradeUpdate!] @deprecated(reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once")
+
+  "Subscribe to the trades updates"
+  tradesStream(
     "Filter to apply to trades"
     filter: TradesSubscriptionFilter!
   ): [TradeUpdate!]

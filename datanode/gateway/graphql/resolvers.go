@@ -2124,7 +2124,63 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Trades(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*types.Trade, error) {
+func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
+	markets := []string{}
+	parties := []string{}
+	if market != nil {
+		markets = append(markets, *market)
+	}
+
+	if party != nil {
+		parties = append(parties, *party)
+	}
+
+	req := &v2.ObserveTradesRequest{
+		MarketId: markets,
+		PartyId:  parties,
+	}
+
+	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan []*types.Trade)
+	sCtx := stream.Context()
+	go func() {
+		defer func() {
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+			}
+			close(c)
+		}()
+		for {
+			t, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("trades: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+				break
+			}
+			select {
+			case c <- t.Trades:
+				r.log.Debug("trades: data sent")
+			case <-ctx.Done():
+				r.log.Error("trades: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("trades: stream closed by server")
+				break
+			}
+		}
+	}()
+
+	return c, nil
+}
+
+func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*types.Trade, error) {
 	req := &v2.ObserveTradesRequest{
 		MarketId: filter.MarketIds,
 		PartyId:  filter.PartyIds,
