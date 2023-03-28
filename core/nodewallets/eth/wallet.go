@@ -17,7 +17,8 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 )
 
-type wallet interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/nodewallets/eth EthereumWallet
+type EthereumWallet interface {
 	Cleanup() error
 	Name() string
 	Chain() string
@@ -29,10 +30,10 @@ type wallet interface {
 }
 
 type Wallet struct {
-	w wallet
+	w EthereumWallet
 }
 
-func NewWallet(w wallet) *Wallet {
+func NewWallet(w EthereumWallet) *Wallet {
 	return &Wallet{w}
 }
 

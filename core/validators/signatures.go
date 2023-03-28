@@ -141,7 +141,7 @@ func (s *ERC20Signatures) getSignatureWithSubmitterByResID(resID string) (*signa
 }
 
 func (s *ERC20Signatures) offerValidatorAddedSignatures(resID string) []byte {
-	if s.isValidatorSetup {
+	if !s.isValidatorSetup {
 		return nil
 	}
 
@@ -160,11 +160,11 @@ func (s *ERC20Signatures) offerValidatorAddedSignatures(resID string) []byte {
 			logging.Error(err))
 	}
 
-	return signature.Message.Bytes()
+	return signature.Signature.Bytes()
 }
 
 func (s *ERC20Signatures) offerValidatorRemovedSignatures(resID string) []byte {
-	if s.isValidatorSetup {
+	if !s.isValidatorSetup {
 		return nil
 	}
 
@@ -183,7 +183,7 @@ func (s *ERC20Signatures) offerValidatorRemovedSignatures(resID string) []byte {
 			logging.Error(err))
 	}
 
-	return signature.Message.Bytes()
+	return signature.Signature.Bytes()
 }
 
 func (s *ERC20Signatures) getSignatureData(nodeID string, added bool) []*signatureData {
