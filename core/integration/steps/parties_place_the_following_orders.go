@@ -26,6 +26,20 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+type Only string
+
+const (
+	None   Only = ""
+	Post   Only = "post"
+	Reduce Only = "reduce"
+)
+
+var onlyTypes = map[string]Only{
+	"":       None,
+	"post":   Post,
+	"reduce": Reduce,
+}
+
 func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStub, epochService EpochService, table *godog.Table) error {
 	// ensure time is set + idgen is not nil
 	now := time.GetTimeNow()
@@ -42,6 +56,13 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 			Type:        row.OrderType(),
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
@@ -94,6 +115,13 @@ func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeS
 			Type:        row.OrderType(),
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
@@ -148,6 +176,13 @@ func PartiesPlaceTheFollowingOrders(
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
 		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
+		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
 		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
@@ -187,6 +222,7 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"error",
 		"resulting trades",
 		"expires in",
+		"only",
 	})
 }
 
@@ -264,4 +300,16 @@ func (r submitOrderRow) Error() string {
 
 func (r submitOrderRow) ExpectError() bool {
 	return r.row.HasColumn("error")
+}
+
+func (r submitOrderRow) Only() Only {
+	if !r.row.HasColumn("only") {
+		return None
+	}
+	v := r.row.MustStr("only")
+	t, ok := onlyTypes[v]
+	if !ok {
+		panic(fmt.Errorf("unsupported type %v", v))
+	}
+	return t
 }
