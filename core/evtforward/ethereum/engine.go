@@ -23,7 +23,7 @@ import (
 
 const (
 	engineLogger      = "engine"
-	maxEthereumBlocks = 300 // an hour worth of blocks?
+	maxEthereumBlocks = 1000 // 3+ hour worth of blocks?
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Forwarder
