@@ -28,6 +28,7 @@ import (
 type ProposalType v2.ListGovernanceDataRequest_Type
 
 var (
+	ProposalTypeAll                    = ProposalType(v2.ListGovernanceDataRequest_TYPE_ALL)
 	ProposalTypeNewMarket              = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_MARKET)
 	ProposalTypeNewAsset               = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_ASSET)
 	ProposalTypeUpdateAsset            = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_ASSET)
@@ -41,6 +42,8 @@ func (p *ProposalType) String() string {
 		return ""
 	}
 	switch *p {
+	case ProposalTypeAll:
+		return "all"
 	case ProposalTypeNewMarket:
 		return "newMarket"
 	case ProposalTypeNewAsset:
