@@ -101,6 +101,7 @@
 - [8165](https://github.com/vegaprotocol/vega/issues/8165) - Send order events when an `lp` order is cancelled or rejected
 - [8173](https://github.com/vegaprotocol/vega/issues/8173) - Trades when leaving auction should should have the aggressor field set to `SideUnspecified`.
 - [8157](https://github.com/vegaprotocol/vega/issues/8157) - Handle kill/interrupt signals in datanode, and clean up properly.
+- [7914](https://github.com/vegaprotocol/vega/issues/7914) - Offer node signatures after snapshot restore
 
 ## 0.70.0
 
