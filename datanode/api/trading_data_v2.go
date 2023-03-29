@@ -1993,6 +1993,10 @@ func (t *tradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderReq
 		return nil, formatE(ErrMissingOrderID)
 	}
 
+	if req.Version != nil && *req.Version <= 0 {
+		return nil, formatE(ErrNegativeOrderVersion)
+	}
+
 	order, err := t.orderService.GetOrder(ctx, req.OrderId, req.Version)
 	if err != nil {
 		return nil, formatE(ErrOrderNotFound, errors.Wrapf(err, "orderID: %s", req.OrderId))
