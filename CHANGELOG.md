@@ -26,6 +26,7 @@
 - [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
 - [7995](https://github.com/vegaprotocol/vega/issues/7995) - Validate order price input to `estimateFee` and `estimateMargin`
 - [8011](https://github.com/vegaprotocol/vega/issues/8011) - Return a not found error for an invalid network parameter key for the API
+- [8012](https://github.com/vegaprotocol/vega/issues/8012) - Ensure client do not specify both a before and after cursor
 
 
 ## 0.70.0
