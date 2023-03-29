@@ -249,12 +249,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 				types.OrderStatusActive,
 				size, // original size restored
 			},
-			{
-				// this is quite possibly a duplicate because we're forcing the check
-				// for reference moves
-				types.OrderStatusActive,
-				size,
-			},
 		}
 
 		require.Len(t, found, len(expectedStatus))
