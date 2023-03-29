@@ -42,7 +42,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
@@ -402,6 +401,7 @@ func NewApp(
 
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
+	app.ensureConfig()
 	return app
 }
 
@@ -491,6 +491,12 @@ func (app *App) SendTransactionResult(
 	}
 }
 
+func (app *App) ensureConfig() {
+	if app.cfg.KeepCheckpointsMax < 1 {
+		app.cfg.KeepCheckpointsMax = 1
+	}
+}
+
 // ReloadConf updates the internal configuration.
 func (app *App) ReloadConf(cfg Config) {
 	app.log.Info("reloading configuration")
@@ -503,6 +509,7 @@ func (app *App) ReloadConf(cfg Config) {
 	}
 
 	app.cfg = cfg
+	app.ensureConfig()
 }
 
 func (app *App) Abci() *abci.App {
@@ -886,7 +893,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 
 	if len(snapHash) == 0 {
-		resp.Data = crypto.Hash([]byte(app.version))
+		resp.Data = vgcrypto.Hash([]byte(app.version))
 		resp.Data = append(resp.Data, app.exec.Hash()...)
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
 		resp.Data = append(resp.Data, app.gov.Hash()...)
@@ -945,6 +952,7 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	// this function is called both for interval checkpoints and withdrawal checkpoints
 	event := events.NewCheckpointEvent(app.blockCtx, cpt)
 	app.broker.Send(event)
+
 	return app.removeOldCheckpoints()
 }
 
@@ -956,13 +964,13 @@ func (app *App) removeOldCheckpoints() error {
 
 	files, err := ioutil.ReadDir(cpDirPath)
 	if err != nil {
-		return fmt.Errorf("could not open open the checkpoint directory: %w", err)
+		return fmt.Errorf("could not open the checkpoint directory: %w", err)
 	}
 
 	// we assume that the files in this directory are only
 	// from the checkpoints
 	// and always keep the last 20, so return if we have less than that
-	if len(files) <= 20 {
+	if len(files) <= int(app.cfg.KeepCheckpointsMax) {
 		return nil
 	}
 
@@ -1229,7 +1237,7 @@ func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(is); err != nil {
 		return err
 	}
-	return app.top.IssueSignatures(ctx, crypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
+	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {
@@ -1607,7 +1615,7 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 
 	return app.witness.AddNodeCheck(ctx, vote, pubKey)
 }
@@ -1627,7 +1635,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
@@ -1642,7 +1650,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return ErrOracleDataNormalization(err)
