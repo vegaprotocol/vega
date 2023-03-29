@@ -267,7 +267,7 @@ func (ps *Proposals) Get(ctx context.Context,
 		conditions = append(conditions, fmt.Sprintf("party_id=%s", nextBindVar(&args, partyID)))
 	}
 
-	if proposalType != nil {
+	if proposalType != nil && *proposalType != entities.ProposalTypeAll {
 		conditions = append(conditions, fmt.Sprintf("terms ? %s", nextBindVar(&args, proposalType.String())))
 	}
 
