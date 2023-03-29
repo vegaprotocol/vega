@@ -2648,9 +2648,9 @@ func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.
 	if req.Key != v.Key {
 		return nil, formatE(ErrNetworkParameterNotFound, errors.Wrapf(err, "network parameter: %s", req.Key))
 	}
-	np = v.ToProto()
+
 	return &v2.GetNetworkParameterResponse{
-		NetworkParameter: np,
+		NetworkParameter: v.ToProto(),
 	}, nil
 }
 
