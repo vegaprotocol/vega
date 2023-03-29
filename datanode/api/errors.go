@@ -76,6 +76,10 @@ var (
 	ErrorInvalidAssetID = newInvalidArgumentError("invalid asset ID")
 	// ErrMissingNodeID is returned when the node ID is missing from the request.
 	ErrMissingNodeID = newInvalidArgumentError("missing node id")
+	// ErrNegativeOrderVersion is returned when a request is made for an
+	// order with a negative version.
+	ErrNegativeOrderVersion = newInvalidArgumentError("negative order version")
+
 	// ErrOracleServiceSpecID is returned when there was no data found for the given ID.
 	ErrOracleServiceGetSpec = errors.New("failed to retrieve data for oracle spec")
 	// ErrERC20InvalidTokenContractAddress is returned when the ERC20 token contract address is invalid.

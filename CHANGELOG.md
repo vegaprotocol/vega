@@ -27,6 +27,7 @@
 - [7995](https://github.com/vegaprotocol/vega/issues/7995) - Validate order price input to `estimateFee` and `estimateMargin`
 - [8011](https://github.com/vegaprotocol/vega/issues/8011) - Return a not found error for an invalid network parameter key for the API
 - [8012](https://github.com/vegaprotocol/vega/issues/8012) - Ensure client do not specify both a before and after cursor
+- [8017](https://github.com/vegaprotocol/vega/issues/8017) - Return an error when requesting order with negative version
 
 
 ## 0.70.0
