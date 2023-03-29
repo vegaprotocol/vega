@@ -2644,7 +2644,6 @@ func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.
 		return nil, formatE(ErrGetNetworkParameters, err)
 	}
 
-	var np *vega.NetworkParameter
 	if req.Key != v.Key {
 		return nil, formatE(ErrNetworkParameterNotFound, errors.Wrapf(err, "network parameter: %s", req.Key))
 	}
