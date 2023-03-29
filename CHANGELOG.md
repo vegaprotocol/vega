@@ -16,7 +16,7 @@
 - [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
 - [7954](https://github.com/vegaprotocol/vega/issues/7954) - Don't error if subscribing to a market/party that has no position yet
 - [7899](https://github.com/vegaprotocol/vega/issues/7899) - Fixes inconsistency in the `HTTP` status codes returned when rate limited
-- [7968](https://github.com/vegaprotocol/vega/issues/7968) - Ready for protocol upgrade flag set without going through memory barrier 
+- [7968](https://github.com/vegaprotocol/vega/issues/7968) - Ready for protocol upgrade flag set without going through memory barrier
 - [7962](https://github.com/vegaprotocol/vega/issues/7962) - Set `isValidator` when loading from a checkpoint
 - [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
 - [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
@@ -56,6 +56,7 @@
 - [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
 - [7940](https://github.com/vegaprotocol/vega/issues/7940) - Enhance validation of tendermint public keys
 - [7930](https://github.com/vegaprotocol/vega/issues/7930) - Fix typo in the `Vegavisor` configuration and improve Visor binaries runner logging
+- [7981](https://github.com/vegaprotocol/vega/issues/7981) - Ensure LP order events are not sent when nothing changes
 
 
 

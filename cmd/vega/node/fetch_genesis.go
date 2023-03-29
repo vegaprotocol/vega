@@ -24,7 +24,7 @@ import (
 )
 
 func genesisDocHTTPFromURL(genesisFilePath string) (*tmtypes.GenesisDoc, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, genesisFilePath, nil)
 	if err != nil {
@@ -69,7 +69,7 @@ func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *ge
 }
 
 func fetchData(path string) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, path, nil)
 	if err != nil {
