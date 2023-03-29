@@ -410,8 +410,8 @@ func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.U
 	return nil
 }
 
-// addDeterministicID will build the command id and .
-// the command id is built using the signature of the proposer of the command
+// addDeterministicID will build the command ID
+// the command ID is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded.
 func addDeterministicID(

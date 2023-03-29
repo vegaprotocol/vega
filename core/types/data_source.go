@@ -61,9 +61,9 @@ func (s *DataSourceDefinitionInternalx) DeepClone() dataSourceType {
 func (s *DataSourceDefinitionInternalx) String() string {
 	if s.Internal != nil {
 		// Does not return the type of the internal data source, becase the base object
-		// definitions are located in core/vega/protos/ and do not access the local intrface
+		// definitions are located in core/vega/protos/ and do not access the local interface
 		// and accessing it will lead to cycle import.
-		return fmt.Sprintf("external(%s)", s.Internal.String())
+		return fmt.Sprintf("internal(%s)", s.Internal.String())
 	}
 
 	return ""
