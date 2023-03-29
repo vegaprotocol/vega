@@ -41,3 +41,15 @@ Feature: Close a filled order twice
       | sellSideProvider | sell-provider-1 | unable to find the order in the market |
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     Then the cumulated balance for all accounts should be worth "200200000"
+
+    When the parties place the following orders with ticks:
+      | party            | market id | side | volume | price | resulting trades | type       | tif     | reference  | only   |
+      | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_GTC | postonly-1 | post   |
+      | buySideProvider  | ETH/DEC19 | buy  | 10     | 120   | 1                | TYPE_LIMIT | TIF_GTC | reduce-1   | reduce |
+
+    # When the parties place the following orders with ticks:
+    #   | party            | market id | side | volume | price | resulting trades | type       | tif     | reference | only   |error                                      |
+    #   | sellSideProvider | ETH/DEC19 | sell | 10     | 120   | 0                | TYPE_LIMIT | TIF_FOK | postonly-2| post   |OrderError:  |
+    # Then the parties amend the following orders:
+    #   | party | reference   | price | size delta | tif     | error                                      |
+    #   | myboi | myboi-ref-1 | 0     | 0          | TIF_FOK | OrderError: Cannot amend TIF to FOK or IOC |
