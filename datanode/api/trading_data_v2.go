@@ -2466,6 +2466,10 @@ func (t *tradingDataServiceV2) estimateFee(
 		return nil, errors.Wrapf(ErrInvalidOrderPrice, "overflowed: %s", priceS)
 	}
 
+	if price.IsNegative() || price.IsZero() {
+		return nil, formatE(ErrInvalidOrderPrice)
+	}
+
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
 		return nil, errors.Wrap(ErrScalingPriceFromMarketToAsset, err.Error())
@@ -2574,6 +2578,9 @@ func (t *tradingDataServiceV2) estimateMargin(
 	}
 
 	price, _ := num.UintFromDecimal(priceD)
+	if price.IsNegative() || price.IsZero() {
+		return nil, formatE(ErrInvalidOrderPrice)
+	}
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
 		return nil, errors.Wrap(ErrScalingPriceFromMarketToAsset, err.Error())
@@ -2632,19 +2639,17 @@ func (t *tradingDataServiceV2) ListNetworkParameters(ctx context.Context, req *v
 func (t *tradingDataServiceV2) GetNetworkParameter(ctx context.Context, req *v2.GetNetworkParameterRequest) (*v2.GetNetworkParameterResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkParameter")()
 
-	nps, _, err := t.networkParameterService.GetAll(ctx, entities.CursorPagination{})
+	v, err := t.networkParameterService.GetByKey(ctx, req.Key)
 	if err != nil {
 		return nil, formatE(ErrGetNetworkParameters, err)
 	}
 
 	var np *vega.NetworkParameter
-	for _, v := range nps {
-		if req.Key == v.Key {
-			np = v.ToProto()
-			break
-		}
-	}
+	if req.Key != v.Key {
+		return nil, formatE(ErrNetworkParameterNotFound, errors.Wrapf(err, "network parameter: %s", req.Key))
 
+	}
+	np = v.ToProto()
 	return &v2.GetNetworkParameterResponse{
 		NetworkParameter: np,
 	}, nil

@@ -24,6 +24,8 @@
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
 - [8001](https://github.com/vegaprotocol/vega/issues/8001) - Fix issues with order subscriptions
 - [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
+- [7995](https://github.com/vegaprotocol/vega/issues/7995) - Validate order price input to `estimateFee` and `estimateMargin`
+- [8011](https://github.com/vegaprotocol/vega/issues/8011) - Return a not found error for an invalid network parameter key for the API
 
 
 ## 0.70.0

@@ -243,6 +243,8 @@ var (
 	ErrSignaturesGetByTxHash = errors.New("failed to get signatures for tx hash")
 	// NetworkParamaters...
 	ErrNetworkParametersGetByTxHash = errors.New("failed to get network parameters for tx hash")
+	ErrNetworkParameterNotFound     = errors.New("network parameter not found")
+
 	// KeyRotations...
 	ErrKeyRotationsGetByTxHash = errors.New("failed to get key rotations for tx hash")
 	// EthereumKeyRotations...
@@ -339,8 +341,9 @@ var errorMap = map[string]int32{
 	//   ErrBlockchainGenesisTime.Error():   90003,
 	ErrAccountServiceGetBalances.Error(): 90004,
 	// Network limits
-	ErrGetNetworkLimits.Error():     100001,
-	ErrGetNetworkParameters.Error(): 100002,
+	ErrGetNetworkLimits.Error():         100001,
+	ErrGetNetworkParameters.Error():     100002,
+	ErrNetworkParameterNotFound.Error(): 100003,
 	// Node
 	ErrNodeServiceGetNodes.Error():    110001,
 	ErrNodeServiceGetNodeData.Error(): 110002,
