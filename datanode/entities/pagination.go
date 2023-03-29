@@ -113,6 +113,10 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	var err error
 	var forwardOffset, backwardOffset *offset
 
+	if cp.Before != nil && cp.After != nil {
+		return CursorPagination{}, errors.New("cannot set both a before and after cursor")
+	}
+
 	if cp.First != nil {
 		forwardOffset = &offset{
 			Limit: cp.First,

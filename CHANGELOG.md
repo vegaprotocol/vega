@@ -24,6 +24,7 @@
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
 - [8001](https://github.com/vegaprotocol/vega/issues/8001) - Fix issues with order subscriptions
 - [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
+- [8012](https://github.com/vegaprotocol/vega/issues/8012) - Ensure client do not specify both a before and after cursor
 
 
 ## 0.70.0
