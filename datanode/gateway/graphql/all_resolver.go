@@ -41,7 +41,7 @@ func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int)
 	}
 	orderReq := &v2.GetOrderRequest{
 		OrderId: id,
-		Version: &v,
+		Version: v,
 	}
 	order, err := r.clt2.GetOrder(ctx, orderReq)
 	if err != nil {
