@@ -4,7 +4,7 @@ This is a guide to replay a chain using the backup of an existing chain (e.g. Te
 
 ## How it works
 
-A Tendermint Core and Vega Core node store their configuration and data to disk by default at `$HOME/.tendermint` and `$HOME/.vega`. When you start new instances of those nodes using a copy of these directories as their home, Tendermint re-submits (replays) historical blocks/transactions from the genesis height to Vega Core.
+A Tendermint Core and Vega Core node store their configuration and data to disk by default at `$HOME/.cometbft` and `$HOME/.vega`. When you start new instances of those nodes using a copy of these directories as their home, Tendermint re-submits (replays) historical blocks/transactions from the genesis height to Vega Core.
 
 ## Prerequisites
 
