@@ -13,17 +13,20 @@ type orderInfo struct {
 	price *num.Uint
 }
 
-func EstimateLiquidationLevel(sizePosition int64, activeOrders []*vega.Order, currentPrice num.Decimal, collateralAvailable num.Uint, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
+func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, activeOrders []*vega.Order, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
+	if sizePosition == 0 {
+		return num.DecimalOne(), nil
+	}
 	openVolume := num.DecimalFromInt64(sizePosition).Div(positionFactor)
 
 	buyOrders := make([]orderInfo, 0, len(activeOrders))
 	sellOrders := make([]orderInfo, 0, len(activeOrders))
-	liquidationPrice := num.DecimalZero()
+	openVolumeLiquidationPrice := num.DecimalZero()
 	for _, o := range activeOrders {
 		r := o.GetRemaining()
 		p, e := num.UintFromString(o.GetPrice(), 10)
 		if e {
-			return liquidationPrice, fmt.Errorf("could not parse %s to Uint", o.GetPrice())
+			return openVolumeLiquidationPrice, fmt.Errorf("could not parse %s to Uint", o.GetPrice())
 		}
 		s := o.GetSide()
 		ord := orderInfo{size: r, price: p}
@@ -42,15 +45,16 @@ func EstimateLiquidationLevel(sizePosition int64, activeOrders []*vega.Order, cu
 	})
 
 	// calculate liquidation price for position itself
-
-	slippage_factor := CalculateSlippageFactor(openVolume, linearSlippageFactor, quadraticSlippageFactor)
-
 	rf := riskFactorLong
 	if sizePosition < 0 {
 		rf = riskFactorShort
 	}
 
-	liquidationPrice = collateralAvailable.ToDecimal().Sub(openVolume.Mul(currentPrice)).Div(slippage_factor.Add(openVolume.Abs().Mul(rf)).Sub(openVolume))
+	denominator := calculateSlippageFactor(openVolume, linearSlippageFactor, quadraticSlippageFactor).Add(openVolume.Abs().Mul(rf)).Sub(openVolume)
+	if denominator.IsZero() {
+		return num.DecimalZero(), fmt.Errorf("liquidation price not defined")
+	}
+	openVolumeLiquidationPrice = collateralAvailable.Sub(openVolume.Mul(currentPrice)).Div(denominator)
 
-	return liquidationPrice, nil
+	return num.MaxD(openVolumeLiquidationPrice, num.DecimalZero()), nil
 }

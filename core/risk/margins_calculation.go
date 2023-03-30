@@ -130,11 +130,11 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	return newMarginLevels(maintenanceMargin, e.scalingFactorsUint)
 }
 
-func CalculateMaintenanceMarginWithSlippageFactors(sizePosition, sizeBuys, sizeSells int64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal, auction bool) num.Decimal {
-	return computeMaintenanceMargin(sizePosition, sizeBuys, sizeSells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, auction, true, true, num.MaxUint(), num.MaxUint())
+func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, sizeBuys, sizeSells uint64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal, auction bool) num.Decimal {
+	return computeMaintenanceMargin(sizePosition, int64(sizeBuys), int64(sizeSells), buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, auction, true, true, num.MaxUint(), num.MaxUint())
 }
 
-func CalculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor num.Decimal) num.Decimal {
+func calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor num.Decimal) num.Decimal {
 	return linearSlippageFactor.Mul(slippageVolume.Abs()).Add(quadraticSlippageFactor.Mul(slippageVolume.Mul(slippageVolume)))
 }
 
@@ -155,7 +155,7 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 	// marginMaintenanceLng will be 0 by default
 	if riskiestLng.IsPositive() {
 		slippageVolume := num.MaxD(openVolume, num.DecimalZero())
-		slippageCap := marketObservable.Mul(CalculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor))
+		slippageCap := marketObservable.Mul(calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor))
 		if auction {
 			marginMaintenanceLng = slippageCap.Add(slippageVolume.Mul(marketObservable.Mul(riskFactorLong)))
 			maintenanceMarginLongOpenOrders := buySumProduct.Div(positionFactor).Mul(riskFactorLong)
@@ -192,9 +192,10 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 				num.DecimalZero(),
 				slippageCap,
 			).Add(slippageVolume.Mul(riskFactorLong).Mul(marketObservable))
-
-			maintenanceMarginLongOpenOrders := num.DecimalFromInt64(buySize).Div(positionFactor).Mul(riskFactorLong).Mul(marketObservable)
-			marginMaintenanceLng = marginMaintenanceLng.Add(maintenanceMarginLongOpenOrders)
+			if buySize > 0 {
+				maintenanceMarginLongOpenOrders := num.DecimalFromInt64(buySize).Div(positionFactor).Mul(riskFactorLong).Mul(marketObservable)
+				marginMaintenanceLng = marginMaintenanceLng.Add(maintenanceMarginLongOpenOrders)
+			}
 		}
 	}
 	// calculate margin maintenance short only if riskiest is < 0
@@ -202,7 +203,7 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 	if riskiestSht.IsNegative() {
 		slippageVolume := num.MinD(openVolume, num.DecimalZero())
 		absSlippageVolume := slippageVolume.Abs()
-		slippageCap := marketObservable.Mul(CalculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor))
+		slippageCap := marketObservable.Mul(calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor))
 		if auction {
 			marginMaintenanceSht = slippageCap.Add(absSlippageVolume.Mul(marketObservable.Mul(riskFactorShort)))
 			maintenanceMarginShortOpenOrders := sellSumProduct.Div(positionFactor).Mul(riskFactorShort)
@@ -237,9 +238,10 @@ func computeMaintenanceMargin(sizePosition, buySize, sellSize int64, buySumProdu
 				num.DecimalZero(),
 				slippageCap,
 			).Add(absSlippageVolume.Mul(marketObservable).Mul(riskFactorShort))
-
-			maintenanceMarginShortOpenOrders := num.DecimalFromInt64(sellSize).Div(positionFactor).Abs().Mul(marketObservable).Mul(riskFactorShort)
-			marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
+			if sellSize > 0 {
+				maintenanceMarginShortOpenOrders := num.DecimalFromInt64(sellSize).Div(positionFactor).Abs().Mul(marketObservable).Mul(riskFactorShort)
+				marginMaintenanceSht = marginMaintenanceSht.Add(maintenanceMarginShortOpenOrders)
+			}
 		}
 	}
 

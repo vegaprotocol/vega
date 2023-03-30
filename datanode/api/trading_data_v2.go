@@ -2634,8 +2634,8 @@ func (t *tradingDataServiceV2) calcualtePositionMarginRange(
 		return nil, nil, errors.Wrapf(err, "parsing quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor)
 	}
 
-	min := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, int64(buys), int64(sells), buySumProduct, sellSumProduct, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, auction)
-	max := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, int64(buys), int64(sells), buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, auction)
+	min := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buys, sells, buySumProduct, sellSumProduct, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), rf.Long, rf.Short, auction)
+	max := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buys, sells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, rf.Long, rf.Short, auction)
 
 	return implyMarginLevels(min, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", market, asset), implyMarginLevels(max, mkt.TradableInstrument.MarginCalculator.ScalingFactors, "", market, asset), nil
 }

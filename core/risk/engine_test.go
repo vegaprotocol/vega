@@ -750,6 +750,245 @@ func testInitialMarginRequirement(t *testing.T) {
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(uint64(initialMarginAuction))))
 }
 
+func TestMarinenanceMarign(t *testing.T) {
+	relativeTolerance := num.DecimalFromFloat(0.000001)
+
+	testCases := []struct {
+		markPrice               float64
+		positionFactor          float64
+		positionSize            int64
+		buySize                 uint64
+		sellSize                uint64
+		buySumProduct           float64
+		sellSumProduct          float64
+		linearSlippageFactor    float64
+		quadraticSlippageFactor float64
+		riskFactorLong          float64
+		riskFactorShort         float64
+		auction                 bool
+	}{
+		{
+			markPrice:               123.4,
+			positionFactor:          1,
+			positionSize:            40000,
+			buySize:                 1,
+			sellSize:                1,
+			buySumProduct:           0,
+			sellSumProduct:          0,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.1,
+			auction:                 false,
+		},
+		{
+			markPrice:               123.4,
+			positionFactor:          10,
+			positionSize:            40000,
+			buySize:                 1,
+			sellSize:                1,
+			buySumProduct:           111.1,
+			sellSumProduct:          133.3,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.1,
+			auction:                 true,
+		},
+		{
+			markPrice:               123.4,
+			positionFactor:          10,
+			positionSize:            0,
+			buySize:                 1,
+			sellSize:                1,
+			buySumProduct:           111.1,
+			sellSumProduct:          133.3,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.1,
+			auction:                 true,
+		},
+		{
+			markPrice:               123.4,
+			positionFactor:          10,
+			positionSize:            0,
+			buySize:                 10000,
+			sellSize:                30000,
+			buySumProduct:           111.1,
+			sellSumProduct:          133.3,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.2,
+			auction:                 false,
+		},
+		{
+			markPrice:               123.4,
+			positionFactor:          100,
+			positionSize:            0,
+			buySize:                 40000,
+			sellSize:                30000,
+			buySumProduct:           111.1,
+			sellSumProduct:          133.3,
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.1,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.2,
+			auction:                 false,
+		},
+	}
+
+	for i, tc := range testCases {
+		markPrice := num.DecimalFromFloat(tc.markPrice)
+		positionFactor := num.DecimalFromFloat(tc.positionFactor)
+		buySumProduct := num.DecimalFromFloat(tc.buySumProduct)
+		sellSumProduct := num.DecimalFromFloat(tc.sellSumProduct)
+
+		linearSlippageFactor := num.DecimalFromFloat(tc.linearSlippageFactor)
+		quadraticSlippageFactor := num.DecimalFromFloat(tc.quadraticSlippageFactor)
+		riskFactorLong := num.DecimalFromFloat(tc.riskFactorLong)
+		riskFactorShort := num.DecimalFromFloat(tc.riskFactorShort)
+
+		openVolume := num.DecimalFromInt64(tc.positionSize).Div(positionFactor).Abs()
+		expectedMarginShort, expectedMarginLong := num.DecimalZero(), num.DecimalZero()
+		slippage := markPrice.Mul(openVolume.Mul(linearSlippageFactor).Add(openVolume.Mul(openVolume).Mul(quadraticSlippageFactor)))
+		if tc.positionSize-int64(tc.sellSize) < 0 {
+			expectedMarginShort = slippage.Add(openVolume.Mul(markPrice).Mul(riskFactorShort))
+			orders := num.DecimalFromInt64(int64(tc.sellSize)).Div(positionFactor).Abs().Mul(riskFactorShort)
+			if tc.auction {
+				expectedMarginShort = expectedMarginShort.Add(orders.Mul(sellSumProduct))
+			} else {
+				expectedMarginShort = expectedMarginShort.Add(orders.Mul(markPrice))
+			}
+		}
+		if tc.positionSize+int64(tc.buySize) > 0 {
+			expectedMarginLong = slippage.Add(openVolume.Mul(markPrice).Mul(riskFactorLong))
+			orders := num.DecimalFromInt64(int64(tc.buySize)).Div(positionFactor).Abs().Mul(riskFactorLong)
+			if tc.auction {
+				expectedMarginLong = expectedMarginLong.Add(orders.Mul(buySumProduct))
+			} else {
+				expectedMarginLong = expectedMarginLong.Add(orders.Mul(markPrice))
+			}
+		}
+		expectedMargin := num.MaxD(expectedMarginShort, expectedMarginLong)
+
+		actualMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, tc.buySize, tc.sellSize, buySumProduct, sellSumProduct, markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, tc.auction)
+
+		require.True(t, expectedMargin.Div(actualMargin).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance), fmt.Sprintf("Test case %v: expectedMargin=%s, actualMargin:=%s", i+1, expectedMargin, actualMargin))
+	}
+}
+
+func TestLiquidationPriceWithNoOrders(t *testing.T) {
+	relativeTolerance := num.DecimalFromFloat(0.000001)
+
+	testCases := []struct {
+		markPrice               float64
+		positionFactor          float64
+		positionSize            int64
+		linearSlippageFactor    float64
+		quadraticSlippageFactor float64
+		riskFactorLong          float64
+		riskFactorShort         float64
+		collateralFactor        float64
+		expectError             bool
+	}{
+		{
+			markPrice:               123.4,
+			positionFactor:          1,
+			positionSize:            40000,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        1.7,
+		},
+		{
+			markPrice:               1234.5,
+			positionFactor:          10,
+			positionSize:            40000,
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        1.1,
+		},
+		{
+			markPrice:               1234.5,
+			positionFactor:          100,
+			positionSize:            -40000,
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.01,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        3,
+		},
+		{
+			markPrice:               1234.5,
+			positionFactor:          1000,
+			positionSize:            -40000,
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.1,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        0.2,
+		},
+		{
+			markPrice:               1,
+			positionFactor:          1,
+			positionSize:            1,
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          1,
+			riskFactorShort:         1,
+			collateralFactor:        2.5,
+			expectError:             true,
+		},
+	}
+
+	for i, tc := range testCases {
+		markPrice := num.DecimalFromFloat(tc.markPrice)
+		positionFactor := num.DecimalFromFloat(tc.positionFactor)
+
+		linearSlippageFactor := num.DecimalFromFloat(tc.linearSlippageFactor)
+		quadraticSlippageFactor := num.DecimalFromFloat(tc.quadraticSlippageFactor)
+		riskFactorLong := num.DecimalFromFloat(tc.riskFactorLong)
+		riskFactorShort := num.DecimalFromFloat(tc.riskFactorShort)
+
+		maintenanceMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, 0, 0, num.DecimalZero(), num.DecimalZero(), markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, false)
+
+		liquidationPrice, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, markPrice, maintenanceMargin, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		if tc.expectError {
+			require.Error(t, err)
+			continue
+		}
+		require.NoError(t, err)
+
+		liquidationPriceFp := liquidationPrice.InexactFloat64()
+		require.GreaterOrEqual(t, liquidationPriceFp, 0.0)
+
+		require.True(t, markPrice.Div(liquidationPrice).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance))
+
+		collateral := maintenanceMargin.Mul(num.DecimalFromFloat(tc.collateralFactor))
+
+		liquidationPrice, err = risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		require.NoError(t, err)
+		require.False(t, liquidationPrice.IsNegative())
+
+		marginAtLiquidationPrice := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, 0, 0, num.DecimalZero(), num.DecimalZero(), liquidationPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, false)
+		openVolume := num.DecimalFromInt64(tc.positionSize).Div(positionFactor)
+		mtmLoss := liquidationPrice.Sub(markPrice).Mul(openVolume)
+		collateralAfterLoss := collateral.Add(mtmLoss)
+
+		if !marginAtLiquidationPrice.IsZero() {
+			require.True(t, collateralAfterLoss.Div(marginAtLiquidationPrice).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance), fmt.Sprintf("Test case %v: collateralAfterLoss=%s, marginAtLiquidationPrice:=%s", i+1, collateralAfterLoss, marginAtLiquidationPrice))
+		} else {
+			require.True(t, liquidationPrice.IsZero(), fmt.Sprintf("Test case %v:", i+1))
+			require.True(t, collateralAfterLoss.IsNegative(), fmt.Sprintf("Test case %v:", i+1))
+		}
+	}
+}
+
 func getTestEngine(t *testing.T) *testEngine {
 	t.Helper()
 	cpy := riskFactors
