@@ -31,7 +31,7 @@ type StartCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	TendermintHome string `long:"tendermint-home" description:"Directory for tendermint config and data (default: $HOME/.tendermint)"`
+	TendermintHome string `long:"tendermint-home" description:"Directory for tendermint config and data (default: $HOME/.cometbft)"`
 
 	Network    string `long:"network" description:"The network to start this node with"`
 	NetworkURL string `long:"network-url" description:"The URL to a genesis file to start this node with"`
@@ -92,7 +92,7 @@ func (cmd *StartCmd) Execute([]string) error {
 	}
 
 	if len(startCmd.TendermintHome) <= 0 {
-		startCmd.TendermintHome = "$HOME/.tendermint"
+		startCmd.TendermintHome = "$HOME/.cometbft"
 	}
 
 	return (&node.Command{

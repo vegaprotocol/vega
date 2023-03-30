@@ -35,13 +35,13 @@ var genesisCmd Cmd
 func Genesis(ctx context.Context, parser *flags.Parser) error {
 	genesisCmd = Cmd{
 		Generate: generateCmd{
-			TmHome: "$HOME/.tendermint",
+			TmHome: "$HOME/.cometbft",
 		},
 		Update: updateCmd{
-			TmHome: "$HOME/.tendermint",
+			TmHome: "$HOME/.cometbft",
 		},
 		LoadCheckpoint: loadCheckpointCmd{
-			TmHome: "$HOME/.tendermint",
+			TmHome: "$HOME/.cometbft",
 		},
 	}
 

@@ -43,7 +43,7 @@ type InitCmd struct {
 	Force bool `short:"f" long:"force" description:"Erase existing vega configuration at the specified path"`
 
 	NoTendermint   bool   `long:"no-tendermint" description:"Disable tendermint configuration generation"`
-	TendermintHome string `long:"tendermint-home" required:"true" description:"Directory for tendermint config and data" default:"$HOME/.tendermint"`
+	TendermintHome string `long:"tendermint-home" required:"true" description:"Directory for tendermint config and data" default:"$HOME/.cometbft"`
 	TendermintKey  string `long:"tendermint-key" description:"Key type to generate privval file with" choice:"ed25519" choice:"secp256k1" default:"ed25519"`
 }
 
