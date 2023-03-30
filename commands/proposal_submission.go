@@ -647,6 +647,9 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
 		// If the data source type is internal - check only filters content.
+		if name == "data_source_spec_for_settlement_data" {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.external", parentProperty, name), ErrIsRequired)
+		}
 
 		t := tp.Internal.GetTime()
 		if t == nil {
