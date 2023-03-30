@@ -427,7 +427,9 @@ func (m *Market) applyBondPenaltiesAndCancelLPs(
 		if err != nil {
 			m.log.Error("Failed to perform bond slashing", logging.Error(err))
 		}
-		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+		if len(transfers) > 0 {
+			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+		}
 	}
 
 	// now we can handle the liquidated parties

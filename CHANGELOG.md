@@ -30,6 +30,7 @@
 - [8012](https://github.com/vegaprotocol/vega/issues/8012) - Ensure client do not specify both a before and after cursor
 - [8017](https://github.com/vegaprotocol/vega/issues/8017) - Return an error when requesting order with negative version
 - [8020](https://github.com/vegaprotocol/vega/issues/8020) - Update default `tendermint` home path to `cometbft`
+- [7919](https://github.com/vegaprotocol/vega/issues/7919) - Avoid sending empty ledger movements
 
 
 ## 0.70.0

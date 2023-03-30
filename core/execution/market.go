@@ -839,7 +839,10 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	// unregister state-variables
 	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
-	m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
+	if len(clearMarketTransfers) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
+	}
+
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -887,7 +890,9 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
-	m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	if len(transfers) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	}
 
 	// final distribution of liquidity fees
 	m.distributeLiquidityFees(ctx)
@@ -2047,7 +2052,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		return orderUpdates, err
 	}
 	// send transfer to buffer
-	m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	if len(tresps) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	}
 
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
@@ -2298,7 +2305,7 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		return nil
 	}
 	// sending response to buffer
-	if response != nil {
+	if len(response) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, response))
 	}
 
@@ -3374,7 +3381,9 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
 	// then send the responses
-	m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	if len(tresps) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	}
 }
 
 func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
@@ -3450,7 +3459,10 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
 
-	m.broker.Send(events.NewLedgerMovements(ctx, resp))
+	if len(resp) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, resp))
+	}
+
 	return nil
 }
 
