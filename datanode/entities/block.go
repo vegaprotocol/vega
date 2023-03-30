@@ -13,10 +13,7 @@
 package entities
 
 import (
-	"encoding/hex"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/vega/core/events"
 )
@@ -30,19 +27,4 @@ type Block struct {
 	VegaTime time.Time
 	Height   int64
 	Hash     []byte
-}
-
-func BlockFromTimeUpdate(te TimeUpdateEvent) (*Block, error) {
-	hash, err := hex.DecodeString(te.TraceID())
-	if err != nil {
-		return nil, errors.Wrapf(err, "Trace ID is not valid hex string, trace ID:%s", te.TraceID())
-	}
-
-	// Postgres only stores timestamps in microsecond resolution
-	block := Block{
-		VegaTime: te.Time().Truncate(time.Microsecond),
-		Hash:     hash,
-		Height:   te.BlockNr(),
-	}
-	return &block, err
 }

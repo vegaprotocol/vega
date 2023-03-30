@@ -260,7 +260,7 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 
 	start := time.Now()
 
-	currentStateSnapshot, historySnapshots, err := d.copyMoreRecentHistoryIntoDir(ctx, contiguousHistory, datanodeBlockSpan, d.snapshotsCopyFromPath)
+	currentStateSnapshot, historySnapshots, err := d.copyLaterSegmentsIntoDir(ctx, contiguousHistory, datanodeBlockSpan, d.snapshotsCopyFromPath)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
 	}
@@ -347,29 +347,26 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 	return nil
 }
 
-// copyMoreRecentHistoryIntoDir copies all contiguous history data later than that already in the datanode into the target directory.
-func (d *Service) copyMoreRecentHistoryIntoDir(ctx context.Context, contiguousHistory ContiguousHistory,
-	blockSpan sqlstore.DatanodeBlockSpan, targetDir string) (snapshot.CurrentState, []snapshot.History,
+// copyLaterSegmentsIntoDir copies all contiguous history data later than that already in the datanode into the target directory.
+func (d *Service) copyLaterSegmentsIntoDir(ctx context.Context, contiguousHistory ContiguousHistory,
+	blockSpan sqlstore.DatanodeBlockSpan, targetDir string) ([]snapshot.CurrentState, []snapshot.History,
 	error,
 ) {
-	var highestCurrentStateSnapshot snapshot.CurrentState
+	currentStateSnapshots := make([]snapshot.CurrentState, 0, len(contiguousHistory.SegmentsOldestFirst))
 	contiguousHistorySnapshots := make([]snapshot.History, 0, len(contiguousHistory.SegmentsOldestFirst))
 	for _, history := range contiguousHistory.SegmentsOldestFirst {
 		if history.GetToHeight() > blockSpan.ToHeight {
 			currentStateSnaphot, historySnapshot, err := d.extractSnapshotDataFromHistory(ctx, history, targetDir)
 			if err != nil {
-				return snapshot.CurrentState{}, nil, fmt.Errorf("failed to extract data from history:%w", err)
+				return nil, nil, fmt.Errorf("failed to extract data from history:%w", err)
 			}
 
-			if currentStateSnaphot.Height > highestCurrentStateSnapshot.Height {
-				highestCurrentStateSnapshot = currentStateSnaphot
-			}
-
+			currentStateSnapshots = append(currentStateSnapshots, currentStateSnaphot)
 			contiguousHistorySnapshots = append(contiguousHistorySnapshots, historySnapshot)
 		}
 	}
 
-	return highestCurrentStateSnapshot, contiguousHistorySnapshots, nil
+	return currentStateSnapshots, contiguousHistorySnapshots, nil
 }
 
 func (d *Service) extractSnapshotDataFromHistory(ctx context.Context, history Segment, targetDir string) (snapshot.CurrentState, snapshot.History, error) {

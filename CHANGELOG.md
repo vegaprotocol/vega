@@ -37,6 +37,8 @@
 - [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
 - [8003](https://github.com/vegaprotocol/vega/issues/8003) - Fix `ListGovernanceData` does not honour `TYPE_ALL`
+- [8057](https://github.com/vegaprotocol/vega/issues/8057) - Load history and current state in one transaction   
+- [8058](https://github.com/vegaprotocol/vega/issues/8058) - Continuous aggregates should be updated according to the watermark and span of history loaded   
 - [8001](https://github.com/vegaprotocol/vega/issues/8001) - Fix issues with order subscriptions
 - [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
 - [7995](https://github.com/vegaprotocol/vega/issues/7995) - Validate order price input to `estimateFee` and `estimateMargin`

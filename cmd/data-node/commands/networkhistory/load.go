@@ -95,7 +95,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.NetworkHistory.Snapshot, connPool,
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(log, cmd.Config.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+			if err = sqlstore.MigrateUpToSchemaVersion(log, cmd.Config.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
 			}
 			return nil

@@ -33,6 +33,7 @@ import (
 )
 
 var (
+	config           sqlstore.Config
 	connectionSource *sqlstore.ConnectionSource
 	testDBPort       int
 	testDBSocketDir  string
@@ -52,11 +53,8 @@ func TestMain(m *testing.M) {
 		testDBPort = cfg.ConnectionConfig.Port
 		testDBSocketDir = cfg.ConnectionConfig.SocketDir
 		connectionSource = source
+		config = cfg
 	}, postgresRuntimePath, sqlstore.EmbedMigrations)
-}
-
-func NewTestConfig() sqlstore.Config {
-	return databasetest.NewTestConfig(testDBPort, "", testDBSocketDir)
 }
 
 func generateTxHash() entities.TxHash {

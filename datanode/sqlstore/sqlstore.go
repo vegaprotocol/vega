@@ -108,7 +108,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	return nil
 }
 
-func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
+func MigrateUpToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
 	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 	goose.SetVerbose(bool(config.VerboseMigration))

@@ -32,7 +32,7 @@ type LoadLog interface {
 	Info(msg string, fields ...zap.Field)
 }
 
-func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStateSnapshot CurrentState,
+func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStateSnapshots []CurrentState,
 	contiguousHistory []History, relSnapshotsCopyFromPath string, connConfig sqlstore.ConnectionConfig, withIndexesAndOrderTriggers, verbose bool,
 ) (LoadResult, error) {
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, b.connPool)
@@ -70,8 +70,12 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 
 	log.Info("copying data into database", logging.Int64("database version", dbMetaData.DatabaseVersion))
 
-	// History first
 	var totalRowsCopied int64
+
+	heightToCurrentStateSnapshot := map[int64]CurrentState{}
+	for _, currentState := range currentStateSnapshots {
+		heightToCurrentStateSnapshot[currentState.Height] = currentState
+	}
 
 	historyTableLastTimestampMap, err := b.getLastHistoryTimestampMap(ctx, dbMetaData)
 	if err != nil {
@@ -115,26 +119,22 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 			log.Infof("finished migrating database from version %d to version %d", currentDatabaseVersion, targetDatabaseVersion)
 		}
 
-		log.Infof("loading all history segments with database version: %d", targetDatabaseVersion)
-		rowsCopied, err := b.loadHistorySegments(ctx, log, dbVersionToHistorySegments[targetDatabaseVersion], withIndexesAndOrderTriggers,
-			relSnapshotsCopyFromPath, dbMetaData, historyTableLastTimestampMap)
+		log.Infof("loading all segments with schema version: %d", targetDatabaseVersion)
+
+		historySegmentsForSchemaVersion := dbVersionToHistorySegments[targetDatabaseVersion]
+		currentStateSnapshotForSchemaVersion := heightToCurrentStateSnapshot[historySegmentsForSchemaVersion[len(historySegmentsForSchemaVersion)-1].HeightTo]
+
+		rowsCopied, err := b.loadSegments(ctx, log, historySegmentsForSchemaVersion, withIndexesAndOrderTriggers,
+			relSnapshotsCopyFromPath, dbMetaData, historyTableLastTimestampMap, currentStateSnapshotForSchemaVersion)
 		if err != nil {
-			return LoadResult{}, fmt.Errorf("failed to load history segments: %w", err)
+			return LoadResult{}, fmt.Errorf("failed to load segments for database version %d: %w", targetDatabaseVersion, err)
 		}
 
 		totalRowsCopied += rowsCopied
 	}
 
-	rowsCopied, err := b.loadCurrentState(ctx, log, currentStateSnapshot, dbMetaData, relSnapshotsCopyFromPath,
-		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
-	if err != nil {
-		return LoadResult{}, fmt.Errorf("failed to load current state: %w", err)
-	}
-
-	totalRowsCopied += rowsCopied
-
-	err = b.recreateAllContinuousAggregateData(ctx, b.connPool)
 	log.Infof("recreating continuous aggregate data")
+	err = UpdateContinuousAggregateDataFromHighWaterMark(ctx, b.connPool, historyToHeight)
 	if err != nil {
 		return LoadResult{}, fmt.Errorf("failed to recreate continuous aggregate data: %w", err)
 	}
@@ -146,60 +146,10 @@ func (b *Service) LoadSnapshotData(ctx context.Context, log LoadLog, currentStat
 	}, nil
 }
 
-func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, currentStateSnapshot CurrentState,
-	dbMetaData DatabaseMetadata, relSnapshotsCopyFromPath string, withIndexesAndOrderTriggers bool,
+func (b *Service) loadSegments(ctx context.Context, log LoadLog, historySegments []History,
+	withIndexesAndOrderTriggers bool, relSnapshotsCopyFromPath string, dbMetaData DatabaseMetadata,
 	historyTableLastTimestampMap map[string]time.Time,
-) (int64, error) {
-	tx, err := b.connPool.Begin(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	// Rollback on a committed transaction has no effect
-	defer func() { _ = tx.Rollback(ctx) }()
-
-	constraintsSQL, err := removeConstraints(ctx, tx, log)
-	if err != nil {
-		return 0, fmt.Errorf("failed to remove constraints: %w", err)
-	}
-
-	indexes, err := dropAllIndexes(ctx, tx, log, dbMetaData, false, withIndexesAndOrderTriggers)
-	if err != nil {
-		return 0, fmt.Errorf("failed to drop all indexes: %w", err)
-	}
-
-	removedConstraintsAndIndexes := &constraintsAndIndexes{createConstraintsSQL: constraintsSQL, indexes: indexes}
-
-	if err = truncateCurrentStateTables(ctx, tx, dbMetaData); err != nil {
-		return 0, fmt.Errorf("failed to truncate current state tables: %w", err)
-	}
-
-	rowsCopied, err := b.loadSnapshot(ctx, tx, log, currentStateSnapshot, relSnapshotsCopyFromPath, dbMetaData,
-		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
-	if err != nil {
-		return 0, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
-	}
-
-	log.Infof("recreating dropped indexes")
-	err = createIndexes(ctx, tx, log, removedConstraintsAndIndexes.indexes)
-	if err != nil {
-		return 0, fmt.Errorf("failed to create indexes: %w", err)
-	}
-
-	log.Infof("restoring all constraints")
-	err = restoreAllConstraints(ctx, tx, removedConstraintsAndIndexes.createConstraintsSQL)
-	if err != nil {
-		return 0, fmt.Errorf("failed to restore all constraints: %w", err)
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	return rowsCopied, nil
-}
-
-func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historySegments []History, withIndexesAndOrderTriggers bool,
-	relSnapshotsCopyFromPath string, dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
+	currentStateSnapshot CurrentState,
 ) (int64, error) {
 	tx, err := b.connPool.Begin(ctx)
 	if err != nil {
@@ -220,13 +170,16 @@ func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historyS
 
 	removedConstraintsAndIndexes := &constraintsAndIndexes{createConstraintsSQL: constraintsSQL, indexes: indexes}
 
-	var totalRowsCopied int64
-	for _, history := range historySegments {
-		rowsCopied, err := b.loadSnapshot(ctx, tx, log, history, relSnapshotsCopyFromPath, dbMetaData, withIndexesAndOrderTriggers, historyTableLastTimestampMap)
-		if err != nil {
-			return 0, fmt.Errorf("failed to load history segment %s: %w", history, err)
-		}
-		totalRowsCopied += rowsCopied
+	historyRowsCopied, err := b.loadHistorySegments(ctx, log, tx, historySegments, withIndexesAndOrderTriggers,
+		relSnapshotsCopyFromPath, dbMetaData, historyTableLastTimestampMap)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load history segments: %w", err)
+	}
+
+	currentStateRowsCopied, err := b.loadCurrentState(ctx, log, tx, currentStateSnapshot, dbMetaData, relSnapshotsCopyFromPath,
+		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load current state: %w", err)
 	}
 
 	log.Infof("restoring indexes")
@@ -244,6 +197,38 @@ func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, historyS
 	err = tx.Commit(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return historyRowsCopied + currentStateRowsCopied, nil
+}
+
+func (b *Service) loadCurrentState(ctx context.Context, log LoadLog, conn sqlstore.Connection, currentStateSnapshot CurrentState,
+	dbMetaData DatabaseMetadata, relSnapshotsCopyFromPath string, withIndexesAndOrderTriggers bool,
+	historyTableLastTimestampMap map[string]time.Time,
+) (int64, error) {
+	if err := truncateCurrentStateTables(ctx, conn, dbMetaData); err != nil {
+		return 0, fmt.Errorf("failed to truncate current state tables: %w", err)
+	}
+
+	rowsCopied, err := b.loadSnapshot(ctx, conn, log, currentStateSnapshot, relSnapshotsCopyFromPath, dbMetaData,
+		withIndexesAndOrderTriggers, historyTableLastTimestampMap)
+	if err != nil {
+		return 0, fmt.Errorf("failed to load current state snapshot %s: %w", currentStateSnapshot, err)
+	}
+
+	return rowsCopied, nil
+}
+
+func (b *Service) loadHistorySegments(ctx context.Context, log LoadLog, conn sqlstore.Connection, historySegments []History, withIndexesAndOrderTriggers bool,
+	relSnapshotsCopyFromPath string, dbMetaData DatabaseMetadata, historyTableLastTimestampMap map[string]time.Time,
+) (int64, error) {
+	var totalRowsCopied int64
+	for _, history := range historySegments {
+		rowsCopied, err := b.loadSnapshot(ctx, conn, log, history, relSnapshotsCopyFromPath, dbMetaData, withIndexesAndOrderTriggers, historyTableLastTimestampMap)
+		if err != nil {
+			return 0, fmt.Errorf("failed to load history segment %s: %w", history, err)
+		}
+		totalRowsCopied += rowsCopied
 	}
 
 	return totalRowsCopied, nil
@@ -577,7 +562,7 @@ func copyHistoryTableDataIntoDatabase(ctx context.Context, tableMetaData TableMe
 
 	tag, err := vegaDbConn.Exec(ctx, copyQuery)
 	if err != nil {
-		return 0, fmt.Errorf("failed to copy data into hyper-table: %w", err)
+		return 0, fmt.Errorf("failed to copy data into hyper-table %s: %w", tableMetaData.Name, err)
 	}
 
 	return tag.RowsAffected(), nil
@@ -614,25 +599,70 @@ func createIndexes(ctx context.Context, vegaDbConn sqlstore.Connection,
 	return nil
 }
 
-func (b *Service) recreateAllContinuousAggregateData(ctx context.Context, vegaDbConn sqlstore.Connection) error {
-	continuousAggNameRows, err := vegaDbConn.Query(ctx, "SELECT view_name FROM timescaledb_information.continuous_aggregates;")
+func UpdateContinuousAggregateDataFromHighWaterMark(ctx context.Context, conn *pgxpool.Pool, toHeight int64) error {
+	toBlock, err := sqlstore.GetAtHeightUsingConnection(ctx, conn, toHeight)
 	if err != nil {
-		return fmt.Errorf("failed to get materialized view names: %w", err)
+		return fmt.Errorf("failed to get to block: %w", err)
 	}
 
-	defer continuousAggNameRows.Close()
+	dbMetaData, err := NewDatabaseMetaData(ctx, conn)
+	if err != nil {
+		return fmt.Errorf("failed to get database meta data: %w", err)
+	}
 
-	for continuousAggNameRows.Next() {
-		caggName := ""
-		err = continuousAggNameRows.Scan(&caggName)
+	for _, cagg := range dbMetaData.ContinuousAggregatesMetaData {
+		var err error
+		query := fmt.Sprintf(`SELECT COALESCE(
+    _timescaledb_internal.to_timestamp(_timescaledb_internal.cagg_watermark(%d)),
+    '-infinity'::timestamp with time zone);`, cagg.ID)
+		row := conn.QueryRow(ctx, query)
+
+		var highWatermark time.Time
+		err = row.Scan(&highWatermark)
 		if err != nil {
-			return fmt.Errorf("failed to scan continuous aggregate Name: %w", err)
+			return fmt.Errorf("failed to get high water mark: %w", err)
 		}
 
-		_, err = vegaDbConn.Exec(ctx, fmt.Sprintf("CALL refresh_continuous_aggregate('%s', NULL, NULL);;", caggName))
+		// Truncate the toTime down to latest complete cagg boundary
+		toTime := toBlock.VegaTime.Truncate(cagg.BucketInterval)
+
+		// When calling `refresh_continuous_aggregate` the refresh interval needs to be at least 2 times the bucket interval
+		if toTime.Sub(highWatermark) < 2*cagg.BucketInterval {
+			continue
+		}
+
+		fromString := "NULL"
+		if highWatermark.After(time.UnixMilli(0)) {
+			fromString, err = toStoredProcTimestampArg(highWatermark)
+			if err != nil {
+				return fmt.Errorf("failed to convert from timestamp %s to postgres string: %w", highWatermark, err)
+			}
+		}
+
+		toString, err := toStoredProcTimestampArg(toTime)
 		if err != nil {
-			return fmt.Errorf("failed to refresh continuous aggregate %s: %w", caggName, err)
+			return fmt.Errorf("failed to convert from timestamp %s to postgres string: %w", toTime, err)
+		}
+
+		_, err = conn.Exec(ctx, fmt.Sprintf("CALL refresh_continuous_aggregate('%s', %s, %s);;", cagg.Name, fromString, toString))
+		if err != nil {
+			return fmt.Errorf("failed to refresh continuous aggregate %s: %w", cagg.Name, err)
 		}
 	}
+
 	return nil
+}
+
+func toStoredProcTimestampArg(from time.Time) (string, error) {
+	t := pgtype.Timestamp{}
+	t.Set(from)
+	fromBytes, err := t.EncodeText(nil, []byte{})
+	if err != nil {
+		if err != nil {
+			return "", fmt.Errorf("failed to encode time: %w", err)
+		}
+	}
+
+	fromString := string(fromBytes)
+	return "'" + fromString + "'", nil
 }
