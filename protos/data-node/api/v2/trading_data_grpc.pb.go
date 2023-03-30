@@ -8,6 +8,7 @@ package v2
 
 import (
 	context "context"
+	httpbody "google.golang.org/genproto/googleapis/api/httpbody"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -401,6 +402,67 @@ type TradingDataServiceClient interface {
 	//
 	// List all entities created by transaction hash
 	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
+	// Export Network History as CSV
+	//
+	// Extract CSV table data from network history between two block heights.
+	//
+	// The requested block heights must fall on network history segment boundaries, which can
+	// be discovered by calling the API to list all network history segments. By default
+	// segments contain 1000 blocks. In that case ranges such as (1, 1000), (1001, 2000), (1, 3000)
+	// would all fall on segment boundaries and be valid.
+	//
+	// The generated CSV file is compressed into a ZIP file and returned, with the file name
+	// in the following format: <chain id>-<table name>-<start block>-<end block>.zip
+	//
+	// In gRPC, results are returned in a chunked stream of base64 encoded data.
+	//
+	// Through the REST gateway, the base64 data chunks are decoded and streamed as a
+	// `content-type: application/zip` HTTP response.
+	//
+	// The CSV exported data uses a comma as a DELIMITER between fields, and " for QUOTE-ing fields.
+	//
+	// If a value contains any of: DELIMITER, QUOTE, carriage return, or line feed then the whole
+	// value is prefixed and suffixed by the QUOTE character and any occurrence within
+	// the value of a QUOTE character preceded by another QUOTE.
+	//
+	// A NULL is output as the NULL parameter string and is not quoted, while a non-NULL value
+	// matching the NULL parameter string is quoted.
+	//
+	// For example, with the default settings, a NULL is written as an unquoted empty string,
+	// while an empty string data value is written with double quotes ("").
+	//
+	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
+	// Thus the files are not strictly one line per table row like text-format files.
+	//
+	// The first row of the CSV file is a header that allows you to identify the columns
+	// of subsequent rows.
+	//
+	// Usually the ZIP file will contain only a single CSV file. However it is possible that
+	// the (from_block, to_block) request spans over a range of blocks in which the underlying
+	// schema of the database changes. For example, a column may have been added, removed, or renamed.
+	//
+	// If this happens, the CSV file will be split at the point of the schema change and the zip
+	// file will contain multiple CSV files, with a potentially different set of headers. The
+	// 'version' number of the database schema is part of the in the CSV filename:
+	//
+	//	<chain id>-<table name>-<schema version>-<start block>-<end block>.zip
+	//
+	// # For example, a zip file might be called mainnet-sometable-000001-003000.zip
+	//
+	// And contain two CSV files: mainnet-sometable-1-000001-002000.csv:
+	//
+	// timestamp, value
+	// 1, foo
+	// 2, bar
+	//
+	// And mainnet-sometable-2-002001-003000.csv:
+	//
+	// timestamp, value, extra_value
+	// 3, baz, apple
+	//
+	// It is worth nothing that the schema will not change within a single network history segment.
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error)
 	// Ping
 	//
 	// Ping the data node
@@ -1566,6 +1628,38 @@ func (c *tradingDataServiceClient) ListEntities(ctx context.Context, in *ListEnt
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &tradingDataServiceExportNetworkHistoryClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ExportNetworkHistoryClient interface {
+	Recv() (*httpbody.HttpBody, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceExportNetworkHistoryClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceExportNetworkHistoryClient) Recv() (*httpbody.HttpBody, error) {
+	m := new(httpbody.HttpBody)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *tradingDataServiceClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/Ping", in, out, opts...)
@@ -1958,6 +2052,67 @@ type TradingDataServiceServer interface {
 	//
 	// List all entities created by transaction hash
 	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
+	// Export Network History as CSV
+	//
+	// Extract CSV table data from network history between two block heights.
+	//
+	// The requested block heights must fall on network history segment boundaries, which can
+	// be discovered by calling the API to list all network history segments. By default
+	// segments contain 1000 blocks. In that case ranges such as (1, 1000), (1001, 2000), (1, 3000)
+	// would all fall on segment boundaries and be valid.
+	//
+	// The generated CSV file is compressed into a ZIP file and returned, with the file name
+	// in the following format: <chain id>-<table name>-<start block>-<end block>.zip
+	//
+	// In gRPC, results are returned in a chunked stream of base64 encoded data.
+	//
+	// Through the REST gateway, the base64 data chunks are decoded and streamed as a
+	// `content-type: application/zip` HTTP response.
+	//
+	// The CSV exported data uses a comma as a DELIMITER between fields, and " for QUOTE-ing fields.
+	//
+	// If a value contains any of: DELIMITER, QUOTE, carriage return, or line feed then the whole
+	// value is prefixed and suffixed by the QUOTE character and any occurrence within
+	// the value of a QUOTE character preceded by another QUOTE.
+	//
+	// A NULL is output as the NULL parameter string and is not quoted, while a non-NULL value
+	// matching the NULL parameter string is quoted.
+	//
+	// For example, with the default settings, a NULL is written as an unquoted empty string,
+	// while an empty string data value is written with double quotes ("").
+	//
+	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
+	// Thus the files are not strictly one line per table row like text-format files.
+	//
+	// The first row of the CSV file is a header that allows you to identify the columns
+	// of subsequent rows.
+	//
+	// Usually the ZIP file will contain only a single CSV file. However it is possible that
+	// the (from_block, to_block) request spans over a range of blocks in which the underlying
+	// schema of the database changes. For example, a column may have been added, removed, or renamed.
+	//
+	// If this happens, the CSV file will be split at the point of the schema change and the zip
+	// file will contain multiple CSV files, with a potentially different set of headers. The
+	// 'version' number of the database schema is part of the in the CSV filename:
+	//
+	//	<chain id>-<table name>-<schema version>-<start block>-<end block>.zip
+	//
+	// # For example, a zip file might be called mainnet-sometable-000001-003000.zip
+	//
+	// And contain two CSV files: mainnet-sometable-1-000001-002000.csv:
+	//
+	// timestamp, value
+	// 1, foo
+	// 2, bar
+	//
+	// And mainnet-sometable-2-002001-003000.csv:
+	//
+	// timestamp, value, extra_value
+	// 3, baz, apple
+	//
+	// It is worth nothing that the schema will not change within a single network history segment.
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error
 	// Ping
 	//
 	// Ping the data node
@@ -2229,6 +2384,9 @@ func (UnimplementedTradingDataServiceServer) NetworkHistoryBootstrapPeers(contex
 }
 func (UnimplementedTradingDataServiceServer) ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error {
+	return status.Errorf(codes.Unimplemented, "method ExportNetworkHistory not implemented")
 }
 func (UnimplementedTradingDataServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
@@ -3865,6 +4023,27 @@ func _TradingDataService_ListEntities_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_ExportNetworkHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExportNetworkHistoryRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TradingDataServiceServer).ExportNetworkHistory(m, &tradingDataServiceExportNetworkHistoryServer{stream})
+}
+
+type TradingDataService_ExportNetworkHistoryServer interface {
+	Send(*httpbody.HttpBody) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceExportNetworkHistoryServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceExportNetworkHistoryServer) Send(m *httpbody.HttpBody) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _TradingDataService_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PingRequest)
 	if err := dec(in); err != nil {
@@ -4259,6 +4438,11 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObserveLedgerMovements",
 			Handler:       _TradingDataService_ObserveLedgerMovements_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ExportNetworkHistory",
+			Handler:       _TradingDataService_ExportNetworkHistory_Handler,
 			ServerStreams: true,
 		},
 	},

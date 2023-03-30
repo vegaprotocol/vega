@@ -10,6 +10,7 @@ import "vega/oracle.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/validator_commands.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/httpbody.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 
@@ -498,6 +499,68 @@ service TradingDataService {
     //
     // List all entities created by transaction hash
     rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+
+    // Export Network History as CSV
+    //
+    // Extract CSV table data from network history between two block heights.
+    //
+    // The requested block heights must fall on network history segment boundaries, which can
+    // be discovered by calling the API to list all network history segments. By default
+    // segments contain 1000 blocks. In that case ranges such as (1, 1000), (1001, 2000), (1, 3000)
+    // would all fall on segment boundaries and be valid.
+    //
+    // The generated CSV file is compressed into a ZIP file and returned, with the file name
+    // in the following format: <chain id>-<table name>-<start block>-<end block>.zip
+    //
+    // In gRPC, results are returned in a chunked stream of base64 encoded data.
+    //
+    // Through the REST gateway, the base64 data chunks are decoded and streamed as a
+    // `content-type: application/zip` HTTP response.
+    //
+    // The CSV exported data uses a comma as a DELIMITER between fields, and " for QUOTE-ing fields.
+    //
+    // If a value contains any of: DELIMITER, QUOTE, carriage return, or line feed then the whole
+    // value is prefixed and suffixed by the QUOTE character and any occurrence within
+    // the value of a QUOTE character preceded by another QUOTE.
+    //
+    // A NULL is output as the NULL parameter string and is not quoted, while a non-NULL value 
+    // matching the NULL parameter string is quoted.
+    //
+    // For example, with the default settings, a NULL is written as an unquoted empty string,
+    // while an empty string data value is written with double quotes ("").
+    // 
+    // Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds. 
+    // Thus the files are not strictly one line per table row like text-format files.
+    //
+    // The first row of the CSV file is a header that allows you to identify the columns
+    // of subsequent rows.
+    //
+    // Usually the ZIP file will contain only a single CSV file. However it is possible that
+    // the (from_block, to_block) request spans over a range of blocks in which the underlying
+    // schema of the database changes. For example, a column may have been added, removed, or renamed.
+    //
+    // If this happens, the CSV file will be split at the point of the schema change and the zip
+    // file will contain multiple CSV files, with a potentially different set of headers. The
+    // 'version' number of the database schema is part of the in the CSV filename:
+    //
+    //  <chain id>-<table name>-<schema version>-<start block>-<end block>.zip
+    //
+    // For example, a zip file might be called mainnet-sometable-000001-003000.zip
+    //
+    // And contain two CSV files: mainnet-sometable-1-000001-002000.csv:
+    //
+    // timestamp, value
+    // 1, foo
+    // 2, bar
+    // 
+    // And mainnet-sometable-2-002001-003000.csv:
+    //
+    // timestamp, value, extra_value
+    // 3, baz, apple
+    //
+    // It is worth nothing that the schema will not change within a single network history segment.
+    // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME 
+    rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody); 
 
     // Ping
     //
@@ -2776,6 +2839,11 @@ message HistorySegment {
     string history_segment_id = 3;
     // ID of the previous history segment
     string previous_history_segment_id = 4;
+    // Database schema version of the history segment
+    int64 database_version = 5;        
+    // Chain ID of the history segment
+    string chain_id = 6;
+
 }
 
 // Request to get the most recent history segment
@@ -2833,6 +2901,40 @@ message NetworkHistoryBootstrapPeersResponse {
     // The bootstrap peers
     repeated string bootstrap_peers = 1;
 }
+
+enum Table {
+    TABLE_UNSPECIFIED  = 0;
+    TABLE_BALANCES = 1;
+    TABLE_CHECKPOINTS = 2;
+    TABLE_DELEGATIONS = 3;
+    TABLE_LEDGER = 4;
+    TABLE_ORDERS = 5;
+    TABLE_TRADES = 6;
+    TABLE_MARKET_DATA = 7;
+    TABLE_MARGIN_LEVELS = 8;
+    TABLE_POSITIONS = 9;
+    TABLE_LIQUIDITY_PROVISIONS = 10;
+    TABLE_MARKETS = 11;
+    TABLE_DEPOSITS = 12;
+    TABLE_WITHDRAWALS = 13;
+    TABLE_BLOCKS = 14;
+    TABLE_REWARDS = 15;
+}
+
+// Request to export network history data in CSV format
+message ExportNetworkHistoryRequest {
+    // Block to begin exporting from. Must be the first block of a history segment,
+    // which by default are 1000 blocks each; in that case - 1, 1001, 2001 etc. are valid values
+    // you can check by first calling the API to list all network history segments.
+    int64 from_block = 1;
+    // Last block to export up to and including. Must be the last block of a history segment
+    // which by default are 1000 blocks each; in that case - 1000, 2000, 3000 etc. are valid values
+    // you can check by first calling the API to list all network history segments.
+    int64 to_block = 2;
+    // The table you would like to export data from.
+    Table table = 3;
+}
+
 
 message ListEntitiesRequest {
     string transaction_hash = 1;

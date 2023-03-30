@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"sort"
@@ -26,6 +27,8 @@ import (
 type Segment interface {
 	GetFromHeight() int64
 	GetToHeight() int64
+	GetChainId() string
+	GetDatabaseVersion() int64
 	GetHistorySegmentId() string
 	GetPreviousHistorySegmentId() string
 }
@@ -114,6 +117,10 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 	}
 
 	return s, nil
+}
+
+func (d *Service) GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, error) {
+	return d.store.GetHistorySegmentReader(ctx, historySegmentID)
 }
 
 func (d *Service) CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error {

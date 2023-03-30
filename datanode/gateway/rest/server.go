@@ -32,6 +32,7 @@ import (
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"go.elastic.co/apm/module/apmhttp"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -76,6 +77,17 @@ func (s *ProxyServer) ReloadConf(cfg gateway.Config) {
 	s.Config = cfg
 }
 
+// This is because by default the marshaller wants to put a newline between chunks of the stream response.
+type HTTPBodyDelimitedMarshaler struct {
+	runtime.HTTPBodyMarshaler
+
+	delimiter []byte
+}
+
+func (o *HTTPBodyDelimitedMarshaler) Delimiter() []byte {
+	return o.delimiter
+}
+
 // Start start the server.
 func (s *ProxyServer) Start() error {
 	logger := s.log
@@ -106,6 +118,20 @@ func (s *ProxyServer) Start() error {
 			OrigName:     false,
 			Indent:       " ",
 		}),
+		runtime.WithMarshalerOption("text/csv", &HTTPBodyDelimitedMarshaler{
+			delimiter: []byte(""), // Don't append newline between stream sends
+			// Default HTTPBodyMarshaler
+			HTTPBodyMarshaler: runtime.HTTPBodyMarshaler{
+				Marshaler: &runtime.JSONPb{
+					MarshalOptions: protojson.MarshalOptions{
+						EmitUnpopulated: true,
+					},
+					UnmarshalOptions: protojson.UnmarshalOptions{
+						DiscardUnknown: true,
+					},
+				},
+			},
+		}),
 		// default for REST request
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &JSONPb{
 			EmitDefaults: true,
@@ -127,6 +153,8 @@ func (s *ProxyServer) Start() error {
 			// if we are dealing with a stream, let's add some header to use the proper marshaller
 			if strings.HasPrefix(r.URL.Path, "/api/v2/stream/") {
 				r.Header.Set("Accept", "application/json+stream")
+			} else if strings.HasPrefix(r.URL.Path, "/api/v2/networkhistory/export") {
+				r.Header.Set("Accept", "text/csv")
 			} else if _, ok := r.URL.Query()["pretty"]; ok {
 				// checking Values as map[string][]string also catches ?pretty and ?pretty=
 				// r.URL.Query().Get("pretty") would not.

@@ -64,6 +64,7 @@ type index interface {
 type SegmentMetaData struct {
 	HeightFrom               int64
 	HeightTo                 int64
+	DatabaseVersion          int64
 	ChainID                  string
 	PreviousHistorySegmentID string
 }
@@ -74,6 +75,14 @@ func (m SegmentMetaData) GetFromHeight() int64 {
 
 func (m SegmentMetaData) GetToHeight() int64 {
 	return m.HeightTo
+}
+
+func (m SegmentMetaData) GetDatabaseVersion() int64 {
+	return m.DatabaseVersion
+}
+
+func (m SegmentMetaData) GetChainId() string {
+	return m.ChainID
 }
 
 func (i SegmentIndexEntry) GetPreviousHistorySegmentId() string {
@@ -346,9 +355,11 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 	}()
 
 	historySegment := SegmentMetaData{
-		HeightFrom:               historySnapshot.HeightFrom,
-		HeightTo:                 historySnapshot.HeightTo,
-		ChainID:                  historySnapshot.ChainID,
+		HeightFrom:      historySnapshot.HeightFrom,
+		HeightTo:        historySnapshot.HeightTo,
+		DatabaseVersion: historySnapshot.DatabaseVersion,
+		ChainID:         historySnapshot.ChainID,
+
 		PreviousHistorySegmentID: "",
 	}
 
@@ -611,6 +622,20 @@ func (p *Store) getHistorySegmentForHeight(ctx context.Context, toHeight int64, 
 		return "", fmt.Errorf("failed to get history segment:%w", err)
 	}
 	return pathToSegment, nil
+}
+
+func (p *Store) GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, error) {
+	ipfsCid, err := cid.Parse(historySegmentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse history segment id:%w", err)
+	}
+
+	ipfsFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(ipfsCid))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ipfs file:%w", err)
+	}
+
+	return files.ToFile(ipfsFile), nil
 }
 
 func (p *Store) CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, targetFile string) error {

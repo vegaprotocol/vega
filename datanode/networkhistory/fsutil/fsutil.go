@@ -212,3 +212,49 @@ func UntarFile(source io.Reader, decompressedFilesDestination string) error {
 	}
 	return nil
 }
+
+// ReadNetworkHistorySegmentData takes a io.Reader reading from a network history segment .tar archive then
+//   - looks inside the .tar archive for historysnapshot.tar.gz
+//   - looks looks historysnapshot.tar.gz for a file called `historyFileName`
+//   - returns an io.Reader for reading that file
+func ReadNetworkHistorySegmentData(outerTarFileReader io.Reader, historyFileName string) (io.Reader, error) {
+	outerTarReader := tar.NewReader(outerTarFileReader)
+
+	// Find historysnapshot.tar.gz in the top level segment tar archive
+	for {
+		header, err := outerTarReader.Next()
+		if err == io.EOF {
+			return nil, fmt.Errorf("couldn't find snapshot data in history segment")
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error reading history segment tar file: %w", err)
+		}
+		if strings.Contains(header.Name, "historysnapshot.tar.gz") {
+			break
+		}
+	}
+
+	// Decompress historysnapshot.tar.gz
+	innerTarGzReader, err := gzip.NewReader(outerTarReader)
+	if err != nil {
+		return nil, fmt.Errorf("error creating gzip reader for inner tar file: %w", err)
+	}
+	defer innerTarGzReader.Close()
+
+	// Read the history .tar file
+	innerTarFile := tar.NewReader(innerTarGzReader)
+
+	// Find the table dump file in the inner .tar file
+	for {
+		header, err := innerTarFile.Next()
+		if err == io.EOF {
+			return nil, fmt.Errorf("table file '%s' not found in segment", historyFileName)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("error reading inner tar file: %w", err)
+		}
+		if filepath.Base(header.Name) == historyFileName {
+			return innerTarFile, nil
+		}
+	}
+}

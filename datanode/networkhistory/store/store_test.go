@@ -90,7 +90,7 @@ func addTestData(t *testing.T, chainID string, snapshotsDir string, s *store.Sto
 		from := (i * 1000) + 1
 		to := (i + 1) * 1000
 		css := snapshot.NewCurrentSnapshot(chainID, to)
-		hss := snapshot.NewHistorySnapshot(chainID, from, to)
+		hss := snapshot.NewHistorySnapshot(chainID, 1, from, to)
 
 		err := os.WriteFile(filepath.Join(snapshotsDir, css.CompressedFileName()), []byte(fmt.Sprintf("%d", to)), fs.ModePerm)
 		require.NoError(t, err)
