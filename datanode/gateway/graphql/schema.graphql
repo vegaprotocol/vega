@@ -2878,7 +2878,7 @@ enum OrderRejectionReason {
   ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION
 
   "Good for Auction order received during continuous trading"
-  ORDER_ERROR_GFA_CANNOT_SEND_ORDER_DURING_CONTINUOUS_TRADING
+  ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING
 
   "Cannot send IOC orders during an auction"
   ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
@@ -2921,6 +2921,12 @@ enum OrderRejectionReason {
 
   "Non-persistent order exceeds price bounds"
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
+
+  "Order was submitted with an incorrect or invalid market type"
+  ORDER_ERROR_INCORRECT_MARKET_TYPE
+
+  "Unable to submit pegged order, temporarily too many pegged orders across all markets"
+  ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
 }
 
 enum OrderType {
