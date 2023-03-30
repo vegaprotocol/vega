@@ -9,7 +9,7 @@ Feature: Close a filled order twice
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | market.auction.minimumDuration          | 1     |
 
-  Scenario: Traders place an order, a trade happens, and orders are cancelled after being filled
+  Scenario: 001 Traders place an order, a trade happens, and orders are cancelled after being filled; test newly added post-only and reduce-only orders:0068-MATC-040;0068-MATC-041;0068-MATC-042;0068-MATC-043;0068-MATC-044;0068-MATC-045;0068-MATC-046;0068-MATC-047;0068-MATC-048;0068-MATC-049;0068-MATC-050;0068-MATC-051;0068-MATC-055;0068-MATC-056;
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
@@ -133,6 +133,13 @@ Feature: Close a filled order twice
       | aux    | 49     | 0              | 355          | 
       | aux2   | -9     | 0              | -355         |  
 
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 121   | 4      |   
+      | sell | 122   | 5      | 
+      | sell | 123   | 2      | 
+      | sell | 124   | 2      | 
+
     # AC 0068-MATC-048; 0068-MATC-049; 0068-MATC-050; 0068-MATC-051
     When the parties place the following orders with ticks:
       | party| market id | side | volume | price | resulting trades | type        | tif     | reference   | only   | error |
@@ -141,7 +148,80 @@ Feature: Close a filled order twice
       | aux2 | ETH/DEC19 | sell | 1      | 22    | 0                | TYPE_MARKET | TIF_FOK | reduceonly-8| reduce | OrderError: reduce only order would not reduce position | 
       | aux2 | ETH/DEC19 | buy  | 9      | 22    | 2                | TYPE_MARKET | TIF_FOK | reduceonly-9| reduce |       | 
 
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
       Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
       | aux    | 40     | 80             | 369          | 
       | aux2   | 0      | 0              | -369         |  
+
+  Scenario: 002 0068-MATC-048 for reduce-only MO, if not enough volume is available to **fully** fill the order, the remaining will be cancelled
+    Given the parties deposit on asset's general account the following amount:
+      | party            | asset | amount    |
+      | aux              | BTC   | 100000    |
+      | aux2             | BTC   | 100000    |
+      | aux3             | BTC   | 100000    |
+      | aux4             | BTC   | 100000    |
+
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference  | only |
+      | aux   | ETH/DEC19 | buy  | 2      | 2     | 0                | TYPE_LIMIT | TIF_GTC | ref-10     |      |
+      | aux2  | ETH/DEC19 | buy  | 4      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-11     |      |
+      | aux   | ETH/DEC19 | sell | 4      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-12     |      |
+      | aux   | ETH/DEC19 | sell | 4      | 200   | 0                | TYPE_LIMIT | TIF_GTC | ref-13     |      |
+      | aux   | ETH/DEC19 | sell | 5      | 201   | 0                | TYPE_LIMIT | TIF_GTC | ref-14     | post |
+      | aux   | ETH/DEC19 | sell | 5      | 202   | 0                | TYPE_LIMIT | TIF_GTC | ref-15     | post |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 2     | 2      |
+      | sell | 200   | 4      |
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | aux2   | 4      | 0              | 0            |     
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 201   | 5      |
+      | sell | 202   | 5      |
+
+    # check the cancelling and amending of post-only order
+    Then the parties amend the following orders:
+      | party | reference| price | size delta | tif     | error |
+      | aux   | ref-15   | 203   | 1          | TIF_GTC |       |
+    When the parties cancel the following orders:
+      | party | reference | error |
+      | aux   | ref-14    |       |
+      | aux   | ref-15    |       |
+    # check the canceled order, whether still "amendable"
+    Then the parties amend the following orders:
+      | party | reference| price | size delta | tif     | error                        |
+      | aux   | ref-14   | 200   | 1          | TIF_GTC | OrderError: Invalid Order ID |
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 2     | 2      |
+      | sell | 200   | 4      |
+      | sell | 201   | 0      |
+      | sell | 202   | 0      |
+      | sell | 203   | 0      |
+
+    And then the network moves ahead "1" blocks
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | aux2   | 4      | 0              | 0            | 
+
+    When the parties place the following orders with ticks:
+      | party| market id | side | volume | price | resulting trades | type        | tif     | reference    | only   | error |
+      | aux2 | ETH/DEC19 | sell | 4      | 22    | 0                | TYPE_MARKET | TIF_FOK | reduceonly-10| reduce |       | 
+     
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | aux2   | 4      | 0              | 0          | 
+
+    And then the network moves ahead "1" blocks
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+  
