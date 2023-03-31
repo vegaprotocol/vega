@@ -2956,7 +2956,7 @@ func testUpdateMarketWithInternalSettlementDataFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsNotValid)
 }
 
 func testUpdateMarketWithExternalSettlementDataNoSignerFails(t *testing.T) {

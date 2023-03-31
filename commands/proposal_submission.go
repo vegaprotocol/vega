@@ -609,7 +609,7 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", datapb.PropertyKey_TYPE_TIMESTAMP))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkNewOracleBinding(future))
 
@@ -627,14 +627,14 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", datapb.PropertyKey_TYPE_TIMESTAMP))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkUpdateOracleBinding(future))
 
 	return errs
 }
 
-func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string) Errors {
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, banTypes ...datapb.PropertyKey_Type) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
@@ -644,13 +644,9 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name+".source_type"), ErrIsRequired)
 	}
 
+	propertyTypes := []datapb.PropertyKey_Type{}
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
-		// If the data source type is internal - check only filters content.
-		if name == "data_source_spec_for_settlement_data" {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.external", parentProperty, name), ErrIsRequired)
-		}
-
 		t := tp.Internal.GetTime()
 		if t == nil {
 			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
@@ -675,6 +671,8 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			}
 		}
 
+		propertyTypes = []datapb.PropertyKey_Type{datapb.PropertyKey_TYPE_TIMESTAMP}
+
 	case *vegapb.DataSourceDefinition_External:
 		// If data source type is external - check if the signers are present first.
 		o := tp.External.GetOracle()
@@ -697,6 +695,23 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 		filters := o.Filters
 		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+
+		for _, v := range filters {
+			if v.GetKey() != nil {
+				propertyTypes = append(propertyTypes, v.GetKey().Type)
+			}
+		}
+	}
+
+	bans := map[datapb.PropertyKey_Type]struct{}{}
+	for _, v := range banTypes {
+		bans[v] = struct{}{}
+	}
+
+	for _, v := range propertyTypes {
+		if _, ok := bans[v]; ok {
+			errs.AddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
+		}
 	}
 
 	return errs
