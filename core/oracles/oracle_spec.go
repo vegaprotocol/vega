@@ -146,7 +146,7 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 			if err != nil {
 				return nil, err
 			}
-			typedFilters[f.String()] = &filter{
+			typedFilters[f.Key.Name] = &filter{
 				propertyName: "vegaprotocol.builtin.timestamp",
 				propertyType: datapb.PropertyKey_TYPE_TIMESTAMP,
 				conditions:   conditions,

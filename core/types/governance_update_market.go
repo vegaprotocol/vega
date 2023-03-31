@@ -376,7 +376,7 @@ func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 
 func (f UpdateFutureProduct) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
 		reflectPointerToString(f.DataSourceSpecForSettlementData),
 		reflectPointerToString(f.DataSourceSpecForTradingTermination),

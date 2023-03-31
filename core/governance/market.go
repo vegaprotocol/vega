@@ -39,6 +39,8 @@ var (
 	ErrMissingDataSourceSpecBinding = errors.New("missing data source spec binding")
 	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
 	ErrMissingDataSourceSpecForSettlementData = errors.New("missing data source spec for settlement data")
+	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
+	ErrSettlementWithInternalDataSourceIsNotAllowed = errors.New("settlement with internal data source is not allwed")
 	// ErrMissingDataSourceSpecForTradingTermination is returned when the data source spec for trading termination is absent.
 	ErrMissingDataSourceSpecForTradingTermination = errors.New("missing data source spec for trading termination")
 	// ErrDataSourceSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
@@ -235,6 +237,15 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidFutureProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
 	}
 
 	tterm := &future.DataSourceSpecForTradingTermination
@@ -455,6 +466,15 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidFutureProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
 	}
 
 	tterm := &future.DataSourceSpecForTradingTermination
