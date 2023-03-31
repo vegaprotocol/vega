@@ -572,6 +572,7 @@ message NotarySigs {
   int32 kind = 2;
   string node = 3;
   string sig = 4;
+  bool pending = 5;
 }
 
 message Notary {
