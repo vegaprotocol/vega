@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
-	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -72,7 +71,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 
 	// check for enactment timestamp
 	switch cmd.Terms.Change.(type) {
-	case *protoTypes.ProposalTerms_NewFreeform:
+	case *vegapb.ProposalTerms_NewFreeform:
 		if cmd.Terms.EnactmentTimestamp != 0 {
 			errs.AddForProperty("proposal_submission.terms.enactment_timestamp", ErrIsNotSupported)
 		}
@@ -90,7 +89,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 
 	// check for validation timestamp
 	switch cmd.Terms.Change.(type) {
-	case *protoTypes.ProposalTerms_NewAsset:
+	case *vegapb.ProposalTerms_NewAsset:
 		if cmd.Terms.ValidationTimestamp == 0 {
 			errs.AddForProperty("proposal_submission.terms.validation_timestamp", ErrMustBePositive)
 		}
@@ -110,7 +109,7 @@ func checkProposalSubmission(cmd *commandspb.ProposalSubmission) Errors {
 	return errs
 }
 
-func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
+func checkProposalChanges(terms *vegapb.ProposalTerms) Errors {
 	errs := NewErrors()
 
 	if terms.Change == nil {
@@ -118,17 +117,17 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	}
 
 	switch c := terms.Change.(type) {
-	case *protoTypes.ProposalTerms_NewMarket:
+	case *vegapb.ProposalTerms_NewMarket:
 		errs.Merge(checkNewMarketChanges(c))
-	case *protoTypes.ProposalTerms_UpdateMarket:
+	case *vegapb.ProposalTerms_UpdateMarket:
 		errs.Merge(checkUpdateMarketChanges(c))
-	case *protoTypes.ProposalTerms_UpdateNetworkParameter:
+	case *vegapb.ProposalTerms_UpdateNetworkParameter:
 		errs.Merge(checkNetworkParameterUpdateChanges(c))
-	case *protoTypes.ProposalTerms_NewAsset:
+	case *vegapb.ProposalTerms_NewAsset:
 		errs.Merge(checkNewAssetChanges(c))
-	case *protoTypes.ProposalTerms_UpdateAsset:
+	case *vegapb.ProposalTerms_UpdateAsset:
 		errs.Merge(checkUpdateAssetChanges(c))
-	case *protoTypes.ProposalTerms_NewFreeform:
+	case *vegapb.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
@@ -137,7 +136,7 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 	return errs
 }
 
-func checkNetworkParameterUpdateChanges(change *protoTypes.ProposalTerms_UpdateNetworkParameter) Errors {
+func checkNetworkParameterUpdateChanges(change *vegapb.ProposalTerms_UpdateNetworkParameter) Errors {
 	errs := NewErrors()
 
 	if change.UpdateNetworkParameter == nil {
@@ -161,7 +160,7 @@ func checkNetworkParameterUpdateChanges(change *protoTypes.ProposalTerms_UpdateN
 	return errs
 }
 
-func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
+func checkNewAssetChanges(change *vegapb.ProposalTerms_NewAsset) Errors {
 	errs := NewErrors()
 
 	if change.NewAsset == nil {
@@ -195,9 +194,9 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	}
 
 	switch s := change.NewAsset.Changes.Source.(type) {
-	case *protoTypes.AssetDetails_BuiltinAsset:
+	case *vegapb.AssetDetails_BuiltinAsset:
 		errs.Merge(checkBuiltinAssetSource(s))
-	case *protoTypes.AssetDetails_Erc20:
+	case *vegapb.AssetDetails_Erc20:
 		errs.Merge(checkERC20AssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_asset.changes.source", ErrIsNotValid)
@@ -206,7 +205,7 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	return errs
 }
 
-func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Errors {
+func CheckNewFreeformChanges(change *vegapb.ProposalTerms_NewFreeform) Errors {
 	errs := NewErrors()
 
 	if change.NewFreeform == nil {
@@ -215,7 +214,7 @@ func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Error
 	return errs
 }
 
-func checkBuiltinAssetSource(s *protoTypes.AssetDetails_BuiltinAsset) Errors {
+func checkBuiltinAssetSource(s *vegapb.AssetDetails_BuiltinAsset) Errors {
 	errs := NewErrors()
 
 	if s.BuiltinAsset == nil {
@@ -237,7 +236,7 @@ func checkBuiltinAssetSource(s *protoTypes.AssetDetails_BuiltinAsset) Errors {
 	return errs
 }
 
-func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
+func checkERC20AssetSource(s *vegapb.AssetDetails_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
@@ -275,7 +274,7 @@ func checkERC20AssetSource(s *protoTypes.AssetDetails_Erc20) Errors {
 	return errs
 }
 
-func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Errors {
+func checkUpdateAssetChanges(change *vegapb.ProposalTerms_UpdateAsset) Errors {
 	errs := NewErrors()
 
 	if change.UpdateAsset == nil {
@@ -305,7 +304,7 @@ func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Error
 	}
 
 	switch s := change.UpdateAsset.Changes.Source.(type) {
-	case *protoTypes.AssetDetailsUpdate_Erc20:
+	case *vegapb.AssetDetailsUpdate_Erc20:
 		errs.Merge(checkERC20UpdateAssetSource(s))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_asset.changes.source", ErrIsNotValid)
@@ -314,7 +313,7 @@ func checkUpdateAssetChanges(change *protoTypes.ProposalTerms_UpdateAsset) Error
 	return errs
 }
 
-func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors {
+func checkERC20UpdateAssetSource(s *vegapb.AssetDetailsUpdate_Erc20) Errors {
 	errs := NewErrors()
 
 	if s.Erc20 == nil {
@@ -350,7 +349,7 @@ func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors 
 	return errs
 }
 
-func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
+func checkNewMarketChanges(change *vegapb.ProposalTerms_NewMarket) Errors {
 	errs := NewErrors()
 
 	if change.NewMarket == nil {
@@ -410,7 +409,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	return errs
 }
 
-func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Errors {
+func checkUpdateMarketChanges(change *vegapb.ProposalTerms_UpdateMarket) Errors {
 	errs := NewErrors()
 
 	if change.UpdateMarket == nil {
@@ -467,7 +466,7 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	return errs
 }
 
-func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, parentProperty string) Errors {
+func checkPriceMonitoring(parameters *vegapb.PriceMonitoringParameters, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if parameters == nil || len(parameters.Triggers) == 0 {
@@ -503,7 +502,7 @@ func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, pare
 	return errs
 }
 
-func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParameters, parentProperty string) Errors {
+func checkLiquidityMonitoring(parameters *vegapb.LiquidityMonitoringParameters, parentProperty string) Errors {
 	errs := NewErrors()
 
 	if parameters == nil {
@@ -542,7 +541,7 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	return errs
 }
 
-func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration) Errors {
+func checkNewInstrument(instrument *vegapb.InstrumentConfiguration) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -561,7 +560,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration) Errors {
 	}
 
 	switch product := instrument.Product.(type) {
-	case *protoTypes.InstrumentConfiguration_Future:
+	case *vegapb.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product", ErrIsNotValid)
@@ -570,7 +569,7 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration) Errors {
 	return errs
 }
 
-func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration) Errors {
+func checkUpdateInstrument(instrument *vegapb.UpdateInstrumentConfiguration) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
@@ -586,7 +585,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	}
 
 	switch product := instrument.Product.(type) {
-	case *protoTypes.UpdateInstrumentConfiguration_Future:
+	case *vegapb.UpdateInstrumentConfiguration_Future:
 		errs.Merge(checkUpdateFuture(product.Future))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product", ErrIsNotValid)
@@ -595,7 +594,7 @@ func checkUpdateInstrument(instrument *protoTypes.UpdateInstrumentConfiguration)
 	return errs
 }
 
-func checkNewFuture(future *protoTypes.FutureProduct) Errors {
+func checkNewFuture(future *vegapb.FutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -609,14 +608,14 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", datapb.PropertyKey_TYPE_TIMESTAMP))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkNewOracleBinding(future))
 
 	return errs
 }
 
-func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
+func checkUpdateFuture(future *vegapb.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -634,7 +633,7 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string) Errors {
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, banTypes ...datapb.PropertyKey_Type) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
@@ -644,13 +643,11 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name+".source_type"), ErrIsRequired)
 	}
 
+	propertyTypes := []datapb.PropertyKey_Type{}
+
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
 		// If the data source type is internal - check only filters content.
-		if name == "data_source_spec_for_settlement_data" {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.external", parentProperty, name), ErrIsRequired)
-		}
-
 		t := tp.Internal.GetTime()
 		if t == nil {
 			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
@@ -675,6 +672,8 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			}
 		}
 
+		propertyTypes = []datapb.PropertyKey_Type{datapb.PropertyKey_TYPE_TIMESTAMP}
+
 	case *vegapb.DataSourceDefinition_External:
 		// If data source type is external - check if the signers are present first.
 		o := tp.External.GetOracle()
@@ -697,6 +696,21 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 		filters := o.Filters
 		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+
+		for _, v := range filters {
+			propertyTypes = append(propertyTypes, v.GetKey().Type)
+		}
+	}
+
+	bans := map[datapb.PropertyKey_Type]struct{}{}
+	for _, v := range banTypes {
+		bans[v] = struct{}{}
+	}
+
+	for _, v := range propertyTypes {
+		if _, ok := bans[v]; ok {
+			errs.AddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), errors.New("invalid type"))
+		}
 	}
 
 	return errs
@@ -758,7 +772,7 @@ func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty st
 	return bindingPropertyFound
 }
 
-func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
+func checkNewOracleBinding(future *vegapb.FutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
 		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
@@ -783,7 +797,7 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
-func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
+func checkUpdateOracleBinding(future *vegapb.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
 		if len(future.DataSourceSpecBinding.SettlementDataProperty) == 0 {
@@ -808,7 +822,7 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	return errs
 }
 
-func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
+func checkNewRiskParameters(config *vegapb.NewMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -816,9 +830,9 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *protoTypes.NewMarketConfiguration_Simple:
+	case *vegapb.NewMarketConfiguration_Simple:
 		errs.Merge(checkNewSimpleParameters(parameters))
-	case *protoTypes.NewMarketConfiguration_LogNormal:
+	case *vegapb.NewMarketConfiguration_LogNormal:
 		errs.Merge(checkNewLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters", ErrIsNotValid)
@@ -827,7 +841,7 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	return errs
 }
 
-func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Errors {
+func checkUpdateRiskParameters(config *vegapb.UpdateMarketConfiguration) Errors {
 	errs := NewErrors()
 
 	if config.RiskParameters == nil {
@@ -835,9 +849,9 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 	}
 
 	switch parameters := config.RiskParameters.(type) {
-	case *protoTypes.UpdateMarketConfiguration_Simple:
+	case *vegapb.UpdateMarketConfiguration_Simple:
 		errs.Merge(checkUpdateSimpleParameters(parameters))
-	case *protoTypes.UpdateMarketConfiguration_LogNormal:
+	case *vegapb.UpdateMarketConfiguration_LogNormal:
 		errs.Merge(checkUpdateLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters", ErrIsNotValid)
@@ -846,7 +860,7 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 	return errs
 }
 
-func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) Errors {
+func checkNewSimpleParameters(params *vegapb.NewMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -870,7 +884,7 @@ func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) 
 	return errs
 }
 
-func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Simple) Errors {
+func checkUpdateSimpleParameters(params *vegapb.UpdateMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
 	if params.Simple == nil {
@@ -894,7 +908,7 @@ func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Si
 	return errs
 }
 
-func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_LogNormal) Errors {
+func checkNewLogNormalRiskParameters(params *vegapb.NewMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
@@ -940,7 +954,7 @@ func checkNewLogNormalRiskParameters(params *protoTypes.NewMarketConfiguration_L
 	return errs
 }
 
-func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfiguration_LogNormal) Errors {
+func checkUpdateLogNormalRiskParameters(params *vegapb.UpdateMarketConfiguration_LogNormal) Errors {
 	errs := NewErrors()
 
 	if params.LogNormal == nil {
