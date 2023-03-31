@@ -107,7 +107,6 @@ func (p *Position) Types() []events.Type {
 		events.SettleMarketEvent,
 		events.TradeEvent,
 		events.DistressedOrdersClosedEvent,
-		// @TODO handle these events
 		events.DistressedPositionsEvent,
 	}
 }

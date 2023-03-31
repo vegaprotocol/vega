@@ -461,6 +461,8 @@ func (e *Engine) MarkDistressed(closed []string) ([]string, []string) {
 		delete(e.distressedPos, k)
 		nd = append(nd, k)
 	}
+	sort.Strings(nIDs)
+	sort.Strings(nd)
 	return nIDs, nd
 }
 

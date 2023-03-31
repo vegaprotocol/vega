@@ -65,7 +65,7 @@ func MaxAbs[T Signed](vals ...T) T {
 	return r
 }
 
-// CmpV compares 2 numberic values of any type, we attempt to cast T1 to T2 and back to see if that conversion
+// CmpV compares 2 numeric values of any type, we attempt to cast T1 to T2 and back to see if that conversion
 // loses any information, if  no data is lost this way, we compare both values as T2, otherwise we compare both as T1.
 func CmpV[T1 Num, T2 Num](a T1, b T2) bool {
 	if a2 := T2(a); a == T1(a2) {
