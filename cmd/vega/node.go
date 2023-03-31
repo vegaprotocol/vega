@@ -15,6 +15,7 @@ package main
 import (
 	"context"
 	"errors"
+	"runtime/debug"
 
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/core/config"
@@ -22,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/pbnjay/memory"
 )
 
 type StartCmd struct {
@@ -29,7 +31,7 @@ type StartCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	TendermintHome string `long:"tendermint-home" description:"Directory for tendermint config and data (default: $HOME/.tendermint)"`
+	TendermintHome string `long:"tendermint-home" description:"Directory for tendermint config and data (default: $HOME/.cometbft)"`
 
 	Network    string `long:"network" description:"The network to start this node with"`
 	NetworkURL string `long:"network-url" description:"The URL to a genesis file to start this node with"`
@@ -37,11 +39,17 @@ type StartCmd struct {
 
 var startCmd StartCmd
 
-func (cmd *StartCmd) Execute(args []string) error {
+const namedLogger = "core"
+
+func (cmd *StartCmd) Execute([]string) error {
 	log := logging.NewLoggerFromConfig(
-		logging.NewDefaultConfig(),
-	)
-	defer log.AtExit()
+		logging.NewDefaultConfig())
+	logCore := log.Named(namedLogger)
+
+	defer func() {
+		log.AtExit()
+		logCore.AtExit()
+	}()
 
 	// we define this option to parse the cli args each time the config is
 	// loaded. So that we can respect the cli flag precedence.
@@ -56,7 +64,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 		return errors.New("--network-url and --network cannot be set together")
 	}
 
-	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
+	confWatcher, err := config.NewWatcher(context.Background(), logCore, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}
@@ -71,12 +79,24 @@ func (cmd *StartCmd) Execute(args []string) error {
 		}
 	}
 
+	// setup max memory usage
+	memFactor, err := confWatcher.Get().GetMaxMemoryFactor()
+	if err != nil {
+		return err
+	}
+
+	// only set max memory if user didn't require 100%
+	if memFactor != 1 {
+		totalMem := memory.TotalMemory()
+		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
+	}
+
 	if len(startCmd.TendermintHome) <= 0 {
-		startCmd.TendermintHome = "$HOME/.tendermint"
+		startCmd.TendermintHome = "$HOME/.cometbft"
 	}
 
 	return (&node.Command{
-		Log: log,
+		Log: logCore,
 	}).Run(
 		confWatcher,
 		vegaPaths,
@@ -84,7 +104,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 		cmd.TendermintHome,
 		cmd.NetworkURL,
 		cmd.Network,
-		args,
+		log,
 	)
 }
 

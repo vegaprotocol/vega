@@ -5,59 +5,84 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/broker"
+
+	"code.vegaprotocol.io/vega/datanode/utils"
+
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type FileBufferedEventSource struct {
 	log                   *logging.Logger
 	lastBufferedSeqNum    chan uint64
 	sendChannelBufferSize int
-	source                eventSource
+	source                RawEventReceiver
 	bufferFilePath        string
+	archiveFilesPath      string
 	config                BufferedEventSourceConfig
 }
 
-const (
-	numberOfSeqNumBytes = 8
-	numberOfSizeBytes   = 4
-)
-
-func NewBufferedEventSource(log *logging.Logger, config BufferedEventSourceConfig, source eventSource, bufferFilePath string) (*FileBufferedEventSource, error) {
-	err := os.RemoveAll(bufferFilePath)
+func NewBufferedEventSource(ctx context.Context, log *logging.Logger, config BufferedEventSourceConfig,
+	source RawEventReceiver, bufferFilesDir string,
+	archiveFilesDir string,
+) (*FileBufferedEventSource, error) {
+	err := os.RemoveAll(bufferFilesDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to remove old buffer files:%w", err)
+		return nil, fmt.Errorf("failed to remove old buffer files: %w", err)
 	}
 
-	err = os.Mkdir(bufferFilePath, os.ModePerm)
+	err = os.Mkdir(bufferFilesDir, os.ModePerm)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create buffer file directory:%w", err)
+		return nil, fmt.Errorf("failed to create buffer file directory: %w", err)
 	}
 
-	files, _ := ioutil.ReadDir(bufferFilePath)
-	for _, file := range files {
-		os.Remove(filepath.Join(bufferFilePath, file.Name()))
+	if config.Archive {
+		err = os.MkdirAll(archiveFilesDir, os.ModePerm)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create buffer file archive directory: %w", err)
+		}
+
+		go func() {
+			ticker := time.NewTicker(1 * time.Minute)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					err := compressUncompressedFilesInDir(archiveFilesDir)
+					if err != nil {
+						log.Errorf("failed to compress uncompressed file in archive dir: %w", err)
+					}
+
+					err = removeOldArchiveFilesIfDirectoryFull(archiveFilesDir, config.ArchiveMaximumSizeBytes)
+					if err != nil {
+						log.Errorf("failed to remove old files from full archive directory: %w", err)
+					}
+				}
+			}
+		}()
 	}
 
 	fb := &FileBufferedEventSource{
 		log:                log.Named("buffered-event-source"),
 		source:             source,
 		config:             config,
-		lastBufferedSeqNum: make(chan uint64, config.MaxBufferedEvents),
-		bufferFilePath:     bufferFilePath,
+		lastBufferedSeqNum: make(chan uint64, 100),
+		bufferFilePath:     bufferFilesDir,
+		archiveFilesPath:   archiveFilesDir,
 	}
 
 	fb.log.Infof("Starting buffered event source with a max buffered event count of %d, and events per buffer file size %d",
-		config.MaxBufferedEvents, config.EventsPerFile)
+		config.EventsPerFile)
 
 	return fb, nil
 }
@@ -66,7 +91,7 @@ func (m *FileBufferedEventSource) Listen() error {
 	return m.source.Listen()
 }
 
-func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan []byte, <-chan error) {
 	sourceEventCh, sourceErrCh := m.source.Receive(ctx)
 
 	if m.config.EventsPerFile == 0 {
@@ -74,7 +99,7 @@ func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Ev
 		return sourceEventCh, sourceErrCh
 	}
 
-	sinkEventCh := make(chan events.Event, m.sendChannelBufferSize)
+	sinkEventCh := make(chan []byte, m.sendChannelBufferSize)
 	sinkErrorCh := make(chan error, 1)
 
 	ctxWithCancel, cancel := context.WithCancel(ctx)
@@ -90,7 +115,7 @@ func (m *FileBufferedEventSource) Receive(ctx context.Context) (<-chan events.Ev
 	return sinkEventCh, sinkErrorCh
 }
 
-func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourceEventCh <-chan events.Event,
+func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourceEventCh <-chan []byte,
 	sourceErrCh <-chan error, sinkErrorCh chan error,
 ) {
 	bufferSeqNum := uint64(0)
@@ -120,28 +145,24 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 			}
 
 			bufferSeqNum++
-			err = writeToBuffer(bufferFile, bufferSeqNum, event)
+			err = broker.WriteRawToBufferFile(bufferFile, bufferSeqNum, event)
 			metrics.EventBufferWrittenCountInc()
 
 			if err != nil {
 				sinkErrorCh <- fmt.Errorf("failed to write events to buffer:%w", err)
 			}
 
-			select {
-			case m.lastBufferedSeqNum <- bufferSeqNum:
-			default:
-			loop:
-				for {
-					select {
-					case <-m.lastBufferedSeqNum:
-					case <-ctx.Done():
-						return
-					default:
-						break loop
-					}
+		loop:
+			for {
+				select {
+				case <-m.lastBufferedSeqNum:
+				case <-ctx.Done():
+					return
+				default:
+					break loop
 				}
-				m.lastBufferedSeqNum <- bufferSeqNum
 			}
+			m.lastBufferedSeqNum <- bufferSeqNum
 
 		case srcErr, ok := <-sourceErrCh:
 			if !ok {
@@ -154,7 +175,7 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 	}
 }
 
-func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sinkEventCh chan events.Event, sinkErrorCh chan error) {
+func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sinkEventCh chan []byte, sinkErrorCh chan error) {
 	var offset int64
 	var lastBufferSeqNum uint64
 	var lastSentBufferSeqNum uint64
@@ -188,7 +209,7 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 				}
 			}
 
-			event, bufferSeqNum, read, err := readEvent(bufferFile, offset)
+			event, bufferSeqNum, read, err := readRawEvent(bufferFile, offset)
 			if err != nil {
 				sinkErrorCh <- fmt.Errorf("error when reading event from buffer file:%w", err)
 				return
@@ -197,8 +218,7 @@ func (m *FileBufferedEventSource) readEventsFromBuffer(ctx context.Context, sink
 			offset += int64(read)
 
 			if event != nil {
-				evt := toEvent(ctx, event)
-				sinkEventCh <- evt
+				sinkEventCh <- event
 				metrics.EventBufferReadCountInc()
 				lastSentBufferSeqNum = bufferSeqNum
 
@@ -239,48 +259,50 @@ func (m *FileBufferedEventSource) rollBufferFile(currentBufferFile *os.File, seq
 	return newBufferFile, nil
 }
 
-func writeToBuffer(bufferFile *os.File, bufferSeqNum uint64, event events.Event) error {
-	e := event.StreamMessage()
-
-	seqNumBytes := make([]byte, numberOfSeqNumBytes)
-	sizeBytes := make([]byte, numberOfSizeBytes)
-
-	size := numberOfSeqNumBytes + uint32(proto.Size(e))
-	protoBytes, err := proto.Marshal(e)
-	if err != nil {
-		return fmt.Errorf("failed to marshal bus event:%w", err)
-	}
-
-	binary.BigEndian.PutUint64(seqNumBytes, bufferSeqNum)
-	binary.BigEndian.PutUint32(sizeBytes, size)
-	allBytes := append([]byte{}, sizeBytes...)
-	allBytes = append(allBytes, seqNumBytes...)
-	allBytes = append(allBytes, protoBytes...)
-	_, err = bufferFile.Write(allBytes)
-	if err != nil {
-		return fmt.Errorf("failed to write to buffer file:%w", err)
-	}
-
-	return nil
-}
-
 func (m *FileBufferedEventSource) removeBufferFile(bufferFile *os.File) error {
 	err := bufferFile.Close()
 	if err != nil {
 		return fmt.Errorf("failed to close last event buffer file:%w", err)
 	}
 
-	err = os.Remove(bufferFile.Name())
+	if m.config.Archive {
+		err = m.moveBufferFileToArchive(bufferFile.Name())
+		if err != nil {
+			return fmt.Errorf("failed to move buffer file to archive: %w", err)
+		}
+	} else {
+		err = os.Remove(bufferFile.Name())
+		if err != nil {
+			return fmt.Errorf("failed to remove event buffer file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// moveBufferFileToArchive encodes the creation time into the archive file name to ensure that the correct order
+// of files can always be determined even if the archive files are copied etc.
+func (m *FileBufferedEventSource) moveBufferFileToArchive(bufferFilePath string) error {
+	bufferFileName := filepath.Base(bufferFilePath)
+	bufferSeqSpan := strings.ReplaceAll(bufferFileName, bufferFileNamePrepend, "")
+	timeNowUtc := time.Now().UTC()
+
+	archiveFileName := fmt.Sprintf("%s-%s-%d-seqnumspan%s", bufferFileNamePrepend,
+		timeNowUtc.Format("2006-01-02-15-04-05"), timeNowUtc.UnixNano(), bufferSeqSpan)
+
+	archiveFilePath := filepath.Join(m.archiveFilesPath, archiveFileName)
+
+	err := os.Rename(bufferFilePath, archiveFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to remove event buffer file:%w", err)
+		return fmt.Errorf("failed to rename file: %w", err)
 	}
 	return nil
 }
 
-func readEvent(eventFile *os.File, offset int64) (event *eventspb.BusEvent, seqNum uint64,
+func readRawEvent(eventFile *os.File, offset int64) (event []byte, seqNum uint64,
 	totalBytesRead uint32, err error,
 ) {
-	sizeBytes := make([]byte, numberOfSizeBytes)
+	sizeBytes := make([]byte, broker.NumberOfSizeBytes)
 	read, err := eventFile.ReadAt(sizeBytes, offset)
 
 	if err == io.EOF {
@@ -289,11 +311,11 @@ func readEvent(eventFile *os.File, offset int64) (event *eventspb.BusEvent, seqN
 		return nil, 0, 0, fmt.Errorf("error reading message size from events file:%w", err)
 	}
 
-	if read < numberOfSizeBytes {
+	if read < broker.NumberOfSizeBytes {
 		return nil, 0, 0, nil
 	}
 
-	messageOffset := offset + numberOfSizeBytes
+	messageOffset := offset + broker.NumberOfSizeBytes
 
 	msgSize := binary.BigEndian.Uint32(sizeBytes)
 	seqNumAndMsgBytes := make([]byte, msgSize)
@@ -308,22 +330,18 @@ func readEvent(eventFile *os.File, offset int64) (event *eventspb.BusEvent, seqN
 		return nil, 0, 0, nil
 	}
 
-	seqNumBytes := seqNumAndMsgBytes[:numberOfSeqNumBytes]
+	seqNumBytes := seqNumAndMsgBytes[:broker.NumberOfSeqNumBytes]
 	seqNum = binary.BigEndian.Uint64(seqNumBytes)
+	msgBytes := seqNumAndMsgBytes[broker.NumberOfSeqNumBytes:]
+	totalBytesRead = broker.NumberOfSizeBytes + msgSize
 
-	event = &eventspb.BusEvent{}
-	msgBytes := seqNumAndMsgBytes[numberOfSeqNumBytes:]
-	err = proto.Unmarshal(msgBytes, event)
-	if err != nil {
-		return nil, 0, 0, fmt.Errorf("failed to unmarshal bus event: %w", err)
-	}
-	totalBytesRead = numberOfSizeBytes + msgSize
-
-	return event, seqNum, totalBytesRead, nil
+	return msgBytes, seqNum, totalBytesRead, nil
 }
 
+const bufferFileNamePrepend = "datanode-buffer"
+
 func (m *FileBufferedEventSource) getBufferFileName(fromSeqNum uint64, toSeqNum uint64) string {
-	return fmt.Sprintf("%s/datanode-buffer-%d-%d", m.bufferFilePath, fromSeqNum, toSeqNum)
+	return fmt.Sprintf("%s/%s-%d-%d.bevt", m.bufferFilePath, bufferFileNamePrepend, fromSeqNum, toSeqNum)
 }
 
 func (m *FileBufferedEventSource) createFile(fromSeqNum uint64, toSeqNum uint64) (*os.File, error) {
@@ -342,4 +360,80 @@ func (m *FileBufferedEventSource) openBufferFile(fromSeqNum uint64, toSeqNum uin
 		return nil, fmt.Errorf("failed to open buffer file: %s :%w", bufferFileName, err)
 	}
 	return bufferFile, nil
+}
+
+func compressUncompressedFilesInDir(dir string) error {
+	files, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read dir: %w", err)
+	}
+
+	for _, file := range files {
+		if !file.IsDir() {
+			if !strings.HasSuffix(file.Name(), "gz") {
+				err = compressBufferedEventFile(file.Name(), dir)
+				if err != nil {
+					return fmt.Errorf("failed to compress file: %w", err)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func compressBufferedEventFile(bufferFileName string, archiveFilesDir string) error {
+	bufferFilePath := filepath.Join(archiveFilesDir, bufferFileName)
+	archiveFilePath := filepath.Join(archiveFilesDir, bufferFileName+".gz")
+
+	err := utils.CompressFile(bufferFilePath, archiveFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to compress buffer file: %w", err)
+	}
+
+	err = os.Remove(bufferFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to remove uncompressed buffer file: %w", err)
+	}
+
+	return nil
+}
+
+// removeOldArchiveFilesIfDirectoryFull intentionally uses the name of the file to figure out the relative age
+// of the file, see moveBufferFileToArchive.
+func removeOldArchiveFilesIfDirectoryFull(dir string, maximumDirSizeBytes int64) error {
+	var dirSizeBytes int64
+	var archiveFiles []fs.FileInfo
+	err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+		if !info.IsDir() {
+			dirSizeBytes += info.Size()
+			archiveFiles = append(archiveFiles, info)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to walk directory: %w", err)
+	}
+
+	if dirSizeBytes > maximumDirSizeBytes {
+		sort.Slice(archiveFiles, func(i, j int) bool {
+			return strings.Compare(archiveFiles[i].Name(), archiveFiles[j].Name()) < 0
+		})
+
+		minimumBytesToRemove := dirSizeBytes - maximumDirSizeBytes
+
+		var bytesRemoved int64
+		for _, file := range archiveFiles {
+			err := os.Remove(filepath.Join(dir, file.Name()))
+			if err != nil {
+				return fmt.Errorf("failed to remove file: %w", err)
+			}
+			bytesRemoved += file.Size()
+			if bytesRemoved >= minimumBytesToRemove {
+				break
+			}
+		}
+	}
+
+	return nil
 }

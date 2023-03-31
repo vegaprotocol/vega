@@ -20,8 +20,8 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | horizon | probability | auction extension |
       | 100     | 0.99        | 300               |
     And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config          |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.01                   | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 1000000000 |
@@ -50,14 +50,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
-  # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
+    # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         | extension trigger         |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
-  # liquidity auction should only have an end time at T+1s
+      | trading mode                 | auction trigger         | extension trigger                        |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
+    # liquidity auction should only have an end time at T+1s
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                 | auction trigger         | extension trigger         | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      | 1000         | 700            | 0             | 2           |
+      | mark price | trading mode                 | auction trigger         | extension trigger                        | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 700            | 0             | 2           |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -70,8 +70,8 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC21"
     # liquidity auction is extended by 1 second this block (duration accrues)
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                 | auction trigger         | extension trigger         | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      | 1000         | 800            | 0             | 3          |
+      | mark price | trading mode                 | auction trigger         | extension trigger                        | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 800            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -86,12 +86,12 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         | extension trigger         |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                 | auction trigger         | extension trigger                        |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
     # we're still in the same block so auction end is start + 3 seconds now
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                 | auction trigger         | extension trigger         | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      | 1010         | 801            | 0             | 3           |
+      | mark price | trading mode                 | auction trigger         | extension trigger                        | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1010         | 801            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -106,7 +106,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | auction end |
       | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1010         | 10000          | 10            | 0           |
-   
+
   Scenario: Enter liquidity auction, extended by trades at liq. auction end, multiple trades -> still a single extension
 
     Given the parties submit the following liquidity provision:
@@ -124,15 +124,15 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | party2 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
 
     When the opening auction period ends for market "ETH/DEC21"
-  # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
+    # In this case, the required time has expired, and the book is fine, so the trigger probably should be LIQUIDITY
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         | extension trigger         |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                 | auction trigger         | extension trigger                        |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
-  # opening auction (extended by liquidity auction() should have an end time at T+2s
+    # opening auction (extended by liquidity auction() should have an end time at T+2s
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                 | auction trigger         | extension trigger         | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      | 1000         | 700            | 0             | 2          |
+      | mark price | trading mode                 | auction trigger         | extension trigger                        | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 700            | 0             | 2           |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -143,10 +143,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC21"
-  # liquidity auction is extended by 1 second this block
+    # liquidity auction is extended by 1 second this block
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                 | auction trigger         | extension trigger         | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      | 1000         | 800            | 0             | 3           |
+      | mark price | trading mode                 | auction trigger         | extension trigger                        | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1000         | 800            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -160,10 +160,10 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1020  | 0                | TYPE_LIMIT | TIF_GTC |
 
-  # Still in the same block, so auction end is start + 3 seconds now
+    # Still in the same block, so auction end is start + 3 seconds now
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                 | auction trigger         | extension trigger         | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
-      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 100     | 990       | 1010      | 1010         | 801            | 0             | 3          |
+      | mark price | trading mode                 | auction trigger         | extension trigger                        | horizon | min bound | max bound | target stake | supplied stake | open interest | auction end |
+      | 0          | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 990       | 1010      | 1010         | 801            | 0             | 3           |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -173,12 +173,12 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | lp1 | party0 | ETH/DEC21 | 1010              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "1" blocks
- 
+
     # liquidity requirements met -> opening auction finishes (price monitoring extension not possible in opening auction)
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | auction end |  min bound | max bound |
-      | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1010         | 1010           | 10            | 0           |  1001      | 1019      |
-  
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest | auction end | min bound | max bound |
+      | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1010         | 1010           | 10            | 0           | 1001      | 1019      |
+
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -188,9 +188,9 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     # open interest changes from 10 to 20, because the trade _does_ happen
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger           | target stake | supplied stake | open interest | auction end | min bound | max bound |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_UNSPECIFIED | 2020         | 1010           | 20            | 1           |  1001      | 1019     |
-      #| 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_UNSPECIFIED | 2020         | 1010           | 10            | 1           |  1001      | 1019     |
+      | mark price | trading mode                    | auction trigger                          | extension trigger           | target stake | supplied stake | open interest | auction end | min bound | max bound |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_UNSPECIFIED | 2020         | 1010           | 20            | 1           | 1001      | 1019      |
+    #| 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_UNSPECIFIED | 2020         | 1010           | 10            | 1           |  1001      | 1019     |
 
     # Place order outwith price monitoring bounds
     And the parties place the following orders:
@@ -206,12 +206,12 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     # trade at 1010 changes the target stake, too
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger         | target stake | supplied stake | open interest | auction end | min bound | max bound |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_LIQUIDITY | 3090         | 1010           | 20            | 2           |  1001      | 1019     |
-      #| 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_LIQUIDITY | 2050         | 1010           | 20            | 2           |  1001      | 1019     |
+      | mark price | trading mode                    | auction trigger                          | extension trigger                        | target stake | supplied stake | open interest | auction end | min bound | max bound |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 3090         | 1010           | 20            | 2           | 1001      | 1019      |
+    #| 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 2050         | 1010           | 20            | 2           |  1001      | 1019     |
 
     When the network moves ahead "10" blocks
-  
+
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | 2      | amendment |
@@ -223,14 +223,14 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
     # Auction end is now 12s (2+10 blocks) + 300 price extension
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger     | target stake | supplied stake | open interest | auction end |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE | 3090         | 10000          | 20            | 312         |
+      | mark price | trading mode                    | auction trigger                          | extension trigger     | target stake | supplied stake | open interest | auction end |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_PRICE | 3090         | 10000          | 20            | 312         |
 
     When the network moves ahead "150" blocks
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger     | target stake | supplied stake | open interest | auction end |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE | 3090         | 10000          | 20            | 312         |
+      | mark price | trading mode                    | auction trigger                          | extension trigger     | target stake | supplied stake | open interest | auction end |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_PRICE | 3090         | 10000          | 20            | 312         |
 
     Then the network moves ahead "150" blocks
 

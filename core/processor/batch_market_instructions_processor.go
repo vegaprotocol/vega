@@ -34,6 +34,7 @@ func (p *BMIProcessor) ProcessBatch(
 	ctx context.Context,
 	batch *commandspb.BatchMarketInstructions,
 	party, determinitisticID string,
+	stats Stats,
 ) error {
 	errs := commands.NewErrors()
 	// keep track of the index of the current instruction
@@ -44,7 +45,7 @@ func (p *BMIProcessor) ProcessBatch(
 	idx := 0
 
 	// first we generate the IDs for all new orders,
-	// these needs to be determinitistics
+	// these need to be determinitistic
 	idgen := idgeneration.New(determinitisticID)
 	submissionsIDs := make([]string, 0, len(batch.Submissions))
 	for i := 0; i < len(batch.Submissions); i++ {
@@ -55,6 +56,7 @@ func (p *BMIProcessor) ProcessBatch(
 	for i, cancel := range batch.Cancellations {
 		err := commands.CheckOrderCancellation(cancel)
 		if err == nil {
+			stats.IncTotalCancelOrder()
 			_, err = p.exec.CancelOrder(
 				ctx, types.OrderCancellationFromProto(cancel), party, idgen)
 		}
@@ -78,6 +80,7 @@ func (p *BMIProcessor) ProcessBatch(
 		} else {
 			err = commands.CheckOrderAmendment(protoAmend)
 			if err == nil {
+				stats.IncTotalAmendOrder()
 				var amend *types.OrderAmendment
 				amend, err = types.NewOrderAmendmentFromProto(protoAmend)
 				if err == nil {
@@ -101,8 +104,16 @@ func (p *BMIProcessor) ProcessBatch(
 		err := commands.CheckOrderSubmission(protoSubmit)
 		if err == nil {
 			var submit *types.OrderSubmission
+			stats.IncTotalCreateOrder()
 			if submit, err = types.NewOrderSubmissionFromProto(protoSubmit); err == nil {
-				_, err = p.exec.SubmitOrder(ctx, submit, party, idgen, submissionsIDs[i])
+				var conf *types.OrderConfirmation
+				conf, err = p.exec.SubmitOrder(ctx, submit, party, idgen, submissionsIDs[i])
+				if conf != nil {
+					stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
+					stats.AddTotalTrades(uint64(len(conf.Trades)))
+					stats.IncCurrentOrdersInBatch()
+				}
+				stats.IncTotalOrders()
 			}
 		}
 

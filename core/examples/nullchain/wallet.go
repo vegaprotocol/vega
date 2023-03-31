@@ -15,6 +15,7 @@ package nullchain
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -32,12 +33,15 @@ type Party struct {
 
 type Wallet struct {
 	handler    *wallets.Handler
-	store      *storev1.Store
+	store      *storev1.FileStore
 	passphrase string
 }
 
 func NewWallet(root, passphrase string) *Wallet {
-	store, _ := storev1.InitialiseStore(root)
+	store, err := storev1.InitialiseStore(root, false)
+	if err != nil {
+		panic(fmt.Errorf("could not initialise the wallet store: %w", err))
+	}
 
 	return &Wallet{
 		handler:    wallets.NewHandler(store),
@@ -63,10 +67,11 @@ func (w *Wallet) MakeParties(n uint64) ([]*Party, error) {
 		if _, err = w.handler.CreateWallet(walletName, passphrase); err != nil {
 			return nil, err
 		}
-		w.handler.LoginWallet(walletName, passphrase)
-		kp, err := w.handler.GenerateKeyPair(walletName, passphrase, nil)
-		w.handler.LogoutWallet(walletName)
+		if err := w.handler.LoginWallet(walletName, passphrase); err != nil {
+			return nil, err
+		}
 
+		kp, err := w.handler.GenerateKeyPair(walletName, passphrase, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -91,15 +96,10 @@ func (w *Wallet) Login(wallet string) {
 	_ = w.handler.LoginWallet(wallet, w.passphrase)
 }
 
-func (w *Wallet) Logout(wallet string) {
-	w.handler.LogoutWallet(wallet)
-}
-
 func (w *Wallet) SubmitTransaction(conn *Connection, party *Party, txn *walletpb.SubmitTransactionRequest) error {
 	blockHeight, _ := conn.LastBlockHeight()
 
 	w.Login(party.wallet)
-	defer w.Logout(party.wallet)
 
 	// Add public key to the transaction
 	txn.PubKey = party.pubkey
@@ -127,4 +127,8 @@ func (w *Wallet) SubmitTransaction(conn *Connection, party *Party, txn *walletpb
 	}
 
 	return nil
+}
+
+func (w *Wallet) Close() {
+	w.store.Close()
 }

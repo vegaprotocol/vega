@@ -23,6 +23,8 @@ enum Side {
 enum Interval {
   // Default value, always invalid
   INTERVAL_UNSPECIFIED = 0;
+  // The block interval is not a fixed amount of time, rather it used to indicate grouping of events that occur in a single block. It is usually about a second.
+  INTERVAL_BLOCK = -1;
   // 1 minute.
   INTERVAL_I1M = 60;
   // 5 minutes.
@@ -39,6 +41,12 @@ enum Interval {
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum Interval)
+}
+
+enum PositionStatus {
+  POSITION_STATUS_UNSPECIFIED = 0;
+  POSITION_STATUS_ORDERS_CLOSED = 1;
+  POSITION_STATUS_CLOSED_OUT = 2;
 }
 
 // A party represents an entity who wishes to trade on or query a Vega network
@@ -67,8 +75,12 @@ enum AuctionTrigger {
   AUCTION_TRIGGER_OPENING = 2;
   // Price monitoring trigger
   AUCTION_TRIGGER_PRICE = 3;
-  // Liquidity monitoring trigger
+  // Deprecated
   AUCTION_TRIGGER_LIQUIDITY = 4;
+  // Liquidity auction due to not enough committed liquidity
+  AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET = 5;
+  // Liquidity auction due to not being able to deploy LP orders because there's nothing to peg on one or both sides of the book
+  AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS = 6;
 }
 
 // A pegged reference defines which price point a pegged order is linked to - meaning
@@ -157,7 +169,8 @@ message Order {
     STATUS_REJECTED = 6;
     // Used for closed partially filled IOC orders
     STATUS_PARTIALLY_FILLED = 7;
-    // Order has been removed from the order book and has been parked, this applies to pegged orders only
+    // Order has been removed from the order book and has been parked,
+    // this applies to pegged orders and liquidity orders (orders created from a liquidity provision shape)
     STATUS_PARKED = 8;
 
     // Note: If adding an enum value, add a matching entry in:
@@ -175,10 +188,13 @@ message Order {
   Side side = 4;
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 5;
   // Size for the order, for example, in a futures market the size equals the number of contracts
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 size = 6;
   // Size remaining, when this reaches 0 then the order is fully filled and status becomes STATUS_FILLED
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 remaining = 7;
   // Time in force indicates how long an order will remain active before it is executed or expires.
   // - See OrderTimeInForce
@@ -210,6 +226,11 @@ message Order {
   PeggedOrder pegged_order = 18;
   // Is this order created as part of a liquidity provision, will be empty if not.
   string liquidity_provision_id = 19;
+  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only
+  bool post_only = 20;
+  // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
+  // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
+  bool reduce_only = 21;
 }
 
 // Used when cancelling an order
@@ -342,8 +363,12 @@ enum OrderError {
   ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER = 46;
   // An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS = 47;
-	// Unable to submit pegged order, temporarily too many pegged orders across all markets
+  // Unable to submit pegged order, temporarily too many pegged orders across all markets
   ORDER_ERROR_TOO_MANY_PEGGED_ORDERS = 48;
+  // The post order would trade
+  ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE = 49;
+  // The post order would trade
+  ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION = 50;
 
   // Note: If adding an enum value, add a matching entry in:
   //       - proto/errors.go (func Error)
@@ -377,8 +402,10 @@ message Trade {
   string market_id = 2;
   // Price for the trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 3;
   // Size filled for the trade
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 size = 4;
   // Unique party identifier for the buyer
   string buyer = 5;
@@ -408,10 +435,13 @@ message Trade {
 // Represents any fees paid by a party, resulting from a trade
 message Fee {
   // Fee amount paid to the non-aggressive party of the trade
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string maker_fee = 1;
   // Fee amount paid for maintaining the Vega infrastructure
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string infrastructure_fee = 2;
   // Fee amount paid to market makers
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string liquidity_fee = 3;
 }
 
@@ -429,14 +459,19 @@ message Candle {
   // An ISO-8601 datetime with nanosecond precision for when the candle was last updated
   string datetime = 2;
   // Highest price for trading during the candle interval
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string high = 3;
   // Lowest price for trading during the candle interval
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string low = 4;
   // Open trade price
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string open = 5;
   // Closing trade price
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string close = 6;
   // Total trading volume during the candle interval
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 volume = 7;
   // Time interval for the candle - See [`Interval`](#vega.Interval)
   Interval interval = 8;
@@ -446,10 +481,12 @@ message Candle {
 message PriceLevel {
   // Price for the price level, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 1;
   // Number of orders at the price level
   uint64 number_of_orders = 2;
   // Volume at the price level
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 volume = 3;
 }
 
@@ -473,9 +510,9 @@ message MarketDepthUpdate {
   repeated PriceLevel buy = 2;
   // Collection of updated price levels for the sell side of the book
   repeated PriceLevel sell = 3;
-  // Sequence number for the market depth update data returned. It is increasing but not monotonic.
+  // Sequence number for the market depth update data returned. It is increasing but not monotonic
   uint64 sequence_number = 4;
-  // Sequence number of of the previous market depth update, for checking there are no gaps.
+  // Sequence number of the previous market depth update, for checking there are no gaps
   uint64 previous_sequence_number = 5;
 }
 
@@ -486,23 +523,33 @@ message Position {
   // Party identifier
   string party_id = 2;
   // Open volume for the position, value is signed +ve for long and -ve for short
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   int64 open_volume = 3;
   // Realised profit and loss for the position, value is signed +ve for long and -ve for short
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string realised_pnl = 4;
   // Unrealised profit and loss for the position, value is signed +ve for long and -ve for short
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string unrealised_pnl = 5;
   // Average entry price for the position, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string average_entry_price = 6;
   // Timestamp for the latest time the position was updated
   int64 updated_at = 7;
+  // Sum of profit that could not be paid due to loss socialisation.
+  string loss_socialisation_amount = 8;
+  // Position status, indicating whether the party was distressed and had orders cancelled or was closed out.
+  PositionStatus position_status = 9;
 }
 
 message PositionTrade {
   // Volume for the position trade, value is signed +ve for long and -ve for short
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   int64 volume = 1;
   // Price for the position trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 2;
 }
 
@@ -543,6 +590,7 @@ message Deposit {
   // The Vega asset targeted by this deposit
   string asset = 4;
   // The amount to be deposited
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 5;
   // The hash of the transaction from the foreign chain
   string tx_hash = 6;
@@ -554,6 +602,8 @@ message Deposit {
 
 // A withdrawal from the Vega network
 message Withdrawal {
+  reserved 7;
+
   // The status of the withdrawal
   enum Status {
     // Default value, always invalid
@@ -572,6 +622,7 @@ message Withdrawal {
   // Unique party identifier of the user initiating the withdrawal
   string party_id = 2;
   // The amount to be withdrawn
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
   // The asset to withdraw funds from
   string asset = 4;
@@ -580,8 +631,6 @@ message Withdrawal {
   // The reference which is used by the foreign chain
   // to refer to this withdrawal
   string ref = 6;
-  // The time until when the withdrawal is valid
-  int64 expiry = 7;
   // The hash of the foreign chain for this transaction
   string tx_hash = 8;
   // Timestamp for when the network started to process this withdrawal
@@ -683,6 +732,7 @@ message Account {
   // Balance of the asset, the balance is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   // and importantly balances cannot be negative
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string balance = 3;
   // Asset identifier for the account
   string asset = 4;
@@ -694,7 +744,8 @@ message Account {
 
 // Asset value information used within a transfer
 message FinancialAmount {
-  // A signed integer amount of asset
+  // An unsigned integer amount of asset
+  // This field is passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 1;
   // Asset identifier
   string asset = 2;
@@ -741,8 +792,8 @@ enum TransferType {
   TRANSFER_TYPE_DEPOSIT = 19;
   // Bond account penalised when liquidity commitment not met
   TRANSFER_TYPE_BOND_SLASHING = 20;
-  // Staking reward received
-  TRANSFER_TYPE_STAKE_REWARD = 21;
+  // Reward payout received
+  TRANSFER_TYPE_REWARD_PAYOUT = 21;
   // A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
   TRANSFER_TYPE_TRANSFER_FUNDS_SEND = 22;
   // A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
@@ -758,10 +809,12 @@ message Transfer {
   // Party identifier for the owner of the transfer
   string owner = 1;
   // A financial amount (of an asset) to transfer
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   FinancialAmount amount = 2;
   // The type of transfer, gives the reason for the transfer
   TransferType type = 3;
   // A minimum amount
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string min_amount = 4;
   // optional dispatch strategy
   string market_id = 5;
@@ -795,8 +848,10 @@ message TransferRequest {
   // One or more accounts to transfer to
   repeated Account to_account = 2;
   // An amount to transfer for the asset
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
-  // A minimum amount
+  // The minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string min_amount = 4;
   // Asset identifier
   string asset = 5;
@@ -820,11 +875,16 @@ message LedgerEntry {
   // One or more accounts to transfer to
   AccountDetails to_account = 2;
   // An amount to transfer
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
   // Transfer type for this entry
   TransferType type = 4;
   // Timestamps
   int64 timestamp = 5;
+  // Sender account balance after the transfer
+  string from_account_balance = 6;
+  // Receiver account balance after the transfer
+  string to_account_balance = 7;
 }
 
 // Represents the balance for an account during a transfer
@@ -832,6 +892,7 @@ message PostTransferBalance {
   // The account relating to the transfer
   AccountDetails account = 1;
   // The balance relating to the transfer
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string balance = 2;
 }
 
@@ -843,12 +904,16 @@ message LedgerMovement {
 // Represents the margin levels for a party on a market at a given time
 message MarginLevels {
   // Maintenance margin value
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string maintenance_margin = 1;
-  // Search level value
+  // Margin search level value
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string search_level = 2;
   // Initial margin value
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string initial_margin = 3;
   // Collateral release level value
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string collateral_release_level = 4;
   // Party identifier
   string party_id = 5;
@@ -865,44 +930,57 @@ message MarginLevels {
 message MarketData {
   // Mark price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string mark_price = 1;
   // Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string best_bid_price = 2;
   // Aggregated volume being bid at the best bid price
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 best_bid_volume = 3;
   // Lowest price level on an order book for offer orders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string best_offer_price = 4;
   // Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
-  //  // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 best_offer_volume = 5;
   // Highest price on the order book for buy orders not including pegged orders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string best_static_bid_price = 6;
   // Total volume at the best static bid price excluding pegged orders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 best_static_bid_volume = 7;
   // Lowest price on the order book for sell orders not including pegged orders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string best_static_offer_price = 8;
-  // Total volume at the best static offer price excluding pegged orders
+  // Total volume at the best static offer price, excluding pegged orders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 best_static_offer_volume = 9;
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string mid_price = 10;
   // Arithmetic average of the best static bid price and best static offer price
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string static_mid_price = 11;
   // Market identifier for the data
   string market = 12;
   // Timestamp at which this mark price was relevant, in nanoseconds since the epoch
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 13;
-  // The sum of the size of all positions greater than 0 on the market
+  // The sum of the size of all positions greater than zero on the market
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 open_interest = 14;
-  // Time in seconds until the end of the auction (0 if currently not in auction period)
+  // Time in seconds until the end of the auction (zero if currently not in auction period)
   int64 auction_end = 15;
   // Time until next auction, or start time of the current auction if market is in auction period
   int64 auction_start = 16;
   // Indicative price (zero if not in auction)
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string indicative_price = 17;
   // Indicative volume (zero if not in auction)
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 indicative_volume = 18;
   // The current trading mode for the market
   Market.TradingMode market_trading_mode = 19;
@@ -911,8 +989,10 @@ message MarketData {
   // When a market auction is extended, this field indicates what caused the extension
   AuctionTrigger extension_trigger = 21;
   // Targeted stake for the given market
+  // This field is an unsigned integer passed as a string and needs to be scaled using the settlement asset's decimal places.
   string target_stake = 22;
   // Available stake for the given market
+  // This field is an unsigned integer passed as a string and needs to be scaled using the settlement asset's decimal places.
   string supplied_stake = 23;
   // One or more price monitoring bounds for the current timestamp
   repeated PriceMonitoringBounds price_monitoring_bounds = 24;
@@ -924,7 +1004,8 @@ message MarketData {
   Market.State market_state = 27;
   // next MTM timestamp
   int64 next_mark_to_market = 28;
-  // last traded price of the market
+  // Last traded price of the market
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string last_traded_price = 29;
 }
 
@@ -936,18 +1017,22 @@ message LiquidityProviderFeeShare {
   string equity_like_share = 2;
   // The average entry valuation of the liquidity provider for the market
   string average_entry_valuation = 3;
-
+  // The average liquidity score
+  string average_score = 4;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
 message PriceMonitoringBounds {
   // Minimum price that isn't currently breaching the specified price monitoring trigger
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string min_valid_price = 1;
   // Maximum price that isn't currently breaching the specified price monitoring trigger
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string max_valid_price = 2;
   // Price monitoring trigger associated with the bounds
   PriceMonitoringTrigger trigger = 3;
   // Reference price used to calculate the valid price range
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string reference_price = 4;
 }
 
@@ -971,18 +1056,16 @@ message NetworkParameter {
 
 // Network limits, defined in the genesis file
 message NetworkLimits {
+  reserved 3, 6;
+
   // Are market proposals allowed at this point in time
   bool can_propose_market = 1;
   // Are asset proposals allowed at this point in time
   bool can_propose_asset = 2;
-  // True once block count > bootstrapBlockCount
-  bool bootstrap_finished = 3;
   // Are market proposals enabled on this chain
   bool propose_market_enabled = 4;
   // Are asset proposals enabled on this chain
   bool propose_asset_enabled = 5;
-  // How many blocks before the chain comes out of bootstrap mode
-  uint32 bootstrap_block_count = 6;
   // True once the genesis file is loaded
   bool genesis_loaded = 7;
   // The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)
@@ -998,6 +1081,7 @@ message LiquidityOrder {
   // The relative proportion of the commitment to be allocated at a price level
   uint32 proportion = 2;
   // The offset/amount of units away for the order
+  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string offset = 3;
 }
 
@@ -1044,8 +1128,9 @@ message LiquidityProvision {
   // Market identifier for the order, required field
   string market_id = 5;
   // Specified as a unitless number that represents the amount of settlement asset of the market
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string commitment_amount = 6;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
   string fee = 7;
   // A set of liquidity sell orders to meet the liquidity provision obligation
   repeated LiquidityOrderReference sells = 8;
@@ -1077,7 +1162,7 @@ message EthereumConfig {
   EthereumContractConfig staking_bridge_contract = 5;
   // Contract configuration of the token vesting contract for this Ethereum network.
   EthereumContractConfig token_vesting_contract = 6;
-  // Contract configuration of the multisig controld contract for this Ethereum network.
+  // Contract configuration of the multisig control contract for this Ethereum network.
   EthereumContractConfig  multisig_control_contract = 7;
 }
 
@@ -1205,14 +1290,19 @@ message Node {
   // Country code for the location of the node
   string location = 6;
   // The amount the node has put up themselves
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
   string staked_by_operator = 7;
   // The amount of stake that has been delegated by token holders
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
   string staked_by_delegates = 8;
   // Total amount staked on node
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
   string staked_total = 9;
-  // Max amount of (wanted) stake, is this a network param or a node param
+  // Max amount of (wanted) stake
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
   string max_intended_stake = 10;
   // Amount of stake on the next epoch
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the token.
   string pending_stake = 11;
   // Information about epoch
   EpochData epoch_data = 12;
@@ -1247,6 +1337,7 @@ message NodeSet {
 
 message NodeData {
   // Total staked amount across all nodes
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the token.
   string staked_total = 1;
   // Total number of nodes across all node sets
   uint32 total_nodes = 2;
@@ -1268,6 +1359,7 @@ message Delegation {
   // Node ID
   string node_id = 2;
   // Amount delegated
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the token.
   string amount = 3;
   // Epoch of delegation
   string epoch_seq = 4;
@@ -1278,6 +1370,8 @@ message Reward {
   string asset_id = 1;
   string party_id = 2;
   uint64 epoch = 3;
+  // Amount paid as a reward
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the reward asset.
   string amount = 4;
   string percentage_of_total = 5;
   int64 received_at = 6;
@@ -1289,9 +1383,22 @@ message Reward {
 message RewardSummary {
   string asset_id = 1;
   string party_id = 2;
-  // Total amount of rewards for the asset
+  // Total amount of rewards paid in the asset
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
 }
+
+// Details for rewards for a combination of asset, market, and reward type in a given epoch
+message EpochRewardSummary {
+  uint64 epoch = 1;
+  string asset_id = 2;
+  string market_id = 3;
+  string reward_type = 4;
+ // Amount distributed
+  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
+  string amount = 5;
+}
+
 
 message StateValueProposal {
   // state variable identifier

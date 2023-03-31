@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -31,13 +30,14 @@ type DescribePermissionsHandler func(api.AdminDescribePermissionsParams) (api.Ad
 
 func NewCmdDescribePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminDescribePermissionsParams) (api.AdminDescribePermissionsResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminDescribePermissionsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		describePermissions := api.NewAdminDescribePermissions(s)
-		rawResult, errDetails := describePermissions.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		describePermissions := api.NewAdminDescribePermissions(walletStore)
+		rawResult, errDetails := describePermissions.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminDescribePermissionsResult{}, errors.New(errDetails.Data)
 		}
@@ -131,10 +131,10 @@ func PrintDescribePermissionsResult(w io.Writer, resp api.AdminDescribePermissio
 
 	str.Text("Public keys: ").NextLine()
 	str.Text("  Access mode: ").WarningText(fmt.Sprintf("%v", resp.Permissions.PublicKeys.Access)).NextLine()
-	if len(resp.Permissions.PublicKeys.RestrictedKeys) != 0 {
-		str.Text("  Restricted keys: ").NextLine()
-		for _, k := range resp.Permissions.PublicKeys.RestrictedKeys {
-			str.Text("    - ").WarningText(k).NextLine()
+	if len(resp.Permissions.PublicKeys.AllowedKeys) != 0 {
+		str.Text("  Allowed keys: ").NextLine()
+		for _, k := range resp.Permissions.PublicKeys.AllowedKeys {
+			str.ListItem().Text("- ").WarningText(k).NextLine()
 		}
 	}
 }

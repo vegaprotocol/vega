@@ -161,6 +161,19 @@ func (t *Transfers) GetAll(ctx context.Context, pagination entities.CursorPagina
 	return t.getTransfers(ctx, pagination, "")
 }
 
+func (t *Transfers) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Transfer, error) {
+	defer metrics.StartSQLQuery("Transfers", "GetByTxHash")()
+
+	var transfers []entities.Transfer
+	query := "SELECT * FROM transfers WHERE tx_hash = $1"
+
+	err := pgxscan.Select(ctx, t.Connection, &transfers, query, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("getting transfers:%w", err)
+	}
+	return transfers, nil
+}
+
 func (t *Transfers) getTransfers(ctx context.Context, pagination entities.CursorPagination, where string, args ...interface{}) ([]entities.Transfer,
 	entities.PageInfo, error,
 ) {

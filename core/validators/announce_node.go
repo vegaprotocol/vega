@@ -14,6 +14,7 @@ package validators
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -87,7 +88,16 @@ func VerifyAnnounceNode(an *commandspb.AnnounceNode) error {
 		return err
 	}
 
+	if err := VerifyTendermintKey(an.ChainPubKey); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func VerifyTendermintKey(tmKey string) error {
+	_, err := base64.StdEncoding.DecodeString(tmKey)
+	return err
 }
 
 // SignAnnounceNode adds the signature for the ethereum and

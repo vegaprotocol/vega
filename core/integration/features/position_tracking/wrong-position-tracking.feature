@@ -2,8 +2,8 @@ Feature: Test position tracking with auctions
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 0.01                   | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -20,13 +20,13 @@ Feature: Test position tracking with auctions
       | partylp | ETH   | 1000000000 |
       | ruser   | ETH   | 75000      |
 
-# submit our LP
+    # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment  |
 
-# get out of auction
+    # get out of auction
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party0 | ETH/DEC19 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-1    |
@@ -53,8 +53,8 @@ Feature: Test position tracking with auctions
 
     Then the parties place the following pegged orders:
       | party | market id | side | volume | pegged reference | offset |
-      | ruser  | ETH/DEC19 | buy  | 35     | BID              | 1000  |
-      | ruser  | ETH/DEC19 | sell | 35     | ASK              | 3000  |
+      | ruser | ETH/DEC19 | buy  | 35     | BID              | 1000   |
+      | ruser | ETH/DEC19 | sell | 35     | ASK              | 3000   |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |

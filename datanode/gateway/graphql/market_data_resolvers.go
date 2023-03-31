@@ -185,6 +185,7 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 			Party:                 &types.Party{Id: v.Party},
 			EquityLikeShare:       v.EquityLikeShare,
 			AverageEntryValuation: v.AverageEntryValuation,
+			AverageScore:          v.AverageScore,
 		})
 	}
 	return out, nil
@@ -288,6 +289,7 @@ func (r *myObservableMarketDataResolver) LiquidityProviderFeeShare(ctx context.C
 			PartyID:               v.Party,
 			EquityLikeShare:       v.EquityLikeShare,
 			AverageEntryValuation: v.AverageEntryValuation,
+			AverageScore:          v.AverageScore,
 		})
 	}
 	return out, nil
@@ -384,7 +386,7 @@ func (r *mySubscriptionResolver) MarketsDepth(ctx context.Context, marketIds []s
 		return nil, err
 	}
 
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse](r.log, "marketsDepth", stream,
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthResponse](ctx, r.log, "marketsDepth", stream,
 		func(md *v2.ObserveMarketsDepthResponse) []*types.MarketDepth {
 			return md.MarketDepth
 		}), nil
@@ -399,7 +401,7 @@ func (r *mySubscriptionResolver) MarketsDepthUpdate(ctx context.Context, marketI
 		return nil, err
 	}
 
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse](r.log, "marketsDepthUpdate", stream,
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDepthUpdatesResponse](ctx, r.log, "marketsDepthUpdate", stream,
 		func(md *v2.ObserveMarketsDepthUpdatesResponse) []*types.MarketDepthUpdate {
 			return md.Update
 		}), nil
@@ -414,7 +416,7 @@ func (r *mySubscriptionResolver) MarketsData(ctx context.Context, marketIds []st
 		return nil, err
 	}
 
-	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse](r.log, "marketsdata", stream,
+	return grpcStreamToGraphQlChannel[*v2.ObserveMarketsDataResponse](ctx, r.log, "marketsdata", stream,
 		func(md *v2.ObserveMarketsDataResponse) []*types.MarketData {
 			return md.MarketData
 		}), nil
@@ -425,7 +427,9 @@ type grpcStream[T any] interface {
 	grpc.ClientStream
 }
 
-func grpcStreamToGraphQlChannel[T any, Y any](log *logging.Logger, observableType string, stream grpcStream[T], grpcStreamTypeToGraphQlType func(T) Y) chan Y {
+func grpcStreamToGraphQlChannel[T any, Y any](ctx context.Context, log *logging.Logger, observableType string, stream grpcStream[T], grpcStreamTypeToGraphQlType func(T) Y) chan Y {
+	// should be just a wrapped version of ctx, but let's check both
+	sCtx := stream.Context()
 	c := make(chan Y)
 	go func() {
 		defer func() {
@@ -442,7 +446,17 @@ func grpcStreamToGraphQlChannel[T any, Y any](log *logging.Logger, observableTyp
 				log.Error(observableType+": stream closed", logging.Error(err))
 				break
 			}
-			c <- grpcStreamTypeToGraphQlType(md)
+			select {
+			case c <- grpcStreamTypeToGraphQlType(md):
+				log.Debugf("%s: data sent", observableType)
+				continue
+			case <-sCtx.Done():
+				log.Debugf("%s: stream closed by server", observableType)
+				break
+			case <-ctx.Done():
+				log.Debugf("%s: stream closed", observableType)
+				break
+			}
 		}
 	}()
 	return c

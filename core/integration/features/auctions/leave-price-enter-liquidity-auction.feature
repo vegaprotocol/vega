@@ -3,8 +3,8 @@ Feature: Leave a monitoring auction, enter a liquidity auction
   Background:
 
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 0.01                   | 0                         |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -19,13 +19,13 @@ Feature: Leave a monitoring auction, enter a liquidity auction
       | party3  | ETH   | 1000000000 |
       | partylp | ETH   | 1000000000 |
 
-# submit our LP
+    # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment  |
 
-# get out of auction
+    # get out of auction
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | party0 | ETH/DEC19 | buy  | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-1    |
@@ -36,14 +36,14 @@ Feature: Leave a monitoring auction, enter a liquidity auction
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-# trigger liquidity monitoring
+    # trigger liquidity monitoring
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | t1-s-3    |
       | party0 | ETH/DEC19 | buy  | 1      | 99844 | 0                | TYPE_LIMIT | TIF_GTC | t0-b-3    |
 
     And time is updated to "2019-11-30T00:00:03Z"
-      # enter price monitoring auction
+    # enter price monitoring auction
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"
 
@@ -69,7 +69,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     Then the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | party3 | ETH/DEC19 | buy  | 3      | BID              | 900   |
+      | party3 | ETH/DEC19 | buy  | 3      | BID              | 900    |
 
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"

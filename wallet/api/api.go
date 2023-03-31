@@ -2,36 +2,38 @@ package api
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
 	nodetypes "code.vegaprotocol.io/vega/wallet/api/node/types"
-	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
-	"code.vegaprotocol.io/vega/wallet/service"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"go.uber.org/zap"
 )
 
 // Generates mocks
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ServiceStore,TokenStore,TimeProvider,ProofOfWork
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ConnectionsManager,SpamHandler
 
 type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
 
 // WalletStore is the component used to retrieve and update wallets from the
 // computer.
 type WalletStore interface {
+	UnlockWallet(ctx context.Context, name, passphrase string) error
+	LockWallet(ctx context.Context, name string) error
 	WalletExists(ctx context.Context, name string) (bool, error)
-	GetWallet(ctx context.Context, name, passphrase string) (wallet.Wallet, error)
+	GetWallet(ctx context.Context, name string) (wallet.Wallet, error)
 	ListWallets(ctx context.Context) ([]string, error)
-	SaveWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
+	CreateWallet(ctx context.Context, w wallet.Wallet, passphrase string) error
+	UpdateWallet(ctx context.Context, w wallet.Wallet) error
+	UpdatePassphrase(ctx context.Context, name, newPassphrase string) error
 	DeleteWallet(ctx context.Context, name string) error
 	RenameWallet(ctx context.Context, currentName, newName string) error
 	GetWalletPath(name string) string
+	IsWalletAlreadyUnlocked(ctx context.Context, name string) (bool, error)
 }
 
 // NetworkStore is the component used to retrieve and update the networks from the
@@ -43,43 +45,18 @@ type NetworkStore interface {
 	ListNetworks() ([]string, error)
 	GetNetworkPath(string) string
 	DeleteNetwork(string) error
+	RenameNetwork(currentName, newName string) error
 }
 
-// ServiceStore is used to initialise the RSA keys the service API v1 relies on.
-type ServiceStore interface {
-	RSAKeysExists() (bool, error)
-	SaveRSAKeys(*service.RSAKeys) error
-	GetRsaKeys() (*service.RSAKeys, error)
+type ConnectionsManager interface {
+	EndSessionConnection(hostname, wallet string)
+	ListSessionConnections() []Connection
 }
 
-// TokenStore is the component used to retrieve and update the API tokens from the
-// computer.
-type TokenStore interface {
-	TokenExists(token string) (bool, error)
-	ListTokens() ([]session.TokenSummary, error)
-	GetToken(token string) (session.Token, error)
-	SaveToken(tokenConfig session.Token) error
-	DeleteToken(token string) error
+type SpamHandler interface {
+	GenerateProofOfWork(pubKey string, blockData *nodetypes.SpamStatistics) (*commandspb.ProofOfWork, error)
+	CheckSubmission(req *walletpb.SubmitTransactionRequest, latest *nodetypes.SpamStatistics) error
 }
-
-// PolicyBuilderFunc return the policy the API v2.
-type PolicyBuilderFunc func(ctx context.Context) service.Policy
-
-// InteractorBuilderFunc returns the interactor to use in the client API.
-type InteractorBuilderFunc func(ctx context.Context) Interactor
-
-// ShutdownSwitchBuilder is used to build a switch that is controlled by
-// components that share the same lifecycle.
-type ShutdownSwitchBuilder func() *ServiceShutdownSwitch
-
-// LoggerBuilderFunc is used to build a logger. It returns the built logger and a
-// zap.AtomicLevel to allow the caller to dynamically change the log level.
-type LoggerBuilderFunc func(path paths.StatePath, level string) (*zap.Logger, zap.AtomicLevel, error)
-
-// EventListener is used to transmit event happening in a component to another one.
-// For example, it's used in the service to broadcast information about the
-// service health and state.
-type EventListener func(eventName string, optionalData ...interface{})
 
 // Interactor is the component in charge of delegating the JSON-RPC API
 // requests, notifications and logs to the wallet front-end.
@@ -93,7 +70,7 @@ type Interactor interface {
 	// NotifyInteractionSessionBegan notifies the beginning of an interaction
 	// session.
 	// A session is scoped to a request.
-	NotifyInteractionSessionBegan(ctx context.Context, traceID string) error
+	NotifyInteractionSessionBegan(ctx context.Context, traceID string, workflow WorkflowType, numberOfSteps uint8) error
 
 	// NotifyInteractionSessionEnded notifies the end of an interaction
 	// session.
@@ -101,14 +78,14 @@ type Interactor interface {
 	NotifyInteractionSessionEnded(ctx context.Context, traceID string)
 
 	// NotifySuccessfulTransaction is used to report a successful transaction.
-	NotifySuccessfulTransaction(ctx context.Context, traceID, txHash, deserializedInputData, tx string, sentAt time.Time)
+	NotifySuccessfulTransaction(ctx context.Context, traceID string, stepNumber uint8, txHash, deserializedInputData, tx string, sentAt time.Time, host string)
 
 	// NotifyFailedTransaction is used to report a failed transaction.
-	NotifyFailedTransaction(ctx context.Context, traceID, deserializedInputData, tx string, err error, sentAt time.Time)
+	NotifyFailedTransaction(ctx context.Context, traceID string, stepNumber uint8, deserializedInputData, tx string, err error, sentAt time.Time, host string)
 
 	// NotifySuccessfulRequest is used to notify the user the request is
 	// successful.
-	NotifySuccessfulRequest(ctx context.Context, traceID string, message string)
+	NotifySuccessfulRequest(ctx context.Context, traceID string, stepNumber uint8, message string)
 
 	// NotifyError is used to report errors to the user.
 	NotifyError(ctx context.Context, traceID string, t ErrorType, err error)
@@ -123,39 +100,55 @@ type Interactor interface {
 	// RequestWalletConnectionReview is used to trigger a user review of
 	// the wallet connection requested by the specified hostname.
 	// It returns the type of connection approval chosen by the user.
-	RequestWalletConnectionReview(ctx context.Context, traceID, hostname string) (string, error)
+	RequestWalletConnectionReview(ctx context.Context, traceID string, stepNumber uint8, hostname string) (string, error)
 
 	// RequestWalletSelection is used to trigger the selection of the wallet the
 	// user wants to use for the specified hostname.
-	RequestWalletSelection(ctx context.Context, traceID, hostname string, availableWallets []string) (SelectedWallet, error)
+	RequestWalletSelection(ctx context.Context, traceID string, stepNumber uint8, hostname string, availableWallets []string) (string, error)
 
 	// RequestPassphrase is used to request to the user the passphrase of a wallet.
 	// It's primarily used by requests that update the wallet.
-	RequestPassphrase(ctx context.Context, traceID, wallet string) (string, error)
+	RequestPassphrase(ctx context.Context, traceID string, stepNumber uint8, wallet, reason string) (string, error)
 
 	// RequestPermissionsReview is used to trigger a user review of the permissions
 	// requested by the specified hostname.
 	// It returns true if the user approved the requested permissions, false
 	// otherwise.
-	RequestPermissionsReview(ctx context.Context, traceID, hostname, wallet string, perms map[string]string) (bool, error)
+	RequestPermissionsReview(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet string, perms map[string]string) (bool, error)
 
 	// RequestTransactionReviewForSending is used to trigger a user review of the
 	// transaction a third-party application wants to send.
 	// It returns true if the user approved the sending of the transaction,
 	// false otherwise.
-	RequestTransactionReviewForSending(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionReviewForSending(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 
 	// RequestTransactionReviewForSigning is used to trigger a user review of the
 	// transaction a third-party application wants to sign. The wallet doesn't
 	// send the transaction.
 	// It returns true if the user approved the signing of the transaction,
 	// false otherwise.
-	RequestTransactionReviewForSigning(ctx context.Context, traceID, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+	RequestTransactionReviewForSigning(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
+
+	// RequestTransactionReviewForChecking is used to prompt the user to check of the
+	// transaction a third-party application wants to receive. The wallet doesn't
+	// check the transaction.
+	// It returns true if the user approved the transaction,
+	// false otherwise.
+	RequestTransactionReviewForChecking(ctx context.Context, traceID string, stepNumber uint8, hostname, wallet, pubKey, transaction string, receivedAt time.Time) (bool, error)
 }
 
-type ProofOfWork interface {
-	Generate(pubKey string, blockData *nodetypes.LastBlock) (*commandspb.ProofOfWork, error)
-}
+// FileSchemePrefix defines the prefix used in URL's to indicate that the string represents a file-path.
+const FileSchemePrefix = "file://"
+
+// WorkflowType defines the type of interaction workflow that started by a
+// method.
+type WorkflowType string
+
+var (
+	WalletConnectionWorkflow  WorkflowType = "WALLET_CONNECTION"
+	TransactionReviewWorkflow WorkflowType = "TRANSACTION_REVIEW"
+	PermissionRequestWorkflow WorkflowType = "PERMISSION_REQUEST"
+)
 
 // ErrorType defines the type of error that is sent to the user, for fine
 // grain error management and reporting.
@@ -194,43 +187,50 @@ var (
 	SuccessLog LogType = "Success"
 )
 
-// SelectedWallet holds the result of the wallet selection from the user.
-type SelectedWallet struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
+type ClientAPI struct {
+	checkTransaction *ClientCheckTransaction
+	connectWallet    *ClientConnectWallet
+	getChainID       *ClientGetChainID
+	listKeys         *ClientListKeys
+	signTransaction  *ClientSignTransaction
+	sendTransaction  *ClientSendTransaction
 }
 
-// ClientAPI builds the wallet JSON-RPC API with specific methods that are
-// intended to be publicly exposed to third-party applications in a
-// non-trustable environment.
-// Because of the nature of the environment from where these methods are called,
-// no administration methods are exposed. We don't want malicious third-party
-// applications to leverage administration capabilities that could expose the
-// user and/or compromise his wallets.
-func ClientAPI(log *zap.Logger, walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow ProofOfWork, sessions *session.Sessions) (*jsonrpc.API, error) {
-	walletAPI := jsonrpc.New(log)
+func (a *ClientAPI) CheckTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.checkTransaction.Handle(ctx, rawParams, connectedWallet)
+}
 
-	// We add this pre-check so users stop asking why they can't access the
-	// administrative endpoints.
-	walletAPI.AddDispatchPolicy(func(_ context.Context, request jsonrpc.Request, _ jsonrpc.RequestMetadata) *jsonrpc.ErrorDetails {
-		if strings.HasPrefix(request.Method, "admin.") {
-			return requestNotPermittedError(ErrAdminEndpointsNotExposed)
-		}
-		return nil
-	})
+func (a *ClientAPI) ConnectWallet(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails) {
+	return a.connectWallet.Handle(ctx, hostname)
+}
 
-	walletAPI.RegisterMethod("client.connect_wallet", NewConnectWallet(walletStore, interactor, sessions))
-	walletAPI.RegisterMethod("client.disconnect_wallet", NewDisconnectWallet(sessions))
-	walletAPI.RegisterMethod("client.get_chain_id", NewGetChainID(nodeSelector))
-	walletAPI.RegisterMethod("client.list_keys", NewListKeys(walletStore, interactor, sessions))
-	walletAPI.RegisterMethod("client.sign_transaction", NewSignTransaction(interactor, nodeSelector, pow, sessions))
-	walletAPI.RegisterMethod("client.send_transaction", NewSendTransaction(interactor, nodeSelector, pow, sessions))
-	walletAPI.RegisterMethod("client.request_permissions", NewRequestPermissions(walletStore, interactor, sessions))
-	walletAPI.RegisterMethod("client.get_permissions", NewGetPermissions(sessions))
+func (a *ClientAPI) GetChainID(ctx context.Context) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.getChainID.Handle(ctx)
+}
 
-	log.Info("the client JSON-RPC API has been initialised")
+func (a *ClientAPI) ListKeys(ctx context.Context, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.listKeys.Handle(ctx, connectedWallet)
+}
 
-	return walletAPI, nil
+func (a *ClientAPI) SignTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.signTransaction.Handle(ctx, rawParams, connectedWallet)
+}
+
+func (a *ClientAPI) SendTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.sendTransaction.Handle(ctx, rawParams, connectedWallet)
+}
+
+func BuildClientAPI(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, spam SpamHandler) (*ClientAPI, error) {
+	clientAPI := &ClientAPI{}
+
+	clientAPI.checkTransaction = NewClientCheckTransaction(walletStore, interactor, nodeSelector, spam)
+	clientAPI.connectWallet = NewConnectWallet(walletStore, interactor)
+	clientAPI.getChainID = NewGetChainID(nodeSelector)
+	clientAPI.listKeys = NewListKeys(walletStore, interactor)
+	clientAPI.signTransaction = NewClientSignTransaction(walletStore, interactor, nodeSelector, spam)
+	clientAPI.sendTransaction = NewClientSendTransaction(walletStore, interactor, nodeSelector, spam)
+
+	return clientAPI, nil
 }
 
 // AdminAPI builds the JSON-RPC API of the wallet with all the methods available.
@@ -240,38 +240,28 @@ func AdminAPI(
 	log *zap.Logger,
 	walletStore WalletStore,
 	netStore NetworkStore,
-	svcStore ServiceStore,
-	tokenStore TokenStore,
 	nodeSelectorBuilder NodeSelectorBuilder,
-	policyBuilderFunc PolicyBuilderFunc,
-	interactorBuilderFunc InteractorBuilderFunc,
-	loggerBuilderFunc LoggerBuilderFunc,
-	contextBuilderFunc ShutdownSwitchBuilder,
-) (*jsonrpc.API, error) {
-	servicesManager := NewServicesManager(tokenStore, walletStore)
-
-	walletAPI := jsonrpc.New(log)
+	connectionsManager ConnectionsManager,
+) (*jsonrpc.Dispatcher, error) {
+	walletAPI := jsonrpc.NewDispatcher(log)
 	walletAPI.RegisterMethod("admin.annotate_key", NewAdminAnnotateKey(walletStore))
-	walletAPI.RegisterMethod("admin.close_connection", NewAdminCloseConnection(servicesManager))
-	walletAPI.RegisterMethod("admin.close_connections_to_hostname", NewAdminCloseConnectionsToHostname(servicesManager))
-	walletAPI.RegisterMethod("admin.close_connections_to_wallet", NewAdminCloseConnectionsToWallet(servicesManager))
+	walletAPI.RegisterMethod("admin.check_transaction", NewAdminCheckTransaction(walletStore, netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.close_connection", NewAdminCloseConnection(connectionsManager))
+	walletAPI.RegisterMethod("admin.close_connections_to_hostname", NewAdminCloseConnectionsToHostname(connectionsManager))
+	walletAPI.RegisterMethod("admin.close_connections_to_wallet", NewAdminCloseConnectionsToWallet(connectionsManager))
 	walletAPI.RegisterMethod("admin.create_wallet", NewAdminCreateWallet(walletStore))
-	walletAPI.RegisterMethod("admin.delete_api_token", NewAdminDeleteAPIToken(tokenStore))
 	walletAPI.RegisterMethod("admin.describe_key", NewAdminDescribeKey(walletStore))
 	walletAPI.RegisterMethod("admin.describe_network", NewAdminDescribeNetwork(netStore))
 	walletAPI.RegisterMethod("admin.describe_permissions", NewAdminDescribePermissions(walletStore))
-	walletAPI.RegisterMethod("admin.describe_tokens", NewAdminDescribeAPIToken(tokenStore))
 	walletAPI.RegisterMethod("admin.describe_wallet", NewAdminDescribeWallet(walletStore))
-	walletAPI.RegisterMethod("admin.generate_api_token", NewAdminGenerateAPIToken(walletStore, tokenStore))
 	walletAPI.RegisterMethod("admin.generate_key", NewAdminGenerateKey(walletStore))
 	walletAPI.RegisterMethod("admin.import_network", NewAdminImportNetwork(netStore))
 	walletAPI.RegisterMethod("admin.import_wallet", NewAdminImportWallet(walletStore))
 	walletAPI.RegisterMethod("admin.isolate_key", NewAdminIsolateKey(walletStore))
-	walletAPI.RegisterMethod("admin.list_connections", NewAdminListConnections(servicesManager))
+	walletAPI.RegisterMethod("admin.list_connections", NewAdminListConnections(connectionsManager))
 	walletAPI.RegisterMethod("admin.list_keys", NewAdminListKeys(walletStore))
 	walletAPI.RegisterMethod("admin.list_networks", NewAdminListNetworks(netStore))
 	walletAPI.RegisterMethod("admin.list_permissions", NewAdminListPermissions(walletStore))
-	walletAPI.RegisterMethod("admin.list_tokens", NewAdminListAPITokens(tokenStore))
 	walletAPI.RegisterMethod("admin.list_wallets", NewAdminListWallets(walletStore))
 	walletAPI.RegisterMethod("admin.purge_permissions", NewAdminPurgePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.remove_network", NewAdminRemoveNetwork(netStore))
@@ -279,12 +269,10 @@ func AdminAPI(
 	walletAPI.RegisterMethod("admin.rename_wallet", NewAdminRenameWallet(walletStore))
 	walletAPI.RegisterMethod("admin.revoke_permissions", NewAdminRevokePermissions(walletStore))
 	walletAPI.RegisterMethod("admin.rotate_key", NewAdminRotateKey(walletStore))
-	walletAPI.RegisterMethod("admin.send_transaction", NewAdminSendTransaction(walletStore, netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.send_raw_transaction", NewAdminSendRawTransaction(netStore, nodeSelectorBuilder))
+	walletAPI.RegisterMethod("admin.send_transaction", NewAdminSendTransaction(walletStore, netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.sign_message", NewAdminSignMessage(walletStore))
 	walletAPI.RegisterMethod("admin.sign_transaction", NewAdminSignTransaction(walletStore, netStore, nodeSelectorBuilder))
-	walletAPI.RegisterMethod("admin.start_service", NewAdminStartService(walletStore, netStore, svcStore, policyBuilderFunc, interactorBuilderFunc, loggerBuilderFunc, contextBuilderFunc, servicesManager))
-	walletAPI.RegisterMethod("admin.stop_service", NewAdminStopService(servicesManager))
 	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.update_network", NewAdminUpdateNetwork(netStore))

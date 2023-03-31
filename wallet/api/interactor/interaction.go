@@ -8,24 +8,25 @@ import (
 )
 
 const (
-	CancelRequestName                      InteractionName = "CANCEL_REQUEST"
-	DecisionName                           InteractionName = "DECISION"
-	EnteredPassphraseName                  InteractionName = "ENTERED_PASSPHRASE"
-	ErrorOccurredName                      InteractionName = "ERROR_OCCURRED"
-	InteractionSessionBeganName            InteractionName = "INTERACTION_SESSION_BEGAN"
-	InteractionSessionEndedName            InteractionName = "INTERACTION_SESSION_ENDED"
-	LogName                                InteractionName = "LOG"
-	RequestPassphraseName                  InteractionName = "REQUEST_PASSPHRASE"
-	RequestPermissionsReviewName           InteractionName = "REQUEST_PERMISSIONS_REVIEW"
-	RequestSucceededName                   InteractionName = "REQUEST_SUCCEEDED"
-	RequestTransactionReviewForSendingName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SENDING"
-	RequestTransactionReviewForSigningName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SIGNING"
-	RequestWalletConnectionReviewName      InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
-	RequestWalletSelectionName             InteractionName = "REQUEST_WALLET_SELECTION"
-	SelectedWalletName                     InteractionName = "SELECTED_WALLET"
-	TransactionFailedName                  InteractionName = "TRANSACTION_FAILED"
-	TransactionSucceededName               InteractionName = "TRANSACTION_SUCCEEDED"
-	WalletConnectionDecisionName           InteractionName = "WALLET_CONNECTION_DECISION"
+	CancelRequestName                       InteractionName = "CANCEL_REQUEST"
+	DecisionName                            InteractionName = "DECISION"
+	EnteredPassphraseName                   InteractionName = "ENTERED_PASSPHRASE"
+	ErrorOccurredName                       InteractionName = "ERROR_OCCURRED"
+	InteractionSessionBeganName             InteractionName = "INTERACTION_SESSION_BEGAN"
+	InteractionSessionEndedName             InteractionName = "INTERACTION_SESSION_ENDED"
+	LogName                                 InteractionName = "LOG"
+	RequestPassphraseName                   InteractionName = "REQUEST_PASSPHRASE"
+	RequestPermissionsReviewName            InteractionName = "REQUEST_PERMISSIONS_REVIEW"
+	RequestSucceededName                    InteractionName = "REQUEST_SUCCEEDED"
+	RequestTransactionReviewForSendingName  InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SENDING"
+	RequestTransactionReviewForSigningName  InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_SIGNING"
+	RequestTransactionReviewForCheckingName InteractionName = "REQUEST_TRANSACTION_REVIEW_FOR_CHECKING"
+	RequestWalletConnectionReviewName       InteractionName = "REQUEST_WALLET_CONNECTION_REVIEW"
+	RequestWalletSelectionName              InteractionName = "REQUEST_WALLET_SELECTION"
+	SelectedWalletName                      InteractionName = "SELECTED_WALLET"
+	TransactionFailedName                   InteractionName = "TRANSACTION_FAILED"
+	TransactionSucceededName                InteractionName = "TRANSACTION_SUCCEEDED"
+	WalletConnectionDecisionName            InteractionName = "WALLET_CONNECTION_DECISION"
 )
 
 type InteractionName string
@@ -101,6 +102,12 @@ func (f *Interaction) UnmarshalJSON(data []byte) error {
 		f.Data = data
 	case RequestTransactionReviewForSigningName:
 		data := RequestTransactionReviewForSigning{}
+		if err := mapstructure.Decode(input.Data, &data); err != nil {
+			return err
+		}
+		f.Data = data
+	case RequestTransactionReviewForCheckingName:
+		data := RequestTransactionReviewForChecking{}
 		if err := mapstructure.Decode(input.Data, &data); err != nil {
 			return err
 		}
@@ -184,6 +191,8 @@ type CancelRequest struct{}
 // application wants to connect to a wallet.
 type RequestWalletConnectionReview struct {
 	Hostname string `json:"hostname"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestWalletSelection is a request emitted when the service requires the user
@@ -193,6 +202,8 @@ type RequestWalletConnectionReview struct {
 type RequestWalletSelection struct {
 	Hostname         string   `json:"hostname"`
 	AvailableWallets []string `json:"availableWallets"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestPassphrase is a request emitted when the service wants to confirm
@@ -200,6 +211,9 @@ type RequestWalletSelection struct {
 // It should be answered by an interactor.EnteredPassphrase response.
 type RequestPassphrase struct {
 	Wallet string `json:"wallet"`
+	Reason string `json:"reason"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestPermissionsReview is a review request emitted when a third-party
@@ -208,6 +222,8 @@ type RequestPermissionsReview struct {
 	Hostname    string            `json:"hostname"`
 	Wallet      string            `json:"wallet"`
 	Permissions map[string]string `json:"permissions"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestTransactionReviewForSending is a review request emitted when a third-party
@@ -218,6 +234,20 @@ type RequestTransactionReviewForSending struct {
 	PublicKey   string    `json:"publicKey"`
 	Transaction string    `json:"transaction"`
 	ReceivedAt  time.Time `json:"receivedAt"`
+
+	StepNumber uint8 `json:"stepNumber"`
+}
+
+// RequestTransactionReviewForChecking is a review request when a third-party
+// application wants the user to check a transaction.
+type RequestTransactionReviewForChecking struct {
+	Hostname    string    `json:"hostname"`
+	Wallet      string    `json:"wallet"`
+	PublicKey   string    `json:"publicKey"`
+	Transaction string    `json:"transaction"`
+	ReceivedAt  time.Time `json:"receivedAt"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // RequestTransactionReviewForSigning is a review request when a third-party
@@ -228,6 +258,8 @@ type RequestTransactionReviewForSigning struct {
 	PublicKey   string    `json:"publicKey"`
 	Transaction string    `json:"transaction"`
 	ReceivedAt  time.Time `json:"receivedAt"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // WalletConnectionDecision is a specific response for interactor.RequestWalletConnectionReview.
@@ -254,18 +286,19 @@ type EnteredPassphrase struct {
 	Passphrase string `json:"passphrase"`
 }
 
-// SelectedWallet contains required information needed when the user need to
-// choose a wallet and unlock it.
+// SelectedWallet contains the wallet chosen by the user for a given action.
 type SelectedWallet struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
+	Wallet string `json:"wallet"`
 }
 
 // InteractionSessionBegan is a notification that is emitted when the interaction
 // session begin. It only carries informational value on a request lifecycle. This
 // is the first notification to be emitted and is always emitted when a request
 // comes in.
-type InteractionSessionBegan struct{}
+type InteractionSessionBegan struct {
+	Workflow             string `json:"workflow"`
+	MaximumNumberOfSteps uint8  `json:"maximumNumberOfSteps"`
+}
 
 // InteractionSessionEnded is a notification that is emitted when the interaction
 // session ended. This is the last notification to be emitted and is always emitted,
@@ -296,6 +329,8 @@ type ErrorOccurred struct {
 type RequestSucceeded struct {
 	// Message can contain a custom success message.
 	Message string `json:"message"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // TransactionSucceeded is a notification sent when the sending of a
@@ -319,6 +354,12 @@ type TransactionSucceeded struct {
 	// It's useful to build a list of the sending in a chronological order on
 	// the front-ends.
 	SentAt time.Time `json:"sentAt"`
+
+	// Node contains all the information related to the node selected for the
+	// sending of the transaction.
+	Node SelectedNode `json:"node"`
+
+	StepNumber uint8 `json:"stepNumber"`
 }
 
 // TransactionFailed is a notification sent when the sending of a
@@ -342,6 +383,16 @@ type TransactionFailed struct {
 	// It's useful to build a list of the sending in a chronological order on
 	// the front-ends.
 	SentAt time.Time `json:"sentAt"`
+
+	// Node contains all the information related to the node selected for the
+	// sending of the transaction.
+	Node SelectedNode `json:"node"`
+
+	StepNumber uint8 `json:"stepNumber"`
+}
+
+type SelectedNode struct {
+	Host string `json:"host"`
 }
 
 // Log is a generic event that shouldn't be confused with a notification. A log

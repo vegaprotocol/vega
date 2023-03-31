@@ -29,6 +29,8 @@ http:
     # Miscellaneous
     - selector: vega.api.v1.CoreService.Statistics
       get: '/statistics'
+    - selector: vega.api.v1.CoreService.GetSpamStatistics
+      get: '/statistics/spam/{party_id}'
     - selector: vega.api.v1.CoreService.LastBlockHeight
       get: '/blockchain/height'
     - selector: vega.api.v1.CoreService.GetVegaTime

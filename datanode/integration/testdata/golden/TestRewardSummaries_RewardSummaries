@@ -1,0 +1,10 @@
+{
+	"TestName": "TestRewardSummaries_RewardSummaries",
+	"Query": "{ epochRewardSummaries(filter: { assetIds:[\"41498ab9aca53472efe12c37209689f755e30f681170cba3a5bd7012a1ef2001\"], marketIds:[\"\"], fromEpoch: 266, toEpoch: 276 }) { edges { node { epoch marketId assetId rewardType amount } } } }",
+	"Result": {
+		"epochRewardSummaries": {
+			"edges": null
+		}
+	},
+	"Duration": 3091848
+}

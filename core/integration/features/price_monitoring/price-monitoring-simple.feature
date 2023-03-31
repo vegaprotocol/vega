@@ -10,8 +10,8 @@ Feature: Price monitoring test using simple risk model
       | long | short | max move up | min move down | probability of trading |
       | 0.11 | 0.1   | 10          | 11            | 0.1                    |
     And the markets:
-      | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | data source config          |
-      | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future |
+      | id        | quote name | asset | auction duration | risk model           | margin calculator         | fees         | price monitoring    | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | 240              | my-simple-risk-model | default-margin-calculator | default-none | my-price-monitoring | default-eth-for-future | 0.01                   | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 240   |
@@ -292,7 +292,7 @@ Feature: Price monitoring test using simple risk model
       | aux2  | ETH/DEC20 | buy  | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC20 | sell | 1      | 110   | 0                | TYPE_LIMIT | TIF_GTC |
 
-   Then the parties submit the following liquidity provision:
+    Then the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | buy  | BID              | 1          | 10     | submission |
       | lp1 | aux   | ETH/DEC20 | 660               | 0.001 | sell | ASK              | 1          | 10     | amendment  |
@@ -434,7 +434,7 @@ Feature: Price monitoring test using simple risk model
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | last traded price | trading mode            |
-      | 115     | 105            | TRADING_MODE_CONTINUOUS |
+      | 115        | 105               | TRADING_MODE_CONTINUOUS |
 
     #T1 = T0 + 02min10s (auction start)
     Then time is updated to "2020-10-16T00:10:10Z"

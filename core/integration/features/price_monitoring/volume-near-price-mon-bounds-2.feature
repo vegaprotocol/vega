@@ -25,8 +25,8 @@ Feature: Test margin for lp near price monitoring boundaries
       | horizon | probability | auction extension |
       | 43200   | 0.982       | 300               |
     And the markets:
-      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
-      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future |
+      | id         | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH2/MAR22 | ETH2       | ETH2  | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-2 | default-eth-for-future | 1e6                    | 1e6                       |
     And the oracles broadcast data signed with "0xDEADBEEF":
       | name              | value  |
       | prices.ETH2.value | 100000 |

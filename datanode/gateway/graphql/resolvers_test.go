@@ -158,6 +158,9 @@ func getTestMarket() *protoTypes.Market {
 				},
 			},
 		},
+		LiquidityMonitoringParameters: &protoTypes.LiquidityMonitoringParameters{
+			TriggeringRatio: "0.3",
+		},
 	}
 }
 
@@ -184,13 +187,13 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 	})
 
 	name := "BTC/DEC19"
-	vMarkets, err := root.Query().MarketsConnection(ctx, &name, nil)
+	vMarkets, err := root.Query().MarketsConnection(ctx, &name, nil, nil)
 	assert.Nil(t, err)
 	assert.NotNil(t, vMarkets)
 	assert.Len(t, vMarkets.Edges, 1)
 
 	name = "ETH/USD18"
-	vMarkets, err = root.Query().MarketsConnection(ctx, &name, nil)
+	vMarkets, err = root.Query().MarketsConnection(ctx, &name, nil, nil)
 	assert.Error(t, err)
 	assert.Nil(t, vMarkets)
 
@@ -254,7 +257,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	marketResolver := root.Market()
 	assert.NotNil(t, marketResolver)
 
-	orders, err := marketResolver.OrdersConnection(ctx, market, nil, nil, nil)
+	orders, err := marketResolver.OrdersConnection(ctx, market, nil, nil)
 	assert.NotNil(t, orders)
 	assert.Nil(t, err)
 	assert.Len(t, orders.Edges, 2)
@@ -318,6 +321,6 @@ func buildTestResolverRoot(t *testing.T) *testResolver {
 }
 
 func (t *testResolver) Finish() {
-	t.log.Sync()
+	_ = t.log.Sync()
 	t.ctrl.Finish()
 }

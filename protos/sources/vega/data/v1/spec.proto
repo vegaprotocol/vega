@@ -13,12 +13,16 @@ message Filter {
   repeated Condition conditions = 2;
 }
 
-// PropertyKey describes the property key contained in an data source data.
+// PropertyKey describes the property key contained in data source data.
 message PropertyKey {
   // name is the name of the property.
   string name = 1;
   // type is the type of the property.
   Type type = 2;
+  // An optional decimal place to be be applied on the provided value
+  // valid only for PropertyType of type DECIMAL and INTEGER
+  optional uint64 number_decimal_places = 3;
+
   // Type describes the type of properties that are supported by the data source
   // engine.
   enum Type {

@@ -14,6 +14,8 @@ package gql
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -24,7 +26,8 @@ import (
 type stakeLinkingResolver VegaResolverRoot
 
 func (s *stakeLinkingResolver) Timestamp(_ context.Context, obj *eventspb.StakeLinking) (int64, error) {
-	return obj.Ts, nil
+	// returning the time in nano as the timestamp marshallar expects it that way
+	return time.Unix(obj.Ts, 0).UnixNano(), nil
 }
 
 func (s *stakeLinkingResolver) Party(_ context.Context, obj *eventspb.StakeLinking) (*vgproto.Party, error) {
@@ -36,6 +39,10 @@ func (s *stakeLinkingResolver) FinalizedAt(_ context.Context, obj *eventspb.Stak
 		return nil, nil
 	}
 	return ptr.From(obj.FinalizedAt), nil
+}
+
+func (s *stakeLinkingResolver) BlockHeight(_ context.Context, obj *eventspb.StakeLinking) (string, error) {
+	return fmt.Sprintf("%d", obj.BlockHeight), nil
 }
 
 type partyStakeResolver VegaResolverRoot

@@ -49,6 +49,7 @@ var DataNodeCacheHome = CachePath("data-node")
 // 	├── wallet-app/
 // 	│	└── config.toml
 // 	└── wallet-service/
+//		├── config.toml
 // 		└──  networks/
 
 type ConfigPath string
@@ -123,16 +124,16 @@ var (
 	WalletAppDefaultConfigFile = JoinConfigPath(WalletAppConfigHome, "config.toml")
 
 	// WalletServiceConfigHome is the folder containing the configuration files
-	// used by the wallet service application.
+	// used by the wallet service.
 	WalletServiceConfigHome = ConfigPath("wallet-service")
 
-	// WalletServiceNetworksConfigHome is the folder containing the
-	// configuration files used by the networks.
-	WalletServiceNetworksConfigHome = JoinConfigPath(WalletServiceConfigHome, "networks")
+	// WalletServiceDefaultConfigFile is the default configuration file for the
+	// wallet service.
+	WalletServiceDefaultConfigFile = JoinConfigPath(WalletServiceConfigHome, "config.toml")
 
-	// WalletServicePermissionsConfigFile is the file containing the permissions that
-	// control the access to the wallets.
-	WalletServicePermissionsConfigFile = ConfigPath(filepath.Join(WalletServiceConfigHome.String(), "permissions.toml"))
+	// WalletServiceNetworksConfigHome is the folder containing the network
+	// configuration files used to connect to a network.
+	WalletServiceNetworksConfigHome = JoinConfigPath(WalletServiceConfigHome, "networks")
 )
 
 // File structure for data
@@ -276,17 +277,20 @@ var (
 	// DataNodeEmbeddedPostgresRuntimeDir is the runtime directory for embedded postgres.
 	DataNodeEmbeddedPostgresRuntimeDir = StatePath(filepath.Join(DataNodeStorageHome.String(), "postgres"))
 
-	// DataNodeDeHistoryHome is the folder containing the decentralised history data.
-	DataNodeDeHistoryHome = StatePath(filepath.Join(DataNodeStateHome.String(), "dehistory"))
+	// DataNodeNetworkHistoryHome is the folder containing the network history data.
+	DataNodeNetworkHistoryHome = StatePath(filepath.Join(DataNodeStateHome.String(), "networkhistory"))
 
-	// DataNodeDeHistorySnapshotCopyTo is the folder in which the datanode creates snapshots.
-	DataNodeDeHistorySnapshotCopyTo = StatePath(filepath.Join(DataNodeDeHistoryHome.String(), "snapshotscopyto"))
+	// DataNodeNetworkHistorySnapshotCopyTo is the folder in which the datanode creates snapshots.
+	DataNodeNetworkHistorySnapshotCopyTo = StatePath(filepath.Join(DataNodeNetworkHistoryHome.String(), "snapshotscopyto"))
 
-	// DataNodeDeHistorySnapshotCopyFrom is the folder from which the datanode reads snapshot data.
-	DataNodeDeHistorySnapshotCopyFrom = StatePath(filepath.Join(DataNodeDeHistoryHome.String(), "snapshotscopyfrom"))
+	// DataNodeNetworkHistorySnapshotCopyFrom is the folder from which the datanode reads snapshot data.
+	DataNodeNetworkHistorySnapshotCopyFrom = StatePath(filepath.Join(DataNodeNetworkHistoryHome.String(), "snapshotscopyfrom"))
 
 	// DataNodeEventBufferHome is the folder containing event buffer files.
 	DataNodeEventBufferHome = StatePath(filepath.Join(DataNodeStateHome.String(), "eventsbuffer"))
+
+	// DataNodeArchivedEventBufferHome is the folder containing archived event buffer files.
+	DataNodeArchivedEventBufferHome = StatePath(filepath.Join(DataNodeStateHome.String(), "archivedeventbuffers"))
 
 	// NodeStateHome is the folder containing the state of the node.
 	NodeStateHome = StatePath("node")

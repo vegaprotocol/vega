@@ -58,6 +58,8 @@ type Wallet interface {
 type MultiSigTopology interface {
 	IsSigner(address string) bool
 	ExcessSigners(addresses []string) bool
+	GetSigners() []string
+	GetThreshold() uint32
 }
 
 type ValidatorPerformance interface {
@@ -450,12 +452,14 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 
 	// resetting the seed every block, to both get some more unpredictability and still deterministic
 	// and play nicely with snapshot
-	t.rng = rand.New(rand.NewSource(t.timeService.GetTimeNow().Unix()))
+	currentTime := t.timeService.GetTimeNow()
+	t.rng = rand.New(rand.NewSource(currentTime.Unix()))
 
 	t.checkHeartbeat(ctx)
 	t.validatorPerformance.BeginBlock(ctx, hex.EncodeToString(req.Header.ProposerAddress))
 	t.currentBlockHeight = uint64(req.Header.Height)
 
+	t.signatures.SetNonce(currentTime)
 	t.signatures.ClearStaleSignatures()
 	t.keyRotationBeginBlockLocked(ctx)
 	t.ethereumKeyRotationBeginBlockLocked(ctx)

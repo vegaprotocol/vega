@@ -22,8 +22,14 @@ import (
 	"sync"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"google.golang.org/grpc"
+
 	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	vhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -40,7 +46,7 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 		if err != nil {
 			log.Debug("Failed to get remote address in middleware",
 				logging.String("remote-addr", r.RemoteAddr),
-				logging.String("x-forwarded-for", r.Header.Get("X-Forwarded-For")),
+				logging.String("x-forwarded-for", vfmt.Escape(r.Header.Get("X-Forwarded-For"))),
 			)
 		} else {
 			r = r.WithContext(contextutil.WithRemoteIPAddr(r.Context(), ip))
@@ -56,21 +62,10 @@ func MetricCollectionMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 		end := time.Now()
 
-		uri := r.RequestURI
-
-		// Remove the first slash if it has one
-		if strings.Index(uri, "/") == 0 {
-			uri = uri[1:]
-		}
-		// Trim the URI down to something useful
-		if strings.Count(uri, "/") >= 1 {
-			uri = uri[:strings.Index(uri, "/")]
-		}
-
 		// Update the call count and timings in metrics
 		timetaken := end.Sub(start)
 
-		metrics.APIRequestAndTimeREST(uri, timetaken.Seconds())
+		metrics.APIRequestAndTimeREST(r.Method, r.RequestURI, timetaken.Seconds())
 	})
 }
 
@@ -196,6 +191,37 @@ func (s *SubscriptionRateLimiter) WithSubscriptionRateLimiter(next http.Handler)
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *SubscriptionRateLimiter) WithGrpcInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context,
+		req interface{},
+		_ *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp interface{}, err error) {
+		// Fish out IP address from context
+		addr, ok := contextutil.RemoteIPAddrFromContext(ctx)
+		if !ok {
+			// If we don't have an IP we can't rate limit
+			return handler(ctx, req)
+		}
+
+		ip, _, err := net.SplitHostPort(addr)
+		if err != nil {
+			ip = addr
+		}
+		if err := s.Inc(ip); err != nil {
+			s.log.Error("client reached max subscription allowed",
+				logging.Error(err))
+			// write error
+			return nil, status.Error(codes.ResourceExhausted, "client reached max subscription allowed")
+		}
+		defer func() {
+			s.Dec(ip)
+		}()
+
+		return handler(ctx, req)
+	}
 }
 
 func getIP(r *http.Request) (string, error) {

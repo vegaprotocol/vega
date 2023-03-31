@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"log"
 	"math"
 )
 
@@ -117,7 +116,7 @@ func CountZeros(d []byte) byte {
 }
 
 func prepareData(blockHash string, txID string, nonce uint64) []byte {
-	data := bytes.Join(
+	return bytes.Join(
 		[][]byte{
 			prefix,
 			[]byte(blockHash),
@@ -126,8 +125,6 @@ func prepareData(blockHash string, txID string, nonce uint64) []byte {
 		},
 		[]byte{},
 	)
-
-	return data
 }
 
 func hash(data []byte, hashFunction string) ([]byte, error) {
@@ -138,11 +135,7 @@ func hash(data []byte, hashFunction string) ([]byte, error) {
 }
 
 func IntToHex(num uint64) []byte {
-	buff := new(bytes.Buffer)
-	err := binary.Write(buff, binary.BigEndian, num)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return buff.Bytes()
+	bs := make([]byte, 8)
+	binary.BigEndian.PutUint64(bs, num)
+	return bs
 }

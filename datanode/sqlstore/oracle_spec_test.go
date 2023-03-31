@@ -33,6 +33,7 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Upsert should insert an OracleSpec when the id does not exist in the current block", testInsertIntoNewBlock)
 	t.Run("Upsert should update an OracleSpec when the id already exists in the current block", testUpdateExistingInBlock)
 	t.Run("GetSpecByID should retrieve the latest version of the specified OracleSpec", testGetSpecByID)
+	t.Run("GetByTxHash", testGetSpecByTxHash)
 	t.Run("ListOracleSpecs should retrieve the latest versions of all OracleSpecs", testGetSpecs)
 }
 
@@ -115,6 +116,45 @@ func testGetSpecByID(t *testing.T) {
 	require.NoError(t, err)
 
 	want, err := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+
+	assert.NoError(t, err)
+	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
+	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
+	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
+	s := got.ExternalDataSourceSpec.Spec
+	assert.Equal(t, want, s)
+}
+
+func testGetSpecByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, os, conn := setupOracleSpecTest(t)
+
+	var rowCount int
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	specProtos := getTestSpecs()
+
+	specs := make([]entities.OracleSpec, 0, len(specProtos))
+	for _, proto := range specProtos {
+		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
+		require.NoError(t, err)
+		assert.NoError(t, os.Upsert(ctx, data))
+
+		specs = append(specs, *data)
+	}
+
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
+	assert.Equal(t, 3, rowCount)
+
+	foundSpecs, err := os.GetByTxHash(ctx, specs[0].ExternalDataSourceSpec.Spec.TxHash)
+	require.NoError(t, err)
+
+	got := foundSpecs[0]
+	want, err := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+
 	assert.NoError(t, err)
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
@@ -162,7 +202,7 @@ func testGetSpecs(t *testing.T) {
 
 func getTestSpecs() []*vegapb.OracleSpec {
 	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
-	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
+	pk2 := types.CreateSignerFromString("0x124dd8a6044ef048614aea0aac86643a8ae1312d", types.DataSignerTypeEthAddress)
 
 	return []*vegapb.OracleSpec{
 		{

@@ -62,6 +62,34 @@ func (mr *MockTopologyMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTopology)(nil).Get), arg0)
 }
 
+// GetTotalVotingPower mocks base method.
+func (m *MockTopology) GetTotalVotingPower() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalVotingPower")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetTotalVotingPower indicates an expected call of GetTotalVotingPower.
+func (mr *MockTopologyMockRecorder) GetTotalVotingPower() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalVotingPower", reflect.TypeOf((*MockTopology)(nil).GetTotalVotingPower))
+}
+
+// GetVotingPower mocks base method.
+func (m *MockTopology) GetVotingPower(arg0 string) int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetVotingPower", arg0)
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetVotingPower indicates an expected call of GetVotingPower.
+func (mr *MockTopologyMockRecorder) GetVotingPower(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotingPower", reflect.TypeOf((*MockTopology)(nil).GetVotingPower), arg0)
+}
+
 // IsValidator mocks base method.
 func (m *MockTopology) IsValidator() bool {
 	m.ctrl.T.Helper()

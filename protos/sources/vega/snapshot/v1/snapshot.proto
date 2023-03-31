@@ -6,11 +6,11 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/snapshot/v1";
 import "vega/vega.proto";
 import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/chain_events.proto";
 import "vega/governance.proto";
 import "vega/events/v1/events.proto";
 import "vega/checkpoint/v1/checkpoint.proto";
 import "vega/data/v1/data.proto";
+import "vega/chain_events.proto";
 
 enum Format {
   // Default value, always invalid
@@ -31,8 +31,8 @@ message Snapshot {
   bytes metadata = 5;
 }
 
-// NodeHash represents an exported node from the AVL tree and contains all the data necessary to recontruct and identical copy of the
-// AVL tree after we've serialised it
+// NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
+// AVL tree after it's been serialised
 message NodeHash {
   // The node's full key, for example epoch.all
   string key = 3;
@@ -40,7 +40,7 @@ message NodeHash {
   string hash = 4;
   // The height of the node in the tree
   int32 height = 5;
-  // The version of that node i.e how many times its value has changed during tree updates
+  // The version of that node i.e., how many times its value has changed during tree updates
   int64 version = 6;
   // Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
   bool is_leaf = 7;
@@ -114,6 +114,7 @@ message Payload {
     ProtocolUpgradeProposals protocol_upgrade_proposals = 55;
     BankingBridgeState banking_bridge_state = 56;
     SettlementState settlement_state = 57;
+    LiquidityScores liquidity_scores = 58;
   }
 }
 
@@ -209,22 +210,6 @@ message TxRef {
   uint64 log_index = 4;
 }
 
-message AssetAction {
-  string id = 1;
-  uint32 state = 2;
-  string asset = 3;
-  uint64 block_number = 4;
-  uint64 tx_index = 5;
-  string hash = 6;
-
-  vega.BuiltinAssetDeposit builtin_deposit = 7;
-  vega.ERC20Deposit erc20_deposit = 8;
-  vega.ERC20AssetList asset_list = 9;
-  vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
-  bool erc20_bridge_stopped = 11;
-  bool erc20_bridge_resumed = 12;
-}
-
 message BankingWithdrawals {
   repeated Withdrawal withdrawals = 1;
 }
@@ -235,10 +220,11 @@ message BankingDeposits {
 
 message BankingSeen {
   repeated string refs = 1;
+  uint64 last_seen_eth_block = 2;
 }
 
 message BankingAssetActions {
-  repeated AssetAction asset_action = 1;
+  repeated vega.checkpoint.v1.AssetAction asset_action = 1;
 }
 
 message BankingRecurringTransfers {
@@ -302,6 +288,7 @@ message StakingAccount {
 message StakingAccounts {
   repeated StakingAccount accounts = 1;
   string staking_asset_total_supply = 2;
+  vega.StakeTotalSupply pending_stake_total_supply = 3;
 }
 
 message MatchingBook {
@@ -431,6 +418,8 @@ message Market {
   string settlement_data = 18;
   int64 next_mark_to_market = 19;
   string last_traded_price = 20;
+  repeated string parties = 21;
+  bool closed = 22;
 }
 
 message PeggedOrders {
@@ -447,8 +436,8 @@ message Position {
   int64 buy = 3;
   int64 sell = 4;
   string price = 5;
-  string vw_buy_price = 6;
-  string vw_sell_price = 7;
+  string buy_sum_product = 6;
+  string sell_sum_product = 7;
 }
 
 message MarketPositions {
@@ -522,7 +511,7 @@ message RewardsPartyAmount {
 
 // LimitState details
 message LimitState {
-  // Number of blocks into the boostrapping phase
+  // Number of blocks into the bootstrapping phase
   uint32 block_count = 1;
   // whether the limit on market proposals has been lifted
   bool can_propose_market = 2;
@@ -716,6 +705,17 @@ message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
   // required for key generation
   string market_id = 2;
+}
+
+message LiquidityScores {
+  int32 running_average_counter = 1;
+  repeated LiquidityScore scores = 2;
+  string market_id = 3;
+}
+
+message LiquidityScore{
+  string score = 1;
+  string party_id = 2;
 }
 
 // snapshot payload for floating point consensus

@@ -108,3 +108,20 @@ func (ps *ProtocolUpgradeProposals) List(ctx context.Context,
 	pups, pageInfo = entities.PageEntities[*v2.ProtocolUpgradeProposalEdge](pups, pagination)
 	return pups, pageInfo, nil
 }
+
+func (ps *ProtocolUpgradeProposals) GetByTxHash(
+	ctx context.Context,
+	txHash entities.TxHash,
+) ([]entities.ProtocolUpgradeProposal, error) {
+	defer metrics.StartSQLQuery("ProtocolUpgradeProposals", "GetByTxHash")()
+
+	var pups []entities.ProtocolUpgradeProposal
+	query := `SELECT upgrade_block_height, vega_release_tag, approvers, status, vega_time, tx_hash
+		FROM protocol_upgrade_proposals WHERE tx_hash = $1`
+
+	if err := pgxscan.Select(ctx, ps.Connection, &pups, query, txHash); err != nil {
+		return nil, err
+	}
+
+	return pups, nil
+}

@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -45,14 +44,15 @@ type AnnotateKeyHandler func(api.AdminAnnotateKeyParams) (api.AdminAnnotateKeyRe
 
 func NewCmdAnnotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminAnnotateKeyParams) (api.AdminAnnotateKeyResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminAnnotateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		annotateKey := api.NewAdminAnnotateKey(s)
+		annotateKey := api.NewAdminAnnotateKey(walletStore)
 
-		rawResult, errDetails := annotateKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errDetails := annotateKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminAnnotateKeyResult{}, errors.New(errDetails.Data)
 		}

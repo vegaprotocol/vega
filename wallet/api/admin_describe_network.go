@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/network"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -14,12 +14,9 @@ type AdminDescribeNetworkParams struct {
 }
 
 type AdminDescribeNetworkResult struct {
-	Name        string              `json:"name"`
-	LogLevel    vgencoding.LogLevel `json:"logLevel"`
-	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
-	Port        int                 `json:"port"`
-	Host        string              `json:"host"`
-	API         struct {
+	Name     string             `json:"name"`
+	Metadata []network.Metadata `json:"metadata"`
+	API      struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
 			Retries uint64   `json:"retries"`
@@ -31,14 +28,18 @@ type AdminDescribeNetworkResult struct {
 			Hosts []string `json:"hosts"`
 		} `json:"graphQLConfig"`
 	} `json:"api"`
+	Apps struct {
+		Explorer   string `json:"explorer"`
+		Console    string `json:"console"`
+		Governance string `json:"governance"`
+	} `json:"apps"`
 }
 
 type AdminDescribeNetwork struct {
 	networkStore NetworkStore
 }
 
-// Handle retrieve a wallet from its name and passphrase.
-func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -52,21 +53,33 @@ func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Param
 
 	n, err := h.networkStore.GetNetwork(params.Name)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not retrieve the network: %w", err))
+		return nil, internalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
 	}
 
 	resp := AdminDescribeNetworkResult{
-		Name:        n.Name,
-		LogLevel:    n.LogLevel,
-		TokenExpiry: n.TokenExpiry,
-		Port:        n.Port,
-		Host:        n.Host,
+		Name: n.Name,
 	}
 
 	resp.API.GRPCConfig.Hosts = n.API.GRPC.Hosts
 	resp.API.GRPCConfig.Retries = n.API.GRPC.Retries
 	resp.API.RESTConfig.Hosts = n.API.REST.Hosts
 	resp.API.GraphQLConfig.Hosts = n.API.GraphQL.Hosts
+	resp.Apps.Governance = n.Apps.Governance
+	resp.Apps.Explorer = n.Apps.Explorer
+	resp.Apps.Console = n.Apps.Console
+	resp.Metadata = n.Metadata
+
+	// make sure nil maps come through as empty slices
+	if resp.API.GRPCConfig.Hosts == nil {
+		resp.API.GRPCConfig.Hosts = []string{}
+	}
+	if resp.API.GraphQLConfig.Hosts == nil {
+		resp.API.GraphQLConfig.Hosts = []string{}
+	}
+	if resp.API.RESTConfig.Hosts == nil {
+		resp.API.RESTConfig.Hosts = []string{}
+	}
+
 	return resp, nil
 }
 

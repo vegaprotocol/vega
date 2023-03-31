@@ -78,3 +78,19 @@ func (store *EthereumKeyRotations) List(ctx context.Context,
 	paged, pageInfo := entities.PageEntities[*v2.EthereumKeyRotationEdge](ethereumKeyRotations, pagination)
 	return paged, pageInfo, nil
 }
+
+func (store *EthereumKeyRotations) GetByTxHash(
+	ctx context.Context,
+	txHash entities.TxHash,
+) ([]entities.EthereumKeyRotation, error) {
+	defer metrics.StartSQLQuery("EthereumKeyRotations", "GetByTxHash")()
+
+	var ethereumKeyRotations []entities.EthereumKeyRotation
+	query := `SELECT * FROM ethereum_key_rotations WHERE tx_hash = $1`
+
+	if err := pgxscan.Select(ctx, store.Connection, &ethereumKeyRotations, query, txHash); err != nil {
+		return nil, err
+	}
+
+	return ethereumKeyRotations, nil
+}

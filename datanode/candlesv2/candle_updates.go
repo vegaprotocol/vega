@@ -46,7 +46,7 @@ type CandleUpdates struct {
 	candleSource        candleSource
 	candleID            string
 	subscriptionMsgChan chan subscriptionMsg
-	nextSubscriptionID  uint64
+	nextSubscriptionID  atomic.Uint64
 	config              CandleUpdatesConfig
 }
 
@@ -91,13 +91,13 @@ func (s *CandleUpdates) run(ctx context.Context) {
 					candles, err := s.getCandleUpdates(ctx, lastCandle)
 					if err != nil {
 						if !errorGettingCandleUpdates {
-							s.log.Errorf("failed to get candles for candle id %s: %w", s.candleID, err)
+							s.log.Errorf("failed to get candles for candle id", logging.String("candle", s.candleID), logging.Error(err))
 						}
 
 						errorGettingCandleUpdates = true
 					} else {
 						if errorGettingCandleUpdates {
-							s.log.Infof("successfully got candles for candle id %s", s.candleID)
+							s.log.Infof("successfully got candles for candle", logging.String("candle", s.candleID))
 						}
 						errorGettingCandleUpdates = false
 
@@ -147,7 +147,7 @@ func closeAllSubscriptions(subscribers map[string]chan entities.Candle) {
 func (s *CandleUpdates) Subscribe() (string, <-chan entities.Candle, error) {
 	out := make(chan entities.Candle, s.config.CandleUpdatesStreamBufferSize)
 
-	nextID := atomic.AddUint64(&s.nextSubscriptionID, 1)
+	nextID := s.nextSubscriptionID.Add(1)
 	subscriptionID := fmt.Sprintf("%s-%d", s.candleID, nextID)
 
 	msg := subscriptionMsg{

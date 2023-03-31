@@ -20,7 +20,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/pkg/errors"
@@ -42,18 +41,12 @@ type TransferResponse struct {
 	subscriber
 	ledger   Ledger
 	accounts AccountService
-	log      *logging.Logger
 }
 
-func NewTransferResponse(
-	ledger Ledger,
-	accounts AccountService,
-	log *logging.Logger,
-) *TransferResponse {
+func NewTransferResponse(ledger Ledger, accounts AccountService) *TransferResponse {
 	return &TransferResponse{
 		ledger:   ledger,
 		accounts: accounts,
-		log:      log,
 	}
 }
 
@@ -89,12 +82,12 @@ func (t *TransferResponse) consume(ctx context.Context, e TransferResponseEvent)
 }
 
 func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerEntry, txHash string, vegaTime time.Time) error {
-	accFrom, err := t.obtainAccountWithAccountDetails(ctx, vle.FromAccount, txHash, vegaTime)
+	fromAcc, err := t.obtainAccountWithAccountDetails(ctx, vle.FromAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'from' account")
 	}
 
-	accTo, err := t.obtainAccountWithAccountDetails(ctx, vle.ToAccount, txHash, vegaTime)
+	toAcc, err := t.obtainAccountWithAccountDetails(ctx, vle.ToAccount, txHash, vegaTime)
 	if err != nil {
 		return errors.Wrap(err, "obtaining 'to' account")
 	}
@@ -104,14 +97,26 @@ func (t *TransferResponse) addLedgerEntry(ctx context.Context, vle *vega.LedgerE
 		return errors.Wrap(err, "parsing amount string")
 	}
 
+	fromAccountBalance, err := decimal.NewFromString(vle.FromAccountBalance)
+	if err != nil {
+		return errors.Wrap(err, "parsing FromAccountBalance string")
+	}
+
+	toAccountBalance, err := decimal.NewFromString(vle.ToAccountBalance)
+	if err != nil {
+		return errors.Wrap(err, "parsing ToAccountBalance string")
+	}
+
 	le := entities.LedgerEntry{
-		AccountFromID: accFrom.ID,
-		AccountToID:   accTo.ID,
-		Quantity:      quantity,
-		TxHash:        entities.TxHash(txHash),
-		VegaTime:      vegaTime,
-		TransferTime:  time.Unix(0, vle.Timestamp),
-		Type:          entities.LedgerMovementType(vle.Type),
+		FromAccountID:      fromAcc.ID,
+		ToAccountID:        toAcc.ID,
+		Quantity:           quantity,
+		TxHash:             entities.TxHash(txHash),
+		VegaTime:           vegaTime,
+		TransferTime:       time.Unix(0, vle.Timestamp),
+		Type:               entities.LedgerMovementType(vle.Type),
+		FromAccountBalance: fromAccountBalance,
+		ToAccountBalance:   toAccountBalance,
 	}
 
 	err = t.ledger.AddLedgerEntry(le)

@@ -17,6 +17,7 @@ import (
 func TestAdminDescribeNetwork(t *testing.T) {
 	t.Run("Describing a network with invalid params fails", testDescribingNetworkWithInvalidParamsFails)
 	t.Run("Describing a network with valid params succeeds", testDescribingNetworkWithValidParamsSucceeds)
+	t.Run("Describing a network with empty hosts returns non-nil slice", testDescribeNetworkEmptyHosts)
 	t.Run("Describing a network that does not exists fails", testDescribingNetworkThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification fails", testGettingInternalErrorDuringNetworkVerificationFails)
 	t.Run("Getting internal error during retrieval fails", testGettingInternalErrorDuringNetworkRetrievalFails)
@@ -84,14 +85,36 @@ func testDescribingNetworkWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, network.Name, result.Name)
-	assert.Equal(t, network.Host, result.Host)
-	assert.Equal(t, network.Port, result.Port)
-	assert.Equal(t, network.LogLevel, result.LogLevel)
-	assert.Equal(t, network.TokenExpiry, result.TokenExpiry)
 	assert.Equal(t, network.API.GRPC.Hosts, result.API.GRPCConfig.Hosts)
 	assert.Equal(t, network.API.GRPC.Retries, result.API.GRPCConfig.Retries)
 	assert.Equal(t, network.API.REST.Hosts, result.API.RESTConfig.Hosts)
 	assert.Equal(t, network.API.GraphQL.Hosts, result.API.GraphQLConfig.Hosts)
+}
+
+func testDescribeNetworkEmptyHosts(t *testing.T) {
+	// given
+	ctx := context.Background()
+	network := newNetwork(t)
+	network.API.GRPC.Hosts = nil
+	network.API.REST.Hosts = nil
+	network.API.GraphQL.Hosts = nil
+
+	// setup
+	handler := newDescribeNetworkHandler(t)
+	// -- expected calls
+	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
+	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeNetworkParams{
+		Name: network.Name,
+	})
+
+	// then
+	require.Nil(t, errorDetails)
+	assert.NotNil(t, result.API.GRPCConfig.Hosts)
+	assert.NotNil(t, result.API.RESTConfig.Hosts)
+	assert.NotNil(t, result.API.GraphQLConfig.Hosts)
 }
 
 func testDescribingNetworkThatDoesNotExistsFails(t *testing.T) {
@@ -155,7 +178,7 @@ func testGettingInternalErrorDuringNetworkRetrievalFails(t *testing.T) {
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the network: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the network configuration: %w", assert.AnError))
 }
 
 type describeNetworkHandler struct {
@@ -164,10 +187,10 @@ type describeNetworkHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *describeNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeNetworkResult, *jsonrpc.ErrorDetails) {
+func (h *describeNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminDescribeNetworkResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribeNetworkResult)
 		if !ok {

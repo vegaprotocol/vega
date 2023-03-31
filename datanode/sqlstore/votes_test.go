@@ -38,6 +38,7 @@ func addTestVote(t *testing.T,
 	proposal entities.Proposal,
 	value entities.VoteValue,
 	block entities.Block,
+	txHash entities.TxHash,
 ) entities.Vote {
 	t.Helper()
 	r := entities.Vote{
@@ -49,6 +50,7 @@ func addTestVote(t *testing.T,
 		TotalEquityLikeShareWeight:  decimal.NewFromFloat(0.3),
 		VegaTime:                    block.VegaTime,
 		InitialTime:                 block.VegaTime,
+		TxHash:                      txHash,
 	}
 	err := vs.Add(ctx, r)
 	require.NoError(t, err)
@@ -86,14 +88,17 @@ func TestVotes(t *testing.T) {
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
 
-	vote1 := addTestVote(t, ctx, voteStore, party1, prop1, entities.VoteValueYes, block1)
-	vote2 := addTestVote(t, ctx, voteStore, party1, prop2, entities.VoteValueYes, block1)
+	txHash := txHashFromString("tx_vote_1")
+	txHash2 := txHashFromString("tx_vote_2")
+
+	vote1 := addTestVote(t, ctx, voteStore, party1, prop1, entities.VoteValueYes, block1, txHash)
+	vote2 := addTestVote(t, ctx, voteStore, party1, prop2, entities.VoteValueYes, block1, txHash2)
 	// Change vote in same block
-	vote3 := addTestVote(t, ctx, voteStore, party2, prop1, entities.VoteValueYes, block1)
-	vote3b := addTestVote(t, ctx, voteStore, party2, prop1, entities.VoteValueNo, block1)
+	vote3 := addTestVote(t, ctx, voteStore, party2, prop1, entities.VoteValueYes, block1, txHashFromString("tx_vote_3"))
+	vote3b := addTestVote(t, ctx, voteStore, party2, prop1, entities.VoteValueNo, block1, txHashFromString("tx_vote_4"))
 	// Change vote in next block
-	vote4 := addTestVote(t, ctx, voteStore, party2, prop2, entities.VoteValueYes, block1)
-	vote4b := addTestVote(t, ctx, voteStore, party2, prop2, entities.VoteValueNo, block2)
+	vote4 := addTestVote(t, ctx, voteStore, party2, prop2, entities.VoteValueYes, block1, txHashFromString("tx_vote_5"))
+	vote4b := addTestVote(t, ctx, voteStore, party2, prop2, entities.VoteValueNo, block2, txHashFromString("tx_vote_6"))
 
 	_ = vote3
 	_ = vote4
@@ -101,6 +106,18 @@ func TestVotes(t *testing.T) {
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Vote{vote1, vote2, vote3b, vote4b}
 		actual, err := voteStore.Get(ctx, nil, nil, nil)
+		require.NoError(t, err)
+		assertVotesMatch(t, expected, actual)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := []entities.Vote{vote1}
+		actual, err := voteStore.GetByTxHash(ctx, txHash)
+		require.NoError(t, err)
+		assertVotesMatch(t, expected, actual)
+
+		expected = []entities.Vote{vote2}
+		actual, err = voteStore.GetByTxHash(ctx, txHash2)
 		require.NoError(t, err)
 		assertVotesMatch(t, expected, actual)
 	})
@@ -178,7 +195,7 @@ func setupPaginationTestVotes(t *testing.T, ctx context.Context) (*sqlstore.Vote
 			voteValue = entities.VoteValueNo
 		}
 
-		vote := addTestVote(t, ctx, voteStore, party, prop, voteValue, block)
+		vote := addTestVote(t, ctx, voteStore, party, prop, voteValue, block, txHashFromString("tx_hash_1"))
 		votes = append(votes, vote)
 	}
 

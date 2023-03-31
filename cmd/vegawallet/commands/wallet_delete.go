@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
@@ -44,14 +43,15 @@ type RemoveWalletHandler func(api.AdminRemoveWalletParams) error
 
 func NewCmdDeleteWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminRemoveWalletParams) error {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		deleteWallet := api.NewAdminRemoveWallet(s)
+		deleteWallet := api.NewAdminRemoveWallet(walletStore)
 
-		_, errDetails := deleteWallet.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		_, errDetails := deleteWallet.Handle(context.Background(), params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}

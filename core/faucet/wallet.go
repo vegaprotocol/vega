@@ -13,6 +13,7 @@
 package faucet
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -20,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	storev1 "code.vegaprotocol.io/vega/wallet/wallet/store/v1"
-	"code.vegaprotocol.io/vega/wallet/wallets"
 )
 
 // ErrFaucetHasNoKeyInItsWallet is returned when trying to get the wallet
@@ -29,16 +29,15 @@ import (
 var ErrFaucetHasNoKeyInItsWallet = errors.New("faucet has no key in its wallet")
 
 type faucetWallet struct {
-	handler *wallets.Handler
 	// publicKey is the one used to retrieve the private key to sign messages.
-	publicKey  string
-	walletName string
+	publicKey string
+	wallet    wallet.Wallet
 }
 
 func (w *faucetWallet) Sign(message []byte) ([]byte, string, error) {
-	sig, err := w.handler.SignAny(w.walletName, message, w.publicKey)
+	sig, err := w.wallet.SignAny(w.publicKey, message)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("could not sign the message: %w", err)
 	}
 
 	return sig, w.publicKey, nil
@@ -51,65 +50,90 @@ type WalletGenerationResult struct {
 	PublicKey string
 }
 
-type WalletLoader struct {
-	store   *storev1.Store
-	handler *wallets.Handler
-}
+func GenerateWallet(vegaPaths paths.Paths, passphrase string) (*WalletGenerationResult, error) {
+	ctx := context.Background()
 
-func InitialiseWalletLoader(vegaPaths paths.Paths) (*WalletLoader, error) {
 	walletsHome, err := vegaPaths.CreateDataDirFor(paths.FaucetWalletsDataHome)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get directory for %s: %w", paths.FaucetWalletsDataHome, err)
+		return nil, fmt.Errorf("could not get directory for %s: %w", paths.FaucetWalletsDataHome, err)
 	}
 
-	store, err := storev1.InitialiseStore(walletsHome)
+	store, err := storev1.InitialiseStore(walletsHome, false)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise store at %s: %w", walletsHome, err)
+		return nil, fmt.Errorf("could not initialise faucet wallet store at %s: %w", walletsHome, err)
 	}
+	defer store.Close()
 
-	return &WalletLoader{
-		store:   store,
-		handler: wallets.NewHandler(store),
-	}, nil
-}
-
-func (l *WalletLoader) GenerateWallet(passphrase string) (*WalletGenerationResult, error) {
 	walletName := fmt.Sprintf("vega.%v", time.Now().UnixNano())
-	mnemonic, err := l.handler.CreateWallet(walletName, passphrase)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't create wallet %s: %w", walletName, err)
+
+	if exists, err := store.WalletExists(ctx, walletName); err != nil {
+		return nil, fmt.Errorf("couldn't verify the wallet existence: %w", err)
+	} else if exists {
+		return nil, wallet.ErrWalletAlreadyExists
 	}
 
-	keyPair, err := l.handler.GenerateKeyPair(walletName, passphrase, []wallet.Metadata{})
+	w, recoveryPhrase, err := wallet.NewHDWallet(walletName)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't generate key pair for wallet %s: %w", walletName, err)
+		return nil, fmt.Errorf("could not generate faucet wallet: %w", err)
+	}
+
+	keyPair, err := w.GenerateKeyPair([]wallet.Metadata{})
+	if err != nil {
+		return nil, fmt.Errorf("could not generate key pair for faucet wallet %s: %w", walletName, err)
+	}
+
+	if err := store.CreateWallet(ctx, w, passphrase); err != nil {
+		return nil, fmt.Errorf("could not save the generated faucet wallet: %w", err)
 	}
 
 	return &WalletGenerationResult{
-		Mnemonic:  mnemonic,
-		FilePath:  l.store.GetWalletPath(walletName),
+		Mnemonic:  recoveryPhrase,
+		FilePath:  store.GetWalletPath(walletName),
 		Name:      walletName,
 		PublicKey: keyPair.PublicKey(),
 	}, nil
 }
 
-func (l *WalletLoader) load(walletName, passphrase string) (*faucetWallet, error) {
-	if err := l.handler.LoginWallet(walletName, passphrase); err != nil {
-		return nil, fmt.Errorf("couldn't login to wallet %s: %w", walletName, err)
+func loadWallet(vegaPaths paths.Paths, walletName, passphrase string) (*faucetWallet, error) {
+	ctx := context.Background()
+
+	walletsHome, err := vegaPaths.CreateDataDirFor(paths.FaucetWalletsDataHome)
+	if err != nil {
+		return nil, fmt.Errorf("could not get directory for %q: %w", paths.FaucetWalletsDataHome, err)
 	}
 
-	keyPairs, err := l.handler.ListKeyPairs(walletName)
+	store, err := storev1.InitialiseStore(walletsHome, false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not initialise faucet wallet store at %q: %w", walletsHome, err)
 	}
+	defer store.Close()
+
+	if exists, err := store.WalletExists(ctx, walletName); err != nil {
+		return nil, fmt.Errorf("could not verify the faucet wallet existence: %w", err)
+	} else if !exists {
+		return nil, fmt.Errorf("the faucet wallet %q does not exist", walletName)
+	}
+
+	if err := store.UnlockWallet(ctx, walletName, passphrase); err != nil {
+		if errors.Is(err, wallet.ErrWrongPassphrase) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("could not unlock the faucet wallet %q: %w", walletName, err)
+	}
+
+	w, err := store.GetWallet(ctx, walletName)
+	if err != nil {
+		return nil, fmt.Errorf("could not get the faucet wallet %q: %w", walletName, err)
+	}
+
+	keyPairs := w.ListKeyPairs()
 
 	if len(keyPairs) == 0 {
 		return nil, ErrFaucetHasNoKeyInItsWallet
 	}
 
 	return &faucetWallet{
-		handler:    l.handler,
-		publicKey:  keyPairs[0].PublicKey(),
-		walletName: walletName,
+		wallet:    w,
+		publicKey: keyPairs[0].PublicKey(),
 	}, nil
 }

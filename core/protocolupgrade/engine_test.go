@@ -167,6 +167,7 @@ func testProposalApproved(t *testing.T) {
 	require.Equal(t, eventspb.ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_APPROVED, evts[3].StreamMessage().GetProtocolUpgradeEvent().Status)
 	require.Equal(t, "1.0.0", evts[3].StreamMessage().GetProtocolUpgradeEvent().VegaReleaseTag)
 
+	e.SetCoreReadyForUpgrade()
 	e.SetReadyForUpgrade()
 }
 

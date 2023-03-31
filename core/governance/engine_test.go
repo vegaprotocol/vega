@@ -58,11 +58,16 @@ type tstEngine struct {
 
 func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal with closing time too soon fails", testSubmittingProposalWithClosingTimeTooSoonFails)
+	t.Run("Submitting a proposal with internal time termination with closing time too soon fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFails)
 	t.Run("Submitting a proposal with closing time too late fails", testSubmittingProposalWithClosingTimeTooLateFails)
+	t.Run("Submitting a proposal with internal time termination with closing time too late fails", testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails)
+	t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
 	t.Run("Submitting a proposal with enactment time too soon fails", testSubmittingProposalWithEnactmentTimeTooSoonFails)
 	t.Run("Submitting a proposal with enactment time too late fails", testSubmittingProposalWithEnactmentTimeTooLateFails)
 	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
+	t.Run("Submitting a proposal with internal time termination with non-existing account fails", testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails)
 	t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
+	t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
 
 	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
 
@@ -74,6 +79,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Withdrawing vote assets removes vote from proposal state calculation", testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation)
 
 	t.Run("Updating voters key on votes succeeds", testUpdatingVotersKeyOnVotesSucceeds)
+	t.Run("Updating voters key on votes with internal time termination succeeds", testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds)
 
 	t.Run("Computing the governance state hash is deterministic", testComputingGovernanceStateHashIsDeterministic)
 }
@@ -84,7 +90,77 @@ func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
+
+	// expect
+	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	voter1 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voter1, 1)
+
+	// expect
+	eng.expectVoteEvent(t, voter1, proposal.ID)
+
+	// when
+	err = eng.addYesVote(t, voter1, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	voter2 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voter2, 1)
+
+	// expect
+	eng.expectVoteEvent(t, voter2, proposal.ID)
+
+	// when
+	err = eng.addNoVote(t, voter2, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	newVoter1ID := vgrand.RandomStr(5)
+
+	// expect
+	eng.expectVoteEvent(t, newVoter1ID, proposal.ID)
+
+	// then
+	eng.ValidatorKeyChanged(context.Background(), voter1, newVoter1ID)
+
+	// given
+	newVoter2ID := vgrand.RandomStr(5)
+
+	// setup
+	eng.expectVoteEvent(t, newVoter2ID, proposal.ID)
+
+	// then
+	eng.ValidatorKeyChanged(context.Background(), voter2, newVoter2ID)
+}
+
+func testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	proposer := vgrand.RandomStr(5)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, false)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -162,10 +238,54 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 	}{
 		{
 			name:     "For new market",
-			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
 			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
+		}, {
+			name:     "For new asset",
+			proposal: eng.newProposalForNewAsset(party, now),
+		}, {
+			name:     "Freeform",
+			proposal: eng.newFreeformProposal(party, now),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+			eng.ensureNoAccountForParty(tt, party)
+			eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorInsufficientTokens)
+
+			// when
+			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.EqualError(tt, err, errNoBalanceForParty.Error())
+		})
+	}
+}
+
+func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
+
+	tcs := []struct {
+		name     string
+		proposal types.Proposal
+	}{
+		{
+			name:     "For new market",
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, false),
+		}, {
+			name:     "For market update",
+			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, false),
 		}, {
 			name:     "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -208,11 +328,61 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 		{
 			name:                    "For new market",
 			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
-			proposal:                eng.newProposalForNewMarket(party, now, nil, nil),
+			proposal:                eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
 			name:                    "For market update",
 			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
+			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
+		}, {
+			name:                    "For new asset",
+			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
+			proposal:                eng.newProposalForNewAsset(party, now),
+		}, {
+			name:                    "Freeform",
+			minProposerBalanceParam: netparams.GovernanceProposalFreeformMinProposerBalance,
+			proposal:                eng.newFreeformProposal(party, now),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// setup
+			eng.ensureTokenBalanceForParty(tt, party, 10)
+			eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+			eng.ensureAllAssetEnabled(tt)
+			eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorInsufficientTokens)
+
+			// when
+			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+		})
+	}
+}
+
+func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
+
+	tcs := []struct {
+		name                    string
+		minProposerBalanceParam string
+		proposal                types.Proposal
+	}{
+		{
+			name:                    "For new market",
+			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
+			proposal:                eng.newProposalForNewMarket(party, now, nil, nil, false),
+		}, {
+			name:                    "For market update",
+			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
+			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, false),
 		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
@@ -255,10 +425,54 @@ func testSubmittingProposalWithClosingTimeTooSoonFails(t *testing.T) {
 	}{
 		{
 			msg:      "For new market",
-			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
+		}, {
+			msg:      "For new asset",
+			proposal: eng.newProposalForNewAsset(party, now),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.msg, func(tt *testing.T) {
+			// given
+			tc.proposal.Terms.ClosingTimestamp = now.Unix()
+
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorCloseTimeTooSoon)
+
+			// when
+			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too soon, expected >")
+		})
+	}
+}
+
+func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooSoonFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	now := eng.tsvc.GetTimeNow()
+	party := vgrand.RandomStr(5)
+
+	cases := []struct {
+		msg      string
+		proposal types.Proposal
+	}{
+		{
+			msg:      "For new market",
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, false),
+		}, {
+			msg:      "For market update",
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, false),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -299,10 +513,54 @@ func testSubmittingProposalWithClosingTimeTooLateFails(t *testing.T) {
 	}{
 		{
 			msg:      "For new market",
-			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
+		}, {
+			msg:      "For new asset",
+			proposal: eng.newProposalForNewAsset(party, now),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.msg, func(tt *testing.T) {
+			// given
+			tc.proposal.Terms.ClosingTimestamp = now.Add(3 * 365 * 24 * time.Hour).Unix()
+
+			// setup
+			eng.ensureAllAssetEnabled(tt)
+
+			// expect
+			eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorCloseTimeTooLate)
+
+			// when
+			_, err := eng.submitProposal(tt, tc.proposal)
+
+			// then
+			require.Error(tt, err)
+			assert.Contains(tt, err.Error(), "proposal closing time too late, expected <")
+		})
+	}
+}
+
+func testSubmittingProposalWithInternalTimeTerminationWithClosingTimeTooLateFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	now := eng.tsvc.GetTimeNow()
+	party := vgrand.RandomStr(5)
+
+	cases := []struct {
+		msg      string
+		proposal types.Proposal
+	}{
+		{
+			msg:      "For new market",
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, false),
+		}, {
+			msg:      "For market update",
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, false),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -342,7 +600,7 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 	termTimeBeforeEnact := now.Add(1 * 48 * time.Hour).Add(47 * time.Hour).Add(15 * time.Minute)
 
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeBeforeEnact)
-	proposal1 := eng.newProposalForNewMarket(proposer, now, filter, binding)
+	proposal1 := eng.newProposalForNewMarket(proposer, now, filter, binding, true)
 
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
@@ -356,7 +614,7 @@ func testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails(
 	// Enactment time for new market is now + 96 hours
 	termTimeEqualEnact := now.Add(2 * 48 * time.Hour)
 	filter, binding = produceTimeTriggeredDataSourceSpec(termTimeEqualEnact)
-	proposal2 := eng.newProposalForNewMarket(proposer, now, filter, binding)
+	proposal2 := eng.newProposalForNewMarket(proposer, now, filter, binding, true)
 
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
 	eng.ensureAllAssetEnabled(t)
@@ -380,10 +638,10 @@ func testSubmittingProposalWithEnactmentTimeTooSoonFails(t *testing.T) {
 	}{
 		{
 			msg:      "For new market",
-			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -422,10 +680,10 @@ func testSubmittingProposalWithEnactmentTimeTooLateFails(t *testing.T) {
 	}{
 		{
 			msg:      "For new market",
-			proposal: eng.newProposalForNewMarket(party, now, nil, nil),
+			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
 			msg:      "For market update",
-			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil),
+			proposal: eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
 		}, {
 			msg:      "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -477,7 +735,7 @@ func testVotingWithNonExistingAccountFails(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -512,7 +770,7 @@ func testVotingWithoutTokenFails(t *testing.T) {
 
 	// given
 	proposer := eng.newValidParty("proposer", 1)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -560,13 +818,13 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	var afterEnactment time.Time
 
 	for i := 0; i < howMany; i++ {
-		toBePassed := eng.newProposalForNewMarket(partyA, now, nil, nil)
+		toBePassed := eng.newProposalForNewMarket(partyA, now, nil, nil, true)
 		eng.expectOpenProposalEvent(t, partyA, toBePassed.ID)
 		_, err := eng.submitProposal(t, toBePassed)
 		require.NoError(t, err)
 		passed[toBePassed.ID] = &toBePassed
 
-		toBeDeclined := eng.newProposalForNewMarket(partyB, now, nil, nil)
+		toBeDeclined := eng.newProposalForNewMarket(partyB, now, nil, nil, true)
 		eng.expectOpenProposalEvent(t, partyB, toBeDeclined.ID)
 		_, err = eng.submitProposal(t, toBeDeclined)
 		require.NoError(t, err)
@@ -638,7 +896,7 @@ func testWithdrawingVoteAssetRemovesVoteFromProposalStateCalculation(t *testing.
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -724,7 +982,7 @@ func testComputingGovernanceStateHashIsDeterministic(t *testing.T) {
 	// when
 	proposer := vgrand.RandomStr(5)
 	now := eng.tsvc.GetTimeNow()
-	proposal := eng.newProposalForNewMarket(proposer, now, nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, now, nil, nil, true)
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, proposer, 1)
@@ -921,9 +1179,35 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) *types.ProposalTermsNewMarket {
-	if termFilter == nil {
-		termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
+func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsNewMarket {
+	var dt *types.DataSourceDefinition
+	if termExt {
+		if termFilter == nil {
+			termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
+		}
+
+		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
+			&types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+				Filters: []*types.DataSourceSpecFilter{
+					termFilter,
+				},
+			},
+		)
+	} else {
+		tm := time.Now().Add(time.Hour * 24 * 365)
+		if termFilter == nil {
+			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
+		}
+
+		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeInt).SetTimeTriggerConditionConfig(
+			[]*types.DataSourceSpecCondition{
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    fmt.Sprintf("%d", tm.UnixNano()),
+				},
+			},
+		)
 	}
 
 	return &types.ProposalTermsNewMarket{
@@ -957,17 +1241,8 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 									},
 								},
 							),
-							DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
-							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
-										termFilter,
-									},
-								},
-							),
-							DataSourceSpecBinding: termBinding,
+							DataSourceSpecForTradingTermination: *dt,
+							DataSourceSpecBinding:               termBinding,
 						},
 					},
 				},
@@ -982,28 +1257,55 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 						},
 					},
 				},
-				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces: 0,
-				LpPriceRange:  num.DecimalFromFloat(0.95),
+				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces:           0,
+				LpPriceRange:            num.DecimalFromFloat(0.95),
+				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 			},
 		},
 	}
 }
 
-func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) *types.ProposalTermsUpdateMarket {
-	if termFilter == nil {
-		termFilter = &types.DataSourceSpecFilter{
-			Key: &types.DataSourceSpecPropertyKey{
-				Name: "trading.terminated",
-				Type: datapb.PropertyKey_TYPE_BOOLEAN,
+func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
+	var dt *types.DataSourceDefinition
+	if termExt {
+		if termFilter == nil {
+			termFilter = &types.DataSourceSpecFilter{
+				Key: &types.DataSourceSpecPropertyKey{
+					Name: "trading.terminated",
+					Type: datapb.PropertyKey_TYPE_BOOLEAN,
+				},
+				Conditions: []*types.DataSourceSpecCondition{},
+			}
+
+			termBinding = &types.DataSourceSpecBindingForFuture{
+				SettlementDataProperty:     "prices.ETH.value",
+				TradingTerminationProperty: "trading.terminated",
+			}
+		}
+		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
+			&types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+				Filters: []*types.DataSourceSpecFilter{
+					termFilter,
+				},
 			},
-			Conditions: []*types.DataSourceSpecCondition{},
+		)
+	} else {
+		tm := time.Now().Add(time.Hour * 24 * 365)
+		if termFilter == nil {
+			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		termBinding = &types.DataSourceSpecBindingForFuture{
-			SettlementDataProperty:     "prices.ETH.value",
-			TradingTerminationProperty: "trading.terminated",
-		}
+		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeInt).SetTimeTriggerConditionConfig(
+			[]*types.DataSourceSpecCondition{
+				{
+					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    fmt.Sprintf("%d", tm.UnixNano()),
+				},
+			},
+		)
 	}
 
 	return &types.ProposalTermsUpdateMarket{
@@ -1031,17 +1333,8 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 									},
 								},
 							),
-							DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
-							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
-										termFilter,
-									},
-								},
-							),
-							DataSourceSpecBinding: termBinding,
+							DataSourceSpecForTradingTermination: *dt,
+							DataSourceSpecBinding:               termBinding,
 						},
 					},
 				},
@@ -1056,8 +1349,10 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 						},
 					},
 				},
-				Metadata:     []string{"asset_class:fx/crypto", "product:futures"},
-				LpPriceRange: num.DecimalFromFloat(0.95),
+				Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+				LpPriceRange:            num.DecimalFromFloat(0.95),
+				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
 			},
 		},
 	}
@@ -1104,7 +1399,7 @@ func (e *tstEngine) newProposalID() string {
 	return fmt.Sprintf("proposal-id-%d", e.proposalCounter)
 }
 
-func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) types.Proposal {
+func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
 	id := e.newProposalID()
 	return types.Proposal{
 		ID:        id,
@@ -1115,7 +1410,7 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding),
+			Change:              newMarketTerms(termFilter, termBinding, termExt),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -1123,7 +1418,7 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 	}
 }
 
-func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture) types.Proposal {
+func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
 		ID:        id,
@@ -1134,7 +1429,7 @@ func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now tim
 			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
-			Change:              updateMarketTerms(termFilter, termBinding),
+			Change:              updateMarketTerms(termFilter, termBinding, termExt),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",

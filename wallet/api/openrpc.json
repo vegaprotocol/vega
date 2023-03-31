@@ -8,7 +8,7 @@
     {
       "name": "client.connect_wallet",
       "summary": "Initiates a connection between a wallet and a third-party application.",
-      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\nA connection token is generated and returned to the third-party application. This token is meant to be used in protected methods.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname. Each connection will have a different token.\n- A single wallet connected to multiple hostnames. Each connection will have a different token.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new token will be generated.\n\nThis method should be the entry point of every third-party application. Once connected, see the method `get_permissions`.",
+      "description": "This method initiates a connection between a wallet and a third-party application.\n\nThe user has to review the request, and, if they accept it, select the wallet they want to use for this connection.\n\n**Supported connections:**\n- Multiple wallets connected for the same hostname.\n- A single wallet connected to multiple hostnames.\n- Combination of the above setups.\n\nHowever, it's not possible to have multiple connections on the same wallet for the same hostname. The previous connection will be terminated and a new one will be initiated.\n\nThis method should be the entry point of every third-party application.",
       "tags": [
         {
           "name": "client"
@@ -26,43 +26,34 @@
         "name": "Success",
         "required": true,
         "schema": {
-          "type": "object",
-          "required": [
-            "token"
-          ],
-          "properties": {
-            "token": {
-              "$ref": "#/components/schemas/token"
-            }
-          }
+          "type": "null"
         }
       },
       "errors": [
         {
-          "$ref": "#/components/errors/connection_closed"
+          "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
-          "$ref": "#/components/errors/request_rejected"
+          "$ref": "#/components/errors/application_error_request_cancelled"
         },
         {
-          "$ref": "#/components/errors/request_interrupted"
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
+        },
+        {
+          "$ref": "#/components/errors/user_error_request_cancelled"
+        },
+        {
+          "$ref": "#/components/errors/user_error_request_cancelled"
         }
       ],
       "examples": [
         {
           "name": "Accepting a connection from \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" requests a connection to a wallet and the user accepts.",
-          "params": [
-            {
-              "name": "hostname",
-              "value": "vega.xyz"
-            }
-          ],
+          "params": [],
           "result": {
             "name": "Success",
-            "value": {
-              "token": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
+            "value": "null"
           }
         }
       ]
@@ -70,7 +61,7 @@
     {
       "name": "client.disconnect_wallet",
       "summary": "Ends the connection between the third-party application and the wallet.",
-      "description": "This method ends the connection between the third-party application and the wallet. The token is, then, no longer valid.\n\nCalling this method with an invalid token doesn't fail.",
+      "description": "This method ends the connection between the third-party application and the wallet.",
       "tags": [
         {
           "name": "client"
@@ -83,15 +74,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "No result",
         "schema": false
@@ -99,176 +82,11 @@
       "examples": [
         {
           "name": "Disconnection from \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests a disconnection to a wallet using a valid token.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
-          ],
+          "description": "The third-party application \"vega.xyz\" requests a disconnection to a wallet.",
+          "params": [],
           "result": {
             "name": "Success",
             "value": null
-          }
-        }
-      ]
-    },
-    {
-      "name": "client.get_permissions",
-      "summary": "Returns the permissions set on the wallet for the third-party application.",
-      "description": "This method returns the permissions set on the wallet for the third-party application.\n\nThis method should be called, by the third-party application, right after it successfully connected to a wallet, to ensure it has sufficient permissions to call the method it relies on. If the third-party application doesn't have enough permissions, see the method `request_permissions`.",
-      "tags": [
-        {
-          "name": "client"
-        },
-        {
-          "name": "permissions"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "object",
-          "required": [
-            "permissions"
-          ],
-          "properties": {
-            "permissions": {
-              "$ref": "#/components/schemas/permissions_summary"
-            }
-          }
-        }
-      },
-      "examples": [
-        {
-          "name": "Get permissions set for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" wants to know the permissions that have been set on the wallet in use.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {
-              "publicKeys": "read"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "client.request_permissions",
-      "summary": "Requests permissions update for the third-party application.",
-      "description": "This method allows a third-party application to request new permissions to access the methods it requires.\n\nAll permissions the third-party relies on have to be specified. If a permission is omitted, it will be considered as no longer required and, as a result, be automatically revoked.\n\nThe user has to review the permissions.",
-      "tags": [
-        {
-          "name": "client"
-        },
-        {
-          "name": "permissions"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        },
-        {
-          "name": "requestedPermissions",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/permissions_summary"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "object",
-          "required": [
-            "permissions"
-          ],
-          "properties": {
-            "permissions": {
-              "$ref": "#/components/schemas/permissions_summary"
-            }
-          }
-        }
-      },
-      "errors": [
-        {
-          "$ref": "#/components/errors/connection_closed"
-        },
-        {
-          "$ref": "#/components/errors/request_rejected"
-        },
-        {
-          "$ref": "#/components/errors/request_interrupted"
-        }
-      ],
-      "examples": [
-        {
-          "name": "Updating permissions for \"vega.xyz\"",
-          "description": "The third-party application \"vega.xyz\" requests an update of its permissions and the user accepts.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
-            {
-              "name": "requestedPermissions",
-              "value": {
-                "publicKeys": "read"
-              }
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {
-              "permissions": {
-                "publicKeys": "read"
-              }
-            }
-          }
-        },
-        {
-          "name": "Updating permissions for \"vega.xyz\" with omitted permission",
-          "description": "The third-party application \"vega.xyz\" omits a permission during the update and the user accepts. This automatically marks the omitted permission as revoked.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
-            {
-              "name": "requestedPermissions",
-              "value": {}
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": {
-              "permissions": {
-                "publicKeys": "none"
-              }
-            }
           }
         }
       ]
@@ -286,15 +104,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
@@ -313,21 +123,11 @@
           }
         }
       },
-      "errors": [
-        {
-          "$ref": "#/components/errors/read_access_public_keys"
-        }
-      ],
       "examples": [
         {
           "name": "List keys allowed on \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" wants to list the public keys it has access to.",
-          "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            }
-          ],
+          "params": [],
           "result": {
             "name": "Success",
             "value": {
@@ -361,13 +161,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        },
-        {
           "name": "publicKey",
           "required": true,
           "schema": {
@@ -399,22 +192,34 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/no_healthy_node"
+          "$ref": "#/components/errors/network_error_no_healthy_node"
         },
         {
-          "$ref": "#/components/errors/could_not_get_last_block"
+          "$ref": "#/components/errors/network_error_could_not_get_chain_id"
         },
         {
-          "$ref": "#/components/errors/public_key_not_allowed"
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
         },
         {
-          "$ref": "#/components/errors/connection_closed"
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
         },
         {
-          "$ref": "#/components/errors/request_rejected"
+          "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
-          "$ref": "#/components/errors/request_interrupted"
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
+        },
+        {
+          "$ref": "#/components/errors/user_error_request_cancelled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
+        },
+        {
+          "$ref": "#/components/errors/application_error_block_height_is_too_historic"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_per_block_limit_reached"
         }
       ],
       "examples": [
@@ -422,10 +227,6 @@
           "name": "Signing a transaction for \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" requests to sign a transaction and the user accepts.",
           "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
             {
               "name": "publicKey",
               "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
@@ -435,8 +236,8 @@
               "value": "TYPE_SYNC"
             },
             {
-              "name": "encodedTransaction",
-              "value": "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
+              "name": "transaction",
+              "value": {}
             }
           ],
           "result": {
@@ -464,13 +265,6 @@
       ],
       "paramStructure": "by-name",
       "params": [
-        {
-          "name": "token",
-          "required": true,
-          "schema": {
-            "$ref": "#/components/schemas/token"
-          }
-        },
         {
           "name": "publicKey",
           "required": true,
@@ -531,25 +325,37 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/no_healthy_node"
+          "$ref": "#/components/errors/network_error_no_healthy_node"
         },
         {
-          "$ref": "#/components/errors/could_not_get_last_block"
+          "$ref": "#/components/errors/network_error_could_not_get_chain_id"
         },
         {
-          "$ref": "#/components/errors/transaction_failed"
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
         },
         {
-          "$ref": "#/components/errors/public_key_not_allowed"
+          "$ref": "#/components/errors/network_error_failed_transaction"
         },
         {
-          "$ref": "#/components/errors/connection_closed"
+          "$ref": "#/components/errors/user_error_connection_closed"
         },
         {
-          "$ref": "#/components/errors/request_rejected"
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
         },
         {
-          "$ref": "#/components/errors/request_interrupted"
+          "$ref": "#/components/errors/user_error_request_cancelled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
+        },
+        {
+          "$ref": "#/components/errors/application_error_block_height_is_too_historic"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_per_block_limit_reached"
         }
       ],
       "examples": [
@@ -557,10 +363,6 @@
           "name": "Sending a transaction for \"vega.xyz\"",
           "description": "The third-party application \"vega.xyz\" requests to send a transaction and the user accepts.",
           "params": [
-            {
-              "name": "token",
-              "value": "hZKSx0snBvikp2NGMJdKPHU5qvloSeqpqbJg6BsMwCcqX4iZvvy99BV2l13oeyEG"
-            },
             {
               "name": "publicKey",
               "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
@@ -572,6 +374,126 @@
             {
               "name": "encodedTransaction",
               "value": "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": {
+              "receivedAt": "2021-02-18T21:54:42.123Z",
+              "sentAt": "2021-02-18T21:54:42.123Z",
+              "txHash": "E8C167126D1FC8D92898AB9C07C318161DF68753A1316A69ABDC9ADC557723B3"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "client.check_transaction",
+      "summary": "Check a transaction or a bundle of transactions and send them to the network.",
+      "description": "This method sends a transaction or a bundle of transactions to the network to verify their validity.\n\nThe network does not add them to a block. What happens with the transaction is up to the third-party application.\n\nThe user has to review the transaction after this step.",
+      "tags": [
+        {
+          "name": "client"
+        },
+        {
+          "name": "transaction"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "publicKey",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/public_key"
+          }
+        },
+        {
+          "name": "transaction",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/transaction"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transaction"
+          ],
+          "properties": {
+            "receivedAt": {
+              "type": "string",
+              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "sentAt": {
+              "type": "string",
+              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "$ref": "#/components/errors/network_error_no_healthy_node"
+        },
+        {
+          "$ref": "#/components/errors/network_error_could_not_get_chain_id"
+        },
+        {
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
+        },
+        {
+          "$ref": "#/components/errors/network_error_failed_transaction"
+        },
+        {
+          "$ref": "#/components/errors/user_error_connection_closed"
+        },
+        {
+          "$ref": "#/components/errors/user_error_wallet_connection_rejected"
+        },
+        {
+          "$ref": "#/components/errors/user_error_request_cancelled"
+        },
+        {
+          "$ref": "#/components/errors/application_error_public_key_not_allowed"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_would_break_spam_rules"
+        },
+        {
+          "$ref": "#/components/errors/application_error_block_height_is_too_historic"
+        },
+        {
+          "$ref": "#/components/errors/application_error_transaction_per_block_limit_reached"
+        }
+      ],
+      "examples": [
+        {
+          "name": "Check a transaction for \"vega.xyz\"",
+          "description": "",
+          "params": [
+            {
+              "name": "publicKey",
+              "value": "3fd42fd5ceb22d99ac45086f1d82d516118a5cb7ad9a2e096cd78ca2c8960c80"
+            },
+            {
+              "name": "transaction",
+              "value": {}
             }
           ],
           "result": {
@@ -617,10 +539,10 @@
       },
       "errors": [
         {
-          "$ref": "#/components/errors/no_healthy_node"
+          "$ref": "#/components/errors/network_error_no_healthy_node"
         },
         {
-          "$ref": "#/components/errors/could_not_get_last_block"
+          "$ref": "#/components/errors/network_error_could_not_get_last_block"
         }
       ],
       "examples": [
@@ -682,8 +604,7 @@
               "required": [
                 "name",
                 "keyDerivationVersion",
-                "recoveryPhrase",
-                "filePath"
+                "recoveryPhrase"
               ],
               "properties": {
                 "name": {
@@ -693,9 +614,6 @@
                   "type": "number"
                 },
                 "recoveryPhrase": {
-                  "type": "string"
-                },
-                "filePath": {
                   "type": "string"
                 }
               }
@@ -745,8 +663,7 @@
               "wallet": {
                 "name": "my-wallet",
                 "keyDerivationVersion": 2,
-                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render",
-                "filePath": "some/path/to/my-wallet"
+                "recoveryPhrase": "swing ceiling chaos green put insane ripple desk match tip melt usual shrug turkey renew icon parade veteran lens govern path rough page render"
               },
               "key": {
                 "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -824,8 +741,7 @@
               "description": "the imported wallet",
               "required": [
                 "name",
-                "keyDerivationVersion",
-                "filePath"
+                "keyDerivationVersion"
               ],
               "properties": {
                 "name": {
@@ -833,9 +749,6 @@
                 },
                 "keyDerivationVersion": {
                   "type": "number"
-                },
-                "filePath": {
-                  "type": "string"
                 }
               }
             },
@@ -891,8 +804,7 @@
             "value": {
               "wallet": {
                 "name": "my-wallet",
-                "keyDerivationVersion": 2,
-                "filePath": "some/path/to/my-wallet"
+                "keyDerivationVersion": 2
               },
               "key": {
                 "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
@@ -908,6 +820,76 @@
                 ]
               }
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.update_passphrase",
+      "summary": "Change the passphrase of the specified wallet.",
+      "description": "This method changes the passphrase used to lock the wallet.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        },
+        {
+          "name": "passphrase"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "newPassphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Update the passphrase",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-the-old-passphrase"
+            },
+            {
+              "name": "newPassphrase",
+              "value": "this-is-the-new-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
           }
         }
       ]
@@ -1067,13 +1049,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -1094,10 +1069,6 @@
             {
               "name": "newWallet",
               "value": "my-new-wallet-name"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -1177,7 +1148,19 @@
             "networks": {
               "type": "array",
               "items": {
-                "type": "string"
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "required": true
+                  },
+                  "metadata": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/metadata"
+                    }
+                  }
+                }
               }
             }
           }
@@ -1191,9 +1174,27 @@
             "name": "Success",
             "value": {
               "networks": [
-                "mainnet",
-                "fairground",
-                "local-network"
+                {
+                  "name": "mainnet1",
+                  "metadata": [
+                    {
+                      "key": "network",
+                      "value": "mainnet"
+                    }
+                  ]
+                },
+                {
+                  "name": "fairground",
+                  "metadata": [
+                    {
+                      "key": "network",
+                      "value": "testnet"
+                    }
+                  ]
+                },
+                {
+                  "name": "local-network"
+                }
               ]
             }
           }
@@ -1229,30 +1230,24 @@
           "type": "object",
           "required": [
             "name",
-            "logLevel",
-            "tokenExpiry",
-            "port",
-            "host",
-            "api"
+            "api",
+            "apps"
           ],
           "properties": {
             "name": {
               "type": "string"
             },
-            "logLevel": {
-              "type": "string"
-            },
-            "tokenExpiry": {
-              "type": "string"
-            },
-            "port": {
-              "type": "integer"
-            },
-            "host": {
-              "type": "string"
+            "metadata": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/metadata"
+              }
             },
             "api": {
               "$ref": "#/components/schemas/network_api_config"
+            },
+            "apps": {
+              "$ref": "#/components/schemas/network_apps_config"
             }
           }
         }
@@ -1270,10 +1265,12 @@
             "name": "Success",
             "value": {
               "name": "local-network",
-              "logLevel": "info",
-              "tokenExpiry": "168h0m0s",
-              "port": 1789,
-              "host": "localhost",
+              "metadata": [
+                {
+                  "key": "network",
+                  "value": "local"
+                }
+              ],
               "api": {
                 "grpcConfig": {
                   "hosts": [
@@ -1291,6 +1288,11 @@
                     "localhost:3029"
                   ]
                 }
+              },
+              "apps": {
+                "console": "console.vega.xyz",
+                "governance": "governance.vega.xyz",
+                "explorer": "explorer.vega.xyz"
               }
             }
           }
@@ -1319,31 +1321,12 @@
           }
         },
         {
-          "name": "logLevel",
-          "required": true,
+          "name": "metadata",
           "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "tokenExpiry",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "port",
-          "required": true,
-          "schema": {
-            "type": "integer"
-          }
-        },
-        {
-          "name": "host",
-          "required": true,
-          "schema": {
-            "type": "string"
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/metadata"
+            }
           }
         },
         {
@@ -1351,6 +1334,13 @@
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/network_api_config"
+          }
+        },
+        {
+          "name": "apps",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/network_apps_config"
           }
         }
       ],
@@ -1368,22 +1358,6 @@
             {
               "name": "name",
               "value": "local-network"
-            },
-            {
-              "name": "level",
-              "value": "info"
-            },
-            {
-              "name": "tokenExpiry",
-              "value": "168h0m0s"
-            },
-            {
-              "name": "port",
-              "value": "1789"
-            },
-            {
-              "name": "host",
-              "value": "localhost"
             },
             {
               "name": "api",
@@ -1405,6 +1379,62 @@
                   ]
                 }
               }
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin.rename_network",
+      "summary": "Renames a network",
+      "description": "This method renames a network in-place.\n\nIf the new name matches an existing network, it fails.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "network"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "network",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "newName",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Rename a network",
+          "params": [
+            {
+              "name": "network",
+              "value": "my-network"
+            },
+            {
+              "name": "newWallet",
+              "value": "my-new-network-name"
             }
           ],
           "result": {
@@ -1475,19 +1505,14 @@
       "params": [
         {
           "name": "name",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "filePath",
-          "required": true,
+          "description": "The name to give to the imported network. If unset the network's name will be taken from the imported definition",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "url",
+          "description": "The URL of a network to import. The prefix `file://` can be used to indicate a file-path.",
           "required": true,
           "schema": {
             "type": "string"
@@ -1507,14 +1532,10 @@
         "schema": {
           "type": "object",
           "required": [
-            "name",
-            "filePath"
+            "name"
           ],
           "properties": {
             "name": {
-              "type": "string"
-            },
-            "filePath": {
               "type": "string"
             }
           }
@@ -1529,15 +1550,14 @@
               "value": "local-network"
             },
             {
-              "name": "filePath",
-              "value": "/Users/username/local-network.toml"
+              "name": "url",
+              "value": "file:///Users/username/local-network.toml"
             }
           ],
           "result": {
             "name": "Success",
             "value": {
-              "name": "local-network",
-              "filePath": "/Users/username/vega-home/wallet-service/networks/local-network.toml"
+              "name": "local-network"
             }
           }
         }
@@ -1577,9 +1597,7 @@
           "schema": {
             "type": "array",
             "items": {
-              "schema": {
-                "$ref": "#/components/schemas/metadata"
-              }
+              "$ref": "#/components/schemas/metadata"
             }
           }
         }
@@ -1994,18 +2012,11 @@
         "schema": {
           "type": "object",
           "required": [
-            "wallet",
-            "filePath"
+            "wallet"
           ],
           "properties": {
             "wallet": {
               "description": "Name of the generated isolated wallet",
-              "schema": {
-                "type": "string"
-              }
-            },
-            "filePath": {
-              "description": "Path to the isolated wallet file",
               "schema": {
                 "type": "string"
               }
@@ -2037,8 +2048,7 @@
           "result": {
             "name": "Success",
             "value": {
-              "wallet": "my-wallet.b5fd9d3c.isolated",
-              "filePath": "some/path/to/my-wallet.b5fd9d3c.isolated"
+              "wallet": "my-wallet.b5fd9d3c.isolated"
             }
           }
         }
@@ -2184,7 +2194,7 @@
     {
       "name": "admin.taint_key",
       "summary": "Marks the specified public key as tainted.",
-      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the restricted keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no restricted key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
+      "description": "This method marks the specified public key as tainted. It makes it unusable for transaction signing.\n\nWhen a key is tainted, it is automatically removed from the allowed keys if specified. If the key is the only one to be set, the permission to access the public keys is revoked. If no allowed key is specified, but all keys in the wallet are tainted, the permission of the public keys is revoked as well.",
       "tags": [
         {
           "name": "admin"
@@ -2389,7 +2399,7 @@
               "permissions": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2558,7 +2568,7 @@
               "value": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2571,7 +2581,7 @@
               "permissions": {
                 "publicKeys": {
                   "access": "read",
-                  "restrictedKeys": [
+                  "allowedKeys": [
                     "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0"
                   ]
                 }
@@ -2969,6 +2979,18 @@
           }
         },
         {
+          "name": "nodeAddress",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "retries",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
           "name": "sendingMode",
           "required": true,
           "schema": {
@@ -3013,6 +3035,100 @@
             "transactionHash": {
               "type": "string",
               "description": "The hash of the transaction. It's used to uniquely identify the transaction and can be used in the block explorer to retrieve it."
+            },
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "admin.check_transaction",
+      "summary": "Check transaction command using the specified wallet and public key.",
+      "description": "This method checks a transaction is valid, and returns a base64-encoded transaction that can be sent using the method `admin.send_transaction`",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "transaction"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "pubKey",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "network",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "nodeAddress",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "retries",
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "transaction",
+          "required": true,
+          "schema": {
+            "type": "object",
+            "$ref": "#/components/schemas/transaction"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "required": [
+            "receivedAt",
+            "sentAt",
+            "transaction"
+          ],
+          "properties": {
+            "receivedAt": {
+              "type": "string",
+              "description": "The date when the API received the request to send the transaction.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
+            },
+            "sentAt": {
+              "type": "string",
+              "description": "The date when the transaction has been sent to the network.\n\nThe time is a quoted string in RFC 3339 format, with sub-second precision added if present.",
+              "examples": [
+                "2021-02-18T21:54:42.123Z"
+              ]
             },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
@@ -3239,15 +3355,7 @@
         }
       ],
       "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "params": [],
       "result": {
         "name": "Success",
         "required": true,
@@ -3282,12 +3390,7 @@
       "examples": [
         {
           "name": "List the connection of a service",
-          "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            }
-          ],
+          "params": [],
           "result": {
             "name": "Success",
             "value": {
@@ -3325,13 +3428,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "hostname",
           "required": true,
           "schema": {
@@ -3357,10 +3453,6 @@
         {
           "name": "Close a connection",
           "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
             {
               "name": "hostname",
               "value": "vega.xyz"
@@ -3392,13 +3484,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "hostname",
           "required": true,
           "schema": {
@@ -3417,10 +3502,6 @@
         {
           "name": "Close all connections to a given hostname",
           "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
             {
               "name": "hostname",
               "value": "vega.xyz"
@@ -3448,13 +3529,6 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "wallet",
           "required": true,
           "schema": {
@@ -3473,10 +3547,6 @@
         {
           "name": "Close all connections to a given wallet",
           "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
             {
               "name": "wallet",
               "value": "my-btc-wallet"
@@ -3556,10 +3626,6 @@
           }
         }
       },
-      "token": {
-        "type": "string",
-        "description": "A unique connection token randomly generated for each new connection. It's used to access the protected methods."
-      },
       "public_key": {
         "type": "string",
         "description": "The Vega public key to use."
@@ -3582,7 +3648,7 @@
       },
       "metadata": {
         "type": "object",
-        "description": "The key's metadata.",
+        "description": "The object metadata.",
         "required": [
           "key",
           "value"
@@ -3652,13 +3718,13 @@
             "description": "The permissions related to public keys.",
             "required": [
               "access",
-              "restrictedKeys"
+              "allowedKeys"
             ],
             "properties": {
               "access": {
                 "$ref": "#/components/schemas/access_mode"
               },
-              "restrictedKeys": {
+              "allowedKeys": {
                 "type": "array",
                 "description": "The subset of public keys the user selected for this hostname. If empty, the wallet assumes all keys are accessible.",
                 "items": {
@@ -3673,9 +3739,7 @@
         "type": "object",
         "description": "The API configuration for the network.",
         "required": [
-          "grpcConfig",
-          "graphQLConfig",
-          "restConfig"
+          "grpcConfig"
         ],
         "properties": {
           "grpcConfig": {
@@ -3726,6 +3790,21 @@
           }
         }
       },
+      "network_apps_config": {
+        "type": "object",
+        "description": "The URLs to the network applications.",
+        "properties": {
+          "console": {
+            "type": "string"
+          },
+          "governance": {
+            "type": "string"
+          },
+          "explorer": {
+            "type": "string"
+          }
+        }
+      },
       "last_block_data": {
         "type": "object",
         "description": "The data related to the last block forged on the network.",
@@ -3752,7 +3831,7 @@
       },
       "sending_mode": {
         "type": "string",
-        "description": "The chosen mode to send the transaction:\n- `TYPE_SYNC` returns the result of running the transaction.\n- `TYPE_ASYNC` returns right away without waiting to hear if the transaction is even valid.\n- `TYPE_COMMIT` waits until the transaction is committed in a block or until some timeout is reached or returns return right away if the transaction is not valid.",
+        "description": "The chosen mode to send the transaction:\n- `TYPE_SYNC` returns the result of running the transaction.\n- `TYPE_ASYNC` returns right away without waiting to hear if the transaction is even valid.\n- `TYPE_COMMIT` waits until the transaction is committed in a block, or until some timeout is reached, or returns return right away if the transaction is not valid.",
         "enum": [
           "TYPE_SYNC",
           "TYPE_ASYNC",
@@ -3761,45 +3840,110 @@
       }
     },
     "errors": {
-      "no_healthy_node": {
+      "network_error_no_healthy_node": {
         "code": 1000,
         "message": "Network error",
         "data": "no healthy node available"
       },
-      "could_not_get_last_block": {
+      "network_error_could_not_get_last_block": {
         "code": 1000,
         "message": "Network error",
         "data": "could not get information about the last block on the network"
       },
-      "transaction_failed": {
+      "network_error_could_not_get_chain_id": {
         "code": 1000,
+        "message": "Network error",
+        "data": "could not get the chain ID from the node"
+      },
+      "network_error_transaction_failed": {
+        "code": 1000,
+        "message": "Network error",
+        "data": "the transaction could not be sent through the selected node"
+      },
+      "network_error_failed_transaction": {
+        "code": 1001,
         "message": "Network error",
         "data": "the transaction failed"
       },
-      "read_access_public_keys": {
-        "code": 2000,
-        "message": "Application error",
-        "data": "a \"read\" access on public keys is required"
+      "network_error_invalid_transaction": {
+        "code": 1051,
+        "message": "Network error",
+        "data": "the network rejected the transaction because it's invalid"
       },
-      "public_key_not_allowed": {
+      "network_error_malformed_transaction": {
+        "code": 1060,
+        "message": "Network error",
+        "data": "the network rejected the transaction because it's malformed"
+      },
+      "network_error_unprocessable_transaction": {
+        "code": 1070,
+        "message": "Network error",
+        "data": "the network could not process the transaction"
+      },
+      "network_error_unsupported_transaction": {
+        "code": 1080,
+        "message": "Network error",
+        "data": "the network does not support this transaction"
+      },
+      "network_error_spam_protection_activated": {
+        "code": 1089,
+        "message": "Network error",
+        "data": "the network blocked the transaction through the spam protection"
+      },
+      "application_error_public_key_not_allowed": {
         "code": 2000,
         "message": "Application error",
         "data": "the public key is not allowed to be used"
       },
-      "connection_closed": {
+      "application_error_transaction_would_break_spam_rules": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the transaction will break the network's spam rules"
+      },
+      "application_error_block_height_is_too_historic": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the block height is too historic"
+      },
+      "application_error_transaction_per_block_limit_reached": {
+        "code": 2000,
+        "message": "Application error",
+        "data": "the transaction per block limit has been reached"
+      },
+      "application_error_request_cancelled": {
+        "code": 2001,
+        "message": "Application error",
+        "data": "the application cancelled the request"
+      },
+      "user_error_connection_closed": {
         "code": 3000,
-        "message": "Client error",
+        "message": "User error",
         "data": "the user closed the connection"
       },
-      "request_rejected": {
+      "user_error_wallet_connection_rejected": {
         "code": 3001,
-        "message": "Client error",
-        "data": "the user rejected the request"
+        "message": "User error",
+        "data": "the user rejected the wallet connection"
       },
-      "request_interrupted": {
-        "code": -32001,
-        "message": "Server error",
-        "data": "the request has been interrupted"
+      "user_error_keys_access_rejected": {
+        "code": 3001,
+        "message": "User error",
+        "data": "the user rejected the access to the keys"
+      },
+      "user_error_sending_transaction_rejected": {
+        "code": 3001,
+        "message": "User error",
+        "data": "the user rejected the sending of the transaction"
+      },
+      "user_error_signing_transaction_rejected": {
+        "code": 3001,
+        "message": "User error",
+        "data": "the user rejected the signing of the transaction"
+      },
+      "user_error_request_cancelled": {
+        "code": 3002,
+        "message": "User error",
+        "data": "the user cancelled the request"
       }
     }
   }

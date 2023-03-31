@@ -15,8 +15,11 @@ package spam
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 	"sync"
 	"time"
+
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/core/netparams"
 
@@ -31,13 +34,13 @@ var (
 	increaseFactor             = num.NewUint(2)
 	banDurationAsEpochFraction = num.DecimalOne().Div(num.DecimalFromInt64(48)) // 1/48 of an epoch will be the default 30 minutes ban
 	banFactor                  = num.DecimalFromFloat(0.5)
+	rejectRatioForIncrease     = num.DecimalFromFloat(0.3)
 )
 
 const (
-	rejectRatioForIncrease         float64 = 0.3
-	numberOfEpochsBan              uint64  = 4
-	numberOfBlocksForIncreaseCheck uint64  = 10
-	minBanDuration                         = time.Second * 30 // minimum ban duration
+	numberOfEpochsBan              uint64 = 4
+	numberOfBlocksForIncreaseCheck uint64 = 10
+	minBanDuration                        = time.Second * 30 // minimum ban duration
 )
 
 type StakingAccounts interface {
@@ -70,6 +73,8 @@ type Policy interface {
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
 	Deserialise(payload *types.Payload) error
+	GetSpamStats(partyID string) *protoapi.SpamStatistic
+	GetVoteSpamStats(partyID string) *protoapi.VoteSpamStatistics
 }
 
 // ReloadConf updates the internal configuration of the spam engine.
@@ -99,23 +104,42 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		transactionTypeToPolicy: map[txn.Command]Policy{},
 	}
 
+	// simple policies
 	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log, accounting)
 	valJoinPolicy := NewSimpleSpamPolicy("validatorJoin", netparams.StakingAndDelegationRewardMinimumValidatorStake, "", log, accounting)
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
-	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
+	issuesSignaturesPolicy := NewSimpleSpamPolicy("issueSignature", netparams.SpamProtectionMinMultisigUpdates, "", log, accounting)
+
+	// complex policies
+	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
-	e.policyNameToPolicy = map[string]Policy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
-	e.hashKeys = []string{voteKey, proposalPolicy.policyName, delegationPolicy.policyName}
+	e.policyNameToPolicy = map[string]Policy{
+		proposalPolicy.policyName:         proposalPolicy,
+		valJoinPolicy.policyName:          valJoinPolicy,
+		delegationPolicy.policyName:       delegationPolicy,
+		transferPolicy.policyName:         transferPolicy,
+		issuesSignaturesPolicy.policyName: issuesSignaturesPolicy,
+		voteKey:                           votePolicy,
+	}
+	e.hashKeys = []string{
+		proposalPolicy.policyName,
+		valJoinPolicy.policyName,
+		delegationPolicy.policyName,
+		transferPolicy.policyName,
+		issuesSignaturesPolicy.policyName,
+		voteKey,
+	}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
-	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
+	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.TransferFundsCommand] = transferPolicy
 	e.transactionTypeToPolicy[txn.CancelTransferFundsCommand] = transferPolicy
-	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
+	e.transactionTypeToPolicy[txn.IssueSignatures] = issuesSignaturesPolicy
+	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent, e.OnEpochRestore)
@@ -180,6 +204,12 @@ func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.De
 	return e.transactionTypeToPolicy[txn.AnnounceNodeCommand].UpdateUintParam(netparams.StakingAndDelegationRewardMinimumValidatorStake, minTokensForJoiningValidator)
 }
 
+// OnMinTokensForProposalChanged is called when the net param for min tokens requirement for submitting a proposal has changed.
+func (e *Engine) OnMinTokensForMultisigUpdatesChanged(ctx context.Context, minTokens num.Decimal) error {
+	minTokensForMultisigUpdates, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.IssueSignatures].UpdateUintParam(netparams.SpamProtectionMinMultisigUpdates, minTokensForMultisigUpdates)
+}
+
 // OnEpochEvent is a callback for epoch events.
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Info("Spam protection OnEpochEvent called", logging.Uint64("epoch", epoch.Seq))
@@ -230,4 +260,37 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("txHash", hex.EncodeToString(tx.Hash())), logging.String("command", command.String()))
 	}
 	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
+}
+
+func parseBannedUntil(until int64) *string {
+	if until == 0 {
+		return nil
+	}
+	t := strconv.FormatInt(until, 10)
+	return &t
+}
+
+func (e *Engine) GetSpamStatistics(partyID string) *protoapi.SpamStatistics {
+	stats := &protoapi.SpamStatistics{}
+
+	for txType, policy := range e.transactionTypeToPolicy {
+		switch txType {
+		case txn.ProposeCommand:
+			stats.Proposals = policy.GetSpamStats(partyID)
+		case txn.DelegateCommand:
+			stats.Delegations = policy.GetSpamStats(partyID)
+		case txn.TransferFundsCommand:
+			stats.Transfers = policy.GetSpamStats(partyID)
+		case txn.AnnounceNodeCommand:
+			stats.NodeAnnouncements = policy.GetSpamStats(partyID)
+		case txn.IssueSignatures:
+			stats.IssueSignatures = policy.GetSpamStats(partyID)
+		case txn.VoteCommand:
+			stats.Votes = policy.GetVoteSpamStats(partyID)
+		default:
+			continue
+		}
+	}
+
+	return stats
 }

@@ -9,8 +9,8 @@ Feature: Position resolution case 1
       | property           | type         | binding             |
       | trading.terminated | TYPE_BOOLEAN | trading termination |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | ethDec21Oracle     |
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | data source config | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-2 | default-overkill-margin-calculator | 1                | default-none | default-none     | ethDec21Oracle     | 0.9145                    | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -37,13 +37,13 @@ Feature: Position resolution case 1
     And the mark price should be "150" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
-# insurance pool generation - setup orderbook
+    # insurance pool generation - setup orderbook
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 290    | 150   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 140   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
 
-# insurance pool generation - trade
+    # insurance pool generation - trade
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | designatedLooser | ETH/DEC19 | buy  | 290    | 150   | 1                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -56,7 +56,7 @@ Feature: Position resolution case 1
 
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 39730       | 127136 | 158920  | 198650  |
+      | designatedLooser | ETH/DEC19 | 39781       | 127299 | 159124  | 198905  |
 
     Then the parties should have the following profit and loss:
       | party            | volume | unrealised pnl | realised pnl |
@@ -74,7 +74,7 @@ Feature: Position resolution case 1
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | buySideProvider | ETH/DEC19 | buy  | 1      | 40    | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
-# insurance pool generation - set new mark price (and trigger closeout)  
+    # insurance pool generation - set new mark price (and trigger closeout)
     When the parties place the following orders with ticks:
       | party            | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
@@ -84,15 +84,15 @@ Feature: Position resolution case 1
     Then the parties should have the following account balances:
       | party            | asset | market id | margin  | general      |
       | designatedLooser | BTC   | ETH/DEC19 | 2900    | 0            |
-      | sellSideProvider | BTC   | ETH/DEC19 | 2154700 | 999997854000 |
+      | sellSideProvider | BTC   | ETH/DEC19 | 127740  | 999999880960 |
       | buySideProvider  | BTC   | ETH/DEC19 | 320     | 999999999680 |
       | aux              | BTC   | ETH/DEC19 | 320     | 999999999650 |
-      | aux2             | BTC   | ETH/DEC19 | 7430    | 999999992600 |
+      | aux2             | BTC   | ETH/DEC19 | 440     | 999999999590 |
 
     # margin level: vol* slippage = vol * (MarkPrice-ExitPrice) =290 * (120-(1*10+40*1)/11) = 290*116 = 33640
     And the parties should have the following margin levels:
       | party            | market id | maintenance | search | initial | release |
-      | designatedLooser | ETH/DEC19 | 33640       | 107648 | 134560  | 168200  |
+      | designatedLooser | ETH/DEC19 | 31825       | 101840 | 127300  | 159125  |
 
     # check positions
     Then the parties should have the following profit and loss:

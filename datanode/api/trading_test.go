@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -27,7 +29,6 @@ import (
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -39,7 +40,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/test/bufconn"
 )
 
@@ -82,11 +82,14 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 
 	mockCoreServiceClient = mocks.NewMockCoreServiceClient(mockCtrl)
 
-	mockCoreServiceClient.EXPECT().GetState().Return(connectivity.Ready).AnyTimes()
+	mockNetworkHistoryService := mocks.NewMockNetworkHistoryService(mockCtrl)
 
-	mockDeHistoryService := mocks.NewMockDeHistoryService(mockCtrl)
+	rawEventSource, err := broker.NewEventReceiverSender(conf.Broker, logging.NewTestLogger(), "")
+	if err != nil {
+		t.Fatalf("failed to create raw event source: %v", err)
+	}
 
-	eventSource, err := broker.NewEventSource(conf.Broker, logging.NewTestLogger(), "")
+	eventSource := broker.NewDeserializer(rawEventSource)
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}
@@ -104,44 +107,44 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	}
 
 	logger := logging.NewTestLogger()
-	eventService := subscribers.NewService(bro)
-	sqlOrderStore := sqlstore.NewOrders(sqlConn, logger)
+	eventService := subscribers.NewService(logger, bro, conf.Broker.EventBusClientBufferSize)
+	sqlOrderStore := sqlstore.NewOrders(sqlConn)
 	sqlOrderService := service.NewOrder(sqlOrderStore, logger)
-	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn), logger)
+	sqlNetworkLimitsService := service.NewNetworkLimits(sqlstore.NewNetworkLimits(sqlConn))
 	sqlMarketDataService := service.NewMarketData(sqlstore.NewMarketData(sqlConn), logger)
 	sqlCandleStore := sqlstore.NewCandles(ctx, sqlConn, conf.CandlesV2.CandleStore)
 	sqlCandlesService := candlesv2.NewService(ctx, logger, conf.CandlesV2, sqlCandleStore)
 	sqlTradeService := service.NewTrade(sqlstore.NewTrades(sqlConn), logger)
 	sqlPositionService := service.NewPosition(sqlstore.NewPositions(sqlConn), logger)
-	sqlAssetService := service.NewAsset(sqlstore.NewAssets(sqlConn), logger)
+	sqlAssetService := service.NewAsset(sqlstore.NewAssets(sqlConn))
 	sqlAccountService := service.NewAccount(sqlstore.NewAccounts(sqlConn), sqlstore.NewBalances(sqlConn), logger)
 	sqlRewardsService := service.NewReward(sqlstore.NewRewards(sqlConn), logger)
-	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn), logger)
+	sqlMarketsService := service.NewMarkets(sqlstore.NewMarkets(sqlConn))
 	sqlDelegationService := service.NewDelegation(sqlstore.NewDelegations(sqlConn), logger)
-	sqlEpochService := service.NewEpoch(sqlstore.NewEpochs(sqlConn), logger)
-	sqlDepositService := service.NewDeposit(sqlstore.NewDeposits(sqlConn), logger)
-	sqlWithdrawalService := service.NewWithdrawal(sqlstore.NewWithdrawals(sqlConn), logger)
+	sqlEpochService := service.NewEpoch(sqlstore.NewEpochs(sqlConn))
+	sqlDepositService := service.NewDeposit(sqlstore.NewDeposits(sqlConn))
+	sqlWithdrawalService := service.NewWithdrawal(sqlstore.NewWithdrawals(sqlConn))
 	sqlGovernanceService := service.NewGovernance(sqlstore.NewProposals(sqlConn), sqlstore.NewVotes(sqlConn), logger)
-	sqlRiskFactorsService := service.NewRiskFactor(sqlstore.NewRiskFactors(sqlConn), logger)
+	sqlRiskFactorsService := service.NewRiskFactor(sqlstore.NewRiskFactors(sqlConn))
 	sqlMarginLevelsService := service.NewRisk(sqlstore.NewMarginLevels(sqlConn), sqlAccountService, logger)
-	sqlNetParamService := service.NewNetworkParameter(sqlstore.NewNetworkParameters(sqlConn), logger)
-	sqlBlockService := service.NewBlock(sqlstore.NewBlocks(sqlConn), logger)
-	sqlCheckpointService := service.NewCheckpoint(sqlstore.NewCheckpoints(sqlConn), logger)
-	sqlPartyService := service.NewParty(sqlstore.NewParties(sqlConn), logger)
-	sqlOracleSpecService := service.NewOracleSpec(sqlstore.NewOracleSpec(sqlConn), logger)
-	sqlOracleDataService := service.NewOracleData(sqlstore.NewOracleData(sqlConn), logger)
-	sqlLPDataService := service.NewLiquidityProvision(sqlstore.NewLiquidityProvision(sqlConn, logger), logger)
-	sqlTransferService := service.NewTransfer(sqlstore.NewTransfers(sqlConn), logger)
-	sqlStakeLinkingService := service.NewStakeLinking(sqlstore.NewStakeLinking(sqlConn), logger)
-	sqlNotaryService := service.NewNotary(sqlstore.NewNotary(sqlConn), logger)
-	sqlMultiSigService := service.NewMultiSig(sqlstore.NewERC20MultiSigSignerEvent(sqlConn), logger)
-	sqlKeyRotationsService := service.NewKeyRotations(sqlstore.NewKeyRotations(sqlConn), logger)
+	sqlNetParamService := service.NewNetworkParameter(sqlstore.NewNetworkParameters(sqlConn))
+	sqlBlockService := service.NewBlock(sqlstore.NewBlocks(sqlConn))
+	sqlCheckpointService := service.NewCheckpoint(sqlstore.NewCheckpoints(sqlConn))
+	sqlPartyService := service.NewParty(sqlstore.NewParties(sqlConn))
+	sqlOracleSpecService := service.NewOracleSpec(sqlstore.NewOracleSpec(sqlConn))
+	sqlOracleDataService := service.NewOracleData(sqlstore.NewOracleData(sqlConn))
+	sqlLPDataService := service.NewLiquidityProvision(sqlstore.NewLiquidityProvision(sqlConn, logger))
+	sqlTransferService := service.NewTransfer(sqlstore.NewTransfers(sqlConn))
+	sqlStakeLinkingService := service.NewStakeLinking(sqlstore.NewStakeLinking(sqlConn))
+	sqlNotaryService := service.NewNotary(sqlstore.NewNotary(sqlConn))
+	sqlMultiSigService := service.NewMultiSig(sqlstore.NewERC20MultiSigSignerEvent(sqlConn))
+	sqlKeyRotationsService := service.NewKeyRotations(sqlstore.NewKeyRotations(sqlConn))
 	sqlEthereumKeyRotationService := service.NewEthereumKeyRotation(sqlstore.NewEthereumKeyRotations(sqlConn), logger)
-	sqlNodeService := service.NewNode(sqlstore.NewNode(sqlConn), logger)
+	sqlNodeService := service.NewNode(sqlstore.NewNode(sqlConn))
 	sqlMarketDepthService := service.NewMarketDepth(sqlOrderService, logger)
 	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
 	sqlProtocolUpgradeService := service.NewProtocolUpgrade(sqlstore.NewProtocolUpgradeProposals(sqlConn), logger)
-	sqlCoreSnapshotService := service.NewSnapshotData(sqlstore.NewCoreSnapshotData(sqlConn), logger)
+	sqlCoreSnapshotService := service.NewSnapshotData(sqlstore.NewCoreSnapshotData(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -182,7 +185,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		sqlMarketDepthService,
 		sqlLedgerService,
 		sqlProtocolUpgradeService,
-		mockDeHistoryService,
+		mockNetworkHistoryService,
 		sqlCoreSnapshotService,
 	)
 	if g == nil {
@@ -458,6 +461,84 @@ func TestLastBlockHeight(t *testing.T) {
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, actualResp)
+		assert.Contains(t, err.Error(), "Critical error")
+	})
+}
+
+func TestGetSpamStatistics(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	t.Run("proxy call is successful", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
+		if err != nil {
+			t.Fatalf("failed to get test gRPC server: %v", err)
+		}
+		defer tidy()
+
+		req := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		wantReq := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		wantResp := &vegaprotoapi.GetSpamStatisticsResponse{
+			Statistics: &vegaprotoapi.SpamStatistics{
+				Proposals:         nil,
+				Delegations:       nil,
+				Transfers:         nil,
+				NodeAnnouncements: nil,
+				Votes:             nil,
+			},
+		}
+
+		mockTradingServiceClient.EXPECT().
+			GetSpamStatistics(gomock.Any(), vgtesting.ProtosEq(wantReq)).
+			Return(&vegaprotoapi.GetSpamStatisticsResponse{
+				Statistics: &vegaprotoapi.SpamStatistics{
+					Proposals:         nil,
+					Delegations:       nil,
+					Transfers:         nil,
+					NodeAnnouncements: nil,
+					Votes:             nil,
+				},
+			}, nil).Times(1)
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		resp, err := proxyClient.GetSpamStatistics(ctx, req)
+		assert.NoError(t, err)
+		vgtesting.AssertProtoEqual(t, wantResp, resp)
+	})
+
+	t.Run("proxy propagates an error", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx)
+		if err != nil {
+			t.Fatalf("failed to get test gRPC server: %v", err)
+		}
+		defer tidy()
+
+		req := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		wantReq := &vegaprotoapi.GetSpamStatisticsRequest{
+			PartyId: "DEADBEEF",
+		}
+
+		mockTradingServiceClient.EXPECT().
+			GetSpamStatistics(gomock.Any(), vgtesting.ProtosEq(wantReq)).
+			Return(nil, fmt.Errorf("Critical error")).Times(1)
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		resp, err := proxyClient.GetSpamStatistics(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, resp)
 		assert.Contains(t, err.Error(), "Critical error")
 	})
 }

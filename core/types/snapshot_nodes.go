@@ -208,7 +208,8 @@ type PayloadExecutionMarkets struct {
 }
 
 type PayloadStakingAccounts struct {
-	StakingAccounts *StakingAccounts
+	StakingAccounts         *StakingAccounts
+	PendingStakeTotalSupply *StakeTotalSupply
 }
 
 type PayloadStakeVerifierDeposited struct {
@@ -332,8 +333,10 @@ type ExecMarket struct {
 	LongRiskFactor             num.Decimal
 	RiskFactorConsensusReached bool
 	FeeSplitter                *FeeSplitter
-	SettlementData             *num.Uint
+	SettlementData             *num.Numeric
 	NextMTM                    int64
+	Parties                    []string
+	Closed                     bool
 }
 
 type PriceMonitor struct {
@@ -479,7 +482,8 @@ type BDeposit struct {
 }
 
 type BankingSeen struct {
-	Refs []string
+	Refs             []string
+	LastSeenEthBlock uint64
 }
 
 type BankingAssetActions struct {
@@ -562,10 +566,10 @@ type MarketPositions struct {
 }
 
 type MarketPosition struct {
-	PartyID         string
-	Size, Buy, Sell int64
-	Price           *num.Uint
-	VwBuy, VwSell   *num.Uint
+	PartyID                       string
+	Size, Buy, Sell               int64
+	Price                         *num.Uint
+	BuySumProduct, SellSumProduct *num.Uint
 }
 
 type StakingAccounts struct {
@@ -592,6 +596,10 @@ type Notary struct {
 
 type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
+}
+
+type PayloadLiquidityScores struct {
+	LiquidityScores *snapshot.LiquidityScores
 }
 
 func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
@@ -778,6 +786,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadProtocolUpgradeProposalFromProto(dt)
 	case *snapshot.Payload_SettlementState:
 		ret.Data = PayloadSettlementFromProto(dt)
+	case *snapshot.Payload_LiquidityScores:
+		ret.Data = PayloadLiquidityScoresFromProto(dt)
 	}
 
 	return ret
@@ -912,6 +922,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ProtocolUpgradeProposals:
 		ret.Data = dt
 	case *snapshot.Payload_SettlementState:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityScores:
 		ret.Data = dt
 	}
 	return &ret
@@ -1928,15 +1940,24 @@ func (*PayloadLimitState) Namespace() SnapshotNamespace {
 }
 
 func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
+	var psts *StakeTotalSupply
+	if sa.StakingAccounts.PendingStakeTotalSupply != nil {
+		psts, _ = StakeTotalSupplyFromProto(sa.StakingAccounts.PendingStakeTotalSupply)
+	}
 	return &PayloadStakingAccounts{
-		StakingAccounts: StakingAccountsFromProto(sa.StakingAccounts),
+		StakingAccounts:         StakingAccountsFromProto(sa.StakingAccounts),
+		PendingStakeTotalSupply: psts,
 	}
 }
 
 func (p PayloadStakingAccounts) IntoProto() *snapshot.Payload_StakingAccounts {
-	return &snapshot.Payload_StakingAccounts{
+	sa := &snapshot.Payload_StakingAccounts{
 		StakingAccounts: p.StakingAccounts.IntoProto(),
 	}
+	if p.PendingStakeTotalSupply != nil {
+		sa.StakingAccounts.PendingStakeTotalSupply = p.PendingStakeTotalSupply.IntoProto()
+	}
+	return sa
 }
 
 func (*PayloadStakingAccounts) isPayload() {}
@@ -2071,21 +2092,23 @@ func (b BDeposit) IntoProto() *snapshot.Deposit {
 
 func BankingSeenFromProto(bs *snapshot.BankingSeen) *BankingSeen {
 	ret := BankingSeen{
-		Refs: bs.Refs,
+		Refs:             bs.Refs,
+		LastSeenEthBlock: bs.LastSeenEthBlock,
 	}
 	return &ret
 }
 
 func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	ret := snapshot.BankingSeen{
-		Refs: b.Refs,
+		Refs:             b.Refs,
+		LastSeenEthBlock: b.LastSeenEthBlock,
 	}
 	return &ret
 }
 
 func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 	ret := snapshot.BankingAssetActions{
-		AssetAction: make([]*snapshot.AssetAction, 0, len(a.AssetAction)),
+		AssetAction: make([]*checkpointpb.AssetAction, 0, len(a.AssetAction)),
 	}
 	for _, aa := range a.AssetAction {
 		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
@@ -2093,8 +2116,8 @@ func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 	return &ret
 }
 
-func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
-	ret := &snapshot.AssetAction{
+func (aa *AssetAction) IntoProto() *checkpointpb.AssetAction {
+	ret := &checkpointpb.AssetAction{
 		Id:                 aa.ID,
 		State:              aa.State,
 		Asset:              aa.Asset,
@@ -2130,7 +2153,7 @@ func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAsse
 	return &ret
 }
 
-func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
+func AssetActionFromProto(a *checkpointpb.AssetAction) *AssetAction {
 	aa := &AssetAction{
 		ID:            a.Id,
 		State:         a.State,
@@ -2427,28 +2450,28 @@ func (g GovernanceActive) IntoProto() *snapshot.GovernanceActive {
 
 func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 	price, _ := num.UintFromString(p.Price, 10)
-	vwBuy, _ := num.UintFromString(p.VwBuyPrice, 10)
-	vwSell, _ := num.UintFromString(p.VwSellPrice, 10)
+	buySumProduct, _ := num.UintFromString(p.BuySumProduct, 10)
+	sellSumProduct, _ := num.UintFromString(p.SellSumProduct, 10)
 	return &MarketPosition{
-		PartyID: p.PartyId,
-		Size:    p.Size,
-		Buy:     p.Buy,
-		Sell:    p.Sell,
-		Price:   price,
-		VwBuy:   vwBuy,
-		VwSell:  vwSell,
+		PartyID:        p.PartyId,
+		Size:           p.Size,
+		Buy:            p.Buy,
+		Sell:           p.Sell,
+		Price:          price,
+		BuySumProduct:  buySumProduct,
+		SellSumProduct: sellSumProduct,
 	}
 }
 
 func (p MarketPosition) IntoProto() *snapshot.Position {
 	return &snapshot.Position{
-		PartyId:     p.PartyID,
-		Size:        p.Size,
-		Buy:         p.Buy,
-		Sell:        p.Sell,
-		Price:       p.Price.String(),
-		VwBuyPrice:  p.VwBuy.String(),
-		VwSellPrice: p.VwSell.String(),
+		PartyId:        p.PartyID,
+		Size:           p.Size,
+		Buy:            p.Buy,
+		Sell:           p.Sell,
+		Price:          p.Price.String(),
+		BuySumProduct:  p.BuySumProduct.String(),
+		SellSumProduct: p.SellSumProduct.String(),
 	}
 }
 
@@ -2906,13 +2929,18 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
 
-	var sp *num.Uint
+	var sp *num.Numeric
 	if em.SettlementData != "" {
-		sp, _ = num.UintFromString(em.SettlementData, 10)
+		spp, _ := num.NumericFromString(em.SettlementData)
+		if spp != nil {
+			sp = spp
+		}
 	}
 
+	m, _ := MarketFromProto(em.Market)
+
 	ret := ExecMarket{
-		Market:                     MarketFromProto(em.Market),
+		Market:                     m,
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
 		AuctionState:               AuctionStateFromProto(em.AuctionState),
 		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),
@@ -2932,6 +2960,8 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		SettlementData:             sp,
 		NextMTM:                    em.NextMarkToMarket,
 		LastTradedPrice:            lastTradedPrice,
+		Parties:                    em.Parties,
+		Closed:                     em.Closed,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -2941,11 +2971,6 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 }
 
 func (e ExecMarket) IntoProto() *snapshot.Market {
-	sp := ""
-	if e.SettlementData != nil {
-		sp = e.SettlementData.String()
-	}
-
 	ret := snapshot.Market{
 		Market:                     e.Market.IntoProto(),
 		PriceMonitor:               e.PriceMonitor.IntoProto(),
@@ -2964,9 +2989,11 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
-		SettlementData:             sp,
+		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
 		LastTradedPrice:            e.LastTradedPrice.String(),
+		Parties:                    e.Parties,
+		Closed:                     e.Closed,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
@@ -3838,6 +3865,32 @@ func (p *PayloadLiquiditySupplied) Key() string {
 }
 
 func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (*PayloadLiquidityScores) isPayload() {}
+
+func PayloadLiquidityScoresFromProto(ls *snapshot.Payload_LiquidityScores) *PayloadLiquidityScores {
+	return &PayloadLiquidityScores{
+		LiquidityScores: ls.LiquidityScores,
+	}
+}
+
+func (p *PayloadLiquidityScores) IntoProto() *snapshot.Payload_LiquidityScores {
+	return &snapshot.Payload_LiquidityScores{
+		LiquidityScores: p.LiquidityScores,
+	}
+}
+
+func (p *PayloadLiquidityScores) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadLiquidityScores) Key() string {
+	return fmt.Sprintf("liquidityScores:%v", p.LiquidityScores.MarketId)
+}
+
+func (*PayloadLiquidityScores) Namespace() SnapshotNamespace {
 	return LiquiditySnapshot
 }
 

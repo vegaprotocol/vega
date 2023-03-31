@@ -34,35 +34,65 @@ message InputData {
   uint64 block_height = 2;
 
   oneof command {
-    // User commands
+    // A command for submitting an order
     OrderSubmission order_submission = 1001;
+
+    // User commands
+    // Command to cancel an order
     OrderCancellation order_cancellation = 1002;
+    // Command to amend an order
     OrderAmendment order_amendment = 1003;
+    // Command to submit a withdrawal
     WithdrawSubmission withdraw_submission = 1004;
+    // Command to submit a governance proposal
     ProposalSubmission proposal_submission = 1005;
+    // Command to submit a vote on a governance proposal
     VoteSubmission vote_submission = 1006;
+    // Command to submit a liquidity commitment
     LiquidityProvisionSubmission liquidity_provision_submission = 1007;
+    // Command to delegate tokens to a validator
     DelegateSubmission delegate_submission = 1008;
+    // Command to remove tokens delegated to a validator
     UndelegateSubmission undelegate_submission = 1009;
+    // Command to request cancelling a liquidity commitment
     LiquidityProvisionCancellation liquidity_provision_cancellation = 1010;
+    // Command to request amending a liquidity commitment
     LiquidityProvisionAmendment liquidity_provision_amendment = 1011;
+    // Command to submit a transfer
     Transfer transfer = 1012;
+    // A command to request cancelling a recurring transfer
     CancelTransfer cancel_transfer = 1013;
+    // A command used by a node operator to announce its node as a pending validator
     AnnounceNode announce_node = 1014;
+    // A command to submit a batch of order instructions to a market
     BatchMarketInstructions batch_market_instructions = 1015;
 
     // Validator commands
+    // Command used by a validator when a node votes for validating that a given resource exists or is valid,
+    // for example, an ERC20 deposit is valid and exists on ethereum
     NodeVote node_vote = 2002;
+    // Command used by a validator to submit a signature, to be used by a foreign chain to recognise a decision taken by the Vega network
     NodeSignature node_signature = 2003;
+    // Command used by a validator to submit an event forwarded to the Vega network to provide information 
+    // on events happening on other networks, to be used by a foreign chain 
+    // to recognise a decision taken by the Vega network
     ChainEvent chain_event = 2004;
+    // Command used by a validator to allow given validator to rotate their Vega keys
     KeyRotateSubmission key_rotate_submission = 2005;
+    // Command used by a validator to submit a floating point value
     StateVariableProposal state_variable_proposal = 2006;
+    // Command used by a validator to signal they are still online and validating blocks
+    // or ready to validate blocks when they are still a pending validator
     ValidatorHeartbeat validator_heartbeat = 2007;
+    // Command used by a validator to allow given validator to rotate their Ethereum keys
     EthereumKeyRotateSubmission ethereum_key_rotate_submission = 2008;
+    // Command used by a validator to propose a protocol upgrade
     ProtocolUpgradeProposal protocol_upgrade_proposal = 2009;
+    // Command used by a validator to submit signatures to a smart contract
     IssueSignatures issue_signatures = 2010;
 
     // Oracles
+    // Command to submit new oracle data from third party providers
     OracleDataSubmission oracle_data_submission = 3001;
   }
 }
@@ -70,11 +100,11 @@ message InputData {
 // The current supported version of the transaction inside the network.
 enum TxVersion {
   reserved 1;
-
+  // Represents an unspecified or missing value from the input
   TX_VERSION_UNSPECIFIED = 0;
-  // This version requires the Proof-of-work added to the transaction.
+  // This version requires the proof-of-work added to the transaction.
   TX_VERSION_V2 = 2;
-  // This version requires the chain ID to be append in front of the input data
+  // This version requires the chain ID to be appended in front of the input data
   // byte, with a `\0` delimiter.
   TX_VERSION_V3 = 3;
 }
@@ -99,7 +129,7 @@ message Transaction {
   }
 
   // A version of the transaction, to be used in the future in case changes are implemented
-  // to the Transaction format.
+  // to the transaction format.
   TxVersion version = 2000;
 
   // Proof of work contains the random transaction id used by the client and the nonce.

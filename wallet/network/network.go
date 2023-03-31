@@ -3,19 +3,15 @@ package network
 import (
 	"errors"
 	"fmt"
-
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 )
 
 var ErrNetworkDoesNotHaveGRPCHostConfigured = errors.New("network configuration does not have any gRPC host set")
 
 type Network struct {
-	Name        string              `json:"name"`
-	LogLevel    vgencoding.LogLevel `json:"level"`
-	TokenExpiry vgencoding.Duration `json:"tokenExpiry"`
-	Port        int                 `json:"port"`
-	Host        string              `json:"host"`
-	API         APIConfig           `json:"api"`
+	Name     string     `json:"name"`
+	Metadata []Metadata `json:"metadata"`
+	API      APIConfig  `json:"api"`
+	Apps     AppsConfig `json:"apps"`
 }
 
 type APIConfig struct {
@@ -37,6 +33,17 @@ type GraphQLConfig struct {
 	Hosts []string `json:"hosts"`
 }
 
+type AppsConfig struct {
+	Console    string `json:"console"`
+	Governance string `json:"governance"`
+	Explorer   string `json:"explorer"`
+}
+
+type Metadata struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 func (n *Network) EnsureCanConnectGRPCNode() error {
 	if len(n.API.GRPC.Hosts) > 0 && len(n.API.GRPC.Hosts[0]) > 0 {
 		return nil
@@ -47,7 +54,7 @@ func (n *Network) EnsureCanConnectGRPCNode() error {
 func GetNetwork(store Store, name string) (*Network, error) {
 	exists, err := store.NetworkExists(name)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't verify network existence: %w", err)
+		return nil, fmt.Errorf("couldn't verify network exists: %w", err)
 	}
 	if !exists {
 		return nil, NewDoesNotExistError(name)

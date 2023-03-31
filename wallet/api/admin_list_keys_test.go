@@ -82,7 +82,8 @@ func testAdminListKeysWithValidParamsSucceeds(t *testing.T) {
 	handler := newAdminListKeysHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListKeysParams{
@@ -143,7 +144,7 @@ func testAdminListKeysGettingInternalErrorDuringWalletVerificationFails(t *testi
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testAdminListKeysGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
@@ -156,7 +157,8 @@ func testAdminListKeysGettingInternalErrorDuringWalletRetrievalFails(t *testing.
 	handler := newAdminListKeysHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListKeysParams{
@@ -176,10 +178,10 @@ type adminListKeysHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *adminListKeysHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListKeysResult, *jsonrpc.ErrorDetails) {
+func (h *adminListKeysHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminListKeysResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListKeysResult)
 		if !ok {

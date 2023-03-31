@@ -31,7 +31,7 @@ func FakeNetwork(name string) string {
 	return fmt.Sprintf(`
 Name = "%s"
 Level = "info"
-TokenExpiry = "1h0m0s"
+MaximumTokenDuration = "1h0m0s"
 Port = 8000
 Host = "127.0.0.1"
 

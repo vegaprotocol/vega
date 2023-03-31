@@ -32,7 +32,7 @@ type CoreStateServiceClient interface {
 	ListAssets(ctx context.Context, in *ListAssetsRequest, opts ...grpc.CallOption) (*ListAssetsResponse, error)
 	// Network parameters list
 	//
-	// Return a list of network paramters
+	// Return a list of network parameters
 	ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error)
 	// Network limits list
 	//
@@ -202,7 +202,7 @@ type CoreStateServiceServer interface {
 	ListAssets(context.Context, *ListAssetsRequest) (*ListAssetsResponse, error)
 	// Network parameters list
 	//
-	// Return a list of network paramters
+	// Return a list of network parameters
 	ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error)
 	// Network limits list
 	//

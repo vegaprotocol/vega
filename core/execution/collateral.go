@@ -38,7 +38,10 @@ func (m *Market) transferMarginsLiquidityProvisionAmendAuction(
 		return err
 	}
 
-	m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tsfr}))
+	if len(tsfr.Entries) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tsfr}))
+	}
+
 	return nil
 }
 
@@ -59,8 +62,11 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 			// @TODO handle this
 			return err
 		}
-		evts = append(evts, events.NewLedgerMovements(ctx, []*types.LedgerMovement{tr}))
+		if len(tr.Entries) > 0 {
+			evts = append(evts, events.NewLedgerMovements(ctx, []*types.LedgerMovement{tr}))
+		}
 	}
+
 	m.broker.SendBatch(evts)
 	rmorders, err := m.matching.RemoveDistressedOrders(distressed)
 	if err != nil {
@@ -80,17 +86,21 @@ func (m *Market) transferMarginsAuction(ctx context.Context, risk []events.Risk,
 	return nil
 }
 
-func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk) error {
+func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk) {
 	if len(risk) == 0 {
-		return nil
+		return
 	}
 	mID := m.GetID()
 	evts := make([]events.Event, 0, len(risk))
 	for _, r := range risk {
+		var tr *types.LedgerMovement
 		responses := make([]*types.LedgerMovement, 0, 1)
 		tr, closed, err := m.collateral.MarginUpdateOnOrder(ctx, mID, r)
 		if err != nil {
-			return err
+			m.log.Warn("margin recheck failed",
+				logging.MarketID(m.GetID()),
+				logging.PartyID(r.Party()),
+				logging.Error(err))
 		}
 		if tr != nil {
 			responses = append(responses, tr)
@@ -107,10 +117,11 @@ func (m *Market) transferRecheckMargins(ctx context.Context, risk []events.Risk)
 				responses = append(responses, resp...)
 			}
 		}
-		evts = append(evts, events.NewLedgerMovements(ctx, responses))
+		if len(responses) > 0 {
+			evts = append(evts, events.NewLedgerMovements(ctx, responses))
+		}
 	}
 	m.broker.SendBatch(evts)
-	return nil
 }
 
 func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Risk) error {
@@ -142,7 +153,10 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 			responses = append(responses, resp...)
 		}
 	}
-	m.broker.Send(events.NewLedgerMovements(ctx, responses))
+	if len(responses) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, responses))
+	}
+
 	return nil
 }
 
@@ -151,6 +165,9 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 	asset, _ := m.mkt.GetAsset()
 	ret := make([]*types.LedgerMovement, 0, len(closed))
 	for _, c := range closed {
+		if !m.liquidity.IsLiquidityProvider(c.Party()) {
+			continue
+		}
 		penalty, _ := num.UintFromDecimal(
 			num.DecimalFromUint(c.MarginShortFall()).Mul(m.bondPenaltyFactor).Floor(),
 		)

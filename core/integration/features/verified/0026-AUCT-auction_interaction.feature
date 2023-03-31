@@ -11,7 +11,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 0     |
-      | network.floatingPointUpdates.delay            | 5s    |
+      | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 10    |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
     And the average block duration is "1"
@@ -32,9 +32,9 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 2       | 0.999995    | 200               |
       | 1       | 0.999999    | 300               |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
-      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1     | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      | ETH/DEC22 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-2 | default-eth-for-future |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1     | default-margin-calculator | 10               | fees-config-1 | price-monitoring-1 | default-eth-for-future | 0.5                    | 0                         |
+      | ETH/DEC22 | ETH        | ETH   | log-normal-risk-model-1 | default-margin-calculator | 10               | fees-config-1 | price-monitoring-2 | default-eth-for-future | 0.5                    | 0                         |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount     |
       | party0 | ETH   | 1000000000 |
@@ -135,8 +135,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the opening auction period ends for market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         | extension trigger         |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                 | auction trigger         | extension trigger                          |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -151,9 +151,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to insufficient supplied stake  (0026-AUCT-004, 0026-AUCT-005)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -172,8 +175,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the opening auction period ends for market "ETH/DEC21"
 
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         | extension trigger         |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                 | auction trigger         | extension trigger                        |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -195,8 +198,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the market data for the market "ETH/DEC21" should be:
-      | trading mode                 | auction trigger         | extension trigger         | target stake | supplied stake | open interest |
-      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY | 1000         | 800            | 0             |
+      | trading mode                 | auction trigger         | extension trigger                        | target stake | supplied stake | open interest |
+      | TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1000         | 800            | 0             |
 
     When the network moves ahead "1" blocks
 
@@ -217,9 +220,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1000       | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1000         | 1000           | 10            |
 
   Scenario: Once market is in continuous trading mode: post a persistent order that should trigger liquidity auction (not enough target stake), appropriate event is sent and market in TRADING_MODE_MONITORING_AUCTION (0026-AUCT-005, 0035-LIQM-003)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -254,14 +260,14 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     # verify that we don't enter liquidity auction immediately, but at the end of block as per 0035-LIQM-003
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 1000           | 30            |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3000         | 1000           | 30            |
 
     # move to the next block to perform liquidity check
     Then the network moves ahead "1" blocks
     # open interest updates to include buy order of size 20
     And the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 3030         | 1000           | 30            |
+      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 3030         | 1000           | 30            |
 
     Then the following events should be emitted:
       | type                    |
@@ -274,7 +280,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | AuctionEvent            |
       | MarketUpdatedEvent      |
     # LP repricing, checking, and cancelling emits a ton of events
-    And a total of "119" events should be emitted
+    And a total of "110" events should be emitted
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -290,9 +296,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 10000          | 30            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (not enough target stake), still goes through, but auction is triggered the next block
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -334,11 +343,11 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1414         | 1000           | 14            |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1400         | 1000           | 14            |
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1414         | 1000           | 14            |
+      | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 1414         | 1000           | 14            |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), the order trades, market goes into auction mode and an appropriate event is sent and market goes into TRADING_MODE_MONITORING_AUCTION the next block (0035-LIQM-002)
     Given the following network parameters are set:
@@ -397,12 +406,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1009              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 403          | 2000           | 4             |
+      | 1000       | 1009              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 400          | 2000           | 4             |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | last traded price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 1009       | 1009              | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 403          | 2000           | 4             |
+      | mark price | last traded price | trading mode                    | auction trigger                            | target stake | supplied stake | open interest |
+      | 1009       | 1009              | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS | 403          | 2000           | 4             |
 
   Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger liquidity auction (no best ask), the order trades, then provide more orders that ensure a best ask price exists before the end of the block. The market should not enter auction. Same scenario as above until the last "network moves ahead 1 blocks" bit)
     Given the following network parameters are set:
@@ -450,7 +459,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | 1      | 0              | 0            |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 505          | 2000           | 5             |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 500          | 2000           | 5             |
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1010  | 0      |
@@ -482,7 +491,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | buy  | 991   | 1      |
       | buy  | 990   | 1      |
 
-  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS
+  Scenario: Once market is in continuous trading mode: post a non-persistent order that should trigger price auction, check that the order gets stopped, appropriate event is sent and market remains in TRADING_MODE_CONTINUOUS, 0024-OSTA-012
     Given the following network parameters are set:
       | name                                          | value |
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
@@ -517,6 +526,14 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party  | market id | reason                                               |
       | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
 
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
+      | party2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |                                                             |
+      | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_FOK | reject-me | OrderError: non-persistent order trades out of price bounds |
+    Then the following orders should be stopped:
+      | party  | market id | reason                                               |
+      | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
+
     Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -524,9 +541,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -566,12 +586,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | ETH/DEC21 | buy  | 4      | 1010  | 3                | TYPE_LIMIT | TIF_FOK |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1414         | 1000           | 14            |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1400         | 1000           | 14            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | horizon | min bound | max bound | 
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 100     | 993       | 1012      |
+      | trading mode                    | auction trigger                          | horizon | min bound | max bound |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 100     | 993       | 1012      |
 
     # submit the order during auction so we can cancel it later on
     And the parties place the following orders with ticks:
@@ -604,8 +624,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     # We should be able to leave liquidity auction now (price extension keep the market in auction mode though)
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | extension trigger     |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE |
+      | trading mode                    | auction trigger                          | extension trigger     |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_PRICE |
 
     # End price auction extension
     When the network moves ahead "301" blocks
@@ -614,9 +634,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 3468         | 4080           | 34            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode (0068-MATC-033,0026-AUCT-005)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -652,16 +675,16 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | party2 | ETH/DEC21 | sell |  2     | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trigger-liq |
+      | party2 | ETH/DEC21 | sell | 2      | 1010  | 0                | TYPE_LIMIT | TIF_GTC | trigger-liq |
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 3                | TYPE_LIMIT | TIF_GTC | trigger-liq |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 1414         | 1000           | 14            |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 1400         | 1000           | 14            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger                          |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     When the network moves ahead "1" blocks
     Then the parties place the following orders with ticks:
@@ -690,8 +713,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     When the network moves ahead "11" blocks
     # We should be able to leave liquidity auction now (price extension keep the market in auction mode though)
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | extension trigger     |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE |
+      | trading mode                    | auction trigger                          | extension trigger     |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_PRICE |
 
     And the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -701,8 +724,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     # Jump ahead to the end of the price monitoring auction period
     When the network moves ahead "301" blocks
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 4488         | 3468           | 14            |
+      | mark price | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 4488         | 3468           | 14            |
 
     When the network moves ahead "1" blocks
 
@@ -720,9 +743,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4488         | 4488           | 44            |
 
   Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode (0068-MATC-033,0026-AUCT-005)
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -758,8 +784,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     # end price auction (gets extended by liquidity)
     When the network moves ahead "301" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger       | extension trigger         |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_LIQUIDITY |
+      | trading mode                    | auction trigger       | extension trigger                        |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET |
 
     # We were in liquidity auction, we've updated the commitment amount
     When the parties submit the following liquidity provision:
@@ -775,9 +801,12 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity auction -> leave auction mode (0068-MATC-033, 0026-AUCT-005)
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.8   |
+    Given the liquidity monitoring parameters:
+      | name               | triggering ratio | time window | scaling factor |
+      | updated-lqm-params | 0.8              | 24h         | 1              |
+    When the markets are updated:
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -805,8 +834,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the network moves ahead "1" blocks
 
     And the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | extension trigger           |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_UNSPECIFIED |
+      | trading mode                    | auction trigger                          | extension trigger           |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_UNSPECIFIED |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -827,8 +856,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_UNSPECIFIED | 100     | 995       | 1015      | 2020         | 2080           | 20            |
+      | mark price | trading mode                    | auction trigger                          | extension trigger           | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_UNSPECIFIED | 100     | 995       | 1015      | 2020         | 2080           | 20            |
 
     # Now we place some orders that are outside the price range to trigger price auction
     When the parties place the following orders with ticks:
@@ -843,11 +872,11 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     Then the network moves ahead "9" blocks
 
     And the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger     | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE | 4080         | 4080           | 20            |
+      | mark price | trading mode                    | auction trigger                          | extension trigger     | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_PRICE | 4080         | 4080           | 20            |
     Then the market data for the market "ETH/DEC21" should be:
-      | trading mode                    | auction trigger           | extension trigger     |
-      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_PRICE |
+      | trading mode                    | auction trigger                          | extension trigger     |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_PRICE |
 
     # increase open interest
     When the parties place the following orders with ticks:
@@ -858,8 +887,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the network moves ahead "301" blocks
 
     Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode                    | auction trigger           | extension trigger         | target stake | supplied stake | open interest |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | AUCTION_TRIGGER_LIQUIDITY | 6120         | 4080           | 20            |
+      | mark price | trading mode                    | auction trigger                          | extension trigger                        | target stake | supplied stake | open interest |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 6120         | 4080           | 20            |
 
     When the network moves ahead "1" blocks
 
@@ -873,4 +902,3 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 6120         | 6120           | 60            |
-

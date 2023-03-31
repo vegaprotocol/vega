@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/delegation"
 	"code.vegaprotocol.io/vega/core/epochtime"
+	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/notary"
 	"code.vegaprotocol.io/vega/core/rewards"
@@ -35,6 +36,7 @@ import (
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
+	protos "code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/golang/mock/gomock"
 )
@@ -88,6 +90,12 @@ type executionTestSetup struct {
 	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
 
+	// record parts of state before each step
+	accountsBefore                []protos.Account
+	ledgerMovementsBefore         int
+	insurancePoolDepositsOverStep map[string]*num.Int
+	eventsBefore                  int
+
 	ntry           *notary.SnapshotNotary
 	stateVarEngine *stubs.StateVarStub
 	witness        *validators.Witness
@@ -103,6 +111,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
 	execsetup.cfg = execution.NewDefaultConfig()
+	execsetup.cfg.Position.StreamPositionVerbose = true
+	execsetup.cfg.Risk.StreamMarginLevelsVerbose = true
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()
@@ -135,6 +145,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			Symbol: "USDC",
 		},
 	}
+
 	execsetup.collateralEngine.EnableAsset(context.Background(), usdc)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.broker)
@@ -151,7 +162,8 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 	execsetup.assetsEngine = stubs.NewAssetStub()
-	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub())
+	ethSourceNoop := evtforward.NewNoopEngine(execsetup.log, evtforward.NewDefaultConfig())
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, execsetup.witness, execsetup.timeService, execsetup.assetsEngine, execsetup.ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine, marketActivityTracker, stubs.NewBridgeViewStub(), ethSourceNoop)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology)
@@ -224,7 +236,6 @@ func (e *executionTestSetup) registerTimeServiceCallbacks() {
 		e.ntry.OnTick,
 		e.banking.OnTick,
 		e.delegationEngine.OnTick,
-		e.rewardsEngine.OnTick,
 		e.builtinOracle.OnTick,
 		e.stateVarEngine.OnTick,
 		e.executionEngine.OnTick,
@@ -250,20 +261,12 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: e.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeScalingFactor,
-			Watcher: e.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketTargetStakeTimeWindow,
-			Watcher: e.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
@@ -280,10 +283,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
-			Watcher: e.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketAuctionMinimumDuration,

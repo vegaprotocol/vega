@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type StakeLinkingEvent interface {
@@ -34,13 +34,11 @@ type StakeLinkingStore interface {
 type StakeLinking struct {
 	subscriber
 	store StakeLinkingStore
-	log   *logging.Logger
 }
 
-func NewStakeLinking(store StakeLinkingStore, log *logging.Logger) *StakeLinking {
+func NewStakeLinking(store StakeLinkingStore) *StakeLinking {
 	return &StakeLinking{
 		store: store,
-		log:   log,
 	}
 }
 

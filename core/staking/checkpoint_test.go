@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:embed testcp/20220627071230-316971-74f8b933dd6e564489de1958b89ca8c00ed25b73b16a85bcf48bd3e8aa493a4e.cp
+//go:embed testcp/20220627071230-316971-11a4d958cb7e0448f0cea0b7c617a1e4535e90c0d0f18fd86e961c97147757d7.cp
 var cpFile []byte
 
 type checkpointTest struct {

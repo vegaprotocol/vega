@@ -15,12 +15,13 @@ package server
 import (
 	"context"
 
+	"golang.org/x/sync/errgroup"
+
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	gql "code.vegaprotocol.io/vega/datanode/gateway/graphql"
 	"code.vegaprotocol.io/vega/datanode/gateway/rest"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"golang.org/x/sync/errgroup"
 )
 
 type Server struct {
@@ -32,7 +33,12 @@ type Server struct {
 	gql  *gql.GraphServer
 }
 
+const namedLogger = "gateway"
+
 func New(cfg gateway.Config, log *logging.Logger, vegaPaths paths.Paths) *Server {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+
 	return &Server{
 		log:       log,
 		cfg:       &cfg,
@@ -53,7 +59,7 @@ func (srv *Server) Start(ctx context.Context) error {
 	}
 
 	if srv.cfg.REST.Enabled {
-		srv.rest = rest.NewProxyServer(srv.log, *srv.cfg)
+		srv.rest = rest.NewProxyServer(srv.log, *srv.cfg, srv.vegaPaths)
 		eg.Go(func() error { return srv.rest.Start() })
 	}
 

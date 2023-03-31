@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -27,32 +26,32 @@ var (
 	`)
 )
 
-type GetInfoWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
+type DescribeWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
 
-func NewCmdGetInfoWallet(w io.Writer, rf *RootFlags) *cobra.Command {
+func NewCmdDescribeWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminDescribeWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		describeWallet := api.NewAdminDescribeWallet(s)
-		rawResult, errorDetails := describeWallet.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		describeWallet := api.NewAdminDescribeWallet(walletStore)
+		rawResult, errorDetails := describeWallet.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminDescribeWalletResult{}, errors.New(errorDetails.Data)
 		}
 		return rawResult.(api.AdminDescribeWalletResult), nil
 	}
-	return BuildCmdGetInfoWallet(w, h, rf)
+	return BuildCmdDescribeWallet(w, h, rf)
 }
 
-func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFlags) *cobra.Command {
-	f := &GetWalletInfoFlags{}
+func BuildCmdDescribeWallet(w io.Writer, handler DescribeWalletHandler, rf *RootFlags) *cobra.Command {
+	f := &DescribeWalletFlags{}
 
 	cmd := &cobra.Command{
 		Use:     "describe",
 		Short:   "Describe the specified wallet",
-		Aliases: []string{"info"},
 		Long:    describeWalletLong,
 		Example: describeWalletExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -93,12 +92,12 @@ func BuildCmdGetInfoWallet(w io.Writer, handler GetInfoWalletHandler, rf *RootFl
 	return cmd
 }
 
-type GetWalletInfoFlags struct {
+type DescribeWalletFlags struct {
 	Wallet         string
 	PassphraseFile string
 }
 
-func (f *GetWalletInfoFlags) Validate() (api.AdminDescribeWalletParams, error) {
+func (f *DescribeWalletFlags) Validate() (api.AdminDescribeWalletParams, error) {
 	req := api.AdminDescribeWalletParams{}
 
 	if len(f.Wallet) == 0 {

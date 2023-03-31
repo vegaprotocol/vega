@@ -20,14 +20,18 @@ import (
 	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory/store"
+	"code.vegaprotocol.io/vega/datanode/gateway"
+
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/contextutil"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/service"
-	"code.vegaprotocol.io/vega/datanode/subscribers"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -36,7 +40,6 @@ import (
 	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
@@ -56,16 +59,20 @@ type BlockService interface {
 	GetLastBlock(ctx context.Context) (entities.Block, error)
 }
 
-// DeHistoryService ...
+// NetworkHistoryService ...
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/dehistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api DeHistoryService
-type DeHistoryService interface {
-	GetHighestBlockHeightHistorySegment() (store.SegmentIndexEntry, error)
-	ListAllHistorySegments() ([]store.SegmentIndexEntry, error)
-	FetchHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error)
-	GetActivePeerAddresses() []string
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api NetworkHistoryService
+type NetworkHistoryService interface {
+	GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error)
+	ListAllHistorySegments() ([]networkhistory.Segment, error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
+	GetActivePeerIPAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
+	GetSwarmKeySeed() string
+	GetConnectedPeerAddresses() ([]string, error)
+	GetIpfsAddress() (string, error)
 	GetSwarmKey() string
+	GetBootstrapPeers() []string
 }
 
 // GRPCServer represent the grpc api provided by the vega node.
@@ -111,7 +118,7 @@ type GRPCServer struct {
 	marketDepthService         *service.MarketDepth
 	ledgerService              *service.Ledger
 	protocolUpgradeService     *service.ProtocolUpgrade
-	deHistoryService           DeHistoryService
+	networkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
 
 	eventObserver *eventObserver
@@ -161,7 +168,7 @@ func NewGRPCServer(
 	marketDepthService *service.MarketDepth,
 	ledgerService *service.Ledger,
 	protocolUpgradeService *service.ProtocolUpgrade,
-	deHistoryService DeHistoryService,
+	networkHistoryService NetworkHistoryService,
 	coreSnapshotService *service.SnapshotData,
 ) *GRPCServer {
 	// setup logger
@@ -208,7 +215,7 @@ func NewGRPCServer(
 		marketDataService:          marketDataService,
 		ledgerService:              ledgerService,
 		protocolUpgradeService:     protocolUpgradeService,
-		deHistoryService:           deHistoryService,
+		networkHistoryService:      networkHistoryService,
 		coreSnapshotService:        coreSnapshotService,
 
 		eventObserver: &eventObserver{
@@ -232,7 +239,7 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 		g.log.SetLevel(cfg.Level.Get())
 	}
 
-	// TODO(): not updating the the actual server for now, may need to look at this later
+	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
 }
@@ -285,8 +292,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 }
 
 func headersInterceptor(
-	getState GetStateFunc,
-	getLastBlock GetBlockFunc,
+	getLastBlock func(context.Context) (entities.Block, error),
 	log *logging.Logger,
 ) grpc.UnaryServerInterceptor {
 	return func(
@@ -308,15 +314,8 @@ func headersInterceptor(
 			timestamp = block.VegaTime.UnixNano()
 		}
 
-		state := getState()
-
-		connState := "DISCONNECTED"
-		if state == connectivity.Ready {
-			connState = "CONNECTED"
-		}
-
 		for _, h := range []metadata.MD{
-			metadata.Pairs("X-Vega-Connection", connState),
+			// Deprecated: use 'X-Block-Height' and 'X-Block-Timestamp' instead to determine if data is fresh.
 			metadata.Pairs("X-Block-Height", strconv.FormatInt(height, 10)),
 			metadata.Pairs("X-Block-Timestamp", strconv.FormatInt(timestamp, 10)),
 		} {
@@ -343,7 +342,7 @@ func (g *GRPCServer) getTCPListener() (net.Listener, error) {
 	return tpcLis, nil
 }
 
-// Start start the grpc server.
+// Start starts the grpc server.
 // Uses default TCP listener if no provided.
 func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	if lis == nil {
@@ -355,15 +354,19 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		lis = tpcLis
 	}
 
+	subscriptionRateLimiter := gateway.NewSubscriptionRateLimiter(g.log, g.Config.MaxSubscriptionPerClient)
+
+	rateLimit := ratelimit.NewFromConfig(&g.RateLimit, g.log)
 	intercept := grpc.ChainUnaryInterceptor(
 		remoteAddrInterceptor(g.log),
-		headersInterceptor(g.vegaCoreServiceClient.GetState, g.blockService.GetLastBlock, g.log),
+		headersInterceptor(g.blockService.GetLastBlock, g.log),
+		subscriptionRateLimiter.WithGrpcInterceptor(),
+		rateLimit.GRPCInterceptor,
 	)
 
 	g.srv = grpc.NewServer(intercept)
 
 	coreProxySvc := &coreProxyService{
-		log:               g.log,
 		conf:              g.Config,
 		coreServiceClient: g.vegaCoreServiceClient,
 		eventObserver:     g.eventObserver,
@@ -410,7 +413,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
 		protocolUpgradeService:     g.protocolUpgradeService,
-		deHistoryService:           g.deHistoryService,
+		networkHistoryService:      g.networkHistoryService,
 		coreSnapshotService:        g.coreSnapshotService,
 	}
 
@@ -481,21 +484,3 @@ func (g *GRPCServer) startWebUI(ctx context.Context) {
 	g.log.Info("Starting gRPC Web UI", logging.String("addr", g.IP), logging.Int("port", g.WebUIPort))
 	go http.Serve(uiListener, uiHandler)
 }
-
-type VegaCoreServiceClient struct {
-	vegaprotoapi.CoreServiceClient
-	getState GetStateFunc
-}
-
-func NewVegaCoreServiceClient(coreServiceClient vegaprotoapi.CoreServiceClient, getState GetStateFunc) *VegaCoreServiceClient {
-	return &VegaCoreServiceClient{CoreServiceClient: coreServiceClient, getState: getState}
-}
-
-func (c VegaCoreServiceClient) GetState() connectivity.State {
-	return c.getState()
-}
-
-type (
-	GetBlockFunc func(context.Context) (entities.Block, error)
-	GetStateFunc func() connectivity.State
-)

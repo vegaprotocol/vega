@@ -55,7 +55,7 @@ func (a ProposalTermsUpdateMarket) DeepClone() proposalTerm {
 	}
 }
 
-func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsUpdateMarket {
+func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) (*ProposalTermsUpdateMarket, error) {
 	var updateMarket *UpdateMarket
 	if p.UpdateMarket != nil {
 		updateMarket = &UpdateMarket{}
@@ -63,13 +63,17 @@ func UpdateMarketFromProto(p *vegapb.ProposalTerms_UpdateMarket) *ProposalTermsU
 		updateMarket.MarketID = p.UpdateMarket.MarketId
 
 		if p.UpdateMarket.Changes != nil {
-			updateMarket.Changes = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
+			var err error
+			updateMarket.Changes, err = UpdateMarketConfigurationFromProto(p.UpdateMarket.Changes)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &ProposalTermsUpdateMarket{
 		UpdateMarket: updateMarket,
-	}
+	}, nil
 }
 
 type UpdateMarket struct {
@@ -119,24 +123,30 @@ type UpdateMarketConfiguration struct {
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	RiskParameters                updateRiskParams
 	LpPriceRange                  num.Decimal
+	LinearSlippageFactor          num.Decimal
+	QuadraticSlippageFactor       num.Decimal
 }
 
 func (n UpdateMarketConfiguration) String() string {
 	return fmt.Sprintf(
-		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s)",
+		"instrument(%s) metadata(%v) priceMonitoring(%s) liquidityMonitoring(%s) risk(%s) lpPriceRange(%s) linearSlippageFactor(%s) quadraticSlippageFactor(%s)",
 		reflectPointerToString(n.Instrument),
 		MetadataList(n.Metadata).String(),
 		reflectPointerToString(n.PriceMonitoringParameters),
 		reflectPointerToString(n.LiquidityMonitoringParameters),
 		reflectPointerToString(n.RiskParameters),
-		n.LpPriceRange,
+		n.LpPriceRange.String(),
+		n.LinearSlippageFactor.String(),
+		n.QuadraticSlippageFactor.String(),
 	)
 }
 
 func (n UpdateMarketConfiguration) DeepClone() *UpdateMarketConfiguration {
 	cpy := &UpdateMarketConfiguration{
-		Metadata:     make([]string, len(n.Metadata)),
-		LpPriceRange: n.LpPriceRange.Copy(),
+		Metadata:                make([]string, len(n.Metadata)),
+		LpPriceRange:            n.LpPriceRange.Copy(),
+		LinearSlippageFactor:    n.LinearSlippageFactor.Copy(),
+		QuadraticSlippageFactor: n.QuadraticSlippageFactor.Copy(),
 	}
 	cpy.Metadata = append(cpy.Metadata, n.Metadata...)
 	if n.Instrument != nil {
@@ -178,6 +188,8 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LpPriceRange:                  n.LpPriceRange.String(),
+		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
+		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 	}
 	switch rp := riskParams.(type) {
 	case *vegapb.UpdateMarketConfiguration_Simple:
@@ -188,7 +200,7 @@ func (n UpdateMarketConfiguration) IntoProto() *vegapb.UpdateMarketConfiguration
 	return r
 }
 
-func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *UpdateMarketConfiguration {
+func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*UpdateMarketConfiguration, error) {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
@@ -203,10 +215,25 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *Up
 	}
 	var liquidityMonitoring *LiquidityMonitoringParameters
 	if p.LiquidityMonitoringParameters != nil {
-		liquidityMonitoring = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+		var err error
+		liquidityMonitoring, err = LiquidityMonitoringParametersFromProto(p.LiquidityMonitoringParameters)
+		if err != nil {
+			return nil, fmt.Errorf("error getting update market configuration from proto: %s", err)
+		}
 	}
 
 	lppr, _ := num.DecimalFromString(p.LpPriceRange)
+	if len(p.LinearSlippageFactor) == 0 || len(p.QuadraticSlippageFactor) == 0 {
+		return nil, ErrMissingSlippageFactor
+	}
+	linearSlippageFactor, err := num.DecimalFromString(p.LinearSlippageFactor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+	}
+	quadraticSlippageFactor, err := num.DecimalFromString(p.QuadraticSlippageFactor)
+	if err != nil {
+		return nil, fmt.Errorf("error getting new market configuration from proto: %w", err)
+	}
 
 	r := &UpdateMarketConfiguration{
 		Instrument:                    instrument,
@@ -214,6 +241,8 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *Up
 		PriceMonitoringParameters:     priceMonitoring,
 		LiquidityMonitoringParameters: liquidityMonitoring,
 		LpPriceRange:                  lppr,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
 	if p.RiskParameters != nil {
 		switch rp := p.RiskParameters.(type) {
@@ -223,7 +252,7 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) *Up
 			r.RiskParameters = UpdateMarketConfigurationLogNormalFromProto(rp)
 		}
 	}
-	return r
+	return r, nil
 }
 
 type UpdateInstrumentConfiguration struct {
@@ -313,7 +342,6 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				QuoteName:                           pr.Future.QuoteName,
 				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
-				SettlementDataDecimals:              pr.Future.SettlementDataDecimals,
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
@@ -326,7 +354,6 @@ type UpdateFutureProduct struct {
 	DataSourceSpecForSettlementData     DataSourceDefinition
 	DataSourceSpecForTradingTermination DataSourceDefinition
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimals              uint32
 }
 
 func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
@@ -335,7 +362,6 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -345,13 +371,12 @@ func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f UpdateFutureProduct) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) oracleSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementData(%s) tradingTermination(%s) binding(%s)",
 		f.QuoteName,
 		reflectPointerToString(f.DataSourceSpecForSettlementData),
 		reflectPointerToString(f.DataSourceSpecForTradingTermination),

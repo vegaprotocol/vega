@@ -176,15 +176,15 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		// update product -> use type switch even though currently only futures exist
 		switch ti := existing.TradableInstrument.Instrument.Product.(type) {
 		case *types.InstrumentFuture:
+			filters := settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters()
 			futureUp := &types.UpdateFutureProduct{
-				QuoteName:              ti.Future.QuoteName,
-				SettlementDataDecimals: settlementDecimals,
+				QuoteName: ti.Future.QuoteName,
 				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
 					proto.DataSourceDefinitionTypeExt,
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+						Filters: filters,
 					},
 				),
 				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
@@ -192,7 +192,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: settleSpec.ExternalDataSourceSpec.Spec.Data.GetFilters(),
+						Filters: filters,
 					},
 				),
 				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{
@@ -200,10 +200,9 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 					TradingTerminationProperty: oracleTermination.Binding.TradingTerminationProperty,
 				}),
 			}
-			ti.Future.SettlementDataDecimals = settlementDecimals
-			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec
-			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
+			ti.Future.DataSourceSpecForSettlementData = settleSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDecimals)).ToDataSourceSpec()
 			ti.Future.DataSourceSpecForTradingTermination = termSpec.ExternalDataSourceSpec.Spec
+			ti.Future.DataSourceSpecBinding = futureUp.DataSourceSpecBinding
 			// ensure we update the existing market
 			existing.TradableInstrument.Instrument.Product = ti
 			update.Changes.Instrument = &types.UpdateInstrumentConfiguration{
@@ -265,6 +264,20 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 		update.Changes.LpPriceRange = lpprD
 		existing.LPPriceRange = lpprD
 	}
+
+	// linear slippage factor
+	if slippage, ok := row.tryLinearSlippageFactor(); ok {
+		slippageD := num.DecimalFromFloat(slippage)
+		update.Changes.LinearSlippageFactor = slippageD
+		existing.LinearSlippageFactor = slippageD
+	}
+
+	// quadratic slippage factor
+	if slippage, ok := row.tryQuadraticSlippageFactor(); ok {
+		slippageD := num.DecimalFromFloat(slippage)
+		update.Changes.QuadraticSlippageFactor = slippageD
+		existing.QuadraticSlippageFactor = slippageD
+	}
 	return update
 }
 
@@ -285,6 +298,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	settlementDataDecimals := config.OracleConfigs.GetSettlementDataDP(row.oracleConfig())
+	settlSpec := types.OracleSpecFromProto(oracleConfigForSettlement.Spec)
 	var binding proto.DataSourceSpecToFutureBinding
 	binding.SettlementDataProperty = oracleConfigForSettlement.Binding.SettlementDataProperty
 	binding.TradingTerminationProperty = oracleConfigForTradingTermination.Binding.TradingTerminationProperty
@@ -305,6 +319,8 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	lpPriceRange := row.lpPriceRange()
+	linearSlippageFactor := row.linearSlippageFactor()
+	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
 	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
 	// so we do this step here manually
@@ -342,10 +358,9 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 					Future: &types.Future{
 						SettlementAsset:                     row.asset(),
 						QuoteName:                           row.quoteName(),
-						DataSourceSpecForSettlementData:     types.DataSourceSpecFromProto(oracleConfigForSettlement.Spec.GetExternalDataSourceSpec().Spec),
+						DataSourceSpecForSettlementData:     settlSpec.ExternalDataSourceSpec.Spec.Data.SetFilterDecimals(uint64(settlementDataDecimals)).ToDataSourceSpec(),
 						DataSourceSpecForTradingTermination: types.DataSourceSpecFromProto(oracleConfigForTradingTermination.Spec.ExternalDataSourceSpec.Spec),
 						DataSourceSpecBinding:               types.DataSourceSpecBindingForFutureFromProto(&binding),
-						SettlementDataDecimals:              settlementDataDecimals,
 					},
 				},
 			},
@@ -355,6 +370,8 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		PriceMonitoringSettings:       types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: liqMon,
 		LPPriceRange:                  num.DecimalFromFloat(lpPriceRange),
+		LinearSlippageFactor:          num.DecimalFromFloat(linearSlippageFactor),
+		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 	}
 
 	tip := m.TradableInstrument.IntoProto()
@@ -389,6 +406,8 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"price monitoring",
 		"margin calculator",
 		"auction duration",
+		"linear slippage factor",
+		"quadratic slippage factor",
 	}, []string{
 		"decimal places",
 		"position decimal places",
@@ -400,11 +419,13 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
+		"linear slippage factor", // slippage factors must be explicitly set to avoid setting them to hard-coded defaults
+		"quadratic slippage factor",
 	}, []string{
-		"data source config",    // product update
-		"price monitoring",      // price monitoring update
-		"risk model",            // risk model update
-		"liquidity monitoring ", // liquidity monitoring update
+		"data source config",   // product update
+		"price monitoring",     // price monitoring update
+		"risk model",           // risk model update
+		"liquidity monitoring", // liquidity monitoring update
 		"lp price range",
 	})
 }
@@ -518,9 +539,39 @@ func (r marketRow) lpPriceRange() float64 {
 	return r.row.MustF64("lp price range")
 }
 
+func (r marketRow) linearSlippageFactor() float64 {
+	if !r.row.HasColumn("linear slippage factor") {
+		// set to 0.1 by default
+		return 0.001
+	}
+	return r.row.MustF64("linear slippage factor")
+}
+
+func (r marketRow) quadraticSlippageFactor() float64 {
+	if !r.row.HasColumn("quadratic slippage factor") {
+		// set to 0.1 by default
+		return 0.0
+	}
+	return r.row.MustF64("quadratic slippage factor")
+}
+
 func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
 	if r.row.HasColumn("lp price range") {
 		return r.row.MustF64("lp price range"), true
+	}
+	return -1, false
+}
+
+func (r marketUpdateRow) tryLinearSlippageFactor() (float64, bool) {
+	if r.row.HasColumn("linear slippage factor") {
+		return r.row.MustF64("linear slippage factor"), true
+	}
+	return -1, false
+}
+
+func (r marketUpdateRow) tryQuadraticSlippageFactor() (float64, bool) {
+	if r.row.HasColumn("quadratic slippage factor") {
+		return r.row.MustF64("quadratic slippage factor"), true
 	}
 	return -1, false
 }

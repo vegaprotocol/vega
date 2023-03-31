@@ -11,9 +11,6 @@ Feature:
     And the price monitoring named "price-monitoring":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 3                 |
-    And the markets:
-      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config          |
-      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future |
     And the following network parameters are set:
       | name                                                | value |
       | market.value.windowLength                           | 1h    |
@@ -22,6 +19,9 @@ Feature:
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
       | network.markPriceUpdateMaximumFrequency             | 0s    |
+    And the markets:
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.5                    | 0                         |
 
 
   @VirtStake
@@ -62,17 +62,13 @@ Feature:
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | submission |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment  |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment  |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |            |
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | BID              | 1          | 2      | submission |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | ASK              | 1          | 2      | amendment  |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      | amendment  |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      |            |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -118,9 +114,7 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
@@ -144,14 +138,14 @@ Feature:
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) = ceil(21 * 1001 * 0.002) = 43
 
     And the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 43    | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 43     | USD   |
 
     And the accumulated liquidity fees should be "43" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 10260        | 49000          | 41           |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 10250        | 49000          | 41            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -209,10 +203,8 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |           |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -234,14 +226,14 @@ Feature:
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(22 * 1001 * 0.002) = 45
 
     And the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 45    | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 45     | USD   |
 
     And the accumulated liquidity fees should be "45" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 15765        | 50000          | 63           |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 15765        | 50000          | 63            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -299,16 +291,12 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 3000              | 0.001 | sell | MID              | 3          | 1      |           |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | buy  | BID              | 1          | 2      | amendment |
       | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | MID              | 3          | 1      | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 45000             | 0.002 | sell | MID              | 3          | 1      |           |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -331,29 +319,29 @@ Feature:
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(2 * 1001 * 0.002) + ceil(18 * 1001 * 0.002) = 49
 
     When the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 48    | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 48     | USD   |
 
     Then the accumulated liquidity fees should be "48" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 21521        | 48000          | 86           |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 21521        | 48000          | 86            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
     # Check equity-like-shares before the network moves forward
     Given the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.0621352630754675 | 15812.68125            |
-      | lp2   | 0.9378647369245325 | 50000                  |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.0621352630754675 | 15812.68125             |
+      | lp2   | 0.9378647369245325 | 50000                   |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
 
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
+      | party | equity like share  | average entry valuation |
       | lp1   | 0.0621352630754675 | 15812.68125             |
       | lp2   | 0.9378647369245325 | 50000                   |
 
@@ -377,7 +365,7 @@ Feature:
 
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share | average entry valuation |
+      | party | equity like share  | average entry valuation |
       | lp1   | 0.0621352630754675 | 15812.68125             |
       | lp2   | 0.9378647369245325 | 50000                   |
 
@@ -396,16 +384,12 @@ Feature:
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | BID              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | buy  | MID              | 3          | 1      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
-      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      | amendment |
+      | lp1 | lp1   | ETH/MAR22 | 4000              | 0.001 | sell | MID              | 3          | 1      |           |
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | BID              | 1          | 2      | amendment |
       | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | buy  | MID              | 3          | 1      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | ASK              | 1          | 2      | amendment |
-      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      | amendment |
+      | lp2 | lp2   | ETH/MAR22 | 46000             | 0.002 | sell | MID              | 3          | 1      |           |
 
     # Confirm equity-like-shares updated immediately after liquidity amendment
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
@@ -428,8 +412,8 @@ Feature:
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(3 * 1001 * 0.002) + ceil(3 * 1001 * 0.002) = 50
 
     When the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 50    | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 50     | USD   |
 
     Then the accumulated liquidity fees should be "50" for the market "ETH/MAR22"
 
@@ -457,7 +441,7 @@ Feature:
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 47    | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 47     | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -524,8 +508,8 @@ Feature:
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(3 * 1001 * 0.002) + ceil(3 * 1001 * 0.002) = 52
 
     When the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 52     | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 52     | USD   |
 
     # CALCULATION:
     Then the accumulated liquidity fees should be "52" for the market "ETH/MAR22"
@@ -553,8 +537,8 @@ Feature:
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 49    | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 49     | USD   |
 
     Then the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -575,9 +559,9 @@ Feature:
       | lp1   | 0.0589326838400726 | 25014.390259105092498   |
       | lp2   | 0.9410673161599274 | 50178.9876096722076451  |
 
-    # -------------------------------------------------------------------------------------------------------------------
-    # -------------------------------------------------------------------------------------------------------------------
-  
+  # -------------------------------------------------------------------------------------------------------------------
+  # -------------------------------------------------------------------------------------------------------------------
+
   @VirtStake
   Scenario: 002  Checks ELS calculations for a market which grows and then shrinks.
 
@@ -626,8 +610,8 @@ Feature:
 
     And the liquidity provider fee shares for the market "ETH/MAR22" should be:
       | party | equity like share | average entry valuation |
-      | lp1   | 0.5                | 25000                  |
-      | lp2   | 0.5                | 50000                  |
+      | lp1   | 0.5               | 25000                   |
+      | lp2   | 0.5               | 50000                   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -654,14 +638,14 @@ Feature:
     # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) = ceil(19 * 1001 * 0.001) + ceil(1 * 1001 * 0.001) = 22
 
     And the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 22    | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 22     | USD   |
 
     And the accumulated liquidity fees should be "22" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 7507         | 50000          | 30            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 7500         | 50000          | 30            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -670,9 +654,9 @@ Feature:
 
     # Confirm equity-like-shares are unchanged by network moving forwards (as new market period not entered)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.5                | 25000                   |
-      | lp2   | 0.5                | 50000                   |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.5               | 25000                   |
+      | lp2   | 0.5               | 50000                   |
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
@@ -688,9 +672,9 @@ Feature:
 
     # Confirm equity-like-shares are unchanged by the network moving forwards (as virtual-stakes scaled by same factor, r)
     Then the liquidity provider fee shares for the market "ETH/MAR22" should be:
-      | party | equity like share  | average entry valuation |
-      | lp1   | 0.5                | 25000                   |
-      | lp2   | 0.5                | 50000                   |
+      | party | equity like share | average entry valuation |
+      | lp1   | 0.5               | 25000                   |
+      | lp2   | 0.5               | 50000                   |
 
     # -------------------------------------------------------------------------------------------------------------------
     # -------------------------------------------------------------------------------------------------------------------
@@ -727,14 +711,14 @@ Feature:
     # liquidity_fee = trades * ceil(volume/trades * price * liquidity_fee_factor) = ceil(19 * 1001 * 0.001) + ceil(11 * 1001 * 0.001) = 32
 
     And the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 32     | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 32     | USD   |
 
     And the accumulated liquidity fees should be "32" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 15015        | 75000          | 60           |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 15015        | 75000          | 60            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -748,11 +732,12 @@ Feature:
       | lp2   | 0.3750624687656172 | 50000                   |
       | lp3   | 0.2498750624687656 | 100050                  |
 
+    # lp3 just joined so liquidity score this period is virtually 0, hence no rewards
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 12     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 12     | USD   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -786,14 +771,14 @@ Feature:
       | party1 | 1001  | 10   | lp3    |
 
     And the following transfers should happen:
-      | from   | to     | from account           | to account                  | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL   | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 11    | USD   |
+      | from   | to     | from account         | to account                  | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 11     | USD   |
 
     And the accumulated liquidity fees should be "11" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 17517        | 75000          | 70           |
+      | 1001       | TRADING_MODE_CONTINUOUS | 1       | 502       | 1500      | 17517        | 75000          | 70            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -809,8 +794,8 @@ Feature:
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
       | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
@@ -947,5 +932,5 @@ Feature:
       | lp2   | 0.3333333333333333 | 50000                   |
       | lp3   | 0.3333333333333333 | 100050                  |
 
-    # -------------------------------------------------------------------------------------------------------------------
-    # -------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------------------------

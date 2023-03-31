@@ -16,13 +16,17 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"strconv"
 	"sync"
 	"time"
+
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -242,6 +246,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	for i, p := range e.activeParams {
 		if txBlock >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= txBlock) {
 			stateInd = i
+			break
 		}
 	}
 	state := e.activeStates[stateInd]
@@ -279,6 +284,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	if partyState.seenCount < uint(params.spamPoWNumberOfTxPerBlock) {
 		partyState.observedDifficulty += uint(d)
 		partyState.seenCount++
+
 		if e.log.IsDebug() {
 			e.log.Debug("transaction accepted", logging.String("tid", tx.GetPoWTID()))
 		}
@@ -292,7 +298,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	}
 
 	// calculate the expected difficulty - allow spamPoWNumberOfTxPerBlock for every level of increased difficulty
-	totalExpectedDifficulty := calculateExpectedDifficulty(params.spamPoWDifficulty, uint(params.spamPoWNumberOfTxPerBlock), partyState.seenCount+1)
+	totalExpectedDifficulty, _ := calculateExpectedDifficulty(params.spamPoWDifficulty, uint(params.spamPoWNumberOfTxPerBlock), partyState.seenCount+1)
 
 	// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
 	if partyState.observedDifficulty+uint(d) < totalExpectedDifficulty {
@@ -304,6 +310,7 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	partyState.observedDifficulty += +uint(d)
 	partyState.seenCount++
+
 	return nil
 }
 
@@ -315,9 +322,13 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 //	      seenTx = 33
 //
 // expected difficulty = 10 * 5 + 10 * 6 + 10 * 7 + 3 * 8 = 204.
-func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) uint {
+func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlock uint, seenTx uint) (uint, uint) {
 	if seenTx <= spamPoWNumberOfTxPerBlock {
-		return seenTx * spamPoWDifficulty
+		if seenTx == spamPoWNumberOfTxPerBlock {
+			return seenTx * spamPoWDifficulty, spamPoWDifficulty + 1
+		}
+
+		return seenTx * spamPoWDifficulty, spamPoWDifficulty
 	}
 	total := uint(0)
 	diff := spamPoWDifficulty
@@ -332,7 +343,12 @@ func calculateExpectedDifficulty(spamPoWDifficulty uint, spamPoWNumberOfTxPerBlo
 		}
 		diff++
 	}
-	return total
+
+	if seenTx%spamPoWNumberOfTxPerBlock == 0 {
+		diff++
+	}
+
+	return total, diff
 }
 
 func (e *Engine) findParamsForBlockHeight(height uint64) int {
@@ -560,4 +576,109 @@ func (e *Engine) BlockData() (uint64, string) {
 		return 0, ""
 	}
 	return e.currentBlock, e.blockHash[e.currentBlock%ringSize]
+}
+
+func getParamsForBlock(block uint64, activeParams []*params) *params {
+	stateInd := 0
+	for i, p := range activeParams {
+		if block >= p.fromBlock && (p.untilBlock == nil || *p.untilBlock >= block) {
+			stateInd = i
+			break
+		}
+	}
+
+	params := activeParams[stateInd]
+	return params
+}
+
+func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	stats := make([]*protoapi.PoWBlockState, 0)
+
+	currentBlockStatsExists := false
+
+	for _, state := range e.activeStates {
+		for block, blockToPartyState := range state.blockToPartyState {
+			if block == e.currentBlock {
+				currentBlockStatsExists = true
+			}
+
+			if partyState, ok := blockToPartyState[partyID]; ok {
+				blockIndex := block % ringSize
+				params := getParamsForBlock(block, e.activeParams)
+
+				stats = append(stats, &protoapi.PoWBlockState{
+					BlockHeight:      block,
+					BlockHash:        e.blockHash[blockIndex],
+					TransactionsSeen: uint64(partyState.seenCount),
+					ExpectedDifficulty: getMinDifficultyForNextTx(params.spamPoWDifficulty,
+						uint(params.spamPoWNumberOfTxPerBlock),
+						partyState.seenCount,
+						partyState.observedDifficulty,
+						params.spamPoWIncreasingDifficulty,
+					),
+					IncreasingDifficulty: params.spamPoWIncreasingDifficulty,
+					TxPerBlock:           params.spamPoWNumberOfTxPerBlock,
+					HashFunction:         params.spamPoWHashFunction,
+					Difficulty:           uint64(params.spamPoWDifficulty),
+				})
+			}
+		}
+	}
+
+	// If we don't have any spam stats for the current block, add it
+	if !currentBlockStatsExists {
+		params := getParamsForBlock(e.currentBlock, e.activeParams)
+		expected := uint64(params.spamPoWDifficulty)
+		stats = append(stats, &protoapi.PoWBlockState{
+			BlockHeight:          e.currentBlock,
+			BlockHash:            e.blockHash[e.currentBlock%ringSize],
+			TransactionsSeen:     0,
+			ExpectedDifficulty:   &expected,
+			HashFunction:         params.spamPoWHashFunction,
+			IncreasingDifficulty: params.spamPoWIncreasingDifficulty,
+			TxPerBlock:           params.spamPoWNumberOfTxPerBlock,
+			Difficulty:           uint64(params.spamPoWDifficulty),
+		})
+	}
+
+	until := e.bannedParties[partyID].UnixNano()
+
+	var bannedUntil *string
+
+	if until > 0 {
+		untilStr := strconv.FormatInt(until, 10)
+		bannedUntil = &untilStr
+	}
+
+	return &protoapi.PoWStatistic{
+		BlockStates:        stats,
+		BannedUntil:        bannedUntil,
+		NumberOfPastBlocks: e.getActiveParams().spamPoWNumberOfPastBlocks,
+	}
+}
+
+func getMinDifficultyForNextTx(baseDifficulty, txPerBlock, seenTx, observedDifficulty uint, increaseDifficulty bool) *uint64 {
+	if !increaseDifficulty {
+		if seenTx < txPerBlock {
+			return ptr.From(uint64(baseDifficulty))
+		}
+		// they cannot submit any more against this block, do not return a next-difficulty
+		return nil
+	}
+
+	// calculate the total expected difficulty based on the number of transactions seen
+	totalDifficulty, powDiff := calculateExpectedDifficulty(baseDifficulty, txPerBlock, seenTx)
+	// add the current PoW difficulty to the current expected difficulty to get the expected total difficulty for the next transaction
+	totalDifficulty += powDiff
+	nextExpectedDifficulty := totalDifficulty - observedDifficulty
+	if nextExpectedDifficulty < baseDifficulty {
+		nextExpectedDifficulty = baseDifficulty
+	}
+
+	minDifficultyForNextTx := uint64(nextExpectedDifficulty)
+
+	return &minDifficultyForNextTx
 }

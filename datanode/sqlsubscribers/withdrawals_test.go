@@ -16,13 +16,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-	"github.com/golang/mock/gomock"
 )
 
 func TestWithdrawal_Push(t *testing.T) {
@@ -32,7 +32,7 @@ func TestWithdrawal_Push(t *testing.T) {
 	store := mocks.NewMockWithdrawalStore(ctrl)
 
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewWithdrawal(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewWithdrawal(store)
 	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewWithdrawalEvent(context.Background(), types.Withdrawal{
 		ID:             "DEADBEEF",
@@ -44,7 +44,6 @@ func TestWithdrawal_Push(t *testing.T) {
 		TxHash:         "",
 		CreationDate:   0,
 		WithdrawalDate: 0,
-		ExpirationDate: 0,
 		Ext:            &types.WithdrawExt{},
 	}))
 }

@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/georgysavva/scany/pgxscan"
+
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
-	"github.com/georgysavva/scany/pgxscan"
 )
 
 var (
@@ -29,6 +30,8 @@ var (
 )
 
 func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transaction, error) {
+	txID = strings.ToUpper(txID)
+
 	query := `SELECT * FROM tx_results where tx_hash=$1`
 	var rows []entities.TxResultRow
 
@@ -81,6 +84,8 @@ func (s *Store) ListTransactions(ctx context.Context,
 		if key == "tx.submitter" {
 			// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
 			predicate = fmt.Sprintf("tx_results.submitter=%s", nextBindVar(&args, value))
+		} else if key == "cmd.type" {
+			predicate = fmt.Sprintf("tx_results.cmd_type=%s", nextBindVar(&args, value))
 		} else if key == "block.height" {
 			// much quicker to filter block height by joining to the block table than looking in attributes
 			predicate = fmt.Sprintf("block_id = (select b.rowid from blocks b where b.height = %s)", nextBindVar(&args, value))

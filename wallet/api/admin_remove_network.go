@@ -17,7 +17,7 @@ type AdminRemoveNetwork struct {
 }
 
 // Handle removes a wallet from the computer.
-func (h *AdminRemoveNetwork) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminRemoveNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRemoveNetworkParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

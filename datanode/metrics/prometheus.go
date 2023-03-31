@@ -16,7 +16,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"code.vegaprotocol.io/vega/protos"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"github.com/pkg/errors"
@@ -73,6 +76,14 @@ var (
 
 	eventBufferWrittenCount prometheus.Counter
 	eventBufferReadCount    prometheus.Counter
+
+	networkHistoryIpfsStoreBytes prometheus.Gauge
+	// Data Node HTTP bindings that we will check against when updating HTTP metrics.
+	httpBindings *protos.Bindings
+
+	// Per table segment creation time.
+	networkHistoryCopiedRowsCounter *prometheus.CounterVec
+	networkHistoryCopyTimeCounter   *prometheus.CounterVec
 )
 
 // abstract prometheus types.
@@ -446,6 +457,36 @@ func setupMetrics() error {
 	}
 	eventCounter = ec
 
+	h, err = addInstrument(
+		Counter,
+		"network_history_copied_rows_total",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	cr, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	networkHistoryCopiedRowsCounter = cr
+
+	h, err = addInstrument(
+		Counter,
+		"network_history_copy_time_total",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	ct, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	networkHistoryCopyTimeCounter = ct
+
 	// sqlQueryTime
 	h, err = addInstrument(
 		Counter,
@@ -622,6 +663,22 @@ func setupMetrics() error {
 	}
 	lastSnapshotSeconds = lss
 
+	h, err = addInstrument(
+		Gauge,
+		"networkhistory_ipfs_store_bytes",
+		Namespace("datanode"),
+		Vectors(),
+		Help("The size in bytes of the network history ipfs store"),
+	)
+	if err != nil {
+		return err
+	}
+	dsb, err := h.Gauge()
+	if err != nil {
+		return err
+	}
+	networkHistoryIpfsStoreBytes = dsb
+
 	//
 	// API usage metrics start here
 	//
@@ -668,6 +725,10 @@ func setupMetrics() error {
 	}
 	eventBusConnectionGauge = ac
 
+	httpBindings, err = protos.DataNodeBindings()
+	if err != nil {
+		return err
+	}
 	// Number of calls to each request type
 	h, err = addInstrument(
 		Counter,
@@ -790,13 +851,43 @@ func SetLastSnapshotSeconds(seconds float64) {
 	lastSnapshotSeconds.Set(seconds)
 }
 
-// APIRequestAndTimeREST updates the metrics for REST API calls.
-func APIRequestAndTimeREST(request string, time float64) {
-	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
+func SetNetworkHistoryIpfsStoreBytes(bytes float64) {
+	if networkHistoryIpfsStoreBytes == nil {
 		return
 	}
-	apiRequestCallCounter.WithLabelValues("REST", request).Inc()
-	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
+	networkHistoryIpfsStoreBytes.Set(bytes)
+}
+
+// APIRequestAndTimeREST updates the metrics for REST API calls.
+func APIRequestAndTimeREST(method, request string, time float64) {
+	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil || httpBindings == nil {
+		return
+	}
+
+	const (
+		invalid = "invalid route"
+		prefix  = "/api/v2/"
+	)
+
+	if !httpBindings.HasRoute(method, request) {
+		apiRequestCallCounter.WithLabelValues("REST", invalid).Inc()
+		apiRequestTimeCounter.WithLabelValues("REST", invalid).Add(time)
+		return
+	}
+
+	uri := request
+
+	// Remove the first slash if it has one
+	if strings.Index(uri, prefix) == 0 {
+		uri = uri[len(prefix):]
+	}
+	// Trim the URI down to something useful
+	if strings.Count(uri, "/") >= 1 {
+		uri = uri[:strings.Index(uri, "/")]
+	}
+
+	apiRequestCallCounter.WithLabelValues("REST", uri).Inc()
+	apiRequestTimeCounter.WithLabelValues("REST", uri).Add(time)
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls.
@@ -818,6 +909,24 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 		apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
 		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
+	}
+}
+
+func NetworkHistoryRowsCopied(table string, rowsCopied int64) {
+	if networkHistoryCopiedRowsCounter == nil {
+		return
+	}
+	networkHistoryCopiedRowsCounter.WithLabelValues(table).Add(float64(rowsCopied))
+}
+
+func StartNetworkHistoryCopy(table string) func() {
+	startTime := time.Now()
+	return func() {
+		if networkHistoryCopyTimeCounter == nil {
+			return
+		}
+		duration := time.Since(startTime).Seconds()
+		networkHistoryCopyTimeCounter.WithLabelValues(table).Add(duration)
 	}
 }
 

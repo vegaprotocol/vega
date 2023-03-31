@@ -26,12 +26,13 @@ import (
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/stats"
 	vgtesting "code.vegaprotocol.io/vega/datanode/libs/testing"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"go.nanomsg.org/mangos/v3/protocol/pull"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -58,7 +59,8 @@ func getBroker(t *testing.T) *brokerTst {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
+	logger := logging.NewTestLogger()
+	broker, _ := broker.New(ctx, logger, broker.NewDefaultConfig(), stats.NewBlockchain())
 	return &brokerTst{
 		Broker: broker,
 		cfunc:  cfunc,
@@ -637,7 +639,7 @@ func testStreamsOverSocket(t *testing.T) {
 	config.Socket.Enabled = true
 	config.Socket.Transport = "inproc"
 
-	sock, err := pull.NewSocket()
+	sock, err := pair.NewSocket()
 	assert.NoError(t, err)
 
 	addr := fmt.Sprintf(
@@ -647,7 +649,7 @@ func testStreamsOverSocket(t *testing.T) {
 	err = sock.Listen(addr)
 	assert.NoError(t, err)
 
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config, stats.NewBlockchain())
 
 	defer func() {
 		cfunc()
@@ -681,7 +683,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		config.Socket.SocketChannelBufferSize = 0
 		config.Socket.EventChannelBufferSize = 0
 
-		sock, err := pull.NewSocket()
+		sock, err := pair.NewSocket()
 		assert.NoError(t, err)
 
 		addr := fmt.Sprintf(
@@ -691,7 +693,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 		err = sock.Listen(addr)
 		assert.NoError(t, err)
 
-		broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+		broker, _ := broker.New(ctx, logging.NewTestLogger(), config, stats.NewBlockchain())
 
 		defer func() {
 			cfunc()
@@ -752,4 +754,8 @@ func (e evt) TxHash() string {
 
 func (e evt) StreamMessage() *eventspb.BusEvent {
 	return nil
+}
+
+func (e evt) CompositeCount() uint64 {
+	return 1
 }

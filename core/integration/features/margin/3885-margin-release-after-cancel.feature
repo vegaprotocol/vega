@@ -3,8 +3,8 @@ Feature: Regression test for issue 3885
   Background:
 
     Given the markets:
-      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config          | price monitoring |
-      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     |
+      | id        | quote name | asset | auction duration | risk model                    | margin calculator         | fees         | data source config     | price monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | 1                | default-log-normal-risk-model | default-margin-calculator | default-none | default-eth-for-future | default-none     | 1e0                    | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
@@ -12,12 +12,12 @@ Feature: Regression test for issue 3885
   @Cancel
   Scenario: Margin should be released after the order was canceled
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount  |
-      | party1 | BTC   | 10000   |
-      | party2 | BTC   | 10000   |
-      | party3 | BTC   | 10000   |
-      | party4 | BTC   | 10000   |
-      | lpprov | BTC   | 10000   |
+      | party  | asset | amount |
+      | party1 | BTC   | 10000  |
+      | party2 | BTC   | 10000  |
+      | party3 | BTC   | 10000  |
+      | party4 | BTC   | 10000  |
+      | lpprov | BTC   | 10000  |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -49,14 +49,14 @@ Feature: Regression test for issue 3885
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 28     | 9972    |
+      | party1 | BTC   | ETH/DEC19 | 256    | 9744    |
 
     When the parties place the following orders with ticks:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC | party1-3  |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 37     | 9963    |
+      | party1 | BTC   | ETH/DEC19 | 265    | 9735    |
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
@@ -65,13 +65,13 @@ Feature: Regression test for issue 3885
       | party1 | party1-3  |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | BTC   | ETH/DEC19 | 37     | 9963    |
-      # With a small change to force margin recalculating whennever an order is removed, we can have margins released.
-      # But back when we implemented this, we decided not to check margins for parties who still have an open position.
-      # The reasoning being that any party with an open position will get their margin released/topped up next MTM cycle.
-      # Cancelling an order, even if it changes the potential long/short, will always decrease margin requirements. All this would do is
-      # increase the number of transfers between margin and general accounts.
-      # | party1 | BTC   | ETH/DEC19 | 24     | 9976    |
+      | party1 | BTC   | ETH/DEC19 | 265    | 9735    |
+    # With a small change to force margin recalculating whennever an order is removed, we can have margins released.
+    # But back when we implemented this, we decided not to check margins for parties who still have an open position.
+    # The reasoning being that any party with an open position will get their margin released/topped up next MTM cycle.
+    # Cancelling an order, even if it changes the potential long/short, will always decrease margin requirements. All this would do is
+    # increase the number of transfers between margin and general accounts.
+    # | party1 | BTC   | ETH/DEC19 | 24     | 9976    |
     And the mark price should be "100" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 

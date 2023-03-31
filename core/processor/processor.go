@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
+	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/governance"
@@ -116,6 +117,8 @@ type Stats interface {
 	CurrentTradesInBatch() uint64
 	SetOrdersPerSecond(i uint64)
 	SetTradesPerSecond(i uint64)
+	CurrentEventsInBatch() uint64
+	SetEventsPerSecond(uint64)
 	// blockchain stats
 	IncTotalTxCurrentBatch()
 	IncHeight()
@@ -159,6 +162,8 @@ type ValidatorTopology interface {
 type Broker interface {
 	Send(e events.Event)
 	SetStreaming(on bool) bool
+	StreamingEnabled() bool
+	SocketClient() broker.SocketClient
 }
 
 // Notary.
@@ -194,6 +199,7 @@ type Banking interface {
 	CancelTransferFunds(context.Context, *types.CancelTransferFunds) error
 	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
 	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
+	CheckTransfer(t *types.TransferBase) error
 }
 
 // NetworkParameters ...

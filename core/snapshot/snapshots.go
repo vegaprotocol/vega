@@ -81,7 +81,7 @@ func AvailableSnapshotsHeights(dbpath string) ([]Data, []Data, error) {
 		return nil, nil, fmt.Errorf("failed to open database located at %s : %w", dbpath, err)
 	}
 
-	tree, err := iavl.NewMutableTree(db, 0)
+	tree, err := iavl.NewMutableTree(db, 0, false)
 	if err != nil {
 		return nil, nil, err
 	}

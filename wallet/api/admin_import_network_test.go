@@ -24,6 +24,8 @@ func TestAdminImportNetwork(t *testing.T) {
 	t.Run("Importing a network from a valid file saves", testImportingValidFileSaves)
 	t.Run("Importing a network with no name fails", testImportingWithNoNameFails)
 	t.Run("Importing a network from a valid file with name in config works", testImportingWithNameInConfig)
+	t.Run("Importing a network with a github url suggests better alternative", testImportNetworkWithURL)
+	t.Run("Importing a network with a content that is not TOML fails with a user friendly message", testImportNetworkWithNotTOMLContentFailsWithFriendlyMessage)
 }
 
 func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
@@ -43,19 +45,10 @@ func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty sources",
 			params: api.AdminImportNetworkParams{
-				Name:     "fairground",
-				FilePath: "",
-				URL:      "",
+				Name: "fairground",
+				URL:  "",
 			},
 			expectedError: api.ErrNetworkSourceIsRequired,
-		}, {
-			name: "with both sources",
-			params: api.AdminImportNetworkParams{
-				Name:     "fairground",
-				FilePath: "some-file-path",
-				URL:      "some-url",
-			},
-			expectedError: api.ErrMultipleNetworkSources,
 		},
 	}
 
@@ -94,8 +87,8 @@ func testImportingNetworkThatAlreadyExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: filePath,
+		Name: name,
+		URL:  api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -120,8 +113,8 @@ func testGettingInternalErrorDuringVerificationDoesNotImportNetwork(t *testing.T
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: filePath,
+		Name: name,
+		URL:  api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -140,8 +133,8 @@ func testImportingANetworkFromAFileThatDoesntExistFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: "some-file-path",
+		Name: name,
+		URL:  api.FileSchemePrefix + "some-file-path",
 	})
 
 	// then
@@ -170,8 +163,8 @@ func testImportingValidFileSaves(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		Name:     name,
-		FilePath: filePath,
+		Name: name,
+		URL:  api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -194,7 +187,7 @@ func testImportingWithNoNameFails(t *testing.T) {
 
 	// when the config has no network name, and there is no network name specified in the params
 	_, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		FilePath: filePath,
+		URL: api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -220,7 +213,7 @@ func testImportingWithNameInConfig(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
-		FilePath: filePath,
+		URL: api.FileSchemePrefix + filePath,
 	})
 
 	// then
@@ -229,16 +222,120 @@ func testImportingWithNameInConfig(t *testing.T) {
 	assert.Equal(t, result.FilePath, resultFilePath)
 }
 
+func testImportNetworkWithURL(t *testing.T) {
+	// given
+	ctx := context.Background()
+
+	d := t.TempDir()
+	filePath := filepath.Join(d + "tmp.toml")
+	err := os.WriteFile(filePath, []byte("Name = \"local\""), 0o644)
+	require.NoError(t, err)
+
+	// setup
+	_ = "network-path/local.toml"
+	handler := newImportNetworkHandler(t)
+
+	testCases := []struct {
+		name       string
+		url        string
+		suggestion string
+		jsonrpcErr jsonrpc.ErrorCode
+	}{
+		{
+			name:       "real-url",
+			url:        "https://github.com/vegaprotocol/networks-internal/blob/main/fairground/vegawallet-fairground.toml",
+			suggestion: "https://raw.githubusercontent.com/vegaprotocol/networks-internal/main/fairground/vegawallet-fairground.toml",
+			jsonrpcErr: jsonrpc.ErrorCodeInvalidParams,
+		},
+		{
+			name:       "without s in http",
+			url:        "http://github.com/blah/blob/main/fairground/network.toml",
+			suggestion: "http://raw.githubusercontent.com/blah/main/fairground/network.toml",
+			jsonrpcErr: jsonrpc.ErrorCodeInvalidParams,
+		},
+		{
+			name:       "non-github url tries to fetch",
+			url:        "https://example.com",
+			jsonrpcErr: jsonrpc.ErrorCodeInternalError,
+		},
+		{
+			name:       "missing .toml tries to fetch",
+			url:        "https://github.com/vegaprotocol/vega/issues",
+			jsonrpcErr: jsonrpc.ErrorCodeInternalError,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
+				URL: tc.url,
+			})
+			// then
+			require.NotNil(t, errorDetails)
+			assert.Equal(t, tc.jsonrpcErr, errorDetails.Code)
+			if tc.suggestion != "" {
+				require.Contains(t, errorDetails.Data, tc.suggestion)
+			}
+		})
+	}
+}
+
+func testImportNetworkWithNotTOMLContentFailsWithFriendlyMessage(t *testing.T) {
+	// given
+	ctx := context.Background()
+	d := t.TempDir()
+
+	// setup
+	handler := newImportNetworkHandler(t)
+
+	tcs := []struct {
+		name           string
+		content        []byte
+		identifiedType string
+	}{
+		{
+			name:           "when HTML",
+			content:        []byte("<!DOCTYPE html><html></html>"),
+			identifiedType: "HTML",
+		}, {
+			name:           "when JSON",
+			content:        []byte("{\"type\":\"JSON\"}"),
+			identifiedType: "JSON",
+		}, {
+			name:           "when JSON",
+			content:        []byte("{\"type\":\"JSON\"}"),
+			identifiedType: "JSON",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			filePath := filepath.Join(d + "tmp.toml")
+			err := os.WriteFile(filePath, tc.content, 0o644)
+			require.NoError(tt, err)
+
+			// when
+			result, errorDetails := handler.handle(tt, ctx, api.AdminImportNetworkParams{
+				URL: api.FileSchemePrefix + filePath,
+			})
+
+			// then
+			require.NotNil(tt, errorDetails)
+			assert.Equal(tt, fmt.Sprintf("could not read the network configuration at %q: the content looks like it contains %s, be sure your file has TOML formatting", filePath, tc.identifiedType), errorDetails.Data)
+			assert.Empty(tt, result)
+		})
+	}
+}
+
 type importNetworkHandler struct {
 	*api.AdminImportNetwork
 	ctrl         *gomock.Controller
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *importNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminImportNetworkResult, *jsonrpc.ErrorDetails) {
+func (h *importNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminImportNetworkResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminImportNetworkResult)
 		if !ok {

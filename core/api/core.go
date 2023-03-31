@@ -16,16 +16,19 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -61,10 +64,12 @@ type coreService struct {
 	eventService EventService
 	subCancels   []func()
 	powParams    ProofOfWorkParams
+	spamEngine   SpamEngine
+	powEngine    PowEngine
 
 	chainID                  string
 	genesisTime              time.Time
-	hasGenesisTimeAndChainID uint32
+	hasGenesisTimeAndChainID atomic.Bool
 	mu                       sync.Mutex
 
 	netInfo   *tmctypes.ResultNetInfo
@@ -100,7 +105,7 @@ func (s *coreService) LastBlockHeight(
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 
-	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+	if !s.hasGenesisTimeAndChainID.Load() {
 		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
 			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
 		}
@@ -334,6 +339,8 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 		TotalOrders:           s.stats.Blockchain.TotalOrders(),
 		TotalTrades:           s.stats.Blockchain.TotalTrades(),
 		BlockDuration:         s.stats.Blockchain.BlockDuration(),
+		EventCount:            s.stats.Blockchain.TotalEventsLastBatch(),
+		EventsPerSecond:       s.stats.Blockchain.EventsPerSecond(),
 		EpochSeq:              s.stats.GetEpochSeq(),
 		EpochStartTime:        vegatime.Format(s.stats.GetEpochStartTime()),
 		EpochExpiryTime:       vegatime.Format(s.stats.GetEpochExpireTime()),
@@ -367,7 +374,7 @@ func (s *coreService) getTendermintStats(
 		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
-	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+	if !s.hasGenesisTimeAndChainID.Load() {
 		if err = s.getGenesisTimeAndChainID(ctx); err != nil {
 			return 0, 0, nil, "", err
 		}
@@ -435,7 +442,7 @@ func (s *coreService) getGenesisTimeAndChainID(ctx context.Context) error {
 		return apiError(codes.Internal, ErrBlockchainChainID, err)
 	}
 
-	atomic.StoreUint32(&s.hasGenesisTimeAndChainID, 1)
+	s.hasGenesisTimeAndChainID.Store(true)
 	return nil
 }
 
@@ -665,4 +672,47 @@ func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.Su
 	}
 
 	return successResponse, nil
+}
+
+func (s *coreService) GetSpamStatistics(ctx context.Context, req *protoapi.GetSpamStatisticsRequest) (*protoapi.GetSpamStatisticsResponse, error) {
+	if req.PartyId == "" {
+		return nil, apiError(codes.InvalidArgument, ErrEmptyMissingPartyID)
+	}
+
+	if !s.hasGenesisTimeAndChainID.Load() {
+		if err := s.getGenesisTimeAndChainID(ctx); err != nil {
+			return nil, fmt.Errorf("failed to intialise chainID: %w", err)
+		}
+	}
+
+	spamStats := &protoapi.SpamStatistics{}
+	// Spam engine is not set when NullBlockChain is used
+	if s.spamEngine != nil && !reflect.ValueOf(s.spamEngine).IsNil() {
+		spamStats = s.spamEngine.GetSpamStatistics(req.PartyId)
+	} else {
+		defaultStats := &protoapi.SpamStatistic{
+			MaxForEpoch:       math.MaxUint64,
+			MinTokensRequired: "0",
+		}
+		spamStats.Delegations = defaultStats
+		spamStats.NodeAnnouncements = defaultStats
+		spamStats.Proposals = defaultStats
+		spamStats.IssueSignatures = defaultStats
+		spamStats.Transfers = defaultStats
+		spamStats.Votes = &protoapi.VoteSpamStatistics{
+			Statistics:  []*protoapi.VoteSpamStatistic{},
+			MaxForEpoch: math.MaxUint64,
+		}
+	}
+
+	// Noop PoW Engine is used for NullBlockChain so this should be safe
+	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)
+	spamStats.EpochSeq = s.stats.GetEpochSeq()
+
+	resp := &protoapi.GetSpamStatisticsResponse{
+		ChainId:    s.chainID,
+		Statistics: spamStats,
+	}
+
+	return resp, nil
 }

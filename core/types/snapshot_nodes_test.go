@@ -351,22 +351,22 @@ func getDummyData() *types.Chunk {
 				MarketID: "key",
 				Positions: []*types.MarketPosition{
 					{
-						PartyID: "party1",
-						Size:    10,
-						Buy:     0,
-						Sell:    0,
-						Price:   num.NewUint(10),
-						VwBuy:   num.UintZero(),
-						VwSell:  num.UintZero(),
+						PartyID:        "party1",
+						Size:           10,
+						Buy:            0,
+						Sell:           0,
+						Price:          num.NewUint(10),
+						BuySumProduct:  num.UintZero(),
+						SellSumProduct: num.UintZero(),
 					},
 					{
-						PartyID: "party2",
-						Size:    -10,
-						Buy:     0,
-						Sell:    0,
-						Price:   num.NewUint(10),
-						VwBuy:   num.UintZero(),
-						VwSell:  num.UintZero(),
+						PartyID:        "party2",
+						Size:           -10,
+						Buy:            0,
+						Sell:           0,
+						Price:          num.NewUint(10),
+						BuySumProduct:  num.UintZero(),
+						SellSumProduct: num.UintZero(),
 					},
 				},
 			},
@@ -786,7 +786,7 @@ func TestListSnapFromTree(t *testing.T) {
 func createTree(t *testing.T) *iavl.MutableTree {
 	t.Helper()
 	db := db.NewMemDB()
-	tree, err := iavl.NewMutableTreeWithOpts(db, 0, nil)
+	tree, err := iavl.NewMutableTreeWithOpts(db, 0, nil, false)
 	require.NoError(t, err)
 	return tree
 }

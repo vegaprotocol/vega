@@ -35,6 +35,20 @@ func TestTransferFunds(t *testing.T) {
 		},
 		{
 			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_MARGIN,
+				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "080538b7cc2249de568cb4272a17f4d5e0b0a69a1a240acbf5119d816178daff",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.from_account_type (is not a valid value)",
+		},
+		{
+			transfer: commandspb.Transfer{
 				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				ToAccountType:   vega.AccountType_ACCOUNT_TYPE_GENERAL,
 				Kind: &commandspb.Transfer_OneOff{
@@ -380,13 +394,50 @@ func TestTransferFunds(t *testing.T) {
 		},
 	}
 
+	invalidAccountTypesForOneOff := []vega.AccountType{
+		vega.AccountType_ACCOUNT_TYPE_INSURANCE,
+		vega.AccountType_ACCOUNT_TYPE_SETTLEMENT,
+		vega.AccountType_ACCOUNT_TYPE_MARGIN,
+		vega.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE,
+		vega.AccountType_ACCOUNT_TYPE_FEES_LIQUIDITY,
+		vega.AccountType_ACCOUNT_TYPE_FEES_MAKER,
+		vega.AccountType_ACCOUNT_TYPE_BOND,
+		vega.AccountType_ACCOUNT_TYPE_EXTERNAL,
+		vega.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE,
+		vega.AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS,
+		vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES,
+		vega.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES,
+		vega.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS,
+		vega.AccountType_ACCOUNT_TYPE_REWARD_MAKER_PAID_FEES,
+	}
+
+	for _, at := range invalidAccountTypesForOneOff {
+		cases = append(cases, struct {
+			transfer  commandspb.Transfer
+			errString string
+		}{
+			transfer: commandspb.Transfer{
+				FromAccountType: vega.AccountType_ACCOUNT_TYPE_GENERAL,
+				ToAccountType:   at,
+				Kind: &commandspb.Transfer_OneOff{
+					OneOff: &commandspb.OneOffTransfer{},
+				},
+				To:        "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				Asset:     "",
+				Amount:    "1",
+				Reference: "testing",
+			},
+			errString: "transfer.to_account_type (account type is not valid for one off transfer)",
+		})
+	}
+
 	for _, c := range cases {
 		err := commands.CheckTransfer(&c.transfer)
 		if len(c.errString) <= 0 {
 			assert.NoError(t, err)
 			continue
 		}
-		assert.EqualError(t, err, c.errString)
+		assert.Contains(t, err.Error(), c.errString)
 	}
 }
 

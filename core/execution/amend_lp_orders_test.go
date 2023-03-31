@@ -20,12 +20,13 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	proto "code.vegaprotocol.io/vega/protos/vega"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAmendDeployedCommitment(t *testing.T) {
@@ -154,7 +155,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -242,7 +248,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -334,7 +345,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -515,10 +531,10 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 			ctx, lpSubmissionCancel, lpparty),
 	)
 
-	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
+	t.Run("bond account doesn't exist any more", func(t *testing.T) {
 		acc, err := tm.collateralEngine.GetPartyBondAccount(tm.market.GetID(), lpparty, tm.asset)
-		assert.NoError(t, err)
-		assert.Equal(t, num.UintZero(), acc.Balance)
+		assert.ErrorContains(t, err, "account does not exist")
+		assert.Nil(t, acc)
 	})
 }
 
@@ -612,7 +628,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -621,7 +642,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			expectedStatus := types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusParked
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -640,7 +661,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -752,7 +778,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, mustOrderFromProto(evt.Order()))
+				order := evt.Order()
+				// skip the seeded orders
+				if order.Status == types.OrderStatusStopped {
+					continue
+				}
+				found = append(found, mustOrderFromProto(order))
 			}
 		}
 
@@ -761,7 +792,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			expectedStatus := types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusParked
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -789,5 +820,5 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 
 	err := tm.market.AmendLiquidityProvision(
 		ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash())
-	require.EqualError(t, err, "margin would be below maintenance: insufficient margin")
+	require.EqualError(t, err, "commitment submission not allowed")
 }

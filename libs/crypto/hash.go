@@ -13,6 +13,7 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -26,6 +27,12 @@ func Hash(key []byte) []byte {
 	return hashFunc.Sum(nil)
 }
 
+func HashBytesBuffer(key bytes.Buffer) []byte {
+	hashFunc := sha3.New256()
+	key.WriteTo(hashFunc)
+	return hashFunc.Sum(nil)
+}
+
 // HashToHex hash the input bytes and returns a hex encoded string of the result.
 func HashToHex(data []byte) string {
 	return hex.EncodeToString(Hash(data))
@@ -34,16 +41,6 @@ func HashToHex(data []byte) string {
 // HashStrToHex hash a string returns a hex encoded string of the result.
 func HashStrToHex(s string) string {
 	return hex.EncodeToString(Hash([]byte(s)))
-}
-
-// HashHexStrToHex hash a hex encoded string with sha3 256
-// returns a hex encoded string of the result.
-func HashHexStrToHex(s string) string {
-	x, err := hex.DecodeString(s)
-	if err != nil {
-		panic(fmt.Sprintf("a hexadecimal string is required: %v", err))
-	}
-	return hex.EncodeToString(Hash(x))
 }
 
 func RandomHash() string {

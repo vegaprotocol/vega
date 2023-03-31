@@ -1,0 +1,168 @@
+{
+	"TestName": "TestGovernance_ProposalNewMarket",
+	"Query": "{ proposalsConnection { edges { node { id terms { change { ... on NewMarket { instrument { name } decimalPlaces riskParameters { ... on SimpleRiskModel { params { factorLong factorShort } } } metadata priceMonitoringParameters { triggers { horizonSecs probability auctionExtensionSecs } } liquidityMonitoringParameters { targetStakeParameters { timeWindow scalingFactor } triggeringRatio auctionExtensionSecs } positionDecimalPlaces lpPriceRange } } } } } } }",
+	"Result": {
+		"proposalsConnection": {
+			"edges": [
+				{
+					"node": {
+						"id": "43dfd2d3d454e003898e3bc178161614af5addf6bca7a456acc04b46e52c5dcb",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "bda439ade276efe1567fedec94ea5b9c040c5f89f72382ef1cf893faf0454f32",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "d5122c4250310da96a1b66717d73e90c4cca39dcbf98d4c4c98f01b0f254b8d2",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "060b8ffe23076e5ef49056fd68ea3760de6be9990fb58d9ef25d14132cc8fb31",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "9fdf16a4b58cd8c124de0fc0acfc42bacdc6650018f570a5852cffa5242dc433",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "c8657325431e08fc2a22f5094d3fb42a570b6b13d5dafc346924e340ea2a6711",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "836da1ce68446d8b5cd1102bd46712fab678da8174c21f974d650212d928d5cd",
+						"terms": {
+							"change": {
+								"decimalPlaces": 5,
+								"instrument": {
+									"name": "Futures System-Tests Market"
+								},
+								"liquidityMonitoringParameters": {
+									"auctionExtensionSecs": 1,
+									"targetStakeParameters": {
+										"scalingFactor": 5,
+										"timeWindow": 10
+									},
+									"triggeringRatio": "0"
+								},
+								"lpPriceRange": "1",
+								"metadata": [
+									"asset_class:fx/crypto",
+									"product:futures"
+								],
+								"positionDecimalPlaces": 5,
+								"priceMonitoringParameters": {
+									"triggers": []
+								},
+								"riskParameters": {}
+							}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "b089c18d7b645eec14e78c6310831f6011f191494470dde01e34a1d8f90d3f2c",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "0fa76c9a96793dd080f21c41e4c192cee76d34bd150d5ead49574296a10cc665",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "aa7a5a629097b0d3abdb2510d992dfd943409db2cbe63151f6dd710a64f6c8bd",
+						"terms": {
+							"change": {}
+						}
+					}
+				},
+				{
+					"node": {
+						"id": "ea438780e0f53a4fade0d05819f46716e101f2e63e18803cd3731875d523135b",
+						"terms": {
+							"change": {}
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 6022109
+}

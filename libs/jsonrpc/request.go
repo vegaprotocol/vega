@@ -9,11 +9,6 @@ var (
 	ErrMethodIsRequired    = errors.New("the method is required")
 )
 
-type RequestMetadata struct {
-	TraceID  string
-	Hostname string
-}
-
 // Params is just a nicer way to describe what's passed to the handlers.
 type Params interface{}
 
@@ -37,7 +32,7 @@ type Request struct {
 }
 
 func (r *Request) Check() error {
-	if r.Version != JSONRPC2 {
+	if r.Version != VERSION2 {
 		return ErrOnlySupportJSONRPC2
 	}
 

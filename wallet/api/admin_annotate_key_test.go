@@ -97,8 +97,9 @@ func testAnnotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, expectedWallet, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
@@ -150,7 +151,8 @@ func testAnnotatingKeyOnUnknownKeyFails(t *testing.T) {
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
@@ -188,7 +190,7 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey(t *testi
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.T) {
@@ -201,7 +203,8 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
@@ -227,8 +230,9 @@ func testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey(t *testing.T) 
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UpdateWallet(ctx, gomock.Any()).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
@@ -250,10 +254,10 @@ type annotateKeyHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *annotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminAnnotateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *annotateKeyHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminAnnotateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, requestMetadataForTest())
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminAnnotateKeyResult)
 		if !ok {

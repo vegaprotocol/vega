@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -8,7 +9,6 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/api/node"
-	"code.vegaprotocol.io/vega/wallet/api/session"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +34,7 @@ func assertRequestNotPermittedError(t *testing.T, errorDetails *jsonrpc.ErrorDet
 func assertRequestInterruptionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, jsonrpc.ErrorCodeRequestHasBeenInterrupted, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenInterrupted, errorDetails.Code)
 	assert.Equal(t, string(api.ServerError), errorDetails.Message)
 	assert.Equal(t, api.ErrRequestInterrupted.Error(), errorDetails.Data)
 }
@@ -63,23 +63,29 @@ func assertNetworkError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expect
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
-func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) {
+func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expectedErr error) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenRejected, errorDetails.Code)
 	assert.Equal(t, string(api.UserError), errorDetails.Message)
-	assert.Equal(t, api.ErrUserRejectedTheRequest.Error(), errorDetails.Data)
+	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
 func assertApplicationCancellationError(t *testing.T, errorDetails *jsonrpc.ErrorDetails) {
 	t.Helper()
 	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeRequestHasBeenCanceledByApplication, errorDetails.Code)
+	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
 	assert.Equal(t, string(api.ApplicationError), errorDetails.Message)
-	assert.Equal(t, api.ErrApplicationCanceledTheRequest.Error(), errorDetails.Data)
+	assert.Equal(t, api.ErrApplicationCancelledTheRequest.Error(), errorDetails.Data)
 }
 
-func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) (wallet.Wallet, wallet.KeyPair) {
+func clientContextForTest() (context.Context, string) {
+	traceID := vgrand.RandomStr(5)
+	ctx := context.WithValue(context.Background(), jsonrpc.TraceIDKey, traceID)
+	return ctx, traceID
+}
+
+func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) wallet.Wallet {
 	t.Helper()
 
 	walletName := vgrand.RandomStr(5)
@@ -89,8 +95,7 @@ func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) (w
 		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
-	kp, err := w.GenerateKeyPair(nil)
-	if err != nil {
+	if _, err = w.GenerateKeyPair(nil); err != nil {
 		t.Fatalf("could not generate a key on the wallet for test: %v", err)
 	}
 
@@ -98,10 +103,18 @@ func walletWithPerms(t *testing.T, hostname string, perms wallet.Permissions) (w
 		t.Fatalf("could not update permissions on wallet for test: %v", err)
 	}
 
-	return w, kp
+	return w
 }
 
 func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
+	t.Helper()
+
+	w, kps := walletWithKeys(t, 1)
+
+	return w, kps[0]
+}
+
+func walletWithKeys(t *testing.T, num int) (wallet.Wallet, []wallet.KeyPair) {
 	t.Helper()
 
 	walletName := vgrand.RandomStr(5)
@@ -111,12 +124,16 @@ func walletWithKey(t *testing.T) (wallet.Wallet, wallet.KeyPair) {
 		t.Fatalf("could not create wallet for test: %v", err)
 	}
 
-	kp, err := w.GenerateKeyPair(nil)
-	if err != nil {
-		t.Fatalf("could not update permissions on wallet for test: %v", err)
+	kps := make([]wallet.KeyPair, 0, num)
+	for i := 0; i < num; i++ {
+		kp, err := w.GenerateKeyPair(nil)
+		if err != nil {
+			t.Fatalf("could not update permissions on wallet for test: %v", err)
+		}
+		kps = append(kps, kp)
 	}
 
-	return w, kp
+	return w, kps
 }
 
 func newNetwork(t *testing.T) network.Network {
@@ -130,6 +147,16 @@ func newNetwork(t *testing.T) network.Network {
 					"n01.localtest.vega.xyz:3007",
 				},
 				Retries: 5,
+			},
+			REST: network.RESTConfig{
+				Hosts: []string{
+					"http://n01.localtest.vega.xyz:3097",
+				},
+			},
+			GraphQL: network.GraphQLConfig{
+				Hosts: []string{
+					"http://n01.localtest.vega.xyz:3087",
+				},
 			},
 		},
 	}
@@ -145,22 +172,6 @@ func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
 	return kp
 }
 
-func requestMetadataForTest() jsonrpc.RequestMetadata {
-	return jsonrpc.RequestMetadata{
-		TraceID:  vgrand.RandomStr(5),
-		Hostname: vgrand.RandomStr(5) + ".xyz",
-	}
-}
-
-func connectWallet(t *testing.T, sessions *session.Sessions, hostname string, w wallet.Wallet) string {
-	t.Helper()
-	token, err := sessions.ConnectWallet(hostname, w)
-	if err != nil {
-		t.Fatalf("could not connect to a wallet for test: %v", err)
-	}
-	return token
-}
-
 func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
 	t.Helper()
 
@@ -170,13 +181,9 @@ func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
 	}
 }
 
-func dummyServiceShutdownSwitch() *api.ServiceShutdownSwitch {
-	return api.NewServiceShutdownSwitch(func(err error) {})
-}
-
 var (
-	testTransactionJSON          = `{"voteSubmission":{"proposalId":"eb2d3902fdda9c3eb6e369f2235689b871c7322cf3ab284dde3e9dfc13863a17","value":"VALUE_YES"}}`
-	testMalformedTransactionJSON = `{"voteSubmission":{"proposalId":"not real id","value":"VALUE_YES"}}`
+	fakeTransaction          = `{"voteSubmission":{"proposalId":"eb2d3902fdda9c3eb6e369f2235689b871c7322cf3ab284dde3e9dfc13863a17","value":"VALUE_YES"}}`
+	fakeMalformedTransaction = `{"voteSubmission":{"proposalId":"not real id","value":"VALUE_YES"}}`
 )
 
 func transactionFromJSON(t *testing.T, JSON string) map[string]any {
@@ -188,12 +195,10 @@ func transactionFromJSON(t *testing.T, JSON string) map[string]any {
 
 func testTransaction(t *testing.T) map[string]any {
 	t.Helper()
-	return transactionFromJSON(t, testTransactionJSON)
+	return transactionFromJSON(t, fakeTransaction)
 }
 
 func testMalformedTransaction(t *testing.T) map[string]any {
 	t.Helper()
-	return transactionFromJSON(t, testMalformedTransactionJSON)
+	return transactionFromJSON(t, fakeMalformedTransaction)
 }
-
-var testEncodedTransaction = "ewogICAgInZvdGVTdWJtaXNzaW9uIjogewogICAgICAgICJwcm9wb3NhbElkIjogImViMmQzOTAyZmRkYTljM2ViNmUzNjlmMjIzNTY4OWI4NzFjNzMyMmNmM2FiMjg0ZGRlM2U5ZGZjMTM4NjNhMTciLAogICAgICAgICJ2YWx1ZSI6ICJWQUxVRV9ZRVMiCiAgICB9Cn0K"

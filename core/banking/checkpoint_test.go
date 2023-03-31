@@ -22,10 +22,54 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCheckpoint(t *testing.T) {
 	t.Run("test simple scheduled transfer", testSimpledScheduledTransfer)
+}
+
+func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	eng.tsvc.EXPECT().GetTimeNow().AnyTimes()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	eng.OnTick(context.Background(), time.Now())
+	bad := &types.BuiltinAssetDeposit{
+		VegaAssetID: "VGT",
+		PartyID:     "someparty",
+		Amount:      num.NewUint(42),
+	}
+
+	// call the deposit function
+	err := eng.DepositBuiltinAsset(context.Background(), bad, "depositid", 42)
+	assert.NoError(t, err)
+
+	// then we call the callback from the fake erc
+	eng.erc.r.Check()
+	eng.erc.f(eng.erc.r, true)
+
+	// now we take a checkpoint
+	cp, err := eng.Checkpoint()
+	require.NoError(t, err)
+
+	loadEng := getTestEngine(t)
+	defer loadEng.ctrl.Finish()
+
+	loadEng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
+	loadEng.tsvc.EXPECT().GetTimeNow().AnyTimes()
+	loadEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// load from checkpoint
+	require.NoError(t, loadEng.Load(context.Background(), cp))
+
+	// now finalise the asset action
+	// then we call time update, which should call the collateral to
+	// to do the deposit
+	loadEng.col.EXPECT().Deposit(gomock.Any(), bad.PartyID, bad.VegaAssetID, bad.Amount).Times(1).Return(&types.LedgerMovement{}, nil)
+	loadEng.OnTick(context.Background(), time.Now())
 }
 
 func testSimpledScheduledTransfer(t *testing.T) {

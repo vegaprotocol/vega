@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,13 +33,19 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+
 	"github.com/cosmos/iavl"
+	"github.com/syndtr/goleveldb/leveldb/filter"
+	"github.com/syndtr/goleveldb/leveldb/opt"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
 	db "github.com/tendermint/tm-db"
 )
 
 const (
-	SnapshotDBName = "snapshot"
-	numWorkers     = 1000
+	SnapshotDBName     = "snapshot"
+	SnapshotMetaDBName = "snapshot_meta"
+	numWorkers         = 1000
 )
 
 type StateProviderT interface {
@@ -87,6 +94,7 @@ type Engine struct {
 	timeService  TimeService
 	statsService StatsService
 	db           db.DB
+	metadb       *MetaDB
 	dbPath       string
 
 	avl             *iavl.MutableTree
@@ -219,6 +227,43 @@ func (e *Engine) ReloadConfig(cfg Config) {
 }
 
 // List returns all snapshots available.
+func (e *Engine) ListMeta() ([]*tmtypes.Snapshot, error) {
+	e.avlLock.Lock()
+	defer e.avlLock.Unlock()
+
+	snapshots := make([]*tmtypes.Snapshot, 0, len(e.versions))
+	// TM list of snapshots is limited to the 10 most recent ones.
+	i := len(e.versions) - 11
+	if i < 0 {
+		i = 0
+	}
+	for j := len(e.versions); i < j; i++ {
+		v := e.versions[i]
+
+		// use the meta db
+		snap, err := e.metadb.Load(v)
+		if err != nil {
+			e.log.Error("could not list snapshot",
+				logging.Int64("version", v),
+				logging.Error(err))
+			continue // if we have a borked snapshot we just won't list it
+		}
+
+		// then save the version for height
+		snapMeta := &snappb.Metadata{}
+		err = proto.Unmarshal(snap.Metadata, snapMeta)
+		if err != nil {
+			return nil, err
+		}
+		e.versionHeight[snap.Height] = snapMeta.Version
+
+		// then add to the list
+		snapshots = append(snapshots, snap)
+	}
+	return snapshots, nil
+}
+
+// List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
 	e.avlLock.Lock()
 	defer e.avlLock.Unlock()
@@ -252,20 +297,21 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 // and ensuring any pre-existing snapshot database is removed first. It is to be called
 // by a chain that is starting from block 0.
 func (e *Engine) ClearAndInitialise() error {
-	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
+	for _, name := range []string{SnapshotDBName, SnapshotMetaDBName} {
+		p := filepath.Join(e.dbPath, name+".db")
 
-	exists, err := vgfs.PathExists(p)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
-		if err := os.RemoveAll(p); err != nil {
+		exists, err := vgfs.PathExists(p)
+		if err != nil {
 			return err
 		}
-	}
 
+		if exists {
+			e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
+			if err := os.RemoveAll(p); err != nil {
+				return err
+			}
+		}
+	}
 	if err := e.initialiseTree(); err != nil {
 		return err
 	}
@@ -313,9 +359,11 @@ func (e *Engine) CheckLoaded() (bool, error) {
 		return true, e.applySnap(e.ctx)
 	}
 
-	e.initialiseTree()
+	if err := e.initialiseTree(); err != nil {
+		return false, err
+	}
 	versions := e.avl.AvailableVersions()
-	startHeight := e.Config.StartHeight
+	startHeight := e.StartHeight
 
 	if startHeight < 0 && len(versions) == 0 {
 		// we have no snapshots, and so this is a new chain there is nothing to load
@@ -331,6 +379,7 @@ func (e *Engine) CheckLoaded() (bool, error) {
 		// forced chain replay, we need to remove all old snapshots and start again
 		e.initialised = false
 		e.db.Close()
+		e.metadb.Close()
 		return false, e.ClearAndInitialise()
 	}
 
@@ -394,17 +443,33 @@ func (e *Engine) initialiseTree() error {
 	switch e.Storage {
 	case memDB:
 		e.db = db.NewMemDB()
+		e.metadb = NewMetaDB(NewMetaMemDB())
 	case goLevelDB:
-		conn, err := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
+		conn, err := db.NewGoLevelDBWithOpts(SnapshotDBName, e.dbPath,
+			&opt.Options{
+				Filter:          filter.NewBloomFilter(10),
+				BlockCacher:     opt.NoCacher,
+				OpenFilesCacher: opt.NoCacher,
+			})
 		if err != nil {
 			return fmt.Errorf("could not open goleveldb: %w", err)
 		}
 		e.db = conn
+
+		metaConn, err := db.NewGoLevelDBWithOpts(SnapshotMetaDBName, e.dbPath,
+			&opt.Options{
+				BlockCacher:     opt.NoCacher,
+				OpenFilesCacher: opt.NoCacher,
+			})
+		if err != nil {
+			return fmt.Errorf("could not open meta goleveldb: %w", err)
+		}
+		e.metadb = NewMetaDB(NewMetaGoLevelDB(metaConn))
 	default:
 		return types.ErrInvalidSnapshotStorageMethod
 	}
 
-	tree, err := iavl.NewMutableTree(e.db, 0)
+	tree, err := iavl.NewMutableTree(e.db, 0, false)
 	if err != nil {
 		e.log.Error("Could not create AVL tree", logging.Error(err))
 		return err
@@ -440,8 +505,8 @@ func (e *Engine) applySnapshotFromLocalStore(ctx context.Context) error {
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
-	if e.Config.StartHeight > 0 && snap.Height != uint64(e.Config.StartHeight) {
-		return fmt.Errorf("received snapshot height does not equal config height: %d != %d", snap.Height, e.Config.StartHeight)
+	if e.StartHeight > 0 && snap.Height != uint64(e.StartHeight) {
+		return fmt.Errorf("received snapshot height does not equal config height: %d != %d", snap.Height, e.StartHeight)
 	}
 
 	if e.snapshot != nil {
@@ -589,7 +654,7 @@ func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.
 		}
 	}
 	// check format:
-	f, err := types.SnapshotFromatFromU32(format)
+	f, err := types.SnapshotFormatFromU32(format)
 	if err != nil {
 		return nil, err
 	}
@@ -607,6 +672,7 @@ func (e *Engine) setSnapshotForHeight(height uint64) error {
 	if !ok {
 		return types.ErrMissingSnapshotVersion
 	}
+
 	tree, err := e.avl.GetImmutable(v)
 	if err != nil {
 		return err
@@ -670,7 +736,7 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 
 	// workers
 	wg := &sync.WaitGroup{}
-	inputCnt := int64(0)
+	inputCnt := atomic.Int64{}
 	inputs := make([]nsInput, 0, len(e.namespaces))
 
 	// we first iterate over the namespaces and collect all the top level tree keys
@@ -683,12 +749,12 @@ func (e *Engine) snapshotNow(ctx context.Context, saveAsync bool) ([]byte, error
 
 		for _, tk := range treeKeys {
 			inputs = append(inputs, nsInput{treeKey: tk, namespace: ns})
-			inputCnt++
+			inputCnt.Add(1)
 		}
 	}
 	// channel for the results
 	resChan := make(chan nsSnapResult, numWorkers)
-	// generate <NumWorkers> workes passing the input channel and the result channel
+	// generate <NumWorkers> workers passing the input channel and the result channel
 	for i := 0; i < numWorkers; i++ {
 		wg.Add(1)
 		go worker(e, inputChan, resChan, wg, &inputCnt)
@@ -874,10 +940,12 @@ func (e *Engine) saveCurrentTree() error {
 	if len(e.versions) >= cap(e.versions) {
 		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
 			// this is not a fatal error, but still we should be paying attention.
-			e.log.Warn("Could not delete old version",
+			e.log.Error("Could not delete old version",
 				logging.Int64("old-version", e.versions[0]),
 				logging.Error(err),
 			)
+		} else {
+			e.log.Info("old snapshot version deleted", logging.Int64("old-version", v))
 		}
 		// drop first version
 		copy(e.versions[0:], e.versions[1:])
@@ -889,10 +957,21 @@ func (e *Engine) saveCurrentTree() error {
 	}
 	// get ptr to current version
 	e.last = e.avl.ImmutableTree
-	return nil
+
+	snap, err := types.SnapshotFromTree(e.last)
+	if err != nil {
+		return err
+	}
+
+	tmSnap, err := snap.ToTM()
+	if err != nil {
+		return err
+	}
+
+	return e.metadb.Save(v, tmSnap)
 }
 
-func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *int64) {
+func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *atomic.Int64) {
 	// Decreasing internal counter for wait-group as soon as goroutine finishes
 	defer wg.Done()
 
@@ -907,7 +986,7 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 		// nothing has changed (or both values were nil)
 		if stopped {
 			resChan <- nsSnapResult{input: input, updated: true, toRemove: stopped}
-			if atomic.AddInt64(cnt, -1) <= 0 {
+			if cnt.Add(-1) <= 0 {
 				close(nsInputChan)
 				close(resChan)
 			}
@@ -965,13 +1044,13 @@ func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg
 			logging.Float64("took", time.Since(t0).Seconds()),
 		)
 
-		atomic.AddInt64(cnt, genCnt)
+		cnt.Add(genCnt)
 		for _, inp := range inputs {
 			nsInputChan <- inp
 		}
 
 		resChan <- nsSnapResult{input: input, state: v, updated: true}
-		if atomic.AddInt64(cnt, -1) <= 0 {
+		if cnt.Add(-1) <= 0 {
 			close(nsInputChan)
 			close(resChan)
 		}
@@ -1071,7 +1150,17 @@ func (e *Engine) Close() error {
 		}
 	}
 	if e.db != nil {
-		return e.db.Close()
+		dbErr := e.db.Close()
+		metaErr := e.metadb.Close()
+		if dbErr != nil || metaErr != nil {
+			if dbErr != nil {
+				e.log.Error("could not close cleanly snapshot db", logging.Error(dbErr))
+			}
+			if metaErr != nil {
+				e.log.Error("could not close cleanly meta snapshot db", logging.Error(metaErr))
+			}
+			return errors.New("unable to close dbs cleanly")
+		}
 	}
 	return nil
 }

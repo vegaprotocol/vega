@@ -108,6 +108,27 @@ func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
 	assert.Equal(t, tradeID2, trades[2].ID.String())
 }
 
+func TestStorageGetByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	tradeStore := sqlstore.NewTrades(connectionSource)
+
+	insertedTrades := insertTestData(t, ctx, tradeStore)
+
+	trades, err := tradeStore.GetByTxHash(ctx, insertedTrades[0].TxHash)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(trades))
+	assert.Equal(t, insertedTrades[0].ID.String(), trades[0].ID.String())
+	assert.Equal(t, insertedTrades[0].TxHash, trades[0].TxHash)
+
+	trades, err = tradeStore.GetByTxHash(ctx, insertedTrades[2].TxHash)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(trades))
+	assert.Equal(t, insertedTrades[2].ID.String(), trades[0].ID.String())
+	assert.Equal(t, insertedTrades[2].TxHash, trades[0].TxHash)
+}
+
 func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
@@ -166,7 +187,7 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	assert.Equal(t, 0, len(trades))
 }
 
-func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trades) {
+func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trades) []entities.Trade {
 	t.Helper()
 
 	// Insert some trades
@@ -261,6 +282,7 @@ func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trad
 
 	protos := []types.Trade{*trade1, *trade2, *trade3, *trade4, *trade5, *trade6}
 
+	inserted := []entities.Trade{}
 	var seqNum uint64
 	vegaTime := block1.VegaTime
 	for _, proto := range protos {
@@ -277,9 +299,12 @@ func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trad
 			t.Fatalf("failed to add trade:%s", err)
 		}
 		seqNum++
+
+		inserted = append(inserted, *trade)
 	}
 
 	tradeStore.Flush(ctx)
+	return inserted
 }
 
 func TestTrades_CursorPagination(t *testing.T) {

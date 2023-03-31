@@ -15,10 +15,9 @@ package integration_test
 import "testing"
 
 func TestERC20WithdrawalApproval(t *testing.T) {
-	t.Skip("missing data")
-
+	// This is a bit suboptimal as this needs updating when the event file is replaced; perhaps we can make it nicer in the future.
 	queries := map[string]string{
-		"ERC20WithdrawalApproval": `{ erc20WithdrawalApproval(withdrawalId: "GIMME_AN_ID"){ assetSource amount nonce signatures targetAddress } }`,
+		"ERC20WithdrawalApproval": `{ erc20WithdrawalApproval(withdrawalId: "692595a5049cebd114ed62265e300fb9252967e52beef35b42ff4e298059a954"){ assetSource amount nonce signatures targetAddress } }`,
 	}
 
 	for name, query := range queries {

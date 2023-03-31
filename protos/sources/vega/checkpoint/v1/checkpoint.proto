@@ -7,6 +7,7 @@ import "vega/vega.proto";
 import "vega/assets.proto";
 import "vega/governance.proto";
 import "vega/events/v1/events.proto";
+import "vega/chain_events.proto";
 
 // CheckpointState is the entire checkpoint serialised (basically serialised the Checkpoint message + hash)
 message CheckpointState {
@@ -31,7 +32,7 @@ message Checkpoint {
   bytes market_tracker = 13;
 }
 
-// AssetEntrty is a single (enabled) asset
+// AssetEntry is a single (enabled) asset
 message AssetEntry {
   string id = 1;
   vega.AssetDetails asset_details = 2;
@@ -149,6 +150,10 @@ message Banking {
   repeated ScheduledTransferAtTime transfers_at_time = 1;
   RecurringTransfers recurring_transfers = 2;
   BridgeState bridge_state = 3;
+  repeated AssetAction asset_actions = 4;
+  uint64 last_seen_eth_block = 5;
+  repeated string seen_refs = 6;
+
 }
 
 message BridgeState {
@@ -169,6 +174,8 @@ message ValidatorState {
   uint64 eth_events_forwarded = 3;
   int64 validator_power = 4;
   vega.RankingScore ranking_score = 5;
+  int32 heartbeat_block_index = 6;
+  repeated bool heartbeat_block_sigs = 7;
 }
 
 message Staking {
@@ -201,4 +208,20 @@ message MarketActivityTracker {
 message PartyFees {
   string party = 1;
   string fee = 2;
+}
+
+message AssetAction {
+  string id = 1;
+  uint32 state = 2;
+  string asset = 3;
+  uint64 block_number = 4;
+  uint64 tx_index = 5;
+  string hash = 6;
+
+  vega.BuiltinAssetDeposit builtin_deposit = 7;
+  vega.ERC20Deposit erc20_deposit = 8;
+  vega.ERC20AssetList asset_list = 9;
+  vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
+  bool erc20_bridge_stopped = 11;
+  bool erc20_bridge_resumed = 12;
 }

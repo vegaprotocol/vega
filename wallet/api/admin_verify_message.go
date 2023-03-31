@@ -23,7 +23,7 @@ type AdminVerifyMessageResult struct {
 
 type AdminVerifyMessage struct{}
 
-func (h *AdminVerifyMessage) Handle(_ context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminVerifyMessage) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminVerifyMessageParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)

@@ -148,8 +148,10 @@ const (
 	AuctionTriggerOpening AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_OPENING
 	// Price monitoring trigger.
 	AuctionTriggerPrice AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_PRICE
-	// Liquidity monitoring trigger.
-	AuctionTriggerLiquidity AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
+	// Liquidity monitoring due to unmet target trigger.
+	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
+	// Liquidity monitoring due to being unable to deploy LP orders due to missing best bid or ask.
+	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
 )
 
 type InstrumentMetadata struct {
@@ -341,7 +343,6 @@ type Future struct {
 	DataSourceSpecForSettlementData     *DataSourceSpec
 	DataSourceSpecForTradingTermination *DataSourceSpec
 	DataSourceSpecBinding               *DataSourceSpecBindingForFuture
-	SettlementDataDecimals              uint32
 }
 
 func FutureFromProto(f *proto.Future) *Future {
@@ -351,7 +352,6 @@ func FutureFromProto(f *proto.Future) *Future {
 		DataSourceSpecForSettlementData:     DataSourceSpecFromProto(f.DataSourceSpecForSettlementData),
 		DataSourceSpecForTradingTermination: DataSourceSpecFromProto(f.DataSourceSpecForTradingTermination),
 		DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(f.DataSourceSpecBinding),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
@@ -362,16 +362,14 @@ func (f Future) IntoProto() *proto.Future {
 		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.IntoProto(),
 		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.IntoProto(),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.IntoProto(),
-		SettlementDataDecimals:              f.SettlementDataDecimals,
 	}
 }
 
 func (f Future) String() string {
 	return fmt.Sprintf(
-		"quoteName(%s) settlementAsset(%s) SettlementDataDecimals(%v) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
+		"quoteName(%s) settlementAsset(%s) dataSourceSpec(settlementData(%s) tradingTermination(%s) binding(%s))",
 		f.QuoteName,
 		f.SettlementAsset,
-		f.SettlementDataDecimals,
 		reflectPointerToString(f.DataSourceSpecForSettlementData),
 		reflectPointerToString(f.DataSourceSpecForTradingTermination),
 		reflectPointerToString(f.DataSourceSpecBinding),
@@ -631,6 +629,8 @@ type Market struct {
 	PriceMonitoringSettings       *PriceMonitoringSettings
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters
 	LPPriceRange                  num.Decimal
+	LinearSlippageFactor          num.Decimal
+	QuadraticSlippageFactor       num.Decimal
 
 	TradingMode      MarketTradingMode
 	State            MarketState
@@ -638,9 +638,16 @@ type Market struct {
 	asset            string
 }
 
-func MarketFromProto(mkt *proto.Market) *Market {
+func MarketFromProto(mkt *proto.Market) (*Market, error) {
 	asset, _ := mkt.GetAsset()
 	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
+	linearSlippageFactor, _ := num.DecimalFromString(mkt.LinearSlippageFactor)
+	quadraticSlippageFactor, _ := num.DecimalFromString(mkt.QuadraticSlippageFactor)
+	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
+	if err != nil {
+		return nil, err
+	}
+
 	m := &Market{
 		ID:                            mkt.Id,
 		TradableInstrument:            TradableInstrumentFromProto(mkt.TradableInstrument),
@@ -649,14 +656,16 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		Fees:                          FeesFromProto(mkt.Fees),
 		OpeningAuction:                AuctionDurationFromProto(mkt.OpeningAuction),
 		PriceMonitoringSettings:       PriceMonitoringSettingsFromProto(mkt.PriceMonitoringSettings),
-		LiquidityMonitoringParameters: LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters),
+		LiquidityMonitoringParameters: liquidityParameters,
 		TradingMode:                   mkt.TradingMode,
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
 		asset:                         asset,
 		LPPriceRange:                  lppr,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
-	return m
+	return m, nil
 }
 
 func (m Market) IntoProto() *proto.Market {
@@ -699,6 +708,8 @@ func (m Market) IntoProto() *proto.Market {
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
 		LpPriceRange:                  m.LPPriceRange.String(),
+		LinearSlippageFactor:          m.LinearSlippageFactor.String(),
+		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
 	}
 	return r
 }
@@ -755,13 +766,15 @@ func (m Market) String() string {
 
 func (m Market) DeepClone() *Market {
 	cpy := &Market{
-		ID:                    m.ID,
-		DecimalPlaces:         m.DecimalPlaces,
-		PositionDecimalPlaces: m.PositionDecimalPlaces,
-		TradingMode:           m.TradingMode,
-		State:                 m.State,
-		asset:                 m.asset,
-		LPPriceRange:          m.LPPriceRange,
+		ID:                      m.ID,
+		DecimalPlaces:           m.DecimalPlaces,
+		PositionDecimalPlaces:   m.PositionDecimalPlaces,
+		TradingMode:             m.TradingMode,
+		State:                   m.State,
+		asset:                   m.asset,
+		LPPriceRange:            m.LPPriceRange,
+		LinearSlippageFactor:    m.LinearSlippageFactor,
+		QuadraticSlippageFactor: m.QuadraticSlippageFactor,
 	}
 
 	if m.TradableInstrument != nil {

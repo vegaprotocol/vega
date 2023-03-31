@@ -73,9 +73,11 @@ type InitFlags struct {
 }
 
 func Init(home string, f *InitFlags) error {
-	if _, err := wallets.InitialiseStore(home); err != nil {
+	walletStore, err := wallets.InitialiseStore(home, false)
+	if err != nil {
 		return fmt.Errorf("couldn't initialise wallets store: %w", err)
 	}
+	defer walletStore.Close()
 
 	vegaPaths := paths.New(home)
 

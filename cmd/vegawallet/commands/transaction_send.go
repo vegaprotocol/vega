@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	coreversion "code.vegaprotocol.io/vega/version"
@@ -26,8 +26,6 @@ import (
 )
 
 var (
-	ErrDoNotSetPubKeyInTransaction = errors.New("do not set the public key through the transaction, use --pubkey flag instead")
-
 	sendTransactionLong = cli.LongDesc(`
 		Send a transaction to a Vega node via the gRPC API. The transaction can be sent to
 		any node of a registered network or to a specific node address.
@@ -65,21 +63,22 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 	handler := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		ws, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
 		ns, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		signTx := api.NewAdminSendTransaction(ws, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
 
-		rawResult, errDetails := signTx.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errDetails := sendTx.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
 		}
@@ -223,7 +222,7 @@ func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error
 		return api.AdminSendTransactionParams{}, err
 	}
 
-	// Encode transaction into nested structure; this is a bit nasty but mirroring what happens
+	// Encode transaction into a nested structure; this is a bit nasty but mirroring what happens
 	// when our json-rpc library parses a request. There's an issue (6983#) to make the use
 	// json.RawMessage instead.
 	transaction := make(map[string]any)
@@ -259,4 +258,6 @@ func PrintSendTransactionResponse(w io.Writer, res api.AdminSendTransactionResul
 	defer p.Print(str)
 	str.CheckMark().SuccessText("Transaction sending successful").NextSection()
 	str.Text("Transaction Hash:").NextLine().WarningText(res.TxHash).NextSection()
+	str.Text("Sent at:").NextLine().WarningText(res.SentAt.Format(time.ANSIC)).NextSection()
+	str.Text("Selected node:").NextLine().WarningText(res.Node.Host).NextLine()
 }

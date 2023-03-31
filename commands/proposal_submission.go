@@ -9,11 +9,13 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 const ReferenceMaxLen int = 100
@@ -378,6 +380,28 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.lp_price_range", ErrMustBeAtMost100)
 	}
 
+	if len(changes.LinearSlippageFactor) > 0 {
+		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
+		} else if linearSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
+		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
+		}
+	}
+
+	if len(changes.QuadraticSlippageFactor) > 0 {
+		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
+		} else if squaredSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
+		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
+		}
+	}
+
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument))
@@ -411,6 +435,28 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBePositive)
 	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.lp_price_range", ErrMustBeAtMost100)
+	}
+
+	if len(changes.LinearSlippageFactor) > 0 {
+		linearSlippage, err := num.DecimalFromString(changes.LinearSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrIsNotValidNumber)
+		} else if linearSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBePositiveOrZero)
+		} else if linearSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.linear_slippage_factor", ErrMustBeAtMost1M)
+		}
+	}
+
+	if len(changes.QuadraticSlippageFactor) > 0 {
+		squaredSlippage, err := num.DecimalFromString(changes.QuadraticSlippageFactor)
+		if err != nil {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrIsNotValidNumber)
+		} else if squaredSlippage.IsNegative() {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBePositiveOrZero)
+		} else if squaredSlippage.GreaterThan(num.DecimalFromInt64(1000000)) {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
+		}
 	}
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
@@ -447,9 +493,9 @@ func checkPriceMonitoring(parameters *protoTypes.PriceMonitoringParameters, pare
 			)
 		}
 
-		if probability <= 0 || probability >= 1 {
+		if probability <= 0.9 || probability >= 1 {
 			errs.AddForProperty(fmt.Sprintf("%s.price_monitoring_parameters.triggers.%d.probability", parentProperty, i),
-				errors.New("should be between 0 (exclusive) and 1 (exclusive)"),
+				errors.New("should be between 0.9 (exclusive) and 1 (exclusive)"),
 			)
 		}
 	}
@@ -464,7 +510,18 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 		return errs
 	}
 
-	if parameters.TriggeringRatio < 0 || parameters.TriggeringRatio > 1 {
+	if len(parameters.TriggeringRatio) == 0 {
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.liquidity_monitoring_parameters.triggering_ratio", parentProperty), ErrIsNotValidNumber)
+	}
+
+	tr, err := num.DecimalFromString(parameters.TriggeringRatio)
+	if err != nil {
+		errs.AddForProperty(
+			fmt.Sprintf("%s.liquidity_monitoring_parameters.triggering_ratio", parentProperty),
+			fmt.Errorf("error parsing triggering ratio value: %s", err.Error()),
+		)
+	}
+	if tr.IsNegative() || tr.GreaterThan(num.DecimalOne()) {
 		errs.AddForProperty(
 			fmt.Sprintf("%s.liquidity_monitoring_parameters.triggering_ratio", parentProperty),
 			errors.New("should be between 0 (inclusive) and 1 (inclusive)"),
@@ -552,7 +609,7 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", datapb.PropertyKey_TYPE_TIMESTAMP))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
 	errs.Merge(checkNewOracleBinding(future))
 
@@ -570,14 +627,14 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", datapb.PropertyKey_TYPE_TIMESTAMP))
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
 	errs.Merge(checkUpdateOracleBinding(future))
 
 	return errs
 }
 
-func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string) Errors {
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, banTypes ...datapb.PropertyKey_Type) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
@@ -587,9 +644,37 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name+".source_type"), ErrIsRequired)
 	}
 
+	propertyTypes := []datapb.PropertyKey_Type{}
 	switch tp := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_Internal:
+		t := tp.Internal.GetTime()
+		if t == nil {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
+		}
+
+		if len(t.Conditions) == 0 {
+			errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+		}
+
+		if len(t.Conditions) != 0 {
+			for j, condition := range t.Conditions {
+				if len(condition.Value) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
+				}
+				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
+				}
+
+				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+				}
+			}
+		}
+
+		propertyTypes = []datapb.PropertyKey_Type{datapb.PropertyKey_TYPE_TIMESTAMP}
+
 	case *vegapb.DataSourceDefinition_External:
-		// For now check only for oracle type for external data source. Add a check for Oracle type data later when other sources are added.
+		// If data source type is external - check if the signers are present first.
 		o := tp.External.GetOracle()
 
 		signers := o.Signers
@@ -601,34 +686,35 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			signer := types.SignerFromProto(key)
 			if signer.IsEmpty() {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+			} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
+			} else if address := signer.GetSignerETHAddress(); address != nil && !common.IsHexAddress(address.Address) {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
 			}
 		}
 
 		filters := o.Filters
-		if isBuiltInSpec(filters) {
-			return checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty)
-		}
-
 		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+
+		for _, v := range filters {
+			if v.GetKey() != nil {
+				propertyTypes = append(propertyTypes, v.GetKey().Type)
+			}
+		}
+	}
+
+	bans := map[datapb.PropertyKey_Type]struct{}{}
+	for _, v := range banTypes {
+		bans[v] = struct{}{}
+	}
+
+	for _, v := range propertyTypes {
+		if _, ok := bans[v]; ok {
+			errs.AddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
+		}
 	}
 
 	return errs
-}
-
-func isBuiltInSpec(filters []*datapb.Filter) bool {
-	if len(filters) != 1 {
-		return false
-	}
-
-	if filters[0].Key == nil || filters[0].Conditions == nil {
-		return false
-	}
-
-	if strings.HasPrefix(filters[0].Key.Name, "vegaprotocol.builtin") && filters[0].Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-		return true
-	}
-
-	return false
 }
 
 func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentProperty string) Errors {
@@ -648,6 +734,9 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 			if filter.Key.Type == datapb.PropertyKey_TYPE_UNSPECIFIED {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsRequired)
 			}
+			if _, ok := datapb.PropertyKey_Type_name[int32(filter.Key.Type)]; !ok {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.key.type", parentProperty, name, i), ErrIsNotValid)
+			}
 		}
 
 		if len(filter.Conditions) != 0 {
@@ -657,6 +746,9 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 				}
 				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.conditions.%d.operator", parentProperty, name, i, j), ErrIsRequired)
+				}
+				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.filters.%d.conditions.%d.operator", parentProperty, name, i, j), ErrIsNotValid)
 				}
 			}
 		}

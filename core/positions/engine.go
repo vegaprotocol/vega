@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 // Errors.
@@ -56,6 +57,10 @@ type Engine struct {
 	// this slice.
 	positionsCpy []events.MarketPosition
 
+	// keep track of the position updated during the current block to avoid sending
+	updatedPositions map[string]struct{}
+	positionUpdated  func(context.Context, *MarketPosition)
+
 	broker Broker
 }
 
@@ -65,14 +70,54 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	return &Engine{
-		marketID:     marketID,
-		Config:       config,
-		log:          log,
-		positions:    map[string]*MarketPosition{},
-		positionsCpy: []events.MarketPosition{},
-		broker:       broker,
+	e := &Engine{
+		marketID:         marketID,
+		Config:           config,
+		log:              log,
+		positions:        map[string]*MarketPosition{},
+		positionsCpy:     []events.MarketPosition{},
+		broker:           broker,
+		updatedPositions: map[string]struct{}{},
 	}
+	e.positionUpdated = e.bufferPosition
+	if config.StreamPositionVerbose {
+		e.positionUpdated = e.sendPosition
+	}
+
+	return e
+}
+
+func (e *Engine) FlushPositionEvents(ctx context.Context) {
+	if e.StreamPositionVerbose || len(e.updatedPositions) <= 0 {
+		return
+	}
+
+	e.sendBufferedPosition(ctx)
+}
+
+func (e *Engine) bufferPosition(ctx context.Context, pos *MarketPosition) {
+	e.updatedPositions[pos.partyID] = struct{}{}
+}
+
+func (e *Engine) sendBufferedPosition(ctx context.Context) {
+	parties := maps.Keys(e.updatedPositions)
+	sort.Strings(parties)
+	evts := make([]events.Event, 0, len(parties))
+
+	for _, v := range parties {
+		// ensure the position exists,
+		// party might have been distressed or something
+		if pos, ok := e.positions[v]; ok {
+			evts = append(evts, events.NewPositionStateEvent(ctx, pos, e.marketID))
+		}
+	}
+
+	e.broker.SendBatch(evts)
+	e.updatedPositions = make(map[string]struct{}, len(e.updatedPositions))
+}
+
+func (e *Engine) sendPosition(ctx context.Context, pos *MarketPosition) {
+	e.broker.Send(events.NewPositionStateEvent(ctx, pos, e.marketID))
 }
 
 func (e *Engine) Hash() []byte {
@@ -93,10 +138,10 @@ func (e *Engine) Hash() []byte {
 		}
 
 		// Add bytes for VWBuy and VWSell here
-		b := p.VWBuy().Bytes()
+		b := p.BuySumProduct().Bytes()
 		copy(output[i:], b[:])
 		i += 32
-		s := p.VWBuy().Bytes()
+		s := p.SellSumProduct().Bytes()
 		copy(output[i:], s[:])
 		i += 32
 	}
@@ -134,8 +179,8 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 
-	pos.RegisterOrder(order)
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
+	pos.RegisterOrder(e.log, order)
+	e.positionUpdated(ctx, pos)
 	return pos
 }
 
@@ -148,7 +193,7 @@ func (e *Engine) UnregisterOrder(ctx context.Context, order *types.Order) *Marke
 			logging.Order(*order))
 	}
 	pos.UnregisterOrder(e.log, order)
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, order.MarketID))
+	e.positionUpdated(ctx, pos)
 	return pos
 }
 
@@ -163,7 +208,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 	}
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, originalOrder.MarketID))
+	e.positionUpdated(ctx, pos)
 	return pos
 }
 
@@ -171,7 +216,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 // party in the trade (whether it be buyer or seller). This could be incorporated into the Update
 // function, but we know when we're adding network trades, and having this check every time is
 // wasteful, and would only serve to add complexity to the Update func, and slow it down.
-func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
+func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
 	// there's only 1 position
 	var (
 		ok  bool
@@ -191,9 +236,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 				logging.Int64("potential-buy", pos.buy),
 				logging.Trade(*trade))
 		}
-
-		// potential buy pos is smaller now
-		pos.buy -= int64(trade.Size)
+		pos.size += size
 	} else {
 		pos, ok = e.positions[trade.Seller]
 		if !ok {
@@ -207,21 +250,19 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 				logging.Int64("potential-sell", pos.sell),
 				logging.Trade(*trade))
 		}
-
-		// potential sell pos is smaller now
-		pos.sell -= int64(trade.Size)
 		// size is negative in case of a sale
-		size = -size
+		pos.size -= size
 	}
-	pos.size += size
 
-	e.broker.Send(events.NewPositionStateEvent(ctx, pos, trade.MarketID))
+	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
+
+	e.positionUpdated(ctx, pos)
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
-func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
+func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition {
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
 		e.log.Panic("could not find buyer position",
@@ -255,21 +296,24 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 	buyer.size += int64(trade.Size)
 	seller.size -= int64(trade.Size)
 
-	// Update potential positions. Potential positions decrease for both buyer and seller.
-	buyer.buy -= int64(trade.Size)
-	seller.sell -= int64(trade.Size)
+	aggressive := buyer
+	passive := seller
+	if aggressiveOrder.Side == types.SideSell {
+		aggressive = seller
+		passive = buyer
+	}
+
+	// Update potential positions & vwaps. Potential positions decrease for both buyer and seller.
+	aggressive.UpdateOnOrderChange(e.log, aggressiveOrder.Side, aggressiveOrder.Price, trade.Size, false)
+	passive.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
 		*seller.Clone(),
 	}
 
-	e.broker.SendBatch(
-		[]events.Event{
-			events.NewPositionStateEvent(ctx, buyer, trade.MarketID),
-			events.NewPositionStateEvent(ctx, seller, trade.MarketID),
-		},
-	)
+	e.positionUpdated(ctx, buyer)
+	e.positionUpdated(ctx, seller)
 
 	if e.log.GetLevel() == logging.DebugLevel {
 		e.log.Debug("Positions Updated for trade",

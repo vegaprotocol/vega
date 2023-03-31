@@ -22,6 +22,8 @@ type TmNode struct {
 	node service.Service
 }
 
+const namedLogger = "tendermint"
+
 func NewTmNode(
 	conf blockchain.Config,
 	log *logging.Logger,
@@ -29,7 +31,7 @@ func NewTmNode(
 	app types.Application,
 	genesisDoc *tmtypes.GenesisDoc,
 ) (*TmNode, error) {
-	log = log.Named("tendermint")
+	log = log.Named(namedLogger)
 	log.SetLevel(conf.Tendermint.Level.Get())
 
 	config, err := loadConfig(homeDir)
@@ -44,6 +46,9 @@ func NewTmNode(
 	if err := viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("decoding tendermint config: %v", err)
 	}
+
+	overwriteConfig(config)
+
 	if err := config.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("invalid tendermint configuration data: %v", err)
 	}
@@ -72,7 +77,7 @@ func NewTmNode(
 	}
 
 	// create logger
-	logger := newTmLogger(log)
+	logger := &TmLogger{log.ToSugared()}
 
 	// create node
 	node, err := nm.NewNode(
@@ -118,12 +123,6 @@ func (t *TmNode) Stop() error {
 	return nil
 }
 
-func newTmLogger(log *logging.Logger) *TmLogger {
-	// return tmlog.MustNewDefaultLogger(tmlog.LogFormatPlain, tmlog.LogLevelInfo, false)
-	tmLogger := &TmLogger{log.ToSugared()}
-	return tmLogger
-}
-
 func loadConfig(homeDir string) (*config.Config, error) {
 	conf := config.DefaultConfig()
 	if err := viper.Unmarshal(conf); err != nil {
@@ -131,7 +130,6 @@ func loadConfig(homeDir string) (*config.Config, error) {
 	}
 
 	conf.SetRoot(homeDir)
-	overwriteConfig(conf)
 	if err := conf.ValidateBasic(); err != nil {
 		return nil, fmt.Errorf("error in config file: %w", err)
 	}
@@ -141,6 +139,10 @@ func loadConfig(homeDir string) (*config.Config, error) {
 
 // we want to force validators to skip timeout on commit so they don't wait after consensus has been reached.
 func overwriteConfig(config *config.Config) {
-	config.Consensus.SkipTimeoutCommit = true
+	config.Consensus.TimeoutCommit = 0
 	config.Consensus.CreateEmptyBlocks = true
+	// enforce using priority mempool
+	config.Mempool.Version = "v1"
+	// enforce compatibility
+	config.P2P.MaxPacketMsgPayloadSize = 16384
 }

@@ -411,7 +411,17 @@ func (a *LocateNetworkAssertion) LocatedUnder(p string) *LocateNetworkAssertion 
 }
 
 type ListNetworksResponse struct {
-	Networks []string `json:"networks"`
+	Networks []ListNetworkResponse `json:"networks"`
+}
+
+type ListNetworkResponse struct {
+	Name     string                        `json:"name"`
+	Metadata []ListNetworkMetadataResponse `json:"metadata"`
+}
+
+type ListNetworkMetadataResponse struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 func NetworkList(t *testing.T, args []string) (*ListNetworksResponse, error) {
@@ -447,7 +457,11 @@ func AssertListNetwork(t *testing.T, resp *ListNetworksResponse) *ListNetworkAss
 
 func (a *ListNetworkAssertion) WithNetworks(networks ...string) *ListNetworkAssertion {
 	sort.Strings(networks)
-	assert.Equal(a.t, networks, a.resp.Networks)
+	nets := make([]string, 0, len(networks))
+	for _, net := range a.resp.Networks {
+		nets = append(nets, net.Name)
+	}
+	assert.Equal(a.t, networks, nets)
 	return a
 }
 
@@ -518,17 +532,6 @@ func AssertDescribeNetwork(t *testing.T, resp *DescribeNetworkResponse) *Describ
 
 func (d *DescribeNetworkAssertion) WithName(expected string) *DescribeNetworkAssertion {
 	assert.Equal(d.t, expected, d.resp.Name)
-	return d
-}
-
-func (d *DescribeNetworkAssertion) WithHostAndPort(host string, port int) *DescribeNetworkAssertion {
-	assert.Equal(d.t, host, d.resp.Host)
-	assert.Equal(d.t, port, d.resp.Port)
-	return d
-}
-
-func (d *DescribeNetworkAssertion) WithTokenExpiry(expected string) *DescribeNetworkAssertion {
-	assert.Equal(d.t, expected, d.resp.TokenExpiry)
 	return d
 }
 
@@ -668,10 +671,10 @@ func (a *VerifyAssertion) IsValid() *VerifyAssertion {
 
 type CreateWalletResponse struct {
 	Wallet struct {
-		Name           string `json:"name"`
-		RecoveryPhrase string `json:"recoveryPhrase"`
-		Version        uint32 `json:"version"`
-		FilePath       string `json:"filePath"`
+		Name                 string `json:"name"`
+		RecoveryPhrase       string `json:"recoveryPhrase"`
+		KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+		FilePath             string `json:"filePath"`
 	} `json:"wallet"`
 	Key struct {
 		PublicKey string `json:"publicKey"`
@@ -712,7 +715,7 @@ func AssertCreateWallet(t *testing.T, resp *CreateWalletResponse) *CreateWalletA
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
 	assert.NotEmpty(t, resp.Wallet.RecoveryPhrase)
-	assert.Equal(t, uint32(2), resp.Wallet.Version)
+	assert.Equal(t, uint32(2), resp.Wallet.KeyDerivationVersion)
 	assert.NotEmpty(t, resp.Wallet.FilePath)
 	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)
@@ -753,9 +756,9 @@ func PassphraseUpdate(t *testing.T, args []string) error {
 
 type ImportWalletResponse struct {
 	Wallet struct {
-		Name     string `json:"name"`
-		Version  uint32 `json:"version"`
-		FilePath string `json:"filePath"`
+		Name                 string `json:"name"`
+		KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
+		FilePath             string `json:"filePath"`
 	} `json:"wallet"`
 	Key struct {
 		PublicKey string `json:"publicKey"`
@@ -795,7 +798,7 @@ func AssertImportWallet(t *testing.T, resp *ImportWalletResponse) *ImportWalletA
 
 	assert.NotNil(t, resp)
 	assert.NotEmpty(t, resp.Wallet.Name)
-	assert.NotEmpty(t, resp.Wallet.Version)
+	assert.NotEmpty(t, resp.Wallet.KeyDerivationVersion)
 	assert.NotEmpty(t, resp.Wallet.FilePath)
 	assert.FileExists(t, resp.Wallet.FilePath)
 	assert.NotEmpty(t, resp.Key.PublicKey)

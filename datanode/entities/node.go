@@ -36,20 +36,20 @@ type Node struct {
 	EthereumAddress   EthereumAddress
 	InfoURL           string
 	Location          string
+	Status            NodeStatus
+	Name              string
+	AvatarURL         string
+	TxHash            TxHash
+	VegaTime          time.Time
 	StakedByOperator  decimal.Decimal
 	StakedByDelegates decimal.Decimal
 	StakedTotal       decimal.Decimal
 	MaxIntendedStake  decimal.Decimal
 	PendingStake      decimal.Decimal
 	EpochData         EpochData
-	Status            NodeStatus
 	Delegations       []Delegation  `json:""`
 	RewardScore       *RewardScore  `json:""`
 	RankingScore      *RankingScore `json:""`
-	Name              string
-	AvatarURL         string
-	TxHash            TxHash
-	VegaTime          time.Time
 }
 
 type ValidatorUpdateAux struct {

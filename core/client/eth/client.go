@@ -27,7 +27,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -51,7 +50,6 @@ type ETHClient interface { //revive:disable:exported
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)
 	NetworkID(context.Context) (*big.Int, error)
-	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
 type Client struct {
@@ -63,6 +61,8 @@ type Client struct {
 	mu                      sync.Mutex
 	currentHeightLastUpdate time.Time
 	currentHeight           uint64
+
+	cfg Config
 }
 
 func Dial(ctx context.Context, cfg Config) (*Client, error) {
@@ -75,7 +75,7 @@ func Dial(ctx context.Context, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
 	}
 
-	return &Client{ETHClient: ethClient}, nil
+	return &Client{ETHClient: ethClient, cfg: cfg}, nil
 }
 
 func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
@@ -134,10 +134,7 @@ func (c *Client) CurrentHeight(ctx context.Context) (uint64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// If last update of the height was more than 15 seconds
-	// ago, we try to update, as we assume an Ethereum block takes
-	// ~15 seconds.
-	if now := time.Now(); c.currentHeightLastUpdate.Add(15).Before(now) {
+	if now := time.Now(); c.currentHeightLastUpdate.Add(c.cfg.RetryDelay.Get()).Before(now) {
 		lastBlockHeader, err := c.HeaderByNumber(ctx, nil)
 		if err != nil {
 			return c.currentHeight, err

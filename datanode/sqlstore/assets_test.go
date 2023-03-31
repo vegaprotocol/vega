@@ -49,12 +49,27 @@ func addTestAsset(t *testing.T, ctx context.Context, as *sqlstore.Assets, block 
 		LifetimeLimit:     decimal.New(42, 0),
 		WithdrawThreshold: decimal.New(81, 0),
 		Status:            entities.AssetStatusEnabled,
+		TxHash:            generateTxHash(),
 	}
 
 	// Add it to the database
 	err := as.Add(ctx, asset)
 	require.NoError(t, err)
 	return asset
+}
+
+func assetsEqual(t *testing.T, expected, actual entities.Asset) {
+	t.Helper()
+
+	assert.Equal(t, expected.ID, actual.ID)
+	assert.Equal(t, expected.Name, actual.Name)
+	assert.Equal(t, expected.Symbol, actual.Symbol)
+	assert.Equal(t, expected.Decimals, actual.Decimals)
+	assert.Equal(t, expected.Quantum, actual.Quantum)
+	assert.Equal(t, expected.ERC20Contract, actual.ERC20Contract)
+	assert.Equal(t, expected.VegaTime, actual.VegaTime)
+	assert.True(t, expected.LifetimeLimit.Equal(actual.LifetimeLimit))
+	assert.True(t, expected.WithdrawThreshold.Equal(actual.WithdrawThreshold))
 }
 
 // TestAssetCache tests for a bug which was discovered whereby fetching an asset by ID after
@@ -118,24 +133,25 @@ func TestAsset(t *testing.T) {
 	require.Empty(t, assets)
 
 	asset := addTestAsset(t, ctx, as, block)
+	asset2 := addTestAsset(t, ctx, as, block)
 
 	// Query and check we've got back an asset the same as the one we put in
 	fetchedAsset, err := as.GetByID(ctx, asset.ID.String())
 	assert.NoError(t, err)
-	assert.Equal(t, asset.ID, fetchedAsset.ID)
-	assert.Equal(t, asset.Name, fetchedAsset.Name)
-	assert.Equal(t, asset.Symbol, fetchedAsset.Symbol)
-	assert.Equal(t, asset.Decimals, fetchedAsset.Decimals)
-	assert.Equal(t, asset.Quantum, fetchedAsset.Quantum)
-	assert.Equal(t, asset.ERC20Contract, fetchedAsset.ERC20Contract)
-	assert.Equal(t, asset.VegaTime, fetchedAsset.VegaTime)
-	assert.True(t, asset.LifetimeLimit.Equal(fetchedAsset.LifetimeLimit))
-	assert.True(t, asset.WithdrawThreshold.Equal(fetchedAsset.WithdrawThreshold))
+	assetsEqual(t, asset, fetchedAsset)
 
 	// Get all assets and make sure there's one more than there was to begin with
 	assets, err = as.GetAll(ctx)
 	assert.NoError(t, err)
-	assert.Len(t, assets, 1)
+	assert.Len(t, assets, 2)
+
+	fetchedAssets, err := as.GetByTxHash(ctx, asset.TxHash)
+	assert.NoError(t, err)
+	assetsEqual(t, asset, fetchedAssets[0])
+
+	fetchedAssets, err = as.GetByTxHash(ctx, asset2.TxHash)
+	assert.NoError(t, err)
+	assetsEqual(t, asset2, fetchedAssets[0])
 }
 
 func setupAssetPaginationTest(t *testing.T, ctx context.Context) (*sqlstore.Assets, []entities.Asset) {

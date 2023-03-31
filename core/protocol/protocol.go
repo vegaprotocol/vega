@@ -15,6 +15,12 @@ package protocol
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
+	"code.vegaprotocol.io/vega/core/spam"
+
+	"github.com/blang/semver"
+
 	"code.vegaprotocol.io/vega/core/api"
 	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/broker"
@@ -26,11 +32,9 @@ import (
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	"github.com/blang/semver"
 )
 
 var Version = semver.MustParse("0.1.0")
@@ -46,11 +50,14 @@ type Protocol struct {
 	services *allServices
 }
 
+const namedLogger = "protocol"
+
 func New(
 	ctx context.Context,
 	confWatcher *config.Watcher,
 	log *logging.Logger,
 	cancel func(),
+	stopBlockchain func() error,
 	nodewallets *nodewallets.NodeWallets,
 	ethClient *ethclient.Client,
 	ethConfirmation *ethclient.EthereumConfirmations,
@@ -58,6 +65,8 @@ func New(
 	vegaPaths paths.Paths,
 	stats *stats.Stats,
 ) (p *Protocol, err error) {
+	log = log.Named(namedLogger)
+
 	defer func() {
 		if err != nil {
 			log.Error("unable to start protocol", logging.Error(err))
@@ -83,6 +92,7 @@ func New(
 			svcs.vegaPaths,
 			confWatcher.Get().Processor,
 			cancel,
+			stopBlockchain,
 			svcs.assets,
 			svcs.banking,
 			svcs.broker,
@@ -173,4 +183,12 @@ func (n *Protocol) GetPoW() api.ProofOfWorkParams {
 
 func (n *Protocol) GetProtocolUpgradeService() *protocolupgrade.Engine {
 	return n.services.protocolUpgradeEngine
+}
+
+func (n *Protocol) GetSpamEngine() *spam.Engine {
+	return n.services.spam
+}
+
+func (n *Protocol) GetPowEngine() processor.PoWEngine {
+	return n.services.pow
 }

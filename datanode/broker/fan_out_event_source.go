@@ -23,7 +23,7 @@ import (
 // fanOutEventSource: an event source to fan out an event stream, it is told in advance the number of subscribers to
 // expect and only starts publishing events once that number of subscriptions has been received.
 type fanOutEventSource struct {
-	source                 eventSource
+	source                 EventReceiver
 	sendChannelBufferSize  int
 	expectedNumSubscribers int
 	numSubscribers         int
@@ -34,7 +34,7 @@ type fanOutEventSource struct {
 }
 
 //revive:disable:unexported-return
-func NewFanOutEventSource(source eventSource, sendChannelBufferSize int, expectedNumSubscribers int) *fanOutEventSource {
+func NewFanOutEventSource(source EventReceiver, sendChannelBufferSize int, expectedNumSubscribers int) *fanOutEventSource {
 	return &fanOutEventSource{
 		source:                 source,
 		sendChannelBufferSize:  sendChannelBufferSize,
@@ -130,7 +130,13 @@ func (e *fanOutEventSource) sendEvents(ctx context.Context) {
 					prevBlock, prevSeq, event.BlockNr(), event.Sequence()))
 			}
 
-			prevBlock, prevSeq = event.BlockNr(), event.Sequence()
+			// if this is the first event, then this gives 0 + 1 for normal events, next will be 2
+			// composite event of 5 gives 0 + 5, the next sequence will be 6
+			prevSeq += event.CompositeCount()
+			if firstBlockAgain || (nextBlockFirstEvent && !firstBlockFirstEvent) {
+				prevSeq = event.CompositeCount()
+			}
+			prevBlock = event.BlockNr()
 
 			// Now get on with sending event to listeners
 			for _, evtCh := range e.eventChannels {

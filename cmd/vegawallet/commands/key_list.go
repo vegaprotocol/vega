@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -31,13 +30,14 @@ type ListKeysHandler func(api.AdminListKeysParams) (api.AdminListKeysResult, err
 
 func NewCmdListKeys(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminListKeysParams) (api.AdminListKeysResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminListKeysResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		listKeys := api.NewAdminListKeys(s)
-		rawResult, errDetails := listKeys.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		listKeys := api.NewAdminListKeys(walletStore)
+		rawResult, errDetails := listKeys.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminListKeysResult{}, errors.New(errDetails.Data)
 		}

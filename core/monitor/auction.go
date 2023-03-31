@@ -61,11 +61,19 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	return &s
 }
 
-// StartLiquidityAuction - set the state to start a liquidity triggered auction
+func (a *AuctionState) StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration) {
+	a.startLiquidityAuction(t, d, types.AuctionTriggerUnableToDeployLPOrders)
+}
+
+func (a *AuctionState) StartLiquidityAuctionUnmetTarget(t time.Time, d *types.AuctionDuration) {
+	a.startLiquidityAuction(t, d, types.AuctionTriggerLiquidityTargetNotMet)
+}
+
+// startLiquidityAuction - set the state to start a liquidity triggered auction
 // @TODO these functions will be removed once the types are in proto.
-func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
+func (a *AuctionState) startLiquidityAuction(t time.Time, d *types.AuctionDuration, tigger types.AuctionTrigger) {
 	a.mode = types.MarketTradingModeMonitoringAuction
-	a.trigger = types.AuctionTriggerLiquidity
+	a.trigger = tigger
 	a.start = true
 	a.stop = false
 	a.begin = &t
@@ -105,10 +113,18 @@ func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 	a.ExtendAuction(delta)
 }
 
-// ExtendAuctionLiquidity - call from liquidity monitoring to extend the auction
+func (a *AuctionState) ExtendAuctionLiquidityNoOrders(delta types.AuctionDuration) {
+	a.extendAuctionLiquidity(delta, types.AuctionTriggerUnableToDeployLPOrders)
+}
+
+func (a *AuctionState) ExtendAuctionLiquidityUnmetTarget(delta types.AuctionDuration) {
+	a.extendAuctionLiquidity(delta, types.AuctionTriggerLiquidityTargetNotMet)
+}
+
+// extendAuctionLiquidity - call from liquidity monitoring to extend the auction
 // sets the extension trigger field accordingly.
-func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
-	t := types.AuctionTriggerLiquidity
+func (a *AuctionState) extendAuctionLiquidity(delta types.AuctionDuration, trigger types.AuctionTrigger) {
+	t := trigger
 	a.extension = &t
 	a.extensionEventSent = false
 	a.ExtendAuction(delta)
@@ -187,7 +203,7 @@ func (a AuctionState) IsOpeningAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityAuction() bool {
-	return a.trigger == types.AuctionTriggerLiquidity
+	return a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
 }
 
 func (a AuctionState) IsPriceAuction() bool {
@@ -195,7 +211,7 @@ func (a AuctionState) IsPriceAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityExtension() bool {
-	return a.extension != nil && *a.extension == types.AuctionTriggerLiquidity
+	return a.extension != nil && (*a.extension == types.AuctionTriggerLiquidityTargetNotMet || *a.extension == types.AuctionTriggerUnableToDeployLPOrders)
 }
 
 func (a AuctionState) IsPriceExtension() bool {
@@ -208,7 +224,7 @@ func (a AuctionState) IsFBA() bool {
 
 // IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine.
 func (a AuctionState) IsMonitorAuction() bool {
-	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidity
+	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidityTargetNotMet || a.trigger == types.AuctionTriggerUnableToDeployLPOrders
 }
 
 // CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction

@@ -97,6 +97,10 @@ const (
 	ProposalErrorLpPriceRangeNonpositive ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE
 	// ProposalErrorLpPriceRangeTooLarge LP price range above 100.
 	ProposalErrorLpPriceRangeTooLarge ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE
+	// ProposalErrorLinearSlippageOutOfRange linear slippage factor is negative or too large.
+	ProposalErrorLinearSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
+	// ProposalErrorSquaredSlippageOutOfRange squared slippage factor is negative or too large.
+	ProposalErrorQuadraticSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -507,7 +511,7 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 		case *vegapb.ProposalTerms_NewMarket:
 			change, err = NewNewMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarket:
-			change = UpdateMarketFromProto(ch)
+			change, err = UpdateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:

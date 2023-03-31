@@ -26,12 +26,9 @@ import (
 )
 
 func TestOracleSpec(t *testing.T) {
-	t.Run("Creating without required public keys fails", testOracleSpecCreatingWithoutPubKeysFails)
-	t.Run("Creating without filters fails", testOracleSpecCreatingWithoutFiltersFails)
+	t.Run("Creating builtin oracle without pubkeys succeeeds", testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds)
 	t.Run("Creating with filters but without key fails", testOracleSpecCreatingWithFiltersWithoutKeyFails)
-	t.Run("Creating with filters but without property name fails", testOracleSpecCreatingWithFiltersWithoutPropertyNameFails)
-	t.Run("Creating with split filters with same type works", testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks)
-	t.Run("Creating with split filters with different type fails", testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks)
+	t.Run("Creating with split filters with same type works", testOracleSpecCreatingWithSplitFiltersWithSameTypeFails)
 	t.Run("Creating with filters with inconvertible type fails", testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails)
 	t.Run("Matching with unauthorized public keys fails", testOracleSpecMatchingUnauthorizedPubKeysFails)
 	t.Run("Matching with authorized public keys succeeds", testOracleSpecMatchingAuthorizedPubKeysSucceeds)
@@ -46,7 +43,7 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Verifying binding of property works", testOracleSpecVerifyingBindingWorks)
 }
 
-func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
+func testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds(t *testing.T) {
 	// given
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
@@ -58,8 +55,8 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 					Filters: []*types.DataSourceSpecFilter{
 						{
 							Key: &types.DataSourceSpecPropertyKey{
-								Name: "price",
-								Type: datapb.PropertyKey_TYPE_INTEGER,
+								Name: "vegaprotocol.builtin.timestamp",
+								Type: datapb.PropertyKey_TYPE_TIMESTAMP,
 							},
 							Conditions: []*types.DataSourceSpecCondition{},
 						},
@@ -68,39 +65,13 @@ func testOracleSpecCreatingWithoutPubKeysFails(t *testing.T) {
 			),
 		},
 	}
-	// when
-	oracleSpec, err := oracles.NewOracleSpec(spec)
-
-	// then
-	require.Error(t, err)
-	assert.Equal(t, "signers are required", err.Error())
-	assert.Nil(t, oracleSpec)
-}
-
-func testOracleSpecCreatingWithoutFiltersFails(t *testing.T) {
-	// given
-	spec := types.ExternalDataSourceSpec{
-		Spec: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: []*types.Signer{
-						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-					},
-					Filters: []*types.DataSourceSpecFilter{},
-				},
-			),
-		},
-	}
 
 	// when
 	oracleSpec, err := oracles.NewOracleSpec(spec)
 
 	// then
-	require.Error(t, err)
-	assert.Equal(t, "at least one filter is required", err.Error())
-	assert.Nil(t, oracleSpec)
+	require.NoError(t, err)
+	assert.NotNil(t, oracleSpec)
 }
 
 func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
@@ -134,43 +105,9 @@ func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	assert.Nil(t, oracleSpec)
 }
 
-func testOracleSpecCreatingWithFiltersWithoutPropertyNameFails(t *testing.T) {
+func testOracleSpecCreatingWithSplitFiltersWithSameTypeFails(t *testing.T) {
 	// given
-	spec := types.ExternalDataSourceSpec{
-		Spec: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: []*types.Signer{
-						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-					},
-					Filters: []*types.DataSourceSpecFilter{
-						{
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "",
-								Type: datapb.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: nil,
-						},
-					},
-				},
-			),
-		},
-	}
-
-	// when
-	oracleSpec, err := oracles.NewOracleSpec(spec)
-
-	// then
-	require.Error(t, err)
-	assert.Equal(t, "a property name is required", err.Error())
-	assert.Nil(t, oracleSpec)
-}
-
-func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
-	// given
-	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+	spec, err := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
 				vegapb.DataSourceDefinitionTypeExt,
@@ -210,89 +147,7 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeWorks(t *testing.T) {
 		},
 	})
 
-	matchedData := oracles.OracleData{
-		Signers: []*types.Signer{
-			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-			types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-		},
-		Data: map[string]string{
-			"prices.BTC.value": "50",
-		},
-	}
-
-	unmatchedData := oracles.OracleData{
-		Signers: []*types.Signer{
-			types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-			types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-		},
-		Data: map[string]string{
-			"prices.BTC.value": "100",
-		},
-	}
-
-	// when
-	matched, err := spec.MatchData(matchedData)
-
-	// then
-	require.NoError(t, err)
-	assert.True(t, matched)
-
-	// when
-	matched, err = spec.MatchData(unmatchedData)
-
-	// then
-	require.NoError(t, err)
-	assert.False(t, matched)
-}
-
-func testOracleSpecCreatingWithSplitFiltersWithDifferentTypeWorks(t *testing.T) {
-	// given
-	originalSpec := types.ExternalDataSourceSpec{
-		Spec: &types.DataSourceSpec{
-			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
-			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: []*types.Signer{
-						types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey),
-						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-					},
-					Filters: []*types.DataSourceSpecFilter{
-						{
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "prices.BTC.value",
-								Type: datapb.PropertyKey_TYPE_INTEGER,
-							},
-							Conditions: []*types.DataSourceSpecCondition{
-								{
-									Value:    "42",
-									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-								},
-							},
-						}, {
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "prices.BTC.value",
-								Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-							},
-							Conditions: []*types.DataSourceSpecCondition{
-								{
-									Value:    "84",
-									Operator: datapb.Condition_OPERATOR_LESS_THAN,
-								},
-							},
-						},
-					},
-				},
-			),
-		},
-	}
-
-	// when
-	spec, err := oracles.NewOracleSpec(originalSpec)
-
-	// then
-	require.Error(t, err)
-	assert.Equal(t, "cannot redeclared property prices.BTC.value with different type, first TYPE_INTEGER then TYPE_TIMESTAMP", err.Error())
+	assert.ErrorIs(t, types.ErrMultipleSameKeyNamesInFilterList, err)
 	assert.Nil(t, spec)
 }
 
@@ -1302,6 +1157,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 		msg              string
 		declaredType     datapb.PropertyKey_Type
 		declaredProperty string
+		decimalPlaces    uint64
 		boundType        datapb.PropertyKey_Type
 		boundProperty    string
 		expectedError    error
@@ -1310,6 +1166,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 			msg:              "same integer properties can be bound",
 			declaredType:     datapb.PropertyKey_TYPE_INTEGER,
 			declaredProperty: "price.ETH.value",
+			decimalPlaces:    7,
 			boundType:        datapb.PropertyKey_TYPE_INTEGER,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
@@ -1317,6 +1174,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 			msg:              "different integer properties cannot be bound",
 			declaredType:     datapb.PropertyKey_TYPE_INTEGER,
 			declaredProperty: "price.USD.value",
+			decimalPlaces:    19,
 			boundType:        datapb.PropertyKey_TYPE_INTEGER,
 			boundProperty:    "price.BTC.value",
 			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
@@ -1324,12 +1182,14 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 			msg:              "same integer properties can be bound",
 			declaredType:     datapb.PropertyKey_TYPE_BOOLEAN,
 			declaredProperty: "price.ETH.value",
+			decimalPlaces:    2,
 			boundType:        datapb.PropertyKey_TYPE_BOOLEAN,
 			boundProperty:    "price.ETH.value",
 			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
 			declaredType:     datapb.PropertyKey_TYPE_BOOLEAN,
+			decimalPlaces:    4,
 			declaredProperty: "price.USD.value",
 			boundType:        datapb.PropertyKey_TYPE_BOOLEAN,
 			boundProperty:    "price.BTC.value",
@@ -1337,6 +1197,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 		}, {
 			msg:              "same integer properties can be bound",
 			declaredType:     datapb.PropertyKey_TYPE_DECIMAL,
+			decimalPlaces:    0,
 			declaredProperty: "price.ETH.value",
 			boundType:        datapb.PropertyKey_TYPE_DECIMAL,
 			boundProperty:    "price.ETH.value",
@@ -1401,8 +1262,9 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 							Filters: []*types.DataSourceSpecFilter{
 								{
 									Key: &types.DataSourceSpecPropertyKey{
-										Name: c.declaredProperty,
-										Type: c.declaredType,
+										Name:                c.declaredProperty,
+										Type:                c.declaredType,
+										NumberDecimalPlaces: &c.decimalPlaces,
 									},
 									Conditions: []*types.DataSourceSpecCondition{},
 								},

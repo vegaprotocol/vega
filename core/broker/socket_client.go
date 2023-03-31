@@ -20,12 +20,17 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/proto"
-	mangos "go.nanomsg.org/mangos/v3"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+
+	"go.nanomsg.org/mangos/v3"
+	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
-	"go.nanomsg.org/mangos/v3/protocol/push"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/inproc" // Does some nanomsg magic presumably
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // Does some nanomsg magic presumably
+	"golang.org/x/sync/errgroup"
+
+	"code.vegaprotocol.io/vega/libs/proto"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -57,8 +62,11 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 	}
 }
 
+const namedSocketClientLogger = "socket-client"
+
 func newSocketClient(ctx context.Context, log *logging.Logger, config *SocketConfig) (*socketClient, error) {
-	sock, err := push.NewSocket()
+	log = log.Named(namedSocketClientLogger)
+	sock, err := pair.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new push socket: %w", err)
 	}
@@ -218,4 +226,96 @@ func (s *socketClient) stream(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (s *socketClient) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
+	// channel onto which we push the raw messages from the queue
+	inboundCh := make(chan []byte, 10)
+	stopCh := make(chan struct{}, 1)
+
+	outboundCh := make(chan events.Event, 10)
+	errCh := make(chan error, 1)
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		<-ctx.Done()
+
+		return nil
+	})
+
+	eg.Go(func() error {
+		defer close(outboundCh)
+
+		for msg := range inboundCh {
+			var be eventspb.BusEvent
+			if err := proto.Unmarshal(msg, &be); err != nil {
+				// surely we should stop if this happens?
+				s.log.Error("Failed to unmarshal received event", logging.Error(err))
+				continue
+			}
+			if be.Version != eventspb.Version {
+				return fmt.Errorf("mismatched BusEvent version received: %d, want %d", be.Version, eventspb.Version)
+			}
+
+			evt := toEvent(ctx, &be)
+			if evt == nil {
+				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
+				continue
+			}
+
+			// Listen for context cancels, even if we're blocked sending events
+			select {
+			case outboundCh <- evt:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+
+		return nil
+	})
+
+	eg.Go(func() error {
+		defer close(inboundCh)
+
+		s.sock.SetOption(mangos.OptionRecvDeadline, 1*time.Second)
+		for {
+			msg, err := s.sock.Recv()
+			if err != nil {
+				switch err {
+				case mangosErr.ErrRecvTimeout:
+					select {
+					case <-stopCh:
+						return nil
+					default:
+					}
+				case mangosErr.ErrBadVersion:
+					return fmt.Errorf("failed with bad protocol version: %w", err)
+				case mangosErr.ErrClosed:
+					return nil
+				default:
+					s.log.Error("Failed to Receive message", logging.Error(err))
+					continue
+				}
+			}
+
+			if len(msg) == 0 {
+				continue
+			}
+
+			inboundCh <- msg
+		}
+	})
+
+	go func() {
+		defer func() {
+			close(errCh)
+		}()
+
+		if err := eg.Wait(); err != nil {
+			errCh <- err
+		}
+	}()
+
+	return outboundCh, errCh
 }

@@ -110,6 +110,10 @@ type Engine struct {
 	// what they were to calculate new LP orders. They are cleared once the new LP orders are
 	// ready to deploy
 	lpPartyOrders map[string][]*types.Order
+
+	// fields used for liquidity score calculation (quality of deployed orders)
+	avgScores map[string]num.Decimal
+	nAvg      int64 // counter for the liquidity score running average
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -149,6 +153,7 @@ func NewEngine(config Config,
 		// lp orders that have been removed from the book but yet to be redeployed
 		lpPartyOrders: map[string][]*types.Order{},
 	}
+	e.ResetAverageLiquidityScores() // initialise
 
 	return e
 }
@@ -236,9 +241,8 @@ func (e *Engine) IsLiquidityProvider(party string) bool {
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
-	err := e.stopLiquidityProvision(
+	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusRejected)
-	return err
 }
 
 // CancelLiquidityProvision removes a parties commitment of liquidity
@@ -400,37 +404,65 @@ func (e *Engine) SubmitLiquidityProvision(
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idgen)
+	orderEvts := e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lps.Buys, lps.Sells, idgen)
+	// seed the dummy orders with the generated IDs in order to avoid broken references
+	e.broker.SendBatch(orderEvts)
 
 	return nil
 }
 
-func (e *Engine) setShapesReferencesOnLiquidityProvision(
+func (e *Engine) SetShapesReferencesOnLiquidityProvision(
+	ctx context.Context,
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
 	idGen IDGen,
-) {
+) []events.Event {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
-	order := &types.Order{}
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
+	orderEvts := make([]events.Event, 0, len(buys)+len(sells))
+
 	for _, buy := range buys {
-		order.ID = idGen.NextID()
+		order := &types.Order{
+			ID:                   idGen.NextID(),
+			MarketID:             e.marketID,
+			Party:                lp.Party,
+			Side:                 types.SideBuy,
+			Price:                num.UintZero(),
+			Status:               types.OrderStatusStopped,
+			Reference:            lp.Reference,
+			LiquidityProvisionID: lp.ID,
+			CreatedAt:            lp.CreatedAt,
+		}
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: buy,
 		})
+		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 	}
 
 	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(sells))
 	for _, sell := range sells {
-		order.ID = idGen.NextID()
+		order := &types.Order{
+			ID:                   idGen.NextID(),
+			MarketID:             e.marketID,
+			Party:                lp.Party,
+			Side:                 types.SideSell,
+			Price:                num.UintZero(),
+			Status:               types.OrderStatusStopped,
+			Reference:            lp.Reference,
+			LiquidityProvisionID: lp.ID,
+			CreatedAt:            lp.CreatedAt,
+		}
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: sell,
 		})
+		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
 	}
+
+	return orderEvts
 }
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.
@@ -641,7 +673,8 @@ func (e *Engine) buildOrder(side types.Side, price *num.Uint, partyID, marketID 
 		Reference:            ref,
 		LiquidityProvisionID: lpID,
 	}
-	return order.Create(e.timeService.GetTimeNow())
+	p, _ := e.provisions.Get(partyID)
+	return order.Create(p.CreatedAt)
 }
 
 func (e *Engine) undeployOrdersFromShape(
@@ -748,7 +781,6 @@ func (e *Engine) createOrdersFromShape(
 		order = e.buildOrder(side, o.Price, party, e.marketID, o.LiquidityImpliedVolume, lp.Reference, lp.ID)
 		order.ID = ref.OrderID
 		newOrders = append(newOrders, order)
-		ref.OrderID = order.ID
 	}
 
 	return newOrders, toCancel
@@ -794,6 +826,80 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 		}
 	}
 	return nil
+}
+
+func (e *Engine) GetAverageLiquidityScores() map[string]num.Decimal {
+	return e.avgScores
+}
+
+func (e *Engine) UpdateAverageLiquidityScores(bestBid, bestAsk num.Decimal, minLpPrice, maxLpPrice *num.Uint) {
+	current, total := e.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
+	nLps := len(current)
+	if nLps == 0 {
+		return
+	}
+
+	// normalise first
+	equalFraction := num.DecimalOne().Div(num.DecimalFromInt64(int64(nLps)))
+	for k, v := range current {
+		if total.IsZero() {
+			current[k] = equalFraction
+		} else {
+			current[k] = v.Div(total)
+		}
+	}
+
+	if e.nAvg > 1 {
+		n := num.DecimalFromInt64(e.nAvg)
+		nMinusOneOverN := n.Sub(num.DecimalOne()).Div(n)
+
+		for k, vNew := range current {
+			// if not found then it defaults to 0
+			vOld := e.avgScores[k]
+			current[k] = vOld.Mul(nMinusOneOverN).Add(vNew.Div(n))
+		}
+	}
+
+	for k := range current {
+		current[k] = current[k].Round(10)
+	}
+
+	// always overwrite with latest to automatically remove LPs that are no longer ACTIVE from the list
+	e.avgScores = current
+	e.nAvg++
+}
+
+func (e *Engine) ResetAverageLiquidityScores() {
+	e.avgScores = make(map[string]num.Decimal, len(e.avgScores))
+	e.nAvg = 1
+}
+
+// GetCurrentLiquidityScores returns volume-weighted probability of trading per each LP's deployed orders.
+func (e *Engine) GetCurrentLiquidityScores(bestBid, bestAsk num.Decimal, minLpPrice, maxLpPrice *num.Uint) (map[string]num.Decimal, num.Decimal) {
+	provs := e.provisions.Slice()
+	t := num.DecimalZero()
+	r := make(map[string]num.Decimal, len(provs))
+	for _, p := range provs {
+		if p.Status != vega.LiquidityProvision_STATUS_ACTIVE {
+			continue
+		}
+		orders := e.getAllActiveOrders(p.Party)
+		l := e.suppliedEngine.CalculateLiquidityScore(orders, bestBid, bestAsk, minLpPrice, maxLpPrice)
+		r[p.Party] = l
+		t = t.Add(l)
+	}
+	return r, t
+}
+
+func (e *Engine) getAllActiveOrders(party string) []*types.Order {
+	partyOrders := e.orderBook.GetOrdersPerParty(party)
+	orders := make([]*types.Order, 0, len(partyOrders))
+	for _, order := range partyOrders {
+		if order.Status == vega.Order_STATUS_ACTIVE {
+			orders = append(orders, order)
+		}
+	}
+	return orders
 }
 
 func (e *Engine) IsPoTInitialised() bool {

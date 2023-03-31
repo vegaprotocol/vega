@@ -126,25 +126,10 @@ func (m *MockMarketStore) EXPECT() *MockMarketStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method.
-func (m *MockMarketStore) GetAll(arg0 context.Context, arg1 entities.OffsetPagination) ([]entities.Market, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", arg0, arg1)
-	ret0, _ := ret[0].([]entities.Market)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAll indicates an expected call of GetAll.
-func (mr *MockMarketStoreMockRecorder) GetAll(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketStore)(nil).GetAll), arg0, arg1)
-}
-
 // GetAllPaged mocks base method.
-func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
+func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 entities.CursorPagination, arg3 bool) ([]entities.Market, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllPaged", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetAllPaged", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]entities.Market)
 	ret1, _ := ret[1].(entities.PageInfo)
 	ret2, _ := ret[2].(error)
@@ -152,9 +137,9 @@ func (m *MockMarketStore) GetAllPaged(arg0 context.Context, arg1 string, arg2 en
 }
 
 // GetAllPaged indicates an expected call of GetAllPaged.
-func (mr *MockMarketStoreMockRecorder) GetAllPaged(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockMarketStoreMockRecorder) GetAllPaged(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPaged", reflect.TypeOf((*MockMarketStore)(nil).GetAllPaged), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPaged", reflect.TypeOf((*MockMarketStore)(nil).GetAllPaged), arg0, arg1, arg2, arg3)
 }
 
 // GetByID mocks base method.
@@ -170,6 +155,21 @@ func (m *MockMarketStore) GetByID(arg0 context.Context, arg1 string) (entities.M
 func (mr *MockMarketStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketStore)(nil).GetByID), arg0, arg1)
+}
+
+// GetByTxHash mocks base method.
+func (m *MockMarketStore) GetByTxHash(arg0 context.Context, arg1 entities.TxHash) ([]entities.Market, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByTxHash", arg0, arg1)
+	ret0, _ := ret[0].([]entities.Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByTxHash indicates an expected call of GetByTxHash.
+func (mr *MockMarketStoreMockRecorder) GetByTxHash(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTxHash", reflect.TypeOf((*MockMarketStore)(nil).GetByTxHash), arg0, arg1)
 }
 
 // Upsert mocks base method.
@@ -398,6 +398,21 @@ func (mr *MockPositionStoreMockRecorder) GetByMarket(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarket", reflect.TypeOf((*MockPositionStore)(nil).GetByMarket), arg0, arg1)
 }
 
+// GetByMarketAndParties mocks base method.
+func (m *MockPositionStore) GetByMarketAndParties(arg0 context.Context, arg1 string, arg2 []string) ([]entities.Position, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByMarketAndParties", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]entities.Position)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByMarketAndParties indicates an expected call of GetByMarketAndParties.
+func (mr *MockPositionStoreMockRecorder) GetByMarketAndParties(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarketAndParties", reflect.TypeOf((*MockPositionStore)(nil).GetByMarketAndParties), arg0, arg1, arg2)
+}
+
 // GetByMarketAndParty mocks base method.
 func (m *MockPositionStore) GetByMarketAndParty(arg0 context.Context, arg1, arg2 string) (entities.Position, error) {
 	m.ctrl.T.Helper()
@@ -429,7 +444,7 @@ func (mr *MockPositionStoreMockRecorder) GetByParty(arg0, arg1 interface{}) *gom
 }
 
 // GetByPartyConnection mocks base method.
-func (m *MockPositionStore) GetByPartyConnection(arg0 context.Context, arg1, arg2 string, arg3 entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
+func (m *MockPositionStore) GetByPartyConnection(arg0 context.Context, arg1, arg2 []string, arg3 entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByPartyConnection", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]entities.Position)
@@ -442,4 +457,19 @@ func (m *MockPositionStore) GetByPartyConnection(arg0 context.Context, arg1, arg
 func (mr *MockPositionStoreMockRecorder) GetByPartyConnection(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyConnection", reflect.TypeOf((*MockPositionStore)(nil).GetByPartyConnection), arg0, arg1, arg2, arg3)
+}
+
+// GetByTxHash mocks base method.
+func (m *MockPositionStore) GetByTxHash(arg0 context.Context, arg1 entities.TxHash) ([]entities.Position, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByTxHash", arg0, arg1)
+	ret0, _ := ret[0].([]entities.Position)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByTxHash indicates an expected call of GetByTxHash.
+func (mr *MockPositionStoreMockRecorder) GetByTxHash(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTxHash", reflect.TypeOf((*MockPositionStore)(nil).GetByTxHash), arg0, arg1)
 }

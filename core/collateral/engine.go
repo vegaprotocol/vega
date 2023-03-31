@@ -597,9 +597,9 @@ func (e *Engine) CheckLeftOverBalance(ctx context.Context, settle *types.Account
 	return nil, nil
 }
 
-// FinalSettlement will process the list of transfer instructed by other engines
+// FinalSettlement will process the list of transfers instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
-// other transfer types have dedicated funcs (MartToMarket, MarginUpdate).
+// other transfer types have dedicated funcs (MarkToMarket, MarginUpdate).
 func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
@@ -1334,6 +1334,19 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 	return res, nil
 }
 
+func (e *Engine) RemoveBondAccount(partyID, marketID, asset string) error {
+	bondID := e.accountID(marketID, partyID, asset, types.AccountTypeBond)
+	bondAcc, ok := e.accs[bondID]
+	if !ok {
+		return ErrAccountDoesNotExist
+	}
+	if !bondAcc.Balance.IsZero() {
+		e.log.Panic("attempting to delete a bond account with non-zero balance")
+	}
+	e.removeAccount(bondID)
+	return nil
+}
+
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates).
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error) {
 	// create "fake" settle account for market ID
@@ -1899,18 +1912,20 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 			}
 			for _, to = range ret.Balances {
 				lm = &types.LedgerEntry{
-					FromAccount: acc.ToDetails(),
-					ToAccount:   to.Account.ToDetails(),
-					Amount:      parts,
-					Type:        req.Type,
-					Timestamp:   now,
+					FromAccount:        acc.ToDetails(),
+					ToAccount:          to.Account.ToDetails(),
+					Amount:             parts.Clone(),
+					Type:               req.Type,
+					Timestamp:          now,
+					FromAccountBalance: acc.Balance.Clone(),
+					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
 				}
 				ret.Entries = append(ret.Entries, lm)
 				to.Balance.AddSum(parts)
 				to.Account.Balance.AddSum(parts)
 			}
 			// add remainder
-			if !remainder.IsZero() {
+			if !remainder.IsZero() && lm != nil {
 				lm.Amount.AddSum(remainder)
 				to.Balance.AddSum(remainder)
 				to.Account.Balance.AddSum(remainder)
@@ -1931,14 +1946,15 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				return nil, err
 			}
 			for _, to = range ret.Balances {
-				lm = &types.LedgerEntry{
-					FromAccount: acc.ToDetails(),
-					ToAccount:   to.Account.ToDetails(),
-					Amount:      parts,
-					Type:        req.Type,
-					Timestamp:   now,
-				}
-				ret.Entries = append(ret.Entries, lm)
+				ret.Entries = append(ret.Entries, &types.LedgerEntry{
+					FromAccount:        acc.ToDetails(),
+					ToAccount:          to.Account.ToDetails(),
+					Amount:             parts,
+					Type:               req.Type,
+					Timestamp:          now,
+					FromAccountBalance: acc.Balance.Clone(),
+					ToAccountBalance:   num.Sum(to.Account.Balance, parts),
+				})
 				to.Account.Balance.AddSum(parts)
 				to.Balance.AddSum(parts)
 			}
@@ -2316,7 +2332,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      bondAcc.Balance.Clone(),
 				Type:        types.TransferTypeMarginLow,
 				// Reference:   "position-resolution",
-				Timestamp: now,
+				Timestamp:          now,
+				FromAccountBalance: num.UintZero(),
+				ToAccountBalance:   num.Sum(bondAcc.Balance, marginAcc.Balance),
 			})
 			if err := e.IncrementBalance(ctx, marginAcc.ID, bondAcc.Balance); err != nil {
 				return nil, err
@@ -2334,7 +2352,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      genAcc.Balance.Clone(),
 				Type:        types.TransferTypeMarginLow,
 				// Reference:   "position-resolution",
-				Timestamp: now,
+				Timestamp:          now,
+				FromAccountBalance: num.UintZero(),
+				ToAccountBalance:   num.Sum(marginAcc.Balance, genAcc.Balance),
 			})
 			if err := e.IncrementBalance(ctx, marginAcc.ID, genAcc.Balance); err != nil {
 				return nil, err
@@ -2351,7 +2371,9 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 				Amount:      marginAcc.Balance.Clone(),
 				Type:        types.TransferTypeMarginConfiscated,
 				// Reference:   "position-resolution",
-				Timestamp: now,
+				Timestamp:          now,
+				FromAccountBalance: num.UintZero(),
+				ToAccountBalance:   num.Sum(ins.Balance, marginAcc.Balance),
 			})
 			if err := e.IncrementBalance(ctx, ins.ID, marginAcc.Balance); err != nil {
 				return nil, err
@@ -2391,11 +2413,13 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 	}
 
 	resp.Entries = append(resp.Entries, &types.LedgerEntry{
-		FromAccount: acc.ToDetails(),
-		ToAccount:   genAcc.ToDetails(),
-		Amount:      acc.Balance.Clone(),
-		Type:        types.TransferTypeMarginHigh,
-		Timestamp:   now,
+		FromAccount:        acc.ToDetails(),
+		ToAccount:          genAcc.ToDetails(),
+		Amount:             acc.Balance.Clone(),
+		Type:               types.TransferTypeMarginHigh,
+		Timestamp:          now,
+		FromAccountBalance: num.UintZero(),
+		ToAccountBalance:   num.Sum(genAcc.Balance, acc.Balance),
 	})
 	if err := e.IncrementBalance(ctx, genAcc.ID, acc.Balance); err != nil {
 		return nil, err
@@ -2661,21 +2685,6 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 
-	return nil
-}
-
-// DecrementBalance will decrement the balance of a given account
-// using the given value.
-func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint) error {
-	acc, ok := e.accs[id]
-	if !ok {
-		return fmt.Errorf("account does not exist: %s", id)
-	}
-	acc.Balance.Sub(acc.Balance, dec)
-	if acc.Type != types.AccountTypeExternal {
-		e.state.updateAccs(e.hashableAccs)
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	}
 	return nil
 }
 

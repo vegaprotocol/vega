@@ -18,11 +18,16 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
@@ -37,7 +42,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
@@ -55,17 +59,14 @@ import (
 const AppVersion = 1
 
 var (
-	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction without balance")
-	ErrUnexpectedTxPubKey                             = errors.New("no one listens to the public keys that signed this oracle data")
-	ErrTradingDisabled                                = errors.New("trading disabled")
-	ErrNoTransactionAllowedDuringBootstrap            = errors.New("no transaction allowed during the bootstraping period")
-	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
-	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
-	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
-	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
-	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
-	ErrOracleNoSubscribers                            = errors.New("there are no subscribes to the oracle data")
-	ErrOracleDataNormalization                        = func(err error) error {
+	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction without balance")
+	ErrUnexpectedTxPubKey                            = errors.New("no one listens to the public keys that signed this oracle data")
+	ErrTradingDisabled                               = errors.New("trading disabled")
+	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
+	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
+	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
+	ErrOracleDataNormalization                       = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
 )
@@ -88,6 +89,7 @@ type PoWEngine interface {
 	CheckTx(tx abci.Tx) error
 	DeliverTx(tx abci.Tx) error
 	Commit()
+	GetSpamStatistics(partyID string) *protoapi.PoWStatistic
 }
 
 //nolint:interfacebloat
@@ -100,7 +102,7 @@ type Snapshot interface {
 	ClearAndInitialise() error
 
 	// Calls related to statesync
-	List() ([]*types.Snapshot, error)
+	ListMeta() ([]*tmtypes.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
 	RejectSnapshot() error
 	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
@@ -124,6 +126,8 @@ type ProtocolUpgradeService interface {
 	TimeForUpgrade() bool
 	GetUpgradeStatus() types.UpgradeStatus
 	SetReadyForUpgrade()
+	CoreReadyForUpgrade() bool
+	SetCoreReadyForUpgrade()
 	Cleanup(ctx context.Context)
 	IsValidProposal(ctx context.Context, pk string, upgradeBlockHeight uint64, vegaReleaseTag string) error
 }
@@ -141,11 +145,12 @@ type App struct {
 	version           string
 	blockchainClient  BlockchainClient
 
-	vegaPaths paths.Paths
-	cfg       Config
-	log       *logging.Logger
-	cancelFn  func()
-	rates     *ratelimit.Rates
+	vegaPaths      paths.Paths
+	cfg            Config
+	log            *logging.Logger
+	cancelFn       func()
+	stopBlockchain func() error
+	rates          *ratelimit.Rates
 
 	// service injection
 	assets                 Assets
@@ -187,6 +192,7 @@ func NewApp(
 	vegaPaths paths.Paths,
 	config Config,
 	cancelFn func(),
+	stopBlockchain func() error,
 	assets Assets,
 	banking Banking,
 	broker Broker,
@@ -224,10 +230,11 @@ func NewApp(
 	app := &App{
 		abci: abci.New(codec),
 
-		log:       log,
-		vegaPaths: vegaPaths,
-		cfg:       config,
-		cancelFn:  cancelFn,
+		log:            log,
+		vegaPaths:      vegaPaths,
+		cfg:            config,
+		cancelFn:       cancelFn,
+		stopBlockchain: stopBlockchain,
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
@@ -289,9 +296,9 @@ func NewApp(
 		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.RotateEthereumKeySubmissionCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ProtocolUpgradeCommand, app.CheckProtocolUpgradeProposal).
-		HandleCheckTx(txn.IssueSignatures, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.BatchMarketInstructions, app.CheckBatchMarketInstructions).
-		HandleCheckTx(txn.ProposeCommand, app.CheckPropose)
+		HandleCheckTx(txn.ProposeCommand, app.CheckPropose).
+		HandleCheckTx(txn.TransferFundsCommand, app.CheckTransferCommand)
 
 	app.abci.
 		// node commands
@@ -394,6 +401,7 @@ func NewApp(
 
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
+	app.ensureConfig()
 	return app
 }
 
@@ -402,8 +410,8 @@ func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.U
 	return nil
 }
 
-// addDeterministicID will build the command id and .
-// the command id is built using the signature of the proposer of the command
+// addDeterministicID will build the command ID
+// the command ID is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded.
 func addDeterministicID(
@@ -483,6 +491,12 @@ func (app *App) SendTransactionResult(
 	}
 }
 
+func (app *App) ensureConfig() {
+	if app.cfg.KeepCheckpointsMax < 1 {
+		app.cfg.KeepCheckpointsMax = 1
+	}
+}
+
 // ReloadConf updates the internal configuration.
 func (app *App) ReloadConf(cfg Config) {
 	app.log.Info("reloading configuration")
@@ -495,6 +509,7 @@ func (app *App) ReloadConf(cfg Config) {
 	}
 
 	app.cfg = cfg
+	app.ensureConfig()
 }
 
 func (app *App) Abci() *abci.App {
@@ -555,21 +570,13 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
 	app.log.Debug("ABCI service ListSnapshots requested")
-	snapshots, err := app.snapshot.List()
+	snapshots, err := app.snapshot.ListMeta()
 	resp := tmtypes.ResponseListSnapshots{}
 	if err != nil {
 		app.log.Error("Could not list snapshots", logging.Error(err))
 		return resp
 	}
-	resp.Snapshots = make([]*tmtypes.Snapshot, 0, len(snapshots))
-	for _, snap := range snapshots {
-		tmSnap, err := snap.ToTM()
-		if err != nil {
-			app.log.Error("Failed to convert snapshot to TM form", logging.Error(err))
-			continue
-		}
-		resp.Snapshots = append(resp.Snapshots, tmSnap)
-	}
+	resp.Snapshots = snapshots
 	return resp
 }
 
@@ -620,6 +627,8 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	resp := tmtypes.ResponseApplySnapshotChunk{}
 	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
 	if err != nil {
+		app.log.Error("could not apply snapshot chunk", logging.Error(err))
+
 		switch err {
 		case types.ErrUnknownSnapshot:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?
@@ -754,17 +763,8 @@ func (app *App) OnBeginBlock(
 	hash := hex.EncodeToString(req.Hash)
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 
-	if app.protocolUpgradeService.GetUpgradeStatus().ReadyToUpgrade {
-		app.broker.Send(
-			events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
-				LastBlockHeight: app.stats.Height(),
-			}),
-		)
-		// wait until killed
-		for {
-			time.Sleep(1 * time.Second)
-			app.log.Info("application is ready for shutdown")
-		}
+	if app.protocolUpgradeService.CoreReadyForUpgrade() {
+		app.startProtocolUpgrade(ctx)
 	}
 
 	app.broker.Send(
@@ -807,6 +807,55 @@ func (app *App) OnBeginBlock(
 	return ctx, resp
 }
 
+func (app *App) startProtocolUpgrade(ctx context.Context) {
+	// Stop blockchain server so it doesn't acceptc transactions and it doesn't times out.
+	go func() { app.stopBlockchain() }()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var eventsCh <-chan events.Event
+	var errsCh <-chan error
+	if app.broker.StreamingEnabled() {
+		// wait here for data node send back the confirmation
+		eventsCh, errsCh = app.broker.SocketClient().Receive(ctx)
+	}
+
+	app.broker.Send(
+		events.NewProtocolUpgradeStarted(ctx, eventspb.ProtocolUpgradeStarted{
+			LastBlockHeight: app.stats.Height(),
+		}),
+	)
+
+	if eventsCh != nil {
+		app.log.Info("waiting for data node to get ready for upgrade")
+
+	Loop:
+		for {
+			select {
+			case e := <-eventsCh:
+				if e.Type() != events.ProtocolUpgradeDataNodeReadyEvent {
+					continue
+				}
+				if e.StreamMessage().GetProtocolUpgradeDataNodeReady().GetLastBlockHeight() == app.stats.Height() {
+					cancel()
+					break Loop
+				}
+			case err := <-errsCh:
+				app.log.Fatal("failed to wait for data node to get ready for upgrade", logging.Error(err))
+			}
+		}
+	}
+
+	app.protocolUpgradeService.SetReadyForUpgrade()
+
+	// wait until killed
+	for {
+		time.Sleep(1 * time.Second)
+		app.log.Info("application is ready for shutdown")
+	}
+}
+
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("entering commit", logging.Time("at", time.Now()))
 	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
@@ -826,7 +875,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		app.protocolUpgradeService.Cleanup(app.blockCtx)
 		snapHash, err = app.snapshot.SnapshotNow(app.blockCtx)
 		if err == nil {
-			app.protocolUpgradeService.SetReadyForUpgrade()
+			app.protocolUpgradeService.SetCoreReadyForUpgrade()
 		}
 	} else {
 		snapHash, err = app.snapshot.Snapshot(app.blockCtx)
@@ -844,7 +893,8 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 
 	if len(snapHash) == 0 {
-		resp.Data = app.exec.Hash()
+		resp.Data = vgcrypto.Hash([]byte(app.version))
+		resp.Data = append(resp.Data, app.exec.Hash()...)
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
 		resp.Data = append(resp.Data, app.gov.Hash()...)
 		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
@@ -902,6 +952,66 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	// this function is called both for interval checkpoints and withdrawal checkpoints
 	event := events.NewCheckpointEvent(app.blockCtx, cpt)
 	app.broker.Send(event)
+
+	return app.removeOldCheckpoints()
+}
+
+func (app *App) removeOldCheckpoints() error {
+	cpDirPath, err := app.vegaPaths.CreateStatePathFor(paths.StatePath(paths.CheckpointStateHome.String()))
+	if err != nil {
+		return fmt.Errorf("couldn't get checkpoints directory: %w", err)
+	}
+
+	files, err := ioutil.ReadDir(cpDirPath)
+	if err != nil {
+		return fmt.Errorf("could not open the checkpoint directory: %w", err)
+	}
+
+	// we assume that the files in this directory are only
+	// from the checkpoints
+	// and always keep the last 20, so return if we have less than that
+	if len(files) <= int(app.cfg.KeepCheckpointsMax) {
+		return nil
+	}
+
+	oldest := app.stats.Height()
+	toRemove := ""
+	for _, file := range files {
+		// checkpoint have the following format:
+		// 20230322173929-12140156-d833359cb648eb315b4d3f9ccaa5092bd175b2f72a9d44783377ca5d7a2ec965.cp
+		// which is:
+		// time-block-hash.cp
+		// we split and should have the block in splitted[1]
+		splitted := strings.Split(file.Name(), "-")
+		if len(splitted) != 3 {
+			app.log.Error("weird checkpoint file name", logging.String("checkpoint-file", file.Name()))
+			// weird file, keep going
+			continue
+		}
+		block, err := strconv.ParseInt(splitted[1], 10, 64)
+		if err != nil {
+			app.log.Error("could not parse block number", logging.Error(err), logging.String("checkpoint-file", file.Name()))
+			continue
+		}
+
+		if uint64(block) < oldest {
+			oldest = uint64(block)
+			toRemove = file.Name()
+		}
+	}
+
+	if len(toRemove) > 0 {
+		finalPath := filepath.Join(cpDirPath, toRemove)
+		if err := os.Remove(finalPath); err != nil {
+			app.log.Error("could not remove old checkpoint file",
+				logging.Error(err),
+				logging.String("checkpoint-file", finalPath),
+			)
+		}
+		// just return an error, not much we can do
+		return nil
+	}
+
 	return nil
 }
 
@@ -1112,7 +1222,7 @@ func (app *App) DeliverBatchMarketInstructions(
 	}
 
 	return NewBMIProcessor(app.log, app.exec).
-		ProcessBatch(ctx, batch, tx.Party(), deterministicID)
+		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
 }
 
 func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
@@ -1127,7 +1237,7 @@ func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(is); err != nil {
 		return err
 	}
-	return app.top.IssueSignatures(ctx, crypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
+	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {
@@ -1154,6 +1264,26 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 	}
 
 	return app.top.ProcessValidatorHeartbeat(ctx, an, signatures.VerifyVegaSignature, signatures.VerifyEthereumSignature)
+}
+
+func (app *App) CheckTransferCommand(ctx context.Context, tx abci.Tx) error {
+	tfr := &commandspb.Transfer{}
+	if err := tx.Unmarshal(tfr); err != nil {
+		return err
+	}
+	party := tx.Party()
+	transfer, err := types.NewTransferFromProto("", party, tfr)
+	if err != nil {
+		return err
+	}
+	switch transfer.Kind {
+	case types.TransferCommandKindOneOff:
+		return app.banking.CheckTransfer(transfer.OneOff.TransferBase)
+	case types.TransferCommandKindRecurring:
+		return app.banking.CheckTransfer(transfer.Recurring.TransferBase)
+	default:
+		return errors.New("unsupported transfer kind")
+	}
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {
@@ -1485,7 +1615,7 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 
 	return app.witness.AddNodeCheck(ctx, vote, pubKey)
 }
@@ -1505,7 +1635,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
@@ -1520,7 +1650,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return ErrOracleDataNormalization(err)

@@ -313,7 +313,6 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch)
-	engine.OnTick(context.Background(), epoch.EndTime.Add(120*time.Second))
 
 	// get party account balances
 	party1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
@@ -377,7 +376,6 @@ func TestErsatzTendermintRewardSplit(t *testing.T) {
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch)
-	engine.OnTick(context.Background(), epoch.EndTime.Add(120*time.Second))
 
 	// given the delegation breakdown we expect
 	// tendermint validators to get 0.9375 x 1000000 => 937500

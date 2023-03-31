@@ -29,11 +29,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// by default all validators needs to sign.
-	defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
-	oneDec                        = num.MustDecimalFromString("1")
-)
+// by default all validators needs to sign.
+var defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
 
 var (
 	ErrAggregateSigAlreadyStartedForResource = errors.New("aggregate signature already started for resource")
@@ -253,10 +250,7 @@ func (n *Notary) send(id string, kind commandspb.NodeSignatureKind, signature []
 }
 
 func (n *Notary) votePassed(votesCount, topLen int) bool {
-	topLenDec := num.DecimalFromInt64(int64(topLen))
-	return num.MinD(
-		(topLenDec.Mul(n.validatorVotesRequired)).Add(oneDec), topLenDec,
-	).LessThanOrEqual(num.DecimalFromInt64(int64(votesCount)))
+	return num.DecimalFromInt64(int64(votesCount)).Div(num.DecimalFromInt64(int64(topLen))).GreaterThanOrEqual(n.validatorVotesRequired)
 }
 
 func (n *Notary) sendSignatureEvents(ctx context.Context, signatures []commandspb.NodeSignature) {

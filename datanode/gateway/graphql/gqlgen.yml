@@ -230,6 +230,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalRationale
   ProposalTerms:
     model: code.vegaprotocol.io/vega/protos/vega.ProposalTerms
+  ProposalDetail:
+    model: code.vegaprotocol.io/vega/protos/vega.Proposal
   NewMarket:
     model: code.vegaprotocol.io/vega/protos/vega.NewMarket
   NewAsset:
@@ -336,8 +338,6 @@ models:
   AccountType:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AccountType
-  AccountField:
-    model: code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AccountField
   AccountFilter:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.AccountFilter
   AggregatedBalance:
@@ -495,3 +495,26 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.CoreSnapshotEdge
   CoreSnapshotData:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.CoreSnapshotData
+  RewardSummaryFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.RewardSummaryFilter
+  EpochRewardSummaryConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EpochRewardSummaryConnection
+  EpochRewardSummaryEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.EpochRewardSummaryEdge
+  EpochRewardSummary:
+    model: code.vegaprotocol.io/vega/protos/vega.EpochRewardSummary
+  PositionsFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PositionsFilter
+  PositionStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PositionStatus
+  LedgerEntry:
+    model: code.vegaprotocol.io/vega/protos/vega.LedgerEntry
+  ERC20MultiSigSignerAddedBundle:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ERC20MultiSigSignerAddedBundle
+  ERC20MultiSigSignerRemovedBundle:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ERC20MultiSigSignerRemovedBundle
+  NodeBasic:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.NodeBasic
+  Entities:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ListEntitiesResponse

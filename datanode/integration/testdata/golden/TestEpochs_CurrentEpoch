@@ -1,15 +1,17 @@
 {
 	"TestName": "TestEpochs_CurrentEpoch",
-	"Query": "{ epoch{ id timestamps{ start, expiry, end } } }",
+	"Query": "{ epoch{ id timestamps{ start, expiry, end, firstBlock, lastBlock } } }",
 	"Result": {
 		"epoch": {
-			"id": "619",
+			"id": "110",
 			"timestamps": {
 				"end": null,
-				"expiry": "2022-11-08T09:37:46.392383Z",
-				"start": "2022-11-08T09:37:41.392383Z"
+				"expiry": "2023-03-10T10:29:24.670678Z",
+				"firstBlock": "1079",
+				"lastBlock": null,
+				"start": "2023-03-10T10:29:19.670678Z"
 			}
 		}
 	},
-	"Duration": 1832334
+	"Duration": 5996193
 }

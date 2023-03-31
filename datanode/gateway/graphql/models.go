@@ -202,24 +202,9 @@ type Erc20 struct {
 
 func (Erc20) IsAssetSource() {}
 
-type ERC20MultiSigSignerAddedBundle struct {
-	// The ethereum address of the signer to be added
-	NewSigner string `json:"newSigner"`
-	// The ethereum address of the submitter
-	Submitter string `json:"submitter"`
-	// The nonce used in the signing operation
-	Nonce string `json:"nonce"`
-	// Unix-nano timestamp for when the validator was added
-	Timestamp string `json:"timestamp"`
-	// The bundle of signatures from current validators to sign in the new signer
-	Signatures string `json:"signatures"`
-	// The epoch in which the validator was added
-	EpochSeq string `json:"epochSeq"`
-}
-
 type ERC20MultiSigSignerAddedBundleEdge struct {
-	Node   *ERC20MultiSigSignerAddedBundle `json:"node"`
-	Cursor string                          `json:"cursor"`
+	Node   *v2.ERC20MultiSigSignerAddedBundle `json:"node"`
+	Cursor string                             `json:"cursor"`
 }
 
 // Response for the signature bundle to add a particular validator to the signer list of the multisig contract
@@ -228,24 +213,9 @@ type ERC20MultiSigSignerAddedConnection struct {
 	PageInfo *v2.PageInfo                          `json:"pageInfo"`
 }
 
-type ERC20MultiSigSignerRemovedBundle struct {
-	// The ethereum address of the signer to be removed
-	OldSigner string `json:"oldSigner"`
-	// The ethereum address of the submitter
-	Submitter string `json:"submitter"`
-	// The nonce used in the signing operation
-	Nonce string `json:"nonce"`
-	// Unix-nano timestamp for when the validator was added
-	Timestamp string `json:"timestamp"`
-	// The bundle of signatures from current validators to sign in the new signer
-	Signatures string `json:"signatures"`
-	// The epoch in which the validator was removed
-	EpochSeq string `json:"epochSeq"`
-}
-
 type ERC20MultiSigSignerRemovedBundleEdge struct {
-	Node   *ERC20MultiSigSignerRemovedBundle `json:"node"`
-	Cursor string                            `json:"cursor"`
+	Node   *v2.ERC20MultiSigSignerRemovedBundle `json:"node"`
+	Cursor string                               `json:"cursor"`
 }
 
 // Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
@@ -309,8 +279,6 @@ type Erc20WithdrawalApproval struct {
 	AssetSource string `json:"assetSource"`
 	// The amount to be withdrawn
 	Amount string `json:"amount"`
-	// Timestamp in seconds for expiry of the approval
-	Expiry int64 `json:"expiry"`
 	// The nonce to be used in the request
 	Nonce string `json:"nonce"`
 	// Signature aggregate from the nodes, in the following format:
@@ -350,25 +318,14 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
-type LedgerEntry struct {
-	// Account from which the asset was taken
-	AccountFromID *vega.AccountDetails `json:"accountFromId"`
-	// Account to which the balance was transferred
-	AccountToID *vega.AccountDetails `json:"accountToId"`
-	// The amount transferred
-	Amount string `json:"amount"`
-	// Type of ledger entry
-	Type vega.TransferType `json:"type"`
-	// RFC3339Nano time at which the transfer was made
-	Timestamp int64 `json:"timestamp"`
-}
-
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters"`
 	// Specifies the triggering ratio for entering liquidity auction
-	TriggeringRatio float64 `json:"triggeringRatio"`
+	TriggeringRatio string `json:"triggeringRatio"`
+	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
+	AuctionExtensionSecs int `json:"auctionExtensionSecs"`
 }
 
 // The equity like share of liquidity fee for each liquidity provider
@@ -379,6 +336,8 @@ type LiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
+	// The average liquidity score
+	AverageScore string `json:"averageScore"`
 }
 
 type LossSocialization struct {
@@ -389,8 +348,6 @@ type LossSocialization struct {
 	// The amount lost
 	Amount string `json:"amount"`
 }
-
-func (LossSocialization) IsEvent() {}
 
 // The liquidity commitments for this market
 type MarketDataCommitments struct {
@@ -416,16 +373,12 @@ type MarketEvent struct {
 	Payload string `json:"payload"`
 }
 
-func (MarketEvent) IsEvent() {}
-
 type MarketTick struct {
 	// The market ID
 	MarketID string `json:"marketId"`
 	// The block time
 	Time string `json:"time"`
 }
-
-func (MarketTick) IsEvent() {}
 
 // Details on the collection of nodes for particular validator status
 type NodeSet struct {
@@ -449,6 +402,8 @@ type ObservableLiquidityProviderFeeShare struct {
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
+	// The average liquidity score
+	AverageScore string `json:"averageScore"`
 }
 
 type OffsetPagination struct {
@@ -459,6 +414,22 @@ type OffsetPagination struct {
 	// Descending reverses the order of the records returned
 	// default is true, if false the results will be returned in ascending order
 	Descending bool `json:"descending"`
+}
+
+type OrderByMarketAndPartyIdsFilter struct {
+	Order     *v2.OrderFilter `json:"order"`
+	MarketIds []string        `json:"marketIds"`
+	PartyIds  []string        `json:"partyIds"`
+}
+
+type OrderByMarketIdsFilter struct {
+	Order     *v2.OrderFilter `json:"order"`
+	MarketIds []string        `json:"marketIds"`
+}
+
+type OrderByPartyIdsFilter struct {
+	Order    *v2.OrderFilter `json:"order"`
+	PartyIds []string        `json:"partyIds"`
 }
 
 // An estimate of the fee to be paid by the order
@@ -481,8 +452,6 @@ type PositionResolution struct {
 	// The mark price at which parties were distressed/closed out
 	MarkPrice string `json:"markPrice"`
 }
-
-func (PositionResolution) IsEvent() {}
 
 // Range of valid prices and the associated price monitoring trigger
 type PriceMonitoringBounds struct {
@@ -508,7 +477,7 @@ type PriceMonitoringSettings struct {
 	Parameters *PriceMonitoringParameters `json:"parameters"`
 }
 
-// PriceMonitoringParameters holds together price projection horizon τ, probability level p, and auction extension duration
+// PriceMonitoringTrigger holds together price projection horizon τ, probability level p, and auction extension duration
 type PriceMonitoringTrigger struct {
 	// Price monitoring projection horizon τ in seconds (> 0).
 	HorizonSecs int `json:"horizonSecs"`
@@ -601,8 +570,6 @@ type SettleDistressed struct {
 	Price string `json:"price"`
 }
 
-func (SettleDistressed) IsEvent() {}
-
 type SettlePosition struct {
 	// The market in which a position was settled
 	MarketID string `json:"marketId"`
@@ -613,8 +580,6 @@ type SettlePosition struct {
 	// The trades that were settled to close the overall position
 	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
 }
-
-func (SettlePosition) IsEvent() {}
 
 // Signer is the authorized signature used for the data.
 type Signer struct {
@@ -676,7 +641,7 @@ type TransferBalance struct {
 
 type TransferResponse struct {
 	// The ledger entries and balances resulting from a transfer request
-	Transfers []*LedgerEntry `json:"transfers"`
+	Transfers []*vega.LedgerEntry `json:"transfers"`
 	// The balances of accounts involved in the transfer
 	Balances []*TransferBalance `json:"balances"`
 }
@@ -685,8 +650,6 @@ type TransferResponses struct {
 	// A group of transfer responses - events from core
 	Responses []*TransferResponse `json:"responses"`
 }
-
-func (TransferResponses) IsEvent() {}
 
 // An asset originated from an Ethereum ERC20 Token
 type UpdateErc20 struct {
@@ -706,98 +669,30 @@ type UpdateInstrumentConfiguration struct {
 	Product *vega.UpdateFutureProduct `json:"product"`
 }
 
+// Event types
 type BusEventType string
 
 const (
 	// Vega Time has changed
 	BusEventTypeTimeUpdate BusEventType = "TimeUpdate"
-	// A balance has been transferred between accounts
-	BusEventTypeTransferResponses BusEventType = "TransferResponses"
-	// A position resolution event has occurred
-	BusEventTypePositionResolution BusEventType = "PositionResolution"
-	// An order has been created or updated
-	BusEventTypeOrder BusEventType = "Order"
-	// An account has been updated
-	BusEventTypeAccount BusEventType = "Account"
-	// A party has been updated
-	BusEventTypeParty BusEventType = "Party"
-	// A trade has been created
-	BusEventTypeTrade BusEventType = "Trade"
-	// Margin levels have changed for a position
-	BusEventTypeMarginLevels BusEventType = "MarginLevels"
-	// A governance proposal has been created or updated
-	BusEventTypeProposal BusEventType = "Proposal"
-	// A vote has been placed on a governance proposal
-	BusEventTypeVote BusEventType = "Vote"
-	// Market data has been updated
-	BusEventTypeMarketData BusEventType = "MarketData"
-	// Validator node signatures for an event
-	BusEventTypeNodeSignature BusEventType = "NodeSignature"
-	// A position has been closed without sufficient insurance pool balance to cover it
-	BusEventTypeLossSocialization BusEventType = "LossSocialization"
-	// A position has been settled
-	BusEventTypeSettlePosition BusEventType = "SettlePosition"
-	// A distressed position has been settled
-	BusEventTypeSettleDistressed BusEventType = "SettleDistressed"
-	// A new market has been created
-	BusEventTypeMarketCreated BusEventType = "MarketCreated"
-	// A market has been updated
-	BusEventTypeMarketUpdated BusEventType = "MarketUpdated"
-	// An asset has been created or update
-	BusEventTypeAsset BusEventType = "Asset"
-	// A market has progressed by one tick
-	BusEventTypeMarketTick BusEventType = "MarketTick"
-	// A market has either entered or exited auction
-	BusEventTypeAuction BusEventType = "Auction"
-	// A risk factor adjustment was made
-	BusEventTypeRiskFactor BusEventType = "RiskFactor"
-	// A liquidity commitment change occurred
-	BusEventTypeLiquidityProvision BusEventType = "LiquidityProvision"
 	// Collateral has deposited in to this Vega network via the bridge
 	BusEventTypeDeposit BusEventType = "Deposit"
 	// Collateral has been withdrawn from this Vega network via the bridge
 	BusEventTypeWithdrawal BusEventType = "Withdrawal"
-	// An oracle spec has been registered
-	BusEventTypeOracleSpec BusEventType = "OracleSpec"
-	// Constant for market events - mainly used for logging
-	BusEventTypeMarket BusEventType = "Market"
 	// The results from processing at transaction
 	BusEventTypeTransactionResult BusEventType = "TransactionResult"
 )
 
 var AllBusEventType = []BusEventType{
 	BusEventTypeTimeUpdate,
-	BusEventTypeTransferResponses,
-	BusEventTypePositionResolution,
-	BusEventTypeOrder,
-	BusEventTypeAccount,
-	BusEventTypeParty,
-	BusEventTypeTrade,
-	BusEventTypeMarginLevels,
-	BusEventTypeProposal,
-	BusEventTypeVote,
-	BusEventTypeMarketData,
-	BusEventTypeNodeSignature,
-	BusEventTypeLossSocialization,
-	BusEventTypeSettlePosition,
-	BusEventTypeSettleDistressed,
-	BusEventTypeMarketCreated,
-	BusEventTypeMarketUpdated,
-	BusEventTypeAsset,
-	BusEventTypeMarketTick,
-	BusEventTypeAuction,
-	BusEventTypeRiskFactor,
-	BusEventTypeLiquidityProvision,
 	BusEventTypeDeposit,
 	BusEventTypeWithdrawal,
-	BusEventTypeOracleSpec,
-	BusEventTypeMarket,
 	BusEventTypeTransactionResult,
 }
 
 func (e BusEventType) IsValid() bool {
 	switch e {
-	case BusEventTypeTimeUpdate, BusEventTypeTransferResponses, BusEventTypePositionResolution, BusEventTypeOrder, BusEventTypeAccount, BusEventTypeParty, BusEventTypeTrade, BusEventTypeMarginLevels, BusEventTypeProposal, BusEventTypeVote, BusEventTypeMarketData, BusEventTypeNodeSignature, BusEventTypeLossSocialization, BusEventTypeSettlePosition, BusEventTypeSettleDistressed, BusEventTypeMarketCreated, BusEventTypeMarketUpdated, BusEventTypeAsset, BusEventTypeMarketTick, BusEventTypeAuction, BusEventTypeRiskFactor, BusEventTypeLiquidityProvision, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeOracleSpec, BusEventTypeMarket, BusEventTypeTransactionResult:
+	case BusEventTypeTimeUpdate, BusEventTypeDeposit, BusEventTypeWithdrawal, BusEventTypeTransactionResult:
 		return true
 	}
 	return false
@@ -824,14 +719,14 @@ func (e BusEventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Status describe the status of the data spec
+// Describes the status of the data spec
 type DataSourceSpecStatus string
 
 const (
-	// describes an active data spec.
+	// Describes an active data spec
 	DataSourceSpecStatusStatusActive DataSourceSpecStatus = "STATUS_ACTIVE"
-	// describes a data spec that is not listening to data
-	// anymore.
+	// Describes a data spec that is not listening to data
+	// anymore
 	DataSourceSpecStatusStatusDeactivated DataSourceSpecStatus = "STATUS_DEACTIVATED"
 )
 

@@ -3,7 +3,6 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -78,18 +77,16 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
-	expectedPath := filepath.Join(vgrand.RandomStr(3), vgrand.RandomStr(3))
 	var createdWallet wallet.Wallet
 
 	// setup
 	handler := newCreateWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).DoAndReturn(func(_ context.Context, w wallet.Wallet, passphrase string) error {
+	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), passphrase).Times(1).DoAndReturn(func(_ context.Context, w wallet.Wallet, passphrase string) error {
 		createdWallet = w
 		return nil
 	})
-	handler.walletStore.EXPECT().GetWalletPath(name).Times(1).Return(expectedPath)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCreateWalletParams{
@@ -109,7 +106,6 @@ func testCreatingWalletWithValidParamsSucceeds(t *testing.T) {
 	assert.Equal(t, name, result.Wallet.Name)
 	assert.NotEmpty(t, result.Wallet.RecoveryPhrase)
 	assert.Equal(t, uint32(2), result.Wallet.KeyDerivationVersion)
-	assert.Equal(t, expectedPath, result.Wallet.FilePath)
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), result.Key.Algorithm.Version)
@@ -159,7 +155,7 @@ func testGettingInternalErrorDuringVerificationDoesNotCreateWallet(t *testing.T)
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
@@ -172,7 +168,7 @@ func testGettingInternalErrorDuringSavingDoesNotCreateWallet(t *testing.T) {
 	handler := newCreateWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(false, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCreateWalletParams{
@@ -192,10 +188,10 @@ type createWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *createWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminCreateWalletResult, *jsonrpc.ErrorDetails) {
+func (h *createWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminCreateWalletResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminCreateWalletResult)
 		if !ok {

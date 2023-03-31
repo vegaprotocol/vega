@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	vgencoding "code.vegaprotocol.io/vega/libs/encoding"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/wallet/api"
@@ -43,29 +42,21 @@ func testUpdatingNetworkWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty network name",
 			params: api.AdminUpdateNetworkParams{
-				Name:        "",
-				Level:       "info",
-				TokenExpiry: "2m",
+				Name: "",
 			},
 			expectedError: api.ErrNetworkNameIsRequired,
 		},
 		{
-			name: "with invalid log level",
+			name: "without a single GRPC node",
 			params: api.AdminUpdateNetworkParams{
-				Name:        vgrand.RandomStr(3),
-				Level:       vgrand.RandomStr(3),
-				TokenExpiry: "2m",
+				Name: "testnet",
+				API: network.APIConfig{
+					GRPC: network.GRPCConfig{
+						Hosts: []string{},
+					},
+				},
 			},
-			expectedError: api.ErrInvalidLogLevelValue,
-		},
-		{
-			name: "with invalid token expiry",
-			params: api.AdminUpdateNetworkParams{
-				Name:        vgrand.RandomStr(3),
-				Level:       "info",
-				TokenExpiry: "100",
-			},
-			expectedError: api.ErrInvalidTokenExpiryValue,
+			expectedError: network.ErrNetworkDoesNotHaveGRPCHostConfigured,
 		},
 	}
 
@@ -90,26 +81,32 @@ func testUpdatingNetworkWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	name := vgrand.RandomStr(5)
-	logLevel := &vgencoding.LogLevel{}
-	_ = logLevel.UnmarshalText([]byte("info"))
-	tokenExpiry := &vgencoding.Duration{}
-	_ = tokenExpiry.UnmarshalText([]byte("2m"))
 
 	// setup
 	handler := newUpdateNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().SaveNetwork(&network.Network{
-		Name:        name,
-		LogLevel:    *logLevel,
-		TokenExpiry: *tokenExpiry,
+		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	}).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -128,9 +125,14 @@ func testUpdatingNetworkThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -150,9 +152,14 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkVerificationFails(t 
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -173,9 +180,14 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkSavingFails(t *testi
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
-		Name:        name,
-		Level:       "info",
-		TokenExpiry: "2m",
+		Name: name,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					"localhost:1234",
+				},
+			},
+		},
 	})
 
 	// then
@@ -189,10 +201,10 @@ type updateNetworkHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *updateNetworkHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *updateNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	assert.Nil(t, rawResult)
 	return err
 }

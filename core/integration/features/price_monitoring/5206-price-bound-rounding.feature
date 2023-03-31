@@ -11,8 +11,8 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00011407711613050422 | 0  | 0.016 | 1.5   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config          | decimal places |
-      | ETH/DEC20 | ETH        | ETH   | st-log-normal-risk-model | default-margin-calculator | 1                | default-none | st-price-monitoring | default-eth-for-future | 6              |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring    | data source config     | decimal places | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | ETH        | ETH   | st-log-normal-risk-model | default-margin-calculator | 1                | default-none | st-price-monitoring | default-eth-for-future | 6              | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -29,7 +29,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | partyLP | ETH   | 10000000000000000000000000000 |
       | aux     | ETH   | 10000000000000000000000000000 |
 
-      # 977142641
+    # 977142641
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
       | party3 | ETH/DEC20 | buy  | 1      | 977142640  | 0                | TYPE_LIMIT | TIF_GFA |
@@ -59,8 +59,8 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | 977142640  | 977142641         | TRADING_MODE_CONTINUOUS |
 
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | horizon | min bound | max bound | target stake           | supplied stake          | open interest  |
-      | 977142640  | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524332417800000000 | 39050000000000000000000 | 2              |
+      | mark price | trading mode            | horizon | min bound | max bound | target stake           | supplied stake          | open interest |
+      | 977142640  | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524331312000000000 | 39050000000000000000000 | 2             |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price     | resulting trades | type       | tif     |
@@ -68,8 +68,8 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party4 | ETH/DEC20 | sell | 1      | 975999650 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | last traded price | trading mode                    | auction trigger       | target stake           | supplied stake          | open interest  |
-      | 977142640  | 977142641         |TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 1618890619455000000000 | 39050000000000000000000 | 2              |
+      | mark price | last traded price | trading mode                    | auction trigger       | target stake           | supplied stake          | open interest |
+      | 977142640  | 977142641         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 1618890619455000000000 | 39050000000000000000000 | 2             |
 
   @STAuc
   Scenario: Replicate  issue where price bounds are violated by 1 * 10^(market decimal places)
@@ -82,7 +82,7 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | partyLP | ETH   | 10000000000000000000000000000 |
       | aux     | ETH   | 10000000000000000000000000000 |
 
-      # 977142641
+    # 977142641
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
       | party3 | ETH/DEC20 | buy  | 1      | 977142640  | 0                | TYPE_LIMIT | TIF_GFA |
@@ -108,8 +108,8 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party4 | ETH/DEC20 | sell | 1      | 977142641 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake           | supplied stake          | open interest  |
-      | 977142640  | 977142641         | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524332417800000000 | 39050000000000000000000 | 2              |
+      | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake           | supplied stake          | open interest |
+      | 977142640  | 977142641         | TRADING_MODE_CONTINUOUS | 5       | 975999651 | 978286619 | 1080524331312000000000 | 39050000000000000000000 | 2             |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price     | resulting trades | type       | tif     |
@@ -117,5 +117,5 @@ Feature: Ensure price bounds are triggered as and when they should be, consideri
       | party4 | ETH/DEC20 | sell | 1      | 974999651 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the market data for the market "ETH/DEC20" should be:
-      | mark price | last traded price | trading mode                    | auction trigger       | target stake           | supplied stake          | open interest  |
-      | 977142640  | 977142641         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 1617231921113700000000 | 39050000000000000000000 | 2              |
+      | mark price | last traded price | trading mode                    | auction trigger       | target stake           | supplied stake          | open interest |
+      | 977142640  | 977142641         | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 1617231921113700000000 | 39050000000000000000000 | 2             |

@@ -39,6 +39,7 @@ func addTestPUP(t *testing.T,
 		Approvers:          approvers,
 		Status:             status,
 		VegaTime:           block.VegaTime,
+		TxHash:             generateTxHash(),
 	}
 	err := store.Add(ctx, pup)
 	require.NoError(t, err)
@@ -78,6 +79,18 @@ func TestProtocolUpgradeProposal(t *testing.T) {
 		require.NoError(t, err)
 
 		expected := []entities.ProtocolUpgradeProposal{pup1b, pup2b, pup3, pup4}
+		assert.Equal(t, expected, fetched)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		fetched, err := store.GetByTxHash(ctx, pup1b.TxHash)
+		require.NoError(t, err)
+		expected := []entities.ProtocolUpgradeProposal{pup1b}
+		assert.Equal(t, expected, fetched)
+
+		fetched, err = store.GetByTxHash(ctx, pup2b.TxHash)
+		require.NoError(t, err)
+		expected = []entities.ProtocolUpgradeProposal{pup2b}
 		assert.Equal(t, expected, fetched)
 	})
 

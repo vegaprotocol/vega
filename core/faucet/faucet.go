@@ -27,12 +27,7 @@ type InitialisationResult struct {
 }
 
 func Initialise(vegaPaths paths.Paths, passphrase string, rewrite bool) (*InitialisationResult, error) {
-	walletLoader, err := InitialiseWalletLoader(vegaPaths)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise faucet wallet loader: %w", err)
-	}
-
-	walletGenResult, err := walletLoader.GenerateWallet(passphrase)
+	walletGenResult, err := GenerateWallet(vegaPaths, passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate a new faucet wallet: %w", err)
 	}

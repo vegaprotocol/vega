@@ -18,16 +18,16 @@ import (
 	"net"
 	"strings"
 
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/logging"
-	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"golang.org/x/sync/errgroup"
 
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/golang/protobuf/proto"
-	mangos "go.nanomsg.org/mangos/v3"
+	"go.nanomsg.org/mangos/v3"
 	mangosErr "go.nanomsg.org/mangos/v3/errors"
 	"go.nanomsg.org/mangos/v3/protocol"
-	"go.nanomsg.org/mangos/v3/protocol/pull"
+	"go.nanomsg.org/mangos/v3/protocol/pair"
 	_ "go.nanomsg.org/mangos/v3/transport/inproc" // changes behavior of nanomsg
 	_ "go.nanomsg.org/mangos/v3/transport/tcp"    // changes behavior of nanomsg
 )
@@ -53,13 +53,13 @@ func pipeEventToString(pe mangos.PipeEvent) string {
 }
 
 func newSocketServer(log *logging.Logger, config *Config) (*socketServer, error) {
-	sock, err := pull.NewSocket()
+	sock, err := pair.NewSocket()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new socket: %w", err)
 	}
 
 	return &socketServer{
-		log:    log,
+		log:    log.Named("socket-server"),
 		config: config,
 		sock:   sock,
 	}, nil
@@ -98,8 +98,8 @@ func (s socketServer) Listen() error {
 	return nil
 }
 
-func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
-	outboundCh := make(chan events.Event, s.config.SocketServerOutboundBufferSize)
+func (s socketServer) Receive(ctx context.Context) (<-chan []byte, <-chan error) {
+	outboundCh := make(chan []byte, s.config.SocketServerOutboundBufferSize)
 	// channel onto which we push the raw messages from the queue
 	inboundCh := make(chan []byte, s.config.SocketServerInboundBufferSize)
 	errCh := make(chan error, 1)
@@ -118,25 +118,9 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 		defer close(outboundCh)
 
 		for msg := range inboundCh {
-			var be eventspb.BusEvent
-			if err := proto.Unmarshal(msg, &be); err != nil {
-				// surely we should stop if this happens?
-				s.log.Error("Failed to unmarshal received event", logging.Error(err))
-				continue
-			}
-			if be.Version != eventspb.Version {
-				return fmt.Errorf("mismatched BusEvent version received: %d, want %d", be.Version, eventspb.Version)
-			}
-
-			evt := toEvent(ctx, &be)
-			if evt == nil {
-				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
-				continue
-			}
-
 			// Listen for context cancels, even if we're blocked sending events
 			select {
-			case outboundCh <- evt:
+			case outboundCh <- msg:
 			case <-ctx.Done():
 				return ctx.Err()
 			}
@@ -184,6 +168,27 @@ func (s socketServer) Receive(ctx context.Context) (<-chan events.Event, <-chan 
 	}()
 
 	return outboundCh, errCh
+}
+
+func (s socketServer) Send(evt events.Event) error {
+	msg, err := proto.Marshal(evt.StreamMessage())
+	if err != nil {
+		return fmt.Errorf("failed to marshal event: %w", err)
+	}
+
+	err = s.sock.Send(msg)
+	if err != nil {
+		switch err {
+		case protocol.ErrClosed:
+			return fmt.Errorf("socket is closed: %w", err)
+		case protocol.ErrSendTimeout:
+			return fmt.Errorf("failed to queue message on socket: %w", err)
+		default:
+			return fmt.Errorf("failed to send to socket: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (s socketServer) close() error {

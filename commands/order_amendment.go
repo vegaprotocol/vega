@@ -90,6 +90,11 @@ func checkOrderAmendment(cmd *commandspb.OrderAmendment) Errors {
 
 	if cmd.PeggedOffset != "" {
 		isAmending = true
+		if peggedOffset, ok := big.NewInt(0).SetString(cmd.PeggedOffset, 10); !ok {
+			errs.AddForProperty("order_amendment.pegged_offset", ErrNotAValidInteger)
+		} else if peggedOffset.Cmp(big.NewInt(0)) <= 0 {
+			errs.AddForProperty("order_amendment.pegged_offset", ErrMustBePositive)
+		}
 	}
 
 	if !isAmending {

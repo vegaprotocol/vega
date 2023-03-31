@@ -34,6 +34,7 @@ func addTestNode(t *testing.T, ctx context.Context, ps *sqlstore.Node, block ent
 		EthereumAddress: entities.EthereumAddress(generateEthereumAddress()),
 		VegaTime:        block.VegaTime,
 		Status:          entities.NodeStatusNonValidator,
+		TxHash:          generateTxHash(),
 	}
 
 	err := ps.UpsertNode(ctx, &node)
@@ -137,6 +138,32 @@ func TestGetNodes(t *testing.T) {
 	found, _, err = ns.GetNodes(ctx, 7, entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, found, 1)
+}
+
+func TestNodeGetByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	ns := sqlstore.NewNode(connectionSource)
+	block := addTestBlock(t, ctx, bs)
+
+	now := time.Now()
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	node2 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+	addNodeAnnounced(t, ctx, ns, node1.ID, true, 0, now)
+	addNodeAnnounced(t, ctx, ns, node2.ID, false, 7, now)
+	addNodeAnnounced(t, ctx, ns, node2.ID, false, 9, now)
+
+	found, err := ns.GetByTxHash(ctx, node1.TxHash)
+	require.NoError(t, err)
+	require.Len(t, found, 1)
+	require.Equal(t, node1.ID, found[0].ID)
+
+	found, err = ns.GetByTxHash(ctx, node2.TxHash)
+	require.NoError(t, err)
+	require.Len(t, found, 1)
+	require.Equal(t, node2.ID, found[0].ID)
 }
 
 func TestGetNodesJoiningAndLeaving(t *testing.T) {
@@ -498,4 +525,36 @@ func testNodePaginationLastBefore(t *testing.T) {
 		StartCursor:     nodes[4].Cursor().Encode(),
 		EndCursor:       nodes[6].Cursor().Encode(),
 	}, pageInfo)
+}
+
+func TestNode_AddRankingScoreInSameEpoch(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs := sqlstore.NewBlocks(connectionSource)
+	ns := sqlstore.NewNode(connectionSource)
+
+	block := addTestBlock(t, ctx, bs)
+	node1 := addTestNode(t, ctx, ns, block, helpers.GenerateID())
+
+	// node1 goes from pending -> ersatz -> tendermint
+	// then gets demoted straight to pending with a zero perf score
+	addRankingScore(t, ctx, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.NewFromFloat(0.25),
+			PreviousStatus:   entities.ValidatorNodeStatusPending,
+			Status:           entities.ValidatorNodeStatusErsatz,
+			EpochSeq:         2,
+			VegaTime:         block.VegaTime,
+		})
+	addRankingScore(t, ctx, ns, node1,
+		entities.RankingScore{
+			StakeScore:       decimal.NewFromFloat(0.5),
+			PerformanceScore: decimal.Zero,
+			PreviousStatus:   entities.ValidatorNodeStatusTendermint,
+			Status:           entities.ValidatorNodeStatusPending,
+			EpochSeq:         2,
+			VegaTime:         block.VegaTime,
+		})
 }

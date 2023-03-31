@@ -28,6 +28,7 @@ import (
 
 var (
 	ErrInvalidWithdrawalReferenceNonce       = errors.New("invalid withdrawal reference nonce")
+	ErrWithdrawalAmountUnderMinimalRequired  = errors.New("invalid withdrawal, amount under minimum required")
 	ErrAssetAlreadyBeingListed               = errors.New("asset already being listed")
 	ErrWithdrawalDisabledWhenBridgeIsStopped = errors.New("withdrawal issuance is disabled when the erc20 is stopped")
 )
@@ -55,7 +56,7 @@ func (e *Engine) EnableERC20(
 
 	aa := &assetAction{
 		id:          id,
-		state:       pendingState,
+		state:       newPendingState(),
 		erc20AL:     al,
 		asset:       asset,
 		blockHeight: blockNumber,
@@ -63,7 +64,7 @@ func (e *Engine) EnableERC20(
 		txHash:      txHash,
 		bridgeView:  e.bridgeView,
 	}
-	e.assetActs[aa.id] = aa
+	e.addAction(aa)
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
@@ -80,10 +81,9 @@ func (e *Engine) UpdateERC20(
 			logging.AssetID(event.VegaAssetID),
 		)
 	}
-
 	aa := &assetAction{
 		id:                      id,
-		state:                   pendingState,
+		state:                   newPendingState(),
 		erc20AssetLimitsUpdated: event,
 		asset:                   asset,
 		blockHeight:             blockNumber,
@@ -91,7 +91,7 @@ func (e *Engine) UpdateERC20(
 		txHash:                  txHash,
 		bridgeView:              e.bridgeView,
 	}
-	e.assetActs[aa.id] = aa
+	e.addAction(aa)
 	return e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
 }
 
@@ -123,7 +123,7 @@ func (e *Engine) DepositERC20(
 
 	aa := &assetAction{
 		id:          dep.ID,
-		state:       pendingState,
+		state:       newPendingState(),
 		erc20D:      d,
 		asset:       asset,
 		blockHeight: blockNumber,
@@ -131,7 +131,7 @@ func (e *Engine) DepositERC20(
 		txHash:      txHash,
 		bridgeView:  e.bridgeView,
 	}
-	e.assetActs[aa.id] = aa
+	e.addAction(aa)
 	e.deposits[dep.ID] = dep
 
 	e.broker.Send(events.NewDepositEvent(ctx, *dep))
@@ -160,6 +160,9 @@ func (e *Engine) ERC20WithdrawalEvent(
 		return ErrWithdrawalNotReady
 	}
 
+	if blockNumber > e.lastSeenEthBlock {
+		e.lastSeenEthBlock = blockNumber
+	}
 	withd.WithdrawalDate = e.timeService.GetTimeNow().UnixNano()
 	withd.TxHash = txHash
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *withd))
@@ -183,8 +186,7 @@ func (e *Engine) WithdrawERC20(
 		},
 	}
 
-	expiry := e.timeService.GetTimeNow().Add(withdrawalsDefaultExpiry)
-	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
+	w, ref := e.newWithdrawal(id, party, assetID, amount, wext)
 	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 
@@ -196,6 +198,22 @@ func (e *Engine) WithdrawERC20(
 			logging.AssetID(assetID),
 			logging.Error(err))
 		return err
+	}
+
+	// check for minimal amount reached
+	quantum := asset.Type().Details.Quantum
+	// no reason this would produce an error
+	minAmount, _ := num.UintFromDecimal(quantum.Mul(e.minWithdrawQuantumMultiple))
+
+	// now verify amount
+	if amount.LT(minAmount) {
+		e.log.Debug("cannot withdraw funds, the request is less than minimum withdrawal amount",
+			logging.BigUint("min-amount", minAmount),
+			logging.BigUint("requested-amount", amount),
+		)
+		w.Status = types.WithdrawalStatusRejected
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+		return ErrWithdrawalAmountUnderMinimalRequired
 	}
 
 	if a, ok := asset.ERC20(); !ok {
@@ -297,4 +315,11 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 	}
 
 	return signature
+}
+
+func (e *Engine) addAction(aa *assetAction) {
+	e.assetActs[aa.id] = aa
+	if aa.blockHeight > e.lastSeenEthBlock {
+		e.lastSeenEthBlock = aa.blockHeight
+	}
 }

@@ -9,10 +9,9 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
-	networkStore "code.vegaprotocol.io/vega/wallet/network/store/v1"
+	networkStoreV1 "code.vegaprotocol.io/vega/wallet/network/store/v1"
 
 	"github.com/spf13/cobra"
 )
@@ -34,13 +33,13 @@ func NewCmdListNetworks(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func() (api.AdminListNetworksResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
-		networkStore, err := networkStore.InitialiseStore(vegaPaths)
+		networkStore, err := networkStoreV1.InitialiseStore(vegaPaths)
 		if err != nil {
 			return api.AdminListNetworksResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
 		listWallet := api.NewAdminListNetworks(networkStore)
-		rawResult, errorDetails := listWallet.Handle(context.Background(), nil, jsonrpc.RequestMetadata{})
+		rawResult, errorDetails := listWallet.Handle(context.Background(), nil)
 		if errorDetails != nil {
 			return api.AdminListNetworksResult{}, errors.New(errorDetails.Data)
 		}
@@ -87,7 +86,22 @@ func PrintListNetworksResult(w io.Writer, resp api.AdminListNetworksResult) {
 		return
 	}
 
-	for _, net := range resp.Networks {
-		str.Text(fmt.Sprintf("- %s", net)).NextLine()
+	for i, net := range resp.Networks {
+		str.WarningText(net.Name).NextLine()
+		if len(net.Metadata) > 0 {
+			for j, metadata := range net.Metadata {
+				str.Text(metadata.Key).Text(": ").Text(metadata.Value)
+				if j < len(net.Metadata)-1 {
+					str.Text(", ")
+				}
+			}
+		} else {
+			str.Text("<no metadata>")
+		}
+		if i < len(resp.Networks)-1 {
+			str.NextSection()
+		} else {
+			str.NextLine()
+		}
 	}
 }

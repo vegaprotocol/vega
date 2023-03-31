@@ -14,31 +14,38 @@ package stats
 
 // Blockchain hold stats over all the vega node.
 type Blockchain struct {
-	hash                  string
-	height                uint64
-	averageTxSizeBytes    uint64
-	averageTxPerBatch     uint64
-	totalTxCurrentBatch   uint64
-	totalTxLastBatch      uint64
-	totalOrdersLastBatch  uint64
-	totalTradesLastBatch  uint64
-	averageOrdersPerBatch uint64
-	currentOrdersInBatch  uint64
-	currentTradesInBatch  uint64
-	totalBatches          uint64
-	ordersPerSecond       uint64
-	tradesPerSecond       uint64
-	totalAmendOrder       uint64
-	totalCancelOrder      uint64
-	totalCreateOrder      uint64
-	totalOrders           uint64
-	totalTrades           uint64
-	blockDuration         uint64 // nanoseconds
+	hash                   string
+	height                 uint64
+	averageTxSizeBytes     uint64
+	averageTxPerBatch      uint64
+	totalTxCurrentBatch    uint64
+	totalTxLastBatch       uint64
+	totalOrdersLastBatch   uint64
+	totalTradesLastBatch   uint64
+	averageOrdersPerBatch  uint64
+	currentOrdersInBatch   uint64
+	currentTradesInBatch   uint64
+	totalBatches           uint64
+	ordersPerSecond        uint64
+	tradesPerSecond        uint64
+	totalAmendOrder        uint64
+	totalCancelOrder       uint64
+	totalCreateOrder       uint64
+	totalOrders            uint64
+	totalTrades            uint64
+	blockDuration          uint64 // nanoseconds
+	lastBlockEventCount    uint64
+	currentBlockEventCount uint64
+	eventsPerSecond        uint64
 }
 
 // NewBlockchain instantiate a new Blockchain.
 func NewBlockchain() *Blockchain {
 	return &Blockchain{}
+}
+
+func (b *Blockchain) IncrementEventCount(count uint64) {
+	b.currentBlockEventCount += count
 }
 
 // IncTotalBatches increment total batches.
@@ -56,6 +63,8 @@ func (b *Blockchain) NewBatch() {
 	b.totalTradesLastBatch = b.currentTradesInBatch
 	b.currentOrdersInBatch = 0
 	b.currentTradesInBatch = 0
+	b.lastBlockEventCount = b.currentBlockEventCount
+	b.currentBlockEventCount = 0
 }
 
 func (b *Blockchain) ResetBatchTotals() {
@@ -77,6 +86,10 @@ func (b Blockchain) CurrentOrdersInBatch() uint64 {
 
 func (b Blockchain) CurrentTradesInBatch() uint64 {
 	return b.currentTradesInBatch
+}
+
+func (b Blockchain) CurrentEventsInBatch() uint64 {
+	return b.currentBlockEventCount
 }
 
 func (b Blockchain) Hash() string {
@@ -119,6 +132,14 @@ func (b *Blockchain) AverageTxPerBatch() uint64 {
 
 func (b *Blockchain) SetAverageTxPerBatch(i uint64) {
 	b.averageTxPerBatch = i
+}
+
+func (b *Blockchain) TotalEventsLastBatch() uint64 {
+	return b.lastBlockEventCount
+}
+
+func (b *Blockchain) EventsPerSecond() uint64 {
+	return b.eventsPerSecond
 }
 
 // TotalTxLastBatch return the number of transaction
@@ -283,4 +304,8 @@ func (b *Blockchain) SetTradesPerSecond(val uint64) {
 
 func (b *Blockchain) SetBlockDuration(val uint64) {
 	b.blockDuration = val
+}
+
+func (b *Blockchain) SetEventsPerSecond(val uint64) {
+	b.eventsPerSecond = val
 }

@@ -16,7 +16,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+
+	"code.vegaprotocol.io/vega/protos"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -54,6 +57,8 @@ var (
 	apiRequestTimeCounter *prometheus.CounterVec
 	// Total time spent snapshoting.
 	snapshotTimeCounter *prometheus.CounterVec
+	// Core HTTP bindings that we will check against when updating HTTP metrics.
+	httpBindings *protos.Bindings
 )
 
 // abstract prometheus types.
@@ -436,6 +441,10 @@ func setupMetrics() error {
 	// API usage metrics start here
 	//
 
+	httpBindings, err = protos.CoreBindings()
+	if err != nil {
+		return err
+	}
 	// Number of calls to each request type
 	h, err = addInstrument(
 		Counter,
@@ -531,12 +540,35 @@ func UnconfirmedTxGaugeSet(n int) {
 }
 
 // APIRequestAndTimeREST updates the metrics for REST API calls.
-func APIRequestAndTimeREST(request string, time float64) {
-	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
+func APIRequestAndTimeREST(method, request string, time float64) {
+	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil || httpBindings == nil {
 		return
 	}
-	apiRequestCallCounter.WithLabelValues("REST", request).Inc()
-	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
+
+	const (
+		invalid = "invalid route"
+		prefix  = "/"
+	)
+
+	if !httpBindings.HasRoute(method, request) {
+		apiRequestCallCounter.WithLabelValues("REST", invalid).Inc()
+		apiRequestTimeCounter.WithLabelValues("REST", invalid).Add(time)
+		return
+	}
+
+	uri := request
+
+	// Remove the first slash if it has one
+	if strings.Index(uri, prefix) == 0 {
+		uri = uri[len(prefix):]
+	}
+	// Trim the URI down to something useful
+	if strings.Count(uri, "/") >= 1 {
+		uri = uri[:strings.Index(uri, "/")]
+	}
+
+	apiRequestCallCounter.WithLabelValues("REST", uri).Inc()
+	apiRequestTimeCounter.WithLabelValues("REST", uri).Add(time)
 }
 
 // APIRequestAndTimeGRPC updates the metrics for GRPC API calls.

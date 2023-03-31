@@ -25,15 +25,17 @@ type ledgerStore interface {
 	Flush(ctx context.Context) ([]entities.LedgerEntry, error)
 	Add(le entities.LedgerEntry) error
 	Query(ctx context.Context, filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error)
+	Export(ctx context.Context, partyID, assetID string, dateRange entities.DateRange, pagination entities.CursorPagination) ([]byte, entities.PageInfo, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LedgerEntry, error)
 }
 
 type LedgerEntriesStore interface {
 	Query(filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error)
+	Export(ctx context.Context, partyID, assetID string, dateRange entities.DateRange, pagination entities.CursorPagination) ([]byte, entities.PageInfo, error)
 }
 
 type Ledger struct {
 	store             ledgerStore
-	log               *logging.Logger
 	transferResponses []*vega.LedgerMovement
 	observer          utils.Observer[*vega.LedgerMovement]
 }
@@ -41,7 +43,6 @@ type Ledger struct {
 func NewLedger(store ledgerStore, log *logging.Logger) *Ledger {
 	return &Ledger{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[*vega.LedgerMovement]("ledger", log, 0, 0),
 	}
 }
@@ -86,6 +87,23 @@ func (l *Ledger) Query(
 	return l.store.Query(
 		ctx,
 		filter,
+		dateRange,
+		pagination)
+}
+
+func (l *Ledger) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LedgerEntry, error) {
+	return l.store.GetByTxHash(ctx, txHash)
+}
+
+func (l *Ledger) Export(
+	ctx context.Context,
+	partyID, assetID string, dateRange entities.DateRange,
+	pagination entities.CursorPagination,
+) ([]byte, entities.PageInfo, error) {
+	return l.store.Export(
+		ctx,
+		partyID,
+		assetID,
 		dateRange,
 		pagination)
 }

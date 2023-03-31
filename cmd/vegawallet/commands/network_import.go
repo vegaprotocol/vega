@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	netstore "code.vegaprotocol.io/vega/wallet/network/store/v1"
@@ -48,7 +47,7 @@ func NewCmdImportNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminImportNetworkResult{}, fmt.Errorf("couldn't initialise networks store: %w", err)
 		}
 		importNetwork := api.NewAdminImportNetwork(s)
-		rawResult, errorDetails := importNetwork.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errorDetails := importNetwork.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminImportNetworkResult{}, errors.New(errorDetails.Data)
 		}
@@ -129,9 +128,12 @@ func (f *ImportNetworkFlags) Validate() (api.AdminImportNetworkParams, error) {
 		return api.AdminImportNetworkParams{}, flags.MutuallyExclusiveError("from-file", "from-url")
 	}
 
+	url := f.URL
+	if len(f.FilePath) != 0 {
+		url = api.FileSchemePrefix + f.FilePath
+	}
 	return api.AdminImportNetworkParams{
-		FilePath:  f.FilePath,
-		URL:       f.URL,
+		URL:       url,
 		Name:      f.Name,
 		Overwrite: f.Force,
 	}, nil

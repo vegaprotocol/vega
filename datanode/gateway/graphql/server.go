@@ -14,7 +14,6 @@ package gql
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -26,10 +25,12 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/datanode/ratelimit"
+	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	vega "code.vegaprotocol.io/vega/protos/vega"
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -38,14 +39,13 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 	"github.com/vektah/gqlparser/v2/gqlerror"
-	"golang.org/x/crypto/acme/autocert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
 const (
-	namedLogger = "gateway.gql"
+	namedLogger = "gql"
 )
 
 // GraphServer is the graphql server.
@@ -59,6 +59,7 @@ type GraphServer struct {
 	tradingDataClientV2 v2.TradingDataServiceClient
 	srv                 *http.Server
 	rl                  *gateway.SubscriptionRateLimiter
+	rateLimit           *ratelimit.RateLimit
 }
 
 // New returns a new instance of the grapqhl server.
@@ -73,7 +74,7 @@ func New(
 
 	serverAddr := fmt.Sprintf("%v:%v", config.Node.IP, config.Node.Port)
 
-	tdconn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	tdconn, err := grpc.Dial(serverAddr, grpc.WithInsecure(), ratelimit.WithSecret())
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +95,7 @@ func New(
 		tradingDataClientV2: tradingDataClientV2,
 		rl: gateway.NewSubscriptionRateLimiter(
 			log, config.MaxSubscriptionPerClient),
+		rateLimit: ratelimit.NewFromConfig(&config.RateLimit, log),
 	}, nil
 }
 
@@ -108,9 +110,10 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 		g.log.SetLevel(cfg.Level.Get())
 	}
 
-	// TODO(): not updating the the actual server for now, may need to look at this later
+	// TODO(): not updating the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+	g.rateLimit.ReloadConfig(&cfg.RateLimit)
 }
 
 type (
@@ -128,10 +131,11 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args, reply inte
 	return c.ClientConn.Invoke(ctx, method, args, reply, opts...)
 }
 
-// Start start the server in order receive http request.
+// Start starts the server in order receive http request.
 func (g *GraphServer) Start() error {
 	// <--- cors support - configure for production
-	corz := cors.AllowAll()
+	corsOptions := libhttp.CORSOptions(g.CORS)
+	corz := cors.New(corsOptions)
 	up := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -236,58 +240,33 @@ func (g *GraphServer) Start() error {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
 
-	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
 	middleware := corz.Handler(
 		gateway.Chain(
 			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
 			gateway.WithAddHeadersMiddleware,
 			g.rl.WithSubscriptionRateLimiter,
+			g.rateLimit.HTTPMiddleware,
 		),
 	)
 
+	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
 	handlr.Handle("/query", middleware)
 	handlr.Handle(g.GraphQL.Endpoint, middleware)
 
-	// Set up https if we are using it
-	var tlsConfig *tls.Config
-
-	var cert, key string
-	if g.GraphQL.HTTPSEnabled {
-		if g.GraphQL.CertificateFile != "" {
-			cert = g.GraphQL.CertificateFile
-		}
-		if g.GraphQL.KeyFile != "" {
-			key = g.GraphQL.KeyFile
-		}
-
-		if g.GraphQL.AutoCertDomain != "" {
-			dataNodeHome := paths.StatePath(g.vegaPaths.StatePathFor(paths.DataNodeStateHome))
-			certDir := paths.JoinStatePath(dataNodeHome, "graphql_https_certificates")
-
-			certManager := autocert.Manager{
-				Prompt:     autocert.AcceptTOS,
-				HostPolicy: autocert.HostWhitelist(g.GraphQL.AutoCertDomain),
-				Cache:      autocert.DirCache(certDir),
-			}
-			tlsConfig = &tls.Config{
-				GetCertificate: certManager.GetCertificate,
-				NextProtos:     []string{"http/1.1", "acme-tls/1"},
-			}
-		}
-	} else {
-		g.log.Warn("GraphQL server is not configured to use HTTPS, which is required for subscriptions to work. Please see README.md for help configuring")
+	tlsConfig, err := gateway.GenerateTlsConfig(&g.Config, g.vegaPaths)
+	if err != nil {
+		return fmt.Errorf("problem with HTTPS configuration: %w", err)
 	}
-
 	g.srv = &http.Server{
 		Addr:      addr,
 		Handler:   handlr,
 		TLSConfig: tlsConfig,
 	}
 
-	var err error
-	if g.GraphQL.HTTPSEnabled {
-		err = g.srv.ListenAndServeTLS(cert, key)
+	if g.srv.TLSConfig != nil {
+		err = g.srv.ListenAndServeTLS("", "")
 	} else {
+		g.log.Warn("GraphQL server is not configured to use HTTPS, which is required for subscriptions to work. Please see README.md for help configuring")
 		err = g.srv.ListenAndServe()
 	}
 	if err != nil && err != http.ErrServerClosed {

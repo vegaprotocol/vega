@@ -27,24 +27,27 @@ type AdminDescribeWallet struct {
 	walletStore WalletStore
 }
 
-// Handle retrieve a wallet from its name and passphrase.
-func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
-	if err != nil {
+	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return nil, invalidParams(err)
 		}
+		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	}
+
+	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
+	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 

@@ -122,7 +122,7 @@ func testGettingInternalErrorDuringVerificationDoesNotRemoveWallet(t *testing.T)
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 type removeWalletHandler struct {
@@ -131,10 +131,10 @@ type removeWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *removeWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *removeWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	return h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	return h.Handle(ctx, params)
 }
 
 func newRemoveWalletHandler(t *testing.T) *removeWalletHandler {

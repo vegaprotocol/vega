@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-	"github.com/pkg/errors"
 )
 
 type EpochUpdateEvent interface {
@@ -34,16 +34,11 @@ type EpochStore interface {
 type Epoch struct {
 	subscriber
 	store EpochStore
-	log   *logging.Logger
 }
 
-func NewEpoch(
-	store EpochStore,
-	log *logging.Logger,
-) *Epoch {
+func NewEpoch(store EpochStore) *Epoch {
 	t := &Epoch{
 		store: store,
-		log:   log,
 	}
 	return t
 }

@@ -1,11 +1,11 @@
-Feature: CASE-1: Trader submits long order that will trade - new formula & high exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-003, 0019-MCAL-005)
+Feature: CASE-1: Trader submits long order that will trade - new formula & high exit price (0019-MCAL-001, 0019-MCAL-002, 0019-MCAL-003)
   # https://drive.google.com/drive/folders/1BCOKaEb7LZYAKoiPfXfaqwM4BNicPpF-
 
   Background:
 
     Given the markets:
-      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                | margin calculator                  | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | default-simple-risk-model | default-overkill-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -13,8 +13,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     And the parties deposit on asset's general account the following amount:
       | party      | asset | amount     |
       | party1     | ETH   | 1000000000 |
-      | sellSideMM | ETH   | 1000000000 |
-      | buySideMM  | ETH   | 1000000000 |
+      | sellSideMM | ETH   | 2000000000 |
+      | buySideMM  | ETH   | 2000000000 |
       | aux        | ETH   | 1000000000 |
       | aux2       | ETH   | 1000000000 |
       | lpprov     | ETH   | 1000000000 |
@@ -23,20 +23,20 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | buy  | BID              | 50         | 10     | submission |
       | lp1 | lpprov | ETH/DEC19 | 900000000         | 0.1 | sell | ASK              | 50         | 10     | submission |
-        # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     And the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     |
-      | aux    | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux    | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price    | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1        | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | buy  | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | sell | 1      | 10300000 | 0                | TYPE_LIMIT | TIF_GTC |
     Then the market data for the market "ETH/DEC19" should be:
       | target stake | supplied stake |
       | 20600000     | 900000000      |
     Then the opening auction period ends for market "ETH/DEC19"
     And the mark price should be "10300000" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    
+
     # setting mark price
     And the parties place the following orders:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
@@ -90,7 +90,7 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
       | buySideMM | buy2      |
       | buySideMM | buy3      |
     When the parties place the following orders:
-      | party    | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | buySideMM | ETH/DEC19 | buy  | 1      | 19000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM | ETH/DEC19 | buy  | 3      | 18000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | buySideMM | ETH/DEC19 | buy  | 15     | 17000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
@@ -108,12 +108,12 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
     # ANOTHER TRADE HAPPENING (BY A DIFFERENT PARTY)
     # updating mark price to 200
     When the parties place the following orders with ticks:
-      | party     | market id | side | volume | price    | resulting trades | type       | tif     | reference |
+      | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | sellSideMM | ETH/DEC19 | sell | 1      | 20000000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideMM  | ETH/DEC19 | buy  | 1      | 20000000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the following transfers should happen:
-      | from   | to      | from account           | to account          | market id | amount   | asset |
+      | from   | to     | from account            | to account          | market id | amount   | asset |
       | market | party1 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN | ETH/DEC19 | 78000000 | ETH   |
 
     Then the parties should have the following account balances:
@@ -128,8 +128,8 @@ Feature: CASE-1: Trader submits long order that will trade - new formula & high 
 
     # FULL CLOSEOUT BY TRADER
     When the parties place the following orders with ticks:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | sell | 13     | 16500000 | 3                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party  | market id | side | volume | price    | resulting trades | type       | tif     |
+      | party1 | ETH/DEC19 | sell | 13     | 16500000 | 3                | TYPE_LIMIT | TIF_GTC |
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
       | party1 | ETH/DEC19 | 0           | 0      | 0       | 0       |

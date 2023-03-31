@@ -26,12 +26,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addTestBalance(t *testing.T, store *sqlstore.Balances, block entities.Block, acc entities.Account, balance int64) {
+func addTestBalance(t *testing.T,
+	store *sqlstore.Balances, block entities.Block,
+	acc entities.Account, balance int64,
+	txHash entities.TxHash,
+) {
 	t.Helper()
 	bal := entities.AccountBalance{
 		Account:  &acc,
 		VegaTime: block.VegaTime,
 		Balance:  decimal.NewFromInt(balance),
+		TxHash:   txHash,
 	}
 
 	err := store.Add(bal)
@@ -77,12 +82,12 @@ func TestBalances(t *testing.T) {
 	}
 
 	// And add some dummy balances
-	addTestBalance(t, balanceStore, blocks[0], accounts[0], 1)
-	addTestBalance(t, balanceStore, blocks[0], accounts[0], 2) // Second balance on same acc/block should override first
-	addTestBalance(t, balanceStore, blocks[1], accounts[0], 5)
-	addTestBalance(t, balanceStore, blocks[2], accounts[1], 10)
-	addTestBalance(t, balanceStore, blocks[3], accounts[2], 100)
-	addTestBalance(t, balanceStore, blocks[4], accounts[0], 30)
+	addTestBalance(t, balanceStore, blocks[0], accounts[0], 1, defaultTxHash)
+	addTestBalance(t, balanceStore, blocks[0], accounts[0], 2, defaultTxHash) // Second balance on same acc/block should override first
+	addTestBalance(t, balanceStore, blocks[1], accounts[0], 5, defaultTxHash)
+	addTestBalance(t, balanceStore, blocks[2], accounts[1], 10, defaultTxHash)
+	addTestBalance(t, balanceStore, blocks[3], accounts[2], 100, defaultTxHash)
+	addTestBalance(t, balanceStore, blocks[4], accounts[0], 30, defaultTxHash)
 
 	balanceStore.Flush(ctx)
 

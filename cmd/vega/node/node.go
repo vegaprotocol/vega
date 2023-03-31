@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/nodewallets"
 	"code.vegaprotocol.io/vega/core/protocol"
-	"code.vegaprotocol.io/vega/core/protocolupgrade"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/logging"
@@ -40,7 +39,6 @@ import (
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/version"
 
-	"github.com/blang/semver"
 	"github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"google.golang.org/grpc"
@@ -81,8 +79,6 @@ type Command struct {
 	adminServer *admin.Server
 	coreService *coreapi.Service
 
-	protocolUpgrade <-chan string
-
 	tmNode *abci.TmNode
 }
 
@@ -90,7 +86,7 @@ func (n *Command) Run(
 	confWatcher *config.Watcher,
 	vegaPaths paths.Paths,
 	nodeWalletPassphrase, tmHome, networkURL, network string,
-	args []string,
+	log *logging.Logger,
 ) error {
 	n.Log.Info("starting vega",
 		logging.String("version", version.Get()),
@@ -103,15 +99,15 @@ func (n *Command) Run(
 	n.conf = confWatcher.Get()
 	n.vegaPaths = vegaPaths
 
-	if err := n.setupCommon(args); err != nil {
+	if err := n.setupCommon(); err != nil {
 		return err
 	}
 
-	if err := n.loadNodeWallets(args); err != nil {
+	if err := n.loadNodeWallets(); err != nil {
 		return err
 	}
 
-	if err := n.startBlockchainClients(args); err != nil {
+	if err := n.startBlockchainClients(); err != nil {
 		return err
 	}
 
@@ -119,7 +115,7 @@ func (n *Command) Run(
 	// to run, most likely via configuration, so we can use legacy or current
 	var err error
 	n.protocol, err = protocol.New(
-		n.ctx, n.confWatcher, n.Log, n.cancel, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, vegaPaths, n.stats)
+		n.ctx, n.confWatcher, n.Log, n.cancel, n.stopBlockchain, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, vegaPaths, n.stats)
 	if err != nil {
 		return err
 	}
@@ -141,7 +137,7 @@ func (n *Command) Run(
 				panic(r)
 			}
 		}()
-		if err := n.startBlockchain(tmHome, network, networkURL); err != nil {
+		if err := n.startBlockchain(log, tmHome, network, networkURL); err != nil {
 			errCh <- err
 		}
 		// start the nullblockchain if we are in that mode, it *needs* to be after we've started the gRPC server
@@ -159,7 +155,6 @@ func (n *Command) Run(
 		logging.String("node-mode", string(n.conf.NodeMode)))
 
 	// wait for possible protocol upgrade, or user exist
-
 	if err := n.wait(errCh); err != nil {
 		return err
 	}
@@ -175,8 +170,6 @@ func (n *Command) wait(errCh <-chan error) error {
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		select {
-		case version := <-n.protocolUpgrade:
-			n.startProtocolUpgrade(version)
 		case sig := <-gracefulStop:
 			n.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
 			return nil
@@ -190,42 +183,19 @@ func (n *Command) wait(errCh <-chan error) error {
 	}
 }
 
-func (n *Command) startProtocolUpgrade(version string) {
-	semVersion, err := semver.Parse(protocolupgrade.TrimReleaseTag(version))
-	if err != nil {
-		n.Log.Error("invalid protocol version upgrade received, upgrade aborted",
-			logging.String("version", version),
-			logging.Error(err),
-		)
-		return
+func (n *Command) stopBlockchain() error {
+	if n.blockchainServer == nil {
+		return nil
 	}
-
-	// first check if the request to upgrade match the version we know
-	if !protocol.Version.EQ(semVersion) {
-		n.Log.Error("unknown protocol version upgrade received, upgrade aborted",
-			logging.String("version", version),
-			logging.Error(err),
-		)
-		return
-	}
-
-	// TODO(): this is not final
-	// then by instantiating the new version of the protocol
-	// this is placeholder for now as not implemented.
-	n.protocol, err = protocol.New(
-		n.ctx, n.confWatcher, n.Log, n.cancel, n.nodeWallets, n.ethClient, n.ethConfirmations, n.blockchainClient, n.vegaPaths, n.stats)
-	if err != nil {
-		n.Log.Panic("protocol upgrade failure, could not instantiate the new version of the protocol", logging.Error(err))
-	}
-
-	n.abciApp.ScheduleUpgrade(n.protocol.Abci())
-
-	// now we can update all the services used from the protocol
-	n.updateAPIsServices()
+	return n.blockchainServer.Stop()
 }
 
 func (n *Command) Stop() error {
-	if n.blockchainServer != nil {
+	upStatus := n.protocol.GetProtocolUpgradeService().GetUpgradeStatus()
+
+	// Blockchain server has been already stopped by the app during the upgrade.
+	// Calling stop again would block forever.
+	if n.blockchainServer != nil && !upStatus.ReadyToUpgrade {
 		n.blockchainServer.Stop()
 	}
 	if n.protocol != nil {
@@ -259,20 +229,12 @@ func (n *Command) Stop() error {
 	n.Log.Sync()
 	n.cancel()
 
+	// Blockchain server need to be killed as it is stuck in BeginBlock function.
+	if upStatus.ReadyToUpgrade {
+		return kill()
+	}
+
 	return err
-}
-
-// updateAPIsServices is to be called when a new protocol is being loaded
-// so the API services bind to the proper engines / services.
-func (n *Command) updateAPIsServices() {
-	n.grpcServer.UpdateProtocolServices(
-		n.protocol.GetEventForwarder(),
-		n.protocol.GetTimeService(),
-		n.protocol.GetEventService(),
-		n.protocol.GetPoW(),
-	)
-
-	n.coreService.UpdateBroker(n.protocol.GetBroker())
 }
 
 func (n *Command) startAPIs() error {
@@ -285,6 +247,8 @@ func (n *Command) startAPIs() error {
 		n.protocol.GetTimeService(),
 		n.protocol.GetEventService(),
 		n.protocol.GetPoW(),
+		n.protocol.GetSpamEngine(),
+		n.protocol.GetPowEngine(),
 	)
 
 	n.coreService = coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.protocol.GetBroker())
@@ -306,7 +270,7 @@ func (n *Command) startAPIs() error {
 		}
 		n.adminServer = adminServer
 	} else {
-		adminServer, err := admin.NewNonValidatorServer(n.Log, n.conf.Admin, n.vegaPaths, n.protocol.GetProtocolUpgradeService())
+		adminServer, err := admin.NewNonValidatorServer(n.Log, n.conf.Admin, n.protocol.GetProtocolUpgradeService())
 		if err != nil {
 			return err
 		}
@@ -323,7 +287,7 @@ func (n *Command) startAPIs() error {
 	return nil
 }
 
-func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
+func (n *Command) startBlockchain(log *logging.Logger, tmHome, network, networkURL string) error {
 	// make sure any env variable is resolved
 	tmHome = os.ExpandEnv(tmHome)
 	n.abciApp = newAppW(n.protocol.Abci())
@@ -332,7 +296,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	case blockchain.ProviderTendermint:
 		var err error
 		// initialise the node
-		n.tmNode, err = n.startABCI(n.abciApp, tmHome, network, networkURL)
+		n.tmNode, err = n.startABCI(log, n.abciApp, tmHome, network, networkURL)
 		if err != nil {
 			return err
 		}
@@ -375,7 +339,7 @@ func (n *Command) startBlockchain(tmHome, network, networkURL string) error {
 	return nil
 }
 
-func (n *Command) setupCommon(_ []string) (err error) {
+func (n *Command) setupCommon() (err error) {
 	// this shouldn't happen, the context is initialized in here
 	if n.cancel != nil {
 		n.cancel()
@@ -395,7 +359,7 @@ func (n *Command) setupCommon(_ []string) (err error) {
 	conf := n.confWatcher.Get()
 
 	// reload logger with the setup from configuration
-	n.Log = logging.NewLoggerFromConfig(conf.Logging)
+	n.Log = logging.NewLoggerFromConfig(conf.Logging).Named(n.Log.GetName())
 
 	// enable pprof if necessary
 	if conf.Pprof.Enabled {
@@ -417,7 +381,7 @@ func (n *Command) setupCommon(_ []string) (err error) {
 	return err
 }
 
-func (n *Command) loadNodeWallets(_ []string) (err error) {
+func (n *Command) loadNodeWallets() (err error) {
 	// if we are a non-validator, nothing needs to be done here
 	if !n.conf.IsValidator() {
 		return nil
@@ -431,7 +395,7 @@ func (n *Command) loadNodeWallets(_ []string) (err error) {
 	return n.nodeWallets.Verify()
 }
 
-func (n *Command) startABCI(app types.Application, tmHome string, network string, networkURL string) (*abci.TmNode, error) {
+func (n *Command) startABCI(log *logging.Logger, app types.Application, tmHome string, network string, networkURL string) (*abci.TmNode, error) {
 	var (
 		genesisDoc *tmtypes.GenesisDoc
 		err        error
@@ -447,14 +411,14 @@ func (n *Command) startABCI(app types.Application, tmHome string, network string
 
 	return abci.NewTmNode(
 		n.conf.Blockchain,
-		n.Log,
+		log,
 		tmHome,
 		app,
 		genesisDoc,
 	)
 }
 
-func (n *Command) startBlockchainClients(_ []string) error {
+func (n *Command) startBlockchainClients() error {
 	// just intantiate the client here, we'll setup the actual impl later on
 	// when the null blockchain or tendermint is started.
 	n.blockchainClient = blockchain.NewClient()
@@ -474,4 +438,13 @@ func (n *Command) startBlockchainClients(_ []string) error {
 	}
 
 	return nil
+}
+
+// kill the running process by signaling itself with SIGKILL.
+func kill() error {
+	p, err := os.FindProcess(os.Getpid())
+	if err != nil {
+		return err
+	}
+	return p.Signal(syscall.SIGKILL)
 }

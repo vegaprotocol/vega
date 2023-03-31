@@ -27,18 +27,17 @@ type tradeStore interface {
 	GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error)
 	GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
 	GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error)
 }
 
 type Trade struct {
 	store    tradeStore
-	log      *logging.Logger
 	observer utils.Observer[*entities.Trade]
 }
 
 func NewTrade(store tradeStore, log *logging.Logger) *Trade {
 	return &Trade{
 		store:    store,
-		log:      log,
 		observer: utils.NewObserver[*entities.Trade]("trade", log, 0, 0),
 	}
 }
@@ -76,6 +75,10 @@ func (t *Trade) GetByParty(ctx context.Context, party string, market *string, pa
 
 func (t *Trade) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
 	return t.store.GetByOrderID(ctx, order, market, pagination)
+}
+
+func (t *Trade) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error) {
+	return t.store.GetByTxHash(ctx, txHash)
 }
 
 func (t *Trade) Observe(ctx context.Context, retries int, marketID *string, partyID *string) (<-chan []*entities.Trade, uint64) {

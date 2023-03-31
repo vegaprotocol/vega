@@ -33,8 +33,8 @@ type AdminSignTransactionParams struct {
 	Wallet        string              `json:"wallet"`
 	Passphrase    string              `json:"passphrase"`
 	PublicKey     string              `json:"publicKey"`
-	Transaction   interface{}         `json:"transaction"`
 	Network       string              `json:"network"`
+	Transaction   interface{}         `json:"transaction"`
 	LastBlockData *AdminLastBlockData `json:"lastBlockData"`
 }
 
@@ -58,29 +58,33 @@ type AdminSignTransaction struct {
 	nodeSelectorBuilder NodeSelectorBuilder
 }
 
-func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminSignTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
-	if err != nil {
+	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
 		if errors.Is(err, wallet.ErrWrongPassphrase) {
 			return nil, invalidParams(err)
 		}
+		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	}
+
+	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
+	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
+		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
 	}
 
 	request.PubKey = params.PublicKey
@@ -90,9 +94,9 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 
 	if params.Network != "" {
-		lastBlockData, err := h.getLastBlockDataFromNetwork(ctx, params)
-		if err != nil {
-			return nil, err
+		lastBlockData, errDetails := h.getLastBlockDataFromNetwork(ctx, params)
+		if errDetails != nil {
+			return nil, errDetails
 		}
 		params.LastBlockData = lastBlockData
 	}
@@ -139,7 +143,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, params ParsedAdminSignTransactionParams) (*AdminLastBlockData, *jsonrpc.ErrorDetails) {
 	exists, err := h.networkStore.NetworkExists(params.Network)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not check the network existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
 	} else if !exists {
 		return nil, invalidParams(ErrNetworkDoesNotExist)
 	}
@@ -155,7 +159,7 @@ func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 
 	nodeSelector, err := h.nodeSelectorBuilder(n.API.GRPC.Hosts, n.API.GRPC.Retries)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
+		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
 	node, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
@@ -217,7 +221,7 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 
 	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ParsedAdminSignTransactionParams{}, ErrEncodedTransactionIsNotValid
+		return ParsedAdminSignTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	if params.Network != "" && params.LastBlockData != nil {

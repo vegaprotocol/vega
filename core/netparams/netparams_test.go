@@ -421,3 +421,36 @@ func TestCrossNetParamUpdates(t *testing.T) {
 	err = netp.Validate(netparams.MarketAuctionMinimumDuration, "13h")
 	require.Equal(t, "unable to validate market.auction.minimumDuration: expect < 12h0m0s (market.auction.maximumDuration) got 13h0m0s", err.Error())
 }
+
+func TestCrossNetParamUpdatesInGenesis(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+
+	genesis1 := map[string]interface{}{
+		"network_parameters": map[string]string{
+			"network.validators.tendermint.number":        "5",
+			"network.validators.multisig.numberOfSigners": "5",
+		},
+		"network_parameters_checkpoint_overwrite": []string{},
+	}
+
+	netp.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	buf, err := json.Marshal(genesis1)
+	require.NoError(t, err)
+	require.NoError(t, netp.UponGenesis(context.Background(), buf))
+
+	genesis2 := map[string]interface{}{
+		"network_parameters": map[string]string{
+			"network.validators.multisig.numberOfSigners": "5",
+			"network.validators.tendermint.number":        "5",
+		},
+		"network_parameters_checkpoint_overwrite": []string{},
+	}
+
+	netp.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	buf, err = json.Marshal(genesis2)
+	require.NoError(t, err)
+	require.NoError(t, netp.UponGenesis(context.Background(), buf))
+}

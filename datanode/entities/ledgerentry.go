@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -22,32 +23,59 @@ import (
 )
 
 type LedgerEntry struct {
-	LedgerEntryTime time.Time
-	AccountFromID   AccountID
-	AccountToID     AccountID
-	Quantity        decimal.Decimal
-	TxHash          TxHash
-	VegaTime        time.Time
-	TransferTime    time.Time
-	Type            LedgerMovementType
+	LedgerEntryTime    time.Time
+	FromAccountID      AccountID `db:"account_from_id"`
+	ToAccountID        AccountID `db:"account_to_id"`
+	Quantity           decimal.Decimal
+	TxHash             TxHash
+	VegaTime           time.Time
+	TransferTime       time.Time
+	Type               LedgerMovementType
+	FromAccountBalance decimal.Decimal `db:"account_from_balance"`
+	ToAccountBalance   decimal.Decimal `db:"account_to_balance"`
 }
 
 var LedgerEntryColumns = []string{
 	"ledger_entry_time",
 	"account_from_id", "account_to_id", "quantity",
 	"tx_hash", "vega_time", "transfer_time", "type",
+	"account_from_balance",
+	"account_to_balance",
+}
+
+func (le LedgerEntry) ToProto(ctx context.Context, accountSource AccountSource) (*vega.LedgerEntry, error) {
+	fromAcc, err := accountSource.GetByID(ctx, le.FromAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("getting from account for transfer proto:%w", err)
+	}
+
+	toAcc, err := accountSource.GetByID(ctx, le.ToAccountID)
+	if err != nil {
+		return nil, fmt.Errorf("getting to account for transfer proto:%w", err)
+	}
+
+	return &vega.LedgerEntry{
+		FromAccount:        fromAcc.ToAccountDetailsProto(),
+		ToAccount:          toAcc.ToAccountDetailsProto(),
+		Amount:             le.Quantity.String(),
+		Type:               vega.TransferType(le.Type),
+		FromAccountBalance: le.FromAccountBalance.String(),
+		ToAccountBalance:   le.ToAccountBalance.String(),
+	}, nil
 }
 
 func (le LedgerEntry) ToRow() []any {
 	return []any{
 		le.LedgerEntryTime,
-		le.AccountFromID,
-		le.AccountToID,
+		le.FromAccountID,
+		le.ToAccountID,
 		le.Quantity,
 		le.TxHash,
 		le.VegaTime,
 		le.TransferTime,
 		le.Type,
+		le.FromAccountBalance,
+		le.ToAccountBalance,
 	}
 }
 
@@ -96,8 +124,8 @@ const (
 	LedgerMovementTypeDeposit = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_DEPOSIT)
 	// Bond slashing.
 	LedgerMovementTypeBondSlashing = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_BOND_SLASHING)
-	// Stake reward.
-	LedgerMovementTypeRewardPayout            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_STAKE_REWARD)
+	// Reward payout.
+	LedgerMovementTypeRewardPayout            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_REWARD_PAYOUT)
 	LedgerMovementTypeTransferFundsSend       = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND)
 	LedgerMovementTypeTransferFundsDistribute = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE)
 	LedgerMovementTypeClearAccount            = LedgerMovementType(vega.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT)

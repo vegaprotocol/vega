@@ -9,6 +9,7 @@ skip-dirs = [
 [issues]
 max-issues-per-linter = 0
 max-same-issues = 0
+#new = true
 
 [linters]
 enable-all = true
@@ -119,6 +120,12 @@ linters = ["exhaustruct", "noctx"]
 paths = ["_test.go", "helpers.go"]
 linters = ["revive"]
 text = "context-as-argument"
+
+# Don't complain about underscores in test methods.
+[[issues.exclude-rules]]
+paths = ["_test.go", "helpers.go"]
+linters = ["revive"]
+text = "var-naming"
 
 [linters-settings.forbidigo]
 forbid = ["fmt\\.Print.*"]

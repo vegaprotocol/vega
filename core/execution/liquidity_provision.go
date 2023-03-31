@@ -36,6 +36,8 @@ func (m *Market) SubmitLiquidityProvision(
 	party, deterministicID string,
 ) (err error,
 ) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -51,17 +53,8 @@ func (m *Market) SubmitLiquidityProvision(
 		needsBondRollback bool
 	)
 
-	if err := m.liquidity.ValidateLiquidityProvisionSubmission(sub, true); err != nil {
-		return err
-	}
-
 	if err := m.ensureLPCommitmentAmount(sub.CommitmentAmount); err != nil {
 		return err
-	}
-
-	// if the party is alrready an LP we reject the new submission
-	if m.liquidity.IsLiquidityProvider(party) {
-		return ErrPartyAlreadyLiquidityProvider
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, m.idgen); err != nil {
@@ -214,6 +207,8 @@ func (m *Market) SubmitLiquidityProvision(
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
 func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicID string) (err error) {
+	defer m.onTxProcessed()
+
 	m.idgen = idgeneration.New(deterministicID)
 	defer func() { m.idgen = nil }()
 
@@ -297,6 +292,8 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
 func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
+	defer m.onTxProcessed()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -508,13 +505,14 @@ func (m *Market) repriceLiquidityOrder(side types.Side, reference types.PeggedRe
 
 func (m *Market) adjustPrice(side types.Side, referencePrice, offset, minLpPrice, maxLpPrice *num.Uint) *num.Uint {
 	offsetPrice := m.applyOffset(side, referencePrice, offset)
-	if offsetPrice.LT(minLpPrice) {
+	if offsetPrice.GTE(minLpPrice) && offsetPrice.LTE(maxLpPrice) {
+		return offsetPrice
+	}
+
+	if side == types.SideBuy {
 		return minLpPrice
 	}
-	if offsetPrice.GT(maxLpPrice) {
-		return maxLpPrice
-	}
-	return offsetPrice
+	return maxLpPrice
 }
 
 func (m *Market) applyOffset(side types.Side, referencePrice, offset *num.Uint) *num.Uint {
@@ -556,10 +554,21 @@ func (m *Market) computeValidLPVolumeRange(bestStaticBid, bestStaticAsk *num.Uin
 	if lb.IsNegative() || lb.IsZero() {
 		lb = m.minValidPrice()
 	}
-
 	if lb.GTE(ub) {
-		// if we ended up with overlapping upper and lower bound we set the upper bound to lower bound plus one.
-		ub = ub.Add(lb, num.UintOne())
+		// if we ended up with overlapping upper and lower bound we set the upper bound to lower bound plus one tick.
+		ub = ub.Add(lb, m.priceFactor)
+	}
+
+	// we can't have lower bound >= best static ask as then a buy order with that price would trade on entry
+	// so place it one tick to the left
+	if lb.GTE(bestStaticAsk) {
+		lb = num.UintZero().Sub(bestStaticAsk, m.priceFactor)
+	}
+
+	// we can't have upper bound <= best static bid as then a sell order with that price would trade on entry
+	// so place it one tick to the right
+	if ub.LTE(bestStaticBid) {
+		ub = num.UintZero().Add(bestStaticBid, m.priceFactor)
 	}
 
 	return lb, ub
@@ -649,6 +658,7 @@ func (m *Market) cancelLiquidityProvision(
 			return err
 		}
 		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
+		m.collateral.RemoveBondAccount(party, m.GetID(), asset)
 	}
 
 	// now let's update the fee selection
@@ -713,12 +723,7 @@ func (m *Market) amendLiquidityProvision(
 func (m *Market) amendLiquidityProvisionAuction(
 	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
-	// first try to get the indicative uncrossing price from the book
-	price := m.matching.GetIndicativePrice()
-	if price.IsZero() {
-		// here it is 0 so we will use the mark price
-		price = m.getLastTradedPrice()
-	}
+	price := m.getMarketObservable(num.UintZero())
 
 	// now let's check if we are still at 0, if yes, it means we are in the
 	// third condition from before, no price available, we just accept the
@@ -780,7 +785,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	// now we register all these orders as potential positions
 	// which we will use to calculate the margin just after
 	for _, order := range orders {
-		pos.RegisterOrder(order)
+		pos.RegisterOrder(m.log, order)
 	}
 
 	// then calculate the margins,
@@ -865,7 +870,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 
 	// then add all the newly created ones
 	for _, v := range orders {
-		pos.RegisterOrder(v)
+		pos.RegisterOrder(m.log, v)
 	}
 
 	// now we calculate the margin as if we were submitting these orders
@@ -884,8 +889,6 @@ func (m *Market) amendLiquidityProvisionContinuous(
 func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
-	// first parameter is the update to the orders, but we know that during
-	// auction no orders shall be return, so let's just look at the error
 	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party, m.idgen)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
@@ -988,4 +991,47 @@ func (m *Market) ensureLPCommitmentAmount(amount *num.Uint) error {
 	}
 
 	return nil
+}
+
+func (m *Market) updateLiquidityScores() {
+	minLpPrice, maxLpPrice, err := m.getValidLPVolumeRange()
+	if err != nil {
+		m.log.Debug("liquidity score update error", logging.Error(err))
+		return
+	}
+	bid, ask, err := m.getBestStaticPricesDecimal()
+	if err != nil {
+		m.log.Debug("liquidity score update error", logging.Error(err))
+		return
+	}
+
+	m.liquidity.UpdateAverageLiquidityScores(bid, ask, minLpPrice, maxLpPrice)
+}
+
+func (m *Market) updateSharesWithLiquidityScores(shares map[string]num.Decimal) map[string]num.Decimal {
+	lScores := m.liquidity.GetAverageLiquidityScores()
+
+	total := num.DecimalZero()
+	for k, v := range shares {
+		l, ok := lScores[k]
+		if !ok {
+			continue
+		}
+		adjusted := v.Mul(l)
+		shares[k] = adjusted
+
+		total = total.Add(adjusted)
+	}
+
+	// normalise
+	if !total.IsZero() {
+		for k, v := range shares {
+			shares[k] = v.Div(total)
+		}
+	}
+
+	// reset for next period
+	m.liquidity.ResetAverageLiquidityScores()
+
+	return shares
 }

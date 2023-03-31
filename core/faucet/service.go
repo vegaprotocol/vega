@@ -20,16 +20,18 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	vfmt "code.vegaprotocol.io/vega/libs/fmt"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"google.golang.org/grpc/credentials/insecure"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/cenkalti/backoff"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
@@ -82,20 +84,15 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 
-	walletLoader, err := InitialiseWalletLoader(vegaPaths)
+	wallet, err := loadWallet(vegaPaths, cfg.WalletName, passphrase)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise faucet wallet loader: %w", err)
-	}
-
-	wallet, err := walletLoader.load(cfg.WalletName, passphrase)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't load faucet wallet %s: %w", cfg.WalletName, err)
+		return nil, fmt.Errorf("could not load the faucet wallet %s: %w", cfg.WalletName, err)
 	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", cfg.Node.IP, cfg.Node.Port)
-	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(nodeAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not initialise the gPRC client: %w", err)
 	}
 
 	client := api.NewCoreServiceClient(conn)
@@ -105,7 +102,7 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
 	if err != nil {
 		cfunc()
-		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
+		return nil, fmt.Errorf("could not initialise the rate limiter: %v", err)
 	}
 
 	f := &Faucet{
@@ -123,6 +120,7 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 
 	f.POST("/api/v1/mint", f.Mint)
 	f.GET("/api/v1/health", f.Health)
+
 	return f, nil
 }
 
@@ -173,8 +171,8 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	rlkey := fmt.Sprintf("minting for party %s and asset %s", req.Party, req.Asset)
 	if err := f.rl.NewRequest(rlkey, ip); err != nil {
 		f.log.Debug("Mint denied - rate limit",
-			logging.String("ip", ip),
-			logging.String("rlkey", rlkey),
+			logging.String("ip", vfmt.Escape(ip)),
+			logging.String("rlkey", vfmt.Escape(rlkey)),
 		)
 		writeError(w, newError(err.Error()), http.StatusForbidden)
 		return

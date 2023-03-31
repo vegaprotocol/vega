@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgzap "code.vegaprotocol.io/vega/libs/zap"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -64,7 +64,7 @@ func NewCmdRawTransactionSend(w io.Writer, rf *RootFlags) *cobra.Command {
 		sendTransaction := api.NewAdminSendRawTransaction(netStore, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
-		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params)
 		if errorDetails != nil {
 			return api.AdminSendRawTransactionResult{}, errors.New(errorDetails.Data)
 		}
@@ -194,11 +194,13 @@ func (f *SendRawTransactionFlags) Validate() (api.AdminSendRawTransactionParams,
 	return req, nil
 }
 
-func PrintTXSendResponse(w io.Writer, resp api.AdminSendRawTransactionResult) {
+func PrintTXSendResponse(w io.Writer, res api.AdminSendRawTransactionResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
 	defer p.Print(str)
 	str.CheckMark().SuccessText("Transaction successfully sent").NextSection()
-	str.Text("Transaction Hash:").NextLine().WarningText(resp.TxHash).NextSection()
+	str.Text("Transaction Hash:").NextLine().WarningText(res.TxHash).NextSection()
+	str.Text("Sent at:").NextLine().WarningText(res.SentAt.Format(time.ANSIC)).NextSection()
+	str.Text("Selected node:").NextLine().WarningText(res.Node.Host).NextLine()
 }

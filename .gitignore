@@ -20,6 +20,11 @@ cmd/data-node/__debug_bin
 data-node-amd64
 vega-amd64
 vegawallet-amd64
+vega-arm64
+vega-linux
+vega-v*-arm64
+vega-v*-linux
+visor-arm64
 #cmd/*/*-dbg
 
 # Exclude files related to tests

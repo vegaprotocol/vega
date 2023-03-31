@@ -22,6 +22,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
@@ -31,9 +32,11 @@ const (
                        size, remaining, time_in_force, type, status,
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
-                       tx_hash, vega_time, seq_num`
+                       tx_hash, vega_time, seq_num, post_only, reduce_only`
 
 	ordersFilterDateColumn = "vega_time"
+
+	OrdersTableName = "orders"
 )
 
 type Orders struct {
@@ -42,15 +45,16 @@ type Orders struct {
 }
 
 var ordersOrdering = TableOrdering{
+	ColumnOrdering{Name: "created_at", Sorting: ASC},
+	ColumnOrdering{Name: "id", Sorting: DESC},
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
-	ColumnOrdering{Name: "seq_num", Sorting: ASC},
 }
 
-func NewOrders(connectionSource *ConnectionSource, _ *logging.Logger) *Orders {
+func NewOrders(connectionSource *ConnectionSource) *Orders {
 	a := &Orders{
 		ConnectionSource: connectionSource,
 		batcher: NewMapBatcher[entities.OrderKey, entities.Order](
-			"orders",
+			OrdersTableName,
 			entities.OrderColumns),
 	}
 	return a
@@ -79,7 +83,7 @@ func (os *Orders) GetAll(ctx context.Context) ([]entities.Order, error) {
 	return orders, err
 }
 
-// GetByOrderId returns the last update of the order with the given ID.
+// GetOrder returns the last update of the order with the given ID.
 func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int32) (entities.Order, error) {
 	var err error
 	order := entities.Order{}
@@ -90,44 +94,64 @@ func (os *Orders) GetOrder(ctx context.Context, orderIDStr string, version *int3
 		query := fmt.Sprintf("SELECT %s FROM orders_current_versions WHERE id=$1 and version=$2", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID, version)
 	} else {
-		query := fmt.Sprintf("SELECT %s FROM orders_current WHERE id=$1", sqlOrderColumns)
+		query := fmt.Sprintf("SELECT %s FROM orders_current_desc WHERE id=$1", sqlOrderColumns)
 		err = pgxscan.Get(ctx, os.Connection, &order, query, orderID)
 	}
 
 	return order, os.wrapE(err)
 }
 
-// GetByMarket returns the last update of the all the orders in a particular market.
-func (os *Orders) GetByMarket(ctx context.Context, marketIDStr string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByMarket")()
-	marketID := entities.MarketID(marketIDStr)
+// GetByMarketAndID returns all orders with given IDs for a market.
+func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
+	if len(orderIDs) == 0 {
+		os.log.Warn("GetByMarketAndID called with an empty order slice",
+			logging.String("market ID", marketIDstr),
+		)
+		return nil, nil
+	}
+	defer metrics.StartSQLQuery("Orders", "GetByMarketAndID")()
+	marketID := entities.MarketID(marketIDstr)
+	// IDs := make([]entities.OrderID, 0, len(orderIDs))
+	IDs := make([]interface{}, 0, len(orderIDs))
+	in := make([]string, 0, len(orderIDs))
+	bindNum := 2
+	for _, o := range orderIDs {
+		IDs = append(IDs, entities.OrderID(o))
+		in = append(in, fmt.Sprintf("$%d", bindNum))
+		bindNum++
+	}
+	bind := make([]interface{}, 0, len(in)+1)
+	// set all bind vars
+	bind = append(bind, marketID)
+	bind = append(bind, IDs...)
+	// select directly from orders_live table, the current view searches in orders
+	// this is used to expire orders, which have to be, by definition, live. This table uses ID as its PK
+	// so this is a more optimal way of querying the data.
+	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
+	orders := make([]entities.Order, 0, len(orderIDs))
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
 
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE market_id=$1`, sqlOrderColumns)
-	args := []interface{}{marketID}
-	return os.queryOrders(ctx, query, args, &p)
+	return orders, os.wrapE(err)
 }
 
-// GetByParty returns the last update of the all the orders in a particular party.
-func (os *Orders) GetByParty(ctx context.Context, partyIDStr string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByParty")()
-	partyID := entities.PartyID(partyIDStr)
+func (os *Orders) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByTxHash")()
 
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE party_id=$1`, sqlOrderColumns)
-	args := []interface{}{partyID}
-	return os.queryOrders(ctx, query, args, &p)
-}
+	orders := []entities.Order{}
+	query := fmt.Sprintf(`SELECT %s FROM orders WHERE tx_hash=$1`, sqlOrderColumns)
 
-// GetByReference returns the last update of orders with the specified user-suppled reference.
-func (os *Orders) GetByReference(ctx context.Context, reference string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetByReference")()
-	query := fmt.Sprintf(`SELECT %s from orders_current WHERE reference=$1`, sqlOrderColumns)
-	args := []interface{}{reference}
-	return os.queryOrders(ctx, query, args, &p)
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("querying orders: %w", err)
+	}
+	return orders, nil
 }
 
 // GetByReference returns the last update of orders with the specified user-suppled reference.
 func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
-	return os.ListOrders(ctx, nil, nil, &reference, false, p, entities.DateRange{}, entities.OrderFilter{})
+	return os.ListOrders(ctx, p, entities.OrderFilter{
+		Reference: &reference,
+	})
 }
 
 // GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
@@ -167,15 +191,30 @@ func (os *Orders) queryOrders(ctx context.Context, query string, args []interfac
 }
 
 func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query string, args []interface{},
-	pagination entities.CursorPagination,
+	pagination entities.CursorPagination, alreadyOrdered bool,
 ) ([]entities.Order, entities.PageInfo, error) {
 	var (
 		err      error
 		orders   []entities.Order
 		pageInfo entities.PageInfo
 	)
+	// This is a bit subtle - if we're selecting from a view that's doing DISTINCT ON ... ORDER BY
+	// it is imperative that we don't apply an ORDER BY clause to the outer query or else postgres
+	// will try and materialize the entire view; so rely on the view to sort correctly for us.
+	ordering := ordersOrdering
 
-	query, args, err = PaginateQuery[entities.OrderCursor](query, args, ordersOrdering, pagination)
+	paginateQuery := PaginateQuery[entities.OrderCursor]
+	if alreadyOrdered {
+		paginateQuery = PaginateQueryWithoutOrderBy[entities.OrderCursor]
+	}
+
+	// We don't have views and indexes for iterating backwards for now so we can't use 'last'
+	// as it requires us to order in reverse
+	if pagination.HasBackward() {
+		return nil, entities.PageInfo{}, fmt.Errorf("'last' pagination for orders not currently supported")
+	}
+
+	query, args, err = paginateQuery(query, args, ordering, pagination)
 	if err != nil {
 		return orders, pageInfo, err
 	}
@@ -205,36 +244,47 @@ func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagin
 	return query, args
 }
 
-func (os *Orders) ListOrders(ctx context.Context, party *string, market *string, reference *string, liveOnly bool, p entities.CursorPagination,
-	dateRange entities.DateRange, orderFilter entities.OrderFilter,
+func currentView(f entities.OrderFilter, p entities.CursorPagination) (string, bool, error) {
+	if !p.NewestFirst {
+		return "", false, fmt.Errorf("oldest first order query is not currently supported")
+	}
+	if f.LiveOnly {
+		return "orders_live", false, nil
+	}
+	if f.Reference != nil {
+		return "orders_current_desc_by_reference", true, nil
+	}
+	if len(f.PartyIDs) > 0 {
+		return "orders_current_desc_by_party", true, nil
+	}
+	if len(f.MarketIDs) > 0 {
+		return "orders_current_desc_by_market", true, nil
+	}
+	return "orders_current_desc", true, nil
+}
+
+func (os *Orders) ListOrders(
+	ctx context.Context,
+	p entities.CursorPagination,
+	orderFilter entities.OrderFilter,
 ) ([]entities.Order, entities.PageInfo, error) {
-	var filters []filter
-	if party != nil {
-		filters = append(filters, filter{"party_id", entities.PartyID(*party)})
+	table, alreadyOrdered, err := currentView(orderFilter, p)
+	if err != nil {
+		return nil, entities.PageInfo{}, err
 	}
 
-	if market != nil {
-		filters = append(filters, filter{"market_id", entities.MarketID(*market)})
-	}
+	bind := make([]interface{}, 0, len(orderFilter.PartyIDs)+len(orderFilter.MarketIDs)+1)
+	where := strings.Builder{}
+	where.WriteString("WHERE 1=1 ")
 
-	if reference != nil {
-		filters = append(filters, filter{"reference", *reference})
-	}
+	whereStr, args := applyOrderFilter(where.String(), bind, orderFilter)
 
-	where, args := buildWhereClause(filters...)
-	where, args = applyOrderFilter(where, args, orderFilter)
-
-	table := "orders_current"
-	if liveOnly {
-		table = "orders_live"
-	}
-
-	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, where)
-	query, args = filterDateRange(query, ordersFilterDateColumn, dateRange, args...)
+	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, whereStr)
+	query, args = filterDateRange(query, ordersFilterDateColumn, ptr.UnBox(orderFilter.DateRange), args...)
 
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 
-	return os.queryOrdersWithCursorPagination(ctx, query, args, p)
+	return os.queryOrdersWithCursorPagination(ctx, query, args, p, alreadyOrdered)
 }
 
 func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
@@ -245,37 +295,39 @@ func (os *Orders) ListOrderVersions(ctx context.Context, orderIDStr string, p en
 	query := fmt.Sprintf(`SELECT %s from orders_current_versions WHERE id=$1`, sqlOrderColumns)
 	defer metrics.StartSQLQuery("Orders", "GetByOrderIDPaged")()
 
-	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p)
-}
-
-type filter struct {
-	colName string
-	value   any
-}
-
-func buildWhereClause(filters ...filter) (string, []any) {
-	whereBuilder := strings.Builder{}
-	var args []any
-	filterNum := 0
-	for _, filter := range filters {
-		if filter.value != nil {
-			filterNum++
-			if filterNum == 1 {
-				whereBuilder.WriteString(fmt.Sprintf("WHERE %s = $1", filter.colName))
-				args = append(args, filter.value)
-			} else {
-				whereBuilder.WriteString(fmt.Sprintf(" AND %s = $%d", filter.colName, filterNum))
-				args = append(args, filter.value)
-			}
-		}
-	}
-
-	return whereBuilder.String(), args
+	return os.queryOrdersWithCursorPagination(ctx, query, []interface{}{orderID}, p, true)
 }
 
 func applyOrderFilter(whereClause string, args []any, filter entities.OrderFilter) (string, []any) {
 	if filter.ExcludeLiquidity {
 		whereClause += " AND COALESCE(lp_id, '') = ''"
+	}
+
+	if len(filter.PartyIDs) > 0 {
+		parties := strings.Builder{}
+		for i, party := range filter.PartyIDs {
+			if i > 0 {
+				parties.WriteString(",")
+			}
+			parties.WriteString(nextBindVar(&args, entities.PartyID(party)))
+		}
+		whereClause += fmt.Sprintf(" AND party_id IN (%s)", parties.String())
+	}
+
+	if len(filter.MarketIDs) > 0 {
+		markets := strings.Builder{}
+		for i, market := range filter.MarketIDs {
+			if i > 0 {
+				markets.WriteString(",")
+			}
+			markets.WriteString(nextBindVar(&args, entities.MarketID(market)))
+		}
+		whereClause += fmt.Sprintf(" AND market_id IN (%s)", markets.String())
+	}
+
+	if filter.Reference != nil {
+		args = append(args, filter.Reference)
+		whereClause += fmt.Sprintf(" AND reference = $%d", len(args))
 	}
 
 	if len(filter.Statuses) > 0 {

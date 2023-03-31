@@ -19,15 +19,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
 	"code.vegaprotocol.io/vega/libs/num"
-	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 )
 
 type expect struct {
@@ -476,6 +475,7 @@ func getSubscriberAndStore(t *testing.T) (*sqlsubscribers.Position, sqlsubscribe
 	ctrl := gomock.NewController(t)
 
 	store := mocks.NewMockPositionStore(ctrl)
+	mkt := mocks.NewMockMarketSvc(ctrl)
 
 	var lastPos entities.Position
 	recordPos := func(_ context.Context, pos entities.Position) error {
@@ -494,8 +494,9 @@ func getSubscriberAndStore(t *testing.T) (*sqlsubscribers.Position, sqlsubscribe
 	store.EXPECT().Add(gomock.Any(), gomock.Any()).DoAndReturn(recordPos)
 	store.EXPECT().GetByMarket(gomock.Any(), gomock.Any()).DoAndReturn(getByMarket)
 	store.EXPECT().GetByMarketAndParty(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(getByMarketAndParty)
+	mkt.EXPECT().GetMarketScalingFactor(gomock.Any(), gomock.Any()).AnyTimes().Return(num.DecimalFromInt64(1), true)
 
-	p := sqlsubscribers.NewPosition(store, logging.NewTestLogger())
+	p := sqlsubscribers.NewPosition(store, mkt)
 	return p, store
 }
 

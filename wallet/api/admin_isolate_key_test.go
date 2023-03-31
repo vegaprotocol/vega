@@ -3,7 +3,6 @@ package api_test
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -103,15 +102,14 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
-	expectedPath := filepath.Join(vgrand.RandomStr(3), vgrand.RandomStr(3))
 
 	// setup
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(nil)
-	handler.walletStore.EXPECT().GetWalletPath(gomock.Any()).Times(1).Return(expectedPath)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
@@ -124,7 +122,6 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.True(t, strings.HasPrefix(result.Wallet, expectedWallet.Name()))
-	assert.Equal(t, expectedPath, result.FilePath)
 }
 
 func testIsolatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
@@ -176,7 +173,7 @@ func testIsolatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testin
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
@@ -190,7 +187,8 @@ func testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
@@ -217,8 +215,9 @@ func testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails(t *test
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
@@ -245,7 +244,8 @@ func testIsolatingKeyThatDoesNotExistsFails(t *testing.T) {
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
@@ -267,10 +267,10 @@ type isolateKeyHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *isolateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminIsolateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *isolateKeyHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminIsolateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminIsolateKeyResult)
 		if !ok {

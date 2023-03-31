@@ -15,7 +15,7 @@ func (e *Engine) BridgeStopped(
 ) error {
 	aa := &assetAction{
 		id:                 id,
-		state:              pendingState,
+		state:              newPendingState(),
 		erc20BridgeStopped: &types.ERC20EventBridgeStopped{BridgeStopped: stopped},
 		blockHeight:        block,
 		logIndex:           logIndex,
@@ -35,7 +35,7 @@ func (e *Engine) BridgeResumed(
 ) error {
 	aa := &assetAction{
 		id:                 id,
-		state:              pendingState,
+		state:              newPendingState(),
 		erc20BridgeResumed: &types.ERC20EventBridgeResumed{BridgeResumed: resumed},
 		blockHeight:        block,
 		logIndex:           logIndex,

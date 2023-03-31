@@ -19,6 +19,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var defaultPageSize int32 = 1000
+
 type Pagination interface{}
 
 type OffsetPagination struct {
@@ -103,13 +105,17 @@ func NewCursorPagination(first *int32, after *string, last *int32, before *strin
 }
 
 func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
-	if cp == nil || (cp.Last == nil && cp.First == nil && cp.NewestFirst == nil) {
+	if cp == nil {
 		return DefaultCursorPagination(true), nil
 	}
 
 	var after, before Cursor
 	var err error
 	var forwardOffset, backwardOffset *offset
+
+	if cp.Before != nil && cp.After != nil {
+		return CursorPagination{}, errors.New("cannot set both a before and after cursor")
+	}
 
 	if cp.First != nil {
 		forwardOffset = &offset{
@@ -134,6 +140,26 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 			}
 			backwardOffset.Cursor = &before
 		}
+	} else if cp.After != nil {
+		// Have an 'after' cursor but no page size ('first') so use default
+		if err = after.Decode(*cp.After); err != nil {
+			return CursorPagination{}, errors.Wrap(err, "failed to decode after cursor")
+		}
+
+		forwardOffset = &offset{
+			Limit:  &defaultPageSize,
+			Cursor: &after,
+		}
+	} else if cp.Before != nil {
+		// Have an 'before' cursor but no page size ('first') so use default
+		if err = before.Decode(*cp.Before); err != nil {
+			return CursorPagination{}, errors.Wrap(err, "failed to decode before cursor")
+		}
+
+		backwardOffset = &offset{
+			Limit:  &defaultPageSize,
+			Cursor: &before,
+		}
 	}
 
 	// Default the sort order to return the newest records first if no sort order is provided
@@ -156,10 +182,9 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 }
 
 func DefaultCursorPagination(newestFirst bool) CursorPagination {
-	limit := int32(1000)
 	return CursorPagination{
 		Forward: &offset{
-			Limit: &limit,
+			Limit: &defaultPageSize,
 		},
 		NewestFirst: newestFirst,
 	}

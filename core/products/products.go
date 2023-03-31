@@ -45,11 +45,12 @@ type Product interface {
 	Value(markPrice *num.Uint) (*num.Uint, error)
 	GetAsset() string
 	IsTradingTerminated() bool
-	ScaleSettlementDataToDecimalPlaces(price *num.Uint, dp uint32) (*num.Uint, error)
+	ScaleSettlementDataToDecimalPlaces(price *num.Numeric, dp uint32) (*num.Uint, error)
 	NotifyOnTradingTerminated(listener func(context.Context, bool))
-	NotifyOnSettlementData(listener func(context.Context, *num.Uint))
+	NotifyOnSettlementData(listener func(context.Context, *num.Numeric))
 	UnsubscribeTradingTerminated(ctx context.Context)
 	UnsubscribeSettlementData(ctx context.Context)
+	RestoreSettlementData(*num.Numeric)
 }
 
 // New instance a new product from a Market framework product configuration.

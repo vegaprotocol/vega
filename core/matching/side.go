@@ -339,7 +339,7 @@ func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 	return priceLevel.volume, nil
 }
 
-// fakeUncross returns hypotehetical trades if the order book side were to be uncrossed with the agg order supplied,
+// fakeUncross returns hypothetical trades if the order book side were to be uncrossed with the agg order supplied,
 // checkWashTrades checks non-FOK orders for wash trades if set to true (FOK orders are always checked for wash trades).
 func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*types.Trade, error) {
 	var (
@@ -417,7 +417,7 @@ func (s *OrderBookSide) fakeUncross(agg *types.Order, checkWashTrades bool) ([]*
 	return trades, err
 }
 
-// fakeUncrossAuction returns hypotehetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
+// fakeUncrossAuction returns hypothetical trades if the order book side were to be uncrossed with the agg orders supplied, wash trades are allowed.
 func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trade, error) {
 	// in here we iterate from the end, as it's easier to remove the
 	// price levels from the back of the slice instead of from the front

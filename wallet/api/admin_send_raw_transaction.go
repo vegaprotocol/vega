@@ -30,10 +30,15 @@ type ParsedAdminSendRawTransactionParams struct {
 }
 
 type AdminSendRawTransactionResult struct {
-	ReceivedAt time.Time               `json:"receivedAt"`
-	SentAt     time.Time               `json:"sentAt"`
-	TxHash     string                  `json:"transactionHash"`
-	Tx         *commandspb.Transaction `json:"transaction"`
+	ReceivedAt time.Time                         `json:"receivedAt"`
+	SentAt     time.Time                         `json:"sentAt"`
+	TxHash     string                            `json:"transactionHash"`
+	Tx         *commandspb.Transaction           `json:"transaction"`
+	Node       AdminSendRawTransactionNodeResult `json:"node"`
+}
+
+type AdminSendRawTransactionNodeResult struct {
+	Host string `json:"host"`
 }
 
 type AdminSendRawTransaction struct {
@@ -41,7 +46,7 @@ type AdminSendRawTransaction struct {
 	nodeSelectorBuilder NodeSelectorBuilder
 }
 
-func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminSendRawTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -51,7 +56,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal([]byte(params.RawTransaction), tx); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
+		return nil, invalidParams(ErrRawTransactionIsNotValidVegaTransaction)
 	}
 
 	var hosts []string
@@ -59,7 +64,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not check the network existence: %w", err))
+			return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
 		} else if !exists {
 			return nil, invalidParams(ErrNetworkDoesNotExist)
 		}
@@ -81,7 +86,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 
 	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
+		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
 	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
@@ -100,6 +105,9 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 		SentAt:     sentAt,
 		TxHash:     txHash,
 		Tx:         tx,
+		Node: AdminSendRawTransactionNodeResult{
+			Host: currentNode.Host(),
+		},
 	}, nil
 }
 

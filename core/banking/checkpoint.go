@@ -15,13 +15,16 @@ package banking
 import (
 	"context"
 	"sort"
-	"time"
+	"sync/atomic"
 
+	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
+	"github.com/emirpasic/gods/sets/treeset"
 )
 
 func (e *Engine) Name() types.CheckpointName {
@@ -33,7 +36,20 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		TransfersAtTime:    e.getScheduledTransfers(),
 		RecurringTransfers: e.getRecurringTransfers(),
 		BridgeState:        e.getBridgeState(),
+		LastSeenEthBlock:   e.lastSeenEthBlock,
 	}
+
+	msg.SeenRefs = make([]string, 0, e.seen.Size())
+	iter := e.seen.Iterator()
+	for iter.Next() {
+		msg.SeenRefs = append(msg.SeenRefs, iter.Value().(string))
+	}
+
+	msg.AssetActions = make([]*checkpoint.AssetAction, 0, len(e.assetActs))
+	for _, aa := range e.getAssetActions() {
+		msg.AssetActions = append(msg.AssetActions, aa.IntoProto())
+	}
+
 	ret, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
@@ -56,11 +72,91 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	e.loadBridgeState(b.BridgeState)
 
+	e.seen = treeset.NewWithStringComparator()
+	for _, v := range b.SeenRefs {
+		e.seen.Add(v)
+	}
+
+	e.lastSeenEthBlock = b.LastSeenEthBlock
+	if e.lastSeenEthBlock != 0 {
+		e.log.Info("restoring collateral bridge starting block", logging.Uint64("block", e.lastSeenEthBlock))
+		e.ethEventSource.UpdateCollateralStartingBlock(e.lastSeenEthBlock)
+	}
+
+	aa := make([]*types.AssetAction, 0, len(b.AssetActions))
+	for _, a := range b.AssetActions {
+		aa = append(aa, types.AssetActionFromProto(a))
+	}
+	e.loadAssetActions(aa)
+	for _, aa := range e.assetActs {
+		e.witness.StartCheck(aa, e.onCheckDone, e.timeService.GetTimeNow().Add(defaultValidationDuration))
+	}
+
 	if len(evts) > 0 {
 		e.broker.SendBatch(evts)
 	}
 
 	return nil
+}
+
+func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
+	for _, v := range aa {
+		var (
+			err           error
+			asset         *assets.Asset
+			bridgeStopped *types.ERC20EventBridgeStopped
+			bridgeResumed *types.ERC20EventBridgeResumed
+		)
+
+		// only others action than bridge stop and resume
+		// have an actual asset associated
+		if !v.BridgeResume && !v.BridgeStopped {
+			asset, err = e.assets.Get(v.Asset)
+			if err != nil {
+				e.log.Panic("trying to restore an assetAction with no asset", logging.String("asset", v.Asset))
+			}
+		}
+
+		if v.BridgeStopped {
+			bridgeStopped = &types.ERC20EventBridgeStopped{BridgeStopped: true}
+		}
+
+		if v.BridgeResume {
+			bridgeResumed = &types.ERC20EventBridgeResumed{BridgeResumed: true}
+		}
+
+		state := &atomic.Uint32{}
+		state.Store(v.State)
+		aa := &assetAction{
+			id:                      v.ID,
+			state:                   state,
+			blockHeight:             v.BlockNumber,
+			asset:                   asset,
+			logIndex:                v.TxIndex,
+			txHash:                  v.Hash,
+			builtinD:                v.BuiltinD,
+			erc20AL:                 v.Erc20AL,
+			erc20D:                  v.Erc20D,
+			erc20AssetLimitsUpdated: v.ERC20AssetLimitsUpdated,
+			erc20BridgeStopped:      bridgeStopped,
+			erc20BridgeResumed:      bridgeResumed,
+			// this is needed every time now
+			bridgeView: e.bridgeView,
+		}
+
+		if len(aa.getRef().Hash) == 0 {
+			// if we're here it means that the IntoProto code has not done its job properly for a particular asset action type
+			e.log.Panic("asset action has not been serialised correct and is empty", logging.String("txHash", aa.txHash))
+		}
+
+		e.assetActs[v.ID] = aa
+		// store the deposit in the deposits
+		if v.BuiltinD != nil {
+			e.deposits[v.ID] = e.newDeposit(v.ID, v.BuiltinD.PartyID, v.BuiltinD.VegaAssetID, v.BuiltinD.Amount, v.Hash)
+		} else if v.Erc20D != nil {
+			e.deposits[v.ID] = e.newDeposit(v.ID, v.Erc20D.TargetPartyID, v.Erc20D.VegaAssetID, v.Erc20D.Amount, v.Hash)
+		}
+	}
 }
 
 func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
@@ -95,7 +191,7 @@ func (e *Engine) loadScheduledTransfers(
 			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
 			transfers = append(transfers, transfer)
 		}
-		e.scheduledTransfers[time.Unix(v.DeliverOn, 0).UnixNano()] = transfers
+		e.scheduledTransfers[v.DeliverOn] = transfers
 	}
 
 	return evts, nil
@@ -142,14 +238,49 @@ func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 		for _, v := range v {
 			transfers = append(transfers, v.ToProto())
 		}
-
-		// k is a Unix nano timestamp, and we want a Unix timestamp.
-		deliverOnAsUnix := k / int64(time.Second)
-
-		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: deliverOnAsUnix, Transfers: transfers})
+		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: k, Transfers: transfers})
 	}
 
 	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
 
 	return out
+}
+
+func (e *Engine) getAssetActions() []*types.AssetAction {
+	aa := make([]*types.AssetAction, 0, len(e.assetActs))
+	for _, v := range e.assetActs {
+		// this is optional as bridge action don't have one
+		var assetID string
+		if v.asset != nil {
+			assetID = v.asset.ToAssetType().ID
+		}
+
+		var bridgeStopped bool
+		if v.erc20BridgeStopped != nil {
+			bridgeStopped = true
+		}
+
+		var bridgeResumed bool
+		if v.erc20BridgeResumed != nil {
+			bridgeResumed = true
+		}
+
+		aa = append(aa, &types.AssetAction{
+			ID:                      v.id,
+			State:                   v.state.Load(),
+			BlockNumber:             v.blockHeight,
+			Asset:                   assetID,
+			TxIndex:                 v.logIndex,
+			Hash:                    v.txHash,
+			BuiltinD:                v.builtinD,
+			Erc20AL:                 v.erc20AL,
+			Erc20D:                  v.erc20D,
+			ERC20AssetLimitsUpdated: v.erc20AssetLimitsUpdated,
+			BridgeStopped:           bridgeStopped,
+			BridgeResume:            bridgeResumed,
+		})
+	}
+
+	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
+	return aa
 }

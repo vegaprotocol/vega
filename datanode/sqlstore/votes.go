@@ -83,6 +83,18 @@ func (vs *Votes) GetByParty(ctx context.Context, partyIDStr string) ([]entities.
 	return vs.Get(ctx, nil, &partyIDStr, nil)
 }
 
+func (vs *Votes) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Vote, error) {
+	defer metrics.StartSQLQuery("Votes", "GetByTxHash")()
+
+	var votes []entities.Vote
+	query := `SELECT * FROM votes WHERE tx_hash = $1`
+	err := pgxscan.Select(ctx, vs.Connection, &votes, query, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("querying votes: %w", err)
+	}
+	return votes, nil
+}
+
 func (vs *Votes) GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {
 	args := make([]interface{}, 0)
 	query := fmt.Sprintf(`select * from votes_current where party_id=%s`, nextBindVar(&args, entities.PartyID(partyIDStr)))

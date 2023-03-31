@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -34,16 +33,11 @@ type pupAdder interface {
 type ProtocolUpgrade struct {
 	subscriber
 	store pupAdder
-	log   *logging.Logger
 }
 
-func NewProtocolUpgrade(
-	store pupAdder,
-	log *logging.Logger,
-) *ProtocolUpgrade {
+func NewProtocolUpgrade(store pupAdder) *ProtocolUpgrade {
 	ps := &ProtocolUpgrade{
 		store: store,
-		log:   log,
 	}
 	return ps
 }

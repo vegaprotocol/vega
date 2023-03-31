@@ -192,7 +192,8 @@ func testRotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -263,7 +264,7 @@ func testRotatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testing
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testRotatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
@@ -276,7 +277,8 @@ func testRotatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T)
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -310,7 +312,8 @@ func testRotatingKeyWithIsolatedWalletFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, isolatedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, isolatedWallet.Name(), passphrase).Times(1).Return(isolatedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, isolatedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, isolatedWallet.Name()).Times(1).Return(isolatedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -340,7 +343,8 @@ func testRotatingKeyFromPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -369,7 +373,8 @@ func testRotatingKeyToPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -402,7 +407,8 @@ func testRotatingKeyToTaintedPublicKeyDoesNotExistsFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
@@ -427,10 +433,10 @@ type rotateKeyHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *rotateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminRotateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *rotateKeyHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminRotateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminRotateKeyResult)
 		if !ok {

@@ -67,7 +67,7 @@ func TestCollateralTransfer(t *testing.T) {
 }
 
 func TestCollateralMarkToMarket(t *testing.T) {
-	t.Run("Mark to Market distribution, insufficient funcs - complex scenario", testProcessBothProRatedMTM)
+	t.Run("Mark to Market distribution, insufficient funds - complex scenario", testProcessBothProRatedMTM)
 	t.Run("Mark to Market successful", testMTMSuccess)
 	// we panic if settlement account is non-zero, this test doesn't pass anymore
 	t.Run("Mark to Market wins and losses do not match up, settlement not drained", testSettleBalanceNotZero)
@@ -180,13 +180,18 @@ func testTransferRewardsSuccess(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	_, err := eng.TransferRewards(context.Background(), rewardAcc.ID, transfers)
+	lm, err := eng.TransferRewards(context.Background(), rewardAcc.ID, transfers)
 	require.Nil(t, err)
 	partyAccount, _ := eng.GetAccountByID(partyAccountID)
 	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
 
 	rewardAccount, _ := eng.GetGlobalRewardAccount("ETH")
 	require.Equal(t, num.UintZero(), rewardAccount.Balance)
+
+	assert.Equal(t, 1, len(lm))
+	assert.Equal(t, 1, len(lm[0].Entries))
+	assert.Equal(t, num.NewUint(1000), lm[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.UintZero(), lm[0].Entries[0].FromAccountBalance)
 }
 
 func testPartyWithAccountHasABalance(t *testing.T) {
@@ -250,6 +255,49 @@ func testCreateBondAccountSuccess(t *testing.T) {
 	assert.Equal(t, account.Balance, bndacc.Balance.String())
 }
 
+func TestDeleteBondAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).Times(6)
+
+	party := "myparty"
+	err := eng.RemoveBondAccount(party, testMarketID, testMarketAsset)
+	require.EqualError(t, err, collateral.ErrAccountDoesNotExist.Error())
+
+	bal := num.NewUint(500)
+	// create party
+	_, err = eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
+	require.NoError(t, err)
+	bnd, err := eng.CreatePartyBondAccount(context.Background(), party, testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	// add funds
+	err = eng.UpdateBalance(context.Background(), bnd, bal)
+	require.Nil(t, err)
+
+	require.Panics(t, func() { eng.RemoveBondAccount(party, testMarketID, testMarketAsset) })
+
+	transfer := &types.Transfer{
+		Owner: party,
+		Amount: &types.FinancialAmount{
+			Amount: bal,
+			Asset:  testMarketAsset,
+		},
+		Type:      types.TransferTypeBondHigh,
+		MinAmount: bal,
+	}
+
+	_, err = eng.BondUpdate(context.Background(), testMarketID, transfer)
+	require.NoError(t, err)
+
+	err = eng.RemoveBondAccount(party, testMarketID, testMarketAsset)
+	require.NoError(t, err)
+
+	_, err = eng.GetPartyBondAccount(testMarketID, party, testMarketAsset)
+
+	require.ErrorContains(t, err, "account does not exist")
+}
+
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
@@ -282,13 +330,17 @@ func testReleasePartyMarginAccount(t *testing.T) {
 	assert.Nil(t, err)
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-	_, err = eng.ClearPartyMarginAccount(
+	lm, err := eng.ClearPartyMarginAccount(
 		context.Background(), party, testMarketID, testMarketAsset)
 	assert.NoError(t, err)
 	generalAcc, _ := eng.GetAccountByID(gen)
 	assert.Equal(t, num.NewUint(600), generalAcc.Balance)
 	marginAcc, _ := eng.GetAccountByID(mar)
 	assert.True(t, marginAcc.Balance.IsZero())
+
+	assert.Equal(t, 1, len(lm.Entries))
+	assert.Equal(t, num.NewUint(600), lm.Entries[0].ToAccountBalance)
+	assert.Equal(t, num.UintZero(), lm.Entries[0].FromAccountBalance)
 }
 
 func testFeeTransferContinuousNoFunds(t *testing.T) {
@@ -398,6 +450,10 @@ func testFeeTransferContinuousOKWithEnoughInGenral(t *testing.T) {
 	assert.NotNil(t, transfers)
 	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
 	assert.Len(t, transfers, 1)
+
+	assert.Equal(t, 1, len(transfers[0].Entries))
+	assert.Equal(t, num.NewUint(9000), transfers[0].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(1000), transfers[0].Entries[0].ToAccountBalance)
 }
 
 func testFeeTransferContinuousOKWith0Amount(t *testing.T) {
@@ -439,6 +495,10 @@ func testFeeTransferContinuousOKWith0Amount(t *testing.T) {
 	assert.Len(t, transfers, 1)
 	generalAcc, _ := eng.GetAccountByID(general)
 	assert.Equal(t, num.NewUint(10000), generalAcc.Balance)
+
+	assert.Len(t, transfers[0].Entries, 1)
+	assert.Equal(t, num.UintZero(), transfers[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(10000), transfers[0].Entries[0].FromAccountBalance)
 }
 
 func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
@@ -478,6 +538,9 @@ func testFeeTransferContinuousOKWithEnoughInMargin(t *testing.T) {
 	assert.NotNil(t, transfers)
 	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
 	assert.Len(t, transfers, 1)
+	assert.Len(t, transfers[0].Entries, 1)
+	assert.Equal(t, num.NewUint(1000), transfers[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(9000), transfers[0].Entries[0].FromAccountBalance)
 }
 
 func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
@@ -545,6 +608,11 @@ func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
 	assert.Len(t, transfers, 2)
 	assert.True(t, seenInfra)
 	assert.True(t, seenLiqui)
+
+	assert.Equal(t, num.NewUint(1000), transfers[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(9000), transfers[0].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(3000), transfers[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(6000), transfers[1].Entries[0].FromAccountBalance)
 }
 
 func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
@@ -594,6 +662,8 @@ func testFeeTransferContinuousOKWithEnoughInGeneralAndMargin(t *testing.T) {
 	assert.True(t, generalAcc.Balance.IsZero())
 	marginAcc, _ := eng.GetAccountByID(margin)
 	assert.Equal(t, num.NewUint(600), marginAcc.Balance)
+	assert.Equal(t, num.NewUint(700), transfers[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.UintZero(), transfers[0].Entries[0].FromAccountBalance)
 }
 
 func testEnableAssetSuccess(t *testing.T) {
@@ -759,6 +829,12 @@ func testTransferLoss(t *testing.T) {
 	assert.Equal(t, num.Sum(price, price), num.Sum(resp.Balances[0].Balance, responses[1].Balances[0].Balance))
 	// there should be 1 ledger moves
 	assert.Equal(t, 1, len(resp.Entries))
+	assert.Equal(t, num.NewUint(4000), resp.Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(1000), resp.Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(responses[1].Entries))
+	assert.Equal(t, num.UintZero(), responses[1].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(101000), responses[1].Entries[0].ToAccountBalance)
 }
 
 func testTransferComplexLoss(t *testing.T) {
@@ -823,6 +899,16 @@ func testTransferComplexLoss(t *testing.T) {
 	assert.Equal(t, price, resp.Balances[0].Balance)
 	// there should be 2 ledger moves, one from party account, one from insurance acc
 	assert.Equal(t, 2, len(resp.Entries))
+
+	assert.Equal(t, 2, len(responses[0].Entries))
+	assert.Equal(t, num.UintZero(), responses[0].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(4500), responses[0].Entries[1].FromAccountBalance)
+	assert.Equal(t, num.NewUint(1000), responses[0].Entries[1].ToAccountBalance)
+
+	assert.Equal(t, 1, len(responses[1].Entries))
+	assert.Equal(t, num.UintZero(), responses[1].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(101000), responses[1].Entries[0].ToAccountBalance)
 }
 
 func testTransferLossMissingPartyAccounts(t *testing.T) {
@@ -934,7 +1020,29 @@ func testProcessBoth(t *testing.T) {
 	}
 	// resp = responses[1]
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
+	assert.Equal(t, 1, len(responses[0].Entries))
+	for _, e := range responses[0].Entries {
+		assert.Equal(t, num.NewUint(2000), e.FromAccountBalance)
+		assert.Equal(t, num.NewUint(1000), e.ToAccountBalance)
+	}
+
 	assert.Equal(t, 1, len(responses[1].Entries))
+	for _, e := range responses[1].Entries {
+		assert.Equal(t, num.NewUint(4000), e.FromAccountBalance)
+		assert.Equal(t, num.NewUint(2000), e.ToAccountBalance)
+	}
+
+	assert.Equal(t, 1, len(responses[2].Entries))
+	for _, e := range responses[2].Entries {
+		assert.Equal(t, num.NewUint(1000), e.FromAccountBalance)
+		assert.Equal(t, num.NewUint(1000), e.ToAccountBalance)
+	}
+
+	assert.Equal(t, 1, len(responses[3].Entries))
+	for _, e := range responses[3].Entries {
+		assert.Equal(t, num.UintZero(), e.FromAccountBalance)
+		assert.Equal(t, num.NewUint(5000), e.ToAccountBalance)
+	}
 }
 
 func TestLossSocialization(t *testing.T) {
@@ -1012,6 +1120,15 @@ func TestLossSocialization(t *testing.T) {
 	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers)
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
+
+	assert.Equal(t, 1, len(raw[0].Entries))
+	assert.Equal(t, num.NewUint(500), raw[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, 1, len(raw[1].Entries))
+	assert.Equal(t, num.NewUint(1600), raw[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, 1, len(raw[2].Entries))
+	assert.Equal(t, num.NewUint(1066), raw[2].Entries[0].ToAccountBalance)
+	assert.Equal(t, 1, len(raw[3].Entries))
+	assert.Equal(t, num.NewUint(534), raw[3].Entries[0].ToAccountBalance)
 }
 
 func testSettleBalanceNotZero(t *testing.T) {
@@ -1145,7 +1262,21 @@ func testProcessBothProRated(t *testing.T) {
 	assert.NoError(t, err)
 
 	// there should be 3 ledger moves -> settle to party 1, settle to party 2, insurance to party 2
+	assert.Equal(t, 1, len(responses[0].Entries))
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+
 	assert.Equal(t, 1, len(responses[1].Entries))
+	assert.Equal(t, num.NewUint(1500), responses[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(1500), responses[1].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(responses[2].Entries))
+	assert.Equal(t, num.NewUint(750), responses[2].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(750), responses[2].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(responses[3].Entries))
+	assert.Equal(t, num.NewUint(4750), responses[3].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(4750), responses[3].Entries[0].ToAccountBalance)
 }
 
 func testProcessBothProRatedMTM(t *testing.T) {
@@ -1661,6 +1792,14 @@ func TestFinalSettlementNotEnoughMargin(t *testing.T) {
 	responses, err := eng.FinalSettlement(context.Background(), testMarketID, pos)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(responses))
+
+	assert.Equal(t, 1, len(responses[0].Entries))
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(responses[1].Entries))
+	assert.Equal(t, num.NewUint(500), responses[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), responses[1].Entries[0].ToAccountBalance)
 }
 
 func TestGetPartyMarginNoAccounts(t *testing.T) {
@@ -1815,6 +1954,22 @@ func TestMTMLossSocialization(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(raw))
 	assert.NotEmpty(t, evts)
+
+	assert.Equal(t, 1, len(raw[0].Entries))
+	assert.Equal(t, num.NewUint(500), raw[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), raw[0].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(raw[1].Entries))
+	assert.Equal(t, num.NewUint(1600), raw[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(1600), raw[1].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(raw[2].Entries))
+	assert.Equal(t, num.NewUint(1066), raw[2].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(1066), raw[2].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(raw[3].Entries))
+	assert.Equal(t, num.NewUint(534), raw[3].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(534), raw[3].Entries[0].ToAccountBalance)
 }
 
 func testMarginUpdateOnOrderOK(t *testing.T) {
@@ -1856,6 +2011,10 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, closed)
 	assert.NotNil(t, resp)
+
+	assert.Equal(t, 1, len(resp.Entries))
+	assert.Equal(t, num.NewUint(100), resp.Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(100), resp.Entries[0].ToAccountBalance)
 }
 
 func testMarginUpdateOnOrderOKNotShortFallWithBondAccount(t *testing.T) {
@@ -1899,6 +2058,10 @@ func testMarginUpdateOnOrderOKNotShortFallWithBondAccount(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Nil(t, closed)
 	assert.NotNil(t, resp)
+
+	assert.Equal(t, 1, len(resp.Entries))
+	assert.Equal(t, num.NewUint(100), resp.Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(100), resp.Entries[0].ToAccountBalance)
 }
 
 func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
@@ -1951,6 +2114,10 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 	bondAcc, err := eng.GetAccountByID(bondAccID)
 	assert.NoError(t, err)
 	assert.Equal(t, num.NewUint(400), bondAcc.Balance)
+
+	assert.Equal(t, 1, len(resp.Entries))
+	assert.Equal(t, num.NewUint(100), resp.Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(100), resp.Entries[0].ToAccountBalance)
 }
 
 func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
@@ -2082,6 +2249,10 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 	resp, err = eng.RollbackMarginUpdateOnOrder(context.Background(), testMarketID, testMarketAsset, rollback)
 	assert.Nil(t, err)
 	assert.NotNil(t, resp)
+
+	assert.Equal(t, 1, len(resp.Entries))
+	assert.Equal(t, num.NewUint(500), resp.Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), resp.Entries[0].ToAccountBalance)
 }
 
 func testMarginUpdateOnOrderFail(t *testing.T) {
@@ -2149,6 +2320,10 @@ func TestMarginUpdates(t *testing.T) {
 	assert.Equal(t, len(margin), 0)
 	assert.Equal(t, len(resp), 1)
 	assert.Equal(t, resp[0].Entries[0].Amount, num.NewUint(100))
+
+	assert.Equal(t, 1, len(resp[0].Entries))
+	assert.Equal(t, num.NewUint(100), resp[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(100), resp[0].Entries[0].ToAccountBalance)
 }
 
 func TestClearMarket(t *testing.T) {
@@ -2172,6 +2347,14 @@ func TestClearMarket(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(responses))
+
+	assert.Equal(t, 1, len(responses[0].Entries))
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+
+	assert.Equal(t, 1, len(responses[1].Entries))
+	assert.Equal(t, num.NewUint(1000), responses[1].Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(1000), responses[1].Entries[0].ToAccountBalance)
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
@@ -2264,8 +2447,12 @@ func TestWithdrawalOK(t *testing.T) {
 		}
 	})
 
-	_, err = eng.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(100))
+	lm, err := eng.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(100))
 	assert.Nil(t, err)
+
+	assert.Equal(t, 1, len(lm.Entries))
+	assert.Equal(t, num.NewUint(100), lm.Entries[0].ToAccountBalance)
+	assert.Equal(t, num.NewUint(100), lm.Entries[0].ToAccountBalance)
 }
 
 func TestWithdrawalExact(t *testing.T) {
@@ -2511,20 +2698,34 @@ func (e *testEngine) Finish() {
 }
 
 type marketPositionFake struct {
-	party           string
-	size, buy, sell int64
-	price           *num.Uint
-	vwBuy, vwSell   *num.Uint
+	party                         string
+	size, buy, sell               int64
+	price                         *num.Uint
+	buySumProduct, sellSumProduct *num.Uint
 }
 
-func (m marketPositionFake) Party() string     { return m.party }
-func (m marketPositionFake) Size() int64       { return m.size }
-func (m marketPositionFake) Buy() int64        { return m.buy }
-func (m marketPositionFake) Sell() int64       { return m.sell }
-func (m marketPositionFake) Price() *num.Uint  { return m.price }
-func (m marketPositionFake) VWBuy() *num.Uint  { return m.vwBuy }
-func (m marketPositionFake) VWSell() *num.Uint { return m.vwSell }
-func (m marketPositionFake) ClearPotentials()  {}
+func (m marketPositionFake) Party() string             { return m.party }
+func (m marketPositionFake) Size() int64               { return m.size }
+func (m marketPositionFake) Buy() int64                { return m.buy }
+func (m marketPositionFake) Sell() int64               { return m.sell }
+func (m marketPositionFake) Price() *num.Uint          { return m.price }
+func (m marketPositionFake) BuySumProduct() *num.Uint  { return m.buySumProduct }
+func (m marketPositionFake) SellSumProduct() *num.Uint { return m.sellSumProduct }
+func (m marketPositionFake) ClearPotentials()          {}
+
+func (m marketPositionFake) VWBuy() *num.Uint {
+	if m.buy == 0 {
+		return num.UintZero()
+	}
+	return num.UintZero().Div(num.NewUint(uint64(m.buy)), m.buySumProduct)
+}
+
+func (m marketPositionFake) VWSell() *num.Uint {
+	if m.sell == 0 {
+		return num.UintZero()
+	}
+	return num.UintZero().Div(num.NewUint(uint64(m.sell)), m.sellSumProduct)
+}
 
 type mtmFake struct {
 	t     *types.Transfer
@@ -2534,6 +2735,8 @@ type mtmFake struct {
 func (m mtmFake) Party() string             { return m.party }
 func (m mtmFake) Size() int64               { return 0 }
 func (m mtmFake) Price() *num.Uint          { return num.UintZero() }
+func (m mtmFake) BuySumProduct() *num.Uint  { return num.UintZero() }
+func (m mtmFake) SellSumProduct() *num.Uint { return num.UintZero() }
 func (m mtmFake) VWBuy() *num.Uint          { return num.UintZero() }
 func (m mtmFake) VWSell() *num.Uint         { return num.UintZero() }
 func (m mtmFake) Buy() int64                { return 0 }
@@ -2553,15 +2756,16 @@ func getMTMTransfer(transfers []*types.Transfer) []events.Transfer {
 }
 
 type riskFake struct {
-	party           string
-	size, buy, sell int64
-	price           *num.Uint
-	vwBuy, vwSell   *num.Uint
-	margins         *types.MarginLevels
-	amount          *num.Uint
-	transfer        *types.Transfer
-	asset           string
-	marginShortFall *num.Uint
+	party                         string
+	size, buy, sell               int64
+	price                         *num.Uint
+	buySumProduct, sellSumProduct *num.Uint
+	vwBuy, vwSell                 *num.Uint
+	margins                       *types.MarginLevels
+	amount                        *num.Uint
+	transfer                      *types.Transfer
+	asset                         string
+	marginShortFall               *num.Uint
 }
 
 func (m riskFake) Party() string                     { return m.party }
@@ -2569,6 +2773,8 @@ func (m riskFake) Size() int64                       { return m.size }
 func (m riskFake) Buy() int64                        { return m.buy }
 func (m riskFake) Sell() int64                       { return m.sell }
 func (m riskFake) Price() *num.Uint                  { return m.price }
+func (m riskFake) BuySumProduct() *num.Uint          { return m.buySumProduct }
+func (m riskFake) SellSumProduct() *num.Uint         { return m.sellSumProduct }
 func (m riskFake) VWBuy() *num.Uint                  { return m.vwBuy }
 func (m riskFake) VWSell() *num.Uint                 { return m.vwSell }
 func (m riskFake) ClearPotentials()                  {}

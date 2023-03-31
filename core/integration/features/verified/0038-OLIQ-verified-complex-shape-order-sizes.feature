@@ -1,18 +1,18 @@
 Feature: Verify the order size is correctly cumulated.
 
-# Numbers come from 0038-liquidity-provision-order-type.xlsx
+  # Numbers come from 0038-liquidity-provision-order-type.xlsx
 
   Background:
     Given the log normal risk model named "my-log-normal-risk-model":
       | risk aversion | tau                    | mu | r     | sigma |
       | 0.001         | 0.00000190128526884174 | 0  | 0.016 | 2.5   |
     And the markets:
-      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config          |
-      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model               | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | my-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
-      | name                                                | value |
-      | market.liquidityProvision.shapes.maxSize            | 10    |
-      | network.markPriceUpdateMaximumFrequency             | 0s    |
+      | name                                     | value |
+      | market.liquidityProvision.shapes.maxSize | 10    |
+      | network.markPriceUpdateMaximumFrequency  | 0s    |
 
   Scenario: 001: Order from liquidity provision and from normal order submission are correctly cumulated in order book's total size (0038-OLIQ-003, 0038-OLIQ-004, 0038-OLIQ-005)
 
@@ -26,10 +26,10 @@ Feature: Verify the order size is correctly cumulated.
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC19 | buy  | 1      | 12000007 | 0                | TYPE_LIMIT | TIF_GTC | party1-1 |
-      | party2 | ETH/DEC19 | sell | 1      | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
-      | party1 | ETH/DEC19 | buy  | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party1-2 |
-      | party2 | ETH/DEC19 | sell | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party2-2 |
+      | party1 | ETH/DEC19 | buy  | 1      | 12000007 | 0                | TYPE_LIMIT | TIF_GTC | party1-1  |
+      | party2 | ETH/DEC19 | sell | 1      | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | ETH/DEC19 | buy  | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party1-2  |
+      | party2 | ETH/DEC19 | sell | 1      | 12000010 | 0                | TYPE_LIMIT | TIF_GFA | party2-2  |
 
     And the parties submit the following liquidity provision:
       | id  | party      | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type    |
@@ -54,7 +54,7 @@ Feature: Verify the order size is correctly cumulated.
 
     When the parties place the following orders:
       | party      | market id | side | volume | price    | resulting trades | type       | tif     | reference |
-      | party-lp-1 | ETH/DEC19 | sell | 50     | 12000013 | 0                | TYPE_LIMIT | TIF_GTC | party2-1 |
+      | party-lp-1 | ETH/DEC19 | sell | 50     | 12000013 | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
 
     Then the liquidity provisions should have the following states:
       | id  | party      | market    | commitment amount | status        |
@@ -82,7 +82,7 @@ Feature: Verify the order size is correctly cumulated.
       | party-lp-1 | ETH/DEC19 | buy  | 10     | 12000000 | STATUS_ACTIVE |
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference  |
+      | party  | market id | side | volume | price    | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | sell | 167    | 12000020 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |
       | party3 | ETH/DEC19 | sell | 50     | 12000019 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
       | party3 | ETH/DEC19 | sell | 50     | 12000018 | 0                | TYPE_LIMIT | TIF_GTC | party3-3  |

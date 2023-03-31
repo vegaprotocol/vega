@@ -136,7 +136,7 @@ func testGettingInternalErrorDuringExistingWalletVerificationDoesNotRenameWallet
 
 	// then
 	require.NotNil(t, errorDetails)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testRenamingWalletWithNameAlreadyTakenFails(t *testing.T) {
@@ -182,7 +182,7 @@ func testGettingInternalErrorDuringNonExistingWalletVerificationDoesNotRenameWal
 
 	// then
 	require.NotNil(t, errorDetails)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringRenamingDoesNotRenameWallet(t *testing.T) {
@@ -215,10 +215,10 @@ type renameWalletHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *renameWalletHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *renameWalletHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	require.Nil(t, rawResult)
 	return err
 }

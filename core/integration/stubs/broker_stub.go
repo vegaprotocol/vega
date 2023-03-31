@@ -13,12 +13,15 @@
 package stubs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 
-	"code.vegaprotocol.io/vega/core/broker"
+	"code.vegaprotocol.io/vega/libs/broker"
+
 	"code.vegaprotocol.io/vega/core/events"
+	vtypes "code.vegaprotocol.io/vega/core/types"
 	proto "code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
@@ -33,7 +36,8 @@ type BrokerStub struct {
 	data map[events.Type][]events.Event
 	subT map[events.Type][]broker.Subscriber
 
-	immdata map[events.Type][]events.Event
+	immdata      map[events.Type][]events.Event
+	immdataSlice []events.Event
 }
 
 func NewBrokerStub() *BrokerStub {
@@ -123,10 +127,11 @@ func (b *BrokerStub) Send(e events.Event) {
 	}
 	b.data[t] = append(b.data[t], e)
 	b.immdata[t] = append(b.immdata[t], e)
+	b.immdataSlice = append(b.immdataSlice, e)
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) GetAllEvents() []events.Event {
+func (b *BrokerStub) GetAllEventsSinceCleared() []events.Event {
 	b.mu.Lock()
 	evs := []events.Event{}
 	for _, d := range b.data {
@@ -134,6 +139,14 @@ func (b *BrokerStub) GetAllEvents() []events.Event {
 	}
 	b.mu.Unlock()
 	return evs
+}
+
+func (b *BrokerStub) GetAllEvents() []events.Event {
+	b.mu.Lock()
+	ret := make([]events.Event, len(b.immdataSlice))
+	copy(ret, b.immdataSlice)
+	b.mu.Unlock()
+	return ret
 }
 
 func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
@@ -156,8 +169,12 @@ func (b *BrokerStub) GetImmBatch(t events.Type) []events.Event {
 	return r
 }
 
-func (b *BrokerStub) GetLedgerMovements() []events.LedgerMovements {
+// GetLedgerMovements returns ledger movements, `mutable` argument specifies if these should be all the scenario events or events that can be cleared by the user.
+func (b *BrokerStub) GetLedgerMovements(mutable bool) []events.LedgerMovements {
 	batch := b.GetBatch(events.LedgerMovementsEvent)
+	if !mutable {
+		batch = b.GetImmBatch((events.LedgerMovementsEvent))
+	}
 	if len(batch) == 0 {
 		return nil
 	}
@@ -186,10 +203,42 @@ func (b *BrokerStub) ClearTransferResponseEvents() {
 	b.mu.Unlock()
 }
 
+// GetTransfers returns ledger entries, mutable argument specifies if these should be all the scenario events or events that can be cleared by the user.
+func (b *BrokerStub) GetTransfers(mutable bool) []*types.LedgerEntry {
+	transferEvents := b.GetLedgerMovements(mutable)
+	transfers := []*types.LedgerEntry{}
+	for _, e := range transferEvents {
+		for _, response := range e.LedgerMovements() {
+			transfers = append(transfers, response.GetEntries()...)
+		}
+	}
+	return transfers
+}
+
 func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
+	exp := b.GetImmBatch(events.ExpiredOrdersEvent)
 	if len(batch) == 0 {
 		return nil, nil
+	}
+	expForMarket := map[string]struct{}{}
+	for _, e := range exp {
+		switch et := e.(type) {
+		case *events.ExpiredOrders:
+			if !et.IsMarket(market) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				expForMarket[oid] = struct{}{}
+			}
+		case events.ExpiredOrders:
+			if !et.IsMarket(market) {
+				continue
+			}
+			for _, oid := range et.OrderIDs() {
+				expForMarket[oid] = struct{}{}
+			}
+		}
 	}
 
 	// first get all active orders
@@ -218,7 +267,10 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 
 	// now we have all active orders, let's build both sides
 	sell, buy = map[string]uint64{}, map[string]uint64{}
-	for _, v := range activeOrders {
+	for id, v := range activeOrders {
+		if _, ok := expForMarket[id]; ok {
+			continue
+		}
 		if v.Side == types.Side_SIDE_BUY {
 			buy[v.Price] = buy[v.Price] + v.Remaining
 			continue
@@ -312,13 +364,35 @@ func (b *BrokerStub) GetOrderEvents() []events.Order {
 	if len(batch) == 0 {
 		return nil
 	}
+	last := map[string]*vtypes.Order{}
 	ret := make([]events.Order, 0, len(batch))
 	for _, e := range batch {
+		var o *vtypes.Order
 		switch et := e.(type) {
 		case *events.Order:
+			o, _ = vtypes.OrderFromProto(et.Order())
 			ret = append(ret, *et)
 		case events.Order:
+			o, _ = vtypes.OrderFromProto(et.Order())
 			ret = append(ret, et)
+		}
+		last[o.ID] = o
+	}
+	expired := b.GetBatch(events.ExpiredOrdersEvent)
+	for _, e := range expired {
+		var ids []string
+		switch et := e.(type) {
+		case *events.ExpiredOrders:
+			ids = et.OrderIDs()
+		case events.ExpiredOrders:
+			ids = et.OrderIDs()
+		}
+		for _, id := range ids {
+			if o, ok := last[id]; ok {
+				o.Status = types.Order_STATUS_EXPIRED
+				fe := events.NewOrderEvent(context.Background(), o)
+				ret = append(ret, *fe)
+			}
 		}
 	}
 	return ret
@@ -378,6 +452,38 @@ func (b *BrokerStub) GetAccountEvents() []events.Acc {
 		s = append(s, e)
 	}
 	return s
+}
+
+func (b *BrokerStub) GetDeposits() []types.Deposit {
+	// Use GetImmBatch so that clearing events doesn't affact this method
+	batch := b.GetImmBatch(events.DepositEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]types.Deposit, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Deposit:
+			ret = append(ret, et.Deposit())
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetWithdrawals() []types.Withdrawal {
+	// Use GetImmBatch so that clearing events doesn't affact this method
+	batch := b.GetImmBatch(events.WithdrawalEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]types.Withdrawal, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.Withdrawal:
+			ret = append(ret, et.Withdrawal())
+		}
+	}
+	return ret
 }
 
 func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.DelegationBalance {

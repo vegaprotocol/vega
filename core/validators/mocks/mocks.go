@@ -206,18 +206,18 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 	return m.recorder
 }
 
-// AllNodeIDs mocks base method.
-func (m *MockValidatorTopology) AllNodeIDs() []string {
+// AllVegaPubKeys mocks base method.
+func (m *MockValidatorTopology) AllVegaPubKeys() []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AllNodeIDs")
+	ret := m.ctrl.Call(m, "AllVegaPubKeys")
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// AllNodeIDs indicates an expected call of AllNodeIDs.
-func (mr *MockValidatorTopologyMockRecorder) AllNodeIDs() *gomock.Call {
+// AllVegaPubKeys indicates an expected call of AllVegaPubKeys.
+func (mr *MockValidatorTopologyMockRecorder) AllVegaPubKeys() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllNodeIDs", reflect.TypeOf((*MockValidatorTopology)(nil).AllNodeIDs))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AllVegaPubKeys", reflect.TypeOf((*MockValidatorTopology)(nil).AllVegaPubKeys))
 }
 
 // GetTotalVotingPower mocks base method.
@@ -646,6 +646,18 @@ func (mr *MockSignaturesMockRecorder) SerialisePendingSignatures() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SerialisePendingSignatures", reflect.TypeOf((*MockSignatures)(nil).SerialisePendingSignatures))
 }
 
+// SetNonce mocks base method.
+func (m *MockSignatures) SetNonce(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetNonce", arg0)
+}
+
+// SetNonce indicates an expected call of SetNonce.
+func (mr *MockSignaturesMockRecorder) SetNonce(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetNonce", reflect.TypeOf((*MockSignatures)(nil).SetNonce), arg0)
+}
+
 // MockMultiSigTopology is a mock of MultiSigTopology interface.
 type MockMultiSigTopology struct {
 	ctrl     *gomock.Controller
@@ -681,6 +693,34 @@ func (m *MockMultiSigTopology) ExcessSigners(arg0 []string) bool {
 func (mr *MockMultiSigTopologyMockRecorder) ExcessSigners(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExcessSigners", reflect.TypeOf((*MockMultiSigTopology)(nil).ExcessSigners), arg0)
+}
+
+// GetSigners mocks base method.
+func (m *MockMultiSigTopology) GetSigners() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSigners")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetSigners indicates an expected call of GetSigners.
+func (mr *MockMultiSigTopologyMockRecorder) GetSigners() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSigners", reflect.TypeOf((*MockMultiSigTopology)(nil).GetSigners))
+}
+
+// GetThreshold mocks base method.
+func (m *MockMultiSigTopology) GetThreshold() uint32 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetThreshold")
+	ret0, _ := ret[0].(uint32)
+	return ret0
+}
+
+// GetThreshold indicates an expected call of GetThreshold.
+func (mr *MockMultiSigTopologyMockRecorder) GetThreshold() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetThreshold", reflect.TypeOf((*MockMultiSigTopology)(nil).GetThreshold))
 }
 
 // IsSigner mocks base method.

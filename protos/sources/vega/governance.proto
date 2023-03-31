@@ -20,8 +20,6 @@ message FutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 4;
   // The binding between the data source spec and the settlement data
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source
-  uint32 settlement_data_decimals = 6;
 }
 
 // Instrument configuration
@@ -43,7 +41,7 @@ message NewMarketConfiguration {
   InstrumentConfiguration instrument = 1;
   // Decimal places used for the new market, sets the smallest price increment on the book
   uint64 decimal_places = 2;
-  // Optional new market meta data, tags
+  // Optional new market metadata, tags
   repeated string metadata = 3;
   // Price monitoring parameters
   PriceMonitoringParameters price_monitoring_parameters = 4;
@@ -61,6 +59,10 @@ message NewMarketConfiguration {
   // Percentage move up and down from the mid price which specifies the range of 
   // price levels over which automated liquidity provision orders will be deployed
   string lp_price_range = 8;
+  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+  string linear_slippage_factor = 9; 
+  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+  string quadratic_slippage_factor = 10;
 }
 
 // New market on Vega
@@ -97,6 +99,10 @@ message UpdateMarketConfiguration {
   // Percentage move up and down from the mid price which specifies the range of 
   // price levels over which automated liquidity provision orders will be deployed
   string lp_price_range = 5;
+  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+  string linear_slippage_factor = 6; 
+  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+  string quadratic_slippage_factor = 7;
 }
 
 // Instrument configuration
@@ -120,8 +126,6 @@ message UpdateFutureProduct {
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 3;
   // The binding between the data source spec and the settlement data
   DataSourceSpecToFutureBinding data_source_spec_binding = 4;
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement external data source
-  uint32 settlement_data_decimals = 5;
 }
 
 // Update network configuration on Vega
@@ -349,6 +353,10 @@ enum ProposalError {
   PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE = 42;
   // The LP price range must not be larger than 100
   PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE = 43;
+  // The linear slippage factor is out of range (either negative or too large)
+  PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE = 44;
+  // The quadratic slippage factor is out of range (either negative or too large)
+  PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE = 45;
 }
 
 // Governance vote
@@ -376,10 +384,10 @@ message Vote {
   string proposal_id = 3;
   // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
   int64 timestamp = 4;
-  // Total number of governance token for the party that casted the vote
+  // Total number of governance token for the party that cast the vote
   string total_governance_token_balance = 5;
-  // The weight of this vote based on the total of governance token
+  // The weight of this vote based on the total number of governance tokens
   string total_governance_token_weight = 6;
-  // The weight of the vote compared to the total number of equity-like share on the market.
+  // The weight of the vote compared to the total amount of equity-like share on the market
   string total_equity_like_share_weight = 7;
 }

@@ -15,11 +15,11 @@ package sqlsubscribers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
-	"github.com/pkg/errors"
 )
 
 type DepositEvent interface {
@@ -34,13 +34,11 @@ type DepositStore interface {
 type Deposit struct {
 	subscriber
 	store DepositStore
-	log   *logging.Logger
 }
 
-func NewDeposit(store DepositStore, log *logging.Logger) *Deposit {
+func NewDeposit(store DepositStore) *Deposit {
 	return &Deposit{
 		store: store,
-		log:   log,
 	}
 }
 

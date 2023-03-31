@@ -13,14 +13,14 @@ Feature: check pegged GTT and GTC in auction
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 36600   | 0.99        | 300               |
-    And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     |
-      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future |
     And the following network parameters are set:
       | name                              | value |
       | market.auction.minimumDuration    | 1     |
       | market.stake.target.scalingFactor | 1     |
       | limits.markets.maxPeggedOrders    | 1500  |
+    And the markets:
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | ETH   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
 
   Scenario: 001, Pegged GTC (good till time) (parked in auction), Pegged orders will be [parked] if placed during [an auction], with time priority preserved. 0011-MARA-017
     Given the parties deposit on asset's general account the following amount:

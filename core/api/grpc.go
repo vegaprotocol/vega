@@ -18,16 +18,17 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
+
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -84,6 +85,14 @@ type ProofOfWorkParams interface {
 	IsReady() bool
 }
 
+type SpamEngine interface {
+	GetSpamStatistics(partyID string) *protoapi.SpamStatistics
+}
+
+type PowEngine interface {
+	GetSpamStatistics(partyID string) *protoapi.PoWStatistic
+}
+
 // GRPCServer represent the grpc api provided by the vega node.
 type GRPC struct {
 	Config
@@ -96,6 +105,8 @@ type GRPC struct {
 	evtfwd     EvtForwarder
 	evtService EventService
 	powParams  ProofOfWorkParams
+	spamEngine SpamEngine
+	powEngine  PowEngine
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -116,6 +127,8 @@ func NewGRPC(
 	timeService *vegatime.Svc,
 	eventService *subscribers.Service,
 	powParams ProofOfWorkParams,
+	spamEngine SpamEngine,
+	powEngine PowEngine,
 ) *GRPC {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -133,6 +146,8 @@ func NewGRPC(
 		evtfwd:     evtfwd,
 		evtService: eventService,
 		powParams:  powParams,
+		spamEngine: spamEngine,
+		powEngine:  powEngine,
 	}
 }
 
@@ -246,6 +261,8 @@ func (g *GRPC) Start() {
 		evtForwarder: g.evtfwd,
 		eventService: g.evtService,
 		powParams:    g.powParams,
+		spamEngine:   g.spamEngine,
+		powEngine:    g.powEngine,
 	}
 	g.core = coreSvc
 	protoapi.RegisterCoreServiceServer(g.srv, coreSvc)

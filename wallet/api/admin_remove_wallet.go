@@ -17,14 +17,14 @@ type AdminRemoveWallet struct {
 }
 
 // Handle removes a wallet from the computer.
-func (h *AdminRemoveWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminRemoveWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRemoveWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}

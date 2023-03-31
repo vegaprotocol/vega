@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	"google.golang.org/grpc/codes"
 )
 
 func observe[T any](ctx context.Context, log *logging.Logger, eventType string, eventsInChan <-chan []T,
@@ -27,9 +26,12 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 	defer metrics.StartActiveSubscriptionCountGRPC(eventType)()
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
-	var publishedEvents int64
+	defer publishedEventStatTicker.Stop()
 
-	var err error
+	var (
+		publishedEvents int64
+		err             error
+	)
 	for {
 		select {
 		case <-publishedEventStatTicker.C:
@@ -39,12 +41,12 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 			if !ok {
 				err = ErrChannelClosed
 				log.Errorf("subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return apiError(codes.Internal, err)
+				return formatE(ErrStreamInternal, err)
 			}
 			for _, event := range events {
 				if err = send(event); err != nil {
 					log.Errorf("rpc stream error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
-					return apiError(codes.Internal, ErrStreamInternal, err)
+					return formatE(ErrStreamInternal, err)
 				}
 				publishedEvents++
 			}
@@ -53,14 +55,14 @@ func observe[T any](ctx context.Context, log *logging.Logger, eventType string, 
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream ctx error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+			return formatE(ErrStreamInternal, err)
 		}
 
 		if eventsInChan == nil {
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream closed, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamClosed)
+			return formatE(ErrStreamClosed)
 		}
 	}
 }
@@ -72,8 +74,12 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 	defer metrics.StartActiveSubscriptionCountGRPC(eventType)()
 
 	publishedEventStatTicker := time.NewTicker(time.Second)
-	var publishedEvents int64
-	var err error
+	defer publishedEventStatTicker.Stop()
+
+	var (
+		publishedEvents int64
+		err             error
+	)
 	for {
 		select {
 		case <-publishedEventStatTicker.C:
@@ -83,12 +89,12 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 			if !ok {
 				err = ErrChannelClosed
 				log.Errorf("subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return apiError(codes.Internal, err)
+				return formatE(ErrStreamInternal, err)
 			}
 			err = send(events)
 			if err != nil {
 				log.Errorf("rpc stream error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
-				return apiError(codes.Internal, ErrStreamInternal, err)
+				return formatE(ErrStreamInternal, err)
 			}
 			publishedEvents = publishedEvents + int64(len(events))
 		case <-ctx.Done():
@@ -96,14 +102,14 @@ func observeBatch[T any](ctx context.Context, log *logging.Logger, eventType str
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream ctx error, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamInternal, err)
+			return formatE(ErrStreamInternal, err)
 		}
 
 		if eventsInChan == nil {
 			if log.GetLevel() == logging.DebugLevel {
 				log.Debugf("rpc stream closed, subscriber to %s, reference %v, error: %v", eventType, ref, err)
 			}
-			return apiError(codes.Internal, ErrStreamClosed)
+			return formatE(ErrStreamClosed)
 		}
 	}
 }

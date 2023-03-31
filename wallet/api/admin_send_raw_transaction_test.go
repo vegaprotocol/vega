@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -113,6 +114,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 	sendingMode := "TYPE_SYNC"
 	network := newNetwork(t)
 	txHash := vgrand.RandomStr(64)
+	nodeHost := vgrand.RandomStr(5)
 
 	// setup
 	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -120,6 +122,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(node, nil)
+		node.EXPECT().Host().Times(1).Return(nodeHost)
 		node.EXPECT().SendTransaction(ctx, gomock.Any(), apipb.SubmitTransactionRequest_TYPE_SYNC).Times(1).Return(txHash, nil)
 		return nodeSelector, nil
 	})
@@ -183,7 +186,7 @@ func testAdminSendingRawTransactionWithNetworkThatFailsExistenceCheckFails(t *te
 	})
 
 	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not check the network existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not determine if the network exists: %w", assert.AnError))
 	assert.Empty(t, result)
 }
 
@@ -233,7 +236,7 @@ func testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildin
 	})
 
 	// then
-	assertInternalError(t, errorDetails, fmt.Errorf("could not initializing the node selector: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not initialize the node selector: %w", assert.AnError))
 	assert.Empty(t, result)
 }
 
@@ -294,7 +297,7 @@ func testAdminSendingRawTransactionWithFailedSendingFails(t *testing.T) {
 	})
 
 	// then
-	assertNetworkError(t, errorDetails, api.ErrTransactionFailed)
+	assertNetworkError(t, errorDetails, errors.New("the transaction failed: assert.AnError general error for testing"))
 	assert.Empty(t, result)
 }
 
@@ -304,10 +307,10 @@ type adminSendRawTransactionHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminSendRawTransactionResult, *jsonrpc.ErrorDetails) {
+func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminSendRawTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminSendRawTransactionResult)
 		if !ok {

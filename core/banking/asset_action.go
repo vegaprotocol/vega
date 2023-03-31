@@ -14,6 +14,7 @@ package banking
 
 import (
 	"errors"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/assets/common"
@@ -25,7 +26,7 @@ var ErrUnknownAssetAction = errors.New("unknown asset action")
 
 type assetAction struct {
 	id    string
-	state uint32
+	state *atomic.Uint32
 	asset *assets.Asset
 
 	// erc20 specifics
@@ -48,6 +49,25 @@ type assetAction struct {
 
 func (t *assetAction) GetID() string {
 	return t.id
+}
+
+func (t *assetAction) GetType() types.NodeVoteType {
+	switch {
+	case t.IsBuiltinAssetDeposit():
+		return types.NodeVoteTypeFundsDeposited
+	case t.IsERC20Deposit():
+		return types.NodeVoteTypeFundsDeposited
+	case t.IsERC20AssetList():
+		return types.NodeVoteTypeAssetListed
+	case t.IsERC20AssetLimitsUpdated():
+		return types.NodeVoteTypeAssetLimitsUpdated
+	case t.IsERC20BridgeStopped():
+		return types.NodeVoteTypeBridgeStopped
+	case t.IsERC20BridgeResumed():
+		return types.NodeVoteTypeBridgeResumed
+	default:
+		return types.NodeVoteTypeUnspecified
+	}
 }
 
 func (t *assetAction) IsBuiltinAssetDeposit() bool {

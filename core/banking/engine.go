@@ -36,15 +36,7 @@ import (
 	"github.com/emirpasic/gods/sets/treeset"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView
-
-const (
-	// this is temporarily used until we remove expiry completely
-	// make the expiry 2 years, which will outlive anyway any
-	// vega network at first.
-	// 24 hours * 365 * days * 2 years.
-	withdrawalsDefaultExpiry = 24 * 365 * 2 * time.Hour
-)
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/banking Assets,Notary,Collateral,Witness,TimeService,EpochService,Topology,MarketActivityTracker,ERC20BridgeView,EthereumEventSource
 
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
@@ -113,6 +105,10 @@ type MarketActivityTracker interface {
 	MarkPaidProposer(market, payoutAsset string, marketsInScope []string, funder string)
 }
 
+type EthereumEventSource interface {
+	UpdateCollateralStartingBlock(uint64)
+}
+
 const (
 	pendingState uint32 = iota
 	okState
@@ -122,21 +118,23 @@ const (
 var defaultValidationDuration = 2 * time.Hour
 
 type Engine struct {
-	cfg         Config
-	log         *logging.Logger
-	timeService TimeService
-	broker      broker.Interface
-	col         Collateral
-	witness     Witness
-	notary      Notary
-	assets      Assets
-	top         Topology
+	cfg            Config
+	log            *logging.Logger
+	timeService    TimeService
+	broker         broker.Interface
+	col            Collateral
+	witness        Witness
+	notary         Notary
+	assets         Assets
+	top            Topology
+	ethEventSource EthereumEventSource
 
-	assetActs     map[string]*assetAction
-	seen          *treeset.Set
-	withdrawals   map[string]withdrawalRef
-	withdrawalCnt *big.Int
-	deposits      map[string]*types.Deposit
+	assetActs        map[string]*assetAction
+	seen             *treeset.Set
+	lastSeenEthBlock uint64 // the block height of the latest ERC20 chain event
+	withdrawals      map[string]withdrawalRef
+	withdrawalCnt    *big.Int
+	deposits         map[string]*types.Deposit
 
 	currentEpoch uint64
 	bss          *bankingSnapshotState
@@ -153,8 +151,9 @@ type Engine struct {
 	recurringTransfersMap map[string]*types.RecurringTransfer
 
 	bridgeState *bridgeState
+	bridgeView  ERC20BridgeView
 
-	bridgeView ERC20BridgeView
+	minWithdrawQuantumMultiple num.Decimal
 }
 
 type withdrawalRef struct {
@@ -175,6 +174,7 @@ func New(
 	epoch EpochService,
 	marketActivityTracker MarketActivityTracker,
 	bridgeView ERC20BridgeView,
+	ethEventSource EthereumEventSource,
 ) (e *Engine) {
 	defer func() {
 		epoch.NotifyOnEpoch(e.OnEpoch, e.OnEpochRestore)
@@ -192,6 +192,7 @@ func New(
 		assets:                     assets,
 		notary:                     notary,
 		top:                        top,
+		ethEventSource:             ethEventSource,
 		assetActs:                  map[string]*assetAction{},
 		seen:                       treeset.NewWithStringComparator(),
 		withdrawals:                map[string]withdrawalRef{},
@@ -203,12 +204,18 @@ func New(
 		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
 		transferFeeFactor:          num.DecimalZero(),
 		minTransferQuantumMultiple: num.DecimalZero(),
+		minWithdrawQuantumMultiple: num.DecimalZero(),
 		marketActivityTracker:      marketActivityTracker,
 		bridgeState: &bridgeState{
 			active: true,
 		},
 		bridgeView: bridgeView,
 	}
+}
+
+func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal) error {
+	e.minWithdrawQuantumMultiple = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration.
@@ -246,7 +253,7 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 	// iterate over asset actions deterministically
 	for _, k := range assetActionKeys {
 		v := e.assetActs[k]
-		state := atomic.LoadUint32(&v.state)
+		state := v.state.Load()
 		if state == pendingState {
 			continue
 		}
@@ -320,7 +327,7 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 	if valid {
 		newState = okState
 	}
-	atomic.StoreUint32(&aa.state, newState)
+	aa.state.Store(newState)
 }
 
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
@@ -439,7 +446,6 @@ func (e *Engine) finalizeWithdraw(
 func (e *Engine) newWithdrawal(
 	id, partyID, asset string,
 	amount *num.Uint,
-	expirationDate time.Time,
 	wext *types.WithdrawExt,
 ) (w *types.Withdrawal, ref *big.Int) {
 	partyID = strings.TrimPrefix(partyID, "0x")
@@ -450,15 +456,14 @@ func (e *Engine) newWithdrawal(
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(now.Unix()))
 	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
-		ID:             id,
-		Status:         types.WithdrawalStatusOpen,
-		PartyID:        partyID,
-		Asset:          asset,
-		Amount:         amount,
-		ExpirationDate: expirationDate.Unix(),
-		Ext:            wext,
-		CreationDate:   now.UnixNano(),
-		Ref:            ref.String(),
+		ID:           id,
+		Status:       types.WithdrawalStatusOpen,
+		PartyID:      partyID,
+		Asset:        asset,
+		Amount:       amount,
+		Ext:          wext,
+		CreationDate: now.UnixNano(),
+		Ref:          ref.String(),
 	}
 	return
 }
@@ -488,4 +493,10 @@ func getRefKey(ref snapshot.TxRef) (string, error) {
 	}
 
 	return hex.EncodeToString(crypto.Hash(buf)), nil
+}
+
+func newPendingState() *atomic.Uint32 {
+	state := &atomic.Uint32{}
+	state.Store(pendingState)
+	return state
 }

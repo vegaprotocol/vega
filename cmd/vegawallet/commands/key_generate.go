@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -38,13 +37,14 @@ type GenerateKeyHandler func(params api.AdminGenerateKeyParams) (api.AdminGenera
 
 func NewCmdGenerateKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error) {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminGenerateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		generateKey := api.NewAdminGenerateKey(s)
-		rawResult, errDetails := generateKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		generateKey := api.NewAdminGenerateKey(walletStore)
+		rawResult, errDetails := generateKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminGenerateKeyResult{}, errors.New(errDetails.Data)
 		}

@@ -11,7 +11,6 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
-	connectivity "google.golang.org/grpc/connectivity"
 )
 
 // MockCoreServiceClient is a mock of CoreServiceClient interface.
@@ -77,18 +76,24 @@ func (mr *MockCoreServiceClientMockRecorder) CheckTransaction(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockCoreServiceClient)(nil).CheckTransaction), varargs...)
 }
 
-// GetState mocks base method.
-func (m *MockCoreServiceClient) GetState() connectivity.State {
+// GetSpamStatistics mocks base method.
+func (m *MockCoreServiceClient) GetSpamStatistics(arg0 context.Context, arg1 *v1.GetSpamStatisticsRequest, arg2 ...grpc.CallOption) (*v1.GetSpamStatisticsResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetState")
-	ret0, _ := ret[0].(connectivity.State)
-	return ret0
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetSpamStatistics", varargs...)
+	ret0, _ := ret[0].(*v1.GetSpamStatisticsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// GetState indicates an expected call of GetState.
-func (mr *MockCoreServiceClientMockRecorder) GetState() *gomock.Call {
+// GetSpamStatistics indicates an expected call of GetSpamStatistics.
+func (mr *MockCoreServiceClientMockRecorder) GetSpamStatistics(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockCoreServiceClient)(nil).GetState))
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpamStatistics", reflect.TypeOf((*MockCoreServiceClient)(nil).GetSpamStatistics), varargs...)
 }
 
 // GetVegaTime mocks base method.

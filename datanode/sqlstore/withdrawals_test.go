@@ -34,6 +34,7 @@ func TestWithdrawals(t *testing.T) {
 	t.Run("Upsert should insert withdrawal updates if the same withdrawal id is inserted in a different block", testInsertWithdrawalUpdatesIfNewBlock)
 	t.Run("GetByID should retrieve the latest state of the withdrawal with the given ID", testWithdrawalsGetByID)
 	t.Run("GetByParty should retrieve the latest state of all withdrawals for a given party", testWithdrawalsGetByParty)
+	t.Run("GetByTxHash", testWithdrawalsGetByTxHash)
 }
 
 func TestWithdrawalsPagination(t *testing.T) {
@@ -202,7 +203,6 @@ func testWithdrawalsGetByID(t *testing.T) {
 
 	got, err := ws.GetByID(ctx, withdrawalProto.Id)
 	assert.NoError(t, err)
-	withdrawal.Expiry = withdrawal.Expiry.Truncate(time.Microsecond)
 	withdrawal.CreatedTimestamp = withdrawal.CreatedTimestamp.Truncate(time.Microsecond)
 	withdrawal.WithdrawnTimestamp = withdrawal.WithdrawnTimestamp.Truncate(time.Microsecond)
 	assert.Equal(t, *withdrawal, got)
@@ -244,7 +244,6 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	err = ws.Upsert(ctx, withdrawal)
 	require.NoError(t, err)
 
-	withdrawal.Expiry = withdrawal.Expiry.Truncate(time.Microsecond)
 	withdrawal.CreatedTimestamp = withdrawal.CreatedTimestamp.Truncate(time.Microsecond)
 	withdrawal.WithdrawnTimestamp = withdrawal.WithdrawnTimestamp.Truncate(time.Microsecond)
 
@@ -269,7 +268,6 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	err = ws.Upsert(ctx, withdrawal)
 	require.NoError(t, err)
 
-	withdrawal.Expiry = withdrawal.Expiry.Truncate(time.Microsecond)
 	withdrawal.CreatedTimestamp = withdrawal.CreatedTimestamp.Truncate(time.Microsecond)
 	withdrawal.WithdrawnTimestamp = withdrawal.WithdrawnTimestamp.Truncate(time.Microsecond)
 
@@ -280,6 +278,32 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+func testWithdrawalsGetByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	bs, ws, conn := setupWithdrawalStoreTests(t)
+
+	var rowCount int
+
+	err := conn.QueryRow(ctx, `select count(*) from withdrawals`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	withdrawalProto1 := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
+	withdrawalProto1.Id = "deadbeef01"
+
+	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto1, generateTxHash(), block.VegaTime)
+	require.NoError(t, err, "Converting withdrawal proto to database entity")
+
+	err = ws.Upsert(ctx, withdrawal)
+	require.NoError(t, err)
+
+	withdrawals, err := ws.GetByTxHash(ctx, withdrawal.TxHash)
+	require.NoError(t, err)
+	require.Equal(t, *withdrawal, withdrawals[0])
+}
+
 func getTestWithdrawal(id, party, asset, amount, txHash string, ts time.Time) *vega.Withdrawal {
 	return &vega.Withdrawal{
 		Id:                 id,
@@ -288,7 +312,6 @@ func getTestWithdrawal(id, party, asset, amount, txHash string, ts time.Time) *v
 		Asset:              asset,
 		Status:             vega.Withdrawal_STATUS_OPEN,
 		Ref:                "deadbeef",
-		Expiry:             ts.Unix() + 1,
 		TxHash:             txHash,
 		CreatedTimestamp:   ts.UnixNano(),
 		WithdrawnTimestamp: ts.UnixNano(),

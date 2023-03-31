@@ -6,8 +6,8 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
       | maker fee | infrastructure fee |
       | 0.00025   | 0.0005             |
     And the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees           | price monitoring | data source config          |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future |
+      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees           | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-4 | default-margin-calculator | 1                | my-fees-config | default-none     | default-eth-for-future | 1e4                    | 1e4                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -17,13 +17,13 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
-      | tt_12     | BTC   | 10000000  |
-      | tt_13     | BTC   | 10000000  |
-      | tt_14     | BTC   | 10000000  |
-      | tt_15     | BTC   | 100       |
-      | tt_16     | BTC   | 10000000  |
-      | tt_aux    | BTC   | 100000000 |
-      | t2_aux    | BTC   | 100000000 |
+      | tt_12    | BTC   | 100000000 |
+      | tt_13    | BTC   | 100000000 |
+      | tt_14    | BTC   | 100000000 |
+      | tt_15    | BTC   | 100       |
+      | tt_16    | BTC   | 100000000 |
+      | tt_aux   | BTC   | 100000000 |
+      | t2_aux   | BTC   | 100000000 |
       | party-lp | BTC   | 100000000 |
     And the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -40,13 +40,17 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
 
     # place orders and generate trades
     When the parties place the following orders "1" blocks apart:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
-      | tt_12  | ETH/DEC19 | buy  | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTT | tt_12-1   | 3600       |
-      | tt_13  | ETH/DEC19 | sell | 5      | 20    | 1                | TYPE_LIMIT | TIF_GTT | tt_13-1   | 3600       |
-      | tt_14  | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-1   |            |
-      | tt_14  | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-2   |            |
-      | tt_15  | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-1   |            |
-      | tt_16  | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-1   |            |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference | expires in |
+      | tt_12 | ETH/DEC19 | buy  | 5      | 20    | 0                | TYPE_LIMIT | TIF_GTT | tt_12-1   | 3600       |
+      | tt_13 | ETH/DEC19 | sell | 5      | 20    | 1                | TYPE_LIMIT | TIF_GTT | tt_13-1   | 3600       |
+      | tt_14 | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-1   |            |
+      | tt_14 | ETH/DEC19 | sell | 2      | 50    | 0                | TYPE_LIMIT | TIF_GTC | tt_14-2   |            |
+      | tt_15 | ETH/DEC19 | sell | 2      | 20    | 0                | TYPE_LIMIT | TIF_GTC | tt_15-1   |            |
+      | tt_16 | ETH/DEC19 | buy  | 2      | 20    | 1                | TYPE_LIMIT | TIF_GTC | tt_16-1   |            |
+
+    Then the parties should have the following account balances:
+      | party | asset | market id | margin | general |
+      | tt_15 | BTC   | ETH/DEC19 | 76     | 25       |
 
     When the parties place the following orders "1" blocks apart:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -66,9 +70,9 @@ Feature: Short close-out test (see ln 449 of system-tests/grpc/trading/tradesTes
     #   Note that the realised pnl for tt_15 is -102 as additional 2 was made
     #   on top of initial deposit by earning maker fee on passive orders.
     Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | tt_12  | 5      | 0              | 0            |
-      | tt_13  | -5     | 0              | 0            |
-      | tt_14  | -4     | 120            | -22          |
-      | tt_15  | 0      | 0              | -102         |
-      | tt_16  | 4      | 0              | 0            |
+      | party | volume | unrealised pnl | realised pnl |
+      | tt_12 | 5      | 0              | 0            |
+      | tt_13 | -5     | 0              | 0            |
+      | tt_14 | -4     | 120            | -22          |
+      | tt_15 | 0      | 0              | -102         |
+      | tt_16 | 4      | 0              | 0            |

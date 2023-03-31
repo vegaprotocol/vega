@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
-	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 
@@ -34,13 +33,14 @@ type UntaintKeyHandler func(api.AdminUntaintKeyParams) error
 
 func NewCmdUntaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminUntaintKeyParams) error {
-		s, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
+		defer walletStore.Close()
 
-		untaintKey := api.NewAdminUntaintKey(s)
-		_, errDetails := untaintKey.Handle(context.Background(), params, jsonrpc.RequestMetadata{})
+		untaintKey := api.NewAdminUntaintKey(walletStore)
+		_, errDetails := untaintKey.Handle(context.Background(), params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}

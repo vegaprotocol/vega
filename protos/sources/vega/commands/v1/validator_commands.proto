@@ -16,9 +16,11 @@ message ValidatorHeartbeat {
   Signature ethereum_signature = 2;
   // Signature from the validator made using the vega wallet
   Signature vega_signature = 3;
+  // Message which has been signed
+  string message = 4;
 }
 
-// Used announce a node as a new pending validator
+// Used to announce a node as a new pending validator
 message AnnounceNode {
   // Vega public key, required field
   string vega_pub_key = 1;
@@ -55,6 +57,37 @@ message NodeVote {
   reserved 1;
   // Reference, required field
   string reference = 2;
+  // type of NodeVote, also required
+  Type type = 3;
+
+  enum Type {
+    // Represents an unspecified or missing value from the input
+    TYPE_UNSPECIFIED = 0;
+    // A node vote a new stake deposit
+    TYPE_STAKE_DEPOSITED = 1;
+    // A node vote for a new stake removed event
+    TYPE_STAKE_REMOVED = 2;
+    // A node vote for new collateral deposited
+    TYPE_FUNDS_DEPOSITED = 3;
+    // A node vote for a new signer added to the erc20 bridge
+    TYPE_SIGNER_ADDED = 4;
+    // A node vote for a signer removed from the erc20 bridge
+    TYPE_SIGNER_REMOVED = 5;
+    // A node vote for a bridge stopped event
+    TYPE_BRIDGE_STOPPED = 6;
+    // A node vote for a bridge resumed event
+    TYPE_BRIDGE_RESUMED = 7;
+    // A node vote for a newly listed asset
+    TYPE_ASSET_LISTED = 8;
+    // A node vote for an asset limits update
+    TYPE_LIMITS_UPDATED = 9;
+    // A node vote to share the total supply of the staking token
+    TYPE_STAKE_TOTAL_SUPPLY = 10;
+    // A node vote to update the threshold of the signer set for the multisig contract
+    TYPE_SIGNER_THRESHOLD_SET = 11;
+    // A node vote to validate a new assert governance proposal
+    TYPE_GOVERNANCE_VALIDATE_ASSET = 12;
+  }
 }
 
 // The kind of signature created by a node, for example, allow-listing a new asset, withdrawal etc
@@ -103,7 +136,7 @@ message ChainEvent {
   }
 }
 
-// A transaction to allow validator to rotate their Vega keys
+// A transaction to allow a validator to rotate their Vega keys
 message KeyRotateSubmission {
   // New Vega public key derivation index
   uint32 new_pub_key_index = 1;
@@ -115,11 +148,11 @@ message KeyRotateSubmission {
   string current_pub_key_hash = 4;
 }
 
-// A transaction to allow validator to rotate their ethereum keys
+// A transaction to allow a validator to rotate their ethereum keys
 message EthereumKeyRotateSubmission {
   // Target block at which the key rotation will take effect on
   uint64 target_block = 1;
-  // The new adress to rotate to
+  // The new address to rotate to
   string new_address = 2;
   // Currently used public address
   string current_address = 3;
@@ -128,25 +161,15 @@ message EthereumKeyRotateSubmission {
   // Signature that can be verified using the new ethereum address
   Signature ethereum_signature = 5;
 }
-
+// A transaction for a validator to submit a floating point value
 message StateVariableProposal {
   // The state value proposal details
   vega.StateValueProposal proposal = 1;
 }
-
+// A transaction for a validator to suggest a protocol upgrade
 message ProtocolUpgradeProposal {
    // The block height at which to perform the upgrade
    uint64 upgrade_block_height = 1;
    // the release tag for the Vega binary
    string vega_release_tag = 2;
-}
-
-
-message IssueSignatures {
-  // The ethereum address which will submit the signatures to the smart-contract
-  string submitter = 1;
-  // The kind of signatures to generate, namely for whether a signer is being added or removed
-  NodeSignatureKind kind = 2;
-  // The ID of the node that will be signed in or out of the smartcontract
-  string validator_node_id = 3; // the node for which to emit the signatures.
 }

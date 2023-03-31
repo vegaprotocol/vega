@@ -16,7 +16,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"time"
+	"sync/atomic"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -29,7 +29,7 @@ func (e *Engine) WithdrawBuiltinAsset(
 	ctx context.Context, id, party, assetID string, amount *num.Uint,
 ) error {
 	// build the withdrawal type
-	w, ref := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
+	w, ref := e.newWithdrawal(id, party, assetID, amount, nil)
 	w.Status = types.WithdrawalStatusRejected // default
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 
@@ -75,9 +75,12 @@ func (e *Engine) DepositBuiltinAsset(
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, nonce)
 
+	state := &atomic.Uint32{}
+	state.Store(pendingState)
+
 	aa := &assetAction{
 		id:       dep.ID,
-		state:    pendingState,
+		state:    state,
 		builtinD: d,
 		asset:    asset,
 		txHash:   hex.EncodeToString(vgcrypto.Hash(b)),

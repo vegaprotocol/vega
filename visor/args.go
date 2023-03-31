@@ -20,14 +20,17 @@ import (
 // TODO make these functions more robust.
 type Args []string
 
-func (a Args) Exists(name string) bool {
-	for _, arg := range a {
+func (a Args) indexOf(name string) int {
+	for i, arg := range a {
 		if strings.Contains(arg, name) {
-			return true
+			return i
 		}
 	}
+	return -1
+}
 
-	return false
+func (a Args) Exists(name string) bool {
+	return a.indexOf(name) != -1
 }
 
 // Set sets a new argument. Ignores if argument exists.
@@ -54,4 +57,25 @@ func (a *Args) ForceSet(name, value string) bool {
 	*a = append(*a, name, value)
 
 	return true
+}
+
+// GetFlagWithArg finds and returns a flag with it's argument.
+// Returns nil if not found.
+// Example: --home /path.
+func (a Args) GetFlagWithArg(name string) []string {
+	if name[0:2] != "--" {
+		name = fmt.Sprintf("--%s", name)
+	}
+
+	i := a.indexOf(name)
+	if i == -1 {
+		return nil
+	}
+
+	// Check if there is a flag's paramater available
+	if len(a) < i+2 {
+		return nil
+	}
+
+	return a[i : i+2]
 }

@@ -39,6 +39,8 @@ var (
 	ErrMissingDataSourceSpecBinding = errors.New("missing data source spec binding")
 	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
 	ErrMissingDataSourceSpecForSettlementData = errors.New("missing data source spec for settlement data")
+	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
+	ErrSettlementWithInternalDataSourceIsNotAllowed = errors.New("settlement with internal data source is not allwed")
 	// ErrMissingDataSourceSpecForTradingTermination is returned when the data source spec for trading termination is absent.
 	ErrMissingDataSourceSpecForTradingTermination = errors.New("missing data source spec for trading termination")
 	// ErrDataSourceSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
@@ -78,7 +80,6 @@ func assignProduct(
 				QuoteName:                           product.Future.QuoteName,
 				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData.ToDataSourceSpec(),
 				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination.ToDataSourceSpec(),
-				SettlementDataDecimals:              product.Future.SettlementDataDecimalPlaces,
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
@@ -197,6 +198,8 @@ func buildMarketFromProposal(
 		},
 		LiquidityMonitoringParameters: definition.Changes.LiquidityMonitoringParameters,
 		LPPriceRange:                  definition.Changes.LpPriceRange,
+		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
+		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -236,6 +239,15 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidFutureProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
+	}
+
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
@@ -271,10 +283,21 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+	switch future.DataSourceSpecBinding.SettlementDataProperty {
+	case datapb.PropertyKey_TYPE_DECIMAL.String():
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+
+	default:
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
 	}
 
+	// ensure the oracle spec for market termination can be constructed
 	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
@@ -353,6 +376,20 @@ func validateAuctionDuration(proposedDuration time.Duration, netp NetParams) (ty
 	return types.ProposalErrorUnspecified, nil
 }
 
+func validateSlippageFactor(slippageFactor num.Decimal, isLinear bool) (types.ProposalError, error) {
+	err := types.ProposalErrorLinearSlippageOutOfRange
+	if !isLinear {
+		err = types.ProposalErrorQuadraticSlippageOutOfRange
+	}
+	if slippageFactor.IsNegative() {
+		return err, fmt.Errorf("proposal slippage factor has incorrect value, expected value in [0,1000000], got %s", slippageFactor.String())
+	}
+	if slippageFactor.GreaterThan(num.DecimalFromInt64(1000000)) {
+		return err, fmt.Errorf("proposal slippage factor has incorrect value, expected value in [0,1000000], got %s", slippageFactor.String())
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
 func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error) {
 	if lpPriceRange.IsZero() || lpPriceRange.IsNegative() || lpPriceRange.GreaterThan(num.DecimalFromInt64(100)) {
 		return types.ProposalErrorLpPriceRangeNonpositive, fmt.Errorf("proposal LP price range has incorrect value, expected value in (0,100], got %s", lpPriceRange.String())
@@ -385,7 +422,12 @@ func validateNewMarketChange(
 	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
 		return perr, err
 	}
-
+	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
+		return perr, err
+	}
+	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -400,7 +442,12 @@ func validateUpdateMarketChange(terms *types.UpdateMarket, etu *enactmentTime) (
 	if perr, err := validateLpPriceRange(terms.Changes.LpPriceRange); err != nil {
 		return perr, err
 	}
-
+	if perr, err := validateSlippageFactor(terms.Changes.LinearSlippageFactor, true); err != nil {
+		return perr, err
+	}
+	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
@@ -419,6 +466,15 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	settlData := &future.DataSourceSpecForSettlementData
 	if settlData == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
+	}
+
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidFutureProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
 	}
 
 	tterm := &future.DataSourceSpecForTradingTermination
@@ -453,15 +509,25 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 	}
 
 	// ensure the oracle spec for settlement data can be constructed
-	tedss := *future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec()
-	ospec, err := oracles.NewOracleSpec(tedss)
+	ospec, err := oracles.NewOracleSpec(*future.DataSourceSpecForSettlementData.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err
 	}
-	if err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER); err != nil {
-		return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+	switch future.DataSourceSpecBinding.SettlementDataProperty {
+	case datapb.PropertyKey_TYPE_DECIMAL.String():
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_DECIMAL)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
+
+	default:
+		err := ospec.EnsureBoundableProperty(future.DataSourceSpecBinding.SettlementDataProperty, datapb.PropertyKey_TYPE_INTEGER)
+		if err != nil {
+			return types.ProposalErrorInvalidFutureProduct, fmt.Errorf("invalid oracle spec binding for settlement data: %w", err)
+		}
 	}
 
+	// ensure the oracle spec for market termination can be constructed
 	ospec, err = oracles.NewOracleSpec(*future.DataSourceSpecForTradingTermination.ToExternalDataSourceSpec())
 	if err != nil {
 		return types.ProposalErrorInvalidFutureProduct, err

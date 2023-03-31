@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/vega/cmd/data-node/commands/dehistory"
+	"code.vegaprotocol.io/vega/cmd/data-node/commands/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/config"
 
 	"github.com/jessevdk/go-flags"
@@ -47,7 +47,7 @@ func Execute(ctx context.Context) error {
 		Version,
 		Postgres,
 		LastBlock,
-		dehistory.DeHistory,
+		networkhistory.NetworkHistory,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

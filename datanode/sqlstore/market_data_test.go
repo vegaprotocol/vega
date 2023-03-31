@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/protos/vega"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/shopspring/decimal"
@@ -93,7 +95,19 @@ func shouldInsertAValidMarketDataRecord(t *testing.T) {
 		MarketState:       "STATE_ACTIVE",
 		AuctionTrigger:    "AUCTION_TRIGGER_LIQUIDITY",
 		ExtensionTrigger:  "AUCTION_TRIGGER_UNSPECIFIED",
-		VegaTime:          block.VegaTime,
+		PriceMonitoringBounds: []*vega.PriceMonitoringBounds{
+			{
+				MinValidPrice: "1",
+				MaxValidPrice: "2",
+				Trigger: &vega.PriceMonitoringTrigger{
+					Horizon:          100,
+					Probability:      "0.5",
+					AuctionExtension: 200,
+				},
+				ReferencePrice: "3",
+			},
+		},
+		VegaTime: block.VegaTime,
 	})
 	require.NoError(t, err)
 
@@ -140,13 +154,25 @@ func getLatestMarketData(t *testing.T) {
 		ExtensionTrigger:      "AUCTION_TRIGGER_UNSPECIFIED",
 		TargetStake:           mustParseDecimal(t, "67499499622"),
 		SuppliedStake:         mustParseDecimal(t, "50000000000"),
-		PriceMonitoringBounds: nil,
-		MarketValueProxy:      "194290093211464.7413030152957024",
-		LiquidityProviderFeeShares: []*entities.LiquidityProviderFeeShare{
+		PriceMonitoringBounds: []*vega.PriceMonitoringBounds{
+			{
+				MinValidPrice: "1",
+				MaxValidPrice: "2",
+				Trigger: &vega.PriceMonitoringTrigger{
+					Horizon:          100,
+					Probability:      "0.5",
+					AuctionExtension: 200,
+				},
+				ReferencePrice: "3",
+			},
+		},
+		MarketValueProxy: "194290093211464.7413030152957024",
+		LiquidityProviderFeeShares: []*vega.LiquidityProviderFeeShare{
 			{
 				Party:                 "af2bb48edd738353fcd7a2b6cea4821dd2382ec95497954535278dfbfff7b5b5",
-				EquityLikeShare:       decimal.NewFromFloat(1),
-				AverageEntryValuation: decimal.NewFromInt(50000000000),
+				EquityLikeShare:       "1",
+				AverageEntryValuation: "50000000000",
+				AverageScore:          "123",
 			},
 		},
 		VegaTime: time.Date(2022, 2, 11, 10, 5, 41, 0, time.UTC),
@@ -956,13 +982,13 @@ func mustParseInt64(t *testing.T, value string) int64 {
 	return i
 }
 
-func mustParsePriceMonitoringBounds(t *testing.T, value string) []*entities.PriceMonitoringBound {
+func mustParsePriceMonitoringBounds(t *testing.T, value string) []*vega.PriceMonitoringBounds {
 	t.Helper()
 	if strings.ToLower(value) == "null" {
 		return nil
 	}
 
-	var bounds []*entities.PriceMonitoringBound
+	var bounds []*vega.PriceMonitoringBounds
 
 	err := json.Unmarshal([]byte(value), &bounds)
 	if err != nil {
@@ -972,13 +998,13 @@ func mustParsePriceMonitoringBounds(t *testing.T, value string) []*entities.Pric
 	return bounds
 }
 
-func mustParseLiquidity(t *testing.T, value string) []*entities.LiquidityProviderFeeShare {
+func mustParseLiquidity(t *testing.T, value string) []*vega.LiquidityProviderFeeShare {
 	t.Helper()
 	if strings.ToLower(value) == "null" {
 		return nil
 	}
 
-	var liquidity []*entities.LiquidityProviderFeeShare
+	var liquidity []*vega.LiquidityProviderFeeShare
 
 	err := json.Unmarshal([]byte(value), &liquidity)
 	if err != nil {

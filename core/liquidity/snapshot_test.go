@@ -25,10 +25,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
-	"code.vegaprotocol.io/vega/libs/proto"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/libs/proto"
 )
 
 var initialTime = time.Date(2020, 10, 20, 1, 1, 1, 0, time.UTC)
@@ -46,6 +47,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	)
 
 	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e1.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e3.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -114,6 +116,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"pendingProvisions:market-id": "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
 		"provisions:market-id":        "7c76902e145d0eaf0abb83382575c027097abdb418364c351e2ad085e1c69c3e",
 		"liquiditySupplied:market-id": "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
+		"liquidityScores:market-id":   "960e7a009ad808147dc0a83638379ae5df2a67dab2a9654ce7bae55b0110ff07",
 	}
 
 	for _, key := range keys {
@@ -151,6 +154,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"pendingProvisions:market-id": "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
 		"provisions:market-id":        "89335d14e98ca80b144cb6502e9b508d97d63027ba0c7733d6024030cdf102ed",
 		"liquiditySupplied:market-id": "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
+		"liquidityScores:market-id":   "4f1d569c75a1a524084d6c1e9998fef46451a00bcc8dbfac41db90bd948e5af0",
 	}
 
 	lp3 := &types.LiquidityProvisionSubmission{
@@ -193,6 +197,8 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		AnyTimes()
 
 	e2.engine.Update(ctx, num.NewUint(99), num.NewUint(101), repriceFN)
+
+	e2.engine.UpdateAverageLiquidityScores(num.DecimalFromFloat(99.1), num.DecimalFromFloat(100.8), num.NewUint(99), num.NewUint(101))
 
 	for _, key := range keys {
 		s, _, err := e2.engine.GetState(key)
@@ -239,6 +245,7 @@ func TestSnapshotChangeOnUpdate(t *testing.T) {
 	)
 
 	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	e1.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e1.orderbook.EXPECT().GetOrdersPerParty(gomock.Any()).AnyTimes()
 	e1.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).AnyTimes()
 

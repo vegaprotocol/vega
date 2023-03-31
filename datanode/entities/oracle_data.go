@@ -34,7 +34,7 @@ func OracleDataFromProto(data *vegapb.OracleData, txHash TxHash, vegaTime time.T
 	}, nil
 }
 
-func (od *OracleData) ToProto() *vegapb.OracleData {
+func (od OracleData) ToProto() *vegapb.OracleData {
 	return &vegapb.OracleData{
 		ExternalData: od.ExternalData.ToProto(),
 	}

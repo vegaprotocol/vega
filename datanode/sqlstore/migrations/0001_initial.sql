@@ -40,8 +40,6 @@ CREATE TRIGGER update_last_block AFTER INSERT ON blocks FOR EACH ROW EXECUTE fun
 
 
 
-
-
 create table chain
 (
     id            TEXT NOT NULL,
@@ -163,14 +161,16 @@ WHERE conflated_balances.vega_time < (SELECT coalesce(min(balances.vega_time), '
 
 create table ledger
 (
-    ledger_entry_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    account_from_id bytea                      NOT NULL,
-    account_to_id   bytea                      NOT NULL,
-    quantity        HUGEINT                  NOT NULL,
-    tx_hash         BYTEA                    NOT NULL,
-    vega_time       TIMESTAMP WITH TIME ZONE NOT NULL,
-    transfer_time   TIMESTAMP WITH TIME ZONE NOT NULL,
-    type            TEXT,
+    ledger_entry_time              TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_id                bytea                    NOT NULL,
+    account_to_id                  bytea                    NOT NULL,
+    quantity                       HUGEINT                  NOT NULL,
+    tx_hash                        BYTEA                    NOT NULL,
+    vega_time                      TIMESTAMP WITH TIME ZONE NOT NULL,
+    transfer_time                  TIMESTAMP WITH TIME ZONE NOT NULL,
+    account_from_balance  HUGEINT                  NOT NULL,
+    account_to_balance    HUGEINT                  NOT NULL,
+    type                           TEXT,
     PRIMARY KEY(ledger_entry_time)
 );
 SELECT create_hypertable('ledger', 'ledger_entry_time', chunk_time_interval => INTERVAL '1 day');
@@ -205,15 +205,15 @@ CREATE TABLE orders (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL,
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    current           BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(vega_time, seq_num)
 );
 
 SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON orders (market_id, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders (party_id, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders (reference, vega_time DESC) where vega_time_to='infinity';
-CREATE INDEX ON orders (id, vega_time_to);
+CREATE INDEX ON orders (market_id, vega_time DESC) where current=true;
+CREATE INDEX ON orders (party_id, vega_time DESC) where current=true;
+CREATE INDEX ON orders (reference, vega_time DESC) where current=true;
+CREATE INDEX ON orders (id, current);
 
 CREATE TABLE orders_live (
     id                BYTEA                     NOT NULL,
@@ -239,7 +239,7 @@ CREATE TABLE orders_live (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL, -- event sequence number in the block
-    vega_time_to      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT 'infinity',
+    current           BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id)
 );
 
@@ -257,10 +257,10 @@ $$
     BEGIN
     -- It is permitted by core to re-use order IDs and 'resurrect' done orders (specifically,
     -- LP orders do this, so we need to check our history table to see if we need to updated
-    -- vega_time_to on any most-recent-version-of an order.
+    -- current flag on any most-recent-version-of an order.
     UPDATE orders
-       SET vega_time_to = NEW.vega_time
-     WHERE vega_time_to = 'infinity'
+       SET current = false
+     WHERE current = true
        AND id = NEW.id;
 
       DELETE from orders_live
@@ -277,7 +277,7 @@ $$
               new.size, new.remaining, new.time_in_force, new.type, new.status,
               new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
               new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
-              new.tx_hash, new.vega_time, new.seq_num, 'infinity');
+              new.tx_hash, new.vega_time, new.seq_num, true);
     END IF;
 
     RETURN NEW;
@@ -294,7 +294,7 @@ CREATE TRIGGER archive_orders BEFORE INSERT ON orders FOR EACH ROW EXECUTE funct
 -- this view contains the *current* state of the latest version each order
 --  (e.g. it's unique on order ID)
 CREATE VIEW orders_current AS (
-  SELECT * FROM orders WHERE vega_time_to = 'infinity'
+  SELECT * FROM orders WHERE current = true
 );
 
 -- Manual updates to the order (e.g. user changing price level) increment the 'version'
@@ -442,10 +442,8 @@ CREATE TABLE network_limits (
   tx_hash                     BYTEA                    NOT NULL,
   can_propose_market          BOOLEAN NOT NULL,
   can_propose_asset           BOOLEAN NOT NULL,
-  bootstrap_finished          BOOLEAN NOT NULL,
   propose_market_enabled      BOOLEAN NOT NULL,
   propose_asset_enabled       BOOLEAN NOT NULL,
-  bootstrap_block_count       INTEGER,
   genesis_loaded              BOOLEAN NOT NULL,
   propose_market_enabled_from TIMESTAMP WITH TIME ZONE NOT NULL,
   propose_asset_enabled_from  TIMESTAMP WITH TIME ZONE NOT NULL
@@ -622,6 +620,10 @@ CREATE TABLE rewards(
   primary key (vega_time, seq_num)
 );
 
+create index on rewards (party_id, asset_id);
+create index on rewards (asset_id);
+create index on rewards (epoch_id);
+
 CREATE TABLE delegations(
   party_id         BYTEA NOT NULL,
   node_id          BYTEA NOT NULL,
@@ -648,6 +650,9 @@ create table delegations_current
     seq_num  BIGINT NOT NULL,
     primary key (party_id, node_id, epoch_id)
 );
+
+create index on delegations_current(node_id, epoch_id);
+create index on delegations_current(epoch_id);
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_delegations()
@@ -688,6 +693,8 @@ create table if not exists markets (
     lp_price_range text,
     primary key (id, vega_time)
 );
+
+select create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 drop view if exists markets_current;
 
@@ -767,11 +774,13 @@ create table if not exists deposits (
     vega_time timestamp with time zone not null,
     primary key (id, party_id, vega_time)
 );
+CREATE INDEX ON deposits(party_id);
 
 select create_hypertable('deposits', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE VIEW deposits_current AS (
-    SELECT DISTINCT ON (id) * FROM deposits ORDER BY id, vega_time DESC
+    -- Assume that party_id is always the same for a given deposit ID to allow filter to be pushed down
+    SELECT DISTINCT ON (id, party_id) * FROM deposits ORDER BY id, party_id, vega_time DESC
 );
 
 create type withdrawal_status as enum('STATUS_UNSPECIFIED', 'STATUS_OPEN', 'STATUS_REJECTED', 'STATUS_FINALIZED');
@@ -783,7 +792,6 @@ create table if not exists withdrawals (
     asset bytea not null,
     status withdrawal_status not null,
     ref text not null,
-    expiry timestamp with time zone not null,
     foreign_tx_hash text not null,
     created_timestamp timestamp with time zone not null,
     withdrawn_timestamp timestamp with time zone not null,
@@ -793,10 +801,13 @@ create table if not exists withdrawals (
     primary key (id, party_id, vega_time)
 );
 
+CREATE INDEX ON withdrawals(party_id);
+
 select create_hypertable('withdrawals', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
 CREATE VIEW withdrawals_current AS (
-    SELECT DISTINCT ON (id) * FROM withdrawals ORDER BY id, vega_time DESC
+    -- Assume that party_id is always the same for a given withdrawal ID to allow filter to be pushed down
+    SELECT DISTINCT ON (id, party_id) * FROM withdrawals ORDER BY id, party_id, vega_time DESC
 );
 
 CREATE TYPE proposal_state AS enum('STATE_UNSPECIFIED', 'STATE_FAILED', 'STATE_OPEN', 'STATE_PASSED', 'STATE_REJECTED', 'STATE_DECLINED', 'STATE_ENACTED', 'STATE_WAITING_FOR_NODE_VOTE');
@@ -839,6 +850,8 @@ CREATE TABLE votes(
   initial_time                   TIMESTAMP WITH TIME ZONE,
   PRIMARY KEY (proposal_id, party_id, vega_time)
 );
+
+CREATE INDEX ON votes(party_id);
 
 CREATE VIEW votes_current AS (
   SELECT DISTINCT ON (proposal_id, party_id) * FROM votes ORDER BY proposal_id, party_id, vega_time DESC
@@ -1099,6 +1112,8 @@ create table positions_current
 
 );
 
+CREATE INDEX ON positions_current(market_id);
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_positions()
     RETURNS TRIGGER
@@ -1229,6 +1244,10 @@ create table current_liquidity_provisions
     primary key (id)
 );
 
+create index on current_liquidity_provisions (party_id);
+create index on current_liquidity_provisions (market_id, party_id);
+create index on current_liquidity_provisions (reference);
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_liquidity_provisions()
    RETURNS TRIGGER
@@ -1314,7 +1333,8 @@ create table if not exists transfers (
 create index on transfers (from_account_id);
 create index on transfers (to_account_id);
 
-CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id) * FROM transfers ORDER BY id DESC, vega_time DESC);
+-- Assume that from/to account is never changed for a given xfer id
+CREATE VIEW transfers_current AS ( SELECT DISTINCT ON (id, from_account_id, to_account_id) * FROM transfers ORDER BY id, from_account_id, to_account_id, vega_time DESC);
 
 create table if not exists key_rotations (
   node_id bytea not null references nodes(id),
@@ -1393,6 +1413,8 @@ create table if not exists stake_linking_current(
     vega_time timestamp with time zone not null,
     primary key (id)
 );
+
+create index on stake_linking_current(party_id);
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_stake_linking()

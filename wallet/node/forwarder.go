@@ -49,16 +49,20 @@ func NewForwarder(log *zap.Logger, nodeConfigs network.GRPCConfig) (*Forwarder, 
 	}, nil
 }
 
-func (n *Forwarder) Stop() error {
+func (n *Forwarder) Stop() {
+	hasErrors := false
 	for i, v := range n.nodeCfgs.Hosts {
 		n.log.Debug("Closing gRPC client", zap.String("address", v))
 		if err := n.conns[i].Close(); err != nil {
 			n.log.Warn("Couldn't close gRPC client", zap.Error(err))
-			return err
+			hasErrors = true
 		}
 	}
-	n.log.Info("gRPC clients successfully closed")
-	return nil
+	if hasErrors {
+		n.log.Warn("gRPC clients successfully with errors")
+	} else {
+		n.log.Info("gRPC clients successfully closed")
+	}
 }
 
 func (n *Forwarder) HealthCheck(ctx context.Context) error {
@@ -136,6 +140,38 @@ func (n *Forwarder) CheckTx(ctx context.Context, tx *commandspb.Transaction, clt
 	)
 
 	return resp, err
+}
+
+func (n *Forwarder) SpamStatistics(ctx context.Context, pubkey string) (*api.GetSpamStatisticsResponse, int, error) {
+	req := api.GetSpamStatisticsRequest{
+		PartyId: pubkey,
+	}
+	var resp *api.GetSpamStatisticsResponse
+	clt := -1
+	err := backoff.Retry(
+		func() error {
+			clt = n.nextClt()
+			r, err := n.clts[clt].GetSpamStatistics(ctx, &req)
+			if err != nil {
+				n.log.Debug("Couldn't get spam statistics", zap.Error(err))
+				return err
+			}
+			resp = r
+			return nil
+		},
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+	)
+
+	if err != nil {
+		n.log.Error("Couldn't get spam statistics", zap.Error(err))
+		clt = -1
+	} else {
+		n.log.Debug("Spam statistics",
+			zap.Time("request.time", time.Now()),
+		)
+	}
+
+	return resp, clt, err
 }
 
 func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type, cltIdx int) (*api.SubmitTransactionResponse, error) {

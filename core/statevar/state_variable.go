@@ -150,7 +150,7 @@ func (sv *StateVariable) startBlock(t time.Time) {
 	}
 	sv.lock.Unlock()
 	if needsResend {
-		sv.logAndRetry(errors.New("timeout expired"), sv.lastSentSelfBundle)
+		sv.logAndRetry(errors.New("consensus not reached - timeout expired"), sv.lastSentSelfBundle)
 	}
 }
 
@@ -297,24 +297,30 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, node, eventID strin
 
 	// save the result from the validator and check if we have a quorum
 	sv.validatorResults[node] = bundle
-	numResults := num.DecimalFromInt64(int64(len(sv.validatorResults)))
-	validatorsNum := num.DecimalFromInt64(int64(len(sv.top.AllNodeIDs())))
-	requiredNumberOfResults := validatorsNum.Mul(validatorVotesRequired)
 
-	if sv.log.IsDebug() {
-		sv.log.Debug("received results for state variable", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received", numResults), logging.String("out-of", validatorsNum.String()))
+	// calculate how much voting power is required for majority
+	requiredVotingPower := validatorVotesRequired.Mul(num.DecimalFromInt64(sv.top.GetTotalVotingPower()))
+
+	// calculate how much voting power is represented by the voters
+	bundlesVotingPower := num.DecimalZero()
+	for k := range sv.validatorResults {
+		bundlesVotingPower = bundlesVotingPower.Add(num.DecimalFromInt64(sv.top.GetVotingPower(k)))
 	}
 
-	if numResults.LessThan(requiredNumberOfResults) {
+	if sv.log.IsDebug() {
+		sv.log.Debug("received results for state variable", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received-voting-power", bundlesVotingPower), logging.String("out-of", requiredVotingPower.String()))
+	}
+
+	if bundlesVotingPower.LessThan(requiredVotingPower) {
 		if sv.log.GetLevel() <= logging.DebugLevel {
-			sv.log.Debug("waiting for more results for state variable consensus check", logging.String("state-var", sv.ID), logging.String("event-id", eventID), logging.Decimal("received", numResults), logging.String("out-of", validatorsNum.String()))
+			sv.log.Debug("waiting for more results for state variable consensus check", logging.String("state-var", sv.ID), logging.Decimal("received-voting-power", bundlesVotingPower), logging.String("out-of", requiredVotingPower.String()))
 		}
 		return
 	}
 
 	// if we're already in seeking consensus state, no point in checking if all match - suffice checking if there's a majority with matching within tolerance
 	if sv.state == ConsensusStateSeekingConsensus {
-		sv.tryConsensusLocked(ctx, rng, requiredNumberOfResults)
+		sv.tryConsensusLocked(ctx, rng, requiredVotingPower)
 		return
 	}
 
@@ -336,7 +342,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, node, eventID strin
 
 			// initiate a round of voting
 			sv.state = ConsensusStateSeekingConsensus
-			sv.tryConsensusLocked(ctx, rng, validatorsNum.Mul(validatorVotesRequired))
+			sv.tryConsensusLocked(ctx, rng, requiredVotingPower)
 			return
 		}
 	}
@@ -352,7 +358,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, node, eventID strin
 
 // if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance.
 // NB: assumes lock has already been acquired.
-func (sv *StateVariable) tryConsensusLocked(ctx context.Context, rng *rand.Rand, requiredMatches num.Decimal) {
+func (sv *StateVariable) tryConsensusLocked(ctx context.Context, rng *rand.Rand, requiredVotingPower num.Decimal) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
 	for nodeID := range sv.validatorResults {
@@ -369,13 +375,13 @@ func (sv *StateVariable) tryConsensusLocked(ctx context.Context, rng *rand.Rand,
 		}
 		alreadyCheckedForTolerance[nodeID] = struct{}{}
 		candidateResult := sv.validatorResults[nodeID]
-		countMatch := int64(0)
+		votingPowerMatch := num.DecimalZero()
 		for _, nID := range nodeIDs {
 			if sv.validatorResults[nID].WithinTolerance(candidateResult) {
-				countMatch++
+				votingPowerMatch = votingPowerMatch.Add(num.DecimalFromInt64(sv.top.GetVotingPower(nID)))
 			}
 		}
-		if num.DecimalFromInt64(countMatch).GreaterThanOrEqual(requiredMatches) {
+		if votingPowerMatch.GreaterThanOrEqual(requiredVotingPower) {
 			sv.state = ConsensusStateconsensusReachedLocked
 			sv.consensusReachedLocked(ctx, candidateResult)
 			return

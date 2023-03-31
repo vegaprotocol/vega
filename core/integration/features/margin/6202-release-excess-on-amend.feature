@@ -11,9 +11,15 @@ Feature: test margin during amending orders
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
       | 1       | 0.99        | 300               |
+    And the following network parameters are set:
+      | name                                          | value |
+      | market.stake.target.timeWindow                | 24h   |
+      | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.bondPenaltyParameter         | 0.2   |
+      | market.liquidity.targetstake.triggering.ratio | 0.1   |
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     |
-      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | risk model              | margin calculator         | auction duration | fees          | price monitoring   | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | ETH        | USD   | log-normal-risk-model-1 | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future | 1e6                    | 1e6                       |
     And the parties deposit on asset's general account the following amount:
       | party  | asset | amount    |
       | party0 | USD   | 500000    |
@@ -29,14 +35,7 @@ Feature: test margin during amending orders
   @MTMDelta
   Scenario: 001, reduce order size, 0011-MARA-004
 
-    Given the following network parameters are set:
-      | name                                          | value |
-      | market.stake.target.timeWindow                | 24h   |
-      | market.stake.target.scalingFactor             | 1     |
-      | market.liquidity.bondPenaltyParameter         | 0.2   |
-      | market.liquidity.targetstake.triggering.ratio | 0.1   |
-
-    And the average block duration is "1"
+    Given the average block duration is "1"
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -60,9 +59,9 @@ Feature: test margin during amending orders
 
     # check the requried balances
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
-      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 | 0     |
-      | party4 | USD   | ETH/MAR22 | 93902  | 99906098 | 0     |
+      | party  | asset | market id | margin | general  |
+      | party1 | USD   | ETH/MAR22 | 19218  | 99980782 |
+      | party4 | USD   | ETH/MAR22 | 93902  | 99906098 |
 
     #margin for party4: 20*1000*3.5569036=71139
 
@@ -78,9 +77,9 @@ Feature: test margin during amending orders
       | party4 | sell-ref-4 | 1100  | 20         | TIF_GTC |
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general  | bond |
-      | party1 | USD   | ETH/MAR22 | 1922   | 99998078 | 0    |
-      | party4 | USD   | ETH/MAR22 | 170732 | 99829268 | 0    |
+      | party  | asset | market id | margin | general  |
+      | party1 | USD   | ETH/MAR22 | 1922   | 99998078 |
+      | party4 | USD   | ETH/MAR22 | 170732 | 99829268 |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | search | initial | release |
@@ -94,8 +93,7 @@ Feature: test margin during amending orders
 
     And the network moves ahead "1" blocks
 
-
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general   | bond |
-      | party1 | USD   | ETH/MAR22 | 0      | 100000000 | 0    |
-      | party4 | USD   | ETH/MAR22 | 0      | 100000000 | 0    |
+      | party  | asset | market id | margin | general   |
+      | party1 | USD   | ETH/MAR22 | 0      | 100000000 |
+      | party4 | USD   | ETH/MAR22 | 0      | 100000000 |

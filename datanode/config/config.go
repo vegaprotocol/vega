@@ -15,10 +15,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/vega/datanode/dehistory"
+	"code.vegaprotocol.io/vega/datanode/admin"
+
+	"code.vegaprotocol.io/vega/datanode/networkhistory"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/broker"
@@ -36,6 +39,7 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
+	Admin     admin.Config     `group:"Admin" namespace:"admin"`
 	API       api.Config       `group:"API" namespace:"api"`
 	CandlesV2 candlesv2.Config `group:"CandlesV2" namespace:"candlesv2"`
 	Logging   logging.Config   `group:"Logging" namespace:"logging"`
@@ -48,29 +52,40 @@ type Config struct {
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
 
-	DeHistory                   dehistory.Config `group:"DeHistory" namespace:"dehistory"`
-	AutoInitialiseFromDeHistory encoding.Bool    `long:"auto-initialise" choice:"true" choice:"false" description:"if true the node will attempt to load the latest history segment(s) from decentralised history if the node is empty"`
+	NetworkHistory                   networkhistory.Config `group:"NetworkHistory" namespace:"networkhistory"`
+	AutoInitialiseFromNetworkHistory encoding.Bool         `long:"auto-initialise" choice:"true" choice:"false" description:"if true the node will attempt to load the latest history segment(s) from network history if the node is empty"`
 
-	ChainID string `long:"chainID"`
+	ChainID          string `long:"chainID"`
+	MaxMemoryPercent uint8  `long:"max-memory-percent" description:"The maximum amount of memory reserved for the data node (default: 33%)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig() Config {
 	return Config{
-		API:                         api.NewDefaultConfig(),
-		CandlesV2:                   candlesv2.NewDefaultConfig(),
-		SQLStore:                    sqlstore.NewDefaultConfig(),
-		Pprof:                       pprof.NewDefaultConfig(),
-		Logging:                     logging.NewDefaultConfig(),
-		Gateway:                     gateway.NewDefaultConfig(),
-		Metrics:                     metrics.NewDefaultConfig(),
-		Broker:                      broker.NewDefaultConfig(),
-		Service:                     service.NewDefaultConfig(),
-		GatewayEnabled:              true,
-		DeHistory:                   dehistory.NewDefaultConfig(),
-		AutoInitialiseFromDeHistory: false,
+		MaxMemoryPercent:                 33,
+		Admin:                            admin.NewDefaultConfig(),
+		API:                              api.NewDefaultConfig(),
+		CandlesV2:                        candlesv2.NewDefaultConfig(),
+		SQLStore:                         sqlstore.NewDefaultConfig(),
+		Pprof:                            pprof.NewDefaultConfig(),
+		Logging:                          logging.NewDefaultConfig(),
+		Gateway:                          gateway.NewDefaultConfig(),
+		Metrics:                          metrics.NewDefaultConfig(),
+		Broker:                           broker.NewDefaultConfig(),
+		Service:                          service.NewDefaultConfig(),
+		GatewayEnabled:                   true,
+		NetworkHistory:                   networkhistory.NewDefaultConfig(),
+		AutoInitialiseFromNetworkHistory: false,
 	}
+}
+
+func (c Config) GetMaxMemoryFactor() (float64, error) {
+	if c.MaxMemoryPercent <= 0 || c.MaxMemoryPercent >= 100 {
+		return 0, errors.New("MaxMemoryPercent is out of range, expect > 0 and < 100")
+	}
+
+	return float64(c.MaxMemoryPercent) / 100., nil
 }
 
 type Loader struct {

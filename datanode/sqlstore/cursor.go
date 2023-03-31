@@ -187,6 +187,25 @@ func PaginateQuery[T any, PT parserPtr[T]](
 	ordering TableOrdering,
 	pagination entities.CursorPagination,
 ) (string, []interface{}, error) {
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, false)
+}
+
+func PaginateQueryWithoutOrderBy[T any, PT parserPtr[T]](
+	query string,
+	args []interface{},
+	ordering TableOrdering,
+	pagination entities.CursorPagination,
+) (string, []interface{}, error) {
+	return paginateQueryInternal[T, PT](query, args, ordering, pagination, true)
+}
+
+func paginateQueryInternal[T any, PT parserPtr[T]](
+	query string,
+	args []interface{},
+	ordering TableOrdering,
+	pagination entities.CursorPagination,
+	omitOrderBy bool,
+) (string, []interface{}, error) {
 	// Extract a cursor struct from the pagination struct
 	cursor, err := parseCursor[T, PT](pagination)
 	if err != nil {
@@ -220,8 +239,10 @@ func PaginateQuery[T any, PT parserPtr[T]](
 		query = fmt.Sprintf("%s %s (%s)", query, whereOrAnd, predicate)
 	}
 
-	// Add an ORDER BY clause
-	query = fmt.Sprintf("%s %s", query, ordering.OrderByClause())
+	// Add an ORDER BY clause if requested
+	if !omitOrderBy {
+		query = fmt.Sprintf("%s %s", query, ordering.OrderByClause())
+	}
 
 	// And a LIMIT clause
 	limit := calculateLimit(pagination)

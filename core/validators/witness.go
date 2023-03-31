@@ -52,7 +52,7 @@ type Commander interface {
 type ValidatorTopology interface {
 	IsValidator() bool
 	SelfVegaPubKey() string
-	AllNodeIDs() []string
+	AllVegaPubKeys() []string
 	IsValidatorVegaPubKey(string) bool
 	IsTendermintValidator(string) bool
 	GetVotingPower(pubkey string) int64
@@ -61,6 +61,7 @@ type ValidatorTopology interface {
 
 type Resource interface {
 	GetID() string
+	GetType() commandspb.NodeVote_Type
 	Check() error
 }
 
@@ -92,7 +93,7 @@ type res struct {
 	mu         sync.Mutex
 	votes      map[string]struct{} // checks vote sent by the nodes
 	// the stated of the checking
-	state uint32
+	state atomic.Uint32
 	// the context used to notify the routine to exit
 	cfunc context.CancelFunc
 	// the function to call one validation is done
@@ -236,11 +237,12 @@ func (w *Witness) StartCheck(
 	rs := &res{
 		res:        r,
 		checkUntil: checkUntil,
-		state:      notValidated,
+		state:      atomic.Uint32{},
 		cfunc:      cfunc,
 		cb:         cb,
 		votes:      map[string]struct{}{},
 	}
+	rs.state.Store(notValidated)
 
 	w.resources[id] = rs
 
@@ -252,7 +254,7 @@ func (w *Witness) StartCheck(
 		// if not a validator, we just jump to the state voteSent
 		// and will wait for all validator to approve basically.
 		// check succeeded
-		atomic.StoreUint32(&rs.state, voteSent)
+		rs.state.Store(voteSent)
 	}
 	return nil
 }
@@ -301,7 +303,7 @@ func (w *Witness) start(ctx context.Context, r *res) {
 	}
 
 	// check succeeded
-	atomic.StoreUint32(&r.state, validated)
+	r.state.Store(validated)
 }
 
 func (w *Witness) OnTick(ctx context.Context, t time.Time) {
@@ -319,7 +321,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 	for _, k := range resourceIDs {
 		v := w.resources[k]
 
-		state := atomic.LoadUint32(&v.state)
+		state := v.state.Load()
 		checkPass := v.votePassed(w.top, w.validatorVotesRequired)
 
 		// if the time is expired, or we received enough votes
@@ -331,7 +333,10 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 				votesReceived := []string{}
 				votesMissing := []string{}
 				votePowers := []string{}
-				for _, k := range w.top.AllNodeIDs() {
+				for _, k := range w.top.AllVegaPubKeys() {
+					if !w.top.IsTendermintValidator(k) {
+						continue
+					}
 					if _, ok := v.votes[k]; ok {
 						votesReceived = append(votesReceived, k)
 						votePowers = append(votePowers, strconv.FormatInt(w.top.GetVotingPower(k), 10))
@@ -361,10 +366,11 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			v.lastSentVote = t
 			nv := &commandspb.NodeVote{
 				Reference: v.res.GetID(),
+				Type:      v.res.GetType(),
 			}
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k), nil)
 			// set new state so we do not try to validate again
-			atomic.StoreUint32(&v.state, voteSent)
+			v.state.Store(voteSent)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
 			if v.selfVoteReceived(w.top.SelfVegaPubKey()) {
 				continue

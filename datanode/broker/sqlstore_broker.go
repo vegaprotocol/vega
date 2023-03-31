@@ -18,11 +18,12 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/pkg/errors"
 )
 
 type SQLBrokerSubscriber interface {
@@ -62,7 +63,7 @@ type SQLStoreBroker struct {
 	log                          *logging.Logger
 	subscribers                  []SQLBrokerSubscriber
 	typeToSubs                   map[events.Type][]SQLBrokerSubscriber
-	eventSource                  eventSource
+	eventSource                  EventReceiver
 	transactionManager           TransactionManager
 	blockStore                   BlockStore
 	onBlockCommitted             func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
@@ -78,7 +79,7 @@ func NewSQLStoreBroker(
 	log *logging.Logger,
 	config Config,
 	chainID string,
-	eventsource eventSource,
+	eventsource EventReceiver,
 	transactionManager TransactionManager,
 	blockStore BlockStore,
 	onBlockCommitted func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool),
@@ -87,7 +88,7 @@ func NewSQLStoreBroker(
 ) *SQLStoreBroker {
 	b := &SQLStoreBroker{
 		config:                config,
-		log:                   log,
+		log:                   log.Named("sqlstore-broker"),
 		subscribers:           subs,
 		typeToSubs:            map[events.Type][]SQLBrokerSubscriber{},
 		eventSource:           eventsource,
@@ -133,8 +134,7 @@ func (b *SQLStoreBroker) Receive(ctx context.Context) error {
 		b.onBlockCommitted(ctx, b.chainID, b.lastBlock.Height, b.snapshotTaken)
 
 		if b.receivedProtocolUpgradeEvent {
-			b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
-			return nil
+			return b.protocolUpdateHandler.OnProtocolUpgradeEvent(ctx, b.chainID, b.lastBlock.Height)
 		}
 	}
 }
@@ -261,6 +261,11 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 				}
 				b.slowTimeUpdateTicker.Reset(slowTimeUpdateThreshold)
 				betweenBlocks = true
+
+				if err = b.handleEvent(blockCtx, e); err != nil {
+					return nil, err
+				}
+
 			case events.BeginBlockEvent:
 				beginBlock := e.(entities.BeginBlockEvent)
 				return entities.BlockFromBeginBlock(beginBlock)

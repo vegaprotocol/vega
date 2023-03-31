@@ -22,15 +22,27 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+type RetentionPeriod string
+
+const (
+	RetentionPeriodStandard RetentionPeriod = "standard"
+	RetentionPeriodArchive  RetentionPeriod = "forever"
+	RetentionPeriodLite     RetentionPeriod = "1 day"
+)
+
 type Config struct {
-	ConnectionConfig      ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
-	WipeOnStartup         encoding.Bool         `long:"wipe-on-startup"`
-	Level                 encoding.LogLevel     `long:"log-level"`
-	UseEmbedded           encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
-	FanOutBufferSize      int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
-	RetentionPolicies     []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
-	ConnectionRetryConfig ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
-	LogRotationConfig     LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
+	ConnectionConfig                                   ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
+	WipeOnStartup                                      encoding.Bool         `long:"wipe-on-startup"`
+	Level                                              encoding.LogLevel     `long:"log-level"`
+	UseEmbedded                                        encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
+	FanOutBufferSize                                   int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
+	RetentionPolicies                                  []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
+	ConnectionRetryConfig                              ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
+	LogRotationConfig                                  LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
+	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `long:"disable-min-retention-policy-use-in-sys-test-only" description:"Disables the minimum retention policy interval check - only for use in system tests"`
+	RetentionPeriod                                    RetentionPeriod       `long:"retention-period" description:"Set the retention level for the database. standard, archive, or lite"`
+	VerboseMigration                                   encoding.Bool         `long:"verbose-migration" description:"Enable verbose logging of SQL migrations"`
+	ChunkIntervals                                     []ChunkInterval       `group:"ChunkIntervals" namespace:"ChunkIntervals"`
 }
 
 type ConnectionConfig struct {
@@ -43,11 +55,30 @@ type ConnectionConfig struct {
 	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 	MaxConnPoolSize       int               `long:"max-conn-pool-size"`
+	MinConnPoolSize       int32             `long:"min-conn-pool-size"`
+}
+
+type HypertableOverride interface {
+	RetentionPolicy | ChunkInterval
+	EntityName() string
 }
 
 type RetentionPolicy struct {
 	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
-	DataRetentionPeriod  string `string:"interval" description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc"`
+	DataRetentionPeriod  string `string:"interval" description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc. To retain data indefinitely specify 'forever'"`
+}
+
+func (p RetentionPolicy) EntityName() string {
+	return p.HypertableOrCaggName
+}
+
+type ChunkInterval struct {
+	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
+	ChunkInterval        string `string:"chunk-interval" description:"the interval at which to create new chunks, e.g '1 day', '1 month', '1 year' etc."`
+}
+
+func (p ChunkInterval) EntityName() string {
+	return p.HypertableOrCaggName
 }
 
 type ConnectionRetryConfig struct {
@@ -91,11 +122,12 @@ func (conf ConnectionConfig) GetConnectionStringForPostgresDatabase() string {
 
 func (conf ConnectionConfig) GetPoolConfig() (*pgxpool.Config, error) {
 	cfg, err := pgxpool.ParseConfig(conf.GetConnectionString())
-	cfg.MaxConnLifetime = conf.MaxConnLifetime.Duration
-	cfg.MaxConnLifetimeJitter = conf.MaxConnLifetimeJitter.Duration
 	if err != nil {
 		return nil, err
 	}
+	cfg.MaxConnLifetime = conf.MaxConnLifetime.Duration
+	cfg.MaxConnLifetimeJitter = conf.MaxConnLifetimeJitter.Duration
+
 	cfg.ConnConfig.RuntimeParams["application_name"] = "Vega Data Node"
 	return cfg, nil
 }
@@ -116,26 +148,7 @@ func NewDefaultConfig() Config {
 		Level:            encoding.LogLevel{Level: logging.InfoLevel},
 		UseEmbedded:      false,
 		FanOutBufferSize: 1000,
-		RetentionPolicies: []RetentionPolicy{
-			{HypertableOrCaggName: "balances", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "checkpoints", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_balances", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "delegations", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "ledger", DataRetentionPeriod: "6 months"},
-			{HypertableOrCaggName: "orders", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "trades_candle_1_minute", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades_candle_5_minutes", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades_candle_15_minutes", DataRetentionPeriod: "1 month"},
-			{HypertableOrCaggName: "trades_candle_1_hour", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "trades_candle_6_hours", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "market_data", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "margin_levels", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_margin_levels", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "positions", DataRetentionPeriod: "7 days"},
-			{HypertableOrCaggName: "conflated_positions", DataRetentionPeriod: "1 year"},
-			{HypertableOrCaggName: "liquidity_provisions", DataRetentionPeriod: "1 day"},
-		},
+		DisableMinRetentionPolicyCheckForUseInSysTestsOnly: false,
 		ConnectionRetryConfig: ConnectionRetryConfig{
 			MaxRetries:      10,
 			InitialInterval: time.Second,
@@ -146,5 +159,7 @@ func NewDefaultConfig() Config {
 			MaxSize: 100,
 			MaxAge:  2,
 		},
+		RetentionPeriod:  RetentionPeriodStandard,
+		VerboseMigration: false,
 	}
 }

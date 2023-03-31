@@ -72,10 +72,10 @@ type listWalletsHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *listWalletsHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminListWalletsResult, *jsonrpc.ErrorDetails) {
+func (h *listWalletsHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminListWalletsResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminListWalletsResult)
 		if !ok {

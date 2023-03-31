@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/libs/subscribers"
+
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
@@ -51,7 +53,6 @@ import (
 	"code.vegaprotocol.io/vega/core/staking"
 	"code.vegaprotocol.io/vega/core/statevar"
 	"code.vegaprotocol.io/vega/core/stats"
-	"code.vegaprotocol.io/vega/core/subscribers"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/erc20multisig"
@@ -146,7 +147,7 @@ func newServices(
 		vegaPaths:        vegaPaths,
 	}
 
-	svcs.broker, err = broker.New(svcs.ctx, svcs.log, svcs.conf.Broker)
+	svcs.broker, err = broker.New(svcs.ctx, svcs.log, svcs.conf.Broker, stats.Blockchain)
 	if err != nil {
 		svcs.log.Error("unable to initialise broker", logging.Error(err))
 		return nil, err
@@ -171,7 +172,7 @@ func newServices(
 	svcs.genesisHandler = genesis.New(svcs.log, svcs.conf.Genesis)
 	svcs.genesisHandler.OnGenesisTimeLoaded(svcs.timeService.SetTimeNow)
 
-	svcs.eventService = subscribers.NewService(svcs.broker)
+	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
 
@@ -243,7 +244,7 @@ func newServices(
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView)
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()
@@ -358,7 +359,6 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.delegation.OnTick,
 		svcs.notary.OnTick,
 		svcs.banking.OnTick,
-		svcs.rewards.OnTick,
 		svcs.limits.OnTick,
 	)
 }
@@ -438,6 +438,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				Param:   netparams.TransferMaxCommandsPerEpoch,
 				Watcher: svcs.spam.OnMaxTransfersChanged,
 			},
+			{
+				Param:   netparams.SpamProtectionMinMultisigUpdates,
+				Watcher: svcs.spam.OnMinTokensForMultisigUpdatesChanged,
+			},
 		}
 	}
 
@@ -511,20 +515,12 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarketFeeFactorsInfrastructureFeeUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityStakeToCCYSiskas,
+			Param:   netparams.MarketLiquidityStakeToCCYVolume,
 			Watcher: svcs.executionEngine.OnSuppliedStakeToObligationFactorUpdate,
 		},
 		{
 			Param:   netparams.MarketValueWindowLength,
 			Watcher: svcs.executionEngine.OnMarketValueWindowLengthUpdate,
-		},
-		{
-			Param:   netparams.MarketTargetStakeScalingFactor,
-			Watcher: svcs.executionEngine.OnMarketTargetStakeScalingFactorUpdate,
-		},
-		{
-			Param:   netparams.MarketTargetStakeTimeWindow,
-			Watcher: svcs.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
 		},
 		{
 			Param: netparams.BlockchainsEthereumConfig,
@@ -568,10 +564,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: svcs.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
-		},
-		{
-			Param:   netparams.MarketLiquidityTargetStakeTriggeringRatio,
-			Watcher: svcs.executionEngine.OnMarketLiquidityTargetStakeTriggeringRatio,
 		},
 		{
 			Param:   netparams.MarketAuctionMinimumDuration,
@@ -653,6 +645,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: svcs.banking.OnMinTransferQuantumMultiple,
+		},
+		{
+			Param:   netparams.SpamProtectionMinimumWithdrawalQuantumMultiple,
+			Watcher: svcs.banking.OnMinWithdrawQuantumMultiple,
 		},
 		{
 			Param: netparams.BlockchainsEthereumConfig,

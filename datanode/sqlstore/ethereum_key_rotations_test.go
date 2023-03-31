@@ -43,6 +43,7 @@ func addTestEthereumKeyRotation(t *testing.T,
 		VegaTime:    block.VegaTime,
 		BlockHeight: 42,
 		SeqNum:      seqNum,
+		TxHash:      generateTxHash(),
 	}
 	err := store.Add(ctx, kr)
 	require.NoError(t, err)
@@ -63,6 +64,13 @@ func TestEthereumKeyRotations(t *testing.T) {
 	var kr entities.EthereumKeyRotation
 	t.Run("adding", func(t *testing.T) {
 		kr = addTestEthereumKeyRotation(t, ctx, krStore, block, 0)
+	})
+
+	t.Run("GetByTxHash", func(t *testing.T) {
+		fetched, err := krStore.GetByTxHash(ctx, kr.TxHash)
+		require.NoError(t, err)
+		require.Len(t, fetched, 1)
+		assert.Equal(t, fetched[0], kr)
 	})
 
 	t.Run("fetching all", func(t *testing.T) {

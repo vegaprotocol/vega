@@ -14,6 +14,7 @@ package commands
 
 import (
 	"context"
+	"runtime/debug"
 
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -22,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/pbnjay/memory"
 )
 
 type StartCmd struct {
@@ -32,10 +34,11 @@ type StartCmd struct {
 
 var startCmd StartCmd
 
+const namedLogger = "datanode"
+
 func (cmd *StartCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
-		logging.NewDefaultConfig(),
-	)
+		logging.NewDefaultConfig()).Named(namedLogger)
 	defer log.AtExit()
 
 	// we define this option to parse the cli args each time the config is
@@ -52,6 +55,18 @@ func (cmd *StartCmd) Execute(args []string) error {
 		return err
 	}
 
+	// setup max memory usage
+	memFactor, err := configWatcher.Get().GetMaxMemoryFactor()
+	if err != nil {
+		return err
+	}
+
+	// only set max memory if user didn't require 100%
+	if memFactor != 1 {
+		totalMem := memory.TotalMemory()
+		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
+	}
+
 	return (&start.NodeCommand{
 		Log:         log,
 		Version:     version.Get(),
@@ -63,7 +78,7 @@ func (cmd *StartCmd) Execute(args []string) error {
 	)
 }
 
-func Node(ctx context.Context, parser *flags.Parser) error {
+func Node(_ context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}
@@ -81,7 +96,7 @@ func Node(ctx context.Context, parser *flags.Parser) error {
 	return nil
 }
 
-func Start(ctx context.Context, parser *flags.Parser) error {
+func Start(_ context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}

@@ -38,6 +38,10 @@ func checkLiquidityProvisionSubmission(cmd *commandspb.LiquidityProvisionSubmiss
 		errs.AddForProperty("liquidity_provision_submission.market_id", ErrShouldBeAValidVegaID)
 	}
 
+	if len(cmd.Reference) > ReferenceMaxLen {
+		errs.AddForProperty("liquidity_provision_submission.reference", ErrReferenceTooLong)
+	}
+
 	// if the commitment amount is 0, then the command should be interpreted as
 	// a cancellation of the liquidity provision. As a result, the validation
 	// shouldn't be made on the rest of the field.
@@ -95,6 +99,12 @@ func checkLiquidityProvisionShape(
 	zero := big.NewInt(0)
 
 	for idx, order := range orders {
+		if _, ok := types.PeggedReference_name[int32(order.Reference)]; !ok {
+			errs.AddForProperty(
+				fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
+				ErrIsNotValid,
+			)
+		}
 		if order.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			errs.AddForProperty(
 				fmt.Sprintf("%v.%d.reference", shapeSideField, idx),
@@ -218,6 +228,10 @@ func checkLiquidityProvisionAmendment(cmd *commandspb.LiquidityProvisionAmendmen
 		len(cmd.Buys) <= 0 &&
 		len(cmd.Reference) <= 0 {
 		return errs.FinalAddForProperty("liquidity_provision_amendment", ErrIsRequired)
+	}
+
+	if len(cmd.Reference) > ReferenceMaxLen {
+		errs.AddForProperty("liquidity_provision_amendment.reference", ErrReferenceTooLong)
 	}
 
 	errs.Merge(checkLiquidityProvisionShape(cmd.Buys, types.Side_SIDE_BUY, true))

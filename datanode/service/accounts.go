@@ -24,10 +24,11 @@ import (
 type AccountStore interface {
 	GetByID(ctx context.Context, id entities.AccountID) (entities.Account, error)
 	GetAll(ctx context.Context) ([]entities.Account, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Account, error)
 	Obtain(ctx context.Context, a *entities.Account) error
 	Query(ctx context.Context, filter entities.AccountFilter) ([]entities.Account, error)
-	QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error)
 	QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.CursorPagination) ([]entities.AccountBalance, entities.PageInfo, error)
+	GetBalancesByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.AccountBalance, error)
 }
 
 type BalanceStore interface {
@@ -40,7 +41,6 @@ type Account struct {
 	aStore    AccountStore
 	bStore    BalanceStore
 	bObserver utils.Observer[entities.AccountBalance]
-	log       *logging.Logger
 }
 
 func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *Account {
@@ -48,7 +48,6 @@ func NewAccount(aStore AccountStore, bStore BalanceStore, log *logging.Logger) *
 		aStore:    aStore,
 		bStore:    bStore,
 		bObserver: utils.NewObserver[entities.AccountBalance]("account_balance", log, 0, 0),
-		log:       log,
 	}
 }
 
@@ -68,12 +67,16 @@ func (a *Account) Query(ctx context.Context, filter entities.AccountFilter) ([]e
 	return a.aStore.Query(ctx, filter)
 }
 
-func (a *Account) QueryBalancesV1(ctx context.Context, filter entities.AccountFilter, pagination entities.OffsetPagination) ([]entities.AccountBalance, error) {
-	return a.aStore.QueryBalancesV1(ctx, filter, pagination)
-}
-
 func (a *Account) QueryBalances(ctx context.Context, filter entities.AccountFilter, pagination entities.CursorPagination) ([]entities.AccountBalance, entities.PageInfo, error) {
 	return a.aStore.QueryBalances(ctx, filter, pagination)
+}
+
+func (a *Account) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Account, error) {
+	return a.aStore.GetByTxHash(ctx, txHash)
+}
+
+func (a *Account) GetBalancesByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.AccountBalance, error) {
+	return a.aStore.GetBalancesByTxHash(ctx, txHash)
 }
 
 func (a *Account) AddAccountBalance(b entities.AccountBalance) error {

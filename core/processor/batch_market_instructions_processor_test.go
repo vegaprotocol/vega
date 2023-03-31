@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/processor/mocks"
+	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -26,11 +27,14 @@ func TestBatchMarketInstructionsErrors(t *testing.T) {
 		Submissions: []*commandspb.OrderSubmission{{}},
 	}
 
+	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
+
 	err := proc.ProcessBatch(
 		context.Background(),
 		&batch,
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
+		stats.Blockchain,
 	)
 
 	assert.EqualError(t, err, "0 (* (order_amendment does not amend anything), order_amendment.market_id (is required), order_amendment.order_id (is required)), 1 (order_submission.market_id (is required), order_submission.side (is required), order_submission.size (must be positive), order_submission.time_in_force (is required), order_submission.type (is required))")
@@ -40,6 +44,7 @@ func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T)
 	ctrl := gomock.NewController(t)
 	exec := mocks.NewMockExecutionEngine(ctrl)
 	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
 		Amendments: []*commandspb.OrderAmendment{
@@ -73,6 +78,7 @@ func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T)
 		&batch,
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
+		stats.Blockchain,
 	)
 
 	assert.Equal(t, 2, amendCnt)
@@ -84,6 +90,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	defer ctrl.Finish()
 	exec := mocks.NewMockExecutionEngine(ctrl)
 	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
 		Cancellations: []*commandspb.OrderCancellation{
@@ -169,14 +176,14 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 
 	orderCnt := 0
 	exec.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
-		func(ctx context.Context, order *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) ([]*types.OrderConfirmation, error) {
+		func(ctx context.Context, order *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error) {
 			orderCnt++
 
 			// if the order is order 2 we return an error
 			if orderCnt == 2 {
 				return nil, errors.New("cannot submit order")
 			}
-			return nil, nil
+			return &types.OrderConfirmation{Order: nil, Trades: []*types.Trade{{ID: "1"}, {ID: "2"}}, PassiveOrdersAffected: []*types.Order{}}, nil
 		},
 	)
 
@@ -185,10 +192,19 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 		&batch,
 		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
 		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
+		stats.Blockchain,
 	)
+
+	assert.Equal(t, uint64(3), stats.Blockchain.TotalCancelOrder())
+	assert.Equal(t, uint64(3), stats.Blockchain.TotalAmendOrder())
+	stats.Blockchain.NewBatch()
 
 	assert.Equal(t, 3, amendCnt)
 	assert.Equal(t, 3, cancelCnt)
 	assert.Equal(t, 3, orderCnt)
+	assert.Equal(t, uint64(3), stats.Blockchain.TotalOrders())
+	assert.Equal(t, uint64(2), stats.Blockchain.TotalOrdersLastBatch())
+	assert.Equal(t, uint64(4), stats.Blockchain.TotalTradesLastBatch())
+
 	assert.EqualError(t, err, "1 (cannot cancel order), 4 (cannot amend order), 7 (cannot submit order)")
 }

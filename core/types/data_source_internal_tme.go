@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 // DataSourceSpecConfigurationTime is used internally.
@@ -11,27 +12,27 @@ type DataSourceSpecConfigurationTime struct {
 	Conditions []*DataSourceSpecCondition
 }
 
-func (s DataSourceSpecConfigurationTime) isDataSourceType() {}
+func (s *DataSourceSpecConfigurationTime) isDataSourceType() {}
 
-func (s DataSourceSpecConfigurationTime) oneOfProto() interface{} {
+func (s *DataSourceSpecConfigurationTime) oneOfProto() interface{} {
 	return s
 }
 
 // /
 // String returns the content of DataSourceSpecConfigurationTime as a string.
-func (s DataSourceSpecConfigurationTime) String() string {
+func (s *DataSourceSpecConfigurationTime) String() string {
 	return fmt.Sprintf(
 		"conditions(%s)", DataSourceSpecConditions(s.Conditions).String(),
 	)
 }
 
-func (s DataSourceSpecConfigurationTime) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
+func (s *DataSourceSpecConfigurationTime) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
 	return &vegapb.DataSourceSpecConfigurationTime{
 		Conditions: DataSourceSpecConditions(s.Conditions).IntoProto(),
 	}
 }
 
-func (s DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
+func (s *DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
 	conditions := []*DataSourceSpecCondition{}
 	conditions = append(conditions, s.Conditions...)
 
@@ -41,9 +42,14 @@ func (s DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
 }
 
 func DataSourceSpecConfigurationTimeFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) *DataSourceSpecConfigurationTime {
-	return &DataSourceSpecConfigurationTime{
-		Conditions: DataSourceSpecConditionsFromProto(protoConfig.Conditions),
+	dst := &DataSourceSpecConfigurationTime{
+		Conditions: []*DataSourceSpecCondition{},
 	}
+	if protoConfig != nil {
+		dst.Conditions = DataSourceSpecConditionsFromProto(protoConfig.Conditions)
+	}
+
+	return dst
 }
 
 type DataSourceDefinitionInternalTime struct {
@@ -57,7 +63,10 @@ func (i *DataSourceDefinitionInternalTime) oneOfProto() interface{} {
 }
 
 func (i *DataSourceDefinitionInternalTime) IntoProto() *vegapb.DataSourceDefinitionInternal_Time {
-	ids := &vegapb.DataSourceSpecConfigurationTime{}
+	ids := &vegapb.DataSourceSpecConfigurationTime{
+		Conditions: []*datapb.Condition{},
+	}
+
 	if i.Time != nil {
 		ids = i.Time.IntoProto()
 	}

@@ -17,10 +17,9 @@ import (
 func TestAdminUpdatePassphrase(t *testing.T) {
 	t.Run("Updating a passphrase with invalid params fails", testUpdatingPassphraseWithInvalidParamsFails)
 	t.Run("Updating a passphrase with valid params succeeds", testUpdatingPassphraseWithValidParamsSucceeds)
-	t.Run("Updating a passphrase from wallet that does not exists fails", testUpdatingPassphraseFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails)
-	t.Run("Getting internal error during wallet retrieval fails", testUpdatingPassphraseGettingInternalErrorDuringWalletRetrievalFails)
-	t.Run("Getting internal error during isolated wallet saving fails", testUpdatingPassphraseGettingInternalErrorDuringIsolatedWalletSavingFails)
+	t.Run("Updating a passphrase from wallet that does not exists fails", testUpdatingPassphraseFromWalletThatDoesNotExistsFails)
+	t.Run("Getting internal error during isolated wallet saving fails", testUpdatingPassphraseGettingInternalErrorDuringPassphraseUpdateFails)
 }
 
 func testUpdatingPassphraseWithInvalidParamsFails(t *testing.T) {
@@ -92,8 +91,8 @@ func testUpdatingPassphraseWithValidParamsSucceeds(t *testing.T) {
 	handler := newUpdatePassphraseHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, expectedWallet, newPassphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().UpdatePassphrase(ctx, expectedWallet.Name(), newPassphrase).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
@@ -151,35 +150,10 @@ func testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails(t *
 
 	// then
 	require.NotNil(t, errorDetails)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
-func testUpdatingPassphraseGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
-	// given
-	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
-	newPassphrase := vgrand.RandomStr(5)
-	name := vgrand.RandomStr(5)
-
-	// setup
-	handler := newUpdatePassphraseHandler(t)
-	// -- expected calls
-	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
-
-	// when
-	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
-		Wallet:        name,
-		Passphrase:    passphrase,
-		NewPassphrase: newPassphrase,
-	})
-
-	// then
-	require.NotNil(t, errorDetails)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
-}
-
-func testUpdatingPassphraseGettingInternalErrorDuringIsolatedWalletSavingFails(t *testing.T) {
+func testUpdatingPassphraseGettingInternalErrorDuringPassphraseUpdateFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -190,8 +164,8 @@ func testUpdatingPassphraseGettingInternalErrorDuringIsolatedWalletSavingFails(t
 	handler := newUpdatePassphraseHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), gomock.Any()).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().UpdatePassphrase(ctx, gomock.Any(), newPassphrase).Times(1).Return(assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
@@ -211,10 +185,10 @@ type updatePassphraseHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *updatePassphraseHandler) handle(t *testing.T, ctx context.Context, params interface{}) *jsonrpc.ErrorDetails {
+func (h *updatePassphraseHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) *jsonrpc.ErrorDetails {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	require.Nil(t, rawResult)
 	return err
 }

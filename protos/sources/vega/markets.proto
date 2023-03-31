@@ -33,9 +33,6 @@ message Future {
 
   // The binding between the data spec and the data source
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
-
-  // The number of decimal places implied by the settlement data (such as price) emitted by the settlement data source
-  uint32 settlement_data_decimals = 6;
 }
 
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
@@ -185,11 +182,10 @@ message PriceMonitoringSettings {
 
 // LiquidityMonitoringParameters contains settings used for liquidity monitoring
 message LiquidityMonitoringParameters {
-
   // Specifies parameters related to target stake calculation
   TargetStakeParameters target_stake_parameters = 1;
   // Specifies the triggering ratio for entering liquidity auction
-  double triggering_ratio = 2;
+  string triggering_ratio = 2;
   // Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
   int64 auction_extension = 3;
 }
@@ -278,6 +274,10 @@ message Market {
   // Percentage move up and down from the mid price which specifies the range of 
   // price levels over which automated liquidity provision orders will be deployed
   string lp_price_range = 12;
+    // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+    string linear_slippage_factor = 13; 
+    // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+    string quadratic_slippage_factor = 14;
 }
 
 // Time stamps for important times about creating, enacting etc the market

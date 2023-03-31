@@ -19,7 +19,9 @@ import (
 type GRPCAdapter interface {
 	Host() string
 	Statistics(ctx context.Context) (nodetypes.Statistics, error)
+	SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error)
 	SubmitTransaction(ctx context.Context, in *apipb.SubmitTransactionRequest) (*apipb.SubmitTransactionResponse, error)
+	CheckTransaction(ctx context.Context, in *apipb.CheckTransactionRequest) (*apipb.CheckTransactionResponse, error)
 	LastBlock(ctx context.Context) (nodetypes.LastBlock, error)
 	Stop() error
 }
@@ -58,6 +60,33 @@ func (n *RetryingNode) Statistics(ctx context.Context) (nodetypes.Statistics, er
 	return resp, nil
 }
 
+func (n *RetryingNode) SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error) {
+	n.log.Debug("querying the node statistics through the graphQL API", zap.String("host", n.grpcAdapter.Host()))
+	requestTime := time.Now()
+	resp, err := n.grpcAdapter.SpamStatistics(ctx, pubKey)
+	if err != nil {
+		n.log.Error("could not get the statistics",
+			zap.String("host", n.grpcAdapter.Host()),
+			zap.Error(err),
+		)
+		return nodetypes.SpamStatistics{}, err
+	}
+
+	n.log.Debug("response from SpamStatistics",
+		zap.String("host", n.grpcAdapter.Host()),
+		zap.String("chain-id", resp.ChainID),
+		zap.Uint64("epoch", resp.EpochSeq),
+		zap.Uint64("block-height", resp.LastBlockHeight),
+		zap.Uint64("prosposals-count-for-epoch", resp.Proposals.CountForEpoch),
+		zap.Uint64("transfers-count-for-epoch", resp.Transfers.CountForEpoch),
+		zap.Uint64("delegations-count-for-epoch", resp.Delegations.CountForEpoch),
+		zap.Uint64("issue-signatures-count-for-epoch", resp.IssuesSignatures.CountForEpoch),
+		zap.Uint64("node-announcements-count-for-epoch", resp.NodeAnnouncements.CountForEpoch),
+		zap.Time("request-time", requestTime),
+	)
+	return resp, nil
+}
+
 // LastBlock returns information about the last block acknowledged by the node.
 func (n *RetryingNode) LastBlock(ctx context.Context) (nodetypes.LastBlock, error) {
 	n.log.Debug("getting the last block from the gRPC API", zap.String("host", n.grpcAdapter.Host()))
@@ -87,6 +116,39 @@ func (n *RetryingNode) LastBlock(ctx context.Context) (nodetypes.LastBlock, erro
 	}
 
 	return resp, nil
+}
+
+func (n *RetryingNode) CheckTransaction(ctx context.Context, tx *commandspb.Transaction) error {
+	n.log.Debug("checking the transaction through the gRPC API", zap.String("host", n.grpcAdapter.Host()))
+	var resp *apipb.CheckTransactionResponse
+	if err := n.retry(func() error {
+		req := apipb.CheckTransactionRequest{
+			Tx: tx,
+		}
+		requestTime := time.Now()
+		r, err := n.grpcAdapter.CheckTransaction(ctx, &req)
+		if err != nil {
+			return n.handleSubmissionError(err)
+		}
+		n.log.Debug("response from CheckTransaction",
+			zap.String("host", n.grpcAdapter.Host()),
+			zap.Bool("success", r.Success),
+			zap.Time("request-time", requestTime),
+		)
+		resp = r
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if !resp.Success {
+		return nodetypes.TransactionError{
+			ABCICode: resp.Code,
+			Message:  resp.Data,
+		}
+	}
+
+	return nil
 }
 
 func (n *RetryingNode) SendTransaction(ctx context.Context, tx *commandspb.Transaction, ty apipb.SubmitTransactionRequest_Type) (string, error) {
@@ -170,7 +232,7 @@ func (n *RetryingNode) retry(o backoff.Operation) error {
 }
 
 func NewRetryingNode(log *zap.Logger, host string, retries uint64) (*RetryingNode, error) {
-	grpcAdapter, err := adapters.NewInsecureGRPCAdapter(host)
+	grpcAdapter, err := adapters.NewGRPCAdapter(host)
 	if err != nil {
 		log.Error("could not initialise an insecure gRPC adapter",
 			zap.String("host", host),

@@ -14,16 +14,19 @@ package banking_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRecurringTransfers(t *testing.T) {
@@ -33,6 +36,66 @@ func TestRecurringTransfers(t *testing.T) {
 	t.Run("invalid recurring transfers, duplicates", testInvalidRecurringTransfersDuplicates)
 	t.Run("invalid recurring transfers, bad amount", testInvalidRecurringTransfersBadAmount)
 	t.Run("invalid recurring transfers, in the past", testInvalidRecurringTransfersInThePast)
+}
+
+func TestMaturation(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+	ctx := context.Background()
+
+	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(10)}), nil)
+	e.tsvc.EXPECT().GetTimeNow().AnyTimes()
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	fromAcc := types.Account{
+		Balance: num.NewUint(100000), // enough for the all
+	}
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
+
+	endEpoch := uint64(12)
+	transfers := []*types.TransferFunds{}
+	for i := 0; i < 10; i++ {
+		transfers = append(transfers, &types.TransferFunds{
+			Kind: types.TransferCommandKindRecurring,
+			Recurring: &types.RecurringTransfer{
+				TransferBase: &types.TransferBase{
+					ID:              fmt.Sprintf("TRANSFERID-%d", i),
+					From:            "03ae90688632c649c4beab6040ff5bd04dbde8efbf737d8673bbda792a110301",
+					FromAccountType: types.AccountTypeGeneral,
+					To:              crypto.RandomHash(),
+					ToAccountType:   types.AccountTypeGeneral,
+					Asset:           "eth",
+					Amount:          num.NewUint(10),
+					Reference:       "someref",
+				},
+				StartEpoch: 10,
+				EndEpoch:   &endEpoch,
+				Factor:     num.MustDecimalFromString("1"),
+			},
+		})
+		require.NoError(t, e.TransferFunds(ctx, transfers[i]))
+	}
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+
+	seenEvts := []events.Event{}
+	e.broker.EXPECT().SendBatch(gomock.Any()).DoAndReturn(func(evts []events.Event) {
+		seenEvts = append(seenEvts, evts...)
+	}).AnyTimes()
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_END})
+
+	require.Equal(t, 10, len(seenEvts))
+	stoppedIDs := map[string]struct{}{}
+	for _, e2 := range seenEvts {
+		if e2.StreamMessage().GetTransfer().Status == types.TransferStatusDone {
+			stoppedIDs[e2.StreamMessage().GetTransfer().Id] = struct{}{}
+		}
+	}
+	require.Equal(t, 10, len(stoppedIDs))
 }
 
 func testInvalidRecurringTransfersBadAmount(t *testing.T) {

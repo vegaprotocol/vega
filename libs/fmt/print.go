@@ -12,10 +12,19 @@
 
 package fmt
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func PrettyPrint(data map[string]string) {
 	for k, v := range data {
 		fmt.Printf("%s:\n%s\n", k, v)
 	}
+}
+
+func Escape(s string) string {
+	escaped := strings.ReplaceAll(s, "\n", "")
+	escaped = strings.ReplaceAll(escaped, "\r", "")
+	return escaped
 }

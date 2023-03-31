@@ -45,6 +45,8 @@ type Market struct {
 	MarketTimestamps              MarketTimestamps
 	PositionDecimalPlaces         int
 	LpPriceRange                  string
+	LinearSlippageFactor          *decimal.Decimal
+	QuadraticSlippageFactor       *decimal.Decimal
 }
 
 type MarketCursor struct {
@@ -113,6 +115,24 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 	dps := int(market.DecimalPlaces)
 	positionDps := int(market.PositionDecimalPlaces)
 
+	linearSlippageFactor := (*num.Decimal)(nil)
+	if market.LinearSlippageFactor != "" {
+		factor, err := num.DecimalFromString(market.LinearSlippageFactor)
+		if err != nil {
+			return nil, fmt.Errorf("'%v' is not a valid number for linear slippage factor", market.LinearSlippageFactor)
+		}
+		linearSlippageFactor = &factor
+	}
+
+	quadraticSlippageFactor := (*num.Decimal)(nil)
+	if market.QuadraticSlippageFactor != "" {
+		factor, err := num.DecimalFromString(market.QuadraticSlippageFactor)
+		if err != nil {
+			return nil, fmt.Errorf("'%v' is not a valid number for quadratic slippage factor", market.QuadraticSlippageFactor)
+		}
+		quadraticSlippageFactor = &factor
+	}
+
 	return &Market{
 		ID:                            MarketID(market.Id),
 		TxHash:                        txHash,
@@ -129,10 +149,22 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		MarketTimestamps:              marketTimestamps,
 		PositionDecimalPlaces:         positionDps,
 		LpPriceRange:                  market.LpPriceRange,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}, nil
 }
 
 func (m Market) ToProto() *vega.Market {
+	linearSlippageFactor := ""
+	if m.LinearSlippageFactor != nil {
+		linearSlippageFactor = m.LinearSlippageFactor.String()
+	}
+
+	quadraticSlippageFactor := ""
+	if m.QuadraticSlippageFactor != nil {
+		quadraticSlippageFactor = m.QuadraticSlippageFactor.String()
+	}
+
 	return &vega.Market{
 		Id:                 m.ID.String(),
 		TradableInstrument: m.TradableInstrument.ToProto(),
@@ -149,6 +181,8 @@ func (m Market) ToProto() *vega.Market {
 		MarketTimestamps:              m.MarketTimestamps.ToProto(),
 		PositionDecimalPlaces:         int64(m.PositionDecimalPlaces),
 		LpPriceRange:                  m.LpPriceRange,
+		LinearSlippageFactor:          linearSlippageFactor,
+		QuadraticSlippageFactor:       quadraticSlippageFactor,
 	}
 }
 
@@ -210,7 +244,7 @@ func (tsp TargetStakeParameters) ToProto() *vega.TargetStakeParameters {
 
 type LiquidityMonitoringParameters struct {
 	TargetStakeParameters *TargetStakeParameters `json:"targetStakeParameters,omitempty"`
-	TriggeringRatio       float64                `json:"triggeringRatio,omitempty"`
+	TriggeringRatio       string                 `json:"triggeringRatio,omitempty"`
 	AuctionExtension      int64                  `json:"auctionExtension,omitempty"`
 }
 

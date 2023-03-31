@@ -87,8 +87,9 @@ func testGeneratingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newGenerateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, expectedWallet, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
@@ -153,7 +154,7 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey(t *testi
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
 func testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey(t *testing.T) {
@@ -166,7 +167,8 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey(t *testing.
 	handler := newGenerateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
@@ -194,8 +196,9 @@ func testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey(t *testing.T) 
 	handler := newGenerateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(expectedWallet, nil)
-	handler.walletStore.EXPECT().SaveWallet(ctx, gomock.Any(), passphrase).Times(1).Return(assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UpdateWallet(ctx, gomock.Any()).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminGenerateKeyParams{
@@ -215,10 +218,10 @@ type generateKeyHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminGenerateKeyResult, *jsonrpc.ErrorDetails) {
+func (h *generateKeyHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminGenerateKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminGenerateKeyResult)
 		if !ok {

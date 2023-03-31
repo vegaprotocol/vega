@@ -38,6 +38,20 @@ func (m *MockNode) EXPECT() *MockNodeMockRecorder {
 	return m.recorder
 }
 
+// CheckTransaction mocks base method.
+func (m *MockNode) CheckTransaction(arg0 context.Context, arg1 *v10.Transaction) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckTransaction", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckTransaction indicates an expected call of CheckTransaction.
+func (mr *MockNodeMockRecorder) CheckTransaction(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckTransaction", reflect.TypeOf((*MockNode)(nil).CheckTransaction), arg0, arg1)
+}
+
 // Host mocks base method.
 func (m *MockNode) Host() string {
 	m.ctrl.T.Helper()
@@ -80,6 +94,21 @@ func (m *MockNode) SendTransaction(arg0 context.Context, arg1 *v10.Transaction, 
 func (mr *MockNodeMockRecorder) SendTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTransaction", reflect.TypeOf((*MockNode)(nil).SendTransaction), arg0, arg1, arg2)
+}
+
+// SpamStatistics mocks base method.
+func (m *MockNode) SpamStatistics(arg0 context.Context, arg1 string) (types.SpamStatistics, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SpamStatistics", arg0, arg1)
+	ret0, _ := ret[0].(types.SpamStatistics)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SpamStatistics indicates an expected call of SpamStatistics.
+func (mr *MockNodeMockRecorder) SpamStatistics(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpamStatistics", reflect.TypeOf((*MockNode)(nil).SpamStatistics), arg0, arg1)
 }
 
 // Statistics mocks base method.

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
+	"code.vegaprotocol.io/vega/wallet/wallet"
 
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -43,10 +45,15 @@ type ParsedAdminSendTransactionParams struct {
 }
 
 type AdminSendTransactionResult struct {
-	ReceivedAt time.Time               `json:"receivedAt"`
-	SentAt     time.Time               `json:"sentAt"`
-	TxHash     string                  `json:"transactionHash"`
-	Tx         *commandspb.Transaction `json:"transaction"`
+	ReceivedAt time.Time                      `json:"receivedAt"`
+	SentAt     time.Time                      `json:"sentAt"`
+	TxHash     string                         `json:"transactionHash"`
+	Tx         *commandspb.Transaction        `json:"transaction"`
+	Node       AdminSendTransactionNodeResult `json:"node"`
+}
+
+type AdminSendTransactionNodeResult struct {
+	Host string `json:"host"`
 }
 
 type AdminSendTransaction struct {
@@ -55,7 +62,7 @@ type AdminSendTransaction struct {
 	nodeSelectorBuilder NodeSelectorBuilder
 }
 
-func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminSendTransactionParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
@@ -64,19 +71,25 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	receivedAt := time.Now()
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	w, err := h.walletStore.GetWallet(ctx, params.Wallet, params.Passphrase)
+	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
+		if errors.Is(err, wallet.ErrWrongPassphrase) {
+			return nil, invalidParams(err)
+		}
+		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	}
+
+	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
-
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(strings.NewReader(params.RawTransaction), request); err != nil {
-		return nil, invalidParams(ErrTransactionIsMalformed)
+		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
 	}
 
 	request.PubKey = params.PublicKey
@@ -85,13 +98,13 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		return nil, invalidParams(errs)
 	}
 
-	node, errDetails := h.getNode(ctx, params)
+	currentNode, errDetails := h.getNode(ctx, params)
 	if errDetails != nil {
 		return nil, errDetails
 	}
 
-	lastBlockData, errDetails := h.getLastBlockDataFromNetwork(ctx, node)
-	if err != nil {
+	lastBlockData, errDetails := h.getLastBlockDataFromNetwork(ctx, currentNode)
+	if errDetails != nil {
 		return nil, errDetails
 	}
 
@@ -125,7 +138,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 
 	sentAt := time.Now()
-	txHash, err := node.SendTransaction(ctx, tx, params.SendingMode)
+	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
 		return nil, networkErrorFromTransactionError(err)
 	}
@@ -135,6 +148,9 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		SentAt:     sentAt,
 		TxHash:     txHash,
 		Tx:         tx,
+		Node: AdminSendTransactionNodeResult{
+			Host: currentNode.Host(),
+		},
 	}, nil
 }
 
@@ -144,7 +160,7 @@ func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSe
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not check the network existence: %w", err))
+			return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
 		} else if !exists {
 			return nil, invalidParams(ErrNetworkDoesNotExist)
 		}
@@ -166,14 +182,15 @@ func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSe
 
 	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initializing the node selector: %w", err))
+		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
-	node, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
+	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
 		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
-	return node, nil
+
+	return currentNode, nil
 }
 
 func (h *AdminSendTransaction) getLastBlockDataFromNetwork(ctx context.Context, node node.Node) (*AdminLastBlockData, *jsonrpc.ErrorDetails) {
@@ -239,7 +256,7 @@ func validateAdminSendTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSe
 
 	tx, err := json.Marshal(params.Transaction)
 	if err != nil {
-		return ParsedAdminSendTransactionParams{}, ErrEncodedTransactionIsNotValid
+		return ParsedAdminSendTransactionParams{}, ErrTransactionIsNotValidJSON
 	}
 
 	return ParsedAdminSendTransactionParams{

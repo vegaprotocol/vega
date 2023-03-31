@@ -16,13 +16,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/mock/gomock"
+
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers"
 	"code.vegaprotocol.io/vega/datanode/sqlsubscribers/mocks"
-	"code.vegaprotocol.io/vega/logging"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
-	"github.com/golang/mock/gomock"
 )
 
 func TestOracleData_Push(t *testing.T) {
@@ -32,7 +32,7 @@ func TestOracleData_Push(t *testing.T) {
 	store := mocks.NewMockOracleDataStore(ctrl)
 
 	store.EXPECT().Add(context.Background(), gomock.Any()).Times(1)
-	subscriber := sqlsubscribers.NewOracleData(store, logging.NewTestLogger())
+	subscriber := sqlsubscribers.NewOracleData(store)
 	subscriber.Flush(context.Background())
 	subscriber.Push(context.Background(), events.NewOracleDataEvent(context.Background(), vegapb.OracleData{
 		ExternalData: &datapb.ExternalData{

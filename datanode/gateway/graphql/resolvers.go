@@ -27,12 +27,14 @@ import (
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	data "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -173,6 +175,11 @@ func (r *VegaResolverRoot) Proposal() ProposalResolver {
 	return (*proposalResolver)(r)
 }
 
+// ProposalDetail returns the Proposal detail resolver.
+func (r *VegaResolverRoot) ProposalDetail() ProposalDetailResolver {
+	return (*proposalDetailResolver)(r)
+}
+
 // NodeSignature ...
 func (r *VegaResolverRoot) NodeSignature() NodeSignatureResolver {
 	return (*myNodeSignatureResolver)(r)
@@ -191,6 +198,10 @@ func (r *VegaResolverRoot) Deposit() DepositResolver {
 // Withdrawal ...
 func (r *VegaResolverRoot) Withdrawal() WithdrawalResolver {
 	return (*myWithdrawalResolver)(r)
+}
+
+func (r *VegaResolverRoot) PropertyKey() PropertyKeyResolver {
+	return (*myPropertyKeyResolver)(r)
 }
 
 func (r *VegaResolverRoot) LiquidityOrderReference() LiquidityOrderReferenceResolver {
@@ -361,60 +372,60 @@ func (r *VegaResolverRoot) CoreSnapshotData() CoreSnapshotDataResolver {
 	return (*coreDataSnapshotResolver)(r)
 }
 
-func (r *VegaResolverRoot) LedgerEntryFilter() LedgerEntryFilterResolver {
-	return (*ledgerEntryFilterResolver)(r)
+func (r *VegaResolverRoot) EpochRewardSummary() EpochRewardSummaryResolver {
+	return (*epochRewardSummaryResolver)(r)
 }
 
 func (r *VegaResolverRoot) OrderFilter() OrderFilterResolver {
 	return (*orderFilterResolver)(r)
 }
 
-type ledgerEntryFilterResolver VegaResolverRoot
-
-func (r *ledgerEntryFilterResolver) SenderAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
-	if data != nil {
-		obj.AccountFromFilter = data
-		_, err := r.tradingDataClientV2.ListLedgerEntries(
-			ctx,
-			&v2.ListLedgerEntriesRequest{
-				Filter: obj,
-			})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (r *VegaResolverRoot) LedgerEntry() LedgerEntryResolver {
+	return (*ledgerEntryResolver)(r)
 }
 
-func (r *ledgerEntryFilterResolver) ReceiverAccountFilter(ctx context.Context, obj *v2.LedgerEntryFilter, data *v2.AccountFilter) error {
-	if data != nil {
-		obj.AccountToFilter = data
-		_, err := r.tradingDataClientV2.ListLedgerEntries(
-			ctx,
-			&v2.ListLedgerEntriesRequest{
-				Filter: obj,
-			})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (r *VegaResolverRoot) ERC20MultiSigSignerAddedBundle() ERC20MultiSigSignerAddedBundleResolver {
+	return (*erc20MultiSigSignerAddedBundleResolver)(r)
+}
+
+func (r *VegaResolverRoot) ERC20MultiSigSignerRemovedBundle() ERC20MultiSigSignerRemovedBundleResolver {
+	return (*erc20MultiSigSignerRemovedBundleResolver)(r)
+}
+
+// RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
+func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
+	return (*rewardSummaryFilterResolver)(r)
 }
 
 type protocolUpgradeProposalResolver VegaResolverRoot
 
-func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(ctx context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
+func (r *protocolUpgradeProposalResolver) UpgradeBlockHeight(_ context.Context, obj *eventspb.ProtocolUpgradeEvent) (string, error) {
 	return fmt.Sprintf("%d", obj.UpgradeBlockHeight), nil
 }
 
 type coreDataSnapshotResolver VegaResolverRoot
 
-func (r *coreDataSnapshotResolver) BlockHeight(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
+func (r *coreDataSnapshotResolver) BlockHeight(_ context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
 	return fmt.Sprintf("%d", obj.BlockHeight), nil
 }
 
 func (r *coreDataSnapshotResolver) VegaCoreVersion(ctx context.Context, obj *eventspb.CoreSnapshotData) (string, error) {
 	return obj.CoreVersion, nil
+}
+
+type epochRewardSummaryResolver VegaResolverRoot
+
+func (r *epochRewardSummaryResolver) RewardType(_ context.Context, obj *vega.EpochRewardSummary) (vega.AccountType, error) {
+	accountType, ok := vega.AccountType_value[obj.RewardType]
+	if !ok {
+		return vega.AccountType_ACCOUNT_TYPE_UNSPECIFIED, fmt.Errorf("Unknown account type %v", obj.RewardType)
+	}
+
+	return vega.AccountType(accountType), nil
+}
+
+func (r *epochRewardSummaryResolver) Epoch(_ context.Context, obj *vega.EpochRewardSummary) (int, error) {
+	return int(obj.Epoch), nil
 }
 
 type transactionResultResolver VegaResolverRoot
@@ -429,11 +440,11 @@ func (r *transactionResultResolver) Error(ctx context.Context, tr *eventspb.Tran
 
 type accountUpdateResolver VegaResolverRoot
 
-func (r *accountUpdateResolver) AssetID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
+func (r *accountUpdateResolver) AssetID(_ context.Context, obj *v2.AccountBalance) (string, error) {
 	return obj.Asset, nil
 }
 
-func (r *accountUpdateResolver) PartyID(ctx context.Context, obj *v2.AccountBalance) (string, error) {
+func (r *accountUpdateResolver) PartyID(_ context.Context, obj *v2.AccountBalance) (string, error) {
 	return obj.Owner, nil
 }
 
@@ -444,7 +455,7 @@ func (r *VegaResolverRoot) AggregatedLedgerEntry() AggregatedLedgerEntryResolver
 	return (*aggregatedLedgerEntriesResolver)(r)
 }
 
-func (r *aggregatedLedgerEntriesResolver) VegaTime(ctx context.Context, obj *v2.AggregatedLedgerEntry) (int64, error) {
+func (r *aggregatedLedgerEntriesResolver) VegaTime(_ context.Context, obj *v2.AggregatedLedgerEntry) (int64, error) {
 	return obj.Timestamp, nil
 }
 
@@ -467,21 +478,21 @@ func (r *myDepositResolver) Asset(ctx context.Context, obj *types.Deposit) (*typ
 	return r.r.getAssetByID(ctx, obj.Asset)
 }
 
-func (r *myDepositResolver) Party(ctx context.Context, obj *types.Deposit) (*types.Party, error) {
+func (r *myDepositResolver) Party(_ context.Context, obj *types.Deposit) (*types.Party, error) {
 	if len(obj.PartyId) <= 0 {
 		return nil, errors.New("missing party ID")
 	}
 	return &types.Party{Id: obj.PartyId}, nil
 }
 
-func (r *myDepositResolver) CreatedTimestamp(ctx context.Context, obj *types.Deposit) (string, error) {
+func (r *myDepositResolver) CreatedTimestamp(_ context.Context, obj *types.Deposit) (string, error) {
 	if obj.CreatedTimestamp == 0 {
 		return "", errors.New("invalid timestamp")
 	}
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedTimestamp)), nil
 }
 
-func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.Deposit) (*string, error) {
+func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Deposit) (*string, error) {
 	if obj.CreditedTimestamp == 0 {
 		return nil, nil
 	}
@@ -492,6 +503,18 @@ func (r *myDepositResolver) CreditedTimestamp(ctx context.Context, obj *types.De
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error) {
+	resp, err := r.tradingDataClientV2.ListAllPositions(ctx, &v2.ListAllPositionsRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Positions, nil
+}
 
 func (r *myQueryResolver) TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection,
 	pagination *v2.Pagination,
@@ -596,7 +619,6 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	return &Erc20WithdrawalApproval{
 		AssetSource:   res.AssetSource,
 		Amount:        res.Amount,
-		Expiry:        res.Expiry,
 		Nonce:         res.Nonce,
 		Signatures:    res.Signatures,
 		TargetAddress: res.TargetAddress,
@@ -640,8 +662,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerAddedBundles(
 		ctx, &v2.ListERC20MultiSigSignerAddedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -652,14 +674,7 @@ func (r *myQueryResolver) Erc20MultiSigSignerAddedBundles(ctx context.Context, n
 
 	for _, edge := range res.Bundles.Edges {
 		edges = append(edges, &ERC20MultiSigSignerAddedBundleEdge{
-			Node: &ERC20MultiSigSignerAddedBundle{
-				NewSigner:  edge.Node.NewSigner,
-				Submitter:  edge.Node.Submitter,
-				Nonce:      edge.Node.Nonce,
-				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
-				Signatures: edge.Node.Signatures,
-				EpochSeq:   edge.Node.EpochSeq,
-			},
+			Node:   edge.Node,
 			Cursor: edge.Cursor,
 		})
 	}
@@ -674,8 +689,8 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 	res, err := r.tradingDataClientV2.ListERC20MultiSigSignerRemovedBundles(
 		ctx, &v2.ListERC20MultiSigSignerRemovedBundlesRequest{
 			NodeId:     nodeID,
-			Submitter:  fromPtr(submitter),
-			EpochSeq:   fromPtr(epochSeq),
+			Submitter:  ptr.UnBox(submitter),
+			EpochSeq:   ptr.UnBox(epochSeq),
 			Pagination: pagination,
 		})
 	if err != nil {
@@ -686,14 +701,7 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 
 	for _, edge := range res.Bundles.Edges {
 		edges = append(edges, &ERC20MultiSigSignerRemovedBundleEdge{
-			Node: &ERC20MultiSigSignerRemovedBundle{
-				OldSigner:  edge.Node.OldSigner,
-				Submitter:  edge.Node.Submitter,
-				Nonce:      edge.Node.Nonce,
-				Timestamp:  fmt.Sprint(edge.Node.Timestamp),
-				Signatures: edge.Node.Signatures,
-				EpochSeq:   edge.Node.EpochSeq,
-			},
+			Node:   edge.Node,
 			Cursor: edge.Cursor,
 		})
 	}
@@ -702,13 +710,6 @@ func (r *myQueryResolver) Erc20MultiSigSignerRemovedBundles(ctx context.Context,
 		Edges:    edges,
 		PageInfo: res.Bundles.PageInfo,
 	}, nil
-}
-
-func fromPtr[T any](ptr *T) (ret T) {
-	if ptr != nil {
-		ret = *ptr
-	}
-	return
 }
 
 func (r *myQueryResolver) Withdrawal(ctx context.Context, wid string) (*types.Withdrawal, error) {
@@ -918,8 +919,9 @@ func (r *myQueryResolver) OrderVersionsConnection(ctx context.Context, orderID *
 
 func (r *myQueryResolver) OrderByReference(ctx context.Context, reference string) (*types.Order, error) {
 	req := &v2.ListOrdersRequest{
-		Reference: &reference,
-		Filter:    &v2.OrderFilter{},
+		Filter: &v2.OrderFilter{
+			Reference: &reference,
+		},
 	}
 	res, err := r.tradingDataClientV2.ListOrders(ctx, req)
 	if err != nil {
@@ -981,6 +983,22 @@ func (r *myQueryResolver) CoreSnapshots(ctx context.Context, pagination *v2.Pagi
 	}
 
 	return resp.CoreSnapshots, nil
+}
+
+func (r *myQueryResolver) EpochRewardSummaries(
+	ctx context.Context,
+	filter *v2.RewardSummaryFilter,
+	pagination *v2.Pagination,
+) (*v2.EpochRewardSummaryConnection, error) {
+	req := v2.ListEpochRewardSummariesRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	}
+	resp, err := r.tradingDataClientV2.ListEpochRewardSummaries(ctx, &req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Summaries, nil
 }
 
 func (r *myQueryResolver) ProtocolUpgradeProposals(
@@ -1126,9 +1144,9 @@ func (r *myQueryResolver) NetworkLimits(ctx context.Context) (*types.NetworkLimi
 }
 
 func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.HistorySegment, error) {
-	req := &v2.GetMostRecentDeHistorySegmentRequest{}
+	req := &v2.GetMostRecentNetworkHistorySegmentRequest{}
 
-	resp, err := r.tradingDataClientV2.GetMostRecentDeHistorySegment(ctx, req)
+	resp, err := r.tradingDataClientV2.GetMostRecentNetworkHistorySegment(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1139,7 +1157,7 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 
 type myNodeSignatureResolver VegaResolverRoot
 
-func (r *myNodeSignatureResolver) Signature(ctx context.Context, obj *commandspb.NodeSignature) (*string, error) {
+func (r *myNodeSignatureResolver) Signature(_ context.Context, obj *commandspb.NodeSignature) (*string, error) {
 	sig := base64.StdEncoding.EncodeToString(obj.Sig)
 	return &sig, nil
 }
@@ -1157,11 +1175,30 @@ func (r *myPartyResolver) TransfersConnection(
 	return r.r.transfersConnection(ctx, &party.Id, direction, pagination)
 }
 
-func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination) (*v2.RewardsConnection, error) {
+func (r *myPartyResolver) RewardsConnection(ctx context.Context, party *types.Party, assetID *string, pagination *v2.Pagination, fromEpoch *int, toEpoch *int) (*v2.RewardsConnection, error) {
+	var from, to *uint64
+
+	if fromEpoch != nil {
+		from = new(uint64)
+		if *fromEpoch < 0 {
+			return nil, errors.New("invalid fromEpoch for reward query - must be positive")
+		}
+		*from = uint64(*fromEpoch)
+	}
+	if toEpoch != nil {
+		to = new(uint64)
+		if *toEpoch < 0 {
+			return nil, errors.New("invalid toEpoch for reward query - must be positive")
+		}
+		*to = uint64(*toEpoch)
+	}
+
 	req := v2.ListRewardsRequest{
 		PartyId:    party.Id,
 		AssetId:    assetID,
 		Pagination: pagination,
+		FromEpoch:  from,
+		ToEpoch:    to,
 	}
 	resp, err := r.tradingDataClientV2.ListRewards(ctx, &req)
 	if err != nil {
@@ -1218,6 +1255,7 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 	ctx context.Context,
 	party *types.Party,
 	market, ref *string,
+	live *bool,
 	pagination *v2.Pagination,
 ) (*v2.LiquidityProvisionsConnection, error) {
 	var partyID string
@@ -1234,10 +1272,16 @@ func (r *myPartyResolver) LiquidityProvisionsConnection(
 		refID = *ref
 	}
 
+	var l bool
+	if live != nil {
+		l = *live
+	}
+
 	req := v2.ListLiquidityProvisionsRequest{
 		PartyId:    &partyID,
 		MarketId:   &mid,
 		Reference:  &refID,
+		Live:       &l,
 		Pagination: pagination,
 	}
 
@@ -1278,18 +1322,27 @@ func (r *myPartyResolver) MarginsConnection(ctx context.Context, party *types.Pa
 	return res.MarginLevels, nil
 }
 
-func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, dateRange *v2.DateRange,
-	pagination *v2.Pagination, filter *v2.OrderFilter,
-) (*v2.OrderConnection, error) {
-	if party == nil {
-		return nil, errors.New("party is required")
-	}
+func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Party, pagination *v2.Pagination, filter *OrderByMarketIdsFilter) (*v2.OrderConnection, error) {
 	req := v2.ListOrdersRequest{
-		PartyId:    &party.Id,
 		Pagination: pagination,
-		DateRange:  dateRange,
-		Filter:     filter,
+		Filter: &v2.OrderFilter{
+			PartyIds: []string{party.Id},
+		},
 	}
+
+	if filter != nil {
+		req.Filter.MarketIds = filter.MarketIds
+		if filter.Order != nil {
+			req.Filter.Statuses = filter.Order.Statuses
+			req.Filter.Types = filter.Order.Types
+			req.Filter.TimeInForces = filter.Order.TimeInForces
+			req.Filter.ExcludeLiquidity = filter.Order.ExcludeLiquidity
+			req.Filter.Reference = filter.Order.Reference
+			req.Filter.DateRange = filter.Order.DateRange
+			req.Filter.LiveOnly = filter.Order.LiveOnly
+		}
+	}
+
 	res, err := r.tradingDataClientV2.ListOrders(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -1509,23 +1562,23 @@ func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.Ma
 
 type myOrderUpdateResolver VegaResolverRoot
 
-func (r *myOrderUpdateResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Price(_ context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myOrderUpdateResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Size(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderUpdateResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Remaining(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderUpdateResolver) CreatedAt(ctx context.Context, obj *types.Order) (int64, error) {
+func (r *myOrderUpdateResolver) CreatedAt(_ context.Context, obj *types.Order) (int64, error) {
 	return obj.CreatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int64, error) {
+func (r *myOrderUpdateResolver) UpdatedAt(_ context.Context, obj *types.Order) (*int64, error) {
 	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
 		t := obj.UpdatedAt
@@ -1534,11 +1587,11 @@ func (r *myOrderUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Order)
 	return updatedAt, nil
 }
 
-func (r *myOrderUpdateResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderUpdateResolver) Version(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderUpdateResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+func (r *myOrderUpdateResolver) ExpiresAt(_ context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1558,7 +1611,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*v
 	return o.Reason, nil
 }
 
-func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Price(_ context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
 }
 
@@ -1566,19 +1619,19 @@ func (r *myOrderResolver) Market(ctx context.Context, obj *types.Order) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myOrderResolver) Size(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Size(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myOrderResolver) Remaining(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Remaining(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Remaining, 10), nil
 }
 
-func (r *myOrderResolver) CreatedAt(ctx context.Context, obj *types.Order) (int64, error) {
+func (r *myOrderResolver) CreatedAt(_ context.Context, obj *types.Order) (int64, error) {
 	return obj.CreatedAt, nil
 }
 
-func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int64, error) {
+func (r *myOrderResolver) UpdatedAt(_ context.Context, obj *types.Order) (*int64, error) {
 	var updatedAt *int64
 	if obj.UpdatedAt > 0 {
 		t := obj.UpdatedAt
@@ -1587,11 +1640,11 @@ func (r *myOrderResolver) UpdatedAt(ctx context.Context, obj *types.Order) (*int
 	return updatedAt, nil
 }
 
-func (r *myOrderResolver) Version(ctx context.Context, obj *types.Order) (string, error) {
+func (r *myOrderResolver) Version(_ context.Context, obj *types.Order) (string, error) {
 	return strconv.FormatUint(obj.Version, 10), nil
 }
 
-func (r *myOrderResolver) ExpiresAt(ctx context.Context, obj *types.Order) (*string, error) {
+func (r *myOrderResolver) ExpiresAt(_ context.Context, obj *types.Order) (*string, error) {
 	if obj.ExpiresAt <= 0 {
 		return nil, nil
 	}
@@ -1612,7 +1665,7 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 	return res.Trades, nil
 }
 
-func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types.Party, error) {
+func (r *myOrderResolver) Party(_ context.Context, order *types.Order) (*types.Party, error) {
 	if order == nil {
 		return nil, errors.New("nil order")
 	}
@@ -1622,7 +1675,7 @@ func (r *myOrderResolver) Party(ctx context.Context, order *types.Order) (*types
 	return &types.Party{Id: order.PartyId}, nil
 }
 
-func (r *myOrderResolver) PeggedOrder(ctx context.Context, order *types.Order) (*types.PeggedOrder, error) {
+func (r *myOrderResolver) PeggedOrder(_ context.Context, order *types.Order) (*types.PeggedOrder, error) {
 	return order.PeggedOrder, nil
 }
 
@@ -1658,15 +1711,15 @@ func (r *myTradeResolver) Market(ctx context.Context, obj *types.Trade) (*types.
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) Price(_ context.Context, obj *types.Trade) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
+func (r *myTradeResolver) Size(_ context.Context, obj *types.Trade) (string, error) {
 	return strconv.FormatUint(obj.Size, 10), nil
 }
 
-func (r *myTradeResolver) CreatedAt(ctx context.Context, obj *types.Trade) (int64, error) {
+func (r *myTradeResolver) CreatedAt(_ context.Context, obj *types.Trade) (int64, error) {
 	return obj.Timestamp, nil
 }
 
@@ -1702,12 +1755,12 @@ func (r *myTradeResolver) Seller(ctx context.Context, obj *types.Trade) (*types.
 	return res.Party, nil
 }
 
-func (r *myTradeResolver) BuyerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+func (r *myTradeResolver) BuyerAuctionBatch(_ context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.BuyerAuctionBatch)
 	return &i, nil
 }
 
-func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+func (r *myTradeResolver) BuyerFee(_ context.Context, obj *types.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
 		InfrastructureFee: "0",
@@ -1721,12 +1774,12 @@ func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*Trad
 	return &fee, nil
 }
 
-func (r *myTradeResolver) SellerAuctionBatch(ctx context.Context, obj *types.Trade) (*int, error) {
+func (r *myTradeResolver) SellerAuctionBatch(_ context.Context, obj *types.Trade) (*int, error) {
 	i := int(obj.SellerAuctionBatch)
 	return &i, nil
 }
 
-func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*TradeFee, error) {
+func (r *myTradeResolver) SellerFee(_ context.Context, obj *types.Trade) (*TradeFee, error) {
 	fee := TradeFee{
 		MakerFee:          "0",
 		InfrastructureFee: "0",
@@ -1773,15 +1826,15 @@ func (m *myDataSourceSpecConfigurationResolver) Signers(_ context.Context, obj *
 
 type myPriceLevelResolver VegaResolverRoot
 
-func (r *myPriceLevelResolver) Price(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) Price(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return obj.Price, nil
 }
 
-func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) Volume(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
-func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.PriceLevel) (string, error) {
+func (r *myPriceLevelResolver) NumberOfOrders(_ context.Context, obj *types.PriceLevel) (string, error) {
 	return strconv.FormatUint(obj.NumberOfOrders, 10), nil
 }
 
@@ -1789,17 +1842,21 @@ func (r *myPriceLevelResolver) NumberOfOrders(ctx context.Context, obj *types.Pr
 
 type positionUpdateResolver VegaResolverRoot
 
-func (r *positionUpdateResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+func (r *positionUpdateResolver) OpenVolume(_ context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *positionUpdateResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+func (r *positionUpdateResolver) UpdatedAt(_ context.Context, obj *types.Position) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
 		updatedAt = &t
 	}
 	return updatedAt, nil
+}
+
+func (r *positionUpdateResolver) LossSocializationAmount(_ context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
 }
 
 // BEGIN: Position Resolver
@@ -1810,7 +1867,7 @@ func (r *myPositionResolver) Market(ctx context.Context, obj *types.Position) (*
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
 
-func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position) (*string, error) {
+func (r *myPositionResolver) UpdatedAt(_ context.Context, obj *types.Position) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
 		t := vegatime.Format(vegatime.UnixNano(obj.UpdatedAt))
@@ -1819,20 +1876,24 @@ func (r *myPositionResolver) UpdatedAt(ctx context.Context, obj *types.Position)
 	return updatedAt, nil
 }
 
-func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) OpenVolume(_ context.Context, obj *types.Position) (string, error) {
 	return strconv.FormatInt(obj.OpenVolume, 10), nil
 }
 
-func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) RealisedPnl(_ context.Context, obj *types.Position) (string, error) {
 	return obj.RealisedPnl, nil
 }
 
-func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) UnrealisedPnl(_ context.Context, obj *types.Position) (string, error) {
 	return obj.UnrealisedPnl, nil
 }
 
-func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
+func (r *myPositionResolver) AverageEntryPrice(_ context.Context, obj *types.Position) (string, error) {
 	return obj.AverageEntryPrice, nil
+}
+
+func (r *myPositionResolver) LossSocializationAmount(_ context.Context, obj *types.Position) (string, error) {
+	return obj.LossSocialisationAmount, nil
 }
 
 func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
@@ -1871,10 +1932,13 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.Delegation)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("delegations: stream closed", logging.Error(err))
+			}
 			close(ch)
 		}()
 		for {
@@ -1887,7 +1951,16 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 				r.log.Error("delegations levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- dl.Delegation
+			select {
+			case ch <- dl.Delegation:
+				r.log.Debug("delegations: data sent")
+			case <-ctx.Done():
+				r.log.Error("delegations: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("delegations: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1904,10 +1977,13 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.Reward)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("rewards: stream closed", logging.Error(err))
+			}
 			close(ch)
 		}()
 		for {
@@ -1920,7 +1996,16 @@ func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *st
 				r.log.Error("reward details: stream closed", logging.Error(err))
 				break
 			}
-			ch <- rd.Reward
+			select {
+			case ch <- rd.Reward:
+				r.log.Debug("rewards: data sent")
+			case <-ctx.Done():
+				r.log.Error("rewards: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("rewards: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1937,10 +2022,13 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	ch := make(chan *types.MarginLevels)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("margin levels: stream closed", logging.Error(err))
+			}
 			close(ch)
 		}()
 		for {
@@ -1953,7 +2041,16 @@ func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, ma
 				r.log.Error("margin levls: stream closed", logging.Error(err))
 				break
 			}
-			ch <- m.MarginLevels
+			select {
+			case ch <- m.MarginLevels:
+				r.log.Debug("margin levels: data sent")
+			case <-ctx.Done():
+				r.log.Error("margin levels: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("margin levels: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -1995,9 +2092,13 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	}
 
 	c := make(chan []*v2.AccountBalance)
+	var accounts []*v2.AccountBalance
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("accounts: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2011,12 +2112,24 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 				break
 			}
 
+			// empty slice, but preserve cap to avoid excessive reallocation
+			accounts = accounts[:0]
 			if snapshot := a.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Accounts
+				accounts = append(accounts, snapshot.Accounts...)
 			}
 
 			if updates := a.GetUpdates(); updates != nil {
-				c <- updates.Accounts
+				accounts = append(accounts, updates.Accounts...)
+			}
+			select {
+			case c <- accounts:
+				r.log.Debug("accounts: data sent")
+			case <-ctx.Done():
+				r.log.Error("accounts: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("accounts: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2024,20 +2137,26 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 	return c, nil
 }
 
-func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []*types.Order, error) {
-	req := &v2.ObserveOrdersRequest{
-		MarketId: market,
-		PartyId:  party,
+func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*types.Order, error) {
+	req := &v2.ObserveOrdersRequest{}
+	if filter != nil {
+		req.MarketIds = filter.MarketIds
+		req.PartyIds = filter.PartyIds
 	}
+
 	stream, err := r.tradingDataClientV2.ObserveOrders(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	c := make(chan []*types.Order)
+	var orders []*types.Order
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("orders: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2050,11 +2169,22 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
+			orders = orders[:0]
 			if snapshot := o.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Orders
+				orders = append(orders, snapshot.Orders...)
 			}
 			if updates := o.GetUpdates(); updates != nil {
-				c <- updates.Orders
+				orders = append(orders, updates.Orders...)
+			}
+			select {
+			case c <- orders:
+				r.log.Debug("orders: data sent")
+			case <-ctx.Done():
+				r.log.Error("orders: stream closed")
+				return
+			case <-sCtx.Done():
+				r.log.Error("orders: stream closed by server")
+				return
 			}
 		}
 	}()
@@ -2073,9 +2203,12 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	}
 
 	c := make(chan []*types.Trade)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2088,7 +2221,16 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 				r.log.Error("trades: stream closed", logging.Error(err))
 				break
 			}
-			c <- t.Trades
+			select {
+			case c <- t.Trades:
+				r.log.Debug("trades: data sent")
+			case <-ctx.Done():
+				r.log.Error("trades: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("trades: stream closed by server")
+				break
+			}
 		}
 	}()
 
@@ -2106,9 +2248,13 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 	}
 
 	c := make(chan []*types.Position)
+	var positions []*types.Position
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("positions: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2121,12 +2267,23 @@ func (r *mySubscriptionResolver) Positions(ctx context.Context, party, market *s
 				r.log.Error("positions: stream closed", logging.Error(err))
 				break
 			}
+			positions = positions[:0]
 			if snapshot := t.GetSnapshot(); snapshot != nil {
-				c <- snapshot.Positions
+				positions = append(positions, snapshot.Positions...)
 			}
 
 			if updates := t.GetUpdates(); updates != nil {
-				c <- updates.Positions
+				positions = append(positions, updates.Positions...)
+			}
+			select {
+			case c <- positions:
+				r.log.Debug("positions: data sent")
+			case <-ctx.Done():
+				r.log.Error("positions: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("positions: stream closed by server")
+				break
 			}
 		}
 	}()
@@ -2168,10 +2325,13 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 		return nil, err
 	}
 
+	sCtx := stream.Context()
 	c := make(chan *v2.Candle)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("candles: stream closed", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2185,7 +2345,16 @@ func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, int
 				break
 			}
 
-			c <- cdl.Candle
+			select {
+			case c <- cdl.Candle:
+				r.log.Debug("candles: data sent")
+			case <-ctx.Done():
+				r.log.Error("candles: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("candles: stream closed by server")
+				break
+			}
 		}
 	}()
 	return c, nil
@@ -2209,13 +2378,25 @@ func (r *mySubscriptionResolver) subscribeAllProposals(ctx context.Context) (<-c
 		return nil, err
 	}
 	output := make(chan *types.GovernanceData)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("governance (all): failed to close stream", logging.Error(err))
+			}
 			close(output)
 		}()
-		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data.Data
+		for proposals, err := stream.Recv(); !isStreamClosed(err, r.log); proposals, err = stream.Recv() {
+			select {
+			case output <- proposals.Data:
+				r.log.Debug("governance (all): data sent")
+			case <-ctx.Done():
+				r.log.Error("governance (all): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("governance (all): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2228,14 +2409,26 @@ func (r *mySubscriptionResolver) subscribePartyProposals(ctx context.Context, pa
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	output := make(chan *types.GovernanceData)
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("governance (party): stream close failed", logging.Error(err))
+			}
 			close(output)
 		}()
-		for data, err := stream.Recv(); !isStreamClosed(err, r.log); data, err = stream.Recv() {
-			output <- data.Data
+		for proposals, err := stream.Recv(); !isStreamClosed(err, r.log); proposals, err = stream.Recv() {
+			select {
+			case output <- proposals.Data:
+				r.log.Debug("governance (party): data sent")
+			case <-ctx.Done():
+				r.log.Error("governance (party): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("governance (party): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2256,17 +2449,29 @@ func (r *mySubscriptionResolver) subscribeProposalVotes(ctx context.Context, pro
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("votes (proposal): stream close failed", logging.Error(err))
+			}
 			close(output)
 		}()
 		for {
-			data, err := stream.Recv()
+			votes, err := stream.Recv()
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			output <- ProposalVoteFromProto(data.Vote)
+			select {
+			case output <- ProposalVoteFromProto(votes.Vote):
+				r.log.Debug("votes (proposal): data sent")
+			case <-ctx.Done():
+				r.log.Error("votes (proposal): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("votes (proposal): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2280,17 +2485,29 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 	if err != nil {
 		return nil, err
 	}
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("votes (party): failed to close stream", logging.Error(err))
+			}
 			close(output)
 		}()
 		for {
-			data, err := stream.Recv()
+			votes, err := stream.Recv()
 			if isStreamClosed(err, r.log) {
 				break
 			}
-			output <- ProposalVoteFromProto(data.Vote)
+			select {
+			case output <- ProposalVoteFromProto(votes.Vote):
+				r.log.Debug("votes (party): data sent")
+			case <-ctx.Done():
+				r.log.Error("votes (party): stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("votes (party): stream closed by server")
+				break
+			}
 		}
 	}()
 	return output, nil
@@ -2347,24 +2564,27 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("Event bus stream close error", logging.Error(err))
+			}
 			close(out)
 		}()
 
 		if batchSize == 0 {
-			r.busEvents(stream, out)
+			r.busEvents(ctx, stream, out)
 		} else {
-			r.busEventsWithBatch(int64(batchSize), stream, out)
+			r.busEventsWithBatch(ctx, int64(batchSize), stream, out)
 		}
 	}()
 
 	return out, nil
 }
 
-func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+func (r *mySubscriptionResolver) busEvents(ctx context.Context, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+	sCtx := stream.Context()
 	for {
 		// receive batch
-		data, err := stream.Recv()
+		batch, err := stream.Recv()
 		if isStreamClosed(err, r.log) {
 			return
 		}
@@ -2372,18 +2592,27 @@ func (r *mySubscriptionResolver) busEvents(stream v2.TradingDataService_ObserveE
 			r.log.Error("Event bus stream error", logging.Error(err))
 			return
 		}
-		be := busEventFromProto(data.Events...)
-		out <- be
+		select {
+		case out <- busEventFromProto(batch.Events...):
+			r.log.Debug("bus events: data sent")
+		case <-ctx.Done():
+			r.log.Debug("bus events: stream closed")
+			return
+		case <-sCtx.Done():
+			r.log.Debug("bus events: stream closed by server")
+			return
+		}
 	}
 }
 
-func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+func (r *mySubscriptionResolver) busEventsWithBatch(ctx context.Context, batchSize int64, stream v2.TradingDataService_ObserveEventBusClient, out chan []*BusEvent) {
+	sCtx := stream.Context()
 	poll := &v2.ObserveEventBusRequest{
 		BatchSize: batchSize,
 	}
 	for {
 		// receive batch
-		data, err := stream.Recv()
+		batch, err := stream.Recv()
 		if isStreamClosed(err, r.log) {
 			return
 		}
@@ -2391,8 +2620,16 @@ func (r *mySubscriptionResolver) busEventsWithBatch(batchSize int64, stream v2.T
 			r.log.Error("Event bus stream error", logging.Error(err))
 			return
 		}
-		be := busEventFromProto(data.Events...)
-		out <- be
+		select {
+		case out <- busEventFromProto(batch.Events...):
+			r.log.Debug("bus events: data sent")
+		case <-ctx.Done():
+			r.log.Debug("bus events: stream closed")
+			return
+		case <-sCtx.Done():
+			r.log.Debug("bus events: stream closed by server")
+			return
+		}
 		// send request for the next batch
 		if err := stream.SendMsg(poll); err != nil {
 			r.log.Error("Failed to poll next event batch", logging.Error(err))
@@ -2412,9 +2649,12 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 	}
 
 	c := make(chan []*types.LiquidityProvision)
+	sCtx := stream.Context()
 	go func() {
 		defer func() {
-			stream.CloseSend()
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("liquidity provisions: failed to close stream", logging.Error(err))
+			}
 			close(c)
 		}()
 		for {
@@ -2427,8 +2667,19 @@ func (r *mySubscriptionResolver) LiquidityProvisions(ctx context.Context, partyI
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			if lps := received.LiquidityProvisions; lps != nil {
-				c <- lps
+			lps := received.LiquidityProvisions
+			if len(lps) == 0 {
+				continue
+			}
+			select {
+			case c <- lps:
+				r.log.Debug("liquidity provisions: data sent")
+			case <-sCtx.Done():
+				r.log.Debug("liquidity provisions: stream closed by server")
+				break
+			case <-ctx.Done():
+				r.log.Debug("liquidity provisions: stream closed")
+				break
 			}
 		}
 	}()
@@ -2510,7 +2761,18 @@ func getParty(ctx context.Context, _ *logging.Logger, client TradingDataServiceC
 	return res.Party, nil
 }
 
-// Market Data Resolvers
+// Market Data Resolvers.
+type myPropertyKeyResolver VegaResolverRoot
+
+func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *data.PropertyKey) (*int, error) {
+	ndp := obj.NumberDecimalPlaces
+	if ndp == nil {
+		return nil, nil
+	}
+	indp := new(int)
+	*indp = int(*ndp)
+	return indp, nil
+}
 
 // GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
 func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, skip, first, last *int) ([]*types.MarketData, error) {
@@ -2599,7 +2861,7 @@ func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context
 	return resp.GetMarketData(), nil
 }
 
-func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.MarketConnection, error) {
+func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pagination *v2.Pagination, includeSettled *bool) (*v2.MarketConnection, error) {
 	var marketID string
 
 	if id != nil {
@@ -2629,7 +2891,8 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 	}
 
 	resp, err := r.tradingDataClientV2.ListMarkets(ctx, &v2.ListMarketsRequest{
-		Pagination: pagination,
+		Pagination:     pagination,
+		IncludeSettled: includeSettled,
 	})
 	if err != nil {
 		return nil, err
@@ -2638,13 +2901,20 @@ func (r *myQueryResolver) MarketsConnection(ctx context.Context, id *string, pag
 	return resp.Markets, nil
 }
 
-func (r *myQueryResolver) PartiesConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {
-	var partyID string
-	if id != nil {
-		partyID = *id
+func (r *myQueryResolver) Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error) {
+	resp, err := r.tradingDataClientV2.ListEntities(ctx, &v2.ListEntitiesRequest{
+		TransactionHash: txHash,
+	})
+	if err != nil {
+		return nil, err
 	}
+
+	return resp, nil
+}
+
+func (r *myQueryResolver) PartiesConnection(ctx context.Context, partyID *string, pagination *v2.Pagination) (*v2.PartyConnection, error) {
 	resp, err := r.tradingDataClientV2.ListParties(ctx, &v2.ListPartiesRequest{
-		PartyId:    partyID,
+		PartyId:    ptr.UnBox(partyID),
 		Pagination: pagination,
 	})
 	if err != nil {

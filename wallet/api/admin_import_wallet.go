@@ -14,8 +14,6 @@ type AdminImportWalletParams struct {
 	RecoveryPhrase       string `json:"recoveryPhrase"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
 	Passphrase           string `json:"passphrase"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 type AdminImportWalletResult struct {
@@ -26,24 +24,20 @@ type AdminImportWalletResult struct {
 type AdminImportedWallet struct {
 	Name                 string `json:"name"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
-	FilePath             string `json:"filePath"`
-	// DEPRECATED: Use KeyDerivationVersion instead
-	Version uint32 `json:"version"`
 }
 
 type AdminImportWallet struct {
 	walletStore WalletStore
 }
 
-// Handle creates a wallet and generates its first key.
-func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params, _ jsonrpc.RequestMetadata) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportWalletParams(rawParams)
 	if err != nil {
 		return nil, invalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet existence: %w", err))
+		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if exist {
 		return nil, invalidParams(ErrWalletAlreadyExists)
 	}
@@ -58,16 +52,14 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 		return nil, internalError(fmt.Errorf("could not generate first key: %w", err))
 	}
 
-	if err := h.walletStore.SaveWallet(ctx, w, params.Passphrase); err != nil {
+	if err := h.walletStore.CreateWallet(ctx, w, params.Passphrase); err != nil {
 		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return AdminImportWalletResult{
 		Wallet: AdminImportedWallet{
 			Name:                 w.Name(),
-			Version:              w.KeyDerivationVersion(),
 			KeyDerivationVersion: w.KeyDerivationVersion(),
-			FilePath:             h.walletStore.GetWalletPath(w.Name()),
 		},
 		Key: AdminFirstPublicKey{
 			PublicKey: kp.PublicKey(),
@@ -100,10 +92,6 @@ func validateImportWalletParams(rawParams jsonrpc.Params) (AdminImportWalletPara
 
 	if params.RecoveryPhrase == "" {
 		return AdminImportWalletParams{}, ErrRecoveryPhraseIsRequired
-	}
-
-	if params.KeyDerivationVersion == 0 {
-		params.KeyDerivationVersion = params.Version
 	}
 
 	if params.KeyDerivationVersion == 0 {

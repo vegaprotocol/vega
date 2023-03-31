@@ -13,13 +13,15 @@ import (
 )
 
 type LocalClient struct {
-	node *local.Local
+	node       *local.Local
+	genesisDoc *cachedGenesisDoc
 }
 
 func newLocalClient(node service.Service) (*LocalClient, error) {
 	localNode := local.New(node.(*nm.Node))
 	return &LocalClient{
-		node: localNode,
+		node:       localNode,
+		genesisDoc: newCachedGenesisDoc(),
 	}, nil
 }
 
@@ -48,20 +50,20 @@ func (c *LocalClient) CheckTransaction(ctx context.Context, bytes []byte) (*tmct
 
 // GetGenesisTime retrieves the genesis time from the blockchain.
 func (c *LocalClient) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
-	res, err := c.node.Genesis(ctx)
+	res, err := c.genesisDoc.Get(ctx, c.node)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return res.Genesis.GenesisTime.UTC(), nil
+	return res.GenesisTime.UTC(), nil
 }
 
 // GetChainID retrieves the chainID from the blockchain.
 func (c *LocalClient) GetChainID(ctx context.Context) (chainID string, err error) {
-	res, err := c.node.Genesis(ctx)
+	res, err := c.genesisDoc.Get(ctx, c.node)
 	if err != nil {
 		return "", err
 	}
-	return res.Genesis.ChainID, nil
+	return res.ChainID, nil
 }
 
 // GetStatus returns the current status of the chain.
@@ -97,11 +99,11 @@ func (c *LocalClient) Validators(ctx context.Context, height *int64) ([]*tmtypes
 }
 
 func (c *LocalClient) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
-	res, err := c.node.Genesis(ctx)
+	res, err := c.genesisDoc.Get(ctx, c.node)
 	if err != nil {
 		return nil, err
 	}
-	return res.Genesis, nil
+	return res, nil
 }
 
 func (c *LocalClient) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, error) {

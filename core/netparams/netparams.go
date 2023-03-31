@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -50,6 +51,7 @@ type Reset interface {
 type value interface {
 	Validate(value string) error
 	Update(value string) error
+	UpdateOptionalValidation(value string, validate bool) error
 	String() string
 	ToDecimal() (num.Decimal, error)
 	ToInt() (int64, error)
@@ -131,7 +133,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 
 	// now iterate over all parameters and update the existing ones
 	for k, v := range state {
-		if err := s.Update(ctx, k, v); err != nil {
+		if err := s.UpdateOptionalValidation(ctx, k, v, false); err != nil {
 			return fmt.Errorf("%v: %v", k, err)
 		}
 	}
@@ -266,6 +268,10 @@ func (s *Store) Validate(key, value string) error {
 // Update will update the stored value for a given key
 // will return an error if the value do not pass validation.
 func (s *Store) Update(ctx context.Context, key, value string) error {
+	return s.UpdateOptionalValidation(ctx, key, value, true)
+}
+
+func (s *Store) UpdateOptionalValidation(ctx context.Context, key, value string, validate bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	svalue, ok := s.store[key]
@@ -273,7 +279,7 @@ func (s *Store) Update(ctx context.Context, key, value string) error {
 		return ErrUnknownKey
 	}
 
-	if err := svalue.Update(value); err != nil {
+	if err := svalue.UpdateOptionalValidation(value, validate); err != nil {
 		return fmt.Errorf("unable to update %s: %w", key, err)
 	}
 
@@ -290,13 +296,16 @@ func (s *Store) updateBatch(ctx context.Context, params map[string]string) error
 	evts := make([]events.Event, 0, len(params))
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	for k, v := range params {
+	keys := maps.Keys(params)
+	sort.Strings(keys)
+	for _, k := range keys {
+		v := params[k]
 		svalue, ok := s.store[k]
 		if !ok {
 			s.log.Warn("unknown network parameter read from checkpoint", logging.String("param", k))
 			continue
 		}
-		if err := svalue.Update(v); err != nil {
+		if err := svalue.UpdateOptionalValidation(v, false); err != nil {
 			return fmt.Errorf("unable to update %s: %w", k, err)
 		}
 		s.paramUpdates[k] = struct{}{}

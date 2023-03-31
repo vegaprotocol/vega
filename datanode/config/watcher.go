@@ -35,7 +35,7 @@ type Watcher struct {
 	configFilePath string
 
 	// to be used as an atomic
-	hasChanged         int32
+	hasChanged         atomic.Bool
 	cfgUpdateListeners []func(Config)
 	cfgHandlers        []func(*Config) error
 	mu                 sync.Mutex
@@ -96,7 +96,7 @@ func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths,
 }
 
 func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
-	if atomic.LoadInt32(&w.hasChanged) == 0 {
+	if !w.hasChanged.Load() {
 		// no changes we can return straight away
 		return
 	}
@@ -108,7 +108,7 @@ func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
 	}
 
 	// reset the atomic
-	atomic.StoreInt32(&w.hasChanged, 0)
+	w.hasChanged.Store(false)
 }
 
 // Get return the last update of the configuration.
@@ -155,12 +155,12 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 	for {
 		select {
 		case event := <-watcher.Events:
-			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
-				if event.Op&fsnotify.Rename == fsnotify.Rename {
-					// add a small sleep here in order to handle vi
-					// vi do not send a write event / edit the file in place,
-					// it always create a temporary file, then delete the original one,
-					// and then rename the temp file with the name of the original file.
+			if event.Has(fsnotify.Write) || event.Has(fsnotify.Rename) {
+				if event.Has(fsnotify.Rename) {
+					// add a small sleep here in order to handle vi as
+					// vi does not send a write event / edit the file in place,
+					// it always creates a temporary file, then deletes the original one,
+					// and then renames the temp file with the name of the original file.
 					// if we try to update the conf as soon as we get the event, the file is not
 					// always created and we get a no such file or directory error
 					time.Sleep(50 * time.Millisecond)
@@ -171,9 +171,7 @@ func (w *Watcher) watch(ctx context.Context, watcher *fsnotify.Watcher) {
 					w.log.Error("unable to load configuration", logging.Error(err))
 					continue
 				}
-				// set hasChanged to 1 to trigger configs update
-				// next block
-				atomic.StoreInt32(&w.hasChanged, 1)
+				w.hasChanged.Store(true)
 			}
 		case err := <-watcher.Errors:
 			w.log.Error("config watcher received error event", logging.Error(err))

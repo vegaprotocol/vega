@@ -27,6 +27,7 @@ import (
 const (
 	upgradeAPICallTickerDuration = time.Second * 2
 	maxUpgradeStatusErrs         = 10
+	namedLogger                  = "visor"
 )
 
 type Visor struct {
@@ -63,7 +64,7 @@ func NewVisor(ctx context.Context, log *logging.Logger, clientFactory client.Fac
 	v := &Visor{
 		conf:          visorConf,
 		clientFactory: clientFactory,
-		log:           log,
+		log:           log.Named(namedLogger),
 	}
 
 	if !currentFolderExists {
@@ -96,11 +97,15 @@ func (v *Visor) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	var isRestarting bool
+
 	for {
 		runConf, err := config.ParseRunConfig(v.conf.CurrentRunConfigPath())
 		if err != nil {
 			return fmt.Errorf("failed to parse run config: %w", err)
 		}
+
+		v.conf.SetHasDataNode(runConf.DataNode != nil)
 
 		client := v.clientFactory.GetClient(
 			runConf.Vega.RCP.SocketPath,
@@ -120,9 +125,10 @@ func (v *Visor) Run(ctx context.Context) error {
 			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
 			currentReleaseInfo,
 		)
-		binErrs := binRunner.Run(ctx, runConf)
+		binErrs := binRunner.Run(ctx, runConf, isRestarting)
 
 		upgradeTicker.Reset(upgradeAPICallTickerDuration)
+		isRestarting = false
 
 	CheckLoop:
 		for {
@@ -140,6 +146,8 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
 				time.Sleep(restartsDelay)
 				v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
+
+				isRestarting = true
 
 				break CheckLoop
 			case <-upgradeTicker.C:
@@ -171,7 +179,7 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Preparing upgrade")
 
 				if err := binRunner.Stop(); err != nil {
-					v.log.Info("failed to stop binaries, resorting to force kill", logging.Error(err))
+					v.log.Info("Failed to stop binaries, resorting to force kill", logging.Error(err))
 					if err := binRunner.Kill(); err != nil {
 						return fmt.Errorf("failed to force kill the running processes: %w", err)
 					}
@@ -180,7 +188,7 @@ func (v *Visor) Run(ctx context.Context) error {
 				v.log.Info("Starting upgrade")
 
 				if err := v.prepareNextUpgradeFolder(ctx, currentReleaseInfo.VegaReleaseTag); err != nil {
-					return fmt.Errorf("failed to prepare next upgrade folder")
+					return fmt.Errorf("failed to prepare next upgrade folder: %w", err)
 				}
 
 				numOfRestarts = 0

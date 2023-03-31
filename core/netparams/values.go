@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
@@ -128,7 +129,7 @@ func (f *Decimal) Validate(value string) error {
 	return err
 }
 
-func (f *Decimal) Update(value string) error {
+func (f *Decimal) UpdateOptionalValidation(value string, validate bool) error {
 	if !f.mutable {
 		return errors.New("value is not mutable")
 	}
@@ -137,22 +138,19 @@ func (f *Decimal) Update(value string) error {
 		return err
 	}
 
-	for _, fn := range f.rules {
-		if newerr := fn(valf); newerr != nil {
-			if err != nil {
-				err = fmt.Errorf("%v, %w", err, newerr)
-			} else {
-				err = newerr
-			}
+	if validate {
+		if err := f.Validate(value); err != nil {
+			return err
 		}
 	}
 
-	if err == nil {
-		f.rawval = value
-		f.value = valf
-	}
+	f.rawval = value
+	f.value = valf
+	return nil
+}
 
-	return err
+func (f *Decimal) Update(value string) error {
+	return f.UpdateOptionalValidation(value, true)
 }
 
 func (f *Decimal) Mutable(b bool) *Decimal {
@@ -297,7 +295,7 @@ func (i *Int) Validate(value string) error {
 	return err
 }
 
-func (i *Int) Update(value string) error {
+func (i *Int) UpdateOptionalValidation(value string, validate bool) error {
 	if !i.mutable {
 		return errors.New("value is not mutable")
 	}
@@ -306,22 +304,20 @@ func (i *Int) Update(value string) error {
 		return err
 	}
 
-	for _, fn := range i.rules {
-		if newerr := fn(vali); newerr != nil {
-			if err != nil {
-				err = fmt.Errorf("%v, %w", err, newerr)
-			} else {
-				err = newerr
-			}
+	if validate {
+		if err := i.Validate(value); err != nil {
+			return err
 		}
 	}
 
-	if err == nil {
-		i.rawval = value
-		i.value = vali
-	}
+	i.rawval = value
+	i.value = vali
 
-	return err
+	return nil
+}
+
+func (i *Int) Update(value string) error {
+	return i.UpdateOptionalValidation(value, true)
 }
 
 func (i *Int) Mutable(b bool) *Int {
@@ -593,6 +589,10 @@ func (d *Duration) Validate(value string) error {
 }
 
 func (d *Duration) Update(value string) error {
+	return d.UpdateOptionalValidation(value, true)
+}
+
+func (d *Duration) UpdateOptionalValidation(value string, validate bool) error {
 	if !d.mutable {
 		return errors.New("value is not mutable")
 	}
@@ -601,22 +601,15 @@ func (d *Duration) Update(value string) error {
 		return err
 	}
 
-	for _, fn := range d.rules {
-		if newerr := fn(vali); newerr != nil {
-			if err != nil {
-				err = fmt.Errorf("%v, %w", err, newerr)
-			} else {
-				err = newerr
-			}
+	if validate {
+		if err := d.Validate(value); err != nil {
+			return err
 		}
 	}
 
-	if err == nil {
-		d.rawval = value
-		d.value = vali
-	}
-
-	return err
+	d.rawval = value
+	d.value = vali
+	return nil
 }
 
 func (d *Duration) Mutable(b bool) *Duration {
@@ -806,32 +799,22 @@ func (j *JSON) Validate(value string) error {
 	return err
 }
 
-func (j *JSON) Update(value string) error {
-	err := j.validateValue([]byte(value))
-	if err != nil {
-		return fmt.Errorf("unable to unmarshal value, %w", err)
-	}
-
+func (j *JSON) UpdateOptionalValidation(value string, validate bool) error {
 	if !j.mutable {
 		return errors.New("value is not mutable")
 	}
-
-	for _, fn := range j.rules {
-		if newerr := fn(j.value); newerr != nil {
-			if err != nil {
-				err = fmt.Errorf("%v, %w", err, newerr)
-			} else {
-				err = newerr
-			}
+	if validate {
+		if err := j.Validate(value); err != nil {
+			return err
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	j.rawval = value
 	return nil
+}
+
+func (j *JSON) Update(value string) error {
+	return j.UpdateOptionalValidation(value, true)
 }
 
 func (j *JSON) Mutable(b bool) *JSON {
@@ -918,27 +901,23 @@ func (s *String) Validate(value string) error {
 	return err
 }
 
-func (s *String) Update(value string) error {
+func (s *String) UpdateOptionalValidation(value string, validate bool) error {
 	if !s.mutable {
 		return errors.New("value is not mutable")
 	}
 
-	var err error
-	for _, fn := range s.rules {
-		if newerr := fn(value); newerr != nil {
-			if err != nil {
-				err = fmt.Errorf("%v, %w", err, newerr)
-			} else {
-				err = newerr
-			}
+	if validate {
+		if err := s.Validate(value); err != nil {
+			return err
 		}
 	}
 
-	if err == nil {
-		s.rawval = value
-	}
+	s.rawval = value
+	return nil
+}
 
-	return err
+func (s *String) Update(value string) error {
+	return s.UpdateOptionalValidation(value, true)
 }
 
 func (s *String) Mutable(b bool) *String {
@@ -1009,6 +988,10 @@ func (i *Uint) ToUint() (*num.Uint, error) {
 }
 
 func (i *Uint) Validate(value string) error {
+	if strings.HasPrefix(strings.TrimLeft(value, " "), "-") {
+		return errors.New("invalid uint")
+	}
+
 	val, overflow := num.UintFromString(value, 10)
 	if overflow {
 		return errors.New("invalid uint")
@@ -1031,32 +1014,33 @@ func (i *Uint) Validate(value string) error {
 	return err
 }
 
-func (i *Uint) Update(value string) error {
+func (i *Uint) UpdateOptionalValidation(value string, validate bool) error {
 	if !i.mutable {
 		return errors.New("value is not mutable")
 	}
+	if strings.HasPrefix(strings.TrimLeft(value, " "), "-") {
+		return errors.New("invalid uint")
+	}
+
 	val, overflow := num.UintFromString(value, 10)
 	if overflow {
 		return errors.New("invalid uint")
 	}
 
-	var err error
-	for _, fn := range i.rules {
-		if newerr := fn(val); newerr != nil {
-			if err != nil {
-				err = fmt.Errorf("%v, %w", err, newerr)
-			} else {
-				err = newerr
-			}
+	if validate {
+		if err := i.Validate(value); err != nil {
+			return err
 		}
 	}
 
-	if err == nil {
-		i.rawval = value
-		i.value = val
-	}
+	i.rawval = value
+	i.value = val
 
-	return err
+	return nil
+}
+
+func (i *Uint) Update(value string) error {
+	return i.UpdateOptionalValidation(value, true)
 }
 
 func (i *Uint) Mutable(b bool) *Uint {

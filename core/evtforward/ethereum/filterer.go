@@ -108,7 +108,7 @@ func NewLogFilterer(
 
 	collateralBridgeFilterer, err := bridge.NewErc20BridgeLogicRestrictedFilterer(collateralBridge.Address(), ethClient)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't create log filterer for ERC20 brigde: %w", err)
+		return nil, fmt.Errorf("couldn't create log filterer for ERC20 bridge: %w", err)
 	}
 
 	collateralBridgeABI, err := ethabi.JSON(strings.NewReader(bridge.Erc20BridgeLogicRestrictedMetaData.ABI))
@@ -118,7 +118,7 @@ func NewLogFilterer(
 
 	stakingBridgeFilterer, err := staking.NewStakingFilterer(stakingBridge.Address(), ethClient)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't create log filterer for staking brigde: %w", err)
+		return nil, fmt.Errorf("couldn't create log filterer for staking bridge: %w", err)
 	}
 
 	stakingBridgeABI, err := ethabi.JSON(strings.NewReader(staking.StakingMetaData.ABI))
@@ -128,7 +128,7 @@ func NewLogFilterer(
 
 	vestingBridgeFilterer, err := staking.NewStakingFilterer(vestingBridge.Address(), ethClient)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't create log filterer for vesting brigde: %w", err)
+		return nil, fmt.Errorf("couldn't create log filterer for vesting bridge: %w", err)
 	}
 
 	multiSigControlFilterer, err := multisig.NewMultisigControlFilterer(multiSigControl.Address(), ethClient)
@@ -251,7 +251,19 @@ func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []e
 	infiniteRetry(func() error {
 		l, err := f.client.FilterLogs(ctx, query)
 		if err != nil {
-			f.log.Error("Couldn't subscribe to the Ethereum log filterer", logging.Error(err))
+			fromBlock := big.NewInt(0)
+			if query.FromBlock != nil {
+				fromBlock = query.FromBlock
+			}
+			toBlock := big.NewInt(0)
+			if query.ToBlock != nil {
+				toBlock = query.ToBlock
+			}
+			f.log.Error("Couldn't subscribe to the Ethereum log filterer",
+				logging.BigInt("from-block", fromBlock),
+				logging.BigInt("to-block", toBlock),
+				logging.EthereumAddresses(query.Addresses),
+				logging.Error(err))
 			return fmt.Errorf("couldn't subscribe to the Ethereum log filterer: %w", err)
 		}
 		logs = l

@@ -24,6 +24,7 @@ type MarginLevelsStore interface {
 	Add(marginLevel entities.MarginLevels) error
 	Flush(ctx context.Context) ([]entities.MarginLevels, error)
 	GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error)
 	GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error)
 }
 
@@ -34,7 +35,6 @@ type AccountSource interface {
 type Risk struct {
 	mlStore       MarginLevelsStore
 	accountSource AccountSource
-	log           *logging.Logger
 	observer      utils.Observer[entities.MarginLevels]
 }
 
@@ -42,7 +42,6 @@ func NewRisk(mlStore MarginLevelsStore, accountSource AccountSource, log *loggin
 	return &Risk{
 		mlStore:       mlStore,
 		accountSource: accountSource,
-		log:           log,
 		observer:      utils.NewObserver[entities.MarginLevels]("margin_levels", log, 0, 0),
 	}
 }
@@ -62,6 +61,10 @@ func (r *Risk) Flush(ctx context.Context) error {
 
 func (r *Risk) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
 	return r.mlStore.GetMarginLevelsByID(ctx, partyID, marketID, pagination)
+}
+
+func (r *Risk) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error) {
+	return r.mlStore.GetByTxHash(ctx, txHash)
 }
 
 func (r *Risk) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error) {

@@ -88,7 +88,6 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	// Lookup for check tx, skip if not found
 	if fn, ok := app.checkTxs[tx.Command()]; ok {
 		if err := fn(ctx, tx); err != nil {
-			println("transaction failed command validation", tx.Command().String(), "tid", tx.GetPoWTID(), err.Error())
 			return AddCommonCheckTxEvents(blockchain.NewResponseCheckTxError(blockchain.AbciTxnInternalError, err), tx)
 		}
 	}

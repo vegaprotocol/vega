@@ -16,15 +16,15 @@ import (
 )
 
 func TestAdminDescribeKey(t *testing.T) {
-	t.Run("Describing a key with invalid params fails", testDescribingKeyWithInvalidParamsFails)
-	t.Run("Describing a key with valid params succeeds", testDescribingKeyWithValidParamsSucceeds)
-	t.Run("Describing a key from wallet that does not exists fails", testDescribingKeyFromWalletThatDoesNotExistsFails)
-	t.Run("Getting internal error during wallet verification fails", testGettingInternalErrorDuringWalletVerificationFails)
-	t.Run("Getting internal error during wallet retrieval fails", testGettingInternalErrorDuringWalletRetrievalFails)
-	t.Run("Describing a key that does not exists fails", testDescribingKeyThatDoesNotExistsFails)
+	t.Run("Describing a key with invalid params fails", testAdminDescribingKeyWithInvalidParamsFails)
+	t.Run("Describing a key with valid params succeeds", testAdminDescribingKeyWithValidParamsSucceeds)
+	t.Run("Describing a key from wallet that does not exists fails", testAdminDescribeKeyDescribingKeyFromWalletThatDoesNotExistsFails)
+	t.Run("Getting internal error during wallet verification fails", testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails)
+	t.Run("Getting internal error during wallet retrieval fails", testAdminDescribeKeyGettingInternalErrorDuringWalletRetrievalFails)
+	t.Run("Describing a key that does not exists fails", testAdminDescribingKeyThatDoesNotExistsFails)
 }
 
-func testDescribingKeyWithInvalidParamsFails(t *testing.T) {
+func testAdminDescribingKeyWithInvalidParamsFails(t *testing.T) {
 	tcs := []struct {
 		name          string
 		params        interface{}
@@ -83,7 +83,7 @@ func testDescribingKeyWithInvalidParamsFails(t *testing.T) {
 	}
 }
 
-func testDescribingKeyWithValidParamsSucceeds(t *testing.T) {
+func testAdminDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -93,7 +93,8 @@ func testDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
@@ -116,7 +117,7 @@ func testDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 	}, result)
 }
 
-func testDescribingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
+func testAdminDescribeKeyDescribingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -140,7 +141,7 @@ func testDescribingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	assertInvalidParams(t, errorDetails, api.ErrWalletDoesNotExist)
 }
 
-func testGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
+func testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -161,10 +162,10 @@ func testGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// then
 	require.NotNil(t, errorDetails)
 	assert.Empty(t, result)
-	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet existence: %w", assert.AnError))
+	assertInternalError(t, errorDetails, fmt.Errorf("could not verify the wallet exists: %w", assert.AnError))
 }
 
-func testGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
+func testAdminDescribeKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -174,7 +175,8 @@ func testGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, name, passphrase).Times(1).Return(nil, assert.AnError)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
@@ -189,7 +191,7 @@ func testGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	assertInternalError(t, errorDetails, fmt.Errorf("could not retrieve the wallet: %w", assert.AnError))
 }
 
-func testDescribingKeyThatDoesNotExistsFails(t *testing.T) {
+func testAdminDescribingKeyThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	passphrase := vgrand.RandomStr(5)
@@ -199,7 +201,8 @@ func testDescribingKeyThatDoesNotExistsFails(t *testing.T) {
 	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(expectedWallet, nil)
+	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
@@ -220,10 +223,10 @@ type describeKeyHandler struct {
 	walletStore *mocks.MockWalletStore
 }
 
-func (h *describeKeyHandler) handle(t *testing.T, ctx context.Context, params interface{}) (api.AdminDescribeKeyResult, *jsonrpc.ErrorDetails) {
+func (h *describeKeyHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminDescribeKeyResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, jsonrpc.RequestMetadata{})
+	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
 		result, ok := rawResult.(api.AdminDescribeKeyResult)
 		if !ok {

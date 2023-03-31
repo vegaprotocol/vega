@@ -19,10 +19,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"code.vegaprotocol.io/vega/core/events"
-	vgproto "code.vegaprotocol.io/vega/libs/proto"
-	"code.vegaprotocol.io/vega/logging"
 	"google.golang.org/protobuf/proto"
+
+	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 type FileClient struct {
@@ -30,11 +30,20 @@ type FileClient struct {
 
 	config *FileConfig
 
-	file *os.File
-	mut  sync.RWMutex
+	file   *os.File
+	mut    sync.RWMutex
+	seqNum uint64
 }
 
+const (
+	NumberOfSeqNumBytes = 8
+	NumberOfSizeBytes   = 4
+
+	namedFileClientLogger = "file-client"
+)
+
 func NewFileClient(log *logging.Logger, config *FileConfig) (*FileClient, error) {
+	log = log.Named(namedFileClientLogger)
 	fc := &FileClient{
 		log:    log,
 		config: config,
@@ -69,19 +78,40 @@ func (fc *FileClient) Send(event events.Event) error {
 	fc.mut.RLock()
 	defer fc.mut.RUnlock()
 
-	busEvent := event.StreamMessage()
+	err := WriteToBufferFile(fc.file, fc.seqNum, event)
+	fc.seqNum++
 
-	size := uint32(proto.Size(busEvent))
-	sizeBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(sizeBytes, size)
-
-	protoBytes, err := vgproto.Marshal(busEvent)
 	if err != nil {
-		return fmt.Errorf("failed to marshal bus event:" + busEvent.String())
+		return fmt.Errorf("failed to write event to buffer file: %w", err)
 	}
 
-	allBytes := append(sizeBytes, protoBytes...) // nozero
-	fc.file.Write(allBytes)
+	return nil
+}
+
+func WriteToBufferFile(bufferFile *os.File, bufferSeqNum uint64, event events.Event) error {
+	rawEvent, err := proto.Marshal(event.StreamMessage())
+	if err != nil {
+		return fmt.Errorf("failed to marshal bus event:%w", err)
+	}
+	return WriteRawToBufferFile(bufferFile, bufferSeqNum, rawEvent)
+}
+
+func WriteRawToBufferFile(bufferFile *os.File, bufferSeqNum uint64, rawEvent []byte) error {
+	seqNumBytes := make([]byte, NumberOfSeqNumBytes)
+	sizeBytes := make([]byte, NumberOfSizeBytes)
+
+	size := NumberOfSeqNumBytes + uint32(len(rawEvent))
+
+	binary.BigEndian.PutUint64(seqNumBytes, bufferSeqNum)
+	binary.BigEndian.PutUint32(sizeBytes, size)
+	allBytes := append([]byte{}, sizeBytes...)
+	allBytes = append(allBytes, seqNumBytes...)
+	allBytes = append(allBytes, rawEvent...)
+	_, err := bufferFile.Write(allBytes)
+	if err != nil {
+		return fmt.Errorf("failed to write to buffer file:%w", err)
+	}
+
 	return nil
 }
 

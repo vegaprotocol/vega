@@ -21,7 +21,7 @@ const (
 	MarketAuctionMaximumDuration                    = "market.auction.maximumDuration"
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
-	MarketLiquidityStakeToCCYSiskas                 = "market.liquidity.stakeToCcySiskas"
+	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
 	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
 	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
@@ -110,13 +110,15 @@ const (
 	RewardMarketCreationQuantumMultiple = "rewards.marketCreationQuantumMultiple"
 
 	// spam policies params.
-	SpamProtectionMaxVotes               = "spam.protection.max.votes"
-	SpamProtectionMinTokensForVoting     = "spam.protection.voting.min.tokens"
-	SpamProtectionMaxProposals           = "spam.protection.max.proposals"
-	SpamProtectionMinTokensForProposal   = "spam.protection.proposal.min.tokens"
-	SpamProtectionMaxDelegations         = "spam.protection.max.delegations"
-	SpamProtectionMinTokensForDelegation = "spam.protection.delegation.min.tokens"
-	SpamProtectionMaxBatchSize           = "spam.protection.max.batchSize"
+	SpamProtectionMaxVotes                         = "spam.protection.max.votes"
+	SpamProtectionMinTokensForVoting               = "spam.protection.voting.min.tokens"
+	SpamProtectionMaxProposals                     = "spam.protection.max.proposals"
+	SpamProtectionMinTokensForProposal             = "spam.protection.proposal.min.tokens"
+	SpamProtectionMaxDelegations                   = "spam.protection.max.delegations"
+	SpamProtectionMinTokensForDelegation           = "spam.protection.delegation.min.tokens"
+	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
+	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
+	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -185,7 +187,7 @@ var AllKeys = map[string]struct{}{
 	MarketAuctionMaximumDuration:                             {},
 	MarketLiquidityBondPenaltyParameter:                      {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:            {},
-	MarketLiquidityStakeToCCYSiskas:                          {},
+	MarketLiquidityStakeToCCYVolume:                          {},
 	MarketLiquidityProvidersFeeDistribitionTimeStep:          {},
 	MarketLiquidityTargetStakeTriggeringRatio:                {},
 	MarketTargetStakeTimeWindow:                              {},
@@ -287,4 +289,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxBatchSize:                               {},
 	MarkPriceUpdateMaximumFrequency:                          {},
 	ValidatorPerformanceScalingFactor:                        {},
+	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
+	SpamProtectionMinMultisigUpdates:                         {},
 }
