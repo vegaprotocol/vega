@@ -84,6 +84,9 @@ var (
 	// Per table segment creation time.
 	networkHistoryCopiedRowsCounter *prometheus.CounterVec
 	networkHistoryCopyTimeCounter   *prometheus.CounterVec
+
+	batcherAddedEntities   *prometheus.CounterVec
+	batcherFlushedEntities *prometheus.CounterVec
 )
 
 // abstract prometheus types.
@@ -486,6 +489,36 @@ func setupMetrics() error {
 		return err
 	}
 	networkHistoryCopyTimeCounter = ct
+
+	h, err = addInstrument(
+		Counter,
+		"batcher_added_entities",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	baet, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	batcherAddedEntities = baet
+
+	h, err = addInstrument(
+		Counter,
+		"batcher_flushed_entities",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	bfe, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	batcherFlushedEntities = bfe
 
 	// sqlQueryTime
 	h, err = addInstrument(
@@ -910,6 +943,20 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 	}
+}
+
+func IncrementBatcherAddedEntities(table string) {
+	if batcherAddedEntities == nil {
+		return
+	}
+	batcherAddedEntities.WithLabelValues(table).Add(1)
+}
+
+func BatcherFlushedEntitiesAdd(table string, flushed int) {
+	if batcherFlushedEntities == nil {
+		return
+	}
+	batcherFlushedEntities.WithLabelValues(table).Add(float64(flushed))
 }
 
 func NetworkHistoryRowsCopied(table string, rowsCopied int64) {
