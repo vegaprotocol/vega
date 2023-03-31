@@ -29,10 +29,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// by default all validators needs to sign.
-	defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
-)
+// by default all validators needs to sign.
+var defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
 
 var (
 	ErrAggregateSigAlreadyStartedForResource = errors.New("aggregate signature already started for resource")
