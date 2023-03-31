@@ -19,6 +19,7 @@
 
 ### 🐛 Fixes
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
+- [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
 
 
 ## 0.70.1
