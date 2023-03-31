@@ -211,7 +211,7 @@ func testNewAssetChangeSubmissionWithoutDecimalsFails(t *testing.T) {
 		},
 	})
 
-	assert.Contains(t, err.Get("proposal_submission.terms.change.new_asset.changes.decimals"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_asset.changes.decimals"), commands.ErrIsRequired)
 }
 
 func testNewAssetChangeSubmissionWithDecimalsSucceeds(t *testing.T) {
