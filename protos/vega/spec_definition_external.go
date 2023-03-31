@@ -1,6 +1,31 @@
 package vega
 
+import datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 // Add any additional types related External Data sources specifications here.
+
+func (s DataSourceSpecConfiguration) DeepClone() *DataSourceSpecConfiguration {
+	if len(s.Signers) > 0 {
+		sgns := s.Signers
+		s.Signers = make([]*datapb.Signer, len(sgns))
+		for i, sig := range sgns {
+			s.Signers[i] = sig.DeepClone()
+		}
+	}
+
+	if len(s.Filters) > 0 {
+		filters := s.Filters
+		s.Filters = make([]*datapb.Filter, len(filters))
+		for i, f := range filters {
+			s.Filters[i] = f.DeepClone()
+		}
+	}
+
+	return &DataSourceSpecConfiguration{
+		Signers: s.Signers,
+		Filters: s.Filters,
+	}
+}
 
 func (x DataSourceDefinitionExternal_Oracle) DeepClone() *DataSourceDefinitionExternal_Oracle {
 	cpy := &DataSourceDefinitionExternal_Oracle{}

@@ -14,6 +14,7 @@ package governance_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -21,6 +22,8 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,8 +31,13 @@ import (
 
 func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a proposal for new market succeeds", testSubmittingProposalForNewMarketSucceeds)
+	t.Run("Submitting a proposal with internal time termination for new market succeeds", testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds)
+	t.Run("Submitting a proposal with internal time settling for new market fails", testSubmittingProposalWithInternalTimeSettlingForNewMarketFails)
+	t.Run("Submitting a proposal with external source using internal time termination key for new market succeeds", testSubmittingProposalWithExternalWithInternalTimeTerminationKeyForNewMarketSucceeds)
 	t.Run("Submitting a duplicated proposal for new market fails", testSubmittingDuplicatedProposalForNewMarketFails)
+	t.Run("Submitting a duplicated proposal with internal time termination for new market fails", testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFails)
 	t.Run("Submitting a proposal for new market with bad risk parameter fails", testSubmittingProposalForNewMarketWithBadRiskParameterFails)
+	t.Run("Submitting a proposal for new market with internal time termination with bad risk parameter fails", testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskParameterFails)
 
 	t.Run("Rejecting a proposal for new market succeeds", testRejectingProposalForNewMarketSucceeds)
 
@@ -45,7 +53,142 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 
 	// given
 	party := eng.newValidParty("a-valid-party", 123456789)
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, false)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	now := eng.tsvc.GetTimeNow()
+	id := eng.newProposalID()
+	tm := time.Now().Add(time.Hour * 24 * 365)
+	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
+
+	proposal := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     party.Id,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsNewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						Instrument: &types.InstrumentConfiguration{
+							Name: "June 2020 GBP vs VUSD future",
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.InstrumentConfigurationFuture{
+								Future: &types.FutureProduct{
+									SettlementAsset: "VUSD",
+									QuoteName:       "VUSD",
+									DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeInt,
+									).SetTimeTriggerConditionConfig(
+										[]*types.DataSourceSpecCondition{
+											{
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+												Value:    "0",
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeInt,
+									).SetTimeTriggerConditionConfig(
+										[]*types.DataSourceSpecCondition{
+											{
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+												Value:    fmt.Sprintf("%d", tm.UnixNano()),
+											},
+										}),
+									DataSourceSpecBinding: termBinding,
+								},
+							},
+						},
+						RiskParameters: &types.NewMarketConfigurationLogNormal{
+							LogNormal: &types.LogNormalRiskModel{
+								RiskAversionParameter: num.DecimalFromFloat(0.01),
+								Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+								Params: &types.LogNormalModelParams{
+									Mu:    num.DecimalZero(),
+									R:     num.DecimalFromFloat(0.016),
+									Sigma: num.DecimalFromFloat(0.09),
+								},
+							},
+						},
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces:           0,
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrSettlementWithInternalDataSourceIsNotAllowed)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalWithExternalWithInternalTimeTerminationKeyForNewMarketSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -67,7 +210,51 @@ func testSubmittingDuplicatedProposalForNewMarketFails(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil, true)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, party, 1000)
+	eng.ensureAllAssetEnabled(t)
+
+	// expect
+	eng.expectOpenProposalEvent(t, party, proposal.ID)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+
+	// given
+	duplicatedProposal := proposal
+	duplicatedProposal.Reference = "this-is-a-copy"
+
+	// when
+	_, err = eng.submitProposal(t, duplicatedProposal)
+
+	// then
+	require.Error(t, err)
+	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error())
+
+	// given
+	duplicatedProposal = proposal
+	duplicatedProposal.State = types.ProposalStatePassed
+
+	// when
+	_, err = eng.submitProposal(t, duplicatedProposal)
+
+	// then
+	require.Error(t, err)
+	assert.EqualError(t, governance.ErrProposalIsDuplicate, err.Error(), "reject attempt to change state indirectly")
+}
+
+func testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil, false)
 
 	// setup
 	eng.ensureTokenBalanceForParty(t, party, 1000)
@@ -113,7 +300,33 @@ func testSubmittingProposalForNewMarketWithBadRiskParameterFails(t *testing.T) {
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
+		LogNormal: &types.LogNormalRiskModel{
+			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
+		},
+	}
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	// when
+	_, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid risk parameter")
+}
+
+func testSubmittingProposalForNewMarketWithInternalTimeTerminationWithBadRiskParameterFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 1)
+	eng.ensureAllAssetEnabled(t)
+
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, false)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
 		LogNormal: &types.LogNormalRiskModel{
 			Params: nil, // it's nil by zero value, but eh, let's show that's what we test
@@ -140,7 +353,7 @@ func testOutOfRangeRiskParamFail(t *testing.T, lnm *types.LogNormalRiskModel) {
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
@@ -191,7 +404,7 @@ func TestSubmittingProposalForNewMarketWithOutOfRangeRiskParameterFails(t *testi
 	party := eng.newValidParty("a-valid-party", 1)
 	eng.ensureAllAssetEnabled(t)
 
-	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
 	proposal.Terms.GetNewMarket().Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{LogNormal: lnm}
 
 	// setup
@@ -210,7 +423,7 @@ func testRejectingProposalForNewMarketSucceeds(t *testing.T) {
 
 	// given
 	party := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(party, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -249,7 +462,7 @@ func testVotingForNewMarketProposalSucceeds(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -286,7 +499,7 @@ func testVotingWithMajorityOfYesMakesNewMarketProposalPassed(t *testing.T) {
 
 	// when
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -366,7 +579,7 @@ func testVotingWithMajorityOfNoMakesNewMarketProposalDeclined(t *testing.T) {
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)
@@ -445,7 +658,7 @@ func testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined(t *te
 
 	// given
 	proposer := vgrand.RandomStr(5)
-	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil)
+	proposal := eng.newProposalForNewMarket(proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)

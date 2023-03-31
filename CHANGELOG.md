@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
+- [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
