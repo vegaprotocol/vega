@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/processor/mocks"
@@ -207,4 +208,74 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	assert.Equal(t, uint64(4), stats.Blockchain.TotalTradesLastBatch())
 
 	assert.EqualError(t, err, "1 (cannot cancel order), 4 (cannot amend order), 7 (cannot submit order)")
+
+	// ensure the errors is reported as partial
+	perr, ok := err.(abci.MaybePartialError)
+	assert.True(t, ok)
+	assert.True(t, perr.IsPartial())
+}
+
+func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	exec := mocks.NewMockExecutionEngine(ctrl)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
+
+	batch := commandspb.BatchMarketInstructions{
+		Cancellations: []*commandspb.OrderCancellation{
+			{
+				OrderId:  "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+				MarketId: "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa",
+			},
+		},
+		Amendments: []*commandspb.OrderAmendment{
+			{
+				MarketId:    "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23",
+				OrderId:     "f31f922db56ee0ffee7695e358c5f6c253857b8e0656ddead6dc40474502bc22",
+				TimeInForce: vega.Order_TIME_IN_FORCE_GTC,
+			},
+		},
+		Submissions: []*commandspb.OrderSubmission{},
+	}
+
+	cancelCnt := 0
+	exec.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
+			cancelCnt++
+
+			// if the order is order 2 we return an error
+			if order.OrderID == "47076f002ddd9bfeb7f4679fc75b4686f64446d5a5afcb84584e7c7166d13efa" {
+				return nil, errors.New("cannot cancel order")
+			}
+			return nil, nil
+		},
+	)
+	amendCnt := 0
+	exec.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) ([]*types.OrderConfirmation, error) {
+			amendCnt++
+
+			// if the order is order 2 we return an error
+			if order.OrderID == "f31f922db56ee0ffee7695e358c5f6c253857b8e0656ddead6dc40474502bc22" {
+				return nil, errors.New("cannot amend order")
+			}
+			return nil, nil
+		},
+	)
+
+	err := proc.ProcessBatch(
+		context.Background(),
+		&batch,
+		"43f86066fe13743448442022c099c48abbd7e9c5eac1c2558fdac1fbf549e867",
+		"62017b6ae543d2e699f41d37598b22dab025c57ed98ef3c237bb91b948c5f8fc",
+		stats.Blockchain,
+	)
+
+	assert.EqualError(t, err, "0 (cannot cancel order), 1 (cannot amend order)")
+
+	// ensure the errors is reported as partial
+	perr, ok := err.(abci.MaybePartialError)
+	assert.True(t, ok)
+	assert.False(t, perr.IsPartial())
 }

@@ -138,6 +138,14 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	ctx = vgcontext.WithTxHash(ctx, txHash)
 
 	if err := fn(ctx, tx); err != nil {
+		if perr, ok := err.(MaybePartialError); ok {
+			if perr.IsPartial() {
+				return AddCommonDeliverTxEvents(
+					blockchain.NewResponseDeliverTxError(blockchain.AbciTxnPartialProcessingError, err), tx,
+				)
+			}
+		}
+
 		return AddCommonDeliverTxEvents(
 			blockchain.NewResponseDeliverTxError(blockchain.AbciTxnInternalError, err), tx,
 		)
@@ -276,4 +284,9 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	}
 
 	return base
+}
+
+type MaybePartialError interface {
+	error
+	IsPartial() bool
 }
