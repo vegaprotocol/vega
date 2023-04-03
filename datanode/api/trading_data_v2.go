@@ -2434,6 +2434,10 @@ func (t *TradingDataServiceV2) estimateFee(
 		return nil, formatE(ErrInvalidOrderPrice)
 	}
 
+	if size <= 0 {
+		return nil, formatE(ErrInvalidOrderSize)
+	}
+
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
 		return nil, errors.Wrap(ErrScalingPriceFromMarketToAsset, err.Error())
@@ -2548,6 +2552,10 @@ func (t *TradingDataServiceV2) estimateMargin(
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
 		return nil, errors.Wrap(ErrScalingPriceFromMarketToAsset, err.Error())
+	}
+
+	if rSize <= 0 {
+		return nil, formatE(ErrInvalidOrderSize)
 	}
 
 	priceD = price.ToDecimal()
