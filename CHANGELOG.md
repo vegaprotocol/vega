@@ -35,6 +35,7 @@
 - [7919](https://github.com/vegaprotocol/vega/issues/7919) - Avoid sending empty ledger movements
 - [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
 - [8046](https://github.com/vegaprotocol/vega/issues/8046) - Update GraphQL schema with new order rejection reason
+- [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
 
 ## 0.70.0
 
