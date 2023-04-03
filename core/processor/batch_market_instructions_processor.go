@@ -27,6 +27,27 @@ func NewBMIProcessor(
 	}
 }
 
+// BMIError implements blockchain/abci.MaybePartialError.
+type BMIError struct {
+	commands.Errors
+	isPartial bool
+}
+
+func (e *BMIError) IsPartial() bool {
+	return e.isPartial
+}
+
+func (e *BMIError) Error() string {
+	return e.Errors.Error()
+}
+
+func (e *BMIError) ErrorOrNil() error {
+	if len(e.Errors) <= 0 {
+		return nil
+	}
+	return e
+}
+
 // ProcessBatch will process a batch of market transaction. Transaction are
 // always executed in the following order: cancellation, amendment then submissions.
 // All errors are returned as a single error.
@@ -36,13 +57,19 @@ func (p *BMIProcessor) ProcessBatch(
 	party, determinitisticID string,
 	stats Stats,
 ) error {
-	errs := commands.NewErrors()
+	errs := &BMIError{
+		Errors: commands.NewErrors(),
+	}
 	// keep track of the index of the current instruction
 	// in the whole batch e.g:
 	// a batch with 10 instruction in each array
 	// idx 11 will be the second instruction of the
 	// amendment array
 	idx := 0
+
+	// keep track of the cnt of txn which errored to customise
+	// returned error from ABCI
+	errCnt := 0
 
 	// first we generate the IDs for all new orders,
 	// these need to be determinitistic
@@ -63,6 +90,7 @@ func (p *BMIProcessor) ProcessBatch(
 
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%d", i), err)
+			errCnt++
 		}
 		idx++
 	}
@@ -91,6 +119,7 @@ func (p *BMIProcessor) ProcessBatch(
 
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+			errCnt++
 		} else {
 			// add to the amended list, a successful amend should prevent
 			// any following amend of the same order
@@ -119,9 +148,12 @@ func (p *BMIProcessor) ProcessBatch(
 
 		if err != nil {
 			errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+			errCnt++
 		}
 		idx++
 	}
+
+	errs.isPartial = errCnt != len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)
 
 	return errs.ErrorOrNil()
 }
