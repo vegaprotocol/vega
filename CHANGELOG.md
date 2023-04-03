@@ -24,6 +24,7 @@
 - [7962](https://github.com/vegaprotocol/vega/issues/7962) - Set `isValidator` when loading from a checkpoint
 - [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
 - [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
+- [8069](https://github.com/vegaprotocol/vega/issues/8069) - Handle zero return value for memory when setting IPFS resource limits 
 - [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
 - [8003](https://github.com/vegaprotocol/vega/issues/8003) - Fix `ListGovernanceData` does not honour `TYPE_ALL`
