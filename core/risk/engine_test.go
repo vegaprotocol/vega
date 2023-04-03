@@ -16,6 +16,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 	"testing"
 	"time"
 
@@ -944,6 +945,16 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 			collateralFactor:        2.5,
 			expectError:             true,
 		},
+		{
+			markPrice:               110,
+			positionFactor:          1,
+			positionSize:            41,
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.01,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralFactor:        1000,
+		},
 	}
 
 	for i, tc := range testCases {
@@ -957,7 +968,10 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 
 		maintenanceMargin := risk.CalculateMaintenanceMarginWithSlippageFactors(tc.positionSize, 0, 0, num.DecimalZero(), num.DecimalZero(), markPrice, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, false)
 
-		liquidationPrice, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, markPrice, maintenanceMargin, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		sMargi := maintenanceMargin.String()
+		fmt.Print(sMargi)
+
+		liquidationPrice, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, maintenanceMargin, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
 		if tc.expectError {
 			require.Error(t, err)
 			continue
@@ -971,7 +985,7 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 
 		collateral := maintenanceMargin.Mul(num.DecimalFromFloat(tc.collateralFactor))
 
-		liquidationPrice, err = risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		liquidationPrice, _, _, err = risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, nil, nil, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
 		require.NoError(t, err)
 		require.False(t, liquidationPrice.IsNegative())
 
@@ -980,11 +994,252 @@ func TestLiquidationPriceWithNoOrders(t *testing.T) {
 		mtmLoss := liquidationPrice.Sub(markPrice).Mul(openVolume)
 		collateralAfterLoss := collateral.Add(mtmLoss)
 
+		sLiquidationPrice := liquidationPrice.String()
+		sLoss := mtmLoss.String()
+		sCollat := collateral.String()
+		sMargin := marginAtLiquidationPrice.String()
+		sCollatAfterLoss := collateralAfterLoss.String()
+
+		fmt.Print(sLiquidationPrice)
+		fmt.Print(sLoss)
+		fmt.Print(sCollat)
+		fmt.Print(sMargin)
+		fmt.Print(sCollatAfterLoss)
+
+		relativeDifference := collateralAfterLoss.Div(marginAtLiquidationPrice).Sub(num.DecimalOne()).Abs().String()
+		fmt.Print(relativeDifference)
+
 		if !marginAtLiquidationPrice.IsZero() {
 			require.True(t, collateralAfterLoss.Div(marginAtLiquidationPrice).Sub(num.DecimalOne()).Abs().LessThan(relativeTolerance), fmt.Sprintf("Test case %v: collateralAfterLoss=%s, marginAtLiquidationPrice:=%s", i+1, collateralAfterLoss, marginAtLiquidationPrice))
 		} else {
 			require.True(t, liquidationPrice.IsZero(), fmt.Sprintf("Test case %v:", i+1))
 			require.True(t, collateralAfterLoss.IsNegative(), fmt.Sprintf("Test case %v:", i+1))
+		}
+	}
+}
+
+func TestLiquidationPriceWithOrders(t *testing.T) {
+	testCases := []struct {
+		markPrice               float64
+		positionFactor          float64
+		positionSize            int64
+		buyOrders               []risk.OrderInfo
+		sellOrders              []risk.OrderInfo
+		linearSlippageFactor    float64
+		quadraticSlippageFactor float64
+		riskFactorLong          float64
+		riskFactorShort         float64
+		collateralAvailable     float64
+	}{
+		{
+			markPrice:      123.4,
+			positionFactor: 1,
+			positionSize:   0,
+			buyOrders: []risk.OrderInfo{
+				{1, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{1, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0,
+			quadraticSlippageFactor: 0,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     100,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 1,
+			positionSize:   0,
+			buyOrders: []risk.OrderInfo{
+				{39, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{40, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.01,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 1,
+			positionSize:   20,
+			buyOrders: []risk.OrderInfo{
+				{39, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{40, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 100,
+			positionSize:   -2000,
+			buyOrders: []risk.OrderInfo{
+				{3900, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{4000, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 0.1,
+			positionSize:   -2,
+			buyOrders: []risk.OrderInfo{
+				{3, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{4, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      101.2,
+			positionFactor: 100,
+			positionSize:   -2000,
+			buyOrders: []risk.OrderInfo{
+				{3900, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{4000, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      144.5,
+			positionFactor: 100,
+			positionSize:   -2000,
+			buyOrders: []risk.OrderInfo{
+				{3900, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{4000, num.NewUint(130)},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 100,
+			positionSize:   -2000,
+			buyOrders: []risk.OrderInfo{
+				{1800, num.NewUint(100)},
+				{1700, num.NewUint(110)},
+			},
+			sellOrders: []risk.OrderInfo{
+				{3000, num.NewUint(120)},
+				{2000, num.NewUint(130)},
+				{1000, num.NewUint(140)},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+	}
+
+	for i, tc := range testCases {
+		markPrice := num.DecimalFromFloat(tc.markPrice)
+		positionFactor := num.DecimalFromFloat(tc.positionFactor)
+		collateral := num.DecimalFromFloat(tc.collateralAvailable)
+
+		linearSlippageFactor := num.DecimalFromFloat(tc.linearSlippageFactor)
+		quadraticSlippageFactor := num.DecimalFromFloat(tc.quadraticSlippageFactor)
+		riskFactorLong := num.DecimalFromFloat(tc.riskFactorLong)
+		riskFactorShort := num.DecimalFromFloat(tc.riskFactorShort)
+
+		positionOnly, withBuy, withSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(tc.positionSize, tc.buyOrders, tc.sellOrders, markPrice, collateral, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		require.NoError(t, err, fmt.Sprintf("Test case %v:", i+1))
+
+		sPositionOnly := positionOnly.String()
+		sWithBuy := withBuy.String()
+		sWithSell := withSell.String()
+
+		t.Logf("positionOnly=%s, withBuy=%s, withSell=%s", sPositionOnly, sWithBuy, sWithSell)
+
+		if tc.positionSize == 0 {
+			require.True(t, positionOnly.IsZero(), fmt.Sprintf("Test case %v:", i+1))
+		}
+		if tc.positionSize > 0 {
+			require.True(t, withBuy.GreaterThanOrEqual(positionOnly), fmt.Sprintf("Test case %v:", i+1))
+		}
+		if tc.positionSize < 0 {
+			require.True(t, withSell.LessThanOrEqual(positionOnly), fmt.Sprintf("Test case %v:", i+1))
+		}
+
+		sort.Slice(tc.buyOrders, func(i, j int) bool {
+			return tc.buyOrders[i].Price.GT(tc.buyOrders[j].Price)
+		})
+		sort.Slice(tc.sellOrders, func(i, j int) bool {
+			return tc.sellOrders[i].Price.LT(tc.sellOrders[j].Price)
+		})
+
+		newPositionSize := tc.positionSize
+		mtmDelta := num.DecimalZero()
+		lastMarkPrice := markPrice
+		for _, o := range tc.buyOrders {
+			price := num.DecimalFromUint(o.Price)
+			if price.LessThan(withBuy) {
+				break
+			}
+			mtmDelta = mtmDelta.Add(num.DecimalFromInt64(newPositionSize).Mul(price.Sub(lastMarkPrice)))
+			newPositionSize += o.Size
+			lastMarkPrice = price
+		}
+		collateralAfterMtm := collateral.Add(mtmDelta)
+		newPositionOnly, _, _, err := risk.CalculateLiquidationPriceWithSlippageFactors(newPositionSize, nil, nil, lastMarkPrice, collateralAfterMtm, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		require.NoError(t, err, fmt.Sprintf("Test case %v:", i+1))
+		require.True(t, withBuy.Equal(newPositionOnly), fmt.Sprintf("Test case %v: withBuy=%s, newPositionOnly=%s", i+1, withBuy.String(), newPositionOnly.String()))
+
+		if tc.positionSize < 0 && newPositionSize > 0 {
+			require.True(t, withBuy.LessThan(positionOnly), fmt.Sprintf("Test case %v:", i+1))
+		}
+
+		newPositionSize = tc.positionSize
+		mtmDelta = num.DecimalZero()
+		lastMarkPrice = markPrice
+		for _, o := range tc.sellOrders {
+			price := num.DecimalFromUint(o.Price)
+			if price.GreaterThan(withSell) {
+				break
+			}
+			mtmDelta = mtmDelta.Add(num.DecimalFromInt64(newPositionSize).Div(positionFactor).Mul(price.Sub(lastMarkPrice)))
+			newPositionSize -= o.Size
+			lastMarkPrice = price
+		}
+		collateralAfterMtm = collateral.Add(mtmDelta)
+		newPositionOnly, _, _, err = risk.CalculateLiquidationPriceWithSlippageFactors(newPositionSize, nil, nil, lastMarkPrice, collateralAfterMtm, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		require.NoError(t, err, fmt.Sprintf("Test case %v:", i+1))
+		require.True(t, withSell.Equal(newPositionOnly), fmt.Sprintf("Test case %v: withSell=%s, newPositionOnly=%s", i+1, withSell.String(), newPositionOnly.String()))
+
+		if tc.positionSize > 0 && newPositionSize < 0 {
+			require.True(t, withSell.GreaterThan(positionOnly), fmt.Sprintf("Test case %v:", i+1))
 		}
 	}
 }
