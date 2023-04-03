@@ -13,7 +13,7 @@
 //go:build nobuild
 // +build nobuild
 
-package main
+package commands
 
 import (
 	"context"
