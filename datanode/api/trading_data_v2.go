@@ -1496,24 +1496,6 @@ func (t *TradingDataServiceV2) ListEpochRewardSummaries(ctx context.Context, req
 	}, nil
 }
 
-// ObserveRewards subscribes to a stream of rewards.
-func (t *TradingDataServiceV2) ObserveRewards(req *v2.ObserveRewardsRequest, srv v2.TradingDataService_ObserveRewardsServer) error {
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
-
-	if t.log.GetLevel() == logging.DebugLevel {
-		t.log.Debug("starting streaming reward updates")
-	}
-
-	ch, ref := t.rewardService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.AssetId), ptr.UnBox(req.PartyId))
-
-	return observe(ctx, t.log, "Reward", ch, ref, func(reward entities.Reward) error {
-		return srv.Send(&v2.ObserveRewardsResponse{
-			Reward: reward.ToProto(),
-		})
-	})
-}
-
 // GetDeposit gets a deposit by ID.
 func (t *TradingDataServiceV2) GetDeposit(ctx context.Context, req *v2.GetDepositRequest) (*v2.GetDepositResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetDepositV2")()
@@ -2272,24 +2254,6 @@ func (t *TradingDataServiceV2) ListDelegations(ctx context.Context, req *v2.List
 	return &v2.ListDelegationsResponse{
 		Delegations: delegationsConnection,
 	}, nil
-}
-
-// ObserveDelegations subscribe to delegation events.
-func (t *TradingDataServiceV2) ObserveDelegations(req *v2.ObserveDelegationsRequest, srv v2.TradingDataService_ObserveDelegationsServer) error {
-	ctx, cfunc := context.WithCancel(srv.Context())
-	defer cfunc()
-
-	if t.log.GetLevel() == logging.DebugLevel {
-		t.log.Debug("starting streaming delegation updates")
-	}
-
-	ch, ref := t.delegationService.Observe(ctx, t.config.StreamRetries, ptr.UnBox(req.PartyId), ptr.UnBox(req.NodeId))
-
-	return observe(ctx, t.log, "Delegations", ch, ref, func(delegation entities.Delegation) error {
-		return srv.Send(&v2.ObserveDelegationsResponse{
-			Delegation: delegation.ToProto(),
-		})
-	})
 }
 
 func (t *TradingDataServiceV2) marketExistsForID(ctx context.Context, marketID string) bool {

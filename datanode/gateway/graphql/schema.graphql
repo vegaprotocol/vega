@@ -59,14 +59,6 @@ type Subscription {
     interval: Interval!
   ): Candle!
 
-  "Subscribe to delegation data"
-  delegations(
-    "The party to subscribe for, empty if all"
-    partyId: ID
-    "The node to subscribe for, empty if all"
-    nodeId: ID
-  ): Delegation!
-
   "Subscribe to liquidity provisioning data"
   liquidityProvisions(
     "The party ID to subscribe for, empty if all"
@@ -120,14 +112,6 @@ type Subscription {
     "Optional party ID whose proposals are to be streamed"
     partyId: ID
   ): Proposal!
-
-  "Subscribe to reward details data"
-  rewards(
-    "The asset to subscribe for, empty if all"
-    assetId: ID
-    "The party ID to subscribe for, empty if all"
-    partyId: ID
-  ): Reward!
 
   "Subscribe to the trades updates"
   trades(

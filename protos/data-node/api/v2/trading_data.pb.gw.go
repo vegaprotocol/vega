@@ -1769,34 +1769,6 @@ func local_request_TradingDataService_ListEpochRewardSummaries_0(ctx context.Con
 
 }
 
-var (
-	filter_TradingDataService_ObserveRewards_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_TradingDataService_ObserveRewards_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (TradingDataService_ObserveRewardsClient, runtime.ServerMetadata, error) {
-	var protoReq ObserveRewardsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TradingDataService_ObserveRewards_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	stream, err := client.ObserveRewards(ctx, &protoReq)
-	if err != nil {
-		return nil, metadata, err
-	}
-	header, err := stream.Header()
-	if err != nil {
-		return nil, metadata, err
-	}
-	metadata.HeaderMD = header
-	return stream, metadata, nil
-
-}
-
 func request_TradingDataService_GetDeposit_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetDepositRequest
 	var metadata runtime.ServerMetadata
@@ -2258,34 +2230,6 @@ func local_request_TradingDataService_ListDelegations_0(ctx context.Context, mar
 
 	msg, err := server.ListDelegations(ctx, &protoReq)
 	return msg, metadata, err
-
-}
-
-var (
-	filter_TradingDataService_ObserveDelegations_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_TradingDataService_ObserveDelegations_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (TradingDataService_ObserveDelegationsClient, runtime.ServerMetadata, error) {
-	var protoReq ObserveDelegationsRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_TradingDataService_ObserveDelegations_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	stream, err := client.ObserveDelegations(ctx, &protoReq)
-	if err != nil {
-		return nil, metadata, err
-	}
-	header, err := stream.Header()
-	if err != nil {
-		return nil, metadata, err
-	}
-	metadata.HeaderMD = header
-	return stream, metadata, nil
 
 }
 
@@ -3959,13 +3903,6 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 
 	})
 
-	mux.Handle("GET", pattern_TradingDataService_ObserveRewards_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
-		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-		return
-	})
-
 	mux.Handle("GET", pattern_TradingDataService_GetDeposit_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -4208,13 +4145,6 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 
 		forward_TradingDataService_ListDelegations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
-	})
-
-	mux.Handle("GET", pattern_TradingDataService_ObserveDelegations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
-		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-		return
 	})
 
 	mux.Handle("GET", pattern_TradingDataService_GetNetworkData_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -5659,26 +5589,6 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 
 	})
 
-	mux.Handle("GET", pattern_TradingDataService_ObserveRewards_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ObserveRewards", runtime.WithHTTPPathPattern("/api/v2/stream/rewards"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_TradingDataService_ObserveRewards_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_TradingDataService_ObserveRewards_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
-	})
-
 	mux.Handle("GET", pattern_TradingDataService_GetDeposit_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -5916,26 +5826,6 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 		}
 
 		forward_TradingDataService_ListDelegations_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_TradingDataService_ObserveDelegations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/ObserveDelegations", runtime.WithHTTPPathPattern("/api/v2/stream/delegations"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_TradingDataService_ObserveDelegations_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_TradingDataService_ObserveDelegations_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -6495,8 +6385,6 @@ var (
 
 	pattern_TradingDataService_ListEpochRewardSummaries_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "v2", "rewards", "epoch", "summaries"}, ""))
 
-	pattern_TradingDataService_ObserveRewards_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "stream", "rewards"}, ""))
-
 	pattern_TradingDataService_GetDeposit_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v2", "deposit", "id"}, ""))
 
 	pattern_TradingDataService_ListDeposits_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "deposits"}, ""))
@@ -6520,8 +6408,6 @@ var (
 	pattern_TradingDataService_ObserveGovernance_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "stream", "governance"}, ""))
 
 	pattern_TradingDataService_ListDelegations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "delegations"}, ""))
-
-	pattern_TradingDataService_ObserveDelegations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "stream", "delegations"}, ""))
 
 	pattern_TradingDataService_GetNetworkData_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "network", "data"}, ""))
 
@@ -6663,8 +6549,6 @@ var (
 
 	forward_TradingDataService_ListEpochRewardSummaries_0 = runtime.ForwardResponseMessage
 
-	forward_TradingDataService_ObserveRewards_0 = runtime.ForwardResponseStream
-
 	forward_TradingDataService_GetDeposit_0 = runtime.ForwardResponseMessage
 
 	forward_TradingDataService_ListDeposits_0 = runtime.ForwardResponseMessage
@@ -6688,8 +6572,6 @@ var (
 	forward_TradingDataService_ObserveGovernance_0 = runtime.ForwardResponseStream
 
 	forward_TradingDataService_ListDelegations_0 = runtime.ForwardResponseMessage
-
-	forward_TradingDataService_ObserveDelegations_0 = runtime.ForwardResponseStream
 
 	forward_TradingDataService_GetNetworkData_0 = runtime.ForwardResponseMessage
 

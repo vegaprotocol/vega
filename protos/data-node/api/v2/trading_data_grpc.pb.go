@@ -242,10 +242,6 @@ type TradingDataServiceClient interface {
 	//
 	// List reward summaries by epoch
 	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
-	// Observe rewards
-	//
-	// Subscribe to a stream of rewards
-	ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error)
 	// Get deposit
 	//
 	// Get a deposit by its identifier
@@ -294,10 +290,6 @@ type TradingDataServiceClient interface {
 	//
 	// List the token delegations on the network
 	ListDelegations(ctx context.Context, in *ListDelegationsRequest, opts ...grpc.CallOption) (*ListDelegationsResponse, error)
-	// Delegation events subscription
-	//
-	// Subscribe to delegation events
-	ObserveDelegations(ctx context.Context, in *ObserveDelegationsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveDelegationsClient, error)
 	// Get network data
 	//
 	// Get data regarding the nodes of the network
@@ -1133,38 +1125,6 @@ func (c *tradingDataServiceClient) ListEpochRewardSummaries(ctx context.Context,
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) ObserveRewards(ctx context.Context, in *ObserveRewardsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveRewardsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveRewards", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &tradingDataServiceObserveRewardsClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TradingDataService_ObserveRewardsClient interface {
-	Recv() (*ObserveRewardsResponse, error)
-	grpc.ClientStream
-}
-
-type tradingDataServiceObserveRewardsClient struct {
-	grpc.ClientStream
-}
-
-func (x *tradingDataServiceObserveRewardsClient) Recv() (*ObserveRewardsResponse, error) {
-	m := new(ObserveRewardsResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *tradingDataServiceClient) GetDeposit(ctx context.Context, in *GetDepositRequest, opts ...grpc.CallOption) (*GetDepositResponse, error) {
 	out := new(GetDepositResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetDeposit", in, out, opts...)
@@ -1229,7 +1189,7 @@ func (c *tradingDataServiceClient) ListLiquidityProvisions(ctx context.Context, 
 }
 
 func (c *tradingDataServiceClient) ObserveLiquidityProvisions(ctx context.Context, in *ObserveLiquidityProvisionsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLiquidityProvisionsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[11], "/datanode.api.v2.TradingDataService/ObserveLiquidityProvisions", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveLiquidityProvisions", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1279,7 +1239,7 @@ func (c *tradingDataServiceClient) ListGovernanceData(ctx context.Context, in *L
 }
 
 func (c *tradingDataServiceClient) ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[12], "/datanode.api.v2.TradingDataService/ObserveGovernance", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[11], "/datanode.api.v2.TradingDataService/ObserveGovernance", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1317,38 +1277,6 @@ func (c *tradingDataServiceClient) ListDelegations(ctx context.Context, in *List
 		return nil, err
 	}
 	return out, nil
-}
-
-func (c *tradingDataServiceClient) ObserveDelegations(ctx context.Context, in *ObserveDelegationsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveDelegationsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[13], "/datanode.api.v2.TradingDataService/ObserveDelegations", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &tradingDataServiceObserveDelegationsClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TradingDataService_ObserveDelegationsClient interface {
-	Recv() (*ObserveDelegationsResponse, error)
-	grpc.ClientStream
-}
-
-type tradingDataServiceObserveDelegationsClient struct {
-	grpc.ClientStream
-}
-
-func (x *tradingDataServiceObserveDelegationsClient) Recv() (*ObserveDelegationsResponse, error) {
-	m := new(ObserveDelegationsResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 func (c *tradingDataServiceClient) GetNetworkData(ctx context.Context, in *GetNetworkDataRequest, opts ...grpc.CallOption) (*GetNetworkDataResponse, error) {
@@ -1460,7 +1388,7 @@ func (c *tradingDataServiceClient) GetRiskFactors(ctx context.Context, in *GetRi
 }
 
 func (c *tradingDataServiceClient) ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingDataService_ObserveEventBusClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v2.TradingDataService/ObserveEventBus", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[12], "/datanode.api.v2.TradingDataService/ObserveEventBus", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1491,7 +1419,7 @@ func (x *tradingDataServiceObserveEventBusClient) Recv() (*ObserveEventBusRespon
 }
 
 func (c *tradingDataServiceClient) ObserveLedgerMovements(ctx context.Context, in *ObserveLedgerMovementsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLedgerMovementsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[13], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1631,7 +1559,7 @@ func (c *tradingDataServiceClient) ListEntities(ctx context.Context, in *ListEnt
 }
 
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[16], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1894,10 +1822,6 @@ type TradingDataServiceServer interface {
 	//
 	// List reward summaries by epoch
 	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
-	// Observe rewards
-	//
-	// Subscribe to a stream of rewards
-	ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error
 	// Get deposit
 	//
 	// Get a deposit by its identifier
@@ -1946,10 +1870,6 @@ type TradingDataServiceServer interface {
 	//
 	// List the token delegations on the network
 	ListDelegations(context.Context, *ListDelegationsRequest) (*ListDelegationsResponse, error)
-	// Delegation events subscription
-	//
-	// Subscribe to delegation events
-	ObserveDelegations(*ObserveDelegationsRequest, TradingDataService_ObserveDelegationsServer) error
 	// Get network data
 	//
 	// Get data regarding the nodes of the network
@@ -2269,9 +2189,6 @@ func (UnimplementedTradingDataServiceServer) ListRewardSummaries(context.Context
 func (UnimplementedTradingDataServiceServer) ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEpochRewardSummaries not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ObserveRewards(*ObserveRewardsRequest, TradingDataService_ObserveRewardsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ObserveRewards not implemented")
-}
 func (UnimplementedTradingDataServiceServer) GetDeposit(context.Context, *GetDepositRequest) (*GetDepositResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDeposit not implemented")
 }
@@ -2307,9 +2224,6 @@ func (UnimplementedTradingDataServiceServer) ObserveGovernance(*ObserveGovernanc
 }
 func (UnimplementedTradingDataServiceServer) ListDelegations(context.Context, *ListDelegationsRequest) (*ListDelegationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDelegations not implemented")
-}
-func (UnimplementedTradingDataServiceServer) ObserveDelegations(*ObserveDelegationsRequest, TradingDataService_ObserveDelegationsServer) error {
-	return status.Errorf(codes.Unimplemented, "method ObserveDelegations not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetNetworkData(context.Context, *GetNetworkDataRequest) (*GetNetworkDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkData not implemented")
@@ -3284,27 +3198,6 @@ func _TradingDataService_ListEpochRewardSummaries_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_ObserveRewards_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ObserveRewardsRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TradingDataServiceServer).ObserveRewards(m, &tradingDataServiceObserveRewardsServer{stream})
-}
-
-type TradingDataService_ObserveRewardsServer interface {
-	Send(*ObserveRewardsResponse) error
-	grpc.ServerStream
-}
-
-type tradingDataServiceObserveRewardsServer struct {
-	grpc.ServerStream
-}
-
-func (x *tradingDataServiceObserveRewardsServer) Send(m *ObserveRewardsResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
 func _TradingDataService_GetDeposit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDepositRequest)
 	if err := dec(in); err != nil {
@@ -3525,27 +3418,6 @@ func _TradingDataService_ListDelegations_Handler(srv interface{}, ctx context.Co
 		return srv.(TradingDataServiceServer).ListDelegations(ctx, req.(*ListDelegationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
-}
-
-func _TradingDataService_ObserveDelegations_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ObserveDelegationsRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TradingDataServiceServer).ObserveDelegations(m, &tradingDataServiceObserveDelegationsServer{stream})
-}
-
-type TradingDataService_ObserveDelegationsServer interface {
-	Send(*ObserveDelegationsResponse) error
-	grpc.ServerStream
-}
-
-type tradingDataServiceObserveDelegationsServer struct {
-	grpc.ServerStream
-}
-
-func (x *tradingDataServiceObserveDelegationsServer) Send(m *ObserveDelegationsResponse) error {
-	return x.ServerStream.SendMsg(m)
 }
 
 func _TradingDataService_GetNetworkData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -4414,11 +4286,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "ObserveRewards",
-			Handler:       _TradingDataService_ObserveRewards_Handler,
-			ServerStreams: true,
-		},
-		{
 			StreamName:    "ObserveLiquidityProvisions",
 			Handler:       _TradingDataService_ObserveLiquidityProvisions_Handler,
 			ServerStreams: true,
@@ -4426,11 +4293,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObserveGovernance",
 			Handler:       _TradingDataService_ObserveGovernance_Handler,
-			ServerStreams: true,
-		},
-		{
-			StreamName:    "ObserveDelegations",
-			Handler:       _TradingDataService_ObserveDelegations_Handler,
 			ServerStreams: true,
 		},
 		{

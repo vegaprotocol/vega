@@ -1629,7 +1629,6 @@ type ComplexityRoot struct {
 		Accounts            func(childComplexity int, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) int
 		BusEvents           func(childComplexity int, types []BusEventType, marketID *string, partyID *string, batchSize int) int
 		Candles             func(childComplexity int, marketID string, interval vega.Interval) int
-		Delegations         func(childComplexity int, partyID *string, nodeID *string) int
 		LiquidityProvisions func(childComplexity int, partyID *string, marketID *string) int
 		Margins             func(childComplexity int, partyID string, marketID *string) int
 		MarketsData         func(childComplexity int, marketIds []string) int
@@ -1638,7 +1637,6 @@ type ComplexityRoot struct {
 		Orders              func(childComplexity int, filter *OrderByMarketAndPartyIdsFilter) int
 		Positions           func(childComplexity int, partyID *string, marketID *string) int
 		Proposals           func(childComplexity int, partyID *string) int
-		Rewards             func(childComplexity int, assetID *string, partyID *string) int
 		Trades              func(childComplexity int, marketID *string, partyID *string) int
 		Votes               func(childComplexity int, proposalID *string, partyID *string) int
 	}
@@ -2328,7 +2326,6 @@ type SubscriptionResolver interface {
 	Accounts(ctx context.Context, marketID *string, partyID *string, assetID *string, typeArg *vega.AccountType) (<-chan []*v2.AccountBalance, error)
 	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize int) (<-chan []*BusEvent, error)
 	Candles(ctx context.Context, marketID string, interval vega.Interval) (<-chan *v2.Candle, error)
-	Delegations(ctx context.Context, partyID *string, nodeID *string) (<-chan *vega.Delegation, error)
 	LiquidityProvisions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.LiquidityProvision, error)
 	Margins(ctx context.Context, partyID string, marketID *string) (<-chan *vega.MarginLevels, error)
 	MarketsData(ctx context.Context, marketIds []string) (<-chan []*vega.MarketData, error)
@@ -2337,7 +2334,6 @@ type SubscriptionResolver interface {
 	Orders(ctx context.Context, filter *OrderByMarketAndPartyIdsFilter) (<-chan []*vega.Order, error)
 	Positions(ctx context.Context, partyID *string, marketID *string) (<-chan []*vega.Position, error)
 	Proposals(ctx context.Context, partyID *string) (<-chan *vega.GovernanceData, error)
-	Rewards(ctx context.Context, assetID *string, partyID *string) (<-chan *vega.Reward, error)
 	Trades(ctx context.Context, marketID *string, partyID *string) (<-chan []*vega.Trade, error)
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 }
@@ -9134,18 +9130,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.Candles(childComplexity, args["marketId"].(string), args["interval"].(vega.Interval)), true
 
-	case "Subscription.delegations":
-		if e.complexity.Subscription.Delegations == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_delegations_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.Delegations(childComplexity, args["partyId"].(*string), args["nodeId"].(*string)), true
-
 	case "Subscription.liquidityProvisions":
 		if e.complexity.Subscription.LiquidityProvisions == nil {
 			break
@@ -9241,18 +9225,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Subscription.Proposals(childComplexity, args["partyId"].(*string)), true
-
-	case "Subscription.rewards":
-		if e.complexity.Subscription.Rewards == nil {
-			break
-		}
-
-		args, err := ec.field_Subscription_rewards_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Subscription.Rewards(childComplexity, args["assetId"].(*string), args["partyId"].(*string)), true
 
 	case "Subscription.trades":
 		if e.complexity.Subscription.Trades == nil {
@@ -12102,30 +12074,6 @@ func (ec *executionContext) field_Subscription_candles_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Subscription_delegations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["nodeId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["nodeId"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Subscription_liquidityProvisions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -12270,30 +12218,6 @@ func (ec *executionContext) field_Subscription_proposals_args(ctx context.Contex
 		}
 	}
 	args["partyId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Subscription_rewards_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["assetId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("assetId"))
-		arg0, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["assetId"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
-		arg1, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["partyId"] = arg1
 	return args, nil
 }
 
@@ -56955,85 +56879,6 @@ func (ec *executionContext) fieldContext_Subscription_candles(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Subscription_delegations(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
-	fc, err := ec.fieldContext_Subscription_delegations(ctx, field)
-	if err != nil {
-		return nil
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Delegations(rctx, fc.Args["partyId"].(*string), fc.Args["nodeId"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func(ctx context.Context) graphql.Marshaler {
-		select {
-		case res, ok := <-resTmp.(<-chan *vega.Delegation):
-			if !ok {
-				return nil
-			}
-			return graphql.WriterFunc(func(w io.Writer) {
-				w.Write([]byte{'{'})
-				graphql.MarshalString(field.Alias).MarshalGQL(w)
-				w.Write([]byte{':'})
-				ec.marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx, field.Selections, res).MarshalGQL(w)
-				w.Write([]byte{'}'})
-			})
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
-func (ec *executionContext) fieldContext_Subscription_delegations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "amount":
-				return ec.fieldContext_Delegation_amount(ctx, field)
-			case "party":
-				return ec.fieldContext_Delegation_party(ctx, field)
-			case "node":
-				return ec.fieldContext_Delegation_node(ctx, field)
-			case "epoch":
-				return ec.fieldContext_Delegation_epoch(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Delegation", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Subscription_delegations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Subscription_liquidityProvisions(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
 	fc, err := ec.fieldContext_Subscription_liquidityProvisions(ctx, field)
 	if err != nil {
@@ -57788,93 +57633,6 @@ func (ec *executionContext) fieldContext_Subscription_proposals(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Subscription_proposals_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Subscription_rewards(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
-	fc, err := ec.fieldContext_Subscription_rewards(ctx, field)
-	if err != nil {
-		return nil
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().Rewards(rctx, fc.Args["assetId"].(*string), fc.Args["partyId"].(*string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func(ctx context.Context) graphql.Marshaler {
-		select {
-		case res, ok := <-resTmp.(<-chan *vega.Reward):
-			if !ok {
-				return nil
-			}
-			return graphql.WriterFunc(func(w io.Writer) {
-				w.Write([]byte{'{'})
-				graphql.MarshalString(field.Alias).MarshalGQL(w)
-				w.Write([]byte{':'})
-				ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx, field.Selections, res).MarshalGQL(w)
-				w.Write([]byte{'}'})
-			})
-		case <-ctx.Done():
-			return nil
-		}
-	}
-}
-
-func (ec *executionContext) fieldContext_Subscription_rewards(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "asset":
-				return ec.fieldContext_Reward_asset(ctx, field)
-			case "marketId":
-				return ec.fieldContext_Reward_marketId(ctx, field)
-			case "rewardType":
-				return ec.fieldContext_Reward_rewardType(ctx, field)
-			case "party":
-				return ec.fieldContext_Reward_party(ctx, field)
-			case "epoch":
-				return ec.fieldContext_Reward_epoch(ctx, field)
-			case "amount":
-				return ec.fieldContext_Reward_amount(ctx, field)
-			case "percentageOfTotal":
-				return ec.fieldContext_Reward_percentageOfTotal(ctx, field)
-			case "receivedAt":
-				return ec.fieldContext_Reward_receivedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Reward", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Subscription_rewards_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -79913,8 +79671,6 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_busEvents(ctx, fields[0])
 	case "candles":
 		return ec._Subscription_candles(ctx, fields[0])
-	case "delegations":
-		return ec._Subscription_delegations(ctx, fields[0])
 	case "liquidityProvisions":
 		return ec._Subscription_liquidityProvisions(ctx, fields[0])
 	case "margins":
@@ -79931,8 +79687,6 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 		return ec._Subscription_positions(ctx, fields[0])
 	case "proposals":
 		return ec._Subscription_proposals(ctx, fields[0])
-	case "rewards":
-		return ec._Subscription_rewards(ctx, fields[0])
 	case "trades":
 		return ec._Subscription_trades(ctx, fields[0])
 	case "votes":
@@ -82745,10 +82499,6 @@ func (ec *executionContext) marshalNDataSourceSpecToFutureBinding2ᚖcodeᚗvega
 	return ec._DataSourceSpecToFutureBinding(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDelegation2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v vega.Delegation) graphql.Marshaler {
-	return ec._Delegation(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNDelegation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDelegation(ctx context.Context, sel ast.SelectionSet, v *vega.Delegation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -84512,10 +84262,6 @@ func (ec *executionContext) marshalNRankingScore2ᚖcodeᚗvegaprotocolᚗioᚋv
 		return graphql.Null
 	}
 	return ec._RankingScore(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNReward2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v vega.Reward) graphql.Marshaler {
-	return ec._Reward(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐReward(ctx context.Context, sel ast.SelectionSet, v *vega.Reward) graphql.Marshaler {
