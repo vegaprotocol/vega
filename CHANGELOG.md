@@ -8,13 +8,13 @@
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
+- [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
 
 ## 0.70.2
 
 ### 🐛 Fixes
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 - [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
-
 
 ## 0.70.1
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
