@@ -995,7 +995,7 @@ func (t *TradingDataServiceV2) ObserveTrades(req *v2.ObserveTradesRequest, srv v
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	tradesChan, ref := t.tradeService.Observe(ctx, t.config.StreamRetries, req.MarketId, req.PartyId)
+	tradesChan, ref := t.tradeService.Observe(ctx, t.config.StreamRetries, req.MarketIds, req.PartyIds)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Trades subscriber - new rpc stream", logging.Uint64("ref", ref))

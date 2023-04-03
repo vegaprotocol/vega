@@ -2017,9 +2017,9 @@ message ObserveTradesRequest {
     // Both filters can be combined.
 
     // List of Market ID to filter by.
-    repeated string market_id = 1;
+    repeated string market_ids = 1;
     // List of Party IDs to filter by.
-    repeated string party_id = 2;
+    repeated string party_ids = 2;
 }
 
 // A stream of trades

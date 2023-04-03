@@ -2136,8 +2136,8 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 	}
 
 	req := &v2.ObserveTradesRequest{
-		MarketId: markets,
-		PartyId:  parties,
+		MarketIds: markets,
+		PartyIds:  parties,
 	}
 
 	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
@@ -2182,8 +2182,8 @@ func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, par
 
 func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*types.Trade, error) {
 	req := &v2.ObserveTradesRequest{
-		MarketId: filter.MarketIds,
-		PartyId:  filter.PartyIds,
+		MarketIds: filter.MarketIds,
+		PartyIds:  filter.PartyIds,
 	}
 	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
 	if err != nil {
