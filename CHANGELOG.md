@@ -16,6 +16,7 @@
 - [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
 
 ### 🐛 Fixes
+- [7859](https://github.com/vegaprotocol/vega/issues/7859) - Fix Ledger entries exporting `CSV` file. 
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
 - [7954](https://github.com/vegaprotocol/vega/issues/7954) - Don't error if subscribing to a market/party that has no position yet

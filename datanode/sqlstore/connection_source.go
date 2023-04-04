@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"sync"
 
@@ -44,8 +45,13 @@ type Connection interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 }
 
+type copyingConnection interface {
+	Connection
+	CopyTo(ctx context.Context, w io.Writer, sql string) (pgconn.CommandTag, error)
+}
+
 type ConnectionSource struct {
-	Connection      Connection
+	Connection      copyingConnection
 	pool            *pgxpool.Pool
 	log             *logging.Logger
 	postCommitHooks []func()
@@ -260,6 +266,20 @@ func (t *delegatingConnection) QueryFunc(ctx context.Context, sql string, args [
 		return conn.QueryFunc(ctx, sql, args, scans, f)
 	}
 	return t.pool.QueryFunc(ctx, sql, args, scans, f)
+}
+
+func (t *delegatingConnection) CopyTo(ctx context.Context, w io.Writer, sql string) (pgconn.CommandTag, error) {
+	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		return tx.Conn().PgConn().CopyTo(ctx, w, sql)
+	}
+	if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
+		return conn.PgConn().CopyTo(ctx, w, sql)
+	}
+	conn, err := t.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return conn.Conn().PgConn().CopyTo(ctx, w, sql)
 }
 
 func CreateConnectionPool(conf ConnectionConfig) (*pgxpool.Pool, error) {

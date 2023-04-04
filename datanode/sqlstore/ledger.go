@@ -14,16 +14,20 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"strings"
 	"time"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/shopspring/decimal"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/shopspring/decimal"
 )
 
 var aggregateLedgerEntriesOrdering = TableOrdering{
@@ -115,57 +119,28 @@ func (ls *Ledger) Query(
 ) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 
-	filterQueries, args, err := filterLedgerEntriesQuery(filter)
+	dynamicQuery, whereQuery, args, err := prepareQuery(filter, dateRange)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	whereDate := ""
-	if dateRange.Start != nil {
-		whereDate = fmt.Sprintf("WHERE vega_time >= %s", nextBindVar(&args, *dateRange.Start))
-	}
-
-	if dateRange.End != nil {
-		if whereDate != "" {
-			whereDate = fmt.Sprintf("%s AND", whereDate)
-		} else {
-			whereDate = "WHERE "
-		}
-		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, *dateRange.End))
-	}
-
-	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
-	queryLedgerEntries := dynamicQuery
-
-	// This pageQuery is the part that gives us the results for the pagination. We will only pass this part of the query
-	// to the PaginateQuery function because the WHERE clause in the query above will cause an incorrect SQL statement
-	// to be generated
-	pageQuery := fmt.Sprintf(`SELECT
-			vega_time, quantity, transfer_type, asset_id,
-			account_from_market_id, account_from_party_id, account_from_account_type,
-			account_to_market_id, account_to_party_id, account_to_account_type,
-			account_from_balance, account_to_balance
-		FROM entries
-		%s`, whereDate)
-
-	pageQuery, args, err = PaginateQuery[entities.AggregatedLedgerEntriesCursor](
-		pageQuery, args, aggregateLedgerEntriesOrdering, pagination)
+	pageQuery, args, err := PaginateQuery[entities.AggregatedLedgerEntriesCursor](
+		whereQuery, args, aggregateLedgerEntriesOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}
 
-	queryLedgerEntries = fmt.Sprintf("%s %s", queryLedgerEntries, pageQuery)
+	query := fmt.Sprintf("%s %s", dynamicQuery, pageQuery)
 
 	defer metrics.StartSQLQuery("Ledger", "Query")()
-	rows, err := ls.Connection.Query(ctx, queryLedgerEntries, args...)
+	rows, err := ls.Connection.Query(ctx, query, args...)
 	if err != nil {
 		return nil, pageInfo, fmt.Errorf("querying ledger entries: %w", err)
 	}
 	defer rows.Close()
 
-	results := []ledgerEntriesScanned{}
-	err = pgxscan.ScanAll(&results, rows)
-	if err != nil {
+	var results []ledgerEntriesScanned
+	if err = pgxscan.ScanAll(&results, rows); err != nil {
 		return nil, pageInfo, fmt.Errorf("scanning ledger entries: %w", err)
 	}
 
@@ -176,12 +151,13 @@ func (ls *Ledger) Query(
 
 func (ls *Ledger) Export(
 	ctx context.Context,
-	partyID, assetID string,
+	partyID,
+	assetID string,
 	dateRange entities.DateRange,
-	pagination entities.CursorPagination,
-) ([]byte, entities.PageInfo, error) {
+	writer io.Writer,
+) error {
 	if partyID == "" {
-		return nil, entities.PageInfo{}, ErrLedgerEntryExportForParty
+		return ErrLedgerEntryExportForParty
 	}
 
 	filter := &entities.LedgerEntryFilter{
@@ -191,31 +167,73 @@ func (ls *Ledger) Export(
 		},
 	}
 
-	aggregatedEntries, pageInfo, err := ls.Query(ctx, filter, dateRange, pagination)
+	dynamicQuery, whereQuery, args, err := prepareQuery(filter, dateRange)
 	if err != nil {
-		return nil, entities.PageInfo{}, err
+		return err
 	}
 
-	columns := []string{
-		"VegaTime", "AssetId", "SenderPartyId", "SenderMarketId", "SenderAccountType",
-		"ReceiverPartyId", "ReceiverMarketId", "ReceiverAccountType", "Quantity", "TransferType",
-	}
+	query := fmt.Sprintf("copy (%s %s) to STDOUT (FORMAT csv, HEADER)", dynamicQuery, whereQuery)
 
-	data, err := json.MarshalIndent(columns, "", " ")
-	if err != nil {
-		return nil, entities.PageInfo{}, fmt.Errorf("failed to prepare columns: %w", err)
-	}
-
-	if aggregatedEntries != nil {
-		content, err := json.MarshalIndent(*aggregatedEntries, "", "  ")
-		if err != nil {
-			return nil, entities.PageInfo{}, fmt.Errorf("failed to write content: %w", err)
+	for i, arg := range args {
+		if s, ok := toHexString(arg); ok {
+			arg = s
 		}
-
-		data = append(data, content...)
+		query = strings.Replace(query, fmt.Sprintf("$%d", i+1), fmt.Sprintf("'%v'", arg), 1)
 	}
 
-	return data, pageInfo, nil
+	tag, err := ls.Connection.CopyTo(ctx, writer, query)
+	if err != nil {
+		return fmt.Errorf("copying to stdout: %w", err)
+	}
+
+	ls.log.Debug("copy to CSV", logging.Int64("rows affected", tag.RowsAffected()))
+	return nil
+}
+
+func toHexString(arg any) (string, bool) {
+	byteArray, ok := arg.([]byte)
+	if !ok {
+		return "", false
+	}
+
+	str := hex.EncodeToString(byteArray)
+	if _, err := hex.DecodeString(str); err != nil {
+		return "", false
+	}
+
+	return "\\x" + str, true
+}
+
+func prepareQuery(filter *entities.LedgerEntryFilter, dateRange entities.DateRange) (string, string, []any, error) {
+	filterQueries, args, err := filterLedgerEntriesQuery(filter)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("filtering ledger entries: %w", err)
+	}
+
+	whereDate := ""
+	if dateRange.Start != nil {
+		whereDate = fmt.Sprintf("WHERE vega_time >= %s", nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+	}
+
+	if dateRange.End != nil {
+		if whereDate != "" {
+			whereDate = fmt.Sprintf("%s AND", whereDate)
+		} else {
+			whereDate = "WHERE "
+		}
+		whereDate = fmt.Sprintf("%s vega_time < %s", whereDate, nextBindVar(&args, dateRange.End.Format(time.RFC3339)))
+	}
+
+	dynamicQuery := createDynamicQuery(filterQueries, filter.CloseOnAccountFilters)
+
+	whereQuery := fmt.Sprintf(`SELECT
+			vega_time, quantity, transfer_type, asset_id,
+			account_from_market_id, account_from_party_id, account_from_account_type,
+			account_to_market_id, account_to_party_id, account_to_account_type,
+			account_from_balance, account_to_balance
+		FROM entries
+		%s`, whereDate)
+	return dynamicQuery, whereQuery, args, nil
 }
 
 // ledgerEntriesScanned is a local type used as a mediator between pgxscan scanner

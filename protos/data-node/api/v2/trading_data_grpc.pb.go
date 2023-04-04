@@ -88,6 +88,8 @@ type TradingDataServiceClient interface {
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
+	//
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (TradingDataService_ExportLedgerEntriesClient, error)
 	//	Balances
 	//
@@ -1761,6 +1763,8 @@ type TradingDataServiceServer interface {
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
+	//
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
 	ExportLedgerEntries(*ExportLedgerEntriesRequest, TradingDataService_ExportLedgerEntriesServer) error
 	//	Balances
 	//
