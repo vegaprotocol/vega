@@ -46,7 +46,7 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 		})
 	}
 	sort.SliceStable(issued, func(i, j int) bool {
-		return issued[i].EthereumAddress < issued[j].EthereumAddress
+		return issued[i].ResourceId < issued[j].ResourceId
 	})
 
 	return &snapshot.ToplogySignatures{
