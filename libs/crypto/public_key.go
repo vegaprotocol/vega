@@ -50,5 +50,4 @@ func IsValidVegaID(id string) bool {
 	}
 
 	return true
-
 }
