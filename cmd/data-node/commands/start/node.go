@@ -169,12 +169,12 @@ func (l *NodeCommand) runNode([]string) error {
 
 	nodeLog.Info("Vega data node startup complete")
 
-	err := eg.Wait()
-	if errors.Is(err, context.Canceled) {
-		return nil
+	if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		nodeLog.Error("Vega data node stopped with error", logging.Error(err))
+		return fmt.Errorf("vega data node stopped with error: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {

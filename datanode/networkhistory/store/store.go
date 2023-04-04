@@ -14,10 +14,9 @@ import (
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/libs/memory"
-
 	"github.com/dustin/go-humanize"
 	"github.com/ipfs/kubo/core/node/libp2p/fd"
+	"go.uber.org/zap"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
@@ -27,11 +26,13 @@ import (
 
 	"github.com/ipfs/kubo/core/corerepo"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/ipfs/kubo/core/node/libp2p"
 	"github.com/ipfs/kubo/repo/fsrepo"
+
+	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
+	"code.vegaprotocol.io/vega/libs/memory"
+	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
@@ -161,7 +162,8 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		return nil, fmt.Errorf("failed to setup paths:%w", err)
 	}
 
-	p.index, err = NewIndex(p.indexPath)
+	idxLog := log.With(zap.String("component", "index"))
+	p.index, err = NewIndex(p.indexPath, idxLog)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create index:%w", err)
 	}
@@ -226,12 +228,16 @@ func (p *Store) Stop() {
 	p.log.Info("Cleaning up network history store")
 	if p.ipfsNode != nil {
 		p.log.Info("Closing IPFS node")
-		_ = p.ipfsNode.Close()
+		if err := p.ipfsNode.Close(); err != nil {
+			p.log.Errorf("Failed to close IPFS node:%s", err)
+		}
 	}
 
 	if p.index != nil {
-		p.log.Info("Closing LevelDB")
-		_ = p.index.Close()
+		if err := p.index.Close(); err != nil {
+			p.log.Errorf("Failed to close LevelDB:%s", err)
+		}
+		p.log.Info("LevelDB closed")
 	}
 }
 
@@ -260,11 +266,11 @@ func (p *Store) GetLocalNode() (IpfsNode, error) {
 	}
 
 	tcpProtocol := ma.ProtocolWithName("tcp")
-	for _, peer := range connectedPeers {
-		port, err := peer.Local.Addr.ValueForProtocol(tcpProtocol.Code)
+	for _, cp := range connectedPeers {
+		port, err := cp.Local.Addr.ValueForProtocol(tcpProtocol.Code)
 		if err == nil {
 			if port == strconv.Itoa(p.cfg.SwarmPort) {
-				localNode.Addr = peer.Local.Addr
+				localNode.Addr = cp.Local.Addr
 				break
 			}
 		}
@@ -313,7 +319,8 @@ func (p *Store) ResetIndex() error {
 		return fmt.Errorf("failed to create index path:%w", err)
 	}
 
-	p.index, err = NewIndex(p.indexPath)
+	idxLog := p.log.With(zap.String("component", "index"))
+	p.index, err = NewIndex(p.indexPath, idxLog)
 	if err != nil {
 		return fmt.Errorf("failed to create index:%w", err)
 	}
@@ -420,6 +427,8 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 		logging.Int64("to height", historySegment.HeightTo),
 		logging.String("previous history segment id", historySegment.PreviousHistorySegmentID),
 	)
+
+	p.log.Debug("AddSnapshotData: removing old history segments")
 
 	segments, err := p.removeOldHistorySegments(ctx)
 	if err != nil {

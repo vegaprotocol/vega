@@ -118,7 +118,11 @@ func (v *Visor) Run(ctx context.Context) error {
 		maxNumRestarts := v.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
 
-		v.log.Info("Starting binaries")
+		if isRestarting {
+			v.log.Info("Restarting binaries")
+		} else {
+			v.log.Info("Starting binaries")
+		}
 		binRunner := NewBinariesRunner(
 			v.log,
 			v.conf.CurrentFolder(),
