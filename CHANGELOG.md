@@ -24,7 +24,7 @@
 - [7962](https://github.com/vegaprotocol/vega/issues/7962) - Set `isValidator` when loading from a checkpoint
 - [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
 - [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
-- [8069](https://github.com/vegaprotocol/vega/issues/8069) - Handle zero return value for memory when setting IPFS resource limits 
+- [8069](https://github.com/vegaprotocol/vega/issues/8069) - Handle zero return value for memory when setting IPFS resource limits
 - [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
 - [8003](https://github.com/vegaprotocol/vega/issues/8003) - Fix `ListGovernanceData` does not honour `TYPE_ALL`
@@ -39,6 +39,7 @@
 - [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
 - [8046](https://github.com/vegaprotocol/vega/issues/8046) - Update GraphQL schema with new order rejection reason
 - [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
+- [8074](https://github.com/vegaprotocol/vega/issues/8074) - Add missing order rejection reason to `graphql` schema
 
 ## 0.70.0
 
