@@ -103,7 +103,7 @@ service TradingDataService {
     // Ledger entries can be exported by:
     //   - export ledger entries for a single party for a given asset within a given time range
     //   - export ledger entries for a single party for a given asset for all times
-    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (ExportLedgerEntriesResponse) {}
+    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (stream google.api.HttpBody) {}
 
     //  Balances
     //

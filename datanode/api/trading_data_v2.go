@@ -266,18 +266,19 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 }
 
 // ExportLedgerEntries returns a list of ledger entries matching the request.
-func (t *TradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.ExportLedgerEntriesRequest) (*v2.ExportLedgerEntriesResponse, error) {
+func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRequest, stream v2.TradingDataService_ExportLedgerEntriesServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ExportLedgerEntriesV2")()
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
-		return nil, formatE(ErrInvalidPagination, err)
+		formatE(ErrInvalidPagination, err)
 	}
 
-	raw, pageInfo, err := t.ledgerService.Export(ctx, req.PartyId, req.AssetId, dateRange, pagination)
+	// TODO: get more pages?
+	raw, _, err := t.ledgerService.Export(stream.Context(), req.PartyId, req.AssetId, dateRange, pagination)
 	if err != nil {
-		return nil, formatE(ErrLedgerServiceExport, err)
+		formatE(ErrLedgerServiceExport, err)
 	}
 
 	header := metadata.New(map[string]string{
@@ -285,14 +286,17 @@ func (t *TradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.
 		"Content-Disposition": fmt.Sprintf("attachment;filename=%s", "ledger_entries_export.csv"),
 	})
 
-	if err = grpc.SendHeader(ctx, header); err != nil {
-		return nil, formatE(ErrSendingGRPCHeader, err)
+	if err = grpc.SendHeader(stream.Context(), header); err != nil {
+		formatE(ErrSendingGRPCHeader, err)
 	}
 
-	return &v2.ExportLedgerEntriesResponse{
-		Data:     raw,
-		PageInfo: pageInfo.ToProto(),
-	}, nil
+	msg := &httpbody.HttpBody{
+		ContentType: "text/csv",
+		Data:        raw,
+	}
+	stream.Send(msg)
+
+	return nil
 }
 
 // ListBalanceChanges returns a list of balance changes matching the request.
