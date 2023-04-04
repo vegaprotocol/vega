@@ -58,6 +58,9 @@ Feature: Ensure distressed status events are correctly emitted, both for safe an
       | sellSideProvider | ETH/DEC19 | sell | 1      | 120   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | buySideProvider  | ETH/DEC19 | buy  | 1      | 120   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-
-    # TODO: add step to check for events marking designatedLoser as distressed, but maintaining the position on the book
-    And debug all events
+    # designatedLoser should've been closed out, but due to lack of volume on the book, they maintain their position
+    # however, their position status is flagged as being distressed
+    And the parties should have the following profit and loss:
+      | party           | volume | unrealised pnl | realised pnl | status                     |
+      | designatedLoser | 290    | -8700          | 0            | POSITION_STATUS_DISTRESSED |
+    #And debug all events

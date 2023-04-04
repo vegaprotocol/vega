@@ -436,9 +436,9 @@ message DistressedOrders {
 message DistressedPositions {
   // Market identifier for the event
   string market_id = 1;
-  // Slice of Party identifiers (public keys) that are distressed but still have open volume
+  // Slice of party identifiers (public keys) that are distressed but still have open volume
   repeated string distressed_parties = 2;
-  // Slice of Party identifiers (public keys) who were distressed but now can safely maintain their position
+  // Slice of party identifiers (public keys) who were distressed but now can safely maintain their position
   repeated string safe_parties = 3;
 }
 
@@ -732,7 +732,7 @@ enum BusEventType {
   BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED = 56;
   // Event indicating parties had orders closed because they were distressed, but were not closed out.
   BUS_EVENT_TYPE_EXPIRED_ORDERS = 57;
-  // Event indicating parties have become, or were distressed but still have an active position.
+  // Event indicating parties have become, or were, distressed but still have an active position.
   BUS_EVENT_TYPE_DISTRESSED_POSITIONS = 58;
 
   // Event indicating a market related event, for example when a market opens

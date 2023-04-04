@@ -57,7 +57,7 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 				return nil
 			}
 			// check state if required
-			states := positionService.GetPositionStatesByParty(party)
+			states, _ := positionService.GetPositionStatesByParty(party)
 			if len(states) == 1 && states[0] == ps {
 				return nil
 			}
@@ -136,7 +136,7 @@ func (r pnlRow) realisedPNL() num.Decimal {
 	return r.row.MustDecimal("realised pnl")
 }
 
-func (r pnlRow) positionState() (vega.PostionStatus, bool) {
+func (r pnlRow) positionState() (vega.PositionStatus, bool) {
 	if !r.row.HasColumn("status") {
 		// we do not have the status column sepcified
 		return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, false

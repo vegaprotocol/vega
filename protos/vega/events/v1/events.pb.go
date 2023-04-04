@@ -200,7 +200,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED BusEventType = 56
 	// Event indicating parties had orders closed because they were distressed, but were not closed out.
 	BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS BusEventType = 57
-	// Event indicating parties have become, or were distressed but still have an active position.
+	// Event indicating parties have become, or were, distressed but still have an active position.
 	BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS BusEventType = 58
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
@@ -3447,9 +3447,9 @@ type DistressedPositions struct {
 
 	// Market identifier for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Slice of Party identifiers (public keys) that are distressed but still have open volume
+	// Slice of party identifiers (public keys) that are distressed but still have open volume
 	DistressedParties []string `protobuf:"bytes,2,rep,name=distressed_parties,json=distressedParties,proto3" json:"distressed_parties,omitempty"`
-	// Slice of Party identifiers (public keys) who were distressed but now can safely maintain their position
+	// Slice of party identifiers (public keys) who were distressed but now can safely maintain their position
 	SafeParties []string `protobuf:"bytes,3,rep,name=safe_parties,json=safeParties,proto3" json:"safe_parties,omitempty"`
 }
 
