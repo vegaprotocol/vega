@@ -15,6 +15,7 @@
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 - [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
 - [7990](https://github.com/vegaprotocol/vega/issues/7990) - Remove reference to `postgres` in the `protobuf` documentation comments
+- [7992](https://github.com/vegaprotocol/vega/issues/7992) - Improve Candles related `APIs`
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet

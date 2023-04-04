@@ -31,6 +31,9 @@ var (
 	// ErrEmptyMissingMarketID signals to the caller that the request expected a
 	// market id but the field is missing or empty.
 	ErrEmptyMissingMarketID = newInvalidArgumentError("empty or missing market ID")
+	// ErrInvalidMarketID signals to the caller that the request expected a
+	// market id but the field is not in the right format.
+	ErrInvalidMarketID = newInvalidArgumentError("invalid market ID")
 	// ErrMissingPrice signals to the caller that the request expected a price.
 	ErrMissingPrice = newInvalidArgumentError("missing price")
 	// ErrInvalidOrderPrice signals to the caller that the request expected a valid price.
@@ -47,6 +50,10 @@ var (
 	ErrMissingPartyID = newInvalidArgumentError("missing party id")
 	// ErrInvalidPagination signals that the pagination is invalid.
 	ErrInvalidPagination = newInvalidArgumentError("invalid pagination")
+	// ErrInvalidCandleID signals an invalid candle ID submitted.
+	ErrInvalidCandleID = newInvalidArgumentError("invalid candle id")
+	// ErrInvalidCandleTimestampsRange signals an impossible range with the candle timestamps.
+	ErrInvalidCandleTimestampsRange = newInvalidArgumentError("invalid candle timestamps range")
 	// ErrInvalidFilter signals that the filter is invalid.
 	ErrInvalidFilter = newInvalidArgumentError("invalid filter")
 	// ErrMalformedRequest signals that the request was malformed.

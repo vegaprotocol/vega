@@ -167,7 +167,7 @@ type OrderSubmission struct {
 	// Time in force indicates how long an order will remain active before it is executed or expires, required field
 	// - See `Order.TimeInForce`
 	TimeInForce vega.Order_TimeInForce `protobuf:"varint,5,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
-	// Timestamp for when the order will expire, in nanoseconds since the epoch,
+	// Timestamp for when the order will expire, in nanoseconds,
 	// required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`
 	// - See `VegaTimeResponse`.`timestamp`
 	ExpiresAt int64 `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`

@@ -1758,12 +1758,12 @@ type Order struct {
 	TimeInForce Order_TimeInForce `protobuf:"varint,8,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
 	// Type for the order - See OrderType
 	Type Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
-	// Timestamp for when the order was created at, in nanoseconds since the epoch
+	// Timestamp for when the order was created at, in nanoseconds
 	CreatedAt int64 `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// The current status for the order.
 	// - For detail on `STATUS_REJECTED` please check the OrderError value given in the `reason` field
 	Status Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
-	// Timestamp for when the order will expire, in nanoseconds since the epoch
+	// Timestamp for when the order will expire, in nanoseconds
 	ExpiresAt int64 `protobuf:"varint,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus
 	// - Currently set internally by the node to return a unique reference identifier for the order submission
@@ -1771,7 +1771,7 @@ type Order struct {
 	// If the Order `status` is `STATUS_REJECTED` then an OrderError reason will be specified
 	// - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors
 	Reason *OrderError `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError,oneof" json:"reason,omitempty"`
-	// Timestamp for when the order was last updated, in nanoseconds since the epoch
+	// Timestamp for when the order was last updated, in nanoseconds
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	UpdatedAt int64 `protobuf:"varint,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// The version for the order, initial value is version 1 and is incremented after each successful amend
@@ -2197,7 +2197,7 @@ type Trade struct {
 	BuyOrder string `protobuf:"bytes,8,opt,name=buy_order,json=buyOrder,proto3" json:"buy_order,omitempty"`
 	// Identifier of the order from the sell side
 	SellOrder string `protobuf:"bytes,9,opt,name=sell_order,json=sellOrder,proto3" json:"sell_order,omitempty"`
-	// Timestamp for when the trade occurred, in nanoseconds since the epoch
+	// Timestamp for when the trade occurred, in nanoseconds
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Type for the trade - See [`Trade.Type`](#vega.Trade.Type)
@@ -2474,7 +2474,7 @@ type Candle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
+	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// An ISO-8601 datetime with nanosecond precision for when the candle was last updated
@@ -4089,7 +4089,7 @@ type MarginLevels struct {
 	MarketId string `protobuf:"bytes,6,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Asset identifier
 	Asset string `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Timestamp for the time the ledger entry was created, in nanoseconds since the epoch
+	// Timestamp for the time the ledger entry was created, in nanoseconds
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
@@ -4227,7 +4227,7 @@ type MarketData struct {
 	StaticMidPrice string `protobuf:"bytes,11,opt,name=static_mid_price,json=staticMidPrice,proto3" json:"static_mid_price,omitempty"`
 	// Market identifier for the data
 	Market string `protobuf:"bytes,12,opt,name=market,proto3" json:"market,omitempty"`
-	// Timestamp at which this mark price was relevant, in nanoseconds since the epoch
+	// Timestamp at which this mark price was relevant, in nanoseconds
 	Timestamp int64 `protobuf:"varint,13,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The sum of the size of all positions greater than zero on the market
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
@@ -5023,10 +5023,10 @@ type LiquidityProvision struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Unique party identifier for the creator of the provision
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Timestamp for when the order was created at, in nanoseconds since the epoch
+	// Timestamp for when the order was created at, in nanoseconds
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	CreatedAt int64 `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// Timestamp for when the order was updated at, in nanoseconds since the epoch
+	// Timestamp for when the order was updated at, in nanoseconds
 	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Market identifier for the order, required field

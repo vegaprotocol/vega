@@ -43,7 +43,7 @@ message OrderSubmission {
   // Time in force indicates how long an order will remain active before it is executed or expires, required field
   // - See `Order.TimeInForce`
   vega.Order.TimeInForce time_in_force = 5;
-  // Timestamp for when the order will expire, in nanoseconds since the epoch,
+  // Timestamp for when the order will expire, in nanoseconds,
   // required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`
   // - See `VegaTimeResponse`.`timestamp`
   int64 expires_at = 6;

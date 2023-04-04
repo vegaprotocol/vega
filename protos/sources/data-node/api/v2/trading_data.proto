@@ -932,7 +932,7 @@ enum LedgerEntryField {
 message AggregatedLedgerEntry {
     // Removed ID field as it is not used, there is no ID for an aggregated ledger entry
     reserved 1;
-    // Timestamp to of block the result is referring to, in nanoseconds since the epoch
+    // Timestamp to of block the result is referring to, in nanoseconds
     int64 timestamp = 2;
     // The amount of ledger entries for the set of requested accounts at the time above
     string quantity = 3;
@@ -1090,7 +1090,7 @@ enum AccountField {
 // AggregatedBalance data contains the balance of the set of requested accounts combined with corresponding
 // party ID, market ID and account type details
 message AggregatedBalance {
-    // Timestamp to of block the balance is referring to, in nanoseconds since the epoch
+    // Timestamp to of block the balance is referring to, in nanoseconds
     int64 timestamp = 1;
     // The balance of the set of requested accounts at the time above
     string balance = 2;
@@ -1315,9 +1315,9 @@ message ListCandleIntervalsResponse {
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle
 message Candle {
-    // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
+    // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
     int64 start = 1;
-    // Timestamp for the point in time when the candle was last updated, in nanoseconds since the epoch
+    // Timestamp for the point in time when the candle was last updated, in nanoseconds
     int64 last_update = 2;
     // Highest price for trading during the candle interval
     string high = 3;
@@ -1345,20 +1345,19 @@ message ObserveCandleDataResponse {
 
 // Request that is used when listing candles for a market at an interval
 message ListCandleDataRequest {
-    // Candle ID, required field.
-    string candle_id = 1;
+  reserved 4;
 
-    // Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
-    int64 from_timestamp = 2;
+  // Candle ID, required field.
+  string candle_id = 1;
 
-    // Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
-    int64 to_timestamp = 3;
+  // Timestamp to retrieve candles since, in nanoseconds, required field
+  int64 from_timestamp = 2;
 
-    // Time interval for the candles
-    vega.Interval interval = 4;
+  // Timestamp to retrieve candles since, in nanoseconds, required field
+  int64 to_timestamp = 3;
 
-    // pagination controls
-    optional Pagination pagination = 5;
+  // pagination controls
+  optional Pagination pagination = 5;
 }
 
 // Response for list of candles for a market at an interval
