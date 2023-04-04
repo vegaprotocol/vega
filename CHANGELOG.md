@@ -9,6 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
+- [8030](https://github.com/vegaprotocol/vega/issues/8030) - Add `API` for fetching `CSV` data from network history.
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
 - [7505](https://github.com/vegaprotocol/vega/issues/7505) - `Datanode` batcher statistics
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.

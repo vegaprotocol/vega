@@ -15,6 +15,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -68,6 +69,7 @@ type NetworkHistoryService interface {
 	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
 	GetActivePeerIPAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
+	GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, error)
 	GetSwarmKeySeed() string
 	GetConnectedPeerAddresses() ([]string, error)
 	GetIpfsAddress() (string, error)
@@ -374,7 +376,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	g.coreProxySvc = coreProxySvc
 	vegaprotoapi.RegisterCoreServiceServer(g.srv, coreProxySvc)
 
-	tradingDataSvcV2 := &tradingDataServiceV2{
+	tradingDataSvcV2 := &TradingDataServiceV2{
 		config:                     g.Config,
 		log:                        g.log,
 		orderService:               g.orderService,
@@ -413,7 +415,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		ethereumKeyRotationService: g.ethereumKeyRotationService,
 		blockService:               g.blockService,
 		protocolUpgradeService:     g.protocolUpgradeService,
-		networkHistoryService:      g.networkHistoryService,
+		NetworkHistoryService:      g.networkHistoryService,
 		coreSnapshotService:        g.coreSnapshotService,
 	}
 

@@ -555,7 +555,7 @@ func copyTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata,
 }
 
 func copyCurrentStateTableDataIntoDatabase(ctx context.Context, tableMetaData TableMetadata, vegaDbConn sqlstore.Connection, snapshotFilePath string) (int64, error) {
-	tag, err := vegaDbConn.Exec(ctx, fmt.Sprintf(`copy %s from '%s'`, tableMetaData.Name, snapshotFilePath))
+	tag, err := vegaDbConn.Exec(ctx, fmt.Sprintf(`copy %s from '%s' (FORMAT csv, HEADER)`, tableMetaData.Name, snapshotFilePath))
 	if err != nil {
 		return 0, fmt.Errorf("failed to copy data into current state table: %w", err)
 	}
@@ -572,7 +572,7 @@ func copyHistoryTableDataIntoDatabase(ctx context.Context, tableMetaData TableMe
 		return 0, fmt.Errorf("failed to encode timestamp into string: %w", err)
 	}
 
-	copyQuery := fmt.Sprintf(`copy %s from '%s' where %s > timestamp '%s'`, tableMetaData.Name, snapshotFilePath,
+	copyQuery := fmt.Sprintf(`copy %s from '%s' (FORMAT csv, HEADER) where %s > timestamp '%s'`, tableMetaData.Name, snapshotFilePath,
 		partitionColumn, timestampString)
 
 	tag, err := vegaDbConn.Exec(ctx, copyQuery)

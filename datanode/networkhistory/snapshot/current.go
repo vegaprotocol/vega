@@ -46,7 +46,7 @@ func (s CurrentState) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsP
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
 			snapshotFile := filepath.Join(databaseSnapshotsPath, s.UncompressedDataDir(), tableName)
-			tableCopySQL := fmt.Sprintf(`copy (select * from %s order by %s) to '%s'`, tableName,
+			tableCopySQL := fmt.Sprintf(`copy (select * from %s order by %s) to '%s' (FORMAT csv, HEADER)`, tableName,
 				meta.SortOrder, snapshotFile)
 			copySQL = append(copySQL, TableCopySql{meta, tableCopySQL})
 		}

@@ -100,7 +100,7 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 		return MetaData{}, fmt.Errorf("failed to get next snapshot span:%w", err)
 	}
 
-	historySnapshot := NewHistorySnapshot(chainID, nextSpan.FromHeight, nextSpan.ToHeight)
+	historySnapshot := NewHistorySnapshot(chainID, dbMetaData.DatabaseVersion, nextSpan.FromHeight, nextSpan.ToHeight)
 	currentSnapshot := NewCurrentSnapshot(chainID, nextSpan.ToHeight)
 
 	b.log.Infof("creating snapshot for %+v", historySnapshot)
