@@ -5391,7 +5391,7 @@ type ListCandleDataRequest struct {
 	FromTimestamp int64 `protobuf:"varint,2,opt,name=from_timestamp,json=fromTimestamp,proto3" json:"from_timestamp,omitempty"`
 	// Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
 	ToTimestamp int64 `protobuf:"varint,3,opt,name=to_timestamp,json=toTimestamp,proto3" json:"to_timestamp,omitempty"`
-	// Time interval for the candles, required field specified as a valid postgres interval
+	// Time interval for the candles
 	Interval vega.Interval `protobuf:"varint,4,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 	// pagination controls
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
