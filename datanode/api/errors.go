@@ -31,6 +31,9 @@ var (
 	// ErrEmptyMissingMarketID signals to the caller that the request expected a
 	// market id but the field is missing or empty.
 	ErrEmptyMissingMarketID = newInvalidArgumentError("empty or missing market ID")
+	// ErrInvalidMarketID signals to the caller that the request expected a
+	// market id but the field is not in the right format.
+	ErrInvalidMarketID = newInvalidArgumentError("invalid market ID")
 	// ErrMissingPrice signals to the caller that the request expected a price.
 	ErrMissingPrice = newInvalidArgumentError("missing price")
 	// ErrInvalidOrderPrice signals to the caller that the request expected a valid price.

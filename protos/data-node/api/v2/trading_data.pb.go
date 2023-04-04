@@ -2690,7 +2690,7 @@ type AggregatedLedgerEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp to of block the result is referring to, in nanoseconds since the epoch
+	// Timestamp to of block the result is referring to, in nanoseconds
 	Timestamp int64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The amount of ledger entries for the set of requested accounts at the time above
 	Quantity string `protobuf:"bytes,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
@@ -3638,7 +3638,7 @@ type AggregatedBalance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp to of block the balance is referring to, in nanoseconds since the epoch
+	// Timestamp to of block the balance is referring to, in nanoseconds
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// The balance of the set of requested accounts at the time above
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
@@ -5184,9 +5184,9 @@ type Candle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
+	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
 	Start int64 `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
-	// Timestamp for the point in time when the candle was last updated, in nanoseconds since the epoch
+	// Timestamp for the point in time when the candle was last updated, in nanoseconds
 	LastUpdate int64 `protobuf:"varint,2,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
 	// Highest price for trading during the candle interval
 	High string `protobuf:"bytes,3,opt,name=high,proto3" json:"high,omitempty"`
@@ -5387,9 +5387,9 @@ type ListCandleDataRequest struct {
 
 	// Candle ID, required field.
 	CandleId string `protobuf:"bytes,1,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
-	// Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
+	// Timestamp to retrieve candles since, in nanoseconds, required field
 	FromTimestamp int64 `protobuf:"varint,2,opt,name=from_timestamp,json=fromTimestamp,proto3" json:"from_timestamp,omitempty"`
-	// Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
+	// Timestamp to retrieve candles since, in nanoseconds, required field
 	ToTimestamp int64 `protobuf:"varint,3,opt,name=to_timestamp,json=toTimestamp,proto3" json:"to_timestamp,omitempty"`
 	// Time interval for the candles
 	Interval vega.Interval `protobuf:"varint,4,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`

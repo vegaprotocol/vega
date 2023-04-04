@@ -201,12 +201,12 @@ message Order {
   TimeInForce time_in_force = 8;
   // Type for the order - See OrderType
   Type type = 9;
-  // Timestamp for when the order was created at, in nanoseconds since the epoch
+  // Timestamp for when the order was created at, in nanoseconds
   int64 created_at = 10;
   // The current status for the order.
   // - For detail on `STATUS_REJECTED` please check the OrderError value given in the `reason` field
   Status status = 11;
-  // Timestamp for when the order will expire, in nanoseconds since the epoch
+  // Timestamp for when the order will expire, in nanoseconds
   int64 expires_at = 12;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus
   // - Currently set internally by the node to return a unique reference identifier for the order submission
@@ -214,7 +214,7 @@ message Order {
   // If the Order `status` is `STATUS_REJECTED` then an OrderError reason will be specified
   // - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors
   optional OrderError reason = 14;
-  // Timestamp for when the order was last updated, in nanoseconds since the epoch
+  // Timestamp for when the order was last updated, in nanoseconds
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 updated_at = 15;
   // The version for the order, initial value is version 1 and is incremented after each successful amend
@@ -417,7 +417,7 @@ message Trade {
   string buy_order = 8;
   // Identifier of the order from the sell side
   string sell_order = 9;
-  // Timestamp for when the trade occurred, in nanoseconds since the epoch
+  // Timestamp for when the trade occurred, in nanoseconds
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 10;
   // Type for the trade - See [`Trade.Type`](#vega.Trade.Type)
@@ -453,7 +453,7 @@ message TradeSet {
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle
 message Candle {
-  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds since the epoch
+  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 1;
   // An ISO-8601 datetime with nanosecond precision for when the candle was last updated
@@ -921,7 +921,7 @@ message MarginLevels {
   string market_id = 6;
   // Asset identifier
   string asset = 7;
-  // Timestamp for the time the ledger entry was created, in nanoseconds since the epoch
+  // Timestamp for the time the ledger entry was created, in nanoseconds
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 8;
 }
@@ -967,7 +967,7 @@ message MarketData {
   string static_mid_price = 11;
   // Market identifier for the data
   string market = 12;
-  // Timestamp at which this mark price was relevant, in nanoseconds since the epoch
+  // Timestamp at which this mark price was relevant, in nanoseconds
   int64 timestamp = 13;
   // The sum of the size of all positions greater than zero on the market
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
@@ -1119,10 +1119,10 @@ message LiquidityProvision {
   string id = 1;
   // Unique party identifier for the creator of the provision
   string party_id = 2;
-  // Timestamp for when the order was created at, in nanoseconds since the epoch
+  // Timestamp for when the order was created at, in nanoseconds
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 created_at = 3;
-  // Timestamp for when the order was updated at, in nanoseconds since the epoch
+  // Timestamp for when the order was updated at, in nanoseconds
   // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 updated_at = 4;
   // Market identifier for the order, required field
