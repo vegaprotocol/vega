@@ -3021,7 +3021,7 @@ enum OrderRejectionReason {
   "Unable to submit pegged order, temporarily too many pegged orders across all markets"
   ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
 
-  "A reduce ony order would not reduce the party's position"
+  "A reduce-ony order would not reduce the party's position and thus it has been rejected"
   ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE
 
   "A post only order would produce an aggressive trade"
