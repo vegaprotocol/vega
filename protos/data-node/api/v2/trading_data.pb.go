@@ -14418,7 +14418,7 @@ type ListKeyRotationsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node ID to get the key rotations for, if provided.
+	// Node identifier to get key rotations for, if provided.
 	NodeId *string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3,oneof" json:"node_id,omitempty"`
 	// Optional pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -14470,7 +14470,7 @@ func (x *ListKeyRotationsRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response that is received from requesting key rotations
+// Response message containing Vega key rotations
 type ListKeyRotationsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14525,7 +14525,7 @@ type KeyRotationEdge struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node's key rotation data.
+	// Key rotation data.
 	Node *v1.KeyRotation `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -14693,7 +14693,7 @@ func (x *ListEthereumKeyRotationsRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response message containing all checkpoints requested
+// Response message containing Ethereum key rotations
 type ListEthereumKeyRotationsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14806,7 +14806,7 @@ type EthereumKeyRotationEdge struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Key rotation data for the node.
+	// Ethereuem key rotation data.
 	Node *v1.EthereumKeyRotation `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`

@@ -3936,19 +3936,19 @@ func (x *ValidatorRankingEvent) GetTmVotingPower() uint32 {
 	return 0
 }
 
-// A key rotation events contains information about Vega key rotation
+// Event that contains information about a Vega key rotation
 type KeyRotation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node id of the node
+	// Identifier of the node that rotated their Vega key
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Old Vega public key of validator node
+	// Vega public key that was previously associated with the node
 	OldPubKey string `protobuf:"bytes,2,opt,name=old_pub_key,json=oldPubKey,proto3" json:"old_pub_key,omitempty"`
-	// New Vega public key of validator node
+	// Vega public key that is newly associated with the node
 	NewPubKey string `protobuf:"bytes,3,opt,name=new_pub_key,json=newPubKey,proto3" json:"new_pub_key,omitempty"`
-	// Height of the block where key rotation took effect
+	// Block height when the key rotation took effect
 	BlockHeight uint64 `protobuf:"varint,4,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 }
 
@@ -4012,19 +4012,19 @@ func (x *KeyRotation) GetBlockHeight() uint64 {
 	return 0
 }
 
-// An Ethereum key rotation events contains information about Ethereum key rotation
+// Event that contains information about an Ethereum key rotation
 type EthereumKeyRotation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node id of the node
+	// Identifier of the node that rotated their Ethereum key
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Old Ethereum address of validator node
+	// Ethereum address that was previously associated with the node
 	OldAddress string `protobuf:"bytes,2,opt,name=old_address,json=oldAddress,proto3" json:"old_address,omitempty"`
-	// New Ethereum address of validator node
+	// Ethereum address that is newly associated with the node
 	NewAddress string `protobuf:"bytes,3,opt,name=new_address,json=newAddress,proto3" json:"new_address,omitempty"`
-	// Height of the block where key rotation took effect
+	// Block height when the key rotation took effect
 	BlockHeight uint64 `protobuf:"varint,4,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 }
 

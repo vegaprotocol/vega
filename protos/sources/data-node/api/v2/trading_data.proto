@@ -433,12 +433,12 @@ service TradingDataService {
 
     // Key Rotations list
     //
-    // List all key rotation applied for a given party
+    // Get information about Vega key rotations that have been performed by validator nodes
     rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
 
-    // Ethereum Key Rotations
+    // Ethereum Key Rotations list
     //
-    // List all ethereum key rotation applied for a given party
+    // Get information about Ethereum key rotations that have been performed by validator nodes
     rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse);
 
     // Vega Time
@@ -2671,13 +2671,13 @@ message ObserveLedgerMovementsResponse {
 
 // Request to list all key rotations
 message ListKeyRotationsRequest {
-    // Node ID to get the key rotations for, if provided.
+    // Node identifier to get key rotations for, if provided.
     optional string node_id = 1;
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
 }
 
-// Response that is received from requesting key rotations
+// Response message containing Vega key rotations
 message ListKeyRotationsResponse {
     // Key rotations data with corresponding page information.
     KeyRotationConnection rotations = 1;
@@ -2685,7 +2685,7 @@ message ListKeyRotationsResponse {
 
 // Key rotation data with corresponding cursor
 message KeyRotationEdge {
-    // Node's key rotation data.
+    // Key rotation data.
     vega.events.v1.KeyRotation node = 1;
     // Cursor that can be used to fetch further pages.
     string cursor = 2;
@@ -2709,7 +2709,7 @@ message ListEthereumKeyRotationsRequest {
     optional Pagination pagination = 2;
 }
 
-// Response message containing all checkpoints requested
+// Response message containing Ethereum key rotations
 message ListEthereumKeyRotationsResponse {
     // List of Ethereum key rotations data with corresponding page information.
     EthereumKeyRotationsConnection key_rotations = 1;
@@ -2725,7 +2725,7 @@ message EthereumKeyRotationsConnection {
 
 // Ethereum key rotation data with corresponding cursor
 message EthereumKeyRotationEdge {
-    // Key rotation data for the node.
+    // Ethereuem key rotation data.
     vega.events.v1.EthereumKeyRotation node = 1;
     // Cursor that can be used to fetch further pages.
     string cursor = 2;
