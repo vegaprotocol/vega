@@ -1188,7 +1188,6 @@ type Statistics struct {
 	// Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision
 	VegaTime string `protobuf:"bytes,6,opt,name=vega_time,json=vegaTime,proto3" json:"vega_time,omitempty"`
 	// Status of the connection to the Vega blockchain
-	// - See [`ChainStatus`](#vega.ChainStatus)
 	Status vega.ChainStatus `protobuf:"varint,7,opt,name=status,proto3,enum=vega.ChainStatus" json:"status,omitempty"`
 	// Transactions per block
 	TxPerBlock uint64 `protobuf:"varint,8,opt,name=tx_per_block,json=txPerBlock,proto3" json:"tx_per_block,omitempty"`

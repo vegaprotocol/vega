@@ -5145,7 +5145,7 @@ type BusEvent_ValidatorScore struct {
 }
 
 type BusEvent_EpochEvent struct {
-	// Epoch update events - See [Epoch](#vega.Epoch)
+	// Epoch update events
 	EpochEvent *EpochEvent `protobuf:"bytes,131,opt,name=epoch_event,json=epochEvent,proto3,oneof"`
 }
 
@@ -5275,7 +5275,7 @@ type BusEvent_ExpiredOrders struct {
 }
 
 type BusEvent_Market struct {
-	// Market tick events - See [MarketEvent](#vega.MarketEvent)
+	// Market tick events
 	Market *MarketEvent `protobuf:"bytes,1001,opt,name=market,proto3,oneof"`
 }
 

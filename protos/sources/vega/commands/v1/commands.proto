@@ -91,16 +91,13 @@ message OrderAmendment {
   // This field needs to be scaled using the market's position decimal places.
   int64 size_delta = 4;
   // Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   optional int64 expires_at = 5;
   // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
-  // - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
   vega.Order.TimeInForce time_in_force = 6;
   // Amend the pegged order offset for the order
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string pegged_offset = 7;
   // Amend the pegged order reference for the order
-  // - See [`PeggedReference`](#vega.PeggedReference)
   vega.PeggedReference pegged_reference = 8;
 }
 

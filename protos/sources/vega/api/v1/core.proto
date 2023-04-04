@@ -266,7 +266,6 @@ message Statistics {
   // Current Vega date and time formatted in ISO-8601 datetime format with nanosecond precision
   string vega_time = 6;
   // Status of the connection to the Vega blockchain
-  // - See [`ChainStatus`](#vega.ChainStatus)
   vega.ChainStatus status = 7;
   // Transactions per block
   uint64 tx_per_block = 8;
