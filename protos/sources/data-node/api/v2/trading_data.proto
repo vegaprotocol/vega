@@ -523,13 +523,13 @@ service TradingDataService {
     // value is prefixed and suffixed by the QUOTE character and any occurrence within
     // the value of a QUOTE character preceded by another QUOTE.
     //
-    // A NULL is output as the NULL parameter string and is not quoted, while a non-NULL value 
+    // A NULL is output as the NULL parameter string and is not quoted, while a non-NULL value
     // matching the NULL parameter string is quoted.
     //
     // For example, with the default settings, a NULL is written as an unquoted empty string,
     // while an empty string data value is written with double quotes ("").
-    // 
-    // Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds. 
+    //
+    // Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
     // Thus the files are not strictly one line per table row like text-format files.
     //
     // The first row of the CSV file is a header that allows you to identify the columns
@@ -552,15 +552,15 @@ service TradingDataService {
     // timestamp, value
     // 1, foo
     // 2, bar
-    // 
+    //
     // And mainnet-sometable-2-002001-003000.csv:
     //
     // timestamp, value, extra_value
     // 3, baz, apple
     //
     // It is worth nothing that the schema will not change within a single network history segment.
-    // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME 
-    rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody); 
+    // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+    rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody);
 
     // Ping
     //
@@ -1354,7 +1354,7 @@ message ListCandleDataRequest {
     // Timestamp to retrieve candles since, in nanoseconds since the epoch, required field
     int64 to_timestamp = 3;
 
-    // Time interval for the candles, required field specified as a valid postgres interval
+    // Time interval for the candles
     vega.Interval interval = 4;
 
     // pagination controls
@@ -2840,7 +2840,7 @@ message HistorySegment {
     // ID of the previous history segment
     string previous_history_segment_id = 4;
     // Database schema version of the history segment
-    int64 database_version = 5;        
+    int64 database_version = 5;
     // Chain ID of the history segment
     string chain_id = 6;
 
