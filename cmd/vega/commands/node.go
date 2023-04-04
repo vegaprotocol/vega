@@ -15,7 +15,10 @@ package commands
 import (
 	"context"
 	"errors"
+	"fmt"
 	"runtime/debug"
+
+	"code.vegaprotocol.io/vega/libs/memory"
 
 	"code.vegaprotocol.io/vega/cmd/vega/commands/node"
 	"code.vegaprotocol.io/vega/core/config"
@@ -23,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/pbnjay/memory"
 )
 
 type StartCmd struct {
@@ -87,7 +89,10 @@ func (cmd *StartCmd) Execute([]string) error {
 
 	// only set max memory if user didn't require 100%
 	if memFactor != 1 {
-		totalMem := memory.TotalMemory()
+		totalMem, err := memory.TotalMemory()
+		if err != nil {
+			return fmt.Errorf("failed to get total memory: %w", err)
+		}
 		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
 	}
 

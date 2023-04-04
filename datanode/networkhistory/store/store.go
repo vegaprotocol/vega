@@ -14,9 +14,10 @@ import (
 	"strconv"
 	"strings"
 
+	"code.vegaprotocol.io/vega/libs/memory"
+
 	"github.com/dustin/go-humanize"
 	"github.com/ipfs/kubo/core/node/libp2p/fd"
-	"github.com/pbnjay/memory"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
@@ -908,9 +909,17 @@ func setLibP2PResourceManagerLimits(repo repo.Repo, maxMemoryPercent uint8) erro
 		return fmt.Errorf("failed to get repo config:%w", err)
 	}
 
-	// Set the maximum to a quarter of the data-nodes max memory
-	maxMemoryString := humanize.Bytes(uint64(float64(memory.TotalMemory()) * (float64(maxMemoryPercent) / (4 * 100))))
-	cfg.Swarm.ResourceMgr.MaxMemory = config.NewOptionalString(maxMemoryString)
+	// Use max memory percent if set, otherwise use libP2P defaults
+	if maxMemoryPercent > 0 {
+		totalMem, err := memory.TotalMemory()
+		if err != nil {
+			return fmt.Errorf("failed to get total memory: %w", err)
+		}
+
+		// Set the maximum to a quarter of the data-nodes max memory
+		maxMemoryString := humanize.Bytes(uint64(float64(totalMem) * (float64(maxMemoryPercent) / (4 * 100))))
+		cfg.Swarm.ResourceMgr.MaxMemory = config.NewOptionalString(maxMemoryString)
+	}
 
 	// Set the maximum to a quarter of the systems available file descriptors
 	maxFileDescriptors := int64(fd.GetNumFDs()) / 4
