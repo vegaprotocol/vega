@@ -117,6 +117,16 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
+	if req.Filter != nil {
+		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more market id is invalid"))
+		}
+
+		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
+	}
+
 	filter, err := entities.AccountFilterFromProto(req.Filter)
 	if err != nil {
 		return nil, formatE(ErrInvalidFilter, err)
@@ -299,6 +309,16 @@ func (t *TradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.
 // ListBalanceChanges returns a list of balance changes matching the request.
 func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.ListBalanceChangesRequest) (*v2.ListBalanceChangesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListBalanceChangesV2")()
+
+	if req.Filter != nil {
+		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more market id is invalid"))
+		}
+
+		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
+	}
 
 	filter, err := entities.AccountFilterFromProto(req.Filter)
 	if err != nil {
@@ -2055,6 +2075,14 @@ func (t *TradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 		}
 	}
 
+	if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+		return nil, formatE(err, errors.New("one or more market id is invalid"))
+	}
+
+	if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+		return nil, formatE(err, errors.New("one or more party id is invalid"))
+	}
+
 	orders, pageInfo, err := t.orderService.ListOrders(ctx, pagination, filter)
 	if err != nil {
 		return nil, formatE(ErrOrderServiceGetOrders, err)
@@ -2108,11 +2136,31 @@ func (t *TradingDataServiceV2) ListOrderVersions(ctx context.Context, req *v2.Li
 	}, nil
 }
 
+type VegaIDsSlice []string
+
+func (s VegaIDsSlice) Ensure() error {
+	for _, v := range s {
+		if !crypto.IsValidVegaPubKey(v) {
+			return ErrNotAValidVegaID
+		}
+	}
+
+	return nil
+}
+
 // ObserveOrders subscribes to a stream of orders.
 func (t *TradingDataServiceV2) ObserveOrders(req *v2.ObserveOrdersRequest, srv v2.TradingDataService_ObserveOrdersServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
+
+	if err := VegaIDsSlice(req.MarketIds).Ensure(); err != nil {
+		return formatE(err, errors.New("one or more market id is invalid"))
+	}
+
+	if err := VegaIDsSlice(req.PartyIds).Ensure(); err != nil {
+		return formatE(err, errors.New("one or more party id is invalid"))
+	}
 
 	if err := t.sendOrdersSnapshot(ctx, req, srv); err != nil {
 		return formatE(err)
