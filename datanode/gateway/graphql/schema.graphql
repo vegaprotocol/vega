@@ -3024,7 +3024,7 @@ enum OrderRejectionReason {
   "A reduce-ony order would not reduce the party's position and thus it has been rejected"
   ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE
 
-  "A post only order would produce an aggressive trade"
+  "A post-only order would produce an aggressive trade and thus it has been rejected"
   ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
 }
 
