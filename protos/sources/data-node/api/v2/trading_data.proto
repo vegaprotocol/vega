@@ -1345,20 +1345,19 @@ message ObserveCandleDataResponse {
 
 // Request that is used when listing candles for a market at an interval
 message ListCandleDataRequest {
-    // Candle ID, required field.
-    string candle_id = 1;
+  reserved 4;
 
-    // Timestamp to retrieve candles since, in nanoseconds, required field
-    int64 from_timestamp = 2;
+  // Candle ID, required field.
+  string candle_id = 1;
 
-    // Timestamp to retrieve candles since, in nanoseconds, required field
-    int64 to_timestamp = 3;
+  // Timestamp to retrieve candles since, in nanoseconds, required field
+  int64 from_timestamp = 2;
 
-    // Time interval for the candles
-    vega.Interval interval = 4;
+  // Timestamp to retrieve candles since, in nanoseconds, required field
+  int64 to_timestamp = 3;
 
-    // pagination controls
-    optional Pagination pagination = 5;
+  // pagination controls
+  optional Pagination pagination = 5;
 }
 
 // Response for list of candles for a market at an interval
