@@ -74,8 +74,6 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 
 	cmd.Config = configWatcher.Get()
 
-	stateDir := vegaPaths.StatePathFor(paths.DataNodeStorageHome)
-
 	lumberjackLog := &lumberjack.Logger{
 		Filename: paths.StatePath(filepath.Join(paths.DataNodeLogsHome.String(), "embedded-postgres.log")).String(),
 		MaxSize:  cmd.Config.SQLStore.LogRotationConfig.MaxSize,
@@ -89,8 +87,8 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 		Database(cmd.Config.SQLStore.ConnectionConfig.Database).
 		Port(uint32(cmd.Config.SQLStore.ConnectionConfig.Port)).
 		Logger(lumberjackLog).
-		RuntimePath(paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore").String()).
-		DataPath(paths.JoinStatePath(paths.StatePath(stateDir), "sqlstore", "node-data").String())
+		RuntimePath(vegaPaths.StatePathFor(paths.DataNodeStorageSQLStoreHome)).
+		DataPath(vegaPaths.StatePathFor(paths.DataNodeStorageSQLStoreNodeDataHome))
 
 	db := embeddedpostgres.NewDatabase(dbConfig)
 	err = db.Start()
