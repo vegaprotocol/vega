@@ -699,7 +699,7 @@ func (t *TradingDataServiceV2) ListCandleIntervals(ctx context.Context, req *v2.
 	}
 
 	if !crypto.IsValidVegaID(req.MarketId) {
-		return nil, formatE(ErrEmptyMissingMarketID)
+		return nil, formatE(ErrInvalidMarketID)
 	}
 
 	mappings, err := t.candleService.GetCandlesForMarket(ctx, req.MarketId)

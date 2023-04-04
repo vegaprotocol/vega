@@ -50,6 +50,8 @@ var (
 	ErrMissingPartyID = newInvalidArgumentError("missing party id")
 	// ErrInvalidPagination signals that the pagination is invalid.
 	ErrInvalidPagination = newInvalidArgumentError("invalid pagination")
+	// ErrInvalidCandleID signals an invalid candle ID submitted
+	ErrInvalidCandleID = newInvalidArgumentError("invalid candle id")
 	// ErrInvalidCandleTimestampsRange signals an impossible range with the candle timestamps
 	ErrInvalidCandleTimestampsRange = newInvalidArgumentError("invalid candle timestamps range")
 	// ErrInvalidFilter signals that the filter is invalid.
