@@ -584,10 +584,11 @@ type StakingAccount struct {
 }
 
 type NotarySigs struct {
-	ID   string
-	Kind int32
-	Node string
-	Sig  string
+	ID      string
+	Kind    int32
+	Node    string
+	Sig     string
+	Pending bool
 }
 
 type Notary struct {
@@ -3490,10 +3491,11 @@ func NotaryFromProto(n *snapshot.Notary) *Notary {
 
 func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
 	return &NotarySigs{
-		ID:   sk.Id,
-		Kind: sk.Kind,
-		Node: sk.Node,
-		Sig:  sk.Sig,
+		ID:      sk.Id,
+		Kind:    sk.Kind,
+		Node:    sk.Node,
+		Sig:     sk.Sig,
+		Pending: sk.Pending,
 	}
 }
 
@@ -3515,10 +3517,11 @@ func (n Notary) IntoProto() *snapshot.Notary {
 
 func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
 	return &snapshot.NotarySigs{
-		Id:   sk.ID,
-		Kind: sk.Kind,
-		Node: sk.Node,
-		Sig:  sk.Sig,
+		Id:      sk.ID,
+		Kind:    sk.Kind,
+		Node:    sk.Node,
+		Sig:     sk.Sig,
+		Pending: sk.Pending,
 	}
 }
 

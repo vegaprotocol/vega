@@ -14,6 +14,7 @@ package notary
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"golang.org/x/exp/maps"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -69,11 +71,12 @@ type Notary struct {
 	log *logging.Logger
 
 	// resource to be signed -> signatures
-	sigs    map[idKind]map[nodeSig]struct{}
-	retries *txTracker
-	top     ValidatorTopology
-	cmd     Commander
-	broker  Broker
+	sigs              map[idKind]map[nodeSig]struct{}
+	pendingSignatures map[idKind]struct{}
+	retries           *txTracker
+	top               ValidatorTopology
+	cmd               Commander
+	broker            Broker
 
 	validatorVotesRequired num.Decimal
 }
@@ -102,6 +105,7 @@ func New(
 		cfg:                    cfg,
 		log:                    log,
 		sigs:                   map[idKind]map[nodeSig]struct{}{},
+		pendingSignatures:      map[idKind]struct{}{},
 		top:                    top,
 		broker:                 broker,
 		cmd:                    cmd,
@@ -149,6 +153,7 @@ func (n *Notary) StartAggregate(
 		)
 	}
 	n.sigs[idkind] = map[nodeSig]struct{}{}
+	n.pendingSignatures[idkind] = struct{}{}
 
 	// we are not a validator, then just return, job
 	// done from here
@@ -186,6 +191,8 @@ func (n *Notary) RegisterSignature(
 
 	signatures, ok := n.IsSigned(ctx, ns.Id, ns.Kind)
 	if ok {
+		// remove from the pending
+		delete(n.pendingSignatures, idkind)
 		// enough signature to reach the threshold have been received, let's send them to the
 		// the api
 		n.sendSignatureEvents(ctx, signatures)
@@ -231,10 +238,25 @@ func (n *Notary) IsSigned(
 }
 
 // onTick is only use to trigger resending transaction.
-func (n *Notary) OnTick(_ context.Context, t time.Time) {
+func (n *Notary) OnTick(ctx context.Context, t time.Time) {
 	toRetry := n.retries.getRetries(t)
 	for k, v := range toRetry {
 		n.send(k.id, k.kind, v.signature)
+	}
+
+	pendings := maps.Keys(n.pendingSignatures)
+	sort.Slice(pendings, func(i, j int) bool {
+		return pendings[i].id < pendings[j].id
+	})
+
+	for _, v := range pendings {
+		if signatures, ok := n.IsSigned(ctx, v.id, v.kind); ok {
+			// remove from the pending
+			delete(n.pendingSignatures, v)
+			// enough signature to reach the threshold have been received, let's send them to the
+			// the api
+			n.sendSignatureEvents(ctx, signatures)
+		}
 	}
 }
 
