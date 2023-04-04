@@ -52,17 +52,17 @@ enum PositionStatus {
 
 // A party represents an entity who wishes to trade on or query a Vega network
 message Party {
-  // A unique identifier for the party, typically represented by a public key
+  // A unique identifier for the party, typically represented by a public key.
   string id = 1;
 }
 
 // Risk factors are used to calculate the current risk associated with orders trading on a given market
 message RiskFactor {
-  // Market ID that relates to this risk factor
+  // Market ID that relates to this risk factor.
   string market = 1;
-  // Short Risk factor value
+  // Short Risk factor value.
   string short = 2;
-  // Long Risk factor value
+  // Long Risk factor value.
   string long = 3;
 }
 
@@ -100,9 +100,9 @@ enum PeggedReference {
 // Pegged orders are limit orders where the price is specified in the form REFERENCE +/- OFFSET
 // They can be used for any limit order that is valid during continuous trading
 message PeggedOrder {
-  // The price point the order is linked to
+  // The price point the order is linked to.
   PeggedReference reference = 1;
-  // Offset from the price reference
+  // Offset from the price reference.
   string offset = 2;
 }
 
@@ -179,13 +179,13 @@ message Order {
     //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
-  // Unique identifier for the order (set by the system after consensus)
+  // Unique identifier for the order (set by the system after consensus).
   string id = 1;
-  // Market identifier for the order
+  // Market identifier for the order.
   string market_id = 2;
-  // Party identifier for the order
+  // Party identifier for the order.
   string party_id = 3;
-  // Side for the order, e.g. SIDE_BUY or SIDE_SELL
+  // Side for the order, e.g. SIDE_BUY or SIDE_SELL.
   Side side = 4;
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
@@ -200,22 +200,22 @@ message Order {
   // Time in force indicates how long an order will remain active before it is executed or expires.
   // - See OrderTimeInForce
   TimeInForce time_in_force = 8;
-  // Type for the order - See OrderType
+  // Type for the order.
   Type type = 9;
-  // Timestamp for when the order was created at, in nanoseconds
+  // Timestamp for when the order was created at, in nanoseconds.
   int64 created_at = 10;
   // The current status for the order.
-  // - For detail on `STATUS_REJECTED` please check the OrderError value given in the `reason` field
+  // - For detail on `STATUS_REJECTED` please check the OrderError value given in the `reason` field.
   Status status = 11;
-  // Timestamp for when the order will expire, in nanoseconds
+  // Timestamp for when the order will expire, in nanoseconds.
   int64 expires_at = 12;
   // Reference given for the order, this is typically used to retrieve an order submitted through consensus
-  // - Currently set internally by the node to return a unique reference identifier for the order submission
+  // - Currently set internally by the node to return a unique reference identifier for the order submission.
   string reference = 13;
   // If the Order `status` is `STATUS_REJECTED` then an OrderError reason will be specified
-  // - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors
+  // - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors.
   optional OrderError reason = 14;
-  // Timestamp for when the order was last updated, in nanoseconds
+  // Timestamp for when the order was last updated, in nanoseconds.
   int64 updated_at = 15;
   // The version for the order, initial value is version 1 and is incremented after each successful amend
   uint64 version = 16;
@@ -226,7 +226,7 @@ message Order {
   PeggedOrder pegged_order = 18;
   // Is this order created as part of a liquidity provision, will be empty if not.
   string liquidity_provision_id = 19;
-  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only
+  // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only.
   bool post_only = 20;
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
@@ -235,31 +235,31 @@ message Order {
 
 // Used when cancelling an order
 message OrderCancellationConfirmation {
-  // The order that was cancelled
+  // The order that was cancelled.
   Order order = 1;
 }
 
 // Used when confirming an order
 message OrderConfirmation {
-  // The order that was confirmed
+  // The order that was confirmed.
   Order order = 1;
-  // 0 or more trades that were emitted
+  // 0 or more trades that were emitted.
   repeated Trade trades = 2;
-  // 0 or more passive orders that were affected
+  // 0 or more passive orders that were affected.
   repeated Order passive_orders_affected = 3;
 }
 
 // AuctionIndicativeState is used to emit an event with the indicative price/volume per market during an auction
 message AuctionIndicativeState {
-  // The market identifier for which this state relates to
+  // The market identifier for which this state relates to.
   string market_id = 1;
-  // The Indicative Uncrossing Price is the price at which all trades would occur if the auction uncrossed now
+  // The Indicative Uncrossing Price is the price at which all trades would occur if the auction uncrossed now.
   string indicative_price = 2;
-  // The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if the auction uncrossed now
+  // The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if the auction uncrossed now.
   uint64 indicative_volume = 3;
-  // The timestamp at which the auction started
+  // The timestamp at which the auction started.
   int64 auction_start = 4;
-  // The timestamp at which the auction is meant to stop
+  // The timestamp at which the auction is meant to stop.
   int64 auction_end = 5;
 }
 
@@ -396,9 +396,9 @@ message Trade {
     //       - gateway/graphql/schema.graphql (enum TradeType)
   }
 
-  // Unique identifier for the trade (generated by Vega)
+  // Unique identifier for the trade (generated by Vega).
   string id = 1;
-  // Market identifier (the market that the trade occurred on)
+  // Market identifier (the market that the trade occurred on).
   string market_id = 2;
   // Price for the trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
@@ -407,27 +407,27 @@ message Trade {
   // Size filled for the trade
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 size = 4;
-  // Unique party identifier for the buyer
+  // Unique party identifier for the buyer.
   string buyer = 5;
-  // Unique party identifier for the seller
+  // Unique party identifier for the seller.
   string seller = 6;
-  // Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL
+  // Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL.
   Side aggressor = 7;
-  // Identifier of the order from the buy side
+  // Identifier of the order from the buy side.
   string buy_order = 8;
-  // Identifier of the order from the sell side
+  // Identifier of the order from the sell side.
   string sell_order = 9;
-  // Timestamp for when the trade occurred, in nanoseconds
+  // Timestamp for when the trade occurred, in nanoseconds.
   int64 timestamp = 10;
-  // Type for the trade
+  // Type for the trade.
   Type type = 11;
-  // Fee amount charged to the buyer party for the trade
+  // Fee amount charged to the buyer party for the trade.
   Fee buyer_fee = 12;
-  // Fee amount charged to the seller party for the trade
+  // Fee amount charged to the seller party for the trade.
   Fee seller_fee = 13;
-  // Auction batch number that the buy side order was placed in
+  // Auction batch number that the buy side order was placed in.
   uint64 buyer_auction_batch = 14;
-  // Auction batch number that the sell side order was placed in
+  // Auction batch number that the sell side order was placed in.
   uint64 seller_auction_batch = 15;
 }
 
@@ -445,16 +445,16 @@ message Fee {
 }
 
 message TradeSet {
-  // A set of one or more trades
+  // A set of one or more trades.
   repeated Trade trades = 1;
 }
 
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle
 message Candle {
-  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
+  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
   int64 timestamp = 1;
-  // An ISO-8601 datetime with nanosecond precision for when the candle was last updated
+  // An ISO-8601 datetime with nanosecond precision for when the candle was last updated.
   string datetime = 2;
   // Highest price for trading during the candle interval
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -471,7 +471,7 @@ message Candle {
   // Total trading volume during the candle interval
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 volume = 7;
-  // Time interval for the candle
+  // Time interval for the candle.
   Interval interval = 8;
 }
 
@@ -481,7 +481,7 @@ message PriceLevel {
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 1;
-  // Number of orders at the price level
+  // Number of orders at the price level.
   uint64 number_of_orders = 2;
   // Volume at the price level
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
@@ -490,35 +490,35 @@ message PriceLevel {
 
 // Represents market depth or order book data for the specified market on Vega
 message MarketDepth {
-  // Market identifier
+  // Market identifier.
   string market_id = 1;
-  // Collection of price levels for the buy side of the book
+  // Collection of price levels for the buy side of the book.
   repeated PriceLevel buy = 2;
-  // Collection of price levels for the sell side of the book
+  // Collection of price levels for the sell side of the book.
   repeated PriceLevel sell = 3;
-  // Sequence number for the market depth data returned
+  // Sequence number for the market depth data returned.
   uint64 sequence_number = 4;
 }
 
 // Represents the changed market depth since the last update
 message MarketDepthUpdate {
-  // Market identifier
+  // Market identifier.
   string market_id = 1;
-  // Collection of updated price levels for the buy side of the book
+  // Collection of updated price levels for the buy side of the book.
   repeated PriceLevel buy = 2;
-  // Collection of updated price levels for the sell side of the book
+  // Collection of updated price levels for the sell side of the book.
   repeated PriceLevel sell = 3;
-  // Sequence number for the market depth update data returned. It is increasing but not monotonic
+  // Sequence number for the market depth update data returned. It is increasing but not monotonic.
   uint64 sequence_number = 4;
-  // Sequence number of the previous market depth update, for checking there are no gaps
+  // Sequence number of the previous market depth update, for checking there are no gaps.
   uint64 previous_sequence_number = 5;
 }
 
 // Represents position data for a party on the specified market on Vega
 message Position {
-  // Market identifier
+  // Market identifier.
   string market_id = 1;
-  // Party identifier
+  // Party identifier.
   string party_id = 2;
   // Open volume for the position, value is signed +ve for long and -ve for short
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
@@ -533,7 +533,7 @@ message Position {
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string average_entry_price = 6;
-  // Timestamp for the latest time the position was updated
+  // Timestamp for the latest time the position was updated.
   int64 updated_at = 7;
   // Sum of profit that could not be paid due to loss socialisation.
   string loss_socialisation_amount = 8;
@@ -579,22 +579,22 @@ message Deposit {
     STATUS_FINALIZED = 3;
   }
 
-  // Unique identifier for the deposit
+  // Unique identifier for the deposit.
   string id = 1;
-  // Status of the deposit
+  // Status of the deposit.
   Status status = 2;
-  // Party identifier of the user initiating the deposit
+  // Party identifier of the user initiating the deposit.
   string party_id = 3;
-  // The Vega asset targeted by this deposit
+  // The Vega asset targeted by this deposit.
   string asset = 4;
   // The amount to be deposited
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 5;
-  // The hash of the transaction from the foreign chain
+  // The hash of the transaction from the foreign chain.
   string tx_hash = 6;
-  // Timestamp for when the Vega account was updated with the deposit
+  // Timestamp for when the Vega account was updated with the deposit.
   int64 credited_timestamp = 7;
-  // Timestamp for when the deposit was created on the Vega network
+  // Timestamp for when the deposit was created on the Vega network.
   int64 created_timestamp = 8;
 }
 
@@ -615,42 +615,42 @@ message Withdrawal {
     STATUS_FINALIZED = 3;
   }
 
-  // Unique identifier for the withdrawal
+  // Unique identifier for the withdrawal.
   string id = 1;
-  // Unique party identifier of the user initiating the withdrawal
+  // Unique party identifier of the user initiating the withdrawal.
   string party_id = 2;
   // The amount to be withdrawn
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
-  // The asset to withdraw funds from
+  // The asset to withdraw funds from.
   string asset = 4;
-  // The status of the withdrawal
+  // The status of the withdrawal.
   Status status = 5;
   // The reference which is used by the foreign chain
-  // to refer to this withdrawal
+  // to refer to this withdrawal.
   string ref = 6;
-  // The hash of the foreign chain for this transaction
+  // The hash of the foreign chain for this transaction.
   string tx_hash = 8;
-  // Timestamp for when the network started to process this withdrawal
+  // Timestamp for when the network started to process this withdrawal.
   int64 created_timestamp = 9;
-  // Timestamp for when the withdrawal was finalised by the network
+  // Timestamp for when the withdrawal was finalised by the network.
   int64 withdrawn_timestamp = 10;
-  // Foreign chain specifics
+  // Foreign chain specifics.
   WithdrawExt ext = 11;
 }
 
 // Withdrawal external details
 message WithdrawExt {
-  // Foreign chain specifics
+  // Foreign chain specifics.
   oneof ext {
-    // ERC20 withdrawal details
+    // ERC20 withdrawal details.
     Erc20WithdrawExt erc20 = 1;
   }
 }
 
 // An extension of data required for the withdraw submissions
 message Erc20WithdrawExt {
-  // The address into which the bridge will release the funds
+  // The address into which the bridge will release the funds.
   string receiver_address = 1;
 }
 
@@ -722,21 +722,21 @@ enum AccountType {
 
 // Represents an account for an asset on Vega for a particular owner or party
 message Account {
-  // Unique account identifier (used internally by Vega)
+  // Unique account identifier (used internally by Vega).
   string id = 1;
   // The party that the account belongs to, special values include `network`, which represents the Vega network and is
-  // most commonly seen during liquidation of distressed trading positions
+  // most commonly seen during liquidation of distressed trading positions.
   string owner = 2;
   // Balance of the asset, the balance is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   // and importantly balances cannot be negative
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string balance = 3;
-  // Asset identifier for the account
+  // Asset identifier for the account.
   string asset = 4;
-  // Market identifier for the account, if `AccountType.ACCOUNT_TYPE_GENERAL` this will be empty
+  // Market identifier for the account, if `AccountType.ACCOUNT_TYPE_GENERAL` this will be empty.
   string market_id = 5;
-  // The account type related to this account
+  // The account type related to this account.
   AccountType type = 6;
 }
 
@@ -745,7 +745,7 @@ message FinancialAmount {
   // An unsigned integer amount of asset
   // This field is passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 1;
-  // Asset identifier
+  // Asset identifier.
   string asset = 2;
 }
 
@@ -804,17 +804,17 @@ enum TransferType {
 
 // Represents a financial transfer within Vega
 message Transfer {
-  // Party identifier for the owner of the transfer
+  // Party identifier for the owner of the transfer.
   string owner = 1;
   // A financial amount (of an asset) to transfer
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   FinancialAmount amount = 2;
-  // The type of transfer, gives the reason for the transfer
+  // The type of transfer, gives the reason for the transfer.
   TransferType type = 3;
   // A minimum amount
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string min_amount = 4;
-  // optional dispatch strategy
+  // optional dispatch strategy.
   string market_id = 5;
 }
 
@@ -831,19 +831,19 @@ enum DispatchMetric {
 }
 
 message DispatchStrategy {
-  // The asset to use for metric
+  // The asset to use for metric.
   string asset_for_metric = 1;
-  // The metric to apply
+  // The metric to apply.
   DispatchMetric metric = 2;
-  // Optional markets in scope
+  // Optional markets in scope.
   repeated string markets = 3;
 }
 
 // Represents a request to transfer from one set of accounts to another
 message TransferRequest {
-  // One or more accounts to transfer from
+  // One or more accounts to transfer from.
   repeated Account from_account = 1;
-  // One or more accounts to transfer to
+  // One or more accounts to transfer to.
   repeated Account to_account = 2;
   // An amount to transfer for the asset
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -851,43 +851,45 @@ message TransferRequest {
   // The minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string min_amount = 4;
-  // Asset identifier
+  // Asset identifier.
   string asset = 5;
-  // The type of the request for transfer
+  // The type of the request for transfer.
   TransferType type = 7;
 }
 
 message AccountDetails {
+  // The id of the asset of this account.
   string asset_id = 1;
+  // The type of the account.
   AccountType type = 2;
-  // not specified if network account
+  // not specified if network account.
   optional string owner = 3;
-  // not specified is account is not related to a market
+  // not specified is account is not related to a market.
   optional string market_id = 4;
 }
 
 // Represents a ledger entry on Vega
 message LedgerEntry {
-  // One or more accounts to transfer from
+  // One or more accounts to transfer from.
   AccountDetails from_account = 1;
-  // One or more accounts to transfer to
+  // One or more accounts to transfer to.
   AccountDetails to_account = 2;
   // An amount to transfer
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string amount = 3;
-  // Transfer type for this entry
+  // Transfer type for this entry.
   TransferType type = 4;
-  // Timestamps
+  // Timestamps.
   int64 timestamp = 5;
-  // Sender account balance after the transfer
+  // Sender account balance after the transfer.
   string from_account_balance = 6;
-  // Receiver account balance after the transfer
+  // Receiver account balance after the transfer.
   string to_account_balance = 7;
 }
 
 // Represents the balance for an account during a transfer
 message PostTransferBalance {
-  // The account relating to the transfer
+  // The account relating to the transfer.
   AccountDetails account = 1;
   // The balance relating to the transfer
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -895,7 +897,9 @@ message PostTransferBalance {
 }
 
 message LedgerMovement {
+  // All the entries for these ledger movements.
   repeated LedgerEntry entries = 1;
+  // The resulting balances once the ledger movement are applied.
   repeated PostTransferBalance balances = 2;
 }
 
@@ -913,13 +917,13 @@ message MarginLevels {
   // Collateral release level value
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string collateral_release_level = 4;
-  // Party identifier
+  // Party identifier.
   string party_id = 5;
-  // Market identifier
+  // Market identifier.
   string market_id = 6;
-  // Asset identifier
+  // Asset identifier.
   string asset = 7;
-  // Timestamp for the time the ledger entry was created, in nanoseconds
+  // Timestamp for the time the ledger entry was created, in nanoseconds.
   int64 timestamp = 8;
 }
 
@@ -964,14 +968,14 @@ message MarketData {
   string static_mid_price = 11;
   // Market identifier for the data
   string market = 12;
-  // Timestamp at which this mark price was relevant, in nanoseconds
+  // Timestamp at which this mark price was relevant, in nanoseconds.
   int64 timestamp = 13;
   // The sum of the size of all positions greater than zero on the market
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 open_interest = 14;
-  // Time in seconds until the end of the auction (zero if currently not in auction period)
+  // Time in seconds until the end of the auction (zero if currently not in auction period).
   int64 auction_end = 15;
-  // Time until next auction, or start time of the current auction if market is in auction period
+  // Time until next auction, or start time of the current auction if market is in auction period.
   int64 auction_start = 16;
   // Indicative price (zero if not in auction)
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -979,11 +983,11 @@ message MarketData {
   // Indicative volume (zero if not in auction)
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 indicative_volume = 18;
-  // The current trading mode for the market
+  // The current trading mode for the market.
   Market.TradingMode market_trading_mode = 19;
-  // When a market is in an auction trading mode, this field indicates what triggered the auction
+  // When a market is in an auction trading mode, this field indicates what triggered the auction.
   AuctionTrigger trigger = 20;
-  // When a market auction is extended, this field indicates what caused the extension
+  // When a market auction is extended, this field indicates what caused the extension.
   AuctionTrigger extension_trigger = 21;
   // Targeted stake for the given market
   // This field is an unsigned integer passed as a string and needs to be scaled using the settlement asset's decimal places.
@@ -991,15 +995,15 @@ message MarketData {
   // Available stake for the given market
   // This field is an unsigned integer passed as a string and needs to be scaled using the settlement asset's decimal places.
   string supplied_stake = 23;
-  // One or more price monitoring bounds for the current timestamp
+  // One or more price monitoring bounds for the current timestamp.
   repeated PriceMonitoringBounds price_monitoring_bounds = 24;
-  // the market value proxy
+  // the market value proxy.
   string market_value_proxy = 25;
-  // the equity like share of liquidity fee for each liquidity provider
+  // the equity like share of liquidity fee for each liquidity provider.
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
-  // The current state of the market
+  // The current state of the market.
   Market.State market_state = 27;
-  // next MTM timestamp
+  // next MTM timestamp.
   int64 next_mark_to_market = 28;
   // Last traded price of the market
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -1008,13 +1012,13 @@ message MarketData {
 
 // The equity like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
-  // The liquidity provider party id
+  // The liquidity provider party id.
   string party = 1;
-  // The share own by this liquidity provider (float)
+  // The share own by this liquidity provider (float).
   string equity_like_share = 2;
-  // The average entry valuation of the liquidity provider for the market
+  // The average entry valuation of the liquidity provider for the market.
   string average_entry_valuation = 3;
-  // The average liquidity score
+  // The average liquidity score.
   string average_score = 4;
 }
 
@@ -1026,7 +1030,7 @@ message PriceMonitoringBounds {
   // Maximum price that isn't currently breaching the specified price monitoring trigger
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string max_valid_price = 2;
-  // Price monitoring trigger associated with the bounds
+  // Price monitoring trigger associated with the bounds.
   PriceMonitoringTrigger trigger = 3;
   // Reference price used to calculate the valid price range
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -1035,19 +1039,19 @@ message PriceMonitoringBounds {
 
 // Represents Vega domain specific error information over gRPC/Protobuf
 message ErrorDetail {
-  // A Vega API domain specific unique error code, useful for client side mappings, e.g. 10004
+  // A Vega API domain specific unique error code, useful for client side mappings, e.g. 10004.
   int32 code = 1;
-  // A message that describes the error in more detail, should describe the problem encountered
+  // A message that describes the error in more detail, should describe the problem encountered.
   string message = 2;
-  // Any inner error information that could add more context, or be helpful for error reporting
+  // Any inner error information that could add more context, or be helpful for error reporting.
   string inner = 3;
 }
 
 // Represents a network parameter on Vega
 message NetworkParameter {
-  // The unique key
+  // The unique key.
   string key = 1;
-  // The value for the network parameter
+  // The value for the network parameter.
   string value = 2;
 }
 
@@ -1055,27 +1059,27 @@ message NetworkParameter {
 message NetworkLimits {
   reserved 3, 6;
 
-  // Are market proposals allowed at this point in time
+  // Are market proposals allowed at this point in time.
   bool can_propose_market = 1;
-  // Are asset proposals allowed at this point in time
+  // Are asset proposals allowed at this point in time.
   bool can_propose_asset = 2;
-  // Are market proposals enabled on this chain
+  // Are market proposals enabled on this chain.
   bool propose_market_enabled = 4;
-  // Are asset proposals enabled on this chain
+  // Are asset proposals enabled on this chain.
   bool propose_asset_enabled = 5;
-  // True once the genesis file is loaded
+  // True once the genesis file is loaded.
   bool genesis_loaded = 7;
-  // The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set)
+  // The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set).
   int64 propose_market_enabled_from = 8;
-  // The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set)
+  // The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
   int64 propose_asset_enabled_from = 9;
 }
 
 // Represents a liquidity order
 message LiquidityOrder {
-  // The pegged reference point for the order
+  // The pegged reference point for the order.
   PeggedReference reference = 1;
-  // The relative proportion of the commitment to be allocated at a price level
+  // The relative proportion of the commitment to be allocated at a price level.
   uint32 proportion = 2;
   // The offset/amount of units away for the order
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -1084,15 +1088,15 @@ message LiquidityOrder {
 
 // A pair of a liquidity order and the ID of the generated order by the core
 message LiquidityOrderReference {
-  // Unique identifier of the pegged order generated by the core to fulfil this liquidity order
+  // Unique identifier of the pegged order generated by the core to fulfil this liquidity order.
   string order_id = 1;
-  // The liquidity order from the original submission
+  // The liquidity order from the original submission.
   LiquidityOrder liquidity_order = 2;
 }
 
 // An Liquidity provider commitment
 message LiquidityProvision {
-  // Status of a liquidity provision order
+  // Status of a liquidity provision order.
   enum Status {
     // The default value
     STATUS_UNSPECIFIED = 0;
@@ -1112,30 +1116,30 @@ message LiquidityProvision {
     STATUS_PENDING = 6;
   }
 
-  // Unique identifier
+  // Unique identifier.
   string id = 1;
-  // Unique party identifier for the creator of the provision
+  // Unique party identifier for the creator of the provision.
   string party_id = 2;
-  // Timestamp for when the order was created at, in nanoseconds
+  // Timestamp for when the order was created at, in nanoseconds.
   int64 created_at = 3;
-  // Timestamp for when the order was updated at, in nanoseconds
+  // Timestamp for when the order was updated at, in nanoseconds.
   int64 updated_at = 4;
-  // Market identifier for the order, required field
+  // Market identifier for the order, required field.
   string market_id = 5;
   // Specified as a unitless number that represents the amount of settlement asset of the market
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string commitment_amount = 6;
-  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
   string fee = 7;
-  // A set of liquidity sell orders to meet the liquidity provision obligation
+  // A set of liquidity sell orders to meet the liquidity provision obligation.
   repeated LiquidityOrderReference sells = 8;
-  // A set of liquidity buy orders to meet the liquidity provision obligation
+  // A set of liquidity buy orders to meet the liquidity provision obligation.
   repeated LiquidityOrderReference buys = 9;
-  // Version of this liquidity provision order
+  // Version of this liquidity provision order.
   uint64 version = 10;
-  // Status of this liquidity provision order
+  // Status of this liquidity provision order.
   Status status = 11;
-  // A reference shared between this liquidity provision and all its orders
+  // A reference shared between this liquidity provision and all its orders.
   string reference = 12;
 }
 
@@ -1179,35 +1183,35 @@ enum NodeStatus {
 
 // Describes in both human readable and block time when an epoch spans
 message EpochTimestamps {
-  // Timestamp of epoch start in nanoseconds
+  // Timestamp of epoch start in nanoseconds.
   int64 start_time = 1;
-  // Timestamp of epoch expiry in nanoseconds
+  // Timestamp of epoch expiry in nanoseconds.
   int64 expiry_time = 2;
-  // Timestamp of epoch end in nanoseconds, empty if not started
+  // Timestamp of epoch end in nanoseconds, empty if not started.
   int64 end_time = 3;
-  // Height of first block in the epoch
+  // Height of first block in the epoch.
   uint64 first_block = 4;
-  // Height of last block in the epoch, empty if not ended
+  // Height of last block in the epoch, empty if not ended.
   uint64 last_block = 5;
 }
 
 // What epoch action has occurred
 enum EpochAction {
   EPOCH_ACTION_UNSPECIFIED = 0;
-  // The epoch update is for a new epoch
+  // The epoch update is for a new epoch.
   EPOCH_ACTION_START = 1;
-  // The epoch update is for the end of an epoch
+  // The epoch update is for the end of an epoch.
   EPOCH_ACTION_END = 2;
 }
 
 message Epoch {
-  // Sequence is used as epoch identifier
+  // Sequence is used as epoch identifier.
   uint64 seq = 1;
-  // Timestamps for start/end etc
+  // Timestamps for start/end etc.
   EpochTimestamps timestamps = 2;
-  // Validators that participated in this epoch
+  // Validators that participated in this epoch.
   repeated Node validators = 3;
-  // List of all delegations in epoch
+  // List of all delegations in epoch.
   repeated Delegation delegations = 4;
 }
 
@@ -1219,11 +1223,11 @@ message EpochParticipation {
 }
 
 message EpochData {
-  // Total number of epochs since node was created
+  // Total number of epochs since node was created.
   int32 total = 1;
-  // Total number of offline epochs since node was created
+  // Total number of offline epochs since node was created.
   int32 offline = 2;
-  // Total number of online epochs since node was created
+  // Total number of online epochs since node was created.
   int32 online = 3;
 }
 
@@ -1239,47 +1243,47 @@ enum ValidatorNodeStatus {
 }
 
 message RankingScore {
-  // stake based score - no anti-whaling
+  // stake based score - no anti-whaling.
   string stake_score = 1;
-  // performance based score
+  // performance based score.
   string performance_score = 2;
-  // the status of the validator in the previous epoch
+  // the status of the validator in the previous epoch.
   ValidatorNodeStatus previous_status = 3;
-  // the status of the validator in the current epoch
+  // the status of the validator in the current epoch.
   ValidatorNodeStatus status = 4;
-  // tendermint voting power of the validator
+  // tendermint voting power of the validator.
   uint32 voting_power = 5;
-  // final score
+  // final score.
   string ranking_score = 6;
 }
 
 message RewardScore {
-  // stake based score - with anti-whaling
+  // stake based score - with anti-whaling.
   string raw_validator_score = 1;
-  // performance based score
+  // performance based score.
   string performance_score = 2;
-  // multisig score
+  // multisig score.
   string multisig_score = 3;
-  // un-normalised score
+  // un-normalised score.
   string validator_score = 4;
-  // normalised validator score for rewards
+  // normalised validator score for rewards.
   string normalised_score = 5;
-  // the status of the validator for reward
+  // the status of the validator for reward.
   ValidatorNodeStatus validator_status = 6;
 }
 
 message Node {
-  // The node ID (wallet ID)
+  // The node ID (wallet ID).
   string id = 1;
-  // Pub key of the node operator
+  // Pub key of the node operator.
   string pub_key = 2;
-  // Public key of Tendermint
+  // Public key of Tendermint.
   string tm_pub_key = 3;
-  // Ethereum public key of the node
+  // Ethereum public key of the node.
   string ethereum_address = 4;
-  // URL where I can find out more info on the node
+  // URL where I can find out more info on the node.
   string info_url = 5;
-  // Country code for the location of the node
+  // Country code for the location of the node.
   string location = 6;
   // The amount the node has put up themselves
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
@@ -1296,33 +1300,33 @@ message Node {
   // Amount of stake on the next epoch
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the token.
   string pending_stake = 11;
-  // Information about epoch
+  // Information about epoch.
   EpochData epoch_data = 12;
-  // Node status
+  // Node status.
   NodeStatus status = 13;
-  // Node's delegations
+  // Node's delegations.
   repeated Delegation delegations = 14;
-  // Node reward score
+  // Node reward score.
   RewardScore reward_score = 15;
-  // Node ranking information
+  // Node ranking information.
   RankingScore ranking_score = 16;
-  // Node name
+  // Node name.
   string name = 17;
-  // Avatar url
+  // Avatar url.
   string avatar_url = 18;
 }
 
 // Details on the collection of nodes for a particular validator status
 message NodeSet {
-  // Total number of nodes in the node set
+  // Total number of nodes in the node set.
   uint32 total = 1;
-  // Number of nodes in the node set that had a performance score of 0 at the end of the last epoch
+  // Number of nodes in the node set that had a performance score of 0 at the end of the last epoch.
   uint32 inactive = 2;
-  // IDs of nodes that were promoted into this node set at the start of the epoch
+  // IDs of nodes that were promoted into this node set at the start of the epoch.
   repeated string promoted = 3;
-  // IDs of nodes that were demoted into this node set at the start of the epoch
+  // IDs of nodes that were demoted into this node set at the start of the epoch.
   repeated string demoted = 4;
-  // Total number of nodes allowed in the node set
+  // Total number of nodes allowed in the node set.
   optional uint32 maximum = 5;
 
 }
@@ -1331,29 +1335,29 @@ message NodeData {
   // Total staked amount across all nodes
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the token.
   string staked_total = 1;
-  // Total number of nodes across all node sets
+  // Total number of nodes across all node sets.
   uint32 total_nodes = 2;
-  // Total number of nodes that had a performance score of 0 at the end of the last epoch
+  // Total number of nodes that had a performance score of 0 at the end of the last epoch.
   uint32 inactive_nodes = 3;
-  // Details on the set of consensus nodes in the network
+  // Details on the set of consensus nodes in the network.
   NodeSet tendermint_nodes = 4;
-  // Details on the set of ersatz (standby) nodes in the network
+  // Details on the set of ersatz (standby) nodes in the network.
   NodeSet ersatz_nodes = 5;
-  // Details on the set of pending nodes in the network
+  // Details on the set of pending nodes in the network.
   NodeSet pending_nodes = 6;
-  // Total uptime for all epochs across all nodes
+  // Total uptime for all epochs across all nodes.
   float uptime = 7;
 }
 
 message Delegation {
-  // Party which is delegating
+  // Party which is delegating.
   string party = 1;
-  // Node ID
+  // Node ID.
   string node_id = 2;
   // Amount delegated
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places of the token.
   string amount = 3;
-  // Epoch of delegation
+  // Epoch of delegation.
   string epoch_seq = 4;
 }
 
@@ -1393,11 +1397,11 @@ message EpochRewardSummary {
 
 
 message StateValueProposal {
-  // state variable identifier
+  // state variable identifier.
   string state_var_id = 1;
-  // event identifier
+  // event identifier.
   string event_id = 2;
-  // key value tolerance triplets
+  // key value tolerance triplets.
   repeated KeyValueBundle kvb = 3;
 }
 

@@ -185,13 +185,13 @@ type ValidatorHeartbeat struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the id of the node emitting the heartbeat
+	// the id of the node emitting the heartbeat.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Signature from the validator made using the ethereum wallet
+	// Signature from the validator made using the ethereum wallet.
 	EthereumSignature *Signature `protobuf:"bytes,2,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
-	// Signature from the validator made using the vega wallet
+	// Signature from the validator made using the vega wallet.
 	VegaSignature *Signature `protobuf:"bytes,3,opt,name=vega_signature,json=vegaSignature,proto3" json:"vega_signature,omitempty"`
-	// Message which has been signed
+	// Message which has been signed.
 	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
 }
 
@@ -261,32 +261,32 @@ type AnnounceNode struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Vega public key, required field
+	// Vega public key, required field.
 	VegaPubKey string `protobuf:"bytes,1,opt,name=vega_pub_key,json=vegaPubKey,proto3" json:"vega_pub_key,omitempty"`
-	// Ethereum public key, required field
+	// Ethereum public key, required field.
 	EthereumAddress string `protobuf:"bytes,2,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
-	// Public key for the blockchain, required field
+	// Public key for the blockchain, required field.
 	ChainPubKey string `protobuf:"bytes,3,opt,name=chain_pub_key,json=chainPubKey,proto3" json:"chain_pub_key,omitempty"`
-	// URL with more info on the node
+	// URL with more info on the node.
 	InfoUrl string `protobuf:"bytes,4,opt,name=info_url,json=infoUrl,proto3" json:"info_url,omitempty"`
-	// Country code (ISO 3166-1 alpha-2) for the location of the node
+	// Country code (ISO 3166-1 alpha-2) for the location of the node.
 	Country string `protobuf:"bytes,5,opt,name=country,proto3" json:"country,omitempty"`
-	// ID of the validator, (public master key)
+	// ID of the validator, (public master key).
 	Id string `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`
-	// Name of the validator
+	// Name of the validator.
 	Name string `protobuf:"bytes,7,opt,name=name,proto3" json:"name,omitempty"`
-	// AvatarURL of the validator
+	// AvatarURL of the validator.
 	AvatarUrl string `protobuf:"bytes,8,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
-	// Vega public key derivation index
+	// Vega public key derivation index.
 	VegaPubKeyIndex uint32 `protobuf:"varint,9,opt,name=vega_pub_key_index,json=vegaPubKeyIndex,proto3" json:"vega_pub_key_index,omitempty"`
 	// The epoch from which the validator is expected
-	// to be ready to validate blocks
+	// to be ready to validate blocks.
 	FromEpoch uint64 `protobuf:"varint,10,opt,name=from_epoch,json=fromEpoch,proto3" json:"from_epoch,omitempty"`
-	// Signature from the validator made using the ethereum wallet
+	// Signature from the validator made using the ethereum wallet.
 	EthereumSignature *Signature `protobuf:"bytes,11,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
-	// Signature from the validator made using the Vega wallet
+	// Signature from the validator made using the Vega wallet.
 	VegaSignature *Signature `protobuf:"bytes,12,opt,name=vega_signature,json=vegaSignature,proto3" json:"vega_signature,omitempty"`
-	// Ethereum public key to use as a submitter to allow automatic signature generation
+	// Ethereum public key to use as a submitter to allow automatic signature generation.
 	SubmitterAddress string `protobuf:"bytes,13,opt,name=submitter_address,json=submitterAddress,proto3" json:"submitter_address,omitempty"`
 }
 
@@ -414,15 +414,15 @@ func (x *AnnounceNode) GetSubmitterAddress() string {
 }
 
 // Used when a node votes for validating that a given resource exists or is valid,
-// for example, an ERC20 deposit is valid and exists on ethereum
+// for example, an ERC20 deposit is valid and exists on ethereum.
 type NodeVote struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Reference, required field
+	// Reference, required field.
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	// type of NodeVote, also required
+	// type of NodeVote, also required.
 	Type NodeVote_Type `protobuf:"varint,3,opt,name=type,proto3,enum=vega.commands.v1.NodeVote_Type" json:"type,omitempty"`
 }
 
@@ -478,11 +478,11 @@ type NodeSignature struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the resource being signed
+	// The identifier of the resource being signed.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The signature
+	// The signature.
 	Sig []byte `protobuf:"bytes,2,opt,name=sig,proto3" json:"sig,omitempty"`
-	// The kind of resource being signed
+	// The kind of resource being signed.
 	Kind NodeSignatureKind `protobuf:"varint,3,opt,name=kind,proto3,enum=vega.commands.v1.NodeSignatureKind" json:"kind,omitempty"`
 }
 
@@ -545,11 +545,11 @@ type ChainEvent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the transaction in which the events happened, usually a hash
+	// The identifier of the transaction in which the events happened, usually a hash.
 	TxId string `protobuf:"bytes,1,opt,name=tx_id,json=txId,proto3" json:"tx_id,omitempty"`
-	// Arbitrary one-time integer used to prevent replay attacks
+	// Arbitrary one-time integer used to prevent replay attacks.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The event
+	// The event.
 	//
 	// Types that are assignable to Event:
 	//
@@ -646,22 +646,22 @@ type isChainEvent_Event interface {
 }
 
 type ChainEvent_Builtin struct {
-	// Built-in asset event
+	// Built-in asset event.
 	Builtin *vega.BuiltinAssetEvent `protobuf:"bytes,1001,opt,name=builtin,proto3,oneof"`
 }
 
 type ChainEvent_Erc20 struct {
-	// Ethereum ERC20 event
+	// Ethereum ERC20 event.
 	Erc20 *vega.ERC20Event `protobuf:"bytes,1002,opt,name=erc20,proto3,oneof"`
 }
 
 type ChainEvent_StakingEvent struct {
-	// Ethereum Staking event
+	// Ethereum Staking event.
 	StakingEvent *vega.StakingEvent `protobuf:"bytes,1005,opt,name=staking_event,json=stakingEvent,proto3,oneof"`
 }
 
 type ChainEvent_Erc20Multisig struct {
-	// Ethereum ERC20 multisig event
+	// Ethereum ERC20 multisig event.
 	Erc20Multisig *vega.ERC20MultiSigEvent `protobuf:"bytes,1006,opt,name=erc20_multisig,json=erc20Multisig,proto3,oneof"`
 }
 
@@ -679,13 +679,13 @@ type KeyRotateSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// New Vega public key derivation index
+	// New Vega public key derivation index.
 	NewPubKeyIndex uint32 `protobuf:"varint,1,opt,name=new_pub_key_index,json=newPubKeyIndex,proto3" json:"new_pub_key_index,omitempty"`
-	// Target block at which the key rotation will take effect on
+	// Target block at which the key rotation will take effect on.
 	TargetBlock uint64 `protobuf:"varint,2,opt,name=target_block,json=targetBlock,proto3" json:"target_block,omitempty"`
-	// The new public key to rotate to
+	// The new public key to rotate to.
 	NewPubKey string `protobuf:"bytes,3,opt,name=new_pub_key,json=newPubKey,proto3" json:"new_pub_key,omitempty"`
-	// Hash of currently used public key
+	// Hash of currently used public key.
 	CurrentPubKeyHash string `protobuf:"bytes,4,opt,name=current_pub_key_hash,json=currentPubKeyHash,proto3" json:"current_pub_key_hash,omitempty"`
 }
 
@@ -755,15 +755,15 @@ type EthereumKeyRotateSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Target block at which the key rotation will take effect on
+	// Target block at which the key rotation will take effect on.
 	TargetBlock uint64 `protobuf:"varint,1,opt,name=target_block,json=targetBlock,proto3" json:"target_block,omitempty"`
-	// The new address to rotate to
+	// The new address to rotate to.
 	NewAddress string `protobuf:"bytes,2,opt,name=new_address,json=newAddress,proto3" json:"new_address,omitempty"`
-	// Currently used public address
+	// Currently used public address.
 	CurrentAddress string `protobuf:"bytes,3,opt,name=current_address,json=currentAddress,proto3" json:"current_address,omitempty"`
-	// Ethereum public key to use as a submitter to allow automatic signature generation
+	// Ethereum public key to use as a submitter to allow automatic signature generation.
 	SubmitterAddress string `protobuf:"bytes,4,opt,name=submitter_address,json=submitterAddress,proto3" json:"submitter_address,omitempty"`
-	// Signature that can be verified using the new ethereum address
+	// Signature that can be verified using the new ethereum address.
 	EthereumSignature *Signature `protobuf:"bytes,5,opt,name=ethereum_signature,json=ethereumSignature,proto3" json:"ethereum_signature,omitempty"`
 }
 
@@ -840,7 +840,7 @@ type StateVariableProposal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The state value proposal details
+	// The state value proposal details.
 	Proposal *vega.StateValueProposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
 }
 
@@ -889,9 +889,9 @@ type ProtocolUpgradeProposal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The block height at which to perform the upgrade
+	// The block height at which to perform the upgrade.
 	UpgradeBlockHeight uint64 `protobuf:"varint,1,opt,name=upgrade_block_height,json=upgradeBlockHeight,proto3" json:"upgrade_block_height,omitempty"`
-	// the release tag for the Vega binary
+	// the release tag for the Vega binary.
 	VegaReleaseTag string `protobuf:"bytes,2,opt,name=vega_release_tag,json=vegaReleaseTag,proto3" json:"vega_release_tag,omitempty"`
 }
 

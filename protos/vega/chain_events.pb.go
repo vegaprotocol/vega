@@ -26,9 +26,9 @@ type BuiltinAssetDeposit struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A Vega network internal asset identifier
+	// A Vega network internal asset identifier.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// A Vega party identifier (pub-key)
+	// A Vega party identifier (pub-key).
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be deposited
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -94,9 +94,9 @@ type BuiltinAssetWithdrawal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A Vega network internal asset identifier
+	// A Vega network internal asset identifier.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// A Vega network party identifier (pub-key)
+	// A Vega network party identifier (pub-key).
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be withdrawn
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -227,12 +227,12 @@ type isBuiltinAssetEvent_Action interface {
 }
 
 type BuiltinAssetEvent_Deposit struct {
-	// Built-in asset deposit
+	// Built-in asset deposit.
 	Deposit *BuiltinAssetDeposit `protobuf:"bytes,1001,opt,name=deposit,proto3,oneof"`
 }
 
 type BuiltinAssetEvent_Withdrawal struct {
-	// Built-in asset withdrawal
+	// Built-in asset withdrawal.
 	Withdrawal *BuiltinAssetWithdrawal `protobuf:"bytes,1002,opt,name=withdrawal,proto3,oneof"`
 }
 
@@ -246,9 +246,9 @@ type ERC20AssetList struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The ethereum address of the asset
+	// The ethereum address of the asset.
 	AssetSource string `protobuf:"bytes,2,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
 }
 
@@ -304,7 +304,7 @@ type ERC20AssetDelist struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
 }
 
@@ -352,13 +352,13 @@ type ERC20AssetLimitsUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The Ethereum wallet that initiated the deposit
+	// The Ethereum wallet that initiated the deposit.
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=source_ethereum_address,json=sourceEthereumAddress,proto3" json:"source_ethereum_address,omitempty"`
-	// The updated lifetime limits
+	// The updated lifetime limits.
 	LifetimeLimits string `protobuf:"bytes,3,opt,name=lifetime_limits,json=lifetimeLimits,proto3" json:"lifetime_limits,omitempty"`
-	// The updated withdrawal threshold
+	// The updated withdrawal threshold.
 	WithdrawThreshold string `protobuf:"bytes,4,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }
 
@@ -428,13 +428,13 @@ type ERC20Deposit struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The vega network internal identifier of the asset
+	// The vega network internal identifier of the asset.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The Ethereum wallet that initiated the deposit
+	// The Ethereum wallet that initiated the deposit.
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=source_ethereum_address,json=sourceEthereumAddress,proto3" json:"source_ethereum_address,omitempty"`
-	// The Vega party identifier (pub-key) which is the target of the deposit
+	// The Vega party identifier (pub-key) which is the target of the deposit.
 	TargetPartyId string `protobuf:"bytes,3,opt,name=target_party_id,json=targetPartyId,proto3" json:"target_party_id,omitempty"`
-	// The amount to be deposited
+	// The amount to be deposited.
 	Amount string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -504,11 +504,11 @@ type ERC20Withdrawal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// The Vega network internal identifier of the asset.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The target Ethereum wallet address
+	// The target Ethereum wallet address.
 	TargetEthereumAddress string `protobuf:"bytes,2,opt,name=target_ethereum_address,json=targetEthereumAddress,proto3" json:"target_ethereum_address,omitempty"`
-	// The reference nonce used for the transaction
+	// The reference nonce used for the transaction.
 	ReferenceNonce string `protobuf:"bytes,3,opt,name=reference_nonce,json=referenceNonce,proto3" json:"reference_nonce,omitempty"`
 }
 
@@ -571,11 +571,11 @@ type ERC20Event struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Index of the log in the transaction
+	// Index of the log in the transaction.
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	// The block in which the transaction was added
+	// The block in which the transaction was added.
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
-	// The action
+	// The action.
 	//
 	// Types that are assignable to Action:
 	//
@@ -696,37 +696,37 @@ type isERC20Event_Action interface {
 }
 
 type ERC20Event_AssetList struct {
-	// List an ERC20 asset
+	// List an ERC20 asset.
 	AssetList *ERC20AssetList `protobuf:"bytes,1001,opt,name=asset_list,json=assetList,proto3,oneof"`
 }
 
 type ERC20Event_AssetDelist struct {
-	// De-list an ERC20 asset
+	// De-list an ERC20 asset.
 	AssetDelist *ERC20AssetDelist `protobuf:"bytes,1002,opt,name=asset_delist,json=assetDelist,proto3,oneof"`
 }
 
 type ERC20Event_Deposit struct {
-	// Deposit ERC20 asset
+	// Deposit ERC20 asset.
 	Deposit *ERC20Deposit `protobuf:"bytes,1003,opt,name=deposit,proto3,oneof"`
 }
 
 type ERC20Event_Withdrawal struct {
-	// Withdraw ERC20 asset
+	// Withdraw ERC20 asset.
 	Withdrawal *ERC20Withdrawal `protobuf:"bytes,1004,opt,name=withdrawal,proto3,oneof"`
 }
 
 type ERC20Event_AssetLimitsUpdated struct {
-	// Update an ERC20 asset
+	// Update an ERC20 asset.
 	AssetLimitsUpdated *ERC20AssetLimitsUpdated `protobuf:"bytes,1005,opt,name=asset_limits_updated,json=assetLimitsUpdated,proto3,oneof"`
 }
 
 type ERC20Event_BridgeStopped struct {
-	// Bridge operations has been stopped
+	// Bridge operations has been stopped.
 	BridgeStopped bool `protobuf:"varint,1006,opt,name=bridge_stopped,json=bridgeStopped,proto3,oneof"`
 }
 
 type ERC20Event_BridgeResumed struct {
-	// Bridge operations has been resumed
+	// Bridge operations has been resumed.
 	BridgeResumed bool `protobuf:"varint,1007,opt,name=bridge_resumed,json=bridgeResumed,proto3,oneof"`
 }
 
