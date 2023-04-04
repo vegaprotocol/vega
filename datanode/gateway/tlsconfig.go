@@ -14,8 +14,7 @@ func GenerateTlsConfig(g *Config, vegaPaths paths.Paths) (*tls.Config, error) {
 			if g.CertificateFile != "" || g.KeyFile != "" {
 				return nil, fmt.Errorf("Autocert is enabled, and a pre-generated certificate/key specified; use one or the other")
 			}
-			dataNodeHome := paths.StatePath(vegaPaths.StatePathFor(paths.DataNodeStateHome))
-			certDir := paths.JoinStatePath(dataNodeHome, "autocert")
+			certDir := vegaPaths.StatePathFor(paths.DataNodeAutoCertHome)
 
 			certManager := autocert.Manager{
 				Prompt:     autocert.AcceptTOS,
