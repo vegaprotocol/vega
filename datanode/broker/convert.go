@@ -131,6 +131,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.DistressedOrdersEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:
 		return events.ExpiredOrdersEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS:
+		return events.DistressedPositionsEventFromStream(ctx, be)
 	}
 
 	return nil

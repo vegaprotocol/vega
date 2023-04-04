@@ -429,6 +429,19 @@ message DistressedOrders {
   repeated string parties = 2;
 }
 
+// A distressed positions event contains the party IDs for all parties that were distressed, had their orders closed but because of insufficient volume on the book
+// could not be fully closed out. These parties are distressed, but still hold an active position on the book as a result. Once enough volume is on the book to close
+// them out, a SettleDistressed event will be sent. In case they manage to reduce their position, or meet the margin requirements, this status will be updated.
+// Parties that are no longer distressed but active will be listed in the safe_parties field.
+message DistressedPositions {
+  // Market identifier for the event
+  string market_id = 1;
+  // Slice of party identifiers (public keys) that are distressed but still have open volume
+  repeated string distressed_parties = 2;
+  // Slice of party identifiers (public keys) who were distressed but now can safely maintain their position
+  repeated string safe_parties = 3;
+}
+
 // A market ticket event contains the time value for when a particular market was last processed on Vega
 message MarketTick {
   // Market identifier for the event
@@ -719,6 +732,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED = 56;
   // Event indicating parties had orders closed because they were distressed, but were not closed out.
   BUS_EVENT_TYPE_EXPIRED_ORDERS = 57;
+  // Event indicating parties have become, or were, distressed but still have an active position.
+  BUS_EVENT_TYPE_DISTRESSED_POSITIONS = 58;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -845,6 +860,8 @@ message BusEvent {
     DistressedOrders distressed_orders = 155;
     // Orders that expired for a given market
     ExpiredOrders expired_orders = 156;
+    // Open positions on the market that are/were distressed
+    DistressedPositions distressed_positions = 157;
 
     // Market tick events
     MarketEvent market = 1001;

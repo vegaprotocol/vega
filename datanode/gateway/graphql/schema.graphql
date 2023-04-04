@@ -2167,6 +2167,8 @@ enum PositionStatus {
   POSITION_STATUS_ORDERS_CLOSED
   "The position was distressed, and had to be closed out entirely - orders were removed from the book, and the open volume was closed out by the network"
   POSITION_STATUS_CLOSED_OUT
+  "The position was distressed, but could not be closed out - orders were removed from the book, and the open volume will be closed out once there is sufficient volume on the book"
+  POSITION_STATUS_DISTRESSED
 }
 
 """

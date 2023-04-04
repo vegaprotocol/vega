@@ -32,6 +32,11 @@ type MarketPosition struct {
 
 	// sum of size*price for party's buy/sell orders
 	buySumProduct, sellSumProduct *num.Uint
+
+	// this doesn't have to be included in checkpoints or snapshots
+	// yes, it's technically state, but the main reason for this field is to cut down on the number
+	// of events we send out.
+	distressed bool
 }
 
 func NewMarketPosition(party string) *MarketPosition {

@@ -47,6 +47,7 @@ enum PositionStatus {
   POSITION_STATUS_UNSPECIFIED = 0;
   POSITION_STATUS_ORDERS_CLOSED = 1;
   POSITION_STATUS_CLOSED_OUT = 2;
+  POSITION_STATUS_DISTRESSED = 4;
 }
 
 // A party represents an entity who wishes to trade on or query a Vega network

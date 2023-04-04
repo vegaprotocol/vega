@@ -438,6 +438,7 @@ message Position {
   string price = 5;
   string buy_sum_product = 6;
   string sell_sum_product = 7;
+  bool distressed = 8;
 }
 
 message MarketPositions {

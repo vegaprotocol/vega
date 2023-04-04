@@ -18,6 +18,7 @@
 - [7992](https://github.com/vegaprotocol/vega/issues/7992) - Improve Candles related `APIs`
 - [7986](https://github.com/vegaprotocol/vega/issues/7986) - Remove cross `protobuf` files documentation references
 - [7982](https://github.com/vegaprotocol/vega/issues/7982) - Fix behaviour of endpoints with `marketIds` and `partyIds` filters
+- [7846](https://github.com/vegaprotocol/vega/issues/7846) - Add event indicating distressed parties that are still holding an active position.
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
