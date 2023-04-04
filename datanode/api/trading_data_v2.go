@@ -611,6 +611,12 @@ func (t *TradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		to = ptr.From(vegatime.UnixNano(req.ToTimestamp))
 	}
 
+	if to != nil {
+		if from != nil && to.Before(*from) {
+			return nil, formatE(ErrInvalidCandleTimestampsRange)
+		}
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
