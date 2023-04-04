@@ -25,7 +25,7 @@ import (
 var (
 	// ErrChannelClosed signals that the channel streaming data is closed.
 	ErrChannelClosed = errors.New("channel closed")
-	// ErrNotAValidVegaID signals an invalid id
+	// ErrNotAValidVegaID signals an invalid id.
 	ErrNotAValidVegaID = newInvalidArgumentError("not a valid vega id")
 	// ErrMissingResourceID signals to the caller that the request expected a
 	// resource id but the field is missing or empty.

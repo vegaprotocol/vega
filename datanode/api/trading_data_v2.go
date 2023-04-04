@@ -2150,7 +2150,7 @@ type VegaIDsSlice []string
 
 func (s VegaIDsSlice) Ensure() error {
 	for _, v := range s {
-		if !crypto.IsValidVegaPubKey(v) {
+		if v != "network" && !crypto.IsValidVegaPubKey(v) {
 			return ErrNotAValidVegaID
 		}
 	}
