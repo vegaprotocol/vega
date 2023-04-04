@@ -793,7 +793,7 @@ message BusEvent {
     DelegationBalanceEvent delegation_balance = 129;
     // Validator score calculated
     ValidatorScoreEvent validator_score = 130;
-    // Epoch update events - See [Epoch](#vega.Epoch)
+    // Epoch update events
     EpochEvent epoch_event = 131;
     // Validator update events
     ValidatorUpdate validator_update = 132;
@@ -846,7 +846,7 @@ message BusEvent {
     // Orders that expired for a given market
     ExpiredOrders expired_orders = 156;
 
-    // Market tick events - See [MarketEvent](#vega.MarketEvent)
+    // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
     TxErrorEvent tx_err_event = 2001;

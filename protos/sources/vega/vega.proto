@@ -215,7 +215,6 @@ message Order {
   // - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors
   optional OrderError reason = 14;
   // Timestamp for when the order was last updated, in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 updated_at = 15;
   // The version for the order, initial value is version 1 and is incremented after each successful amend
   uint64 version = 16;
@@ -263,7 +262,7 @@ message AuctionIndicativeState {
   int64 auction_end = 5;
 }
 
-// OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue
+// OrderError codes are returned in the Order.reason field - If there is an issue
 // with an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 enum OrderError {
   reserved 38, 39;
@@ -411,16 +410,15 @@ message Trade {
   string buyer = 5;
   // Unique party identifier for the seller
   string seller = 6;
-  // Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL - See [`Side`](#vega.Side)
+  // Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL
   Side aggressor = 7;
   // Identifier of the order from the buy side
   string buy_order = 8;
   // Identifier of the order from the sell side
   string sell_order = 9;
   // Timestamp for when the trade occurred, in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 10;
-  // Type for the trade - See [`Trade.Type`](#vega.Trade.Type)
+  // Type for the trade
   Type type = 11;
   // Fee amount charged to the buyer party for the trade
   Fee buyer_fee = 12;
@@ -454,7 +452,6 @@ message TradeSet {
 // referred to commonly as a candlestick or candle
 message Candle {
   // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 1;
   // An ISO-8601 datetime with nanosecond precision for when the candle was last updated
   string datetime = 2;
@@ -473,7 +470,7 @@ message Candle {
   // Total trading volume during the candle interval
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 volume = 7;
-  // Time interval for the candle - See [`Interval`](#vega.Interval)
+  // Time interval for the candle
   Interval interval = 8;
 }
 
@@ -736,7 +733,7 @@ message Account {
   string balance = 3;
   // Asset identifier for the account
   string asset = 4;
-  // Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty
+  // Market identifier for the account, if `AccountType.ACCOUNT_TYPE_GENERAL` this will be empty
   string market_id = 5;
   // The account type related to this account
   AccountType type = 6;
@@ -922,7 +919,6 @@ message MarginLevels {
   // Asset identifier
   string asset = 7;
   // Timestamp for the time the ledger entry was created, in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 timestamp = 8;
 }
 
@@ -1120,10 +1116,8 @@ message LiquidityProvision {
   // Unique party identifier for the creator of the provision
   string party_id = 2;
   // Timestamp for when the order was created at, in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 created_at = 3;
   // Timestamp for when the order was updated at, in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 updated_at = 4;
   // Market identifier for the order, required field
   string market_id = 5;
@@ -1185,13 +1179,10 @@ enum NodeStatus {
 // Describes in both human readable and block time when an epoch spans
 message EpochTimestamps {
   // Timestamp of epoch start in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 start_time = 1;
   // Timestamp of epoch expiry in nanoseconds
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 expiry_time = 2;
   // Timestamp of epoch end in nanoseconds, empty if not started
-  // - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
   int64 end_time = 3;
   // Height of first block in the epoch
   uint64 first_block = 4;

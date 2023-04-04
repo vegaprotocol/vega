@@ -322,7 +322,7 @@ func (PeggedReference) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{4}
 }
 
-// OrderError codes are returned in the `[Order](#vega.Order).reason` field - If there is an issue
+// OrderError codes are returned in the Order.reason field - If there is an issue
 // with an order during its life-cycle, it will be marked with `status.ORDER_STATUS_REJECTED`
 type OrderError int32
 
@@ -1772,7 +1772,6 @@ type Order struct {
 	// - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors
 	Reason *OrderError `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError,oneof" json:"reason,omitempty"`
 	// Timestamp for when the order was last updated, in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	UpdatedAt int64 `protobuf:"varint,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// The version for the order, initial value is version 1 and is incremented after each successful amend
 	Version uint64 `protobuf:"varint,16,opt,name=version,proto3" json:"version,omitempty"`
@@ -2191,16 +2190,15 @@ type Trade struct {
 	Buyer string `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
 	// Unique party identifier for the seller
 	Seller string `protobuf:"bytes,6,opt,name=seller,proto3" json:"seller,omitempty"`
-	// Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL - See [`Side`](#vega.Side)
+	// Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL
 	Aggressor Side `protobuf:"varint,7,opt,name=aggressor,proto3,enum=vega.Side" json:"aggressor,omitempty"`
 	// Identifier of the order from the buy side
 	BuyOrder string `protobuf:"bytes,8,opt,name=buy_order,json=buyOrder,proto3" json:"buy_order,omitempty"`
 	// Identifier of the order from the sell side
 	SellOrder string `protobuf:"bytes,9,opt,name=sell_order,json=sellOrder,proto3" json:"sell_order,omitempty"`
 	// Timestamp for when the trade occurred, in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Type for the trade - See [`Trade.Type`](#vega.Trade.Type)
+	// Type for the trade
 	Type Trade_Type `protobuf:"varint,11,opt,name=type,proto3,enum=vega.Trade_Type" json:"type,omitempty"`
 	// Fee amount charged to the buyer party for the trade
 	BuyerFee *Fee `protobuf:"bytes,12,opt,name=buyer_fee,json=buyerFee,proto3" json:"buyer_fee,omitempty"`
@@ -2475,7 +2473,6 @@ type Candle struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// An ISO-8601 datetime with nanosecond precision for when the candle was last updated
 	Datetime string `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
@@ -2494,7 +2491,7 @@ type Candle struct {
 	// Total trading volume during the candle interval
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
 	Volume uint64 `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
-	// Time interval for the candle - See [`Interval`](#vega.Interval)
+	// Time interval for the candle
 	Interval Interval `protobuf:"varint,8,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
 }
 
@@ -3386,7 +3383,7 @@ type Account struct {
 	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
 	// Asset identifier for the account
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Market identifier for the account, if [`AccountType`](#vega.AccountType).`ACCOUNT_TYPE_GENERAL` this will be empty
+	// Market identifier for the account, if `AccountType.ACCOUNT_TYPE_GENERAL` this will be empty
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// The account type related to this account
 	Type AccountType `protobuf:"varint,6,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
@@ -4090,7 +4087,6 @@ type MarginLevels struct {
 	// Asset identifier
 	Asset string `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Timestamp for the time the ledger entry was created, in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
@@ -5024,10 +5020,8 @@ type LiquidityProvision struct {
 	// Unique party identifier for the creator of the provision
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Timestamp for when the order was created at, in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	CreatedAt int64 `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Timestamp for when the order was updated at, in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Market identifier for the order, required field
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
@@ -5335,13 +5329,10 @@ type EpochTimestamps struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Timestamp of epoch start in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	StartTime int64 `protobuf:"varint,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Timestamp of epoch expiry in nanoseconds
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	ExpiryTime int64 `protobuf:"varint,2,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
 	// Timestamp of epoch end in nanoseconds, empty if not started
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	EndTime int64 `protobuf:"varint,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Height of first block in the epoch
 	FirstBlock uint64 `protobuf:"varint,4,opt,name=first_block,json=firstBlock,proto3" json:"first_block,omitempty"`

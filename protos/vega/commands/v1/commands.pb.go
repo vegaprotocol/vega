@@ -373,16 +373,13 @@ type OrderAmendment struct {
 	// This field needs to be scaled using the market's position decimal places.
 	SizeDelta int64 `protobuf:"varint,4,opt,name=size_delta,json=sizeDelta,proto3" json:"size_delta,omitempty"`
 	// Amend the expiry time for the order, if the Timestamp value is set, otherwise expiry time will remain unchanged
-	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
 	ExpiresAt *int64 `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
 	// Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged
-	// - See [`TimeInForce`](#api.VegaTimeResponse).`timestamp`
 	TimeInForce vega.Order_TimeInForce `protobuf:"varint,6,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
 	// Amend the pegged order offset for the order
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
 	PeggedOffset string `protobuf:"bytes,7,opt,name=pegged_offset,json=peggedOffset,proto3" json:"pegged_offset,omitempty"`
 	// Amend the pegged order reference for the order
-	// - See [`PeggedReference`](#vega.PeggedReference)
 	PeggedReference vega.PeggedReference `protobuf:"varint,8,opt,name=pegged_reference,json=peggedReference,proto3,enum=vega.PeggedReference" json:"pegged_reference,omitempty"`
 }
 
