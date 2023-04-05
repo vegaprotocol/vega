@@ -312,7 +312,8 @@ type TradingDataServiceClient interface {
 	GetEpoch(ctx context.Context, in *GetEpochRequest, opts ...grpc.CallOption) (*GetEpochResponse, error)
 	// Estimate fee
 	//
-	// Estimate the fee that would be incurred for submitting this order
+	// Estimate the fee that would be incurred for submitting an order
+	// with the specified price and size on the market.
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
 	// Estimate margin
 	//
@@ -1892,7 +1893,8 @@ type TradingDataServiceServer interface {
 	GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error)
 	// Estimate fee
 	//
-	// Estimate the fee that would be incurred for submitting this order
+	// Estimate the fee that would be incurred for submitting an order
+	// with the specified price and size on the market.
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
 	// Estimate margin
 	//
