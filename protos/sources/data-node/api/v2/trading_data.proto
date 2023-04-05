@@ -59,7 +59,11 @@ service TradingDataService {
     //
     // Retrieves information about the data node.
     // Response contains a semver formatted version of the data node and the commit hash, from which the data node was built
-    rpc Info(InfoRequest) returns (InfoResponse);
+  rpc Info(InfoRequest) returns (InfoResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Node infos";
+      };
+    }
 
     // Get order
     //
