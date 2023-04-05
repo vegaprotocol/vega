@@ -519,27 +519,27 @@ message ValidatorRankingEvent {
 }
 
 
-// A key rotation events contains information about Vega key rotation
+// Event that contains information about a Vega key rotation
 message KeyRotation {
-  // Node id of the node
+  // Identifier of the node that rotated their Vega key
   string node_id = 1;
-  // Old Vega public key of validator node
+  // Vega public key that was previously associated with the node
   string old_pub_key = 2;
-  // New Vega public key of validator node
+  // Vega public key that is newly associated with the node
   string new_pub_key = 3;
-  // Height of the block where key rotation took effect
+  // Block height when the key rotation took effect
   uint64 block_height = 4;
 }
 
-// An Ethereum key rotation events contains information about Ethereum key rotation
+// Event that contains information about an Ethereum key rotation
 message EthereumKeyRotation {
-  // Node id of the node
+  // Identifier of the node that rotated their Ethereum key
   string node_id = 1;
-  // Old Ethereum address of validator node
+  // Ethereum address that was previously associated with the node
   string old_address= 2;
-  // New Ethereum address of validator node
+  // Ethereum address that is newly associated with the node
   string new_address = 3;
-  // Height of the block where key rotation took effect
+  // Block height when the key rotation took effect
   uint64 block_height = 4;
 }
 

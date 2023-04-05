@@ -354,11 +354,11 @@ type TradingDataServiceClient interface {
 	ObserveLedgerMovements(ctx context.Context, in *ObserveLedgerMovementsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLedgerMovementsClient, error)
 	// Key Rotations list
 	//
-	// List all key rotation applied for a given party
+	// Get information about Vega key rotations that have been performed by validator nodes
 	ListKeyRotations(ctx context.Context, in *ListKeyRotationsRequest, opts ...grpc.CallOption) (*ListKeyRotationsResponse, error)
-	// Ethereum Key Rotations
+	// Ethereum Key Rotations list
 	//
-	// List all ethereum key rotation applied for a given party
+	// Get information about Ethereum key rotations that have been performed by validator nodes
 	ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error)
 	// Vega Time
 	//
@@ -2004,11 +2004,11 @@ type TradingDataServiceServer interface {
 	ObserveLedgerMovements(*ObserveLedgerMovementsRequest, TradingDataService_ObserveLedgerMovementsServer) error
 	// Key Rotations list
 	//
-	// List all key rotation applied for a given party
+	// Get information about Vega key rotations that have been performed by validator nodes
 	ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error)
-	// Ethereum Key Rotations
+	// Ethereum Key Rotations list
 	//
-	// List all ethereum key rotation applied for a given party
+	// Get information about Ethereum key rotations that have been performed by validator nodes
 	ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error)
 	// Vega Time
 	//
