@@ -13018,11 +13018,11 @@ type EstimateFeeRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// MarketID (used to specify the fee factors).
+	// Market ID, used to specify the fee factors.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Price (the price at which the order could trade).
+	// Price at which the potential order is expected to trade.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
-	// Size (the size at which the order could eventually trade).
+	// Size at which the potential order is expected to trade.
 	Size uint64 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
 }
 

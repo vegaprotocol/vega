@@ -645,7 +645,8 @@ service TradingDataService {
 
     // Estimate fee
     //
-    // Estimate the fee that would be incurred for submitting this order
+    // Estimate the fee that would be incurred for submitting an order
+    // with the specified price and size on the market.
     rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Orders";
@@ -2820,11 +2821,11 @@ message GetEpochResponse {
 
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
-  // MarketID (used to specify the fee factors).
+  // Market ID, used to specify the fee factors.
   string market_id = 1;
-  // Price (the price at which the order could trade).
+  // Price at which the potential order is expected to trade.
   string price = 2;
-  // Size (the size at which the order could eventually trade).
+  // Size at which the potential order is expected to trade.
   uint64 size = 3;
 }
 
