@@ -54,7 +54,7 @@ type TradingDataServiceClient interface {
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
 	// Deprecated: Do not use.
-	// List Positions (deprecated)
+	// List positions (deprecated)
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
 	// Deprecated: use ListAllPositions instead
@@ -320,7 +320,7 @@ type TradingDataServiceClient interface {
 	GetEpoch(ctx context.Context, in *GetEpochRequest, opts ...grpc.CallOption) (*GetEpochResponse, error)
 	// Estimate fee
 	//
-	// Estimate the fee that would incur for submitting this order
+	// Estimate the fee that would be incurred for submitting this order
 	EstimateFee(ctx context.Context, in *EstimateFeeRequest, opts ...grpc.CallOption) (*EstimateFeeResponse, error)
 	// Estimate margin
 	//
@@ -340,7 +340,7 @@ type TradingDataServiceClient interface {
 	ListCheckpoints(ctx context.Context, in *ListCheckpointsRequest, opts ...grpc.CallOption) (*ListCheckpointsResponse, error)
 	// Get Stake
 	//
-	// Retrieve staking informations for a given party
+	// Retrieve staking information for a given party
 	GetStake(ctx context.Context, in *GetStakeRequest, opts ...grpc.CallOption) (*GetStakeResponse, error)
 	// Get risk factors
 	//
@@ -358,11 +358,11 @@ type TradingDataServiceClient interface {
 	//
 	// Get information about Vega key rotations that have been performed by validator nodes
 	ListKeyRotations(ctx context.Context, in *ListKeyRotationsRequest, opts ...grpc.CallOption) (*ListKeyRotationsResponse, error)
-	// List ethereum key rotations
+	// List Ethereum key rotations
 	//
 	// Get information about Ethereum key rotations that have been performed by validator nodes
 	ListEthereumKeyRotations(ctx context.Context, in *ListEthereumKeyRotationsRequest, opts ...grpc.CallOption) (*ListEthereumKeyRotationsResponse, error)
-	// Get vega time
+	// Get Vega time
 	//
 	// Get the current time of the network, displayed as a Unix timestamp in nano seconds
 	GetVegaTime(ctx context.Context, in *GetVegaTimeRequest, opts ...grpc.CallOption) (*GetVegaTimeResponse, error)
@@ -382,7 +382,7 @@ type TradingDataServiceClient interface {
 	//
 	// Get the network's most recently history segment
 	GetMostRecentNetworkHistorySegment(ctx context.Context, in *GetMostRecentNetworkHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentNetworkHistorySegmentResponse, error)
-	// List network history all segments
+	// List all network history segments
 	//
 	// List all history segments stored by the data node you're connected to
 	ListAllNetworkHistorySegments(ctx context.Context, in *ListAllNetworkHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllNetworkHistorySegmentsResponse, error)
@@ -462,7 +462,7 @@ type TradingDataServiceClient interface {
 	// timestamp, value, extra_value
 	// 3, baz, apple
 	//
-	// It is worth nothing that the schema will not change within a single network history segment.
+	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
 	ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error)
 	// Ping
@@ -1706,7 +1706,7 @@ type TradingDataServiceServer interface {
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
 	// Deprecated: Do not use.
-	// List Positions (deprecated)
+	// List positions (deprecated)
 	//
 	// Get a list of positions by party (public key) using cursor based pagination
 	// Deprecated: use ListAllPositions instead
@@ -1972,7 +1972,7 @@ type TradingDataServiceServer interface {
 	GetEpoch(context.Context, *GetEpochRequest) (*GetEpochResponse, error)
 	// Estimate fee
 	//
-	// Estimate the fee that would incur for submitting this order
+	// Estimate the fee that would be incurred for submitting this order
 	EstimateFee(context.Context, *EstimateFeeRequest) (*EstimateFeeResponse, error)
 	// Estimate margin
 	//
@@ -1992,7 +1992,7 @@ type TradingDataServiceServer interface {
 	ListCheckpoints(context.Context, *ListCheckpointsRequest) (*ListCheckpointsResponse, error)
 	// Get Stake
 	//
-	// Retrieve staking informations for a given party
+	// Retrieve staking information for a given party
 	GetStake(context.Context, *GetStakeRequest) (*GetStakeResponse, error)
 	// Get risk factors
 	//
@@ -2010,11 +2010,11 @@ type TradingDataServiceServer interface {
 	//
 	// Get information about Vega key rotations that have been performed by validator nodes
 	ListKeyRotations(context.Context, *ListKeyRotationsRequest) (*ListKeyRotationsResponse, error)
-	// List ethereum key rotations
+	// List Ethereum key rotations
 	//
 	// Get information about Ethereum key rotations that have been performed by validator nodes
 	ListEthereumKeyRotations(context.Context, *ListEthereumKeyRotationsRequest) (*ListEthereumKeyRotationsResponse, error)
-	// Get vega time
+	// Get Vega time
 	//
 	// Get the current time of the network, displayed as a Unix timestamp in nano seconds
 	GetVegaTime(context.Context, *GetVegaTimeRequest) (*GetVegaTimeResponse, error)
@@ -2034,7 +2034,7 @@ type TradingDataServiceServer interface {
 	//
 	// Get the network's most recently history segment
 	GetMostRecentNetworkHistorySegment(context.Context, *GetMostRecentNetworkHistorySegmentRequest) (*GetMostRecentNetworkHistorySegmentResponse, error)
-	// List network history all segments
+	// List all network history segments
 	//
 	// List all history segments stored by the data node you're connected to
 	ListAllNetworkHistorySegments(context.Context, *ListAllNetworkHistorySegmentsRequest) (*ListAllNetworkHistorySegmentsResponse, error)
@@ -2114,7 +2114,7 @@ type TradingDataServiceServer interface {
 	// timestamp, value, extra_value
 	// 3, baz, apple
 	//
-	// It is worth nothing that the schema will not change within a single network history segment.
+	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
 	ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error
 	// Ping

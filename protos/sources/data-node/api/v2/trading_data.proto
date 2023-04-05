@@ -504,7 +504,7 @@ service TradingDataService {
     // Get a deposit by its identifier
     rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse)  {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Funds";
+	tags: "Assets";
       };
     }
 
@@ -513,7 +513,7 @@ service TradingDataService {
     // Get a list of deposits for a given party
     rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Funds";
+	tags: "Assets";
       };
     }
 
@@ -522,7 +522,7 @@ service TradingDataService {
     // Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
     rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Funds";
+	tags: "Assets";
       };
     }
 
@@ -531,7 +531,7 @@ service TradingDataService {
     // Get a list of withdrawals for a given party
     rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Funds";
+	tags: "Assets";
       };
     }
 
