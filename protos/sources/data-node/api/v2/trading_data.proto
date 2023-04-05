@@ -61,7 +61,7 @@ service TradingDataService {
     // Response contains a semver formatted version of the data node and the commit hash, from which the data node was built
   rpc Info(InfoRequest) returns (InfoResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Node infos";
+	tags: "Node information";
       };
     }
 
@@ -101,7 +101,7 @@ service TradingDataService {
       };
     }
 
-    // List Positions (deprecated)
+    // List positions (deprecated)
     //
     // Get a list of positions by party (public key) using cursor based pagination
     // Deprecated: use ListAllPositions instead
@@ -663,7 +663,7 @@ service TradingDataService {
 
     // Estimate fee
     //
-    // Estimate the fee that would incur for submitting this order
+    // Estimate the fee that would be incurred for submitting this order
     rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Orders";
@@ -708,7 +708,7 @@ service TradingDataService {
 
     // Get Stake
     //
-    // Retrieve staking informations for a given party
+    // Retrieve staking information for a given party
     rpc GetStake(GetStakeRequest) returns (GetStakeResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Network";
@@ -751,7 +751,7 @@ service TradingDataService {
       };
     }
 
-    // List ethereum key rotations
+    // List Ethereum key rotations
     //
     // Get information about Ethereum key rotations that have been performed by validator nodes
     rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse) {
@@ -760,7 +760,7 @@ service TradingDataService {
       };
     }
 
-    // Get vega time
+    // Get Vega time
     //
     // Get the current time of the network, displayed as a Unix timestamp in nano seconds
     rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse) {
@@ -812,7 +812,7 @@ service TradingDataService {
       };
     }
 
-    // List network history all segments
+    // List all network history segments
     //
     // List all history segments stored by the data node you're connected to
     rpc ListAllNetworkHistorySegments(ListAllNetworkHistorySegmentsRequest) returns (ListAllNetworkHistorySegmentsResponse) {
@@ -917,7 +917,7 @@ service TradingDataService {
     // timestamp, value, extra_value
     // 3, baz, apple
     //
-    // It is worth nothing that the schema will not change within a single network history segment.
+    // It is worth noting that the schema will not change within a single network history segment.
     // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
     rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
