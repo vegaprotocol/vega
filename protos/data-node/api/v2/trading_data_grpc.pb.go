@@ -136,7 +136,7 @@ type TradingDataServiceClient interface {
 	GetMarketDataHistoryByID(ctx context.Context, in *GetMarketDataHistoryByIDRequest, opts ...grpc.CallOption) (*GetMarketDataHistoryByIDResponse, error)
 	// List transfers
 	//
-	// List Transfers to/from/either a public key
+	// List transfers to/from/either a public key
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
 	// Get network limits
 	//
@@ -1788,7 +1788,7 @@ type TradingDataServiceServer interface {
 	GetMarketDataHistoryByID(context.Context, *GetMarketDataHistoryByIDRequest) (*GetMarketDataHistoryByIDResponse, error)
 	// List transfers
 	//
-	// List Transfers to/from/either a public key
+	// List transfers to/from/either a public key
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
 	// Get network limits
 	//
