@@ -14949,8 +14949,8 @@ func (x *GetVegaTimeResponse) GetTimestamp() int64 {
 
 // A date range for queries that can return historical data
 // If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
-// If only the end_timestamp is provided, results up to the given end should be returned (exclusive).
-// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (exclusive).
+// If only the end_timestamp is provided, results up to the given end should be returned (inclusive).
+// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (inclusive).
 type DateRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

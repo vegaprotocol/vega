@@ -216,7 +216,7 @@ func filterDateRange(query, dateColumn string, dateRange entities.DateRange, arg
 	}
 
 	if dateRange.End != nil {
-		query = fmt.Sprintf("%s AND %s < %s", query, dateColumn, nextBindVar(&args, *dateRange.End))
+		query = fmt.Sprintf("%s AND %s <= %s", query, dateColumn, nextBindVar(&args, *dateRange.End))
 	}
 
 	return query, args

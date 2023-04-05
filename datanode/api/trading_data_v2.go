@@ -1504,6 +1504,10 @@ func (t *TradingDataServiceV2) GetDeposit(ctx context.Context, req *v2.GetDeposi
 		return nil, formatE(ErrMissingDepositID)
 	}
 
+	if !crypto.IsValidVegaPubKey(req.Id) {
+		return nil, formatE(ErrNotAValidVegaID)
+	}
+
 	deposit, err := t.depositService.GetByID(ctx, req.Id)
 	if err != nil {
 		return nil, formatE(ErrDepositServiceGet, err)
@@ -1521,6 +1525,14 @@ func (t *TradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	if len(req.PartyId) <= 0 {
+		return nil, formatE(ErrMissingPartyID)
+	}
+
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrNotAValidVegaID)
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -1581,6 +1593,14 @@ func (t *TradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWit
 // ListWithdrawals gets withdrawals for a party.
 func (t *TradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.ListWithdrawalsRequest) (*v2.ListWithdrawalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListWithdrawalsV2")()
+
+	if len(req.PartyId) <= 0 {
+		return nil, formatE(ErrMissingPartyID)
+	}
+
+	if !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrNotAValidVegaID)
+	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
