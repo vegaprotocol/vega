@@ -414,7 +414,7 @@ type TradingDataServiceClient interface {
 	// would all fall on segment boundaries and be valid.
 	//
 	// The generated CSV file is compressed into a ZIP file and returned, with the file name
-	// in the following format: <chain id>-<table name>-<start block>-<end block>.zip
+	// in the following format: [chain id]-[table name]-[start block]-[end block].zip
 	//
 	// In gRPC, results are returned in a chunked stream of base64 encoded data.
 	//
@@ -447,7 +447,7 @@ type TradingDataServiceClient interface {
 	// file will contain multiple CSV files, with a potentially different set of headers. The
 	// 'version' number of the database schema is part of the in the CSV filename:
 	//
-	//	<chain id>-<table name>-<schema version>-<start block>-<end block>.zip
+	//	[chain id]-[table name]-[schema version]-[start block]-[end block].zip
 	//
 	// # For example, a zip file might be called mainnet-sometable-000001-003000.zip
 	//
@@ -2066,7 +2066,7 @@ type TradingDataServiceServer interface {
 	// would all fall on segment boundaries and be valid.
 	//
 	// The generated CSV file is compressed into a ZIP file and returned, with the file name
-	// in the following format: <chain id>-<table name>-<start block>-<end block>.zip
+	// in the following format: [chain id]-[table name]-[start block]-[end block].zip
 	//
 	// In gRPC, results are returned in a chunked stream of base64 encoded data.
 	//
@@ -2099,7 +2099,7 @@ type TradingDataServiceServer interface {
 	// file will contain multiple CSV files, with a potentially different set of headers. The
 	// 'version' number of the database schema is part of the in the CSV filename:
 	//
-	//	<chain id>-<table name>-<schema version>-<start block>-<end block>.zip
+	//	[chain id]-[table name]-[schema version]-[start block]-[end block].zip
 	//
 	// # For example, a zip file might be called mainnet-sometable-000001-003000.zip
 	//
