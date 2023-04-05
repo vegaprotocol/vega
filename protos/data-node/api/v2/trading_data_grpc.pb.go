@@ -132,11 +132,11 @@ type TradingDataServiceClient interface {
 	ObserveMarketsData(ctx context.Context, in *ObserveMarketsDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDataClient, error)
 	// Get market data history
 	//
-	// Get market data history for a market ID between given dates using a cursor based pagination model
+	// Get market data history for a market ID between given dates
 	GetMarketDataHistoryByID(ctx context.Context, in *GetMarketDataHistoryByIDRequest, opts ...grpc.CallOption) (*GetMarketDataHistoryByIDResponse, error)
 	// List transfers
 	//
-	// List Transfers to/from/either a public key using a cursor based pagination model
+	// List transfers to/from/either a public key
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
 	// Get network limits
 	//
@@ -156,7 +156,7 @@ type TradingDataServiceClient interface {
 	ListCandleIntervals(ctx context.Context, in *ListCandleIntervalsRequest, opts ...grpc.CallOption) (*ListCandleIntervalsResponse, error)
 	// List votes
 	//
-	// Get votes for a party ID using a cursor based pagination model
+	// Get votes for a party ID
 	ListVotes(ctx context.Context, in *ListVotesRequest, opts ...grpc.CallOption) (*ListVotesResponse, error)
 	// Observe votes
 	//
@@ -188,7 +188,7 @@ type TradingDataServiceClient interface {
 	GetLastTrade(ctx context.Context, in *GetLastTradeRequest, opts ...grpc.CallOption) (*GetLastTradeResponse, error)
 	// List trades
 	//
-	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
+	// Get a list of all trades, optionally filtered by party/market/order
 	ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error)
 	// Observe trades
 	//
@@ -220,11 +220,11 @@ type TradingDataServiceClient interface {
 	GetParty(ctx context.Context, in *GetPartyRequest, opts ...grpc.CallOption) (*GetPartyResponse, error)
 	// List parties
 	//
-	// Get parties using a cursor based pagination model
+	// Get parties
 	ListParties(ctx context.Context, in *ListPartiesRequest, opts ...grpc.CallOption) (*ListPartiesResponse, error)
 	// List margin levels
 	//
-	// Get margin levels using a cursor based pagination model
+	// Get margin levels
 	ListMarginLevels(ctx context.Context, in *ListMarginLevelsRequest, opts ...grpc.CallOption) (*ListMarginLevelsResponse, error)
 	// Observe margin levels
 	//
@@ -284,7 +284,7 @@ type TradingDataServiceClient interface {
 	GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
 	// List governance data
 	//
-	// List proposals using a cursor based pagination model
+	// List proposals
 	ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error)
 	// Observe governance
 	//
@@ -1784,11 +1784,11 @@ type TradingDataServiceServer interface {
 	ObserveMarketsData(*ObserveMarketsDataRequest, TradingDataService_ObserveMarketsDataServer) error
 	// Get market data history
 	//
-	// Get market data history for a market ID between given dates using a cursor based pagination model
+	// Get market data history for a market ID between given dates
 	GetMarketDataHistoryByID(context.Context, *GetMarketDataHistoryByIDRequest) (*GetMarketDataHistoryByIDResponse, error)
 	// List transfers
 	//
-	// List Transfers to/from/either a public key using a cursor based pagination model
+	// List transfers to/from/either a public key
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
 	// Get network limits
 	//
@@ -1808,7 +1808,7 @@ type TradingDataServiceServer interface {
 	ListCandleIntervals(context.Context, *ListCandleIntervalsRequest) (*ListCandleIntervalsResponse, error)
 	// List votes
 	//
-	// Get votes for a party ID using a cursor based pagination model
+	// Get votes for a party ID
 	ListVotes(context.Context, *ListVotesRequest) (*ListVotesResponse, error)
 	// Observe votes
 	//
@@ -1840,7 +1840,7 @@ type TradingDataServiceServer interface {
 	GetLastTrade(context.Context, *GetLastTradeRequest) (*GetLastTradeResponse, error)
 	// List trades
 	//
-	// Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
+	// Get a list of all trades, optionally filtered by party/market/order
 	ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error)
 	// Observe trades
 	//
@@ -1872,11 +1872,11 @@ type TradingDataServiceServer interface {
 	GetParty(context.Context, *GetPartyRequest) (*GetPartyResponse, error)
 	// List parties
 	//
-	// Get parties using a cursor based pagination model
+	// Get parties
 	ListParties(context.Context, *ListPartiesRequest) (*ListPartiesResponse, error)
 	// List margin levels
 	//
-	// Get margin levels using a cursor based pagination model
+	// Get margin levels
 	ListMarginLevels(context.Context, *ListMarginLevelsRequest) (*ListMarginLevelsResponse, error)
 	// Observe margin levels
 	//
@@ -1936,7 +1936,7 @@ type TradingDataServiceServer interface {
 	GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error)
 	// List governance data
 	//
-	// List proposals using a cursor based pagination model
+	// List proposals
 	ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error)
 	// Observe governance
 	//

@@ -21,6 +21,7 @@
 - [7846](https://github.com/vegaprotocol/vega/issues/7846) - Add event indicating distressed parties that are still holding an active position.
 - [7985](https://github.com/vegaprotocol/vega/issues/7985) - Add full stop on all fields documentation to get it properly generated
 - [8024](https://github.com/vegaprotocol/vega/issues/8024) - Unify naming in `rpc` endpoints and add tags
+- [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
