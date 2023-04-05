@@ -2821,7 +2821,7 @@ message GetEpochResponse {
 
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
-  // MarketID used to specify the fee factors.
+  // Market ID, used to specify the fee factors.
   string market_id = 1;
   // Price at which the potential order is expected to trade.
   string price = 2;
