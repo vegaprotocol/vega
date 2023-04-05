@@ -249,7 +249,7 @@ service TradingDataService {
 
     // List transfers
     //
-    // List Transfers to/from/either a public key
+    // List transfers to/from/either a public key
     rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Transfers";
