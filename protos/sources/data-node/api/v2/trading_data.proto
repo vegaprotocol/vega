@@ -502,8 +502,8 @@ service TradingDataService {
     // List deposits
     //
     // Get a list of deposits for a given party.
-    // If a date range is provided filtering will be based on the last time the deposit
-    // has been updated (vega time).
+    // If a date range is provided, filtering will be based on the last time the deposit
+    // has been updated (in Vega time).
     rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Assets";
