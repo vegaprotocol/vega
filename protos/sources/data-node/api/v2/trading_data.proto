@@ -19,67 +19,118 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     title: "Vega data node APIs";
     version: "v0.70.0";
   }
-  schemes: [HTTP, HTTPS]
-  host: "lb.testnet.vega.xyz/datanode/rest"
+  schemes: [HTTP, HTTPS];
+  host: "https://api.testnet.vega.xyz";
+  consumes: "application/json";
+  responses: { // can add more keys here to specify common errors between all endpoints, can also be overwritten per rpc call
+    key: "500";
+    value: {
+      description: "An internal server error";
+      schema: {
+        json_schema: {
+          ref: ".google.rpc.Status";
+        }
+      }
+    }
+  }
 };
 
 service TradingDataService {
-    // Accounts list
+    // List accounts
     //
     // Returns a list of accounts matching the supplied filter, including their current balances.
     // If a given account has never had a balance, it will be absent from the list.
-    rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
+    rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Accounts";
+      };
+    }
 
     // Accounts subscription
     //
     // Subscribe to a stream of accounts
-    rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse);
+    rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Accounts";
+      };
+    }
 
     // Data node info
     //
     // Retrieves information about the data node.
     // Response contains a semver formatted version of the data node and the commit hash, from which the data node was built
-    rpc Info(InfoRequest) returns (InfoResponse);
+  rpc Info(InfoRequest) returns (InfoResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Node information";
+      };
+    }
 
-    // Order
+    // Get order
     //
     // Gets the current version of an order, or optionally provide a version ID to retrieve a given version if order was amended.
-    rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+    rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Orders";
+      };
+    }
 
-    // Orders list
+    // List orders
     //
     // Get a list of orders that match the given filters
-    rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+    rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Orders";
+      };
+    }
 
-    // Order history list
+    // List order versions
     //
     // List all versions of an order in the order history
-    rpc ListOrderVersions(ListOrderVersionsRequest) returns (ListOrderVersionsResponse);
+    rpc ListOrderVersions(ListOrderVersionsRequest) returns (ListOrderVersionsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Orders";
+      };
+    }
 
-    // Orders subscription
+    // Observe orders
     //
     // Subscribe to a stream of orders
-    rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse);
+    rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Orders";
+      };
+    }
 
-    // Positions (deprecated)
+    // List positions (deprecated)
     //
     // Get a list of positions by party (public key) using cursor based pagination
     // Deprecated: use ListAllPositions instead
     rpc ListPositions(ListPositionsRequest) returns (ListPositionsResponse) {
-        option deprecated = true;
-    };
+      option deprecated = true;
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Positions";
+      };
+    }
 
-    // Positions list
+    // List positions
     //
     // Get a list of positions by party (public key) using cursor based pagination
-    rpc ListAllPositions(ListAllPositionsRequest) returns (ListAllPositionsResponse);
+    rpc ListAllPositions(ListAllPositionsRequest) returns (ListAllPositionsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Positions";
+      };
+    }
 
-    // Positions subscription
+    // Observe positions
     //
     // Subscribe to a stream of positions
-    rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse);
+    rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Positions";
+      };
+    }
 
-    // Ledger entries list
+    // List ledger entries
     //
     // List ledger entries by asset, market, party, account type and transfer type within the given date range.
     // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
@@ -93,19 +144,27 @@ service TradingDataService {
     //   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
     //   - listing ledger entries with filtering on the sending AND receiving account
     //   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
-    rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {}
+    rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Ledger entries";
+      };
+    }
 
-    // Ledger entries export
-
+    // Export ledger entries
+    //
     // Export ledger entries records ledger entries to a csv file.
     // May or may not contain a date range - if no date range is provided, list all records for all times.
     //
     // Ledger entries can be exported by:
     //   - export ledger entries for a single party for a given asset within a given time range
     //   - export ledger entries for a single party for a given asset for all times
-    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (ExportLedgerEntriesResponse) {}
+    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (ExportLedgerEntriesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Ledger entries";
+      };
+    }
 
-    //  Balances
+    // List balance changes
     //
     // `ListBalanceChanges` queries the change in account balances over a period of time.
     //
@@ -119,347 +178,623 @@ service TradingDataService {
     // `ListBalanceChangesRequest` will return a list of
     // `(vega_time, asset_id, account_type, party_id, market_id, balance)`
     // With a row for each block at which a given account's balance changes.
-    rpc ListBalanceChanges(ListBalanceChangesRequest) returns (ListBalanceChangesResponse) {}
+    rpc ListBalanceChanges(ListBalanceChangesRequest) returns (ListBalanceChangesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Accounts";
+      };
+    }
 
-    // Market Data
+    // Get latest market data
     //
     // Get the latest market data for a given market
-    rpc GetLatestMarketData(GetLatestMarketDataRequest) returns (GetLatestMarketDataResponse);
+    rpc GetLatestMarketData(GetLatestMarketDataRequest) returns (GetLatestMarketDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Market Data list
+    // List latest market data
     //
     // Lists the latest market data for every market
-    rpc ListLatestMarketData(ListLatestMarketDataRequest) returns (ListLatestMarketDataResponse);
+    rpc ListLatestMarketData(ListLatestMarketDataRequest) returns (ListLatestMarketDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Market Depth
+    // Get latest market depth
     //
     // Get the latest market depth for a given market
-    rpc GetLatestMarketDepth(GetLatestMarketDepthRequest) returns (GetLatestMarketDepthResponse);
+    rpc GetLatestMarketDepth(GetLatestMarketDepthRequest) returns (GetLatestMarketDepthResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Market depth subscription
+    // Observe markets depth
     //
     // Subscribe to a stream of the latest market depth for a given market
-    rpc ObserveMarketsDepth(ObserveMarketsDepthRequest) returns (stream ObserveMarketsDepthResponse);
+    rpc ObserveMarketsDepth(ObserveMarketsDepthRequest) returns (stream ObserveMarketsDepthResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Market depth updates subscription
+    // Observe markets depth updates
     //
     // Subscribe to a stream of updates on market depth for a given market
-    rpc ObserveMarketsDepthUpdates(ObserveMarketsDepthUpdatesRequest) returns (stream ObserveMarketsDepthUpdatesResponse);
+    rpc ObserveMarketsDepthUpdates(ObserveMarketsDepthUpdatesRequest) returns (stream ObserveMarketsDepthUpdatesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Market data subscription
+    // Observe markets data
     //
     // Subscribe to a stream of data about a given market
-    rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse);
+    rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Market data history
+    // Get market data history
     //
     // Get market data history for a market ID between given dates using a cursor based pagination model
-    rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse);
+    rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Transfers list
+    // List transfers
     //
     // List Transfers to/from/either a public key using a cursor based pagination model
-    rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse);
+    rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Transfers";
+      };
+    }
 
-    // Network Limits
+    // Get network limits
     //
     // Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
-    rpc GetNetworkLimits(GetNetworkLimitsRequest) returns (GetNetworkLimitsResponse);
+    rpc GetNetworkLimits(GetNetworkLimitsRequest) returns (GetNetworkLimitsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Candle data
+    // List candle data
     //
     // Get candle data for a given candle ID. You can get a candle ID from the list candle intervals query
-    rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse);
+    rpc ListCandleData(ListCandleDataRequest) returns (ListCandleDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Candles";
+      };
+    }
 
-    // Candle updates
+    // Observe candle data
     //
     // Subscribe to a stream of candle updates
-    rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse);
+    rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Candles";
+      };
+    }
 
-    // Candle intervals list
+    // List candle intervals
     //
     // Get all available intervals for a given market along with the corresponding candle ID
-    rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse);
+    rpc ListCandleIntervals(ListCandleIntervalsRequest) returns (ListCandleIntervalsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Candles";
+      };
+    }
 
-    // Votes list
+    // List votes
     //
     // Get votes for a party ID using a cursor based pagination model
-    rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
+    rpc ListVotes(ListVotesRequest) returns (ListVotesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Governance";
+      };
+    }
 
-    // Votes subscription
+    // Observe votes
     //
     // Subscribe to a stream of votes
-    rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse);
+    rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Governance";
+      };
+    }
 
-    // ERC-20 list add signer bundle
+    // List ERC20 multi-sig signer added bundles
     //
     // List the signature bundle to add a particular validator to the signer list of the multisig contract
-    rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse);
+    rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "ERC20 bridge";
+      };
+    }
 
-    // ERC-20 remove signer bundle
+    // List ERC20 multi-sig signer removed bundles
     //
     // List the signatures bundle to remove a particular validator from signer list of the multisig contract
-    rpc ListERC20MultiSigSignerRemovedBundles(ListERC20MultiSigSignerRemovedBundlesRequest) returns (ListERC20MultiSigSignerRemovedBundlesResponse);
+    rpc ListERC20MultiSigSignerRemovedBundles(ListERC20MultiSigSignerRemovedBundlesRequest) returns (ListERC20MultiSigSignerRemovedBundlesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "ERC20 bridge";
+      };
+    }
 
-    // ERC-20 list asset bundle
+    // Get ERC20 list asset bundle
     //
     // Get the signatures bundle to allowlist an ERC20 token in the collateral bridge
-    rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse);
+    rpc GetERC20ListAssetBundle(GetERC20ListAssetBundleRequest) returns (GetERC20ListAssetBundleResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "ERC20 bridge";
+      };
+    }
 
-    // ERC-20 set asset limit bundle
+    // Get ERC20 set asset limits bundle
     //
     // Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
-    rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse);
+    rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "ERC20 bridge";
+      };
+    }
 
-    // ERC-20 withdrawal bundle
+    // Get ERC20 withdrawal approval
     //
     // Get the signature bundle to finalize a withdrawal on ethereum
-    rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse);
+    rpc GetERC20WithdrawalApproval(GetERC20WithdrawalApprovalRequest) returns (GetERC20WithdrawalApprovalResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "ERC20 bridge";
+      };
+    }
 
-    // Trade (latest)
+    // Get latest trade
     //
     // Get latest trade
-    rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse);
+    rpc GetLastTrade(GetLastTradeRequest) returns (GetLastTradeResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Trades";
+      };
+    }
 
-    // Trades list
+    // List trades
     //
     // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
-    rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
+    rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Trades";
+      };
+    }
 
-    // Trades subscription
+    // Observe trades
     //
     // Subscribe to a stream of trades, optionally filtered by party/market
-    rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse);
+    rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Trades";
+      };
+    }
 
-    // Oracle Spec
+    // Get oracle spec
     //
     // Get an oracle spec by ID. Use the oracle spec list to query for oracle spec IDs
-    rpc GetOracleSpec(GetOracleSpecRequest) returns (GetOracleSpecResponse);
+    rpc GetOracleSpec(GetOracleSpecRequest) returns (GetOracleSpecResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Data sources";
+      };
+    }
 
-    // Oracle Spec list
+    // List oracle specs
     //
     // List specs for an oracle
-    rpc ListOracleSpecs(ListOracleSpecsRequest) returns (ListOracleSpecsResponse);
+    rpc ListOracleSpecs(ListOracleSpecsRequest) returns (ListOracleSpecsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Data sources";
+      };
+    }
 
-    // Oracle data list
+    // List oracle data
     //
     // Get all oracle data
-    rpc ListOracleData(ListOracleDataRequest) returns (ListOracleDataResponse);
+    rpc ListOracleData(ListOracleDataRequest) returns (ListOracleDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Data sources";
+      };
+    }
 
-    // Market
+    // Get market
     //
     // Get information about a specific market using its ID. Use the market lists query to get a market's ID
-    rpc GetMarket(GetMarketRequest) returns (GetMarketResponse);
+    rpc GetMarket(GetMarketRequest) returns (GetMarketResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Markets list
+    // List markets
     //
     // Get markets using a cursor based pagination
-    rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
+    rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Party
+    // Get party
     //
     // Get a single party
-    rpc GetParty(GetPartyRequest) returns (GetPartyResponse);
+    rpc GetParty(GetPartyRequest) returns (GetPartyResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Parties";
+      };
+    }
 
-    // Parties
+    // List parties
     //
     // Get parties using a cursor based pagination model
-    rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
+    rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Parties";
+      };
+    }
 
-    // Margin Levels list
+    // List margin levels
     //
     // Get margin levels using a cursor based pagination model
-    rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse);
+    rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Margin levels";
+      };
+    }
 
-    // Margin levels subscription
+    // Observe margin levels
     //
     // Subscribe to a stream of margin levels
-    rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse);
+    rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Margin levels";
+      };
+    }
 
-    // Rewards list
+    // List rewards
     //
-    // Get rewards
-    rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse);
+    // List rewards
+    rpc ListRewards(ListRewardsRequest) returns (ListRewardsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Rewards";
+      };
+    }
 
-    // Reward summaries list
+    // List reward summaries
     //
     // Get reward summaries
-    rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse);
+    rpc ListRewardSummaries(ListRewardSummariesRequest) returns (ListRewardSummariesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Rewards";
+      };
+    }
 
-    // Reward summaries by epoch
+    // List epoch reward summaries
     //
     // List reward summaries by epoch
-    rpc ListEpochRewardSummaries(ListEpochRewardSummariesRequest) returns (ListEpochRewardSummariesResponse);
+    rpc ListEpochRewardSummaries(ListEpochRewardSummariesRequest) returns (ListEpochRewardSummariesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Rewards";
+      };
+    }
 
-    // Rewards subscription
+    // Observe rewards
     //
     // Subscribe to a stream of rewards
-    rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse);
+    rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Rewards";
+      };
+    }
 
-    // Deposit
+    // Get deposit
     //
     // Get a deposit by its identifier
-    rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse);
+    rpc GetDeposit(GetDepositRequest) returns (GetDepositResponse)  {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Assets";
+      };
+    }
 
-    // Deposits list
+    // List deposits
     //
     // Get a list of deposits for a given party
-    rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse);
+    rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Assets";
+      };
+    }
 
-    // Withdrawal
+    // Get withdrawal
     //
     // Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
-    rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse);
+    rpc GetWithdrawal(GetWithdrawalRequest) returns (GetWithdrawalResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Assets";
+      };
+    }
 
-    // Withdrawals list
+    // List withdrawals
     //
     // Get a list of withdrawals for a given party
-    rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse);
+    rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Assets";
+      };
+    }
 
-    // Asset
+    // Get asset
     //
     // Get a single asset using its ID. Use the assets list query to get an asset's ID
-    rpc GetAsset(GetAssetRequest) returns (GetAssetResponse);
+    rpc GetAsset(GetAssetRequest) returns (GetAssetResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Assets";
+      };
+    }
 
-    // Assets list
+    // List assets
     //
     // Get a list of assets using cursor based pagination
-    rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
+    rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Assets";
+      };
+    }
 
-    // Liquidity Provisions list
+    // List liquidity provisions
     //
     // Get a list of liquidity provisions for a given market using a cursor based pagination
-    rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse);
+    rpc ListLiquidityProvisions(ListLiquidityProvisionsRequest) returns (ListLiquidityProvisionsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Liquidity provisions";
+      };
+    }
 
-    // Liquidity provision subscription
+    // Observe liquidity provisions
     //
     // Get a liquidity provision subscription for a given market and party
-    rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse);
+    rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Liquidity provisions";
+      };
+    }
 
-    // Governance
+    // Get governance data
     //
     // Get a single proposal's details
-    rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse);
+    rpc GetGovernanceData(GetGovernanceDataRequest) returns (GetGovernanceDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Governance";
+      };
+    }
 
-    // Governance list
+    // List governance data
     //
     // List proposals using a cursor based pagination model
-    rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse);
+    rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Governance";
+      };
+    }
 
-    // Governance proposals subscription
+    // Observe governance
     //
     // Subscribe to a stream of governance proposals
-    rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse);
+    rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Governance";
+      };
+    }
 
-    // Delegation list
+    // List delegations
     //
     // List the token delegations on the network
-    rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
+    rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
     // Delegation events subscription
     //
     // Subscribe to delegation events
-    rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse);
+    rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Network data
+    // Get network data
     //
     // Get data regarding the nodes of the network
-    rpc GetNetworkData(GetNetworkDataRequest) returns (GetNetworkDataResponse);
+    rpc GetNetworkData(GetNetworkDataRequest) returns (GetNetworkDataResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Node
+    // Get node
     //
     // Get information about a given node
-    rpc GetNode(GetNodeRequest) returns (GetNodeResponse);
+    rpc GetNode(GetNodeRequest) returns (GetNodeResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Nodes list
+    // List nodes
     //
     // List information about the nodes on the network
-    rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+    rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Node signatures list
+    // List node signatures
     //
     // List an aggregate of signatures from all the nodes of the network
-    rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse);
+    rpc ListNodeSignatures(ListNodeSignaturesRequest) returns (ListNodeSignaturesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "ERC20 bridge";
+      };
+    }
 
-    // Epoch
+    // Get epoch
     //
     // Get data for a specific epoch, if ID is omitted, it retrieves the current epoch
-    rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse);
+    rpc GetEpoch(GetEpochRequest) returns (GetEpochResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
     // Estimate fee
     //
-    // Estimate the fee that would incur for submitting this order
-    rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse);
+    // Estimate the fee that would be incurred for submitting this order
+    rpc EstimateFee(EstimateFeeRequest) returns (EstimateFeeResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Orders";
+      };
+    }
 
     // Estimate margin
     //
     // Estimate the margin that would be required for submitting this order
-    rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse);
+    rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Orders";
+      };
+    }
 
-    // Network Parameters list
+    // List network parameters
     //
     // Get the network parameters
-    rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
+    rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Network Parameter
+    // Get network parameter
     //
     // Get a single network parameter
-    rpc GetNetworkParameter(GetNetworkParameterRequest) returns (GetNetworkParameterResponse);
+    rpc GetNetworkParameter(GetNetworkParameterRequest) returns (GetNetworkParameterResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Checkpoints list
+    // List checkpoints
     //
     // List information about checkpoint generated by the network
-    rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse);
+    rpc ListCheckpoints(ListCheckpointsRequest) returns (ListCheckpointsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Stake
+    // Get Stake
     //
-    // Retrieve staking informations for a given party
-    rpc GetStake(GetStakeRequest) returns (GetStakeResponse);
+    // Retrieve staking information for a given party
+    rpc GetStake(GetStakeRequest) returns (GetStakeResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Risk factors
+    // Get risk factors
     //
     // Get risk factor data for a given market
-    rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse);
+    rpc GetRiskFactors(GetRiskFactorsRequest) returns (GetRiskFactorsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Markets";
+      };
+    }
 
-    // Event bus subscription
+    // Observe event bus
     //
     // Subscribe to a stream of events from the core
-    rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse);
+    rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Events";
+      };
+    }
 
-    // Transfer Responses
+    // Observe ledger movements
     //
     // Subscribe to a stream of transfer responses
-    rpc ObserveLedgerMovements(ObserveLedgerMovementsRequest) returns (stream ObserveLedgerMovementsResponse);
+    rpc ObserveLedgerMovements(ObserveLedgerMovementsRequest) returns (stream ObserveLedgerMovementsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Ledger movements";
+      };
+    }
 
-    // Key Rotations list
+    // List key rotations
     //
     // Get information about Vega key rotations that have been performed by validator nodes
-    rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse);
+    rpc ListKeyRotations(ListKeyRotationsRequest) returns (ListKeyRotationsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Ethereum Key Rotations list
+    // List Ethereum key rotations
     //
     // Get information about Ethereum key rotations that have been performed by validator nodes
-    rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse);
+    rpc ListEthereumKeyRotations(ListEthereumKeyRotationsRequest) returns (ListEthereumKeyRotationsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Vega Time
+    // Get Vega time
     //
     // Get the current time of the network, displayed as a Unix timestamp in nano seconds
-    rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse);
+    rpc GetVegaTime(GetVegaTimeRequest) returns (GetVegaTimeResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Protocol upgrade status
+    // Get protocol upgrade status
     //
     // Get status of a protocol upgrade
-    rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse);
+    rpc GetProtocolUpgradeStatus(GetProtocolUpgradeStatusRequest) returns (GetProtocolUpgradeStatusResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Protocol upgrade proposals list
+    // List protocol upgrade proposals
     //
     // List protocol upgrade proposals, optionally filtering on status or approver.
-    rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse);
+    rpc ListProtocolUpgradeProposals(ListProtocolUpgradeProposalsRequest) returns (ListProtocolUpgradeProposalsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
-    // Snapshots list
+    // List snapshots
     //
     // List core snapshots taken
-    rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse);
+    rpc ListCoreSnapshots(ListCoreSnapshotsRequest) returns (ListCoreSnapshotsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network";
+      };
+    }
 
     // Network History
     //
@@ -468,39 +803,63 @@ service TradingDataService {
     // to consume events for the latest block from the Vega core.
     // See https://github.com/vegaprotocol/vega/tree/develop/datanode/networkhistory/README.md for a full description of network history
 
-    // Network history most recent segment
+    // Get most recent network history segment
     //
     // Get the network's most recently history segment
-    rpc GetMostRecentNetworkHistorySegment(GetMostRecentNetworkHistorySegmentRequest) returns (GetMostRecentNetworkHistorySegmentResponse);
+    rpc GetMostRecentNetworkHistorySegment(GetMostRecentNetworkHistorySegmentRequest) returns (GetMostRecentNetworkHistorySegmentResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network history";
+      };
+    }
 
-    // Network history all segments list
+    // List all network history segments
     //
     // List all history segments stored by the data node you're connected to
-    rpc ListAllNetworkHistorySegments(ListAllNetworkHistorySegmentsRequest) returns (ListAllNetworkHistorySegmentsResponse);
+    rpc ListAllNetworkHistorySegments(ListAllNetworkHistorySegmentsRequest) returns (ListAllNetworkHistorySegmentsResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network history";
+      };
+    }
 
-    // Network history peer addresses list
+    // Get active network history peer addresses
     //
     // List the addresses of all active network history peers
-    rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse);
+    rpc GetActiveNetworkHistoryPeerAddresses(GetActiveNetworkHistoryPeerAddressesRequest) returns (GetActiveNetworkHistoryPeerAddressesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network history";
+      };
+    }
 
     // Network history status
     //
     // Retrieves information about the current state of network history
     // Response contains the network history status
-    rpc NetworkHistoryStatus(NetworkHistoryStatusRequest) returns (NetworkHistoryStatusResponse);
+    rpc NetworkHistoryStatus(NetworkHistoryStatusRequest) returns (NetworkHistoryStatusResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network history";
+      };
+    }
 
     // Network history bootstrap peers
     //
     // Retrieves the bootstrap peers for data nodes.
     // Response contains the bootstrap peers
-    rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse);
+    rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network history";
+      };
+    }
 
-    // All entities list
+    // List entities
     //
     // List all entities created by transaction hash
-    rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+    rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Explorer";
+      };
+    }
 
-    // Export Network History as CSV
+    // Export network history as CSV
     //
     // Extract CSV table data from network history between two block heights.
     //
@@ -510,7 +869,7 @@ service TradingDataService {
     // would all fall on segment boundaries and be valid.
     //
     // The generated CSV file is compressed into a ZIP file and returned, with the file name
-    // in the following format: <chain id>-<table name>-<start block>-<end block>.zip
+    // in the following format: [chain id]-[table name]-[start block]-[end block].zip
     //
     // In gRPC, results are returned in a chunked stream of base64 encoded data.
     //
@@ -543,7 +902,7 @@ service TradingDataService {
     // file will contain multiple CSV files, with a potentially different set of headers. The
     // 'version' number of the database schema is part of the in the CSV filename:
     //
-    //  <chain id>-<table name>-<schema version>-<start block>-<end block>.zip
+    //  [chain id]-[table name]-[schema version]-[start block]-[end block].zip
     //
     // For example, a zip file might be called mainnet-sometable-000001-003000.zip
     //
@@ -558,14 +917,22 @@ service TradingDataService {
     // timestamp, value, extra_value
     // 3, baz, apple
     //
-    // It is worth nothing that the schema will not change within a single network history segment.
+    // It is worth noting that the schema will not change within a single network history segment.
     // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
-    rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody);
+    rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Network history";
+      };
+    }
 
     // Ping
     //
     // Ping the data node
-    rpc Ping(PingRequest) returns (PingResponse);
+    rpc Ping(PingRequest) returns (PingResponse) {
+      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+	tags: "Misc";
+      };
+    }
 
 }
 
