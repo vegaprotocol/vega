@@ -280,7 +280,7 @@ func (os *Orders) ListOrders(
 	whereStr, args := applyOrderFilter(where.String(), bind, orderFilter)
 
 	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, whereStr)
-	query, args = filterDateRange(query, ordersFilterDateColumn, ptr.UnBox(orderFilter.DateRange), args...)
+	query, args = filterDateRange(query, ordersFilterDateColumn, ptr.UnBox(orderFilter.DateRange), false, args...)
 
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 

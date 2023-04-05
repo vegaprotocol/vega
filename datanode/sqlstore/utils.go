@@ -210,13 +210,26 @@ func StructValueForColumn(obj any, colName string) (interface{}, error) {
 	return nil, fmt.Errorf("no field matching column name %s", colName)
 }
 
-func filterDateRange(query, dateColumn string, dateRange entities.DateRange, args ...interface{}) (string, []interface{}) {
+func filterDateRange(query, dateColumn string, dateRange entities.DateRange, isFirstCondition bool, args ...interface{}) (string, []interface{}) {
+	conditions := []string{}
+
 	if dateRange.Start != nil {
-		query = fmt.Sprintf("%s AND %s >= %s", query, dateColumn, nextBindVar(&args, *dateRange.Start))
+		conditions = append(conditions, fmt.Sprintf("%s >= %s", query, dateColumn, nextBindVar(&args, *dateRange.Start)))
 	}
 
 	if dateRange.End != nil {
-		query = fmt.Sprintf("%s AND %s <= %s", query, dateColumn, nextBindVar(&args, *dateRange.End))
+		conditions = append(conditions, fmt.Sprintf("%s <= %s", query, dateColumn, nextBindVar(&args, *dateRange.End)))
+	}
+
+	if len(conditions) <= 0 {
+		return query, args
+	}
+
+	finalConditions := strings.Join(conditions, " AND ")
+	if isFirstCondition {
+		query = fmt.Sprintf("%s where %s", query, finalConditions)
+	} else {
+		query = fmt.Sprintf("%s AND %s", query, finalConditions)
 	}
 
 	return query, args
