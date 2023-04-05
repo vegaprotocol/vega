@@ -162,9 +162,11 @@ func getDepositsByPartyQuery(party string, dateRange entities.DateRange) (string
 	query := `select id, status, party_id, asset, amount, foreign_tx_hash, credited_timestamp, created_timestamp, tx_hash, vega_time
 		from deposits_current`
 
+	first := true
 	if party != "" {
 		query = fmt.Sprintf(`%s where party_id = %s`, query, nextBindVar(&args, entities.PartyID(party)))
+		first = false
 	}
 
-	return filterDateRange(query, depositsFilterDateColumn, dateRange, args...)
+	return filterDateRange(query, depositsFilterDateColumn, dateRange, first, args...)
 }

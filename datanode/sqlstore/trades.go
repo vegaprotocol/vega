@@ -131,10 +131,12 @@ func (ts *Trades) List(ctx context.Context,
 	}
 
 	query := `SELECT * from trades`
+	first := true
 	if len(conditions) > 0 {
 		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(conditions, " AND "))
+		first = false
 	}
-	query, args = filterDateRange(query, tradesFilterDateColumn, dateRange, args...)
+	query, args = filterDateRange(query, tradesFilterDateColumn, dateRange, first, args...)
 
 	trades, pageInfo, err := ts.queryTradesWithCursorPagination(ctx, query, args, pagination)
 	if err != nil {

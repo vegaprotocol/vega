@@ -501,7 +501,9 @@ service TradingDataService {
 
     // List deposits
     //
-    // Get a list of deposits for a given party
+    // Get a list of deposits for a given party.
+    // If a date range is provided, filtering will be based on the last time the deposit
+    // has been updated (in Vega time).
     rpc ListDeposits(ListDepositsRequest) returns (ListDepositsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Assets";
@@ -3095,8 +3097,8 @@ message GetVegaTimeResponse {
 
 // A date range for queries that can return historical data
 // If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
-// If only the end_timestamp is provided, results up to the given end should be returned (exclusive).
-// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (exclusive).
+// If only the end_timestamp is provided, results up to the given end should be returned (inclusive).
+// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (inclusive).
 message DateRange {
     // Optional start timestamp in nanoseconds past the epoch.
     optional int64 start_timestamp = 1;

@@ -168,9 +168,11 @@ func getWithdrawalsByPartyQuery(partyID string, dateRange entities.DateRange) (s
 		created_timestamp, withdrawn_timestamp, ext, tx_hash, vega_time
 		FROM withdrawals_current`
 
+	first := true
 	if partyID != "" {
 		query = fmt.Sprintf("%s WHERE party_id = %s", query, nextBindVar(&args, entities.PartyID(partyID)))
+		first = false
 	}
 
-	return filterDateRange(query, withdrawalsFilterDateColumn, dateRange, args...)
+	return filterDateRange(query, withdrawalsFilterDateColumn, dateRange, first, args...)
 }
