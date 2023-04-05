@@ -214,11 +214,11 @@ func filterDateRange(query, dateColumn string, dateRange entities.DateRange, isF
 	conditions := []string{}
 
 	if dateRange.Start != nil {
-		conditions = append(conditions, fmt.Sprintf("%s >= %s", query, dateColumn, nextBindVar(&args, *dateRange.Start)))
+		conditions = append(conditions, fmt.Sprintf("%s >= %s", dateColumn, nextBindVar(&args, *dateRange.Start)))
 	}
 
 	if dateRange.End != nil {
-		conditions = append(conditions, fmt.Sprintf("%s <= %s", query, dateColumn, nextBindVar(&args, *dateRange.End)))
+		conditions = append(conditions, fmt.Sprintf("%s < %s", dateColumn, nextBindVar(&args, *dateRange.End)))
 	}
 
 	if len(conditions) <= 0 {

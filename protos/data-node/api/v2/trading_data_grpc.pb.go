@@ -249,8 +249,8 @@ type TradingDataServiceClient interface {
 	// List deposits
 	//
 	// Get a list of deposits for a given party.
-	// If a date range is provided filtering will be based on the last time the deposit
-	// has been updated (vega time).
+	// If a date range is provided, filtering will be based on the last time the deposit
+	// has been updated (in Vega time).
 	ListDeposits(ctx context.Context, in *ListDepositsRequest, opts ...grpc.CallOption) (*ListDepositsResponse, error)
 	// Get withdrawal
 	//
@@ -1832,8 +1832,8 @@ type TradingDataServiceServer interface {
 	// List deposits
 	//
 	// Get a list of deposits for a given party.
-	// If a date range is provided filtering will be based on the last time the deposit
-	// has been updated (vega time).
+	// If a date range is provided, filtering will be based on the last time the deposit
+	// has been updated (in Vega time).
 	ListDeposits(context.Context, *ListDepositsRequest) (*ListDepositsResponse, error)
 	// Get withdrawal
 	//
