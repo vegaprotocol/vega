@@ -83,7 +83,7 @@ type OracleDataSubmission struct {
 	// Oracle data is a type of external data source data.
 	Source OracleDataSubmission_OracleSource `protobuf:"varint,1,opt,name=source,proto3,enum=vega.commands.v1.OracleDataSubmission_OracleSource" json:"source,omitempty"`
 	// The data provided by the data source
-	// In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data
+	// In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 

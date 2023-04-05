@@ -180,9 +180,9 @@ type AuctionDuration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Duration of the auction in seconds
+	// Duration of the auction in seconds.
 	Duration int64 `protobuf:"varint,1,opt,name=duration,proto3" json:"duration,omitempty"`
-	// Target uncrossing trading volume
+	// Target uncrossing trading volume.
 	Volume uint64 `protobuf:"varint,2,opt,name=volume,proto3" json:"volume,omitempty"`
 }
 
@@ -238,15 +238,15 @@ type Future struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The asset for the future
+	// The asset for the future.
 	SettlementAsset string `protobuf:"bytes,1,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
-	// Quote name of the instrument
+	// Quote name of the instrument.
 	QuoteName string `protobuf:"bytes,2,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
-	// The data source specification that describes the settlement data source filter
+	// The data source specification that describes the settlement data source filter.
 	DataSourceSpecForSettlementData *DataSourceSpec `protobuf:"bytes,3,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
-	// The data source specification that describes the trading termination data source filter
+	// The data source specification that describes the trading termination data source filter.
 	DataSourceSpecForTradingTermination *DataSourceSpec `protobuf:"bytes,4,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
-	// The binding between the data spec and the data source
+	// The binding between the data spec and the data source.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,5,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
 }
 
@@ -329,7 +329,7 @@ type DataSourceSpecToFutureBinding struct {
 	// If it is set to "prices.BTC.value", then the Future will use the value of
 	// this property as settlement data.
 	SettlementDataProperty string `protobuf:"bytes,1,opt,name=settlement_data_property,json=settlementDataProperty,proto3" json:"settlement_data_property,omitempty"`
-	// the name of the property in the data source data that signals termination of trading
+	// the name of the property in the data source data that signals termination of trading.
 	TradingTerminationProperty string `protobuf:"bytes,2,opt,name=trading_termination_property,json=tradingTerminationProperty,proto3" json:"trading_termination_property,omitempty"`
 }
 
@@ -385,7 +385,7 @@ type InstrumentMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more tags
+	// A list of 0 or more tags.
 	Tags []string `protobuf:"bytes,1,rep,name=tags,proto3" json:"tags,omitempty"`
 }
 
@@ -434,15 +434,15 @@ type Instrument struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument identifier
+	// Instrument identifier.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Code for the instrument
+	// Code for the instrument.
 	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	// Name of the instrument
+	// Name of the instrument.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// A collection of instrument meta-data
+	// A collection of instrument meta-data.
 	Metadata *InstrumentMetadata `protobuf:"bytes,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// The product the instrument is composed of
+	// The product the instrument is composed of.
 	//
 	// Types that are assignable to Product:
 	//
@@ -529,7 +529,7 @@ type isInstrument_Product interface {
 }
 
 type Instrument_Future struct {
-	// Future
+	// Future.
 	Future *Future `protobuf:"bytes,100,opt,name=future,proto3,oneof"`
 }
 
@@ -541,11 +541,11 @@ type LogNormalRiskModel struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Risk Aversion Parameter
+	// Risk Aversion Parameter.
 	RiskAversionParameter float64 `protobuf:"fixed64,1,opt,name=risk_aversion_parameter,json=riskAversionParameter,proto3" json:"risk_aversion_parameter,omitempty"`
-	// Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number
+	// Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number.
 	Tau float64 `protobuf:"fixed64,2,opt,name=tau,proto3" json:"tau,omitempty"`
-	// Risk model parameters for log normal
+	// Risk model parameters for log normal.
 	Params *LogNormalModelParams `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
 }
 
@@ -608,11 +608,11 @@ type LogNormalModelParams struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Mu parameter, annualised growth rate of the underlying asset
+	// Mu parameter, annualised growth rate of the underlying asset.
 	Mu float64 `protobuf:"fixed64,1,opt,name=mu,proto3" json:"mu,omitempty"`
-	// R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number
+	// R parameter, annualised growth rate of the risk-free asset, used for discounting of future cash flows, can be any real number.
 	R float64 `protobuf:"fixed64,2,opt,name=r,proto3" json:"r,omitempty"`
-	// Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number
+	// Sigma parameter, annualised volatility of the underlying asset, must be a strictly non-negative real number.
 	Sigma float64 `protobuf:"fixed64,3,opt,name=sigma,proto3" json:"sigma,omitempty"`
 }
 
@@ -675,7 +675,7 @@ type SimpleRiskModel struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Risk model params for simple modelling
+	// Risk model params for simple modelling.
 	Params *SimpleModelParams `protobuf:"bytes,1,opt,name=params,proto3" json:"params,omitempty"`
 }
 
@@ -724,15 +724,15 @@ type SimpleModelParams struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Pre-defined risk factor value for long
+	// Pre-defined risk factor value for long.
 	FactorLong float64 `protobuf:"fixed64,1,opt,name=factor_long,json=factorLong,proto3" json:"factor_long,omitempty"`
-	// Pre-defined risk factor value for short
+	// Pre-defined risk factor value for short.
 	FactorShort float64 `protobuf:"fixed64,2,opt,name=factor_short,json=factorShort,proto3" json:"factor_short,omitempty"`
-	// Pre-defined maximum price move up that the model considers as valid
+	// Pre-defined maximum price move up that the model considers as valid.
 	MaxMoveUp float64 `protobuf:"fixed64,3,opt,name=max_move_up,json=maxMoveUp,proto3" json:"max_move_up,omitempty"`
-	// Pre-defined minimum price move down that the model considers as valid
+	// Pre-defined minimum price move down that the model considers as valid.
 	MinMoveDown float64 `protobuf:"fixed64,4,opt,name=min_move_down,json=minMoveDown,proto3" json:"min_move_down,omitempty"`
-	// Pre-defined constant probability of trading
+	// Pre-defined constant probability of trading.
 	ProbabilityOfTrading float64 `protobuf:"fixed64,5,opt,name=probability_of_trading,json=probabilityOfTrading,proto3" json:"probability_of_trading,omitempty"`
 }
 
@@ -809,11 +809,11 @@ type ScalingFactors struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Search level
+	// Search level.
 	SearchLevel float64 `protobuf:"fixed64,1,opt,name=search_level,json=searchLevel,proto3" json:"search_level,omitempty"`
-	// Initial margin level
+	// Initial margin level.
 	InitialMargin float64 `protobuf:"fixed64,2,opt,name=initial_margin,json=initialMargin,proto3" json:"initial_margin,omitempty"`
-	// Collateral release level
+	// Collateral release level.
 	CollateralRelease float64 `protobuf:"fixed64,3,opt,name=collateral_release,json=collateralRelease,proto3" json:"collateral_release,omitempty"`
 }
 
@@ -876,7 +876,7 @@ type MarginCalculator struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Scaling factors for margin calculation
+	// Scaling factors for margin calculation.
 	ScalingFactors *ScalingFactors `protobuf:"bytes,1,opt,name=scaling_factors,json=scalingFactors,proto3" json:"scaling_factors,omitempty"`
 }
 
@@ -925,11 +925,11 @@ type TradableInstrument struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument details
+	// Instrument details.
 	Instrument *Instrument `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Margin calculator for the instrument
+	// Margin calculator for the instrument.
 	MarginCalculator *MarginCalculator `protobuf:"bytes,2,opt,name=margin_calculator,json=marginCalculator,proto3" json:"margin_calculator,omitempty"`
-	// Risk model for use by the instrument
+	// Risk model for use by the instrument.
 	//
 	// Types that are assignable to RiskModel:
 	//
@@ -1010,12 +1010,12 @@ type isTradableInstrument_RiskModel interface {
 }
 
 type TradableInstrument_LogNormalRiskModel struct {
-	// Log normal
+	// Log normal.
 	LogNormalRiskModel *LogNormalRiskModel `protobuf:"bytes,100,opt,name=log_normal_risk_model,json=logNormalRiskModel,proto3,oneof"`
 }
 
 type TradableInstrument_SimpleRiskModel struct {
-	// Simple
+	// Simple.
 	SimpleRiskModel *SimpleRiskModel `protobuf:"bytes,101,opt,name=simple_risk_model,json=simpleRiskModel,proto3,oneof"`
 }
 
@@ -1029,11 +1029,11 @@ type FeeFactors struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Maker fee
+	// Maker fee.
 	MakerFee string `protobuf:"bytes,1,opt,name=maker_fee,json=makerFee,proto3" json:"maker_fee,omitempty"`
-	// Infrastructure fee
+	// Infrastructure fee.
 	InfrastructureFee string `protobuf:"bytes,2,opt,name=infrastructure_fee,json=infrastructureFee,proto3" json:"infrastructure_fee,omitempty"`
-	// Liquidity fee
+	// Liquidity fee.
 	LiquidityFee string `protobuf:"bytes,3,opt,name=liquidity_fee,json=liquidityFee,proto3" json:"liquidity_fee,omitempty"`
 }
 
@@ -1096,7 +1096,7 @@ type Fees struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Fee factors
+	// Fee factors.
 	Factors *FeeFactors `protobuf:"bytes,1,opt,name=factors,proto3" json:"factors,omitempty"`
 }
 
@@ -1145,13 +1145,13 @@ type PriceMonitoringTrigger struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Price monitoring projection horizon τ in seconds
+	// Price monitoring projection horizon τ in seconds.
 	Horizon int64 `protobuf:"varint,1,opt,name=horizon,proto3" json:"horizon,omitempty"`
-	// Price monitoring probability level p
+	// Price monitoring probability level p.
 	Probability string `protobuf:"bytes,2,opt,name=probability,proto3" json:"probability,omitempty"`
 	// Price monitoring auction extension duration in seconds should the price
 	// breach its theoretical level over the specified horizon at the specified
-	// probability level
+	// probability level.
 	AuctionExtension int64 `protobuf:"varint,3,opt,name=auction_extension,json=auctionExtension,proto3" json:"auction_extension,omitempty"`
 }
 
@@ -1262,7 +1262,7 @@ type PriceMonitoringSettings struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Specifies price monitoring parameters to be used for price monitoring purposes
+	// Specifies price monitoring parameters to be used for price monitoring purposes.
 	Parameters *PriceMonitoringParameters `protobuf:"bytes,1,opt,name=parameters,proto3" json:"parameters,omitempty"`
 }
 
@@ -1311,11 +1311,11 @@ type LiquidityMonitoringParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Specifies parameters related to target stake calculation
+	// Specifies parameters related to target stake calculation.
 	TargetStakeParameters *TargetStakeParameters `protobuf:"bytes,1,opt,name=target_stake_parameters,json=targetStakeParameters,proto3" json:"target_stake_parameters,omitempty"`
-	// Specifies the triggering ratio for entering liquidity auction
+	// Specifies the triggering ratio for entering liquidity auction.
 	TriggeringRatio string `protobuf:"bytes,2,opt,name=triggering_ratio,json=triggeringRatio,proto3" json:"triggering_ratio,omitempty"`
-	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction
+	// Specifies by how many seconds an auction should be extended if leaving the auction were to trigger a liquidity auction.
 	AuctionExtension int64 `protobuf:"varint,3,opt,name=auction_extension,json=auctionExtension,proto3" json:"auction_extension,omitempty"`
 }
 
@@ -1378,9 +1378,9 @@ type TargetStakeParameters struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Specifies length of time window expressed in seconds for target stake calculation
+	// Specifies length of time window expressed in seconds for target stake calculation.
 	TimeWindow int64 `protobuf:"varint,1,opt,name=time_window,json=timeWindow,proto3" json:"time_window,omitempty"`
-	// Specifies scaling factors used in target stake calculation
+	// Specifies scaling factors used in target stake calculation.
 	ScalingFactor float64 `protobuf:"fixed64,2,opt,name=scaling_factor,json=scalingFactor,proto3" json:"scaling_factor,omitempty"`
 }
 
@@ -1436,37 +1436,37 @@ type Market struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier
+	// Unique identifier.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Tradable instrument configuration
+	// Tradable instrument configuration.
 	TradableInstrument *TradableInstrument `protobuf:"bytes,2,opt,name=tradable_instrument,json=tradableInstrument,proto3" json:"tradable_instrument,omitempty"`
 	// Number of decimal places that a price must be shifted by in order to get a
 	// correct price denominated in the currency of the market, for example:
-	// `realPrice = price / 10^decimalPlaces`
+	// `realPrice = price / 10^decimalPlaces`.
 	DecimalPlaces uint64 `protobuf:"varint,3,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Fees configuration
+	// Fees configuration.
 	Fees *Fees `protobuf:"bytes,4,opt,name=fees,proto3" json:"fees,omitempty"`
 	// Auction duration specifies how long the opening auction will run (minimum
-	// duration and optionally a minimum traded volume)
+	// duration and optionally a minimum traded volume).
 	OpeningAuction *AuctionDuration `protobuf:"bytes,5,opt,name=opening_auction,json=openingAuction,proto3" json:"opening_auction,omitempty"`
-	// PriceMonitoringSettings for the market
+	// PriceMonitoringSettings for the market.
 	PriceMonitoringSettings *PriceMonitoringSettings `protobuf:"bytes,6,opt,name=price_monitoring_settings,json=priceMonitoringSettings,proto3" json:"price_monitoring_settings,omitempty"`
-	// LiquidityMonitoringParameters for the market
+	// LiquidityMonitoringParameters for the market.
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,7,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
-	// Current mode of execution of the market
+	// Current mode of execution of the market.
 	TradingMode Market_TradingMode `protobuf:"varint,8,opt,name=trading_mode,json=tradingMode,proto3,enum=vega.Market_TradingMode" json:"trading_mode,omitempty"`
-	// Current state of the market
+	// Current state of the market.
 	State Market_State `protobuf:"varint,9,opt,name=state,proto3,enum=vega.Market_State" json:"state,omitempty"`
-	// Timestamps for when the market state changes
+	// Timestamps for when the market state changes.
 	MarketTimestamps *MarketTimestamps `protobuf:"bytes,10,opt,name=market_timestamps,json=marketTimestamps,proto3" json:"market_timestamps,omitempty"`
-	// The number of decimal places for a position
+	// The number of decimal places for a position.
 	PositionDecimalPlaces int64 `protobuf:"varint,11,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 	// Percentage move up and down from the mid price which specifies the range of
-	// price levels over which automated liquidity provision orders will be deployed
+	// price levels over which automated liquidity provision orders will be deployed.
 	LpPriceRange string `protobuf:"bytes,12,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
-	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,13,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
-	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,14,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
 }
 
@@ -1606,13 +1606,13 @@ type MarketTimestamps struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Time when the market is first proposed
+	// Time when the market is first proposed.
 	Proposed int64 `protobuf:"varint,1,opt,name=proposed,proto3" json:"proposed,omitempty"`
-	// Time when the market has been voted in and began its opening auction
+	// Time when the market has been voted in and began its opening auction.
 	Pending int64 `protobuf:"varint,2,opt,name=pending,proto3" json:"pending,omitempty"`
-	// Time when the market has left the opening auction and is ready to accept trades
+	// Time when the market has left the opening auction and is ready to accept trades.
 	Open int64 `protobuf:"varint,3,opt,name=open,proto3" json:"open,omitempty"`
-	// Time when the market closed
+	// Time when the market closed.
 	Close int64 `protobuf:"varint,4,opt,name=close,proto3" json:"close,omitempty"`
 }
 
