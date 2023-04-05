@@ -490,15 +490,6 @@ service TradingDataService {
       };
     }
 
-    // Observe rewards
-    //
-    // Subscribe to a stream of rewards
-    rpc ObserveRewards(ObserveRewardsRequest) returns (stream ObserveRewardsResponse) {
-      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Rewards";
-      };
-    }
-
     // Get deposit
     //
     // Get a deposit by its identifier
@@ -602,15 +593,6 @@ service TradingDataService {
     //
     // List the token delegations on the network
     rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse) {
-      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Network";
-      };
-    }
-
-    // Delegation events subscription
-    //
-    // Subscribe to delegation events
-    rpc ObserveDelegations(ObserveDelegationsRequest) returns (stream ObserveDelegationsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Network";
       };

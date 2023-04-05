@@ -1740,26 +1740,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveCandleData(arg0, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveCandleData", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveCandleData), varargs...)
 }
 
-// ObserveDelegations mocks base method.
-func (m *MockTradingDataServiceClientV2) ObserveDelegations(arg0 context.Context, arg1 *v2.ObserveDelegationsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveDelegationsClient, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ObserveDelegations", varargs...)
-	ret0, _ := ret[0].(v2.TradingDataService_ObserveDelegationsClient)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ObserveDelegations indicates an expected call of ObserveDelegations.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveDelegations(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDelegations", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveDelegations), varargs...)
-}
-
 // ObserveEventBus mocks base method.
 func (m *MockTradingDataServiceClientV2) ObserveEventBus(arg0 context.Context, arg1 ...grpc.CallOption) (v2.TradingDataService_ObserveEventBusClient, error) {
 	m.ctrl.T.Helper()
@@ -1958,26 +1938,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ObservePositions(arg0, arg
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObservePositions", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObservePositions), varargs...)
-}
-
-// ObserveRewards mocks base method.
-func (m *MockTradingDataServiceClientV2) ObserveRewards(arg0 context.Context, arg1 *v2.ObserveRewardsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveRewardsClient, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ObserveRewards", varargs...)
-	ret0, _ := ret[0].(v2.TradingDataService_ObserveRewardsClient)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ObserveRewards indicates an expected call of ObserveRewards.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveRewards(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveRewards", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveRewards), varargs...)
 }
 
 // ObserveTrades mocks base method.

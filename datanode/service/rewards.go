@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -30,14 +29,12 @@ type rewardStore interface {
 }
 
 type Reward struct {
-	store    rewardStore
-	observer utils.Observer[entities.Reward]
+	store rewardStore
 }
 
 func NewReward(store rewardStore, log *logging.Logger) *Reward {
 	return &Reward{
-		store:    store,
-		observer: utils.NewObserver[entities.Reward]("reward", log, 0, 0),
+		store: store,
 	}
 }
 
@@ -46,7 +43,6 @@ func (r *Reward) Add(ctx context.Context, reward entities.Reward) error {
 	if err != nil {
 		return err
 	}
-	r.observer.Notify([]entities.Reward{reward})
 	return nil
 }
 
@@ -68,18 +64,4 @@ func (r *Reward) GetSummaries(ctx context.Context, partyID *string, assetID *str
 
 func (r *Reward) GetEpochRewardSummaries(ctx context.Context, filter entities.RewardSummaryFilter, p entities.CursorPagination) ([]entities.EpochRewardSummary, entities.PageInfo, error) {
 	return r.store.GetEpochSummaries(ctx, filter, p)
-}
-
-func (r *Reward) Observe(ctx context.Context, retries int, assetID, partyID string) (rewardCh <-chan []entities.Reward, ref uint64) {
-	ch, ref := r.observer.Observe(ctx,
-		retries,
-		func(reward entities.Reward) bool {
-			return (len(assetID) == 0 || assetID == reward.AssetID.String()) &&
-				(len(partyID) == 0 || partyID == reward.PartyID.String())
-		})
-	return ch, ref
-}
-
-func (r *Reward) GetRewardSubscribersCount() int32 {
-	return r.observer.GetSubscribersCount()
 }

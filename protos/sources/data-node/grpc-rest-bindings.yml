@@ -168,12 +168,8 @@ http:
       get: '/api/v2/stream/trades'
     - selector: datanode.api.v2.TradingDataService.ObserveMarginLevels
       get: '/api/v2/stream/margin/levels'
-    - selector: datanode.api.v2.TradingDataService.ObserveRewards
-      get: '/api/v2/stream/rewards'
     - selector: datanode.api.v2.TradingDataService.ObserveGovernance
       get: '/api/v2/stream/governance'
-    - selector: datanode.api.v2.TradingDataService.ObserveDelegations
-      get: '/api/v2/stream/delegations'
     - selector: datanode.api.v2.TradingDataService.ObserveEventBus
       get: '/api/v2/stream/event/bus'
     - selector: datanode.api.v2.TradingDataService.ObserveLedgerMovements

@@ -3,7 +3,7 @@
 ## Unreleased 0.71.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8064](https://github.com/vegaprotocol/vega/issues/8064) - Remove `websocket` for rewards
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
