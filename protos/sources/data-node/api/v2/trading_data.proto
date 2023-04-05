@@ -240,7 +240,7 @@ service TradingDataService {
 
     // Get market data history
     //
-    // Get market data history for a market ID between given dates using a cursor based pagination model
+    // Get market data history for a market ID between given dates
     rpc GetMarketDataHistoryByID(GetMarketDataHistoryByIDRequest) returns (GetMarketDataHistoryByIDResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Markets";
@@ -249,7 +249,7 @@ service TradingDataService {
 
     // List transfers
     //
-    // List Transfers to/from/either a public key using a cursor based pagination model
+    // List Transfers to/from/either a public key
     rpc ListTransfers(ListTransfersRequest) returns (ListTransfersResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Transfers";
@@ -294,7 +294,7 @@ service TradingDataService {
 
     // List votes
     //
-    // Get votes for a party ID using a cursor based pagination model
+    // Get votes for a party ID
     rpc ListVotes(ListVotesRequest) returns (ListVotesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Governance";
@@ -366,7 +366,7 @@ service TradingDataService {
 
     // List trades
     //
-    // Get a list of all trades, optionally filtered by party/market/order using a cursor based pagination model
+    // Get a list of all trades, optionally filtered by party/market/order
     rpc ListTrades(ListTradesRequest) returns (ListTradesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Trades";
@@ -438,7 +438,7 @@ service TradingDataService {
 
     // List parties
     //
-    // Get parties using a cursor based pagination model
+    // Get parties
     rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Parties";
@@ -447,7 +447,7 @@ service TradingDataService {
 
     // List margin levels
     //
-    // Get margin levels using a cursor based pagination model
+    // Get margin levels
     rpc ListMarginLevels(ListMarginLevelsRequest) returns (ListMarginLevelsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Margin levels";
@@ -582,7 +582,7 @@ service TradingDataService {
 
     // List governance data
     //
-    // List proposals using a cursor based pagination model
+    // List proposals
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Governance";

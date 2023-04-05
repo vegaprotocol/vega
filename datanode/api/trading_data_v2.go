@@ -1018,7 +1018,7 @@ func tradesToProto(trades []entities.Trade) []*vega.Trade {
 	return protoTrades
 }
 
-// ListTrades lists trades by using a cursor based pagination model.
+// ListTrades lists trades by.
 func (t *TradingDataServiceV2) ListTrades(ctx context.Context, req *v2.ListTradesRequest) (*v2.ListTradesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListTradesV2")()
 
@@ -1103,7 +1103,7 @@ func (t *TradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 	}, nil
 }
 
-// ListMarkets lists all markets using a cursor based pagination model.
+// ListMarkets lists all markets.
 func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMarketsRequest) (*v2.ListMarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListMarketsV2")()
 
@@ -1137,7 +1137,7 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 	}, nil
 }
 
-// List all Positions using a cursor based pagination model.
+// List all Positions.
 //
 // Deprecated: Use ListAllPositions instead.
 func (t *TradingDataServiceV2) ListPositions(ctx context.Context, req *v2.ListPositionsRequest) (*v2.ListPositionsResponse, error) {
@@ -1171,7 +1171,7 @@ func (t *TradingDataServiceV2) ListPositions(ctx context.Context, req *v2.ListPo
 	}, nil
 }
 
-// ListAllPositions lists all positions using a cursor based pagination model.
+// ListAllPositions lists all positions.
 func (t *TradingDataServiceV2) ListAllPositions(ctx context.Context, req *v2.ListAllPositionsRequest) (*v2.ListAllPositionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllPositions")()
 
@@ -1335,7 +1335,7 @@ func (t *TradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyReq
 	}, nil
 }
 
-// ListParties lists Parties using a cursor based pagination model.
+// ListParties lists Parties.
 func (t *TradingDataServiceV2) ListParties(ctx context.Context, req *v2.ListPartiesRequest) (*v2.ListPartiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListPartiesV2")()
 
@@ -1364,7 +1364,7 @@ func (t *TradingDataServiceV2) ListParties(ctx context.Context, req *v2.ListPart
 	}, nil
 }
 
-// ListMarginLevels lists MarginLevels using a cursor based pagination model.
+// ListMarginLevels lists MarginLevels.
 func (t *TradingDataServiceV2) ListMarginLevels(ctx context.Context, req *v2.ListMarginLevelsRequest) (*v2.ListMarginLevelsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListMarginLevelsV2")()
 
@@ -1417,7 +1417,7 @@ func (t *TradingDataServiceV2) ObserveMarginLevels(req *v2.ObserveMarginLevelsRe
 	})
 }
 
-// ListRewards lists Rewards using a cursor based pagination model.
+// ListRewards lists Rewards.
 func (t *TradingDataServiceV2) ListRewards(ctx context.Context, req *v2.ListRewardsRequest) (*v2.ListRewardsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListRewardsV2")()
 
@@ -1962,7 +1962,7 @@ func (t *TradingDataServiceV2) getVotesByProposal(ctx context.Context, proposalI
 	return
 }
 
-// ListVotes gets all Votes using a cursor based pagination model.
+// ListVotes gets all Votes.
 func (t *TradingDataServiceV2) ListVotes(ctx context.Context, req *v2.ListVotesRequest) (*v2.ListVotesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListVotesV2")()
 
