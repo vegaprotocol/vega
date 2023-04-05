@@ -19,8 +19,20 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
     title: "Vega data node APIs";
     version: "v0.70.0";
   }
-  schemes: [HTTP, HTTPS]
-  host: "lb.testnet.vega.xyz/datanode/rest"
+  schemes: [HTTP, HTTPS];
+  host: "https://lb.testnet.vega.xyz/datanode/rest";
+  consumes: "application/json";
+  responses: { // can add more keys here to specify common errors between all endpoints, can also be overwritten per rpc call
+    key: "500";
+    value: {
+      description: "An internal server error";
+      schema: {
+        json_schema: {
+          ref: ".google.rpc.Status";
+        }
+      }
+    }
+  }
 };
 
 service TradingDataService {
