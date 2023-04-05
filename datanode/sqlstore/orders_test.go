@@ -206,14 +206,6 @@ func TestOrders(t *testing.T) {
 		assert.Equal(t, fetchedOrders[0], updatedOrders[1])
 	})
 
-	t.Run("GetAllVersionsByOrderID", func(t *testing.T) {
-		fetchedOrders, err := os.GetAllVersionsByOrderID(ctx, orders[3].ID.String(), entities.OffsetPagination{})
-		require.NoError(t, err)
-		require.Len(t, fetchedOrders, 2)
-		assert.Equal(t, int32(1), fetchedOrders[0].Version)
-		assert.Equal(t, int32(2), fetchedOrders[1].Version)
-	})
-
 	t.Run("GetOrderNotFound", func(t *testing.T) {
 		notAnOrderID := entities.OrderID(helpers.GenerateID())
 		fetchedOrder, err := os.GetOrder(ctx, notAnOrderID.String(), nil)

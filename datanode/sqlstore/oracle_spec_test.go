@@ -191,7 +191,7 @@ func testGetSpecs(t *testing.T) {
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
 	assert.Equal(t, 3, rowCount)
 
-	got, err := os.GetSpecs(ctx, entities.OffsetPagination{})
+	got, _, err := os.GetSpecsWithCursorPagination(ctx, "", entities.CursorPagination{})
 	wantSpec := []entities.DataSourceSpec{}
 	for _, spec := range want {
 		wantSpec = append(wantSpec, *spec.ExternalDataSourceSpec.Spec)

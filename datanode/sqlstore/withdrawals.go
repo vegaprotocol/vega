@@ -112,29 +112,11 @@ func (w *Withdrawals) GetByParty(ctx context.Context, partyID string, openOnly b
 	[]entities.Withdrawal, entities.PageInfo, error,
 ) {
 	switch p := pagination.(type) {
-	case entities.OffsetPagination:
-		return w.getByPartyOffset(ctx, partyID, p)
 	case entities.CursorPagination:
 		return w.getByPartyCursor(ctx, partyID, p, dateRange)
 	default:
-		return w.getByPartyOffset(ctx, partyID, entities.OffsetPagination{})
+		panic("unsupported pagination")
 	}
-}
-
-func (w *Withdrawals) getByPartyOffset(ctx context.Context, partyID string, pagination entities.OffsetPagination) ([]entities.Withdrawal, entities.PageInfo, error) {
-	var withdrawals []entities.Withdrawal
-	var pageInfo entities.PageInfo
-
-	query, args := getWithdrawalsByPartyQuery(partyID, entities.DateRange{})
-	query = fmt.Sprintf("%s ORDER BY id, vega_time DESC", query)
-	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
-
-	defer metrics.StartSQLQuery("Withdrawals", "GetByParty")()
-	if err := pgxscan.Select(ctx, w.Connection, &withdrawals, query, args...); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not get withdrawals by party: %w", err)
-	}
-
-	return withdrawals, pageInfo, nil
 }
 
 func (w *Withdrawals) getByPartyCursor(ctx context.Context, partyID string, pagination entities.CursorPagination, dateRange entities.DateRange) ([]entities.Withdrawal, entities.PageInfo, error) {

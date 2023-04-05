@@ -98,36 +98,11 @@ func (d *Deposits) GetByParty(ctx context.Context, party string, openOnly bool, 
 	[]entities.Deposit, entities.PageInfo, error,
 ) {
 	switch p := pagination.(type) {
-	case entities.OffsetPagination:
-		return d.getByPartyOffsetPagination(ctx, party, openOnly, p)
 	case entities.CursorPagination:
 		return d.getByPartyCursorPagination(ctx, party, openOnly, p, dateRange)
 	default:
-		return d.getByPartyOffsetPagination(ctx, party, openOnly, entities.OffsetPagination{})
+		panic("unsupported pagination")
 	}
-}
-
-func (d *Deposits) getByPartyOffsetPagination(ctx context.Context, party string, openOnly bool,
-	pagination entities.OffsetPagination,
-) ([]entities.Deposit, entities.PageInfo, error) {
-	var deposits []entities.Deposit
-	var pageInfo entities.PageInfo
-
-	query, args := getDepositsByPartyQuery(party, entities.DateRange{})
-	query = fmt.Sprintf("%s order by id, party_id, vega_time desc",
-		query)
-
-	if openOnly {
-		query = fmt.Sprintf(`%s and status = %s`, query, nextBindVar(&args, entities.DepositStatusOpen))
-	}
-	query, args = orderAndPaginateQuery(query, nil, pagination, args...)
-
-	defer metrics.StartSQLQuery("Deposits", "GetByParty")()
-	if err := pgxscan.Select(ctx, d.Connection, &deposits, query, args...); err != nil {
-		return nil, pageInfo, fmt.Errorf("could not get deposits by party: %w", err)
-	}
-
-	return deposits, pageInfo, nil
 }
 
 func (d *Deposits) getByPartyCursorPagination(ctx context.Context, party string, openOnly bool,

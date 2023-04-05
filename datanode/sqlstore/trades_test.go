@@ -41,73 +41,6 @@ const (
 	tradeID6 = "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 )
 
-func TestStorage_GetTradesByOrderId(t *testing.T) {
-	market := testMarket
-
-	GetTradesByOrderIDAndMarket(t, &market)
-	GetTradesByOrderIDAndMarket(t, nil)
-}
-
-func GetTradesByOrderIDAndMarket(t *testing.T, market *string) {
-	t.Helper()
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
-
-	tradeStore := sqlstore.NewTrades(connectionSource)
-
-	insertTestData(t, ctx, tradeStore)
-
-	trades, err := tradeStore.GetByOrderID(ctx, orderAId, market, entities.OffsetPagination{})
-
-	assert.Nil(t, err)
-	assert.Equal(t, 6, len(trades))
-	assert.Equal(t, tradeID1, trades[0].ID.String())
-	assert.Equal(t, tradeID2, trades[1].ID.String())
-	assert.Equal(t, tradeID3, trades[2].ID.String())
-	assert.Equal(t, tradeID4, trades[3].ID.String())
-	assert.Equal(t, tradeID5, trades[4].ID.String())
-	assert.Equal(t, tradeID6, trades[5].ID.String())
-}
-
-func TestStorage_GetTradesByPartyWithPagination(t *testing.T) {
-	market := testMarket
-	GetTradesByPartyAndMarketWithPagination(t, &market)
-	GetTradesByPartyAndMarketWithPagination(t, nil)
-}
-
-func GetTradesByPartyAndMarketWithPagination(t *testing.T, market *string) {
-	t.Helper()
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
-
-	tradeStore := sqlstore.NewTrades(connectionSource)
-
-	insertTestData(t, ctx, tradeStore)
-
-	// Want last 3 trades (timestamp descending)
-	last := uint64(3)
-
-	// Expect 3 trades with descending trade-ids
-
-	trades, err := tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Limit: last, Descending: true})
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeID6, trades[0].ID.String())
-	assert.Equal(t, tradeID5, trades[1].ID.String())
-	assert.Equal(t, tradeID4, trades[2].ID.String())
-
-	// Want last 3 trades (timestamp descending) and skip 2
-	skip := uint64(2)
-
-	// Expect 3 trades with descending trade-ids
-	trades, err = tradeStore.GetByParty(ctx, testPartyA, market, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeID4, trades[0].ID.String())
-	assert.Equal(t, tradeID3, trades[1].ID.String())
-	assert.Equal(t, tradeID2, trades[2].ID.String())
-}
-
 func TestStorageGetByTxHash(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
@@ -127,64 +60,6 @@ func TestStorageGetByTxHash(t *testing.T) {
 	assert.Equal(t, 1, len(trades))
 	assert.Equal(t, insertedTrades[2].ID.String(), trades[0].ID.String())
 	assert.Equal(t, insertedTrades[2].TxHash, trades[0].TxHash)
-}
-
-func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
-
-	tradeStore := sqlstore.NewTrades(connectionSource)
-
-	insertTestData(t, ctx, tradeStore)
-
-	// Expect 6 trades with no filtration/pagination
-	trades, err := tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{})
-	assert.Nil(t, err)
-	assert.Equal(t, 6, len(trades))
-
-	// Want first 2 trades (timestamp ascending)
-	first := uint64(2)
-
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: first})
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeID1, trades[0].ID.String())
-	assert.Equal(t, tradeID2, trades[1].ID.String())
-
-	// Want last 3 trades (timestamp descending)
-	last := uint64(3)
-
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Limit: last, Descending: true})
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeID6, trades[0].ID.String())
-	assert.Equal(t, tradeID5, trades[1].ID.String())
-	assert.Equal(t, tradeID4, trades[2].ID.String())
-
-	// Want first 2 trades after skipping 2
-	skip := uint64(2)
-
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: first})
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(trades))
-	assert.Equal(t, tradeID3, trades[0].ID.String())
-	assert.Equal(t, tradeID4, trades[1].ID.String())
-
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
-	assert.Nil(t, err)
-	assert.Equal(t, 3, len(trades))
-	assert.Equal(t, tradeID4, trades[0].ID.String())
-	assert.Equal(t, tradeID3, trades[1].ID.String())
-	assert.Equal(t, tradeID2, trades[2].ID.String())
-
-	// Skip a large page size of trades (compared to our set)
-	// effectively skipping past the end of the set, so no
-	// trades should be available at that offset
-	skip = uint64(50)
-
-	trades, err = tradeStore.GetByMarket(ctx, testMarket, entities.OffsetPagination{Skip: skip, Limit: last, Descending: true})
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(trades))
 }
 
 func insertTestData(t *testing.T, ctx context.Context, tradeStore *sqlstore.Trades) []entities.Trade {
