@@ -2083,14 +2083,13 @@ func (t *TradingDataServiceV2) ListOrders(ctx context.Context, req *v2.ListOrder
 			MarketIDs:        req.Filter.MarketIds,
 			DateRange:        &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
 		}
-	}
+		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more market id is invalid"))
+		}
 
-	if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
-		return nil, formatE(err, errors.New("one or more market id is invalid"))
-	}
-
-	if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
-		return nil, formatE(err, errors.New("one or more party id is invalid"))
+		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
 	}
 
 	orders, pageInfo, err := t.orderService.ListOrders(ctx, pagination, filter)
