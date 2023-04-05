@@ -50,6 +50,7 @@
 - [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
 - [8074](https://github.com/vegaprotocol/vega/issues/8074) - Add missing order rejection reason to `graphql` schema
 - [8090](https://github.com/vegaprotocol/vega/issues/8090) - Rename network history `APIs` that did not follow the naming convention
+- [8060](https://github.com/vegaprotocol/vega/issues/8060) - Allow 0 decimals assets
 
 ## 0.70.0
 
