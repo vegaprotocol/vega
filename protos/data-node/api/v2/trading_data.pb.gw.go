@@ -2935,38 +2935,38 @@ func local_request_TradingDataService_ListAllNetworkHistorySegments_0(ctx contex
 
 }
 
-func request_TradingDataService_NetworkHistoryStatus_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NetworkHistoryStatusRequest
+func request_TradingDataService_GetNetworkHistoryStatus_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetNetworkHistoryStatusRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.NetworkHistoryStatus(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetNetworkHistoryStatus(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TradingDataService_NetworkHistoryStatus_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NetworkHistoryStatusRequest
+func local_request_TradingDataService_GetNetworkHistoryStatus_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetNetworkHistoryStatusRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.NetworkHistoryStatus(ctx, &protoReq)
+	msg, err := server.GetNetworkHistoryStatus(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_TradingDataService_NetworkHistoryBootstrapPeers_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NetworkHistoryBootstrapPeersRequest
+func request_TradingDataService_GetNetworkHistoryBootstrapPeers_0(ctx context.Context, marshaler runtime.Marshaler, client TradingDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetNetworkHistoryBootstrapPeersRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := client.NetworkHistoryBootstrapPeers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.GetNetworkHistoryBootstrapPeers(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_TradingDataService_NetworkHistoryBootstrapPeers_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq NetworkHistoryBootstrapPeersRequest
+func local_request_TradingDataService_GetNetworkHistoryBootstrapPeers_0(ctx context.Context, marshaler runtime.Marshaler, server TradingDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq GetNetworkHistoryBootstrapPeersRequest
 	var metadata runtime.ServerMetadata
 
-	msg, err := server.NetworkHistoryBootstrapPeers(ctx, &protoReq)
+	msg, err := server.GetNetworkHistoryBootstrapPeers(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -4575,18 +4575,18 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 
 	})
 
-	mux.Handle("GET", pattern_TradingDataService_NetworkHistoryStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetNetworkHistoryStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/NetworkHistoryStatus", runtime.WithHTTPPathPattern("/api/v2/networkhistory"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetNetworkHistoryStatus", runtime.WithHTTPPathPattern("/api/v2/networkhistory"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TradingDataService_NetworkHistoryStatus_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TradingDataService_GetNetworkHistoryStatus_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -4594,22 +4594,22 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 			return
 		}
 
-		forward_TradingDataService_NetworkHistoryStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetNetworkHistoryStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingDataService_NetworkHistoryBootstrapPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetNetworkHistoryBootstrapPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers", runtime.WithHTTPPathPattern("/api/v2/networkhistory/bootstrap"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetNetworkHistoryBootstrapPeers", runtime.WithHTTPPathPattern("/api/v2/networkhistory/bootstrap"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_TradingDataService_NetworkHistoryBootstrapPeers_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_TradingDataService_GetNetworkHistoryBootstrapPeers_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -4617,7 +4617,7 @@ func RegisterTradingDataServiceHandlerServer(ctx context.Context, mux *runtime.S
 			return
 		}
 
-		forward_TradingDataService_NetworkHistoryBootstrapPeers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetNetworkHistoryBootstrapPeers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -6229,43 +6229,43 @@ func RegisterTradingDataServiceHandlerClient(ctx context.Context, mux *runtime.S
 
 	})
 
-	mux.Handle("GET", pattern_TradingDataService_NetworkHistoryStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetNetworkHistoryStatus_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/NetworkHistoryStatus", runtime.WithHTTPPathPattern("/api/v2/networkhistory"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetNetworkHistoryStatus", runtime.WithHTTPPathPattern("/api/v2/networkhistory"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingDataService_NetworkHistoryStatus_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetNetworkHistoryStatus_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingDataService_NetworkHistoryStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetNetworkHistoryStatus_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_TradingDataService_NetworkHistoryBootstrapPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_TradingDataService_GetNetworkHistoryBootstrapPeers_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers", runtime.WithHTTPPathPattern("/api/v2/networkhistory/bootstrap"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/datanode.api.v2.TradingDataService/GetNetworkHistoryBootstrapPeers", runtime.WithHTTPPathPattern("/api/v2/networkhistory/bootstrap"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_TradingDataService_NetworkHistoryBootstrapPeers_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_TradingDataService_GetNetworkHistoryBootstrapPeers_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_TradingDataService_NetworkHistoryBootstrapPeers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_TradingDataService_GetNetworkHistoryBootstrapPeers_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -6449,9 +6449,9 @@ var (
 
 	pattern_TradingDataService_ListAllNetworkHistorySegments_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "networkhistory", "segments"}, ""))
 
-	pattern_TradingDataService_NetworkHistoryStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "networkhistory"}, ""))
+	pattern_TradingDataService_GetNetworkHistoryStatus_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v2", "networkhistory"}, ""))
 
-	pattern_TradingDataService_NetworkHistoryBootstrapPeers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "networkhistory", "bootstrap"}, ""))
+	pattern_TradingDataService_GetNetworkHistoryBootstrapPeers_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "networkhistory", "bootstrap"}, ""))
 
 	pattern_TradingDataService_ExportNetworkHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v2", "networkhistory", "export"}, ""))
 )
@@ -6613,9 +6613,9 @@ var (
 
 	forward_TradingDataService_ListAllNetworkHistorySegments_0 = runtime.ForwardResponseMessage
 
-	forward_TradingDataService_NetworkHistoryStatus_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetNetworkHistoryStatus_0 = runtime.ForwardResponseMessage
 
-	forward_TradingDataService_NetworkHistoryBootstrapPeers_0 = runtime.ForwardResponseMessage
+	forward_TradingDataService_GetNetworkHistoryBootstrapPeers_0 = runtime.ForwardResponseMessage
 
 	forward_TradingDataService_ExportNetworkHistory_0 = runtime.ForwardResponseStream
 )

@@ -387,12 +387,12 @@ type TradingDataServiceClient interface {
 	//
 	// Retrieves information about the current state of network history
 	// Response contains the network history status
-	NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error)
+	GetNetworkHistoryStatus(ctx context.Context, in *GetNetworkHistoryStatusRequest, opts ...grpc.CallOption) (*GetNetworkHistoryStatusResponse, error)
 	// Network history bootstrap peers
 	//
 	// Retrieves the bootstrap peers for data nodes.
 	// Response contains the bootstrap peers
-	NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error)
+	GetNetworkHistoryBootstrapPeers(ctx context.Context, in *GetNetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*GetNetworkHistoryBootstrapPeersResponse, error)
 	// List entities
 	//
 	// List all entities created by transaction hash
@@ -1532,18 +1532,18 @@ func (c *tradingDataServiceClient) GetActiveNetworkHistoryPeerAddresses(ctx cont
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) NetworkHistoryStatus(ctx context.Context, in *NetworkHistoryStatusRequest, opts ...grpc.CallOption) (*NetworkHistoryStatusResponse, error) {
-	out := new(NetworkHistoryStatusResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/NetworkHistoryStatus", in, out, opts...)
+func (c *tradingDataServiceClient) GetNetworkHistoryStatus(ctx context.Context, in *GetNetworkHistoryStatusRequest, opts ...grpc.CallOption) (*GetNetworkHistoryStatusResponse, error) {
+	out := new(GetNetworkHistoryStatusResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetNetworkHistoryStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) NetworkHistoryBootstrapPeers(ctx context.Context, in *NetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*NetworkHistoryBootstrapPeersResponse, error) {
-	out := new(NetworkHistoryBootstrapPeersResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers", in, out, opts...)
+func (c *tradingDataServiceClient) GetNetworkHistoryBootstrapPeers(ctx context.Context, in *GetNetworkHistoryBootstrapPeersRequest, opts ...grpc.CallOption) (*GetNetworkHistoryBootstrapPeersResponse, error) {
+	out := new(GetNetworkHistoryBootstrapPeersResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetNetworkHistoryBootstrapPeers", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1968,12 +1968,12 @@ type TradingDataServiceServer interface {
 	//
 	// Retrieves information about the current state of network history
 	// Response contains the network history status
-	NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error)
+	GetNetworkHistoryStatus(context.Context, *GetNetworkHistoryStatusRequest) (*GetNetworkHistoryStatusResponse, error)
 	// Network history bootstrap peers
 	//
 	// Retrieves the bootstrap peers for data nodes.
 	// Response contains the bootstrap peers
-	NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error)
+	GetNetworkHistoryBootstrapPeers(context.Context, *GetNetworkHistoryBootstrapPeersRequest) (*GetNetworkHistoryBootstrapPeersResponse, error)
 	// List entities
 	//
 	// List all entities created by transaction hash
@@ -2296,11 +2296,11 @@ func (UnimplementedTradingDataServiceServer) ListAllNetworkHistorySegments(conte
 func (UnimplementedTradingDataServiceServer) GetActiveNetworkHistoryPeerAddresses(context.Context, *GetActiveNetworkHistoryPeerAddressesRequest) (*GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetActiveNetworkHistoryPeerAddresses not implemented")
 }
-func (UnimplementedTradingDataServiceServer) NetworkHistoryStatus(context.Context, *NetworkHistoryStatusRequest) (*NetworkHistoryStatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryStatus not implemented")
+func (UnimplementedTradingDataServiceServer) GetNetworkHistoryStatus(context.Context, *GetNetworkHistoryStatusRequest) (*GetNetworkHistoryStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkHistoryStatus not implemented")
 }
-func (UnimplementedTradingDataServiceServer) NetworkHistoryBootstrapPeers(context.Context, *NetworkHistoryBootstrapPeersRequest) (*NetworkHistoryBootstrapPeersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NetworkHistoryBootstrapPeers not implemented")
+func (UnimplementedTradingDataServiceServer) GetNetworkHistoryBootstrapPeers(context.Context, *GetNetworkHistoryBootstrapPeersRequest) (*GetNetworkHistoryBootstrapPeersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNetworkHistoryBootstrapPeers not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
@@ -3847,38 +3847,38 @@ func _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_NetworkHistoryStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NetworkHistoryStatusRequest)
+func _TradingDataService_GetNetworkHistoryStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNetworkHistoryStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).NetworkHistoryStatus(ctx, in)
+		return srv.(TradingDataServiceServer).GetNetworkHistoryStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/NetworkHistoryStatus",
+		FullMethod: "/datanode.api.v2.TradingDataService/GetNetworkHistoryStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).NetworkHistoryStatus(ctx, req.(*NetworkHistoryStatusRequest))
+		return srv.(TradingDataServiceServer).GetNetworkHistoryStatus(ctx, req.(*GetNetworkHistoryStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_NetworkHistoryBootstrapPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(NetworkHistoryBootstrapPeersRequest)
+func _TradingDataService_GetNetworkHistoryBootstrapPeers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNetworkHistoryBootstrapPeersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(TradingDataServiceServer).NetworkHistoryBootstrapPeers(ctx, in)
+		return srv.(TradingDataServiceServer).GetNetworkHistoryBootstrapPeers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/NetworkHistoryBootstrapPeers",
+		FullMethod: "/datanode.api.v2.TradingDataService/GetNetworkHistoryBootstrapPeers",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).NetworkHistoryBootstrapPeers(ctx, req.(*NetworkHistoryBootstrapPeersRequest))
+		return srv.(TradingDataServiceServer).GetNetworkHistoryBootstrapPeers(ctx, req.(*GetNetworkHistoryBootstrapPeersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4220,12 +4220,12 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_GetActiveNetworkHistoryPeerAddresses_Handler,
 		},
 		{
-			MethodName: "NetworkHistoryStatus",
-			Handler:    _TradingDataService_NetworkHistoryStatus_Handler,
+			MethodName: "GetNetworkHistoryStatus",
+			Handler:    _TradingDataService_GetNetworkHistoryStatus_Handler,
 		},
 		{
-			MethodName: "NetworkHistoryBootstrapPeers",
-			Handler:    _TradingDataService_NetworkHistoryBootstrapPeers_Handler,
+			MethodName: "GetNetworkHistoryBootstrapPeers",
+			Handler:    _TradingDataService_GetNetworkHistoryBootstrapPeers_Handler,
 		},
 		{
 			MethodName: "ListEntities",
