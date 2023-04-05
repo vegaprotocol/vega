@@ -3289,7 +3289,7 @@ func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Cont
 }
 
 // NetworkHistoryStatus returns the network history status.
-func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.NetworkHistoryStatusRequest) (*v2.NetworkHistoryStatusResponse, error) {
+func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.GetNetworkHistoryStatusRequest) (*v2.GetNetworkHistoryStatusResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("NetworkHistoryStatus")()
 
 	connectedPeerAddresses, err := t.NetworkHistoryService.GetConnectedPeerAddresses()
@@ -3308,7 +3308,7 @@ func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.Network
 		return nil, formatE(ErrGetIpfsAddress, err)
 	}
 
-	return &v2.NetworkHistoryStatusResponse{
+	return &v2.GetNetworkHistoryStatusResponse{
 		IpfsAddress:    ipfsAddress,
 		SwarmKey:       t.NetworkHistoryService.GetSwarmKey(),
 		SwarmKeySeed:   t.NetworkHistoryService.GetSwarmKeySeed(),
@@ -3317,8 +3317,8 @@ func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.Network
 }
 
 // NetworkHistoryBootstrapPeers returns the network history bootstrap peers.
-func (t *TradingDataServiceV2) NetworkHistoryBootstrapPeers(context.Context, *v2.NetworkHistoryBootstrapPeersRequest) (*v2.NetworkHistoryBootstrapPeersResponse, error) {
-	return &v2.NetworkHistoryBootstrapPeersResponse{BootstrapPeers: t.NetworkHistoryService.GetBootstrapPeers()}, nil
+func (t *TradingDataServiceV2) NetworkHistoryBootstrapPeers(context.Context, *v2.GetNetworkHistoryBootstrapPeersRequest) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
+	return &v2.GetNetworkHistoryBootstrapPeersResponse{BootstrapPeers: t.NetworkHistoryService.GetBootstrapPeers()}, nil
 }
 
 // Ping returns a ping response.

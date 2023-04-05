@@ -137,11 +137,11 @@ http:
       get: '/api/v2/oracle/specs'
     - selector: datanode.api.v2.TradingDataService.ListOracleData
       get: '/api/v2/oracle/data'
-    - selector: datanode.api.v2.TradingDataService.NetworkHistoryStatus
+    - selector: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus
       get: "/api/v2/networkhistory"
     - selector: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments
       get: "/api/v2/networkhistory/segments"
-    - selector: datanode.api.v2.TradingDataService.NetworkHistoryBootstrapPeers
+    - selector: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers
       get: "/api/v2/networkhistory/bootstrap"
     - selector: datanode.api.v2.TradingDataService.ExportNetworkHistory
       get: "/api/v2/networkhistory/export"

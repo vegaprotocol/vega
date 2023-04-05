@@ -817,7 +817,7 @@ service TradingDataService {
     //
     // Retrieves information about the current state of network history
     // Response contains the network history status
-    rpc NetworkHistoryStatus(NetworkHistoryStatusRequest) returns (NetworkHistoryStatusResponse) {
+    rpc GetNetworkHistoryStatus(GetNetworkHistoryStatusRequest) returns (GetNetworkHistoryStatusResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Network history";
       };
@@ -827,7 +827,7 @@ service TradingDataService {
     //
     // Retrieves the bootstrap peers for data nodes.
     // Response contains the bootstrap peers
-    rpc NetworkHistoryBootstrapPeers(NetworkHistoryBootstrapPeersRequest) returns (NetworkHistoryBootstrapPeersResponse) {
+    rpc GetNetworkHistoryBootstrapPeers(GetNetworkHistoryBootstrapPeersRequest) returns (GetNetworkHistoryBootstrapPeersResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Network history";
       };
@@ -3228,10 +3228,10 @@ message GetActiveNetworkHistoryPeerAddressesResponse {
 }
 
 // Request to get the status of network history
-message NetworkHistoryStatusRequest {}
+message GetNetworkHistoryStatusRequest {}
 
 // Response containing the status of network history
-message NetworkHistoryStatusResponse {
+message GetNetworkHistoryStatusResponse {
     // The IPFS address of the data node you're connecting to.
     string ipfs_address = 1;
     // The swarm key.
@@ -3243,10 +3243,10 @@ message NetworkHistoryStatusResponse {
 }
 
 // Request to get the nodes network history bootstrap peers
-message NetworkHistoryBootstrapPeersRequest {}
+message GetNetworkHistoryBootstrapPeersRequest {}
 
 // Response containing the nodes network history bootstrap peers
-message NetworkHistoryBootstrapPeersResponse {
+message GetNetworkHistoryBootstrapPeersResponse {
     // The bootstrap peers.
     repeated string bootstrap_peers = 1;
 }
