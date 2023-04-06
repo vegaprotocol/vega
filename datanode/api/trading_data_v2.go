@@ -2404,7 +2404,7 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 	return price.Mul(price, priceFactor), nil
 }
 
-func (t *tradingDataServiceV2) getMarketPriceFactor(
+func (t *TradingDataServiceV2) getMarketPriceFactor(
 	ctx context.Context,
 	mkt entities.Market,
 ) (*num.Uint, error) {
@@ -2586,7 +2586,7 @@ func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.Scali
 	}
 }
 
-func (t *tradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
+func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition")()
 
 	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
@@ -2727,7 +2727,7 @@ func (t *tradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 	}, nil
 }
 
-func (t *tradingDataServiceV2) computeMarginRange(
+func (t *TradingDataServiceV2) computeMarginRange(
 	ctx context.Context,
 	market string,
 	openVolume int64,
@@ -2738,60 +2738,6 @@ func (t *tradingDataServiceV2) computeMarginRange(
 	asset string,
 	scalingFactors *vega.ScalingFactors,
 ) (*v2.MarginEstimate, error) {
-
-	// rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, market)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "getting risk factors: %s", market)
-	// }
-
-	// mkt, err := t.marketService.GetByID(ctx, market)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "getting market: %s", market)
-	// }
-
-	// mktData, err := t.marketDataService.GetMarketDataByID(ctx, market)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "getting market data: %s", market)
-	// }
-
-	// mktProto := mkt.ToProto()
-
-	// asset, err := mktProto.GetAsset()
-	// if err != nil {
-	// 	return nil, errors.Wrap(err, "getting asset from market")
-	// }
-
-	// marketObservable, err := num.DecimalFromString(mktData.MarkPrice.String())
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "parsing mark price: %s", mktData.MarkPrice.String())
-	// }
-
-	// auction := mktData.AuctionEnd > 0
-	// if auction && mktData.MarketTradingMode == types.MarketTradingModeOpeningAuction.String() {
-	// 	marketObservable = mktData.IndicativePrice
-	// }
-
-	// priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// dPriceFactor := priceFactor.ToDecimal()
-
-	// marketObservable = marketObservable.Mul(dPriceFactor)
-
-	// positionFactor := num.DecimalFromFloat(10).
-	// 	Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
-
-	// linearSlippageFactor, err := num.DecimalFromString(mktProto.LinearSlippageFactor)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "parsing linear slippage factor: %s", mktProto.LinearSlippageFactor)
-	// }
-	// quadraticSlippageFactor, err := num.DecimalFromString(mktProto.QuadraticSlippageFactor)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "parsing quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor)
-	// }
-
 	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, auction)
 	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, auction)
 
@@ -2801,7 +2747,7 @@ func (t *tradingDataServiceV2) computeMarginRange(
 	}, nil
 }
 
-func (t *tradingDataServiceV2) computeLiquidationPriceRange(
+func (t *TradingDataServiceV2) computeLiquidationPriceRange(
 	ctx context.Context,
 	collateralAvailable num.Decimal,
 	market string,
@@ -2810,40 +2756,6 @@ func (t *tradingDataServiceV2) computeLiquidationPriceRange(
 	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
 	riskFactors entities.RiskFactor,
 ) (*v2.LiquidationEstimate, error) {
-	// rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, market)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "getting risk factors: %s", market)
-	// }
-
-	// mkt, err := t.marketService.GetByID(ctx, market)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "getting market: %s", market)
-	// }
-
-	// mktData, err := t.marketDataService.GetMarketDataByID(ctx, market)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "getting market data: %s", market)
-	// }
-	// positionFactor := num.DecimalFromFloat(10).
-	// 	Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
-
-	// priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// dPriceFactor := priceFactor.ToDecimal()
-
-	// marketObservable, overflowed := num.UintFromString(mktData.MarkPrice.String(), 10)
-	// if overflowed {
-	// 	return nil, fmt.Errorf("mark price overflowed: %s", mktData.MarkPrice)
-	// }
-
-	// marketObservableInAssetPrecision, err := t.scaleFromMarketToAssetPrice(ctx, mkt, marketObservable)
-	// if err != nil {
-	// 	return nil, errors.Wrap(ErrScalingPriceFromMarketToAsset, err.Error())
-	// }
-
-	// dMarketObservableInAssetPrecision := num.DecimalFromUint(marketObservableInAssetPrecision)
 
 	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short)
 
@@ -2851,37 +2763,23 @@ func (t *tradingDataServiceV2) computeLiquidationPriceRange(
 		return nil, err
 	}
 
-	best := &v2.LiquidationPrice{
-		PositionOnly:        bPositionOnly.String(),
-		IncludingBuyOrders:  bWithBuy.String(),
-		IncludingSellOrders: bWithSell.String(),
-	}
-
-	// mktProto := mkt.ToProto()
-	// linearSlippageFactor, err := num.DecimalFromString(mktProto.LinearSlippageFactor)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "parsing linear slippage factor: %s", mktProto.LinearSlippageFactor)
-	// }
-	// quadraticSlippageFactor, err := num.DecimalFromString(mktProto.QuadraticSlippageFactor)
-	// if err != nil {
-	// 	return nil, errors.Wrapf(err, "parsing quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor)
-	// }
-
 	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short)
 
 	if err != nil {
 		return nil, err
 	}
 
-	worst := &v2.LiquidationPrice{
-		PositionOnly:        wPositionOnly.String(),
-		IncludingBuyOrders:  wWithBuy.String(),
-		IncludingSellOrders: wWithSell.String(),
-	}
-
 	return &v2.LiquidationEstimate{
-		WorstCase: worst,
-		BestCase:  best,
+		WorstCase: &v2.LiquidationPrice{
+			PositionOnly:        wPositionOnly.String(),
+			IncludingBuyOrders:  wWithBuy.String(),
+			IncludingSellOrders: wWithSell.String(),
+		},
+		BestCase: &v2.LiquidationPrice{
+			PositionOnly:        bPositionOnly.String(),
+			IncludingBuyOrders:  bWithBuy.String(),
+			IncludingSellOrders: bWithSell.String(),
+		},
 	}, nil
 }
 

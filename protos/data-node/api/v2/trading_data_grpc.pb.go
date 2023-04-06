@@ -327,7 +327,7 @@ type TradingDataServiceClient interface {
 	// Estimate the margin that would be required for maintaining the specified position
 	// if the optional collataral available argument is supplied the reposnse also contains the estimate of the liquidation price
 	EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error)
-	// Network Parameters list
+	// List network parameters
 	//
 	// Get the network parameters
 	ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error)
@@ -1926,7 +1926,7 @@ type TradingDataServiceServer interface {
 	// Estimate the margin that would be required for maintaining the specified position
 	// if the optional collataral available argument is supplied the reposnse also contains the estimate of the liquidation price
 	EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error)
-	// Network Parameters list
+	// List network parameters
 	//
 	// Get the network parameters
 	ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error)
