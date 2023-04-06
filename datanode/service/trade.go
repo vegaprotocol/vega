@@ -25,7 +25,7 @@ import (
 type tradeStore interface {
 	Flush(ctx context.Context) ([]*entities.Trade, error)
 	Add(t *entities.Trade) error
-	List(context.Context, entities.MarketID, entities.PartyID, entities.OrderID, entities.CursorPagination, entities.DateRange) ([]entities.Trade, entities.PageInfo, error)
+	List(context.Context, []entities.MarketID, []entities.PartyID, []entities.OrderID, entities.CursorPagination, entities.DateRange) ([]entities.Trade, entities.PageInfo, error)
 	GetLastTradeByMarket(ctx context.Context, market string) ([]entities.Trade, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error)
 }
