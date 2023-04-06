@@ -2380,8 +2380,7 @@ func (t *TradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 
 	fee, err := t.estimateFee(ctx, req.MarketId, req.Price, req.Size)
 	if err != nil {
-		return nil, formatE(ErrEstimateFee, errors.Wrapf(err,
-			"marketID: %s, price: %s, size: %d", req.MarketId, req.Price, req.Size))
+		return nil, formatE(ErrEstimateFee, err)
 	}
 
 	return &v2.EstimateFeeResponse{
@@ -2422,16 +2421,20 @@ func (t *TradingDataServiceV2) estimateFee(
 ) (*vega.Fee, error) {
 	mkt, err := t.marketService.GetByID(ctx, market)
 	if err != nil {
-		return nil, errors.Wrap(ErrMarketServiceGetByID, err.Error())
+		return nil, err
 	}
 
 	price, overflowed := num.UintFromString(priceS, 10)
 	if overflowed {
-		return nil, errors.Wrapf(ErrInvalidOrderPrice, "overflowed: %s", priceS)
+		return nil, ErrInvalidOrderPrice
 	}
 
 	if price.IsNegative() || price.IsZero() {
-		return nil, formatE(ErrInvalidOrderPrice)
+		return nil, ErrInvalidOrderPrice
+	}
+
+	if size <= 0 {
+		return nil, ErrInvalidOrderSize
 	}
 
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
@@ -2473,8 +2476,7 @@ func (t *TradingDataServiceV2) EstimateMargin(ctx context.Context, req *v2.Estim
 	margin, err := t.estimateMargin(
 		ctx, req.Side, req.Type, req.MarketId, req.PartyId, req.Price, req.Size)
 	if err != nil {
-		return nil, formatE(ErrEstimateMargin, errors.Wrapf(err,
-			"marketID: %s, partyID: %s, price: %s, size: %d", req.MarketId, req.PartyId, req.Price, req.Size))
+		return nil, formatE(ErrEstimateMargin, err)
 	}
 
 	return &v2.EstimateMarginResponse{
@@ -2496,17 +2498,17 @@ func (t *TradingDataServiceV2) estimateMargin(
 	// first get the risk factors and market data (marketdata->markprice)
 	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, rMarket)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting risk factors: %s", rMarket)
+		return nil, err
 	}
 
 	mkt, err := t.marketService.GetByID(ctx, rMarket)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting market: %s", rMarket)
+		return nil, err
 	}
 
 	mktData, err := t.marketDataService.GetMarketDataByID(ctx, rMarket)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting market data: %s", rMarket)
+		return nil, err
 	}
 
 	f, err := num.DecimalFromString(rf.Short.String())
@@ -2543,11 +2545,15 @@ func (t *TradingDataServiceV2) estimateMargin(
 
 	price, _ := num.UintFromDecimal(priceD)
 	if price.IsNegative() || price.IsZero() {
-		return nil, formatE(ErrInvalidOrderPrice)
+		return nil, ErrInvalidOrderPrice
 	}
 	price, err = t.scaleFromMarketToAssetPrice(ctx, mkt, price)
 	if err != nil {
 		return nil, errors.Wrap(ErrScalingPriceFromMarketToAsset, err.Error())
+	}
+
+	if rSize <= 0 {
+		return nil, ErrInvalidOrderSize
 	}
 
 	priceD = price.ToDecimal()

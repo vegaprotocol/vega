@@ -55,6 +55,7 @@
 - [8090](https://github.com/vegaprotocol/vega/issues/8090) - Rename network history `APIs` that did not follow the naming convention
 - [8060](https://github.com/vegaprotocol/vega/issues/8060) - Allow 0 decimals assets
 - [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
+- [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
 
 ## 0.70.0
 

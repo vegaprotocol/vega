@@ -40,6 +40,8 @@ var (
 	ErrMissingPrice = newInvalidArgumentError("missing price")
 	// ErrInvalidOrderPrice signals to the caller that the request expected a valid price.
 	ErrInvalidOrderPrice = newInvalidArgumentError("invalid order price")
+	// ErrInvalidOrderSize signals to the caller that the request expected a valid size.
+	ErrInvalidOrderSize = newInvalidArgumentError("invalid order size")
 	// ErrServerShutdown signals to the client that the server  is shutting down.
 	ErrServerShutdown = errors.New("server shutdown")
 	// ErrStreamClosed signals to the users that the grpc stream is closing.
