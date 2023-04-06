@@ -52,6 +52,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	networkPartyID = "network"
+)
+
 // When returning an 'initial image' snapshot, how many updates to batch into each page.
 var snapshotPageSize = 50
 
@@ -1257,7 +1261,7 @@ func (t *TradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyReq
 		return nil, formatE(ErrMissingPartyID)
 	}
 
-	if !crypto.IsValidVegaID(req.PartyId) {
+	if req.PartyId != networkPartyID && !crypto.IsValidVegaID(req.PartyId) {
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
@@ -1463,8 +1467,8 @@ func (t *TradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	if len(req.PartyId) > 0 && req.PartyId != "network" && !crypto.IsValidVegaPubKey(req.PartyId) {
-		return nil, formatE(ErrNotAValidVegaID)
+	if req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -1530,8 +1534,8 @@ func (t *TradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWit
 func (t *TradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.ListWithdrawalsRequest) (*v2.ListWithdrawalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListWithdrawalsV2")()
 
-	if len(req.PartyId) > 0 && req.PartyId != "network" && !crypto.IsValidVegaPubKey(req.PartyId) {
-		return nil, formatE(ErrNotAValidVegaID)
+	if req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -2099,8 +2103,8 @@ type VegaIDsSlice []string
 
 func (s VegaIDsSlice) Ensure() error {
 	for _, v := range s {
-		if v != "network" && !crypto.IsValidVegaPubKey(v) {
-			return ErrNotAValidVegaID
+		if v != networkPartyID && !crypto.IsValidVegaPubKey(v) {
+			return ErrInvalidPartyID
 		}
 	}
 
@@ -2716,7 +2720,7 @@ func (t *TradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 		return nil, formatE(ErrMissingPartyID)
 	}
 
-	if !crypto.IsValidVegaID(req.PartyId) {
+	if req.PartyId != networkPartyID && !crypto.IsValidVegaID(req.PartyId) {
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
