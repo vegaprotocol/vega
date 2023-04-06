@@ -556,6 +556,10 @@ func (t *TradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		return nil, formatE(ErrMissingCandleID)
 	}
 
+	if !crypto.IsValidVegaID(req.CandleId) {
+		return nil, formatE(ErrInvalidCandleID)
+	}
+
 	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
 		return nil, formatE(ErrCandleServiceGetCandleData, err)
@@ -770,6 +774,10 @@ func (t *TradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, formatE(ErrMissingProposalID)
 	}
 
+	if !crypto.IsValidVegaID(req.ProposalId) {
+		return nil, formatE(ErrInvalidProposalID)
+	}
+
 	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
 	if err != nil {
 		return nil, formatE(ErrGovernanceServiceGet, err)
@@ -819,6 +827,10 @@ func (t *TradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, formatE(ErrMissingAssetID)
 	}
 
+	if !crypto.IsValidVegaID(req.AssetId) {
+		return nil, formatE(ErrInvalidAssetID)
+	}
+
 	asset, err := t.assetService.GetByID(ctx, req.AssetId)
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
@@ -835,7 +847,7 @@ func (t *TradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 
 	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(req.AssetId, "0"))
 	if err != nil {
-		return nil, formatE(ErrorInvalidAssetID, errors.Wrapf(err, "assetID: %s", req.AssetId))
+		return nil, formatE(ErrInvalidAssetID, errors.Wrapf(err, "assetID: %s", req.AssetId))
 	}
 
 	return &v2.GetERC20ListAssetBundleResponse{
@@ -852,6 +864,10 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 
 	if len(req.WithdrawalId) == 0 {
 		return nil, formatE(ErrMissingWithdrawalID)
+	}
+
+	if !crypto.IsValidVegaID(req.WithdrawalId) {
+		return nil, formatE(ErrInvalidWithdrawalID)
 	}
 
 	w, err := t.withdrawalService.GetByID(ctx, req.WithdrawalId)
@@ -897,6 +913,10 @@ func (t *TradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 
 	if len(req.MarketId) == 0 {
 		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
 	}
 
 	trades, err := t.tradeService.GetLastTradeByMarket(ctx, req.MarketId)
@@ -995,6 +1015,10 @@ func (t *TradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 
 	if len(req.MarketId) == 0 {
 		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
 	}
 
 	market, err := t.marketService.GetByID(ctx, req.MarketId)
@@ -1231,6 +1255,10 @@ func (t *TradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyReq
 
 	if len(req.PartyId) == 0 {
 		return nil, formatE(ErrMissingPartyID)
+	}
+
+	if !crypto.IsValidVegaID(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
 	}
 
 	party, err := t.partyService.GetByID(ctx, req.PartyId)
@@ -1484,6 +1512,10 @@ func (t *TradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWit
 		return nil, formatE(ErrMissingWithdrawalID)
 	}
 
+	if !crypto.IsValidVegaPubKey(req.Id) {
+		return nil, formatE(ErrInvalidWithdrawalID)
+	}
+
 	withdrawal, err := t.withdrawalService.GetByID(ctx, req.Id)
 	if err != nil {
 		return nil, formatE(ErrWithdrawalServiceGet, err)
@@ -1534,6 +1566,10 @@ func (t *TradingDataServiceV2) GetAsset(ctx context.Context, req *v2.GetAssetReq
 
 	if len(req.AssetId) == 0 {
 		return nil, formatE(ErrMissingAssetID)
+	}
+
+	if !crypto.IsValidVegaPubKey(req.AssetId) {
+		return nil, formatE(ErrInvalidAssetID)
 	}
 
 	asset, err := t.assetService.GetByID(ctx, req.AssetId)
@@ -1623,6 +1659,10 @@ func (t *TradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 
 	if len(req.OracleSpecId) == 0 {
 		return nil, formatE(ErrMissingOracleSpecID)
+	}
+
+	if !crypto.IsValidVegaPubKey(req.OracleSpecId) {
+		return nil, formatE(ErrInvalidOracleSpecID)
 	}
 
 	spec, err := t.oracleSpecService.GetSpecByID(ctx, req.OracleSpecId)
@@ -1948,6 +1988,10 @@ func (t *TradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderReq
 		return nil, formatE(ErrMissingOrderID)
 	}
 
+	if !crypto.IsValidVegaID(req.OrderId) {
+		return nil, formatE(ErrInvalidOrderID)
+	}
+
 	if req.Version != nil && *req.Version <= 0 {
 		return nil, formatE(ErrNegativeOrderVersion)
 	}
@@ -2020,6 +2064,10 @@ func (t *TradingDataServiceV2) ListOrderVersions(ctx context.Context, req *v2.Li
 
 	if len(req.OrderId) == 0 {
 		return nil, formatE(ErrMissingOrderID)
+	}
+
+	if !crypto.IsValidVegaID(req.OrderId) {
+		return nil, formatE(ErrInvalidOrderID)
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -2378,6 +2426,10 @@ func (t *TradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 		return nil, formatE(ErrEmptyMissingMarketID)
 	}
 
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
 	if len(req.Price) == 0 {
 		return nil, formatE(ErrMissingPrice)
 	}
@@ -2664,6 +2716,10 @@ func (t *TradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 		return nil, formatE(ErrMissingPartyID)
 	}
 
+	if !crypto.IsValidVegaID(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
@@ -2696,6 +2752,10 @@ func (t *TradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRi
 
 	if len(req.MarketId) == 0 {
 		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
 	}
 
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)

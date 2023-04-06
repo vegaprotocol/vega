@@ -52,6 +52,8 @@ var (
 	ErrNotMapped = errors.New("error not found in error lookup table")
 	// ErrMissingPartyID signals that the payload is expected to contain a party id.
 	ErrMissingPartyID = newInvalidArgumentError("missing party id")
+	// ErrInvalidPartyID signals that the given party id is not a valid ID.
+	ErrInvalidPartyID = newInvalidArgumentError("invalid party id")
 	// ErrInvalidPagination signals that the pagination is invalid.
 	ErrInvalidPagination = newInvalidArgumentError("invalid pagination")
 	// ErrInvalidCandleID signals an invalid candle ID submitted.
@@ -64,6 +66,8 @@ var (
 	ErrMalformedRequest = newInvalidArgumentError("malformed request")
 	// ErrMissingOrderID signals that an order ID was required but not specified.
 	ErrMissingOrderID = newInvalidArgumentError("missing orderID parameter")
+	// ErrInvalidOrderID signals that an order ID provided was not a valid ID.
+	ErrInvalidOrderID = newInvalidArgumentError("invalid orderID parameter")
 	// ErrMissingCandleID returned if candle with this id is missing.
 	ErrMissingCandleID = newInvalidArgumentError("candle id is a required parameter")
 	// ErrMissingProposalID returned if proposal with this id is missing.
@@ -78,13 +82,18 @@ var (
 	ErrInvalidProposalID = newInvalidArgumentError("invalid proposal id")
 	// ErrMissingWithdrawalID is returned when the withdrawal ID is missing from the request.
 	ErrMissingWithdrawalID = newInvalidArgumentError("missing withdrawal ID")
+	// ErrInvalidWithdrawalID is returned when the withdrawal ID is not a valid vega ID.
+	ErrInvalidWithdrawalID = newInvalidArgumentError("invalid withdrawal ID")
 	// ErrMissingOracleSpecID is returned when the ID is missing from the request.
 	ErrMissingOracleSpecID = newInvalidArgumentError("missing oracle spec ID")
+	// ErrInvalidOracleSpecID is returned when the ID is not a valid ID.
+	ErrInvalidOracleSpecID = newInvalidArgumentError("invalid oracle spec ID")
 	// ErrMissingDepositID is returned when the deposit ID is missing from the request.
 	ErrMissingDepositID = newInvalidArgumentError("missing deposit ID")
 	// ErrMissingAssetID is returned when the Asset ID is missing from the request.
-	ErrMissingAssetID   = newInvalidArgumentError("missing asset ID")
-	ErrorInvalidAssetID = newInvalidArgumentError("invalid asset ID")
+	ErrMissingAssetID = newInvalidArgumentError("missing asset ID")
+	// ErrInvalidAssetID is returned when the Asset ID is not a valid ID.
+	ErrInvalidAssetID = newInvalidArgumentError("invalid asset ID")
 	// ErrMissingNodeID is returned when the node ID is missing from the request.
 	ErrMissingNodeID = newInvalidArgumentError("missing node id")
 	// ErrNegativeOrderVersion is returned when a request is made for an
@@ -316,7 +325,7 @@ var errorMap = map[string]int32{
 	ErrInvalidOrderSide.Error():             10035,
 	ErrEpochIDParse.Error():                 10036,
 	ErrSendingGRPCHeader.Error():            10037,
-	ErrorInvalidAssetID.Error():             10038,
+	ErrInvalidAssetID.Error():               10038,
 	ErrEstimateFee.Error():                  10039,
 	ErrEstimateMargin.Error():               10040,
 	// Orders
