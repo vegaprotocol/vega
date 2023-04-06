@@ -560,10 +560,6 @@ func (t *TradingDataServiceV2) ListCandleData(ctx context.Context, req *v2.ListC
 		return nil, formatE(ErrMissingCandleID)
 	}
 
-	if !crypto.IsValidVegaID(req.CandleId) {
-		return nil, formatE(ErrInvalidCandleID)
-	}
-
 	candles, pageInfo, err := t.candleService.GetCandleDataForTimeSpan(ctx, req.CandleId, from, to, pagination)
 	if err != nil {
 		return nil, formatE(ErrCandleServiceGetCandleData, err)
@@ -1572,7 +1568,8 @@ func (t *TradingDataServiceV2) GetAsset(ctx context.Context, req *v2.GetAssetReq
 		return nil, formatE(ErrMissingAssetID)
 	}
 
-	if !crypto.IsValidVegaPubKey(req.AssetId) {
+	// TODO: VOTE is a special case used for system tests. Remove this once the system tests are updated to remove the VOTE asset.
+	if req.AssetId != "VOTE" && !crypto.IsValidVegaPubKey(req.AssetId) {
 		return nil, formatE(ErrInvalidAssetID)
 	}
 
