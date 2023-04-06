@@ -178,9 +178,6 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	if len(change.NewAsset.Changes.Symbol) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.symbol", ErrIsRequired)
 	}
-	if change.NewAsset.Changes.Decimals == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.decimals", ErrIsRequired)
-	}
 
 	if len(change.NewAsset.Changes.Quantum) <= 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsRequired)

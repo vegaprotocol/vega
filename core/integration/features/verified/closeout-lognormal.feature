@@ -130,6 +130,11 @@ Feature: Closeout scenarios
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
+
+    And the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | status                        |
+      | trader2 | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
+
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl |
@@ -209,4 +214,8 @@ Feature: Closeout scenarios
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
+
+    And the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | status                     |
+      | trader2 | 0      | 0              | -1026        | POSITION_STATUS_CLOSED_OUT |
 

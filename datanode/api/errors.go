@@ -25,16 +25,23 @@ import (
 var (
 	// ErrChannelClosed signals that the channel streaming data is closed.
 	ErrChannelClosed = errors.New("channel closed")
+	// ErrNotAValidVegaID signals an invalid id.
+	ErrNotAValidVegaID = newInvalidArgumentError("not a valid vega id")
 	// ErrMissingResourceID signals to the caller that the request expected a
 	// resource id but the field is missing or empty.
 	ErrMissingResourceID = newInvalidArgumentError("missing resource ID")
 	// ErrEmptyMissingMarketID signals to the caller that the request expected a
 	// market id but the field is missing or empty.
 	ErrEmptyMissingMarketID = newInvalidArgumentError("empty or missing market ID")
+	// ErrInvalidMarketID signals to the caller that the request expected a
+	// market id but the field is not in the right format.
+	ErrInvalidMarketID = newInvalidArgumentError("invalid market ID")
 	// ErrMissingPrice signals to the caller that the request expected a price.
 	ErrMissingPrice = newInvalidArgumentError("missing price")
 	// ErrInvalidOrderPrice signals to the caller that the request expected a valid price.
 	ErrInvalidOrderPrice = newInvalidArgumentError("invalid order price")
+	// ErrInvalidOrderSize signals to the caller that the request expected a valid size.
+	ErrInvalidOrderSize = newInvalidArgumentError("invalid order size")
 	// ErrServerShutdown signals to the client that the server  is shutting down.
 	ErrServerShutdown = errors.New("server shutdown")
 	// ErrStreamClosed signals to the users that the grpc stream is closing.
@@ -47,6 +54,10 @@ var (
 	ErrMissingPartyID = newInvalidArgumentError("missing party id")
 	// ErrInvalidPagination signals that the pagination is invalid.
 	ErrInvalidPagination = newInvalidArgumentError("invalid pagination")
+	// ErrInvalidCandleID signals an invalid candle ID submitted.
+	ErrInvalidCandleID = newInvalidArgumentError("invalid candle id")
+	// ErrInvalidCandleTimestampsRange signals an impossible range with the candle timestamps.
+	ErrInvalidCandleTimestampsRange = newInvalidArgumentError("invalid candle timestamps range")
 	// ErrInvalidFilter signals that the filter is invalid.
 	ErrInvalidFilter = newInvalidArgumentError("invalid filter")
 	// ErrMalformedRequest signals that the request was malformed.

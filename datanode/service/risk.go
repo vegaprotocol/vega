@@ -23,7 +23,6 @@ import (
 type MarginLevelsStore interface {
 	Add(marginLevel entities.MarginLevels) error
 	Flush(ctx context.Context) ([]entities.MarginLevels, error)
-	GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error)
 	GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error)
 }
@@ -57,10 +56,6 @@ func (r *Risk) Flush(ctx context.Context) error {
 	}
 	r.observer.Notify(flushed)
 	return nil
-}
-
-func (r *Risk) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
-	return r.mlStore.GetMarginLevelsByID(ctx, partyID, marketID, pagination)
 }
 
 func (r *Risk) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error) {

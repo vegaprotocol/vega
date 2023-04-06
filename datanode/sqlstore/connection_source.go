@@ -182,6 +182,10 @@ func (s *ConnectionSource) Close() {
 }
 
 func (s *ConnectionSource) wrapE(err error) error {
+	return wrapE(err)
+}
+
+func wrapE(err error) error {
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		return entities.ErrNotFound

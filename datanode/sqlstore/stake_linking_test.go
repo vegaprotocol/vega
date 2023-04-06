@@ -112,7 +112,7 @@ func testGetStake(t *testing.T) {
 
 	partyID := entities.PartyID("cafed00d")
 
-	currentBalance, links, _, err := sl.GetStake(ctx, partyID, entities.OffsetPagination{})
+	currentBalance, links, _, err := sl.GetStake(ctx, partyID, entities.CursorPagination{})
 	require.NoError(t, err)
 	want := num.NewUint(30002)
 	assert.True(t, want.EQ(currentBalance))

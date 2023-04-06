@@ -119,8 +119,12 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			pos.size = p.Size
 			pos.buySumProduct = p.BuySumProduct
 			pos.sellSumProduct = p.SellSumProduct
+			pos.distressed = p.Distressed
 			e.positionsCpy = append(e.positionsCpy, pos)
 			e.positions[p.PartyID] = pos
+			if p.Distressed {
+				e.distressedPos[p.PartyID] = struct{}{}
+			}
 		}
 		e.data, err = proto.Marshal(payload.IntoProto())
 		return nil, err
@@ -141,14 +145,17 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
 
 	for _, evt := range e.positionsCpy {
+		party := evt.Party()
+		_, distressed := e.distressedPos[party]
 		pos := &types.MarketPosition{
-			PartyID:        evt.Party(),
+			PartyID:        party,
 			Price:          evt.Price(),
 			Buy:            evt.Buy(),
 			Sell:           evt.Sell(),
 			Size:           evt.Size(),
 			BuySumProduct:  evt.BuySumProduct(),
 			SellSumProduct: evt.SellSumProduct(),
+			Distressed:     distressed,
 		}
 		positions = append(positions, pos)
 	}

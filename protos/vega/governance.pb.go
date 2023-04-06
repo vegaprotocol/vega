@@ -361,15 +361,15 @@ type FutureProduct struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Asset ID for the product's settlement asset
+	// Asset ID for the product's settlement asset.
 	SettlementAsset string `protobuf:"bytes,1,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
-	// Product quote name
+	// Product quote name.
 	QuoteName string `protobuf:"bytes,2,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
-	// The data source spec describing the data source for settlement
+	// The data source spec describing the data source for settlement.
 	DataSourceSpecForSettlementData *DataSourceDefinition `protobuf:"bytes,3,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
-	// The external data source spec describing the data source of trading termination
+	// The external data source spec describing the data source of trading termination.
 	DataSourceSpecForTradingTermination *DataSourceDefinition `protobuf:"bytes,4,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
-	// The binding between the data source spec and the settlement data
+	// The binding between the data source spec and the settlement data.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,5,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
 }
 
@@ -446,11 +446,11 @@ type InstrumentConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument name
+	// Instrument name.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Instrument code, human-readable shortcode used to describe the instrument
+	// Instrument code, human-readable shortcode used to describe the instrument.
 	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	// Product specification
+	// Product specification.
 	//
 	// Types that are assignable to Product:
 	//
@@ -523,7 +523,7 @@ type isInstrumentConfiguration_Product interface {
 }
 
 type InstrumentConfiguration_Future struct {
-	// Future
+	// Future.
 	Future *FutureProduct `protobuf:"bytes,100,opt,name=future,proto3,oneof"`
 }
 
@@ -535,31 +535,31 @@ type NewMarketConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// New market instrument configuration
+	// New market instrument configuration.
 	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Decimal places used for the new market, sets the smallest price increment on the book
+	// Decimal places used for the new market, sets the smallest price increment on the book.
 	DecimalPlaces uint64 `protobuf:"varint,2,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Optional new market metadata, tags
+	// Optional new market metadata, tags.
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
-	// Price monitoring parameters
+	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
-	// Liquidity monitoring parameters
+	// Liquidity monitoring parameters.
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,5,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
-	// New market risk model parameters
+	// New market risk model parameters.
 	//
 	// Types that are assignable to RiskParameters:
 	//
 	//	*NewMarketConfiguration_Simple
 	//	*NewMarketConfiguration_LogNormal
 	RiskParameters isNewMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
-	// Decimal places for order sizes, sets what size the smallest order / position on the market can be
+	// Decimal places for order sizes, sets what size the smallest order / position on the market can be.
 	PositionDecimalPlaces int64 `protobuf:"varint,6,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 	// Percentage move up and down from the mid price which specifies the range of
-	// price levels over which automated liquidity provision orders will be deployed
+	// price levels over which automated liquidity provision orders will be deployed.
 	LpPriceRange string `protobuf:"bytes,8,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
-	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,9,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
-	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,10,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
 }
 
@@ -684,12 +684,12 @@ type isNewMarketConfiguration_RiskParameters interface {
 }
 
 type NewMarketConfiguration_Simple struct {
-	// Simple risk model parameters, valid only if MODEL_SIMPLE is selected
+	// Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
 	Simple *SimpleModelParams `protobuf:"bytes,100,opt,name=simple,proto3,oneof"`
 }
 
 type NewMarketConfiguration_LogNormal struct {
-	// Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
+	// Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
 	LogNormal *LogNormalRiskModel `protobuf:"bytes,101,opt,name=log_normal,json=logNormal,proto3,oneof"`
 }
 
@@ -703,7 +703,7 @@ type NewMarket struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The configuration of the new market
+	// The configuration of the new market.
 	Changes *NewMarketConfiguration `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -752,9 +752,9 @@ type UpdateMarket struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the market to update
+	// The identifier of the market to update.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// The updated configuration of the market
+	// The updated configuration of the market.
 	Changes *UpdateMarketConfiguration `protobuf:"bytes,2,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -810,15 +810,15 @@ type UpdateMarketConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Updated market instrument configuration
+	// Updated market instrument configuration.
 	Instrument *UpdateInstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Optional market metadata, tags
+	// Optional market metadata, tags.
 	Metadata []string `protobuf:"bytes,2,rep,name=metadata,proto3" json:"metadata,omitempty"`
-	// Price monitoring parameters
+	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,3,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
-	// Liquidity monitoring parameters
+	// Liquidity monitoring parameters.
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,4,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
-	// Updated market risk model parameters
+	// Updated market risk model parameters.
 	//
 	// Types that are assignable to RiskParameters:
 	//
@@ -826,11 +826,11 @@ type UpdateMarketConfiguration struct {
 	//	*UpdateMarketConfiguration_LogNormal
 	RiskParameters isUpdateMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
 	// Percentage move up and down from the mid price which specifies the range of
-	// price levels over which automated liquidity provision orders will be deployed
+	// price levels over which automated liquidity provision orders will be deployed.
 	LpPriceRange string `protobuf:"bytes,5,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
-	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume
+	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,6,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
-	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume
+	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,7,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
 }
 
@@ -941,12 +941,12 @@ type isUpdateMarketConfiguration_RiskParameters interface {
 }
 
 type UpdateMarketConfiguration_Simple struct {
-	// Simple risk model parameters, valid only if MODEL_SIMPLE is selected
+	// Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
 	Simple *SimpleModelParams `protobuf:"bytes,100,opt,name=simple,proto3,oneof"`
 }
 
 type UpdateMarketConfiguration_LogNormal struct {
-	// Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected
+	// Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
 	LogNormal *LogNormalRiskModel `protobuf:"bytes,101,opt,name=log_normal,json=logNormal,proto3,oneof"`
 }
 
@@ -960,9 +960,9 @@ type UpdateInstrumentConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument code, human-readable shortcode used to describe the instrument
+	// Instrument code, human-readable shortcode used to describe the instrument.
 	Code string `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	// Product specification
+	// Product specification.
 	//
 	// Types that are assignable to Product:
 	//
@@ -1028,7 +1028,7 @@ type isUpdateInstrumentConfiguration_Product interface {
 }
 
 type UpdateInstrumentConfiguration_Future struct {
-	// Future
+	// Future.
 	Future *UpdateFutureProduct `protobuf:"bytes,100,opt,name=future,proto3,oneof"`
 }
 
@@ -1040,13 +1040,13 @@ type UpdateFutureProduct struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Human-readable name/abbreviation of the quote name
+	// Human-readable name/abbreviation of the quote name.
 	QuoteName string `protobuf:"bytes,1,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
-	// The data source spec describing the data of settlement data
+	// The data source spec describing the data of settlement data.
 	DataSourceSpecForSettlementData *DataSourceDefinition `protobuf:"bytes,2,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
-	// The data source spec describing the data source for trading termination
+	// The data source spec describing the data source for trading termination.
 	DataSourceSpecForTradingTermination *DataSourceDefinition `protobuf:"bytes,3,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
-	// The binding between the data source spec and the settlement data
+	// The binding between the data source spec and the settlement data.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,4,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
 }
 
@@ -1116,7 +1116,7 @@ type UpdateNetworkParameter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The network parameter to update
+	// The network parameter to update.
 	Changes *NetworkParameter `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -1165,7 +1165,7 @@ type NewAsset struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The configuration of the new asset
+	// The configuration of the new asset.
 	Changes *AssetDetails `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -1214,9 +1214,9 @@ type UpdateAsset struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the asset to be updated
+	// The ID of the asset to be updated.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	// The changes to apply on an existing asset
+	// The changes to apply on an existing asset.
 	Changes *AssetDetailsUpdate `protobuf:"bytes,2,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -1314,14 +1314,14 @@ type ProposalTerms struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Timestamp (Unix time in seconds) when voting closes for this proposal,
-	// constrained by `minClose` and `maxClose` network parameters
+	// constrained by `minClose` and `maxClose` network parameters.
 	ClosingTimestamp int64 `protobuf:"varint,1,opt,name=closing_timestamp,json=closingTimestamp,proto3" json:"closing_timestamp,omitempty"`
 	// Timestamp (Unix time in seconds) when proposal gets enacted (if passed),
-	// constrained by `minEnact` and `maxEnact` network parameters
+	// constrained by `minEnact` and `maxEnact` network parameters.
 	EnactmentTimestamp int64 `protobuf:"varint,2,opt,name=enactment_timestamp,json=enactmentTimestamp,proto3" json:"enactment_timestamp,omitempty"`
-	// Validation timestamp (Unix time in seconds)
+	// Validation timestamp (Unix time in seconds).
 	ValidationTimestamp int64 `protobuf:"varint,3,opt,name=validation_timestamp,json=validationTimestamp,proto3" json:"validation_timestamp,omitempty"`
-	// Changes being proposed
+	// Changes being proposed.
 	//
 	// Types that are assignable to Change:
 	//
@@ -1441,33 +1441,33 @@ type isProposalTerms_Change interface {
 }
 
 type ProposalTerms_UpdateMarket struct {
-	// Proposal change for modifying an existing market on Vega
+	// Proposal change for modifying an existing market on Vega.
 	UpdateMarket *UpdateMarket `protobuf:"bytes,101,opt,name=update_market,json=updateMarket,proto3,oneof"`
 }
 
 type ProposalTerms_NewMarket struct {
-	// Proposal change for creating new market on Vega
+	// Proposal change for creating new market on Vega.
 	NewMarket *NewMarket `protobuf:"bytes,102,opt,name=new_market,json=newMarket,proto3,oneof"`
 }
 
 type ProposalTerms_UpdateNetworkParameter struct {
-	// Proposal change for updating Vega network parameters
+	// Proposal change for updating Vega network parameters.
 	UpdateNetworkParameter *UpdateNetworkParameter `protobuf:"bytes,103,opt,name=update_network_parameter,json=updateNetworkParameter,proto3,oneof"`
 }
 
 type ProposalTerms_NewAsset struct {
-	// Proposal change for creating new assets on Vega
+	// Proposal change for creating new assets on Vega.
 	NewAsset *NewAsset `protobuf:"bytes,104,opt,name=new_asset,json=newAsset,proto3,oneof"`
 }
 
 type ProposalTerms_NewFreeform struct {
 	// Proposal change for a freeform request, which can be voted on but does not change the behaviour of the system,
-	// and can be used to gauge community sentiment
+	// and can be used to gauge community sentiment.
 	NewFreeform *NewFreeform `protobuf:"bytes,105,opt,name=new_freeform,json=newFreeform,proto3,oneof"`
 }
 
 type ProposalTerms_UpdateAsset struct {
-	// Proposal change for updating an asset
+	// Proposal change for updating an asset.
 	UpdateAsset *UpdateAsset `protobuf:"bytes,106,opt,name=update_asset,json=updateAsset,proto3,oneof"`
 }
 
@@ -1551,19 +1551,19 @@ type GovernanceData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The governance proposal
+	// The governance proposal.
 	Proposal *Proposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
-	// All YES votes in favour of the proposal above
+	// All YES votes in favour of the proposal above.
 	Yes []*Vote `protobuf:"bytes,2,rep,name=yes,proto3" json:"yes,omitempty"`
-	// All NO votes against the proposal above
+	// All NO votes against the proposal above.
 	No []*Vote `protobuf:"bytes,3,rep,name=no,proto3" json:"no,omitempty"`
 	// All latest YES votes by party (guaranteed to be unique),
 	// where key (string) is the party ID (public key) and
-	// value (Vote) is the vote cast by the given party
+	// value (Vote) is the vote cast by the given party.
 	YesParty map[string]*Vote `protobuf:"bytes,4,rep,name=yes_party,json=yesParty,proto3" json:"yes_party,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// All latest NO votes by party (guaranteed to be unique),
 	// where key (string) is the party ID (public key) and
-	// value (Vote) is the vote cast by the given party
+	// value (Vote) is the vote cast by the given party.
 	NoParty map[string]*Vote `protobuf:"bytes,5,rep,name=no_party,json=noParty,proto3" json:"no_party,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -1640,31 +1640,31 @@ type Proposal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique proposal identifier
+	// Unique proposal identifier.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Proposal reference
+	// Proposal reference.
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Party identifier (public key) of the author (the party submitting the proposal)
+	// Party identifier (public key) of the author (the party submitting the proposal).
 	PartyId string `protobuf:"bytes,3,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Proposal state - See (Proposal.State)[#vega.Proposal.State] definition
+	// Proposal state.
 	State Proposal_State `protobuf:"varint,4,opt,name=state,proto3,enum=vega.Proposal_State" json:"state,omitempty"`
-	// Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network
+	// Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted
+	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
 	Terms *ProposalTerms `protobuf:"bytes,6,opt,name=terms,proto3" json:"terms,omitempty"`
-	// A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses
+	// A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
 	Reason *ProposalError `protobuf:"varint,7,opt,name=reason,proto3,enum=vega.ProposalError,oneof" json:"reason,omitempty"`
-	// The detailed error associated to the reason
+	// The detailed error associated to the reason.
 	ErrorDetails *string `protobuf:"bytes,8,opt,name=error_details,json=errorDetails,proto3,oneof" json:"error_details,omitempty"`
-	// The rationale behind a proposal
+	// The rationale behind a proposal.
 	Rationale *ProposalRationale `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	// The required vote participation for this proposal
+	// The required vote participation for this proposal.
 	RequiredParticipation string `protobuf:"bytes,10,opt,name=required_participation,json=requiredParticipation,proto3" json:"required_participation,omitempty"`
-	// The required majority for this proposal
+	// The required majority for this proposal.
 	RequiredMajority string `protobuf:"bytes,11,opt,name=required_majority,json=requiredMajority,proto3" json:"required_majority,omitempty"`
-	// The required participation from liquidity providers, optional (required for market update proposal)
+	// The required participation from liquidity providers, optional (required for market update proposal).
 	RequiredLiquidityProviderParticipation *string `protobuf:"bytes,12,opt,name=required_liquidity_provider_participation,json=requiredLiquidityProviderParticipation,proto3,oneof" json:"required_liquidity_provider_participation,omitempty"`
-	// The require majority from liquidity providers, optional (required for market update proposal)
+	// The require majority from liquidity providers, optional (required for market update proposal).
 	RequiredLiquidityProviderMajority *string `protobuf:"bytes,13,opt,name=required_liquidity_provider_majority,json=requiredLiquidityProviderMajority,proto3,oneof" json:"required_liquidity_provider_majority,omitempty"`
 }
 
@@ -1797,19 +1797,19 @@ type Vote struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Voter's party identifier
+	// Voter's party identifier.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Actual vote
+	// Actual vote.
 	Value Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
-	// Identifier of the proposal being voted on
+	// Identifier of the proposal being voted on.
 	ProposalId string `protobuf:"bytes,3,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
-	// Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network
+	// Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network.
 	Timestamp int64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// Total number of governance token for the party that cast the vote
+	// Total number of governance token for the party that cast the vote.
 	TotalGovernanceTokenBalance string `protobuf:"bytes,5,opt,name=total_governance_token_balance,json=totalGovernanceTokenBalance,proto3" json:"total_governance_token_balance,omitempty"`
-	// The weight of this vote based on the total number of governance tokens
+	// The weight of this vote based on the total number of governance tokens.
 	TotalGovernanceTokenWeight string `protobuf:"bytes,6,opt,name=total_governance_token_weight,json=totalGovernanceTokenWeight,proto3" json:"total_governance_token_weight,omitempty"`
-	// The weight of the vote compared to the total amount of equity-like share on the market
+	// The weight of the vote compared to the total amount of equity-like share on the market.
 	TotalEquityLikeShareWeight string `protobuf:"bytes,7,opt,name=total_equity_like_share_weight,json=totalEquityLikeShareWeight,proto3" json:"total_equity_like_share_weight,omitempty"`
 }
 
