@@ -76,7 +76,7 @@ func (r *Risk) ObserveMarginLevels(
 				return false
 			}
 			return (len(marketID) == 0 || marketID == acc.MarketID.String()) &&
-				partyID == acc.PartyID.String()
+				len(partyID) == 0 || partyID == acc.PartyID.String()
 		})
 	return ch, ref
 }

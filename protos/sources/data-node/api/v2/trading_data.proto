@@ -1318,7 +1318,7 @@ message ExportLedgerEntriesRequest {
     // Party ID to export ledger entries for.
     string party_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Asset ID to export ledger entries for.
-    string asset_id = 2 [(google.api.field_behavior) = REQUIRED];
+    string asset_id = 2;
     // Optional pagination control.
     optional Pagination pagination = 3;
     // Date range to export ledger entries for.
@@ -1578,9 +1578,9 @@ enum TransferDirection {
 message ListTransfersRequest {
     // Public key for which to request transfers.
     optional string pubkey = 1;
-    // Transfer directions (sender, receiver) to include in the response data.
-    TransferDirection direction = 2 [(google.api.field_behavior) = REQUIRED];
-    // Optional pagination control.
+    // Transfer directions (sender, receiver) to include in the response data
+    TransferDirection direction = 2;
+    // Optional pagination control
     optional Pagination pagination = 3;
 }
 
@@ -1675,11 +1675,11 @@ message ListCandleDataRequest {
     reserved 4;
     // Candle ID, required field.
     string candle_id = 1 [(google.api.field_behavior) = REQUIRED];
-    // Timestamp to retrieve candles since, in nanoseconds, required field.
-    int64 from_timestamp = 2 [(google.api.field_behavior) = REQUIRED];
-    // Timestamp to retrieve candles since, in nanoseconds, required field.
-    int64 to_timestamp = 3 [(google.api.field_behavior) = REQUIRED];
-    // pagination controls.
+    // Timestamp to retrieve candles since, in nanoseconds since the epoch.
+    int64 from_timestamp = 2;
+    // Timestamp to retrieve candles to, in nanoseconds since the epoch.
+    int64 to_timestamp = 3;
+    // pagination controls
     optional Pagination pagination = 5;
 }
 
@@ -2197,11 +2197,11 @@ message OrderEdge {
 
 // Request for listing margin levels
 message ListMarginLevelsRequest {
-    // Party ID for which to list the margin levels.
-    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
-    // Market ID for which to list the margin levels.
-    string market_id = 2 [(google.api.field_behavior) = REQUIRED];
-    // Pagination control.
+    // Party ID for which to list the margin levels
+    string party_id = 1;
+    // Market ID for which to list the margin levels
+    string market_id = 2;
+    // Pagination control
     Pagination pagination = 3;
 }
 
@@ -2211,11 +2211,12 @@ message ListMarginLevelsResponse {
     MarginConnection margin_levels = 1;
 }
 
-// Request to subscribe to a stream of MarginLevels data matching the given party identifier
+// Request to subscribe to a stream of MarginLevels data.
+// If a party ID is provided, the stream will contain margin levels for that party only.
 // Optionally, the list can be additionally filtered by market
 message ObserveMarginLevelsRequest {
     // Party identifier, required field.
-    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+    string party_id = 1;
     // Market identifier.
     optional string market_id = 2;
 }
@@ -2252,7 +2253,7 @@ message MarginConnection {
 // A request to get reward details for a party
 message ListRewardsRequest {
     // Party ID for which to get the list of rewards.
-    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+    string party_id = 1;
     // Asset ID for which to get the list of rewards, if provided.
     optional string asset_id = 2;
     // Pagination control.
@@ -2373,7 +2374,8 @@ message GetDepositResponse {
 // A request to list all deposits for a given party
 message ListDepositsRequest {
     // The ID of the party whose deposits are to be retrieved.
-    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+    // If not provided, deposits for all parties will be provided.
+    string party_id = 1;
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
     // Date range of the requested data, if provided.
@@ -2419,7 +2421,8 @@ message GetWithdrawalResponse {
 // List all withdrawals for a given party
 message ListWithdrawalsRequest {
     // The party ID whose withdrawals we want to retrieve.
-    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
+    // If not provided, withdrawals for all parties will be returned.
+    string party_id = 1;
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
      // Date range of the requested data, if provided.

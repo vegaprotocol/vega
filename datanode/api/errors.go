@@ -111,7 +111,7 @@ var (
 	// NodeService...
 	ErrNodeServiceGetNodes    = errors.New("failed to get nodes")
 	ErrNodeServiceGetNodeData = errors.New("failed to get node data")
-	ErrNodeServicGetByTxHash  = errors.New("failed to get nodes for tx hash")
+	ErrNodeServiceGetByTxHash = errors.New("failed to get nodes for tx hash")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
 	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
@@ -235,7 +235,7 @@ var (
 	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
 	// Positions...
-	ErrPostitionsGetByTxHash = errors.New("failed to get positions for tx hash")
+	ErrPositionsGetByTxHash = errors.New("failed to get positions for tx hash")
 	// Ledger entries...
 	ErrLedgerEntriesGetByTxHash = errors.New("failed to get ledger entries for tx hash")
 	// Transfers...
@@ -274,6 +274,8 @@ var (
 	ErrProtocolUpgradeProposalsGetByTxHash = errors.New("failed to get protocol upgrade proposals for tx hash")
 	// MarginLevels...
 	ErrMarginLevelsGetByTxHash = errors.New("failed to get margin levels for tx hash")
+
+	ErrMissingEmptyTxHash = errors.New("missing or empty tx hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

@@ -1229,6 +1229,10 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 func (t *TradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyRequest) (*v2.GetPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetParty")()
 
+	if len(req.PartyId) == 0 {
+		return nil, formatE(ErrMissingPartyID)
+	}
+
 	party, err := t.partyService.GetByID(ctx, req.PartyId)
 	if err != nil {
 		return nil, formatE(ErrPartyServiceGetByID, err)
@@ -2690,6 +2694,10 @@ func (t *TradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 func (t *TradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRiskFactorsRequest) (*v2.GetRiskFactorsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRiskFactors SQL")()
 
+	if len(req.MarketId) == 0 {
+		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrRiskFactorServiceGet, errors.Wrapf(err, "marketID: %s", req.MarketId))
@@ -3252,6 +3260,10 @@ func (t *TradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingR
 func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEntitiesRequest) (*v2.ListEntitiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListEntities")()
 
+	if len(req.GetTransactionHash()) == 0 {
+		return nil, ErrMissingEmptyTxHash
+	}
+
 	txHash := entities.TxHash(req.GetTransactionHash())
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -3264,7 +3276,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.orderService.GetByTxHash, ErrOrderServiceGetByTxHash)
 
 	positions := queryProtoEntities[*vega.Position](ctx, eg, txHash,
-		t.positionService.GetByTxHash, ErrPostitionsGetByTxHash)
+		t.positionService.GetByTxHash, ErrPositionsGetByTxHash)
 
 	balances := queryProtoEntities[*v2.AccountBalance](ctx, eg, txHash,
 		t.accountService.GetBalancesByTxHash, ErrAccountServiceGetBalancesByTxHash)
@@ -3324,7 +3336,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.protocolUpgradeService.GetByTxHash, ErrEthereumKeyRotationsGetByTxHash)
 
 	nodes := queryProtoEntities[*v2.NodeBasic](ctx, eg, txHash,
-		t.nodeService.GetByTxHash, ErrNodeServicGetByTxHash)
+		t.nodeService.GetByTxHash, ErrNodeServiceGetByTxHash)
 
 	// query and map
 	ledgerEntries := queryAndMapEntities(ctx, eg, txHash,
