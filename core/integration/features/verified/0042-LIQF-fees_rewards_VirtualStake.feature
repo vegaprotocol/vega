@@ -662,5 +662,60 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
+  Scenario: Check the fees LPs receive are never 0 unless a non-zero amount is rounded to zero due to integer representation: 0042-LIQF-015
+
+    Given the average block duration is "1"
+
+    When the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | lp1    | USD   | 10000000 |
+      | lp2    | USD   | 10000000 |
+      | lp3    | USD   | 10000000 |
+      | party1 | USD   | 10000000 |
+      | party2 | USD   | 10000000 |
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party1 | ETH/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | pa1-b1    |
+      | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | pa1-b2    |
+      | party2 | ETH/MAR22 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | pa2-s1    |
+      | party2 | ETH/MAR22 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC | lp1-s1    |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lp1   | ETH/MAR22 | 900001            | 0.001 | buy  | BID              | 1          | 1      | submission |
+      | lp1 | lp1   | ETH/MAR22 | 900001            | 0.001 | sell | ASK              | 1          | 1      | amendment  |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lp2   | ETH/MAR22 | 99998             | 0.001 | buy  | BID              | 1          | 1      | submission |
+      | lp2 | lp2   | ETH/MAR22 | 99998             | 0.001 | sell | ASK              | 1          | 1      | amendment  |
+    And the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
+      | lp3 | lp3   | ETH/MAR22 | 1                 | 0.001 | buy  | BID              | 1          | 1      | submission |
+      | lp3 | lp3   | ETH/MAR22 | 1                 | 0.001 | sell | ASK              | 1          | 1      | amendment  |
+    And the opening auction period ends for market "ETH/MAR22"
+
+    Given the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    When the parties place the following orders with ticks:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | party1 | ETH/MAR22 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
+      | party2 | ETH/MAR22 | sell | 10     | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+    Then the accumulated liquidity fees should be "10" for the market "ETH/MAR22"
+
+    # Check the average scores just before the fee distribution, then distribute fees
+    Given the network moves ahead "600" blocks
+    And the liquidity provider fee shares for the market "ETH/MAR22" should be:
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.900001           | 900001                  |
+      | lp2   | 0.099998           | 999999                  |
+      | lp3   | 0.000001           | 1000000                 |
+    When the network moves ahead "1" blocks
+    # Assertion: 0042-LIQF-015
+    Then the following transfers should happen:
+      | from   | to  | from account                | to account           | market id | amount | asset |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 9     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
+    # Assertion: 0042-LIQF-001
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+
 
     
