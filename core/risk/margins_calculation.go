@@ -130,8 +130,31 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	return newMarginLevels(maintenanceMargin, e.scalingFactorsUint)
 }
 
-func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, sizeBuys, sizeSells uint64, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal, auction bool) num.Decimal {
-	return computeMaintenanceMargin(sizePosition, int64(sizeBuys), int64(sizeSells), buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, auction, true, true, num.MaxUint(), num.MaxUint())
+func CalculateMaintenanceMarginWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal, auction bool) num.Decimal {
+	buySumProduct, sellSumProduct := num.DecimalZero(), num.DecimalZero()
+	sizeSells, sizeBuys := int64(0), int64(0)
+	for _, o := range buyOrders {
+		size := int64(o.Size)
+		if o.IsMarketOrder {
+			// assume market order fills
+			sizePosition += size
+		} else {
+			buySumProduct = buySumProduct.Add(num.DecimalFromInt64(size).Mul(o.Price))
+			sizeBuys += size
+		}
+	}
+	for _, o := range sellOrders {
+		size := int64(o.Size)
+		if o.IsMarketOrder {
+			// assume market order fills
+			sizePosition -= size
+		} else {
+			sellSumProduct = sellSumProduct.Add(num.DecimalFromInt64(size).Mul(o.Price))
+			sizeSells += size
+		}
+	}
+
+	return computeMaintenanceMargin(sizePosition, sizeBuys, sizeSells, buySumProduct, sellSumProduct, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort, auction, true, true, num.MaxUint(), num.MaxUint())
 }
 
 func calculateSlippageFactor(slippageVolume, linearSlippageFactor, quadraticSlippageFactor num.Decimal) num.Decimal {

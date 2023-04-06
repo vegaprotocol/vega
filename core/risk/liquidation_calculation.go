@@ -8,11 +8,12 @@ import (
 )
 
 type OrderInfo struct {
-	Size  int64
-	Price *num.Uint
+	Size          uint64
+	Price         num.Decimal
+	IsMarketOrder bool
 }
 
-func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithSellOrders, liquidationPriceWithBuyOrders num.Decimal, err error) {
+func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders, sellOrders []*OrderInfo, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (liquidationPriceForOpenVolume, liquidationPriceWithSellOrders, liquidationPriceWithBuyOrders num.Decimal, err error) {
 	openVolume := num.DecimalFromInt64(sizePosition).Div(positionFactor)
 
 	if sizePosition != 0 {
@@ -24,11 +25,24 @@ func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders,
 		return
 	}
 
+	// assume market orders will trade immediately
+	for _, o := range buyOrders {
+		if o.IsMarketOrder {
+			o.Price = currentPrice
+		}
+	}
+
+	for _, o := range sellOrders {
+		if o.IsMarketOrder {
+			o.Price = currentPrice
+		}
+	}
+
 	sort.Slice(buyOrders, func(i, j int) bool {
-		return buyOrders[i].Price.GT(buyOrders[j].Price)
+		return buyOrders[i].Price.GreaterThan(buyOrders[j].Price)
 	})
 	sort.Slice(sellOrders, func(i, j int) bool {
-		return sellOrders[i].Price.LT(sellOrders[j].Price)
+		return sellOrders[i].Price.LessThan(sellOrders[j].Price)
 	})
 
 	liquidationPriceWithBuyOrders, err = calculateLiquidationPriceWithOrders(liquidationPriceForOpenVolume, buyOrders, true, openVolume, currentPrice, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
@@ -63,28 +77,27 @@ func calculateLiquidationPrice(openVolume num.Decimal, currentPrice, collateralA
 	return ret, nil
 }
 
-func calculateLiquidationPriceWithOrders(liquidationPriceOpenVolumeOnly num.Decimal, orders []OrderInfo, buySide bool, openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
+func calculateLiquidationPriceWithOrders(liquidationPriceOpenVolumeOnly num.Decimal, orders []*OrderInfo, buySide bool, openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
 	var err error
 	liquidationPrice := liquidationPriceOpenVolumeOnly
 	exposureWithOrders := openVolume
 	collateralWithOrders := collateralAvailable
 	for _, o := range orders {
-		price := num.DecimalFromUint(o.Price)
-		if !exposureWithOrders.IsZero() && ((buySide && exposureWithOrders.IsPositive() && price.LessThan(liquidationPrice)) || (!buySide && exposureWithOrders.IsNegative() && price.GreaterThan(liquidationPrice))) {
+		if !exposureWithOrders.IsZero() && ((buySide && exposureWithOrders.IsPositive() && o.Price.LessThan(liquidationPrice)) || (!buySide && exposureWithOrders.IsNegative() && o.Price.GreaterThan(liquidationPrice))) {
 			// party gets marked for closeout before this order gets a chance to fill
 			break
 		}
-		mtm := exposureWithOrders.Mul(price.Sub(currentPrice))
-		currentPrice = price
+		mtm := exposureWithOrders.Mul(o.Price.Sub(currentPrice))
+		currentPrice = o.Price
 
 		collateralWithOrders = collateralWithOrders.Add(mtm)
 		if buySide {
-			exposureWithOrders = exposureWithOrders.Add(num.DecimalFromInt64(o.Size).Div(positionFactor))
+			exposureWithOrders = exposureWithOrders.Add(num.DecimalFromInt64(int64(o.Size)).Div(positionFactor))
 		} else {
-			exposureWithOrders = exposureWithOrders.Sub(num.DecimalFromInt64(o.Size).Div(positionFactor))
+			exposureWithOrders = exposureWithOrders.Sub(num.DecimalFromInt64(int64(o.Size)).Div(positionFactor))
 		}
 
-		liquidationPrice, err = calculateLiquidationPrice(exposureWithOrders, price, collateralWithOrders, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
+		liquidationPrice, err = calculateLiquidationPrice(exposureWithOrders, o.Price, collateralWithOrders, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort)
 		if err != nil {
 			return num.DecimalZero(), err
 		}
