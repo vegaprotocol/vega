@@ -51,7 +51,7 @@ service TradingDataService {
     // Subscribe to a stream of accounts
     rpc ObserveAccounts(ObserveAccountsRequest) returns (stream ObserveAccountsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Accounts";
+	tags: "Websockets";
       };
     }
 
@@ -97,7 +97,7 @@ service TradingDataService {
     // Subscribe to a stream of orders
     rpc ObserveOrders(ObserveOrdersRequest) returns (stream ObserveOrdersResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Orders";
+	tags: "Websockets";
       };
     }
 
@@ -126,7 +126,7 @@ service TradingDataService {
     // Subscribe to a stream of positions
     rpc ObservePositions(ObservePositionsRequest) returns (stream ObservePositionsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Positions";
+	tags: "Websockets";
       };
     }
 
@@ -216,7 +216,7 @@ service TradingDataService {
     // Subscribe to a stream of the latest market depth for a given market
     rpc ObserveMarketsDepth(ObserveMarketsDepthRequest) returns (stream ObserveMarketsDepthResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Markets";
+	tags: "Websockets";
       };
     }
 
@@ -225,7 +225,7 @@ service TradingDataService {
     // Subscribe to a stream of updates on market depth for a given market
     rpc ObserveMarketsDepthUpdates(ObserveMarketsDepthUpdatesRequest) returns (stream ObserveMarketsDepthUpdatesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Markets";
+	tags: "Websockets";
       };
     }
 
@@ -234,7 +234,7 @@ service TradingDataService {
     // Subscribe to a stream of data about a given market
     rpc ObserveMarketsData(ObserveMarketsDataRequest) returns (stream ObserveMarketsDataResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Markets";
+	tags: "Websockets";
       };
     }
 
@@ -279,7 +279,7 @@ service TradingDataService {
     // Subscribe to a stream of candle updates
     rpc ObserveCandleData(ObserveCandleDataRequest) returns (stream ObserveCandleDataResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Candles";
+	tags: "Websockets";
       };
     }
 
@@ -306,7 +306,7 @@ service TradingDataService {
     // Subscribe to a stream of votes
     rpc ObserveVotes(ObserveVotesRequest) returns (stream ObserveVotesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Governance";
+	tags: "Websockets";
       };
     }
 
@@ -378,7 +378,7 @@ service TradingDataService {
     // Subscribe to a stream of trades, optionally filtered by party/market
     rpc ObserveTrades(ObserveTradesRequest) returns (stream ObserveTradesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Trades";
+	tags: "Websockets";
       };
     }
 
@@ -459,7 +459,7 @@ service TradingDataService {
     // Subscribe to a stream of margin levels
     rpc ObserveMarginLevels(ObserveMarginLevelsRequest) returns (stream ObserveMarginLevelsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Margin levels";
+	tags: "Websockets";
       };
     }
 
@@ -560,7 +560,7 @@ service TradingDataService {
     // Get a liquidity provision subscription for a given market and party
     rpc ObserveLiquidityProvisions(ObserveLiquidityProvisionsRequest) returns (stream ObserveLiquidityProvisionsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Liquidity provisions";
+	tags: "Websockets";
       };
     }
 
@@ -587,7 +587,7 @@ service TradingDataService {
     // Subscribe to a stream of governance proposals
     rpc ObserveGovernance(ObserveGovernanceRequest) returns (stream ObserveGovernanceResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Governance";
+	tags: "Websockets";
       };
     }
 
@@ -714,7 +714,7 @@ service TradingDataService {
     // Subscribe to a stream of events from the core
     rpc ObserveEventBus(stream ObserveEventBusRequest) returns (stream ObserveEventBusResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Events";
+	tags: "Websockets";
       };
     }
 
@@ -723,7 +723,7 @@ service TradingDataService {
     // Subscribe to a stream of transfer responses
     rpc ObserveLedgerMovements(ObserveLedgerMovementsRequest) returns (stream ObserveLedgerMovementsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Ledger movements";
+	tags: "Websockets";
       };
     }
 
