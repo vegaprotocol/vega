@@ -2683,25 +2683,6 @@ func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *da
 	return indp, nil
 }
 
-func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
-	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.MarketData == nil {
-		return nil, errors.New("no market data not found")
-	}
-
-	results := make([]*types.MarketData, 0, len(resp.MarketData.Edges))
-
-	for _, edge := range resp.MarketData.Edges {
-		results = append(results, edge.Node)
-	}
-
-	return results, nil
-}
-
 func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
 	req := v2.GetMarketDataHistoryByIDRequest{
 		MarketId:       marketID,

@@ -149,7 +149,6 @@ func TestDelegations(t *testing.T) {
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
-
 }
 
 func TestDelegationPagination(t *testing.T) {

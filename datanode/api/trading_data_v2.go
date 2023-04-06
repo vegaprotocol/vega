@@ -343,21 +343,6 @@ func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 	}, nil
 }
 
-func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketDataConnection, error) {
-	if len(list) == 0 {
-		return nil, nil
-	}
-
-	edges, err := makeEdges[*v2.MarketDataEdge](list)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v2.MarketDataConnection{
-		Edges: edges,
-	}, nil
-}
-
 // ObserveMarketsDepth subscribes to market depth updates.
 func (t *TradingDataServiceV2) ObserveMarketsDepth(req *v2.ObserveMarketsDepthRequest, srv v2.TradingDataService_ObserveMarketsDepthServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
@@ -527,21 +512,6 @@ func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 	return &v2.GetMarketDataHistoryByIDResponse{
 		MarketData: &connection,
 	}, nil
-}
-
-func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	marketData, err := entityMarketDataListToProtoList(results)
-	return &v2.GetMarketDataHistoryByIDResponse{
-		MarketData: marketData,
-	}, errors.Wrap(err, "could not parse market data results")
-}
-
-func (t *TradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := t.marketDataService.GetMarketDataByID(ctx, id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not retrieve market data for market id: %s", id)
-	}
-	return parseMarketDataResults([]entities.MarketData{results})
 }
 
 // GetNetworkLimits returns the latest network limits.
