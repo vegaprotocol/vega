@@ -183,6 +183,7 @@ func TestMain(t *testing.M) {
 
 			fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
 
+			updateAllContinuousAggregateData(ctx)
 			summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
 			fromEventsDatabaseSummaries = append(fromEventsDatabaseSummaries, summary)
@@ -214,6 +215,7 @@ func TestMain(t *testing.M) {
 
 					fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
 
+					updateAllContinuousAggregateData(ctx)
 					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
 					fromEventsDatabaseSummaries = append(fromEventsDatabaseSummaries, summary)
@@ -277,6 +279,7 @@ func TestMain(t *testing.M) {
 
 					fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
 
+					updateAllContinuousAggregateData(ctx)
 					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
 					fromEventsDatabaseSummaries = append(fromEventsDatabaseSummaries, summary)
@@ -392,6 +395,18 @@ func TestMain(t *testing.M) {
 	}
 }
 
+func updateAllContinuousAggregateData(ctx context.Context) {
+	blockspan, err := sqlstore.GetDatanodeBlockSpan(ctx, networkHistoryConnPool)
+	if err != nil {
+		panic(err)
+	}
+
+	err = snapshot.UpdateContinuousAggregateDataFromHighWaterMark(ctx, networkHistoryConnPool, blockspan.ToHeight)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -432,8 +447,6 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	// Now restore the node to height 4000
-
 	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[4000].HistorySegmentID, 3000)
 	require.NoError(t, err)
 	require.Equal(t, int64(3000), fetched)
@@ -454,8 +467,9 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
 
 	dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[4].currentTableSummaries, dbSummary.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[4].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[4].currentTableSummaries, dbSummary.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[4].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[4].caggSummaries, dbSummary.caggSummaries)
 
 	// Run events to height 5000
 	ctxWithCancel, cancelFn = context.WithCancel(ctx)
@@ -503,8 +517,9 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	require.Equal(t, fromEventsIntervalToHistoryHashes[5], historyMd5Hash)
 
 	dbSummary = getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[5].currentTableSummaries, dbSummary.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[5].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].currentTableSummaries, dbSummary.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].caggSummaries, dbSummary.caggSummaries)
 }
 
 func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *testing.T) {
@@ -716,8 +731,9 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 		assert.Equal(t, toHeight, loaded.LoadedToHeight)
 
 		dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
-		assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[i].currentTableSummaries, dbSummary.currentTableSummaries)
-		assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[i].historyTableSummaries, dbSummary.historyTableSummaries)
+		assertSummariesAreEqual(t, fromEventsDatabaseSummaries[i].currentTableSummaries, dbSummary.currentTableSummaries)
+		assertSummariesAreEqual(t, fromEventsDatabaseSummaries[i].historyTableSummaries, dbSummary.historyTableSummaries)
+		assertSummariesAreEqual(t, fromEventsDatabaseSummaries[i].caggSummaries, dbSummary.caggSummaries)
 	}
 }
 
@@ -803,7 +819,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 		expectedHistorySegmentsFromHeights, expectedHistorySegmentsToHeights)
 
 	for i := 2; i < 5; i++ {
-		assertTableSummariesAreEqual(t, fromEventsIntervalToHistoryTableDelta[i], historyTableDelta[i])
+		assertSummariesAreEqual(t, fromEventsIntervalToHistoryTableDelta[i], historyTableDelta[i])
 	}
 
 	assertIntervalHistoryIsEmpty(t, historyTableDelta, 0)
@@ -904,10 +920,13 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	require.Equal(t, fromEventsSnapshotHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
 
+	updateAllContinuousAggregateData(ctx)
+
 	databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000 := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[3].caggSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.caggSummaries)
 }
 
 func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEvents(t *testing.T) {
@@ -1004,10 +1023,13 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 
 	require.Equal(t, fromEventsSnapshotHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
 
+	updateAllContinuousAggregateData(ctx)
+
 	databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000 := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
-	assertTableSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[3].currentTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[3].historyTableSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[3].caggSummaries, databaseSummaryAtBlock3000AfterSnapshotReloadFromBlock2000.caggSummaries)
 }
 
 func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, rootSegmentID string, numBlocksToFetch int64) (int64, error) {
@@ -1157,6 +1179,9 @@ func setupSQLBroker(ctx context.Context, testDbConfig sqlstore.Config, snapshotS
 	subscribers.SetupSQLSubscribers()
 
 	blockStore := sqlstore.NewBlocks(transactionalConnectionSource)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create block store: %w", err)
+	}
 
 	config := broker.NewDefaultConfig()
 
@@ -1229,7 +1254,7 @@ type tableDataSummary struct {
 	dataHash  string
 }
 
-func assertTableSummariesAreEqual(t *testing.T, expected map[string]tableDataSummary, actual map[string]tableDataSummary) {
+func assertSummariesAreEqual(t *testing.T, expected map[string]tableDataSummary, actual map[string]tableDataSummary) {
 	t.Helper()
 	if len(expected) != len(actual) {
 		require.Equalf(t, len(expected), len(actual), "expected table count: %d actual: %d", len(expected), len(actual))
@@ -1249,6 +1274,7 @@ func assertTableSummariesAreEqual(t *testing.T, expected map[string]tableDataSum
 type databaseSummary struct {
 	currentTableSummaries map[string]tableDataSummary
 	historyTableSummaries map[string]tableDataSummary
+	caggSummaries         map[string]tableDataSummary
 	dbMetaData            snapshot.DatabaseMetadata
 }
 
@@ -1266,19 +1292,7 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 	}
 
 	for table, meta := range dbMetaData.TableNameToMetaData {
-		summary := tableDataSummary{tableName: table}
-		err = conn.QueryRow(ctx, fmt.Sprintf("select count(*) from %s", table)).Scan(&summary.rowCount)
-		if err != nil {
-			panic(err)
-		}
-
-		if summary.rowCount > 0 {
-			err = conn.QueryRow(ctx, fmt.Sprintf("SELECT md5(CAST((array_agg(f.* order by %s))AS text)) FROM %s f; ",
-				meta.SortOrder, table)).Scan(&summary.dataHash)
-			if err != nil {
-				panic(err)
-			}
-		}
+		summary := getTableOrViewSummary(ctx, conn, table, meta.SortOrder)
 
 		if meta.Hypertable {
 			historyStateDataSummaries[table] = summary
@@ -1287,10 +1301,48 @@ func getDatabaseDataSummary(ctx context.Context, connConfig sqlstore.ConnectionC
 		}
 	}
 
+	// No sensible way to get the order by from database metadata so it is hardcoded here, will need to be added
+	// to if new CAGGS are added
+	viewNameToGroupBy := map[string]string{
+		"conflated_balances":       "account_id, bucket",
+		"conflated_margin_levels":  "account_id, bucket",
+		"conflated_positions":      "market_id, party_id, bucket",
+		"trades_candle_15_minutes": "market_id, period_start",
+		"trades_candle_1_day":      "market_id, period_start",
+		"trades_candle_1_hour":     "market_id, period_start",
+		"trades_candle_1_minute":   "market_id, period_start",
+		"trades_candle_5_minutes":  "market_id, period_start",
+		"trades_candle_6_hours":    "market_id, period_start",
+	}
+
+	caggSummaries := map[string]tableDataSummary{}
+	for _, caggMeta := range dbMetaData.ContinuousAggregatesMetaData {
+		summary := getTableOrViewSummary(ctx, conn, caggMeta.Name, viewNameToGroupBy[caggMeta.Name])
+		caggSummaries[caggMeta.Name] = summary
+	}
+
 	return databaseSummary{
 		historyTableSummaries: historyStateDataSummaries, currentTableSummaries: currentStateDataSummaries,
-		dbMetaData: dbMetaData,
+		caggSummaries: caggSummaries,
+		dbMetaData:    dbMetaData,
 	}
+}
+
+func getTableOrViewSummary(ctx context.Context, conn *pgxpool.Pool, table string, sortOrder string) tableDataSummary {
+	summary := tableDataSummary{tableName: table}
+	err := conn.QueryRow(ctx, fmt.Sprintf("select count(*) from %s", table)).Scan(&summary.rowCount)
+	if err != nil {
+		panic(err)
+	}
+
+	if summary.rowCount > 0 {
+		err = conn.QueryRow(ctx, fmt.Sprintf("SELECT md5(CAST((array_agg(f.* order by %s))AS text)) FROM %s f; ",
+			sortOrder, table)).Scan(&summary.dataHash)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return summary
 }
 
 func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,

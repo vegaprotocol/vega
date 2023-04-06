@@ -2,9 +2,11 @@ package snapshot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/pressly/goose/v3"
@@ -12,11 +14,13 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/shopspring/decimal"
 )
 
 type DatabaseMetadata struct {
-	TableNameToMetaData map[string]TableMetadata
-	DatabaseVersion     int64
+	TableNameToMetaData          map[string]TableMetadata
+	ContinuousAggregatesMetaData []ContinuousAggregateMetaData
+	DatabaseVersion              int64
 }
 
 type TableMetadata struct {
@@ -24,6 +28,12 @@ type TableMetadata struct {
 	SortOrder       string
 	Hypertable      bool
 	PartitionColumn string
+}
+
+type ContinuousAggregateMetaData struct {
+	ID             int
+	Name           string
+	BucketInterval time.Duration
 }
 
 type IndexInfo struct {
@@ -63,7 +73,15 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 		return DatabaseMetadata{}, fmt.Errorf("failed to get hyper table partition columns:%w", err)
 	}
 
-	result := DatabaseMetadata{TableNameToMetaData: map[string]TableMetadata{}, DatabaseVersion: dbVersion}
+	caggsMeta, err := getContinuousAggregatesMetaData(ctx, connPool)
+	if err != nil {
+		return DatabaseMetadata{}, fmt.Errorf("failed to get continuous aggregate view names:%w", err)
+	}
+
+	result := DatabaseMetadata{
+		TableNameToMetaData: map[string]TableMetadata{}, DatabaseVersion: dbVersion,
+		ContinuousAggregatesMetaData: caggsMeta,
+	}
 	for _, tableName := range tableNames {
 		partitionCol := ""
 		ok := false
@@ -149,6 +167,75 @@ func getHyperTablePartitionColumns(ctx context.Context, conn *pgxpool.Pool) (map
 		tableNameToPartitionColumn[column.HypertableName] = column.ColumnName
 	}
 	return tableNameToPartitionColumn, nil
+}
+
+func getContinuousAggregatesMetaData(ctx context.Context, conn *pgxpool.Pool) ([]ContinuousAggregateMetaData, error) {
+	var views []struct {
+		ViewName       string
+		ViewDefinition string
+	}
+	err := pgxscan.Select(ctx, conn, &views, "SELECT view_name, view_definition FROM timescaledb_information.continuous_aggregates")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query continuous aggregate definitions:%w", err)
+	}
+
+	metas := make([]ContinuousAggregateMetaData, 0, len(views))
+
+	for _, view := range views {
+		interval, err := extractIntervalFromViewDefinition(view.ViewDefinition)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get interval for view %s: %w", view.ViewName, err)
+		}
+
+		intervalAsDuration, err := intervalToSeconds(ctx, conn, interval)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert interval to seconds duration: %w", err)
+		}
+
+		query := fmt.Sprintf(`SELECT id from _timescaledb_catalog.hypertable
+    			WHERE table_name=(
+        		SELECT materialization_hypertable_name FROM timescaledb_information.continuous_aggregates WHERE view_name='%s');`, view.ViewName)
+		row := conn.QueryRow(ctx, query)
+
+		var caggID int
+		err = row.Scan(&caggID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get cagg id : %w", err)
+		}
+
+		meta := ContinuousAggregateMetaData{
+			ID:             caggID,
+			Name:           view.ViewName,
+			BucketInterval: intervalAsDuration,
+		}
+
+		metas = append(metas, meta)
+	}
+
+	return metas, nil
+}
+
+func extractIntervalFromViewDefinition(viewDefinition string) (string, error) {
+	re := regexp.MustCompile(`time_bucket\('(.*)'`)
+	match := re.FindStringSubmatch(viewDefinition)
+	if match == nil || len(match) != 2 {
+		return "", errors.New("failed to extract interval from view definition")
+	}
+
+	return match[1], nil
+}
+
+func intervalToSeconds(ctx context.Context, conn sqlstore.Connection, interval string) (time.Duration, error) {
+	query := fmt.Sprintf("SELECT EXTRACT(epoch FROM INTERVAL '%s')", interval)
+	row := conn.QueryRow(ctx, query)
+
+	var seconds decimal.Decimal
+	err := row.Scan(&seconds)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get interval in seconds %s: %w", interval, err)
+	}
+
+	return time.Duration(seconds.IntPart()) * time.Second, nil
 }
 
 // getDBVersion copied from the goose library and modified to support using a pre-allocated connection. It's worth noting
