@@ -659,10 +659,14 @@ service TradingDataService {
     //
     // Estimate the margin that would be required for submitting this order
     rpc EstimateMargin(EstimateMarginRequest) returns (EstimateMarginResponse) {
-      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Orders";
-      };
-    }
+        option deprecated = true;
+    };
+
+    // Estimate position
+    //
+    // Estimate the margin that would be required for maintaining the specified position
+    // if the optional collataral available argument is supplied the reposnse also contains the estimate of the liquidation price
+    rpc EstimatePosition(EstimatePositionRequest) returns (EstimatePositionResponse);
 
     // List network parameters
     //
@@ -2826,7 +2830,8 @@ message EstimateFeeResponse {
 
 // Request to fetch the estimated MarginLevels if an order were to trade immediately
 message EstimateMarginRequest {
-    // Market ID for the order.
+    option deprecated = true;
+    // Market ID for the order
     string market_id = 1;
     // Party ID of the order.
     string party_id = 2;
@@ -2842,7 +2847,8 @@ message EstimateMarginRequest {
 
 // Response to an estimate margin request, containing the estimated margin levels for a given order
 message EstimateMarginResponse {
-    // Summary of the estimated margins for this order if it were to trade now.
+    option deprecated = true;
+    // Summary of the estimated margins for this order if it were to trade now
     vega.MarginLevels margin_levels = 2;
 }
 
@@ -3315,4 +3321,32 @@ message PingRequest {
 
 // Ping response from the data node
 message PingResponse {
+}
+
+message EstimatePositionRequest {
+    string market_id = 1;
+    int64 open_volume = 2;
+    repeated vega.Order active_orders = 3;
+    string collateral_available = 4; 
+}
+
+message EstimatePositionResponse {
+    MarginEstimate margin_estimate = 1;
+    LiquidationEstimate liquidation_price_estimate = 2;
+}
+
+message MarginEstimate {
+    vega.MarginLevels worst_case = 1;
+    vega.MarginLevels best_case = 2;
+}
+
+message LiquidationEstimate {
+    LiquidationPrice worst_case = 1;
+    LiquidationPrice best_case = 2;
+}
+
+message LiquidationPrice {
+    string position_only = 1;
+    string including_buy_orders = 2;
+    string including_sell_orders = 3;
 }
