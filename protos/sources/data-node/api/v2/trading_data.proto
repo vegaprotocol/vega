@@ -923,17 +923,6 @@ service TradingDataService {
 
 // -- Pagination --
 
-// Pagination controls
-message OffsetPagination {
-    // Skip the number of records specified, default is 0.
-    uint64 skip = 1;
-    // Limit the number of returned records to the value specified, default is 50.
-    uint64 limit = 2;
-    // Descending reverses the order of the records returned,
-    // default is true, if false the results will be returned in ascending order.
-    bool descending = 3;
-}
-
 // Cursor information for cursor based pagination requests
 message Pagination {
     optional int32 first = 1;
@@ -1540,18 +1529,16 @@ message GetLatestMarketDataResponse {
 
 // Request that is sent for getting Market Data History
 message GetMarketDataHistoryByIDRequest {
-    // Market identifier, required field.
-    string market_id = 1;
-    // Optional Unix time in nanoseconds.
-    optional int64 start_timestamp = 2;
-    // Optional Unix time in nanoseconds.
-    optional int64 end_timestamp = 3;
-    // Optional pagination control.
-    optional Pagination pagination = 4;
-    // Optional offset pagination control in order to support existing version of the Market Data History query
-    // that is available in the GraphQL API. That function has been deprecated, but until it's removed we have
-    // added this to support pagination queries that use an offset.
-    optional OffsetPagination offset_pagination = 5 [deprecated = true];
+  reserved 5;
+
+  // Market identifier, required field.
+  string market_id = 1;
+  // Optional Unix time in nanoseconds.
+  optional int64 start_timestamp = 2;
+  // Optional Unix time in nanoseconds.
+  optional int64 end_timestamp = 3;
+  // Optional pagination control.
+  optional Pagination pagination = 4;
 }
 
 // Response that is received when querying Market Data History

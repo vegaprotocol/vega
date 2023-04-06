@@ -24,9 +24,7 @@ type tradeStore interface {
 	Flush(ctx context.Context) ([]*entities.Trade, error)
 	Add(t *entities.Trade) error
 	List(context.Context, entities.MarketID, entities.PartyID, entities.OrderID, entities.CursorPagination, entities.DateRange) ([]entities.Trade, entities.PageInfo, error)
-	GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error)
-	GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
-	GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
+	GetLastTradeByMarket(ctx context.Context, market string) ([]entities.Trade, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error)
 }
 
@@ -65,16 +63,8 @@ func (t *Trade) List(ctx context.Context,
 	return t.store.List(ctx, marketID, partyID, orderID, pagination, dateRange)
 }
 
-func (t *Trade) GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error) {
-	return t.store.GetByMarket(ctx, market, p)
-}
-
-func (t *Trade) GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
-	return t.store.GetByParty(ctx, party, market, pagination)
-}
-
-func (t *Trade) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
-	return t.store.GetByOrderID(ctx, order, market, pagination)
+func (t *Trade) GetLastTradeByMarket(ctx context.Context, market string) ([]entities.Trade, error) {
+	return t.store.GetLastTradeByMarket(ctx, market)
 }
 
 func (t *Trade) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error) {

@@ -105,37 +105,6 @@ func (os *OracleSpec) GetByTxHash(ctx context.Context, txHash entities.TxHash) (
 	return specs, err
 }
 
-func (os *OracleSpec) GetSpecs(ctx context.Context, pagination entities.OffsetPagination) ([]entities.DataSourceSpec, error) {
-	var specsRaw []entities.DataSourceSpecRaw
-	query := fmt.Sprintf(`%s order by id, vega_time desc`, getOracleSpecsQuery())
-
-	var bindVars []interface{}
-	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-	defer metrics.StartSQLQuery("OracleSpec", "ListOracleSpecs")()
-	err := pgxscan.Select(ctx, os.Connection, &specsRaw, query, bindVars...)
-
-	specs := []entities.DataSourceSpec{}
-	for _, specRaw := range specsRaw {
-		newSpec := entities.DataSourceSpec{
-			ID:        specRaw.ID,
-			CreatedAt: specRaw.CreatedAt,
-			UpdatedAt: specRaw.UpdatedAt,
-			Data: &entities.DataSourceDefinition{
-				External: &entities.DataSourceDefinitionExternal{
-					Signers: specRaw.Signers,
-					Filters: specRaw.Filters,
-				},
-			},
-			Status:   specRaw.Status,
-			TxHash:   specRaw.TxHash,
-			VegaTime: specRaw.VegaTime,
-		}
-
-		specs = append(specs, newSpec)
-	}
-	return specs, err
-}
-
 func (os *OracleSpec) GetSpecsWithCursorPagination(ctx context.Context, specID string, pagination entities.CursorPagination) (
 	[]entities.OracleSpec, entities.PageInfo, error,
 ) {

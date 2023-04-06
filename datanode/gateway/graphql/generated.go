@@ -1432,7 +1432,6 @@ type ComplexityRoot struct {
 		Erc20WithdrawalApproval            func(childComplexity int, withdrawalID string) int
 		EstimateOrder                      func(childComplexity int, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) int
 		EthereumKeyRotations               func(childComplexity int, nodeID *string) int
-		GetMarketDataHistoryByID           func(childComplexity int, id string, start *int64, end *int64, skip *int, first *int, last *int) int
 		GetMarketDataHistoryConnectionByID func(childComplexity int, id string, start *int64, end *int64, pagination *v2.Pagination) int
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
@@ -2231,7 +2230,6 @@ type QueryResolver interface {
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
 	EstimateOrder(ctx context.Context, marketID string, partyID string, price *string, size string, side vega.Side, timeInForce vega.Order_TimeInForce, expiration *int64, typeArg vega.Order_Type) (*OrderEstimate, error)
 	EthereumKeyRotations(ctx context.Context, nodeID *string) (*v2.EthereumKeyRotationsConnection, error)
-	GetMarketDataHistoryByID(ctx context.Context, id string, start *int64, end *int64, skip *int, first *int, last *int) ([]*vega.MarketData, error)
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int64, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
@@ -8053,18 +8051,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.EthereumKeyRotations(childComplexity, args["nodeId"].(*string)), true
 
-	case "Query.getMarketDataHistoryByID":
-		if e.complexity.Query.GetMarketDataHistoryByID == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getMarketDataHistoryByID_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetMarketDataHistoryByID(childComplexity, args["id"].(string), args["start"].(*int64), args["end"].(*int64), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
-
 	case "Query.getMarketDataHistoryConnectionByID":
 		if e.complexity.Query.GetMarketDataHistoryConnectionByID == nil {
 			break
@@ -10080,7 +10066,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputAccountFilter,
 		ec.unmarshalInputDateRange,
 		ec.unmarshalInputLedgerEntryFilter,
-		ec.unmarshalInputOffsetPagination,
 		ec.unmarshalInputOrderByMarketAndPartyIdsFilter,
 		ec.unmarshalInputOrderByMarketIdsFilter,
 		ec.unmarshalInputOrderByPartyIdsFilter,
@@ -11276,66 +11261,6 @@ func (ec *executionContext) field_Query_ethereumKeyRotations_args(ctx context.Co
 		}
 	}
 	args["nodeId"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getMarketDataHistoryByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 *int64
-	if tmp, ok := rawArgs["start"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
-		arg1, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["start"] = arg1
-	var arg2 *int64
-	if tmp, ok := rawArgs["end"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
-		arg2, err = ec.unmarshalOTimestamp2ᚖint64(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["end"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["skip"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["skip"] = arg3
-	var arg4 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["first"] = arg4
-	var arg5 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg5, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["last"] = arg5
 	return args, nil
 }
 
@@ -49574,118 +49499,6 @@ func (ec *executionContext) fieldContext_Query_ethereumKeyRotations(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_getMarketDataHistoryByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_getMarketDataHistoryByID(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetMarketDataHistoryByID(rctx, fc.Args["id"].(string), fc.Args["start"].(*int64), fc.Args["end"].(*int64), fc.Args["skip"].(*int), fc.Args["first"].(*int), fc.Args["last"].(*int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*vega.MarketData)
-	fc.Result = res
-	return ec.marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_getMarketDataHistoryByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "market":
-				return ec.fieldContext_MarketData_market(ctx, field)
-			case "markPrice":
-				return ec.fieldContext_MarketData_markPrice(ctx, field)
-			case "bestBidPrice":
-				return ec.fieldContext_MarketData_bestBidPrice(ctx, field)
-			case "bestBidVolume":
-				return ec.fieldContext_MarketData_bestBidVolume(ctx, field)
-			case "bestOfferPrice":
-				return ec.fieldContext_MarketData_bestOfferPrice(ctx, field)
-			case "bestOfferVolume":
-				return ec.fieldContext_MarketData_bestOfferVolume(ctx, field)
-			case "bestStaticBidPrice":
-				return ec.fieldContext_MarketData_bestStaticBidPrice(ctx, field)
-			case "bestStaticBidVolume":
-				return ec.fieldContext_MarketData_bestStaticBidVolume(ctx, field)
-			case "bestStaticOfferPrice":
-				return ec.fieldContext_MarketData_bestStaticOfferPrice(ctx, field)
-			case "bestStaticOfferVolume":
-				return ec.fieldContext_MarketData_bestStaticOfferVolume(ctx, field)
-			case "midPrice":
-				return ec.fieldContext_MarketData_midPrice(ctx, field)
-			case "staticMidPrice":
-				return ec.fieldContext_MarketData_staticMidPrice(ctx, field)
-			case "timestamp":
-				return ec.fieldContext_MarketData_timestamp(ctx, field)
-			case "openInterest":
-				return ec.fieldContext_MarketData_openInterest(ctx, field)
-			case "auctionEnd":
-				return ec.fieldContext_MarketData_auctionEnd(ctx, field)
-			case "auctionStart":
-				return ec.fieldContext_MarketData_auctionStart(ctx, field)
-			case "indicativePrice":
-				return ec.fieldContext_MarketData_indicativePrice(ctx, field)
-			case "indicativeVolume":
-				return ec.fieldContext_MarketData_indicativeVolume(ctx, field)
-			case "marketTradingMode":
-				return ec.fieldContext_MarketData_marketTradingMode(ctx, field)
-			case "marketState":
-				return ec.fieldContext_MarketData_marketState(ctx, field)
-			case "trigger":
-				return ec.fieldContext_MarketData_trigger(ctx, field)
-			case "extensionTrigger":
-				return ec.fieldContext_MarketData_extensionTrigger(ctx, field)
-			case "targetStake":
-				return ec.fieldContext_MarketData_targetStake(ctx, field)
-			case "suppliedStake":
-				return ec.fieldContext_MarketData_suppliedStake(ctx, field)
-			case "commitments":
-				return ec.fieldContext_MarketData_commitments(ctx, field)
-			case "priceMonitoringBounds":
-				return ec.fieldContext_MarketData_priceMonitoringBounds(ctx, field)
-			case "marketValueProxy":
-				return ec.fieldContext_MarketData_marketValueProxy(ctx, field)
-			case "liquidityProviderFeeShare":
-				return ec.fieldContext_MarketData_liquidityProviderFeeShare(ctx, field)
-			case "nextMarkToMarket":
-				return ec.fieldContext_MarketData_nextMarkToMarket(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_getMarketDataHistoryByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_getMarketDataHistoryConnectionByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_getMarketDataHistoryConnectionByID(ctx, field)
 	if err != nil {
@@ -65367,50 +65180,6 @@ func (ec *executionContext) unmarshalInputLedgerEntryFilter(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputOffsetPagination(ctx context.Context, obj interface{}) (OffsetPagination, error) {
-	var it OffsetPagination
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"skip", "limit", "descending"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "skip":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
-			it.Skip, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "limit":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("limit"))
-			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "descending":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("descending"))
-			it.Descending, err = ec.unmarshalNBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputOrderByMarketAndPartyIdsFilter(ctx context.Context, obj interface{}) (OrderByMarketAndPartyIdsFilter, error) {
 	var it OrderByMarketAndPartyIdsFilter
 	asMap := map[string]interface{}{}
@@ -77335,26 +77104,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "getMarketDataHistoryByID":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getMarketDataHistoryByID(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
 		case "getMarketDataHistoryConnectionByID":
 			field := field
 
@@ -87015,47 +86764,6 @@ func (ec *executionContext) marshalOMarketConnection2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._MarketConnection(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOMarketData2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v []*vega.MarketData) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
 }
 
 func (ec *executionContext) marshalOMarketData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarketData(ctx context.Context, sel ast.SelectionSet, v *vega.MarketData) graphql.Marshaler {

@@ -52,12 +52,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var defaultPaginationV2 = entities.OffsetPagination{
-	Skip:       0,
-	Limit:      1000,
-	Descending: true,
-}
-
 // When returning an 'initial image' snapshot, how many updates to batch into each page.
 var snapshotPageSize = 50
 
@@ -349,21 +343,6 @@ func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 	}, nil
 }
 
-func entityMarketDataListToProtoList(list []entities.MarketData) (*v2.MarketDataConnection, error) {
-	if len(list) == 0 {
-		return nil, nil
-	}
-
-	edges, err := makeEdges[*v2.MarketDataEdge](list)
-	if err != nil {
-		return nil, err
-	}
-
-	return &v2.MarketDataConnection{
-		Edges: edges,
-	}, nil
-}
-
 // ObserveMarketsDepth subscribes to market depth updates.
 func (t *TradingDataServiceV2) ObserveMarketsDepth(req *v2.ObserveMarketsDepthRequest, srv v2.TradingDataService_ObserveMarketsDepthServer) error {
 	// Wrap context from the request into cancellable. We can close internal chan on error.
@@ -474,8 +453,7 @@ func (t *TradingDataServiceV2) ListLatestMarketData(ctx context.Context, _ *v2.L
 func (t *TradingDataServiceV2) GetLatestMarketDepth(ctx context.Context, req *v2.GetLatestMarketDepthRequest) (*v2.GetLatestMarketDepthResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetLatestMarketDepth")()
 
-	lastOne := entities.OffsetPagination{Skip: 0, Limit: 1, Descending: true}
-	ts, err := t.tradeService.GetByMarket(ctx, req.MarketId, lastOne)
+	ts, err := t.tradeService.GetLastTradeByMarket(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrTradeServiceGetByMarket, err)
 	}
@@ -503,40 +481,11 @@ func (t *TradingDataServiceV2) GetMarketDataHistoryByID(ctx context.Context, req
 	startTime := vegatime.Unix(0, ptr.UnBox(req.StartTimestamp))
 	endTime := vegatime.Unix(0, ptr.UnBox(req.EndTimestamp))
 
-	if req.OffsetPagination != nil {
-		// TODO: This has been deprecated in the GraphQL API, but needs to be supported until it is removed.
-		marketData, err := t.handleGetMarketDataHistoryWithOffsetPagination(ctx, req, startTime, endTime)
-		if err != nil {
-			return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
-		}
-		return marketData, nil
-	}
 	marketData, err := t.handleGetMarketDataHistoryWithCursorPagination(ctx, req, startTime, endTime)
 	if err != nil {
 		return marketData, formatE(ErrMarketServiceGetMarketDataHistory, err)
 	}
 	return marketData, nil
-}
-
-func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithOffsetPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest, startTime, endTime time.Time) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	pagination := defaultPaginationV2
-	if req.OffsetPagination != nil {
-		pagination = entities.OffsetPaginationFromProto(req.OffsetPagination)
-	}
-
-	if req.StartTimestamp != nil && req.EndTimestamp != nil {
-		return t.getMarketDataHistoryByID(ctx, req.MarketId, startTime, endTime, pagination)
-	}
-
-	if req.StartTimestamp != nil {
-		return t.getMarketDataHistoryFromDateByID(ctx, req.MarketId, startTime, pagination)
-	}
-
-	if req.EndTimestamp != nil {
-		return t.getMarketDataHistoryToDateByID(ctx, req.MarketId, endTime, pagination)
-	}
-
-	return t.getMarketDataByID(ctx, req.MarketId)
 }
 
 func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest, startTime, endTime time.Time) (*v2.GetMarketDataHistoryByIDResponse, error) {
@@ -563,45 +512,6 @@ func (t *TradingDataServiceV2) handleGetMarketDataHistoryWithCursorPagination(ct
 	return &v2.GetMarketDataHistoryByIDResponse{
 		MarketData: &connection,
 	}, nil
-}
-
-func parseMarketDataResults(results []entities.MarketData) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	marketData, err := entityMarketDataListToProtoList(results)
-	return &v2.GetMarketDataHistoryByIDResponse{
-		MarketData: marketData,
-	}, errors.Wrap(err, "could not parse market data results")
-}
-
-func (t *TradingDataServiceV2) getMarketDataHistoryByID(ctx context.Context, id string, start, end time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, _, err := t.marketDataService.GetBetweenDatesByID(ctx, id, start, end, pagination)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not retrieve market data history for market id: %s", id)
-	}
-	return parseMarketDataResults(results)
-}
-
-func (t *TradingDataServiceV2) getMarketDataByID(ctx context.Context, id string) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, err := t.marketDataService.GetMarketDataByID(ctx, id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not retrieve market data for market id: %s", id)
-	}
-	return parseMarketDataResults([]entities.MarketData{results})
-}
-
-func (t *TradingDataServiceV2) getMarketDataHistoryFromDateByID(ctx context.Context, id string, start time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, _, err := t.marketDataService.GetFromDateByID(ctx, id, start, pagination)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not retrieve market data from date %s for market id: %s", start, id)
-	}
-	return parseMarketDataResults(results)
-}
-
-func (t *TradingDataServiceV2) getMarketDataHistoryToDateByID(ctx context.Context, id string, end time.Time, pagination entities.OffsetPagination) (*v2.GetMarketDataHistoryByIDResponse, error) {
-	results, _, err := t.marketDataService.GetToDateByID(ctx, id, end, pagination)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not retrieve market data to date %s for market id: %s", end, id)
-	}
-	return parseMarketDataResults(results)
 }
 
 // GetNetworkLimits returns the latest network limits.
@@ -989,13 +899,7 @@ func (t *TradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 		return nil, formatE(ErrEmptyMissingMarketID)
 	}
 
-	pagination := entities.OffsetPagination{
-		Skip:       0,
-		Limit:      1,
-		Descending: true,
-	}
-
-	trades, err := t.tradeService.GetByMarket(ctx, req.MarketId, pagination)
+	trades, err := t.tradeService.GetLastTradeByMarket(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrTradeServiceGetByMarket, err)
 	}

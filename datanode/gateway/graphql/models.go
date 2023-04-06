@@ -406,16 +406,6 @@ type ObservableLiquidityProviderFeeShare struct {
 	AverageScore string `json:"averageScore"`
 }
 
-type OffsetPagination struct {
-	// Skip the number of records specified, default is 0
-	Skip int `json:"skip"`
-	// Limit the number of returned records to the value specified, default is 50
-	Limit int `json:"limit"`
-	// Descending reverses the order of the records returned
-	// default is true, if false the results will be returned in ascending order
-	Descending bool `json:"descending"`
-}
-
 type OrderByMarketAndPartyIdsFilter struct {
 	Order     *v2.OrderFilter `json:"order"`
 	MarketIds []string        `json:"marketIds"`

@@ -23,13 +23,6 @@ var defaultPageSize int32 = 1000
 
 type Pagination interface{}
 
-type OffsetPagination struct {
-	Pagination
-	Skip       uint64
-	Limit      uint64
-	Descending bool
-}
-
 type Cursor struct {
 	cursor string
 }
@@ -69,14 +62,6 @@ func (c *Cursor) IsSet() bool {
 
 func (c *Cursor) Value() string {
 	return c.cursor
-}
-
-func OffsetPaginationFromProto(pp *v2.OffsetPagination) OffsetPagination {
-	return OffsetPagination{
-		Skip:       pp.Skip,
-		Limit:      pp.Limit,
-		Descending: pp.Descending,
-	}
 }
 
 type CursorPagination struct {

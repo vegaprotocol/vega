@@ -79,40 +79,11 @@ func (s *StakeLinking) GetStake(ctx context.Context, partyID entities.PartyID,
 	p entities.Pagination,
 ) (*num.Uint, []entities.StakeLinking, entities.PageInfo, error) {
 	switch pagination := p.(type) {
-	case entities.OffsetPagination:
-		return s.getStakeWithOffsetPagination(ctx, partyID, pagination)
 	case entities.CursorPagination:
 		return s.getStakeWithCursorPagination(ctx, partyID, pagination)
 	default:
-		return nil, nil, entities.PageInfo{}, errors.New("invalid pagination provided")
+		panic("unsupported pagination")
 	}
-}
-
-func (s *StakeLinking) getStakeWithOffsetPagination(ctx context.Context, partyID entities.PartyID, pagination entities.OffsetPagination) (
-	*num.Uint, []entities.StakeLinking, entities.PageInfo, error,
-) {
-	var links []entities.StakeLinking
-	var pageInfo entities.PageInfo
-	// get the links from the database
-	query, bindVars := getStakeLinkingQuery(partyID)
-	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-
-	var bal *num.Uint
-	var err error
-
-	defer metrics.StartSQLQuery("StakeLinking", "GetStake")()
-	err = pgxscan.Select(ctx, s.Connection, &links, query, bindVars...)
-	if err != nil {
-		s.log.Errorf("could not retrieve links", logging.Error(err))
-		return bal, nil, pageInfo, err
-	}
-
-	bal, err = s.calculateBalance(ctx, partyID)
-	if err != nil {
-		s.log.Errorf("cannot calculate balance", logging.Error(err))
-		return num.UintZero(), nil, pageInfo, err
-	}
-	return bal, links, pageInfo, nil
 }
 
 func (s *StakeLinking) getStakeWithCursorPagination(ctx context.Context, partyID entities.PartyID, pagination entities.CursorPagination) (

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"time"
 
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
@@ -2682,76 +2681,6 @@ func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *da
 	indp := new(int)
 	*indp = int(*ndp)
 	return indp, nil
-}
-
-// GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
-func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, skip, first, last *int) ([]*types.MarketData, error) {
-	pagination := makeAPIV2Pagination(skip, first, last)
-
-	return r.getMarketDataHistoryByID(ctx, id, start, end, pagination)
-}
-
-func makeAPIV2Pagination(skip, first, last *int) *v2.OffsetPagination {
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		limit = uint64(*last)
-		descending = true
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	return &v2.OffsetPagination{
-		Skip:       offset,
-		Limit:      limit,
-		Descending: descending,
-	}
-}
-
-func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
-	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.MarketData == nil {
-		return nil, errors.New("no market data not found")
-	}
-
-	results := make([]*types.MarketData, 0, len(resp.MarketData.Edges))
-
-	for _, edge := range resp.MarketData.Edges {
-		results = append(results, edge.Node)
-	}
-
-	return results, nil
-}
-
-func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {
-	var startTime, endTime *int64
-
-	if start != nil {
-		s := time.Unix(*start, 0).UnixNano()
-		startTime = &s
-	}
-
-	if end != nil {
-		e := time.Unix(*end, 0).UnixNano()
-		endTime = &e
-	}
-
-	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId:         id,
-		StartTimestamp:   startTime,
-		EndTimestamp:     endTime,
-		OffsetPagination: pagination,
-	}
-
-	return r.getMarketData(ctx, &req)
 }
 
 func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {
