@@ -9,12 +9,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type AdminUpdateNetworkParams struct {
-	Name     string             `json:"name"`
-	Metadata []network.Metadata `json:"metadata"`
-	API      network.APIConfig  `json:"api"`
-	Apps     network.AppsConfig `json:"apps"`
-}
 type AdminUpdateNetwork struct {
 	networkStore NetworkStore
 }
@@ -42,7 +36,7 @@ func validateUpdateNetworkParams(rawParams jsonrpc.Params) (network.Network, err
 		return network.Network{}, ErrParamsRequired
 	}
 
-	params := AdminUpdateNetworkParams{}
+	params := AdminNetwork{}
 	if err := mapstructure.Decode(rawParams, &params); err != nil {
 		return network.Network{}, ErrParamsDoNotMatch
 	}
@@ -54,8 +48,23 @@ func validateUpdateNetworkParams(rawParams jsonrpc.Params) (network.Network, err
 	net := network.Network{
 		Name:     params.Name,
 		Metadata: params.Metadata,
-		API:      params.API,
-		Apps:     params.Apps,
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts:   params.API.GRPC.Hosts,
+				Retries: params.API.GRPC.Retries,
+			},
+			REST: network.RESTConfig{
+				Hosts: params.API.REST.Hosts,
+			},
+			GraphQL: network.GraphQLConfig{
+				Hosts: params.API.GraphQL.Hosts,
+			},
+		},
+		Apps: network.AppsConfig{
+			Console:    params.Apps.Console,
+			Governance: params.Apps.Governance,
+			Explorer:   params.Apps.Explorer,
+		},
 	}
 
 	if err := net.EnsureCanConnectGRPCNode(); err != nil {
