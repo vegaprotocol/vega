@@ -2,6 +2,9 @@
 
 ## 0.70.3
 
+### 🚨 Breaking changes
+- [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
+
 ### 🛠 Improvements
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
 

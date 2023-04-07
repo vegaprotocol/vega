@@ -1272,18 +1272,18 @@
                 }
               ],
               "api": {
-                "grpcConfig": {
+                "grpc": {
                   "hosts": [
                     "localhost:3028"
                   ],
                   "retries": 5
                 },
-                "graphQLConfig": {
+                "graphQL": {
                   "hosts": [
                     "localhost:3028"
                   ]
                 },
-                "restConfig": {
+                "rest": {
                   "hosts": [
                     "localhost:3029"
                   ]
@@ -1362,18 +1362,18 @@
             {
               "name": "api",
               "value": {
-                "grpcConfig": {
+                "grpc": {
                   "hosts": [
                     "localhost:3028"
                   ],
                   "retries": 5
                 },
-                "graphQLConfig": {
+                "graphQL": {
                   "hosts": [
                     "localhost:3028"
                   ]
                 },
-                "restConfig": {
+                "rest": {
                   "hosts": [
                     "localhost:3029"
                   ]
@@ -3739,10 +3739,10 @@
         "type": "object",
         "description": "The API configuration for the network.",
         "required": [
-          "grpcConfig"
+          "grpc"
         ],
         "properties": {
-          "grpcConfig": {
+          "grpc": {
             "type": "object",
             "required": [
               "hosts",
@@ -3760,7 +3760,7 @@
               }
             }
           },
-          "graphQLConfig": {
+          "graphQL": {
             "type": "object",
             "required": [
               "hosts"
@@ -3774,7 +3774,7 @@
               }
             }
           },
-          "restConfig": {
+          "rest": {
             "type": "object",
             "required": [
               "hosts"
