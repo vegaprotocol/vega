@@ -1463,7 +1463,7 @@ func (t *TradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	if req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
+	if len(req.PartyId) > 0 && req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
@@ -1530,7 +1530,7 @@ func (t *TradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWit
 func (t *TradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.ListWithdrawalsRequest) (*v2.ListWithdrawalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListWithdrawalsV2")()
 
-	if req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
+	if len(req.PartyId) > 0 && req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
 		return nil, formatE(ErrInvalidPartyID)
 	}
 
