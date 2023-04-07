@@ -471,7 +471,39 @@ type Query {
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
-  ): OrderEstimate!
+  ): OrderEstimate! @deprecated (reason: "Use estimateFees and estimatePosition instead")
+
+  "Return an estimation of the potential cost for a new order"
+  estimateFees(
+    "ID of the market to place the order on"
+    marketId: ID!
+    "ID of the party placing the order"
+    partyId: ID!
+    "Price of the asset"
+    price: String
+    "Size of the order"
+    size: String!
+    "Side of the order (buy or sell)"
+    side: Side!
+    "Time in force of the order"
+    timeInForce: OrderTimeInForce!
+    "Expiration of the order"
+    expiration: Timestamp
+    "Type of the order"
+    type: OrderType!
+  ): FeeEstimate!
+
+  "Return a margin range for the specified position and liquidation price range if available collateral is supplied"
+  estimatePosition(
+     "ID of the market to place the order on"
+    marketId: ID!
+    "Open volume - negative for short position (int64)"
+    openVolume: String!
+    "Open and/or hypothetical orders"
+    orders: [OrderInfo!]
+    "Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate"
+    collateralAvailable: String
+  ): PositionEstimate
 
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
@@ -2222,6 +2254,18 @@ type PositionUpdate {
   positionStatus: PositionStatus!
 }
 
+"Basic description of an order"
+input OrderInfo {
+  "Whether the order is to buy or sell"
+  side: Side!
+  "Price for the order"
+  price: String!
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
+  remaining: String!
+  "Boolean indicating a market order"
+  isMarketOrder: Boolean
+}
+
 "An order in Vega, if active it will be on the order book for the market"
 type Order {
   "Hash of the order data"
@@ -2349,6 +2393,41 @@ type OrderUpdate {
   liquidityProvisionId: ID
 }
 
+"Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"
+type PositionEstimate {
+    "Margin level range estimate for the specified position"
+    margin: MarginEstimate!
+    "Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request"
+    liquidation: LiquidationEstimate
+}
+
+"Margin level estimate for both worst and best case possible"
+type MarginEstimate {
+    "Margin level estimate assuming slippage cap is applied"
+    worstCase: MarginLevels!
+    "Margin level estimate assuming no slippage"
+    bestCase: MarginLevels!
+}
+
+
+"Liquidation estimate for both worst and best case possible"
+type LiquidationEstimate {
+    "Liquidation price estimate assuming slippage cap is applied"
+    worstCase: LiquidationPrice!
+    "Liquidation price estimate assuming no slippage"
+    bestCase: LiquidationPrice!
+}
+
+"Liquidation price estimate for either only the current open volume and position given some or all buy orders get filled, or position given some or all sell orders get filled"
+type LiquidationPrice {
+    "Liquidation price for current open volume ignoring any active orders"
+    open_volume_only: String!
+    "Liquidation price assuming buy orders start getting filled"
+    including_buy_orders: String!
+    "Liquidation price assuming sell orders start getting filled"
+    including_sell_orders: String!
+}
+
 "An estimate of the fee to be paid by the order"
 type OrderEstimate {
   "The estimated fee if the order was to trade"
@@ -2359,6 +2438,15 @@ type OrderEstimate {
 
   "The margin requirement for this order"
   marginLevels: MarginLevels!
+}
+
+"An estimate of the fee to be paid for the order"
+type FeeEstimate {
+  "The estimated fees if the order was to trade"
+  fees: TradeFee!
+
+  "The total estimated amount of fees if the order was to trade"
+  totalFeeAmount: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
