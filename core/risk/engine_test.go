@@ -751,7 +751,7 @@ func testInitialMarginRequirement(t *testing.T) {
 	assert.True(t, riskevt.MarginLevels().InitialMargin.EQ(num.NewUint(uint64(initialMarginAuction))))
 }
 
-func TestMarinenanceMarign(t *testing.T) {
+func TestMaintenanceMarign(t *testing.T) {
 	relativeTolerance := num.DecimalFromFloat(0.000001)
 
 	testCases := []struct {
@@ -839,6 +839,44 @@ func TestMarinenanceMarign(t *testing.T) {
 			},
 			sellOrders: []*risk.OrderInfo{
 				{30000, num.NewDecimalFromFloat(133.3), false},
+			},
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.1,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.2,
+			auction:                 false,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 100,
+			positionSize:   0,
+			buyOrders: []*risk.OrderInfo{
+				{10000, num.NewDecimalFromFloat(111.4), false},
+				{30000, num.NewDecimalFromFloat(111), false},
+			},
+			sellOrders: []*risk.OrderInfo{
+				{10000, num.NewDecimalFromFloat(133.9), false},
+				{20000, num.NewDecimalFromFloat(133.0), false},
+			},
+			linearSlippageFactor:    0.5,
+			quadraticSlippageFactor: 0.1,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.2,
+			auction:                 false,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 100,
+			positionSize:   0,
+			buyOrders: []*risk.OrderInfo{
+				{10000, num.NewDecimalFromFloat(111.4), false},
+				{30000, num.NewDecimalFromFloat(111), false},
+				{20000, num.NewDecimalFromFloat(0), true},
+			},
+			sellOrders: []*risk.OrderInfo{
+				{10000, num.NewDecimalFromFloat(133.9), false},
+				{20000, num.NewDecimalFromFloat(133.0), false},
+				{30000, num.NewDecimalFromFloat(0), true},
 			},
 			linearSlippageFactor:    0.5,
 			quadraticSlippageFactor: 0.1,
@@ -1187,6 +1225,25 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 				{3000, num.NewDecimalFromFloat(120), false},
 				{2000, num.NewDecimalFromFloat(130), false},
 				{1000, num.NewDecimalFromFloat(140), false},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     50800,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 100,
+			positionSize:   -2000,
+			buyOrders: []*risk.OrderInfo{
+				{1800, num.NewDecimalFromFloat(100), false},
+				{1700, num.NewDecimalFromFloat(0), true},
+			},
+			sellOrders: []*risk.OrderInfo{
+				{3000, num.NewDecimalFromFloat(120), false},
+				{2000, num.NewDecimalFromFloat(130), false},
+				{1000, num.NewDecimalFromFloat(0), true},
 			},
 			linearSlippageFactor:    0.01,
 			quadraticSlippageFactor: 0.000001,
