@@ -11,6 +11,7 @@ import "vega/events/v1/events.proto";
 import "vega/commands/v1/validator_commands.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/api/httpbody.proto";
+import "google/api/field_behavior.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 
@@ -1051,7 +1052,7 @@ message InfoResponse {
 // A request that is sent when executing the query for getting a single order
 message GetOrderRequest {
   // Order identifier.
-  string order_id = 1;
+  string order_id = 1 [(google.api.field_behavior) = REQUIRED];
 
   // Optional version of the order.
   optional int32 version = 2;
@@ -1102,7 +1103,7 @@ message ListOrdersResponse {
 // A request that is sent when listing possible order versions
 message ListOrderVersionsRequest {
     // Order identifier as string.
-    string order_id = 1;
+    string order_id = 1 [(google.api.field_behavior) = REQUIRED];
 
     // Optional pagination control.
     optional Pagination pagination = 4;
@@ -1315,7 +1316,7 @@ message ListLedgerEntriesRequest {
 // A request that is sent when exporting ledger entries to csv
 message ExportLedgerEntriesRequest {
     // Party ID to export ledger entries for.
-    string party_id = 1;
+    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Asset ID to export ledger entries for.
     string asset_id = 2;
     // Optional pagination control.
@@ -1486,7 +1487,7 @@ message ObserveMarketsDataResponse {
 // Request that is sent when requesting latest market depth data
 message GetLatestMarketDepthRequest {
     // Market identifier, required field.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 
     // An optional field to indicate the maximum market depth.
     optional uint64 max_depth = 2;
@@ -1518,7 +1519,7 @@ message ListLatestMarketDataResponse {
 // Request that is sent when listing the latest market data for a given market
 message GetLatestMarketDataRequest {
     // Market identifier, required field.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received when listing the latest market data for a given market
@@ -1532,7 +1533,7 @@ message GetMarketDataHistoryByIDRequest {
   reserved 5;
 
   // Market identifier, required field.
-  string market_id = 1;
+  string market_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Optional Unix time in nanoseconds.
   optional int64 start_timestamp = 2;
   // Optional Unix time in nanoseconds.
@@ -1563,19 +1564,6 @@ message MarketDataConnection {
     PageInfo page_info = 2;
 }
 
-// Request that is used to subscribe to a stream of data for all markets
-// Optionally, the list can be additionally filtered by market
-message MarketsDataSubscribeRequest {
-    // Market identifier.
-    string market_id = 1;
-}
-
-// Response that is used when subscribing to a stream of data for all markets
-message MarketsDataSubscribeResponse {
-    // List of market data chunks for each market.
-    repeated vega.MarketData market_data = 1;
-}
-
 // -- Transfers --
 
 // The direction of a transfer
@@ -1590,9 +1578,9 @@ enum TransferDirection {
 message ListTransfersRequest {
     // Public key for which to request transfers.
     optional string pubkey = 1;
-    // Transfer directions (sender, receiver) to include in the response data.
+    // Transfer directions (sender, receiver) to include in the response data
     TransferDirection direction = 2;
-    // Optional pagination control.
+    // Optional pagination control
     optional Pagination pagination = 3;
 }
 
@@ -1633,7 +1621,7 @@ message GetNetworkLimitsResponse {
 // Request that is used to fetch a list of supported intervals for the given market along with the corresponding candle ID
 message ListCandleIntervalsRequest {
     // The unique identifier for the market.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Maps an interval for a given market to its corresponding candle ID
@@ -1673,7 +1661,7 @@ message Candle {
 // Request that is used to subscribe to a stream of candles
 message ObserveCandleDataRequest {
     // The unique identifier for the candle.
-    string candle_id = 1;
+    string candle_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received when subscribing to a stream of candles
@@ -1684,19 +1672,15 @@ message ObserveCandleDataResponse {
 
 // Request that is used when listing candles for a market at an interval
 message ListCandleDataRequest {
-  reserved 4;
-
-  // Candle ID, required field.
-  string candle_id = 1;
-
-  // Timestamp to retrieve candles since, in nanoseconds, required field.
-  int64 from_timestamp = 2;
-
-  // Timestamp to retrieve candles since, in nanoseconds, required field.
-  int64 to_timestamp = 3;
-
-  // pagination controls.
-  optional Pagination pagination = 5;
+    reserved 4;
+    // Candle ID, required field.
+    string candle_id = 1 [(google.api.field_behavior) = REQUIRED];
+    // Timestamp to retrieve candles since, in nanoseconds since the epoch.
+    int64 from_timestamp = 2;
+    // Timestamp to retrieve candles to, in nanoseconds since the epoch.
+    int64 to_timestamp = 3;
+    // pagination controls
+    optional Pagination pagination = 5;
 }
 
 // Response for list of candles for a market at an interval
@@ -1910,7 +1894,7 @@ message ERC20MultiSigSignerRemovedBundle {
 // Request for listing the signature bundle to an ERC-20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
   // The ID of the asset requested.
-  string asset_id = 1;
+  string asset_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response from listing the signature bundle to an ERC-20 token in the collateral bridge
@@ -1929,7 +1913,7 @@ message GetERC20ListAssetBundleResponse {
 // Request for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
 message GetERC20SetAssetLimitsBundleRequest {
   // The ID of the proposal to update an asset.
-  string proposal_id = 1;
+  string proposal_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
@@ -1952,7 +1936,7 @@ message GetERC20SetAssetLimitsBundleResponse {
 // The request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 message GetERC20WithdrawalApprovalRequest {
     // The ID of the withdrawal.
-    string withdrawal_id = 1;
+    string withdrawal_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
@@ -1979,7 +1963,7 @@ message GetERC20WithdrawalApprovalResponse {
 // Request for the latest trade that occurred on Vega for a given market
 message GetLastTradeRequest {
     // Market ID, required field.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response for the latest trade that occurred on Vega for a given market
@@ -2049,7 +2033,7 @@ message ObserveTradesResponse {
 // The request to get a specific oracle spec by its ID
 message GetOracleSpecRequest {
     // The ID to get the oracle spec for.
-    string oracle_spec_id = 1;
+    string oracle_spec_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // The response for a oracle spec
@@ -2120,7 +2104,7 @@ message OracleDataConnection {
 // Request for getting a market by ID
 message GetMarketRequest {
     // The market ID.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response from getting a market by ID
@@ -2164,7 +2148,7 @@ message MarketConnection {
 // Request to get party by ID
 message GetPartyRequest {
     // The party ID.
-    string party_id = 1;
+    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response from getting party by ID
@@ -2213,11 +2197,11 @@ message OrderEdge {
 
 // Request for listing margin levels
 message ListMarginLevelsRequest {
-    // Party ID for which to list the margin levels.
+    // Party ID for which to list the margin levels
     string party_id = 1;
-    // Market ID for which to list the margin levels.
+    // Market ID for which to list the margin levels
     string market_id = 2;
-    // Pagination control.
+    // Pagination control
     Pagination pagination = 3;
 }
 
@@ -2227,7 +2211,8 @@ message ListMarginLevelsResponse {
     MarginConnection margin_levels = 1;
 }
 
-// Request to subscribe to a stream of MarginLevels data matching the given party identifier
+// Request to subscribe to a stream of MarginLevels data.
+// If a party ID is provided, the stream will contain margin levels for that party only.
 // Optionally, the list can be additionally filtered by market
 message ObserveMarginLevelsRequest {
     // Party identifier, required field.
@@ -2377,7 +2362,7 @@ message ObserveRewardsResponse {
 // A request to get data about a specific deposit by ID
 message GetDepositRequest {
     // The deposit ID, which can be obtained using the List Deposits query.
-    string id = 1;
+    string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // A response that is received from getting deposit data
@@ -2389,6 +2374,7 @@ message GetDepositResponse {
 // A request to list all deposits for a given party
 message ListDepositsRequest {
     // The ID of the party whose deposits are to be retrieved.
+    // If not provided, deposits for all parties will be provided.
     string party_id = 1;
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
@@ -2423,7 +2409,7 @@ message DepositsConnection {
 // A request to get a specific withdrawal by identifier
 message GetWithdrawalRequest {
     // The ID of the withdrawal to get.
-    string id = 1;
+    string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // A response for a withdrawal request
@@ -2435,6 +2421,7 @@ message GetWithdrawalResponse {
 // List all withdrawals for a given party
 message ListWithdrawalsRequest {
     // The party ID whose withdrawals we want to retrieve.
+    // If not provided, withdrawals for all parties will be returned.
     string party_id = 1;
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
@@ -2469,7 +2456,7 @@ message WithdrawalsConnection {
 // Request for obtaining asset
 message GetAssetRequest {
     // Asset ID to get data for.
-    string asset_id = 1;
+    string asset_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response from getting an asset
@@ -2724,7 +2711,7 @@ message GetNetworkDataResponse {
 // Request to get node data
 message GetNodeRequest {
     // Node ID to get data for.
-    string id = 1;
+    string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response from getting node
@@ -2766,7 +2753,7 @@ message NodesConnection {
 // Request to specify the identifier of the resource to retrieve aggregated signatures for
 message ListNodeSignaturesRequest {
     // Resource ID, required field.
-    string id = 1;
+    string id = 1 [(google.api.field_behavior) = REQUIRED];
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
 }
@@ -2811,11 +2798,11 @@ message GetEpochResponse {
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
   // Market ID, used to specify the fee factors.
-  string market_id = 1;
+  string market_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Price at which the potential order is expected to trade.
-  string price = 2;
+  string price = 2 [(google.api.field_behavior) = REQUIRED];
   // Size at which the potential order is expected to trade.
-  uint64 size = 3;
+  uint64 size = 3 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received from EstimateFeeRequest, contains the estimated fees for a given order
@@ -2827,17 +2814,17 @@ message EstimateFeeResponse {
 // Request to fetch the estimated MarginLevels if an order were to trade immediately
 message EstimateMarginRequest {
     // Market ID for the order.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Party ID of the order.
-    string party_id = 2;
+    string party_id = 2 [(google.api.field_behavior) = REQUIRED];
     // Order side - indicator for Seller or Buyer side.
-    vega.Side side = 3;
+    vega.Side side = 3 [(google.api.field_behavior) = REQUIRED];
     // Type of the order.
-    vega.Order.Type type = 4;
+    vega.Order.Type type = 4 [(google.api.field_behavior) = REQUIRED];
     // Size of order.
-    uint64 size = 5;
+    uint64 size = 5 [(google.api.field_behavior) = REQUIRED];
     // Price of the asset.
-    string price = 6;
+    string price = 6 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response to an estimate margin request, containing the estimated margin levels for a given order
@@ -2861,7 +2848,7 @@ message ListNetworkParametersResponse {
 // A message requesting a single network parameter
 message GetNetworkParameterRequest {
   // The key identifying the network parameter.
-  string key = 1;
+  string key = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received when getting a network parameter
@@ -2928,7 +2915,7 @@ message CheckpointsConnection {
 // Request to get stake
 message GetStakeRequest {
     // Party ID for which the stake information is requested.
-    string party_id = 1;
+    string party_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
 }
@@ -2960,7 +2947,7 @@ message StakesConnection {
 // Request to get risk factor
 message GetRiskFactorsRequest {
     // Market ID to get the risk factor for.
-    string market_id = 1;
+    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received from getting a risk factor
@@ -3274,10 +3261,12 @@ message ExportNetworkHistoryRequest {
 }
 
 
+// Request to list all entities that were created by the given transaction hash
 message ListEntitiesRequest {
-    string transaction_hash = 1;
+    string transaction_hash = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
+// Response from listing entities that were created for a given transaction hash
 message ListEntitiesResponse {
     repeated vega.Account accounts = 1;
     repeated vega.Order orders = 2;

@@ -52,6 +52,10 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	networkPartyID = "network"
+)
+
 // When returning an 'initial image' snapshot, how many updates to batch into each page.
 var snapshotPageSize = 50
 
@@ -770,6 +774,10 @@ func (t *TradingDataServiceV2) GetERC20SetAssetLimitsBundle(ctx context.Context,
 		return nil, formatE(ErrMissingProposalID)
 	}
 
+	if !crypto.IsValidVegaID(req.ProposalId) {
+		return nil, formatE(ErrInvalidProposalID)
+	}
+
 	proposal, err := t.governanceService.GetProposalByID(ctx, req.ProposalId)
 	if err != nil {
 		return nil, formatE(ErrGovernanceServiceGet, err)
@@ -819,6 +827,10 @@ func (t *TradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 		return nil, formatE(ErrMissingAssetID)
 	}
 
+	if !crypto.IsValidVegaID(req.AssetId) {
+		return nil, formatE(ErrInvalidAssetID)
+	}
+
 	asset, err := t.assetService.GetByID(ctx, req.AssetId)
 	if err != nil {
 		return nil, formatE(ErrAssetServiceGetByID, err)
@@ -835,7 +847,7 @@ func (t *TradingDataServiceV2) GetERC20ListAssetBundle(ctx context.Context, req 
 
 	nonce, err := num.UintFromHex("0x" + strings.TrimLeft(req.AssetId, "0"))
 	if err != nil {
-		return nil, formatE(ErrorInvalidAssetID, errors.Wrapf(err, "assetID: %s", req.AssetId))
+		return nil, formatE(ErrInvalidAssetID, errors.Wrapf(err, "assetID: %s", req.AssetId))
 	}
 
 	return &v2.GetERC20ListAssetBundleResponse{
@@ -852,6 +864,10 @@ func (t *TradingDataServiceV2) GetERC20WithdrawalApproval(ctx context.Context, r
 
 	if len(req.WithdrawalId) == 0 {
 		return nil, formatE(ErrMissingWithdrawalID)
+	}
+
+	if !crypto.IsValidVegaID(req.WithdrawalId) {
+		return nil, formatE(ErrInvalidWithdrawalID)
 	}
 
 	w, err := t.withdrawalService.GetByID(ctx, req.WithdrawalId)
@@ -897,6 +913,10 @@ func (t *TradingDataServiceV2) GetLastTrade(ctx context.Context, req *v2.GetLast
 
 	if len(req.MarketId) == 0 {
 		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
 	}
 
 	trades, err := t.tradeService.GetLastTradeByMarket(ctx, req.MarketId)
@@ -995,6 +1015,10 @@ func (t *TradingDataServiceV2) GetMarket(ctx context.Context, req *v2.GetMarketR
 
 	if len(req.MarketId) == 0 {
 		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
 	}
 
 	market, err := t.marketService.GetByID(ctx, req.MarketId)
@@ -1229,6 +1253,14 @@ func (t *TradingDataServiceV2) sendPositionsSnapshot(ctx context.Context, req *v
 func (t *TradingDataServiceV2) GetParty(ctx context.Context, req *v2.GetPartyRequest) (*v2.GetPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetParty")()
 
+	if len(req.PartyId) == 0 {
+		return nil, formatE(ErrMissingPartyID)
+	}
+
+	if req.PartyId != networkPartyID && !crypto.IsValidVegaID(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
 	party, err := t.partyService.GetByID(ctx, req.PartyId)
 	if err != nil {
 		return nil, formatE(ErrPartyServiceGetByID, err)
@@ -1431,8 +1463,8 @@ func (t *TradingDataServiceV2) ListDeposits(ctx context.Context, req *v2.ListDep
 		return nil, formatE(ErrInvalidPagination, err)
 	}
 
-	if len(req.PartyId) > 0 && req.PartyId != "network" && !crypto.IsValidVegaPubKey(req.PartyId) {
-		return nil, formatE(ErrNotAValidVegaID)
+	if len(req.PartyId) > 0 && req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -1480,6 +1512,10 @@ func (t *TradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWit
 		return nil, formatE(ErrMissingWithdrawalID)
 	}
 
+	if !crypto.IsValidVegaPubKey(req.Id) {
+		return nil, formatE(ErrInvalidWithdrawalID)
+	}
+
 	withdrawal, err := t.withdrawalService.GetByID(ctx, req.Id)
 	if err != nil {
 		return nil, formatE(ErrWithdrawalServiceGet, err)
@@ -1494,8 +1530,8 @@ func (t *TradingDataServiceV2) GetWithdrawal(ctx context.Context, req *v2.GetWit
 func (t *TradingDataServiceV2) ListWithdrawals(ctx context.Context, req *v2.ListWithdrawalsRequest) (*v2.ListWithdrawalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListWithdrawalsV2")()
 
-	if len(req.PartyId) > 0 && req.PartyId != "network" && !crypto.IsValidVegaPubKey(req.PartyId) {
-		return nil, formatE(ErrNotAValidVegaID)
+	if len(req.PartyId) > 0 && req.PartyId != networkPartyID && !crypto.IsValidVegaPubKey(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
 	}
 
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
@@ -1530,6 +1566,11 @@ func (t *TradingDataServiceV2) GetAsset(ctx context.Context, req *v2.GetAssetReq
 
 	if len(req.AssetId) == 0 {
 		return nil, formatE(ErrMissingAssetID)
+	}
+
+	// TODO: VOTE is a special case used for system tests. Remove this once the system tests are updated to remove the VOTE asset.
+	if req.AssetId != "VOTE" && !crypto.IsValidVegaPubKey(req.AssetId) {
+		return nil, formatE(ErrInvalidAssetID)
 	}
 
 	asset, err := t.assetService.GetByID(ctx, req.AssetId)
@@ -1619,6 +1660,10 @@ func (t *TradingDataServiceV2) GetOracleSpec(ctx context.Context, req *v2.GetOra
 
 	if len(req.OracleSpecId) == 0 {
 		return nil, formatE(ErrMissingOracleSpecID)
+	}
+
+	if !crypto.IsValidVegaPubKey(req.OracleSpecId) {
+		return nil, formatE(ErrInvalidOracleSpecID)
 	}
 
 	spec, err := t.oracleSpecService.GetSpecByID(ctx, req.OracleSpecId)
@@ -1944,6 +1989,10 @@ func (t *TradingDataServiceV2) GetOrder(ctx context.Context, req *v2.GetOrderReq
 		return nil, formatE(ErrMissingOrderID)
 	}
 
+	if !crypto.IsValidVegaID(req.OrderId) {
+		return nil, formatE(ErrInvalidOrderID)
+	}
+
 	if req.Version != nil && *req.Version <= 0 {
 		return nil, formatE(ErrNegativeOrderVersion)
 	}
@@ -2018,6 +2067,10 @@ func (t *TradingDataServiceV2) ListOrderVersions(ctx context.Context, req *v2.Li
 		return nil, formatE(ErrMissingOrderID)
 	}
 
+	if !crypto.IsValidVegaID(req.OrderId) {
+		return nil, formatE(ErrInvalidOrderID)
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
@@ -2047,8 +2100,8 @@ type VegaIDsSlice []string
 
 func (s VegaIDsSlice) Ensure() error {
 	for _, v := range s {
-		if v != "network" && !crypto.IsValidVegaPubKey(v) {
-			return ErrNotAValidVegaID
+		if v != networkPartyID && !crypto.IsValidVegaPubKey(v) {
+			return ErrInvalidPartyID
 		}
 	}
 
@@ -2374,6 +2427,10 @@ func (t *TradingDataServiceV2) EstimateFee(ctx context.Context, req *v2.Estimate
 		return nil, formatE(ErrEmptyMissingMarketID)
 	}
 
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
 	if len(req.Price) == 0 {
 		return nil, formatE(ErrMissingPrice)
 	}
@@ -2660,6 +2717,10 @@ func (t *TradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 		return nil, formatE(ErrMissingPartyID)
 	}
 
+	if req.PartyId != networkPartyID && !crypto.IsValidVegaID(req.PartyId) {
+		return nil, formatE(ErrInvalidPartyID)
+	}
+
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {
 		return nil, formatE(ErrInvalidPagination, err)
@@ -2689,6 +2750,14 @@ func (t *TradingDataServiceV2) GetStake(ctx context.Context, req *v2.GetStakeReq
 // GetRiskFactors returns the risk factors for a given market.
 func (t *TradingDataServiceV2) GetRiskFactors(ctx context.Context, req *v2.GetRiskFactorsRequest) (*v2.GetRiskFactorsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetRiskFactors SQL")()
+
+	if len(req.MarketId) == 0 {
+		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
 
 	rfs, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
 	if err != nil {
@@ -3252,6 +3321,10 @@ func (t *TradingDataServiceV2) Ping(context.Context, *v2.PingRequest) (*v2.PingR
 func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEntitiesRequest) (*v2.ListEntitiesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListEntities")()
 
+	if len(req.GetTransactionHash()) == 0 {
+		return nil, ErrMissingEmptyTxHash
+	}
+
 	txHash := entities.TxHash(req.GetTransactionHash())
 
 	eg, ctx := errgroup.WithContext(ctx)
@@ -3264,7 +3337,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.orderService.GetByTxHash, ErrOrderServiceGetByTxHash)
 
 	positions := queryProtoEntities[*vega.Position](ctx, eg, txHash,
-		t.positionService.GetByTxHash, ErrPostitionsGetByTxHash)
+		t.positionService.GetByTxHash, ErrPositionsGetByTxHash)
 
 	balances := queryProtoEntities[*v2.AccountBalance](ctx, eg, txHash,
 		t.accountService.GetBalancesByTxHash, ErrAccountServiceGetBalancesByTxHash)
@@ -3324,7 +3397,7 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 		t.protocolUpgradeService.GetByTxHash, ErrEthereumKeyRotationsGetByTxHash)
 
 	nodes := queryProtoEntities[*v2.NodeBasic](ctx, eg, txHash,
-		t.nodeService.GetByTxHash, ErrNodeServicGetByTxHash)
+		t.nodeService.GetByTxHash, ErrNodeServiceGetByTxHash)
 
 	// query and map
 	ledgerEntries := queryAndMapEntities(ctx, eg, txHash,
