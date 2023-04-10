@@ -570,6 +570,7 @@ type MarketPosition struct {
 	Size, Buy, Sell               int64
 	Price                         *num.Uint
 	BuySumProduct, SellSumProduct *num.Uint
+	Distressed                    bool
 }
 
 type StakingAccounts struct {
@@ -2461,6 +2462,7 @@ func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 		Price:          price,
 		BuySumProduct:  buySumProduct,
 		SellSumProduct: sellSumProduct,
+		Distressed:     p.Distressed,
 	}
 }
 
@@ -2473,6 +2475,7 @@ func (p MarketPosition) IntoProto() *snapshot.Position {
 		Price:          p.Price.String(),
 		BuySumProduct:  p.BuySumProduct.String(),
 		SellSumProduct: p.SellSumProduct.String(),
+		Distressed:     p.Distressed,
 	}
 }
 

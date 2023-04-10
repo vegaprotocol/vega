@@ -640,6 +640,46 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) GetNetworkData(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkData", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetNetworkData), varargs...)
 }
 
+// GetNetworkHistoryBootstrapPeers mocks base method.
+func (m *MockTradingDataServiceClientV2) GetNetworkHistoryBootstrapPeers(arg0 context.Context, arg1 *v2.GetNetworkHistoryBootstrapPeersRequest, arg2 ...grpc.CallOption) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNetworkHistoryBootstrapPeers", varargs...)
+	ret0, _ := ret[0].(*v2.GetNetworkHistoryBootstrapPeersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetworkHistoryBootstrapPeers indicates an expected call of GetNetworkHistoryBootstrapPeers.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetNetworkHistoryBootstrapPeers(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkHistoryBootstrapPeers", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetNetworkHistoryBootstrapPeers), varargs...)
+}
+
+// GetNetworkHistoryStatus mocks base method.
+func (m *MockTradingDataServiceClientV2) GetNetworkHistoryStatus(arg0 context.Context, arg1 *v2.GetNetworkHistoryStatusRequest, arg2 ...grpc.CallOption) (*v2.GetNetworkHistoryStatusResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNetworkHistoryStatus", varargs...)
+	ret0, _ := ret[0].(*v2.GetNetworkHistoryStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetworkHistoryStatus indicates an expected call of GetNetworkHistoryStatus.
+func (mr *MockTradingDataServiceClientV2MockRecorder) GetNetworkHistoryStatus(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkHistoryStatus", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).GetNetworkHistoryStatus), varargs...)
+}
+
 // GetNetworkLimits mocks base method.
 func (m *MockTradingDataServiceClientV2) GetNetworkLimits(arg0 context.Context, arg1 *v2.GetNetworkLimitsRequest, arg2 ...grpc.CallOption) (*v2.GetNetworkLimitsResponse, error) {
 	m.ctrl.T.Helper()
@@ -1660,46 +1700,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ListWithdrawals(arg0, arg1
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWithdrawals", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ListWithdrawals), varargs...)
 }
 
-// NetworkHistoryBootstrapPeers mocks base method.
-func (m *MockTradingDataServiceClientV2) NetworkHistoryBootstrapPeers(arg0 context.Context, arg1 *v2.NetworkHistoryBootstrapPeersRequest, arg2 ...grpc.CallOption) (*v2.NetworkHistoryBootstrapPeersResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "NetworkHistoryBootstrapPeers", varargs...)
-	ret0, _ := ret[0].(*v2.NetworkHistoryBootstrapPeersResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NetworkHistoryBootstrapPeers indicates an expected call of NetworkHistoryBootstrapPeers.
-func (mr *MockTradingDataServiceClientV2MockRecorder) NetworkHistoryBootstrapPeers(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkHistoryBootstrapPeers", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).NetworkHistoryBootstrapPeers), varargs...)
-}
-
-// NetworkHistoryStatus mocks base method.
-func (m *MockTradingDataServiceClientV2) NetworkHistoryStatus(arg0 context.Context, arg1 *v2.NetworkHistoryStatusRequest, arg2 ...grpc.CallOption) (*v2.NetworkHistoryStatusResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "NetworkHistoryStatus", varargs...)
-	ret0, _ := ret[0].(*v2.NetworkHistoryStatusResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// NetworkHistoryStatus indicates an expected call of NetworkHistoryStatus.
-func (mr *MockTradingDataServiceClientV2MockRecorder) NetworkHistoryStatus(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkHistoryStatus", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).NetworkHistoryStatus), varargs...)
-}
-
 // ObserveAccounts mocks base method.
 func (m *MockTradingDataServiceClientV2) ObserveAccounts(arg0 context.Context, arg1 *v2.ObserveAccountsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveAccountsClient, error) {
 	m.ctrl.T.Helper()
@@ -1738,26 +1738,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveCandleData(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveCandleData", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveCandleData), varargs...)
-}
-
-// ObserveDelegations mocks base method.
-func (m *MockTradingDataServiceClientV2) ObserveDelegations(arg0 context.Context, arg1 *v2.ObserveDelegationsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveDelegationsClient, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ObserveDelegations", varargs...)
-	ret0, _ := ret[0].(v2.TradingDataService_ObserveDelegationsClient)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ObserveDelegations indicates an expected call of ObserveDelegations.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveDelegations(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDelegations", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveDelegations), varargs...)
 }
 
 // ObserveEventBus mocks base method.
@@ -1958,26 +1938,6 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) ObservePositions(arg0, arg
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObservePositions", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObservePositions), varargs...)
-}
-
-// ObserveRewards mocks base method.
-func (m *MockTradingDataServiceClientV2) ObserveRewards(arg0 context.Context, arg1 *v2.ObserveRewardsRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ObserveRewardsClient, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ObserveRewards", varargs...)
-	ret0, _ := ret[0].(v2.TradingDataService_ObserveRewardsClient)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ObserveRewards indicates an expected call of ObserveRewards.
-func (mr *MockTradingDataServiceClientV2MockRecorder) ObserveRewards(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveRewards", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).ObserveRewards), varargs...)
 }
 
 // ObserveTrades mocks base method.

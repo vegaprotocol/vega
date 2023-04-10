@@ -3,7 +3,8 @@
 ## Unreleased 0.71.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8064](https://github.com/vegaprotocol/vega/issues/8064) - Remove `websocket` for rewards
+- [8093](https://github.com/vegaprotocol/vega/issues/8093) - Remove offset pagination
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -14,6 +15,16 @@
 - [7505](https://github.com/vegaprotocol/vega/issues/7505) - `Datanode` batcher statistics
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 - [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
+- [7990](https://github.com/vegaprotocol/vega/issues/7990) - Remove reference to `postgres` in the `protobuf` documentation comments
+- [7992](https://github.com/vegaprotocol/vega/issues/7992) - Improve Candles related `APIs`
+- [7986](https://github.com/vegaprotocol/vega/issues/7986) - Remove cross `protobuf` files documentation references
+- [7982](https://github.com/vegaprotocol/vega/issues/7982) - Fix behaviour of endpoints with `marketIds` and `partyIds` filters
+- [7846](https://github.com/vegaprotocol/vega/issues/7846) - Add event indicating distressed parties that are still holding an active position.
+- [7985](https://github.com/vegaprotocol/vega/issues/7985) - Add full stop on all fields documentation to get it properly generated
+- [8024](https://github.com/vegaprotocol/vega/issues/8024) - Unify naming in `rpc` endpoints and add tags
+- [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
+- [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
+- [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
@@ -28,6 +39,8 @@
 - [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
 - [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
 - [8003](https://github.com/vegaprotocol/vega/issues/8003) - Fix `ListGovernanceData` does not honour `TYPE_ALL`
+- [8057](https://github.com/vegaprotocol/vega/issues/8057) - Load history and current state in one transaction
+- [8058](https://github.com/vegaprotocol/vega/issues/8058) - Continuous aggregates should be updated according to the watermark and span of history loaded
 - [8001](https://github.com/vegaprotocol/vega/issues/8001) - Fix issues with order subscriptions
 - [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
 - [7995](https://github.com/vegaprotocol/vega/issues/7995) - Validate order price input to `estimateFee` and `estimateMargin`
@@ -40,6 +53,10 @@
 - [8046](https://github.com/vegaprotocol/vega/issues/8046) - Update GraphQL schema with new order rejection reason
 - [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
 - [8074](https://github.com/vegaprotocol/vega/issues/8074) - Add missing order rejection reason to `graphql` schema
+- [8090](https://github.com/vegaprotocol/vega/issues/8090) - Rename network history `APIs` that did not follow the naming convention
+- [8060](https://github.com/vegaprotocol/vega/issues/8060) - Allow 0 decimals assets
+- [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
+- [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
 
 ## 0.70.0
 

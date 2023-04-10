@@ -3,6 +3,7 @@ package entities
 import (
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
 
@@ -11,21 +12,18 @@ type DateRange struct {
 	End   *time.Time
 }
 
-func DateRangeFromProto(dateRange *v2.DateRange) DateRange {
-	var startDate, endDate *time.Time
-
-	if dateRange != nil && dateRange.StartTimestamp != nil {
-		sd := time.Unix(0, *dateRange.StartTimestamp)
-		startDate = &sd
+func DateRangeFromProto(dateRangeInput *v2.DateRange) (dateRange DateRange) {
+	if dateRangeInput == nil {
+		return
 	}
 
-	if dateRange != nil && dateRange.EndTimestamp != nil {
-		ed := time.Unix(0, *dateRange.EndTimestamp)
-		endDate = &ed
+	if dateRangeInput.StartTimestamp != nil {
+		dateRange.Start = ptr.From(time.Unix(0, *dateRangeInput.StartTimestamp))
 	}
 
-	return DateRange{
-		Start: startDate,
-		End:   endDate,
+	if dateRangeInput.EndTimestamp != nil {
+		dateRange.End = ptr.From(time.Unix(0, *dateRangeInput.EndTimestamp))
 	}
+
+	return
 }

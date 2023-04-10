@@ -18,6 +18,6 @@ message OracleDataSubmission {
   // Oracle data is a type of external data source data.
   OracleSource source = 1;
   // The data provided by the data source
-  // In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data
+  // In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data.
   bytes payload = 2;
 }

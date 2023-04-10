@@ -5,9 +5,9 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // A deposit for a Vega built-in asset
 message BuiltinAssetDeposit {
-  // A Vega network internal asset identifier
+  // A Vega network internal asset identifier.
   string vega_asset_id = 1;
-  // A Vega party identifier (pub-key)
+  // A Vega party identifier (pub-key).
   string party_id = 2;
   // The amount to be deposited
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -16,9 +16,9 @@ message BuiltinAssetDeposit {
 
 // A withdrawal for a Vega built-in asset
 message BuiltinAssetWithdrawal {
-  // A Vega network internal asset identifier
+  // A Vega network internal asset identifier.
   string vega_asset_id = 1;
-  // A Vega network party identifier (pub-key)
+  // A Vega network party identifier (pub-key).
   string party_id = 2;
   // The amount to be withdrawn
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -28,81 +28,81 @@ message BuiltinAssetWithdrawal {
 // An event related to a Vega built-in asset
 message BuiltinAssetEvent {
   oneof action {
-    // Built-in asset deposit
+    // Built-in asset deposit.
     BuiltinAssetDeposit deposit = 1001;
-    // Built-in asset withdrawal
+    // Built-in asset withdrawal.
     BuiltinAssetWithdrawal withdrawal = 1002;
   }
 }
 
 // An asset allow-listing for an ERC20 token
 message ERC20AssetList {
-  // The Vega network internal identifier of the asset
+  // The Vega network internal identifier of the asset.
   string vega_asset_id = 1;
-  // The ethereum address of the asset
+  // The ethereum address of the asset.
   string asset_source = 2;
 }
 
 // An asset deny-listing for an ERC20 token
 message ERC20AssetDelist {
-  // The Vega network internal identifier of the asset
+  // The Vega network internal identifier of the asset.
   string vega_asset_id = 1;
 }
 
 message ERC20AssetLimitsUpdated {
-  // The Vega network internal identifier of the asset
+  // The Vega network internal identifier of the asset.
   string vega_asset_id = 1;
-  // The Ethereum wallet that initiated the deposit
+  // The Ethereum wallet that initiated the deposit.
   string source_ethereum_address = 2;
-  // The updated lifetime limits
+  // The updated lifetime limits.
   string lifetime_limits = 3;
-  // The updated withdrawal threshold
+  // The updated withdrawal threshold.
   string withdraw_threshold = 4;
 }
 
 // An asset deposit for an ERC20 token
 message ERC20Deposit {
-  // The vega network internal identifier of the asset
+  // The vega network internal identifier of the asset.
   string vega_asset_id = 1;
-  // The Ethereum wallet that initiated the deposit
+  // The Ethereum wallet that initiated the deposit.
   string source_ethereum_address = 2;
-  // The Vega party identifier (pub-key) which is the target of the deposit
+  // The Vega party identifier (pub-key) which is the target of the deposit.
   string target_party_id = 3;
-  // The amount to be deposited
+  // The amount to be deposited.
   string amount = 4;
 }
 
 // An asset withdrawal for an ERC20 token
 message ERC20Withdrawal {
-  // The Vega network internal identifier of the asset
+  // The Vega network internal identifier of the asset.
   string vega_asset_id = 1;
-  // The target Ethereum wallet address
+  // The target Ethereum wallet address.
   string target_ethereum_address = 2;
-  // The reference nonce used for the transaction
+  // The reference nonce used for the transaction.
   string reference_nonce = 3;
 }
 
 // An event related to an ERC20 token
 message ERC20Event {
-  // Index of the log in the transaction
+  // Index of the log in the transaction.
   uint64 index = 1;
-  // The block in which the transaction was added
+  // The block in which the transaction was added.
   uint64 block = 2;
-  // The action
+  // The action.
   oneof action {
-    // List an ERC20 asset
+    // List an ERC20 asset.
     ERC20AssetList asset_list = 1001;
-    // De-list an ERC20 asset
+    // De-list an ERC20 asset.
     ERC20AssetDelist asset_delist = 1002;
-    // Deposit ERC20 asset
+    // Deposit ERC20 asset.
     ERC20Deposit deposit = 1003;
-    // Withdraw ERC20 asset
+    // Withdraw ERC20 asset.
     ERC20Withdrawal withdrawal = 1004;
-    // Update an ERC20 asset
+    // Update an ERC20 asset.
     ERC20AssetLimitsUpdated asset_limits_updated = 1005;
-    // Bridge operations has been stopped
+    // Bridge operations has been stopped.
     bool bridge_stopped = 1006;
-    // Bridge operations has been resumed
+    // Bridge operations has been resumed.
     bool bridge_resumed = 1007;
   }
 }

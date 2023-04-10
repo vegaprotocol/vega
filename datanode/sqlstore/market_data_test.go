@@ -197,14 +197,6 @@ func getAllForMarketBetweenDates(t *testing.T) {
 	startDate := time.Date(2022, 2, 11, 10, 5, 30, 0, time.UTC)
 	endDate := time.Date(2022, 2, 11, 10, 6, 0, 0, time.UTC)
 
-	offsetPagination := entities.OffsetPagination{}
-
-	t.Run("should return all results if no offset pagination is provided", func(t *testing.T) {
-		got, _, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, offsetPagination)
-		assert.NoError(t, err)
-		assert.Equal(t, 9, len(got))
-	})
-
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
 		got, pageInfo, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, entities.CursorPagination{})
 		assert.NoError(t, err)
@@ -239,15 +231,6 @@ func getAllForMarketBetweenDates(t *testing.T) {
 					SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 31, 175000, time.UTC).Local(),
 				}.String()).Encode(),
 		}, pageInfo)
-	})
-
-	t.Run("should return page of results if offset pagination is provided", func(t *testing.T) {
-		offsetPagination.Skip = 5
-		offsetPagination.Limit = 5
-
-		got, _, err := store.GetBetweenDatesByID(ctx, market, startDate, endDate, offsetPagination)
-		assert.NoError(t, err)
-		assert.Equal(t, 4, len(got))
 	})
 
 	t.Run("should return page of results if cursor pagination is provided with first", func(t *testing.T) {
@@ -444,14 +427,6 @@ func getForMarketFromDate(t *testing.T) {
 
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
-	pagination := entities.OffsetPagination{}
-
-	t.Run("should return all results if no offset pagination is provided", func(t *testing.T) {
-		got, _, err := store.GetFromDateByID(ctx, market, startDate, pagination)
-		assert.NoError(t, err)
-		assert.Equal(t, 32, len(got))
-	})
-
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
 		got, pageInfo, err := store.GetFromDateByID(ctx, market, startDate, entities.CursorPagination{})
 		assert.NoError(t, err)
@@ -482,14 +457,6 @@ func getForMarketFromDate(t *testing.T) {
 				SyntheticTime: time.Date(2022, 0o2, 11, 10, 0o5, 0o0, 152000, time.UTC).Local(),
 			}.String()).Encode(),
 		}, pageInfo)
-	})
-
-	t.Run("should return a page of results if offset pagination is provided", func(t *testing.T) {
-		pagination.Skip = 5
-		pagination.Limit = 5
-		got, _, err := store.GetFromDateByID(ctx, market, startDate, pagination)
-		assert.NoError(t, err)
-		assert.Equal(t, 5, len(got))
 	})
 
 	t.Run("should return a page of results if cursor pagination is provided with first", func(t *testing.T) {
@@ -668,14 +635,6 @@ func getForMarketToDate(t *testing.T) {
 
 	market := "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8"
 
-	pagination := entities.OffsetPagination{}
-
-	t.Run("should return all results if no pagination is provided", func(t *testing.T) {
-		got, _, err := store.GetToDateByID(ctx, market, startDate, pagination)
-		assert.NoError(t, err)
-		assert.Equal(t, 18, len(got))
-	})
-
 	t.Run("should return all results if no cursor pagination is provided", func(t *testing.T) {
 		got, pageInfo, err := store.GetToDateByID(ctx, market, startDate, entities.CursorPagination{})
 		assert.NoError(t, err)
@@ -710,14 +669,6 @@ func getForMarketToDate(t *testing.T) {
 			StartCursor:     wantStartCursor,
 			EndCursor:       wantEndCursor,
 		}, pageInfo)
-	})
-
-	t.Run("should return a page of results if offset pagination is provided", func(t *testing.T) {
-		pagination.Skip = 10
-		pagination.Limit = 10
-		got, _, err := store.GetToDateByID(ctx, market, startDate, pagination)
-		assert.NoError(t, err)
-		assert.Equal(t, 8, len(got))
 	})
 
 	t.Run("should return a page of results if cursor pagination is provided with first", func(t *testing.T) {

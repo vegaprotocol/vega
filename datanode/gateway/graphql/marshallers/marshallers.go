@@ -445,5 +445,13 @@ func MarshalPositionStatus(s vega.PositionStatus) graphql.Marshaler {
 }
 
 func UnmarshalPositionStatus(v interface{}) (vega.PositionStatus, error) {
-	return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, ErrUnimplemented
+	s, ok := v.(string)
+	if !ok {
+		return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, fmt.Errorf("expected position status to be a string")
+	}
+	t, ok := vega.PositionStatus_value[s]
+	if !ok {
+		return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert position status to Proto: %v", s)
+	}
+	return vega.PositionStatus(t), nil
 }

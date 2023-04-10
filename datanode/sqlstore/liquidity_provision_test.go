@@ -140,7 +140,7 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, got[0].Reference, "TEST1")
@@ -179,7 +179,7 @@ func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, got[0].Reference, "TEST1")
@@ -266,7 +266,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -309,7 +309,7 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -356,7 +356,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 
 	partyID := entities.PartyID("DEADBAAD")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -403,7 +403,7 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 
 	partyID := entities.PartyID("DEADBAAD")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -416,10 +416,10 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 	_, lp, _ := setupLPTests(t)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID("")
-	_, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	_, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	assert.Error(t, err)
 
-	_, _, err = lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	_, _, err = lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	assert.Error(t, err)
 }
 
@@ -461,7 +461,7 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 	assert.Equal(t, 6, rowCount)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -505,7 +505,7 @@ func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
 	assert.Equal(t, 4, rowCount)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)

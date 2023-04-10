@@ -139,6 +139,7 @@ const (
 	ProtocolUpgradeDataNodeReadyEvent
 	DistressedOrdersClosedEvent
 	ExpiredOrdersEvent
+	DistressedPositionsEvent
 )
 
 var (
@@ -209,6 +210,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY: ProtocolUpgradeDataNodeReadyEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED:         DistressedOrdersClosedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:                   ExpiredOrdersEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS:             DistressedPositionsEvent,
 
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
@@ -271,6 +273,7 @@ var (
 		ProtocolUpgradeDataNodeReadyEvent: eventspb.BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY,
 		DistressedOrdersClosedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED,
 		ExpiredOrdersEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS,
+		DistressedPositionsEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS,
 	}
 
 	eventStrings = map[Type]string{
@@ -332,6 +335,7 @@ var (
 		ProtocolUpgradeDataNodeReadyEvent: "UpgradeDataNodeEvent",
 		DistressedOrdersClosedEvent:       "DistressedOrdersClosedEvent",
 		ExpiredOrdersEvent:                "ExpiredOrdersEvent",
+		DistressedPositionsEvent:          "DistressedPositionsEvent",
 	}
 )
 

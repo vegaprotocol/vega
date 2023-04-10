@@ -429,6 +429,19 @@ message DistressedOrders {
   repeated string parties = 2;
 }
 
+// A distressed positions event contains the party IDs for all parties that were distressed, had their orders closed but because of insufficient volume on the book
+// could not be fully closed out. These parties are distressed, but still hold an active position on the book as a result. Once enough volume is on the book to close
+// them out, a SettleDistressed event will be sent. In case they manage to reduce their position, or meet the margin requirements, this status will be updated.
+// Parties that are no longer distressed but active will be listed in the safe_parties field.
+message DistressedPositions {
+  // Market identifier for the event
+  string market_id = 1;
+  // Slice of party identifiers (public keys) that are distressed but still have open volume
+  repeated string distressed_parties = 2;
+  // Slice of party identifiers (public keys) who were distressed but now can safely maintain their position
+  repeated string safe_parties = 3;
+}
+
 // A market ticket event contains the time value for when a particular market was last processed on Vega
 message MarketTick {
   // Market identifier for the event
@@ -506,27 +519,27 @@ message ValidatorRankingEvent {
 }
 
 
-// A key rotation events contains information about Vega key rotation
+// Event that contains information about a Vega key rotation
 message KeyRotation {
-  // Node id of the node
+  // Identifier of the node that rotated their Vega key
   string node_id = 1;
-  // Old Vega public key of validator node
+  // Vega public key that was previously associated with the node
   string old_pub_key = 2;
-  // New Vega public key of validator node
+  // Vega public key that is newly associated with the node
   string new_pub_key = 3;
-  // Height of the block where key rotation took effect
+  // Block height when the key rotation took effect
   uint64 block_height = 4;
 }
 
-// An Ethereum key rotation events contains information about Ethereum key rotation
+// Event that contains information about an Ethereum key rotation
 message EthereumKeyRotation {
-  // Node id of the node
+  // Identifier of the node that rotated their Ethereum key
   string node_id = 1;
-  // Old Ethereum address of validator node
+  // Ethereum address that was previously associated with the node
   string old_address= 2;
-  // New Ethereum address of validator node
+  // Ethereum address that is newly associated with the node
   string new_address = 3;
-  // Height of the block where key rotation took effect
+  // Block height when the key rotation took effect
   uint64 block_height = 4;
 }
 
@@ -719,6 +732,8 @@ enum BusEventType {
   BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED = 56;
   // Event indicating parties had orders closed because they were distressed, but were not closed out.
   BUS_EVENT_TYPE_EXPIRED_ORDERS = 57;
+  // Event indicating parties have become, or were, distressed but still have an active position.
+  BUS_EVENT_TYPE_DISTRESSED_POSITIONS = 58;
 
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
@@ -793,7 +808,7 @@ message BusEvent {
     DelegationBalanceEvent delegation_balance = 129;
     // Validator score calculated
     ValidatorScoreEvent validator_score = 130;
-    // Epoch update events - See [Epoch](#vega.Epoch)
+    // Epoch update events
     EpochEvent epoch_event = 131;
     // Validator update events
     ValidatorUpdate validator_update = 132;
@@ -845,8 +860,10 @@ message BusEvent {
     DistressedOrders distressed_orders = 155;
     // Orders that expired for a given market
     ExpiredOrders expired_orders = 156;
+    // Open positions on the market that are/were distressed
+    DistressedPositions distressed_positions = 157;
 
-    // Market tick events - See [MarketEvent](#vega.MarketEvent)
+    // Market tick events
     MarketEvent market = 1001;
     // Transaction error events, not included in the ALL event type
     TxErrorEvent tx_err_event = 2001;

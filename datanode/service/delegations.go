@@ -16,7 +16,6 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -28,14 +27,12 @@ type delegationStore interface {
 }
 
 type Delegation struct {
-	store    delegationStore
-	observer utils.Observer[entities.Delegation]
+	store delegationStore
 }
 
 func NewDelegation(store delegationStore, log *logging.Logger) *Delegation {
 	return &Delegation{
-		store:    store,
-		observer: utils.NewObserver[entities.Delegation]("delegation", log, 10, 10),
+		store: store,
 	}
 }
 
@@ -44,7 +41,6 @@ func (d *Delegation) Add(ctx context.Context, delegation entities.Delegation) er
 	if err != nil {
 		return err
 	}
-	d.observer.Notify([]entities.Delegation{delegation})
 	return nil
 }
 
@@ -58,18 +54,4 @@ func (d *Delegation) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([
 
 func (d *Delegation) Get(ctx context.Context, partyID *string, nodeID *string, epoch *int64, p entities.Pagination) ([]entities.Delegation, entities.PageInfo, error) {
 	return d.store.Get(ctx, partyID, nodeID, epoch, p)
-}
-
-func (d *Delegation) Observe(ctx context.Context, retries int, partyID, nodeID string) (rewardCh <-chan []entities.Delegation, ref uint64) {
-	ch, ref := d.observer.Observe(ctx,
-		retries,
-		func(dele entities.Delegation) bool {
-			return (len(nodeID) == 0 || nodeID == dele.NodeID.String()) &&
-				(len(partyID) == 0 || partyID == dele.PartyID.String())
-		})
-	return ch, ref
-}
-
-func (d *Delegation) GetDelegationSubscribersCount() int32 {
-	return d.observer.GetSubscribersCount()
 }

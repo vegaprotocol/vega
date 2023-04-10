@@ -222,6 +222,7 @@ const (
 	PositionStatusUnspecified  = PositionStatus(vega.PositionStatus_POSITION_STATUS_UNSPECIFIED)
 	PositionStatusOrdersClosed = PositionStatus(vega.PositionStatus_POSITION_STATUS_ORDERS_CLOSED)
 	PositionStatusClosedOut    = PositionStatus(vega.PositionStatus_POSITION_STATUS_CLOSED_OUT)
+	PositionStatusDistressed   = PositionStatus(vega.PositionStatus_POSITION_STATUS_DISTRESSED)
 )
 
 type TransferType int

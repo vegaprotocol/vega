@@ -62,6 +62,10 @@ type Engine struct {
 	positionUpdated  func(context.Context, *MarketPosition)
 
 	broker Broker
+
+	// keep track of open, but distressed positions, this speeds things up when creating the event data
+	// and when generating snapshots
+	distressedPos map[string]struct{}
 }
 
 // New instantiates a new positions engine.
@@ -78,6 +82,7 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 		positionsCpy:     []events.MarketPosition{},
 		broker:           broker,
 		updatedPositions: map[string]struct{}{},
+		distressedPos:    map[string]struct{}{},
 	}
 	e.positionUpdated = e.bufferPosition
 	if config.StreamPositionVerbose {
@@ -337,6 +342,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 		}
 		// remove from the map
 		delete(e.positions, party)
+		delete(e.distressedPos, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
 			if e.positionsCpy[i].Party() == party {
@@ -419,6 +425,47 @@ func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy
 }
 
+// MarkDistressed - mark any distressed parties as such, returns the IDs of the parties who weren't distressed before.
+func (e *Engine) MarkDistressed(closed []string) ([]string, []string) {
+	// assume number of distressed parties is roughly equal, it isn't but should overall reduce reallocs
+	// create a copy, otherwise newly distressed positions are unmarked
+	prevDistressed := make(map[string]struct{}, len(e.distressedPos))
+	for k := range e.distressedPos {
+		prevDistressed[k] = struct{}{}
+	}
+	nIDs := make([]string, 0, len(closed))
+	for _, c := range closed {
+		if _, ok := prevDistressed[c]; ok {
+			// this party was already known to be distressed, leave it as-is
+			// delete from this map, so we are left with only parties who were distressed, but aren't anymore
+			delete(prevDistressed, c)
+			continue
+		}
+		// not in distressed map -> get position, mark as distressed
+		e.positions[c].distressed = true
+		// add the new distressed party to the map
+		e.distressedPos[c] = struct{}{}
+		// add the ID to the slice of distressed ID's for the event
+		nIDs = append(nIDs, c)
+	}
+	// if we didn't have any previously distressed parties to update, we're done
+	if len(prevDistressed) == 0 {
+		return nIDs, nil
+	}
+	// mark parties who are no longer distressed accoringly
+	nd := make([]string, 0, len(prevDistressed))
+	for k := range prevDistressed {
+		// mark as no longer distressed
+		e.positions[k].distressed = false
+		// remove from the map
+		delete(e.distressedPos, k)
+		nd = append(nd, k)
+	}
+	sort.Strings(nIDs)
+	sort.Strings(nd)
+	return nIDs, nd
+}
+
 // GetPositionByPartyID - return current position for a given party, it's used in margin checks during auctions
 // we're not specifying an interface of the return type, and we return a pointer to a copy for the nil.
 func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
@@ -480,6 +527,7 @@ func (e *Engine) GetOpenPositionCount() uint64 {
 func (e *Engine) remove(p *MarketPosition) {
 	// delete from the map first
 	delete(e.positions, p.partyID)
+	delete(e.distressedPos, p.partyID) // in case party was previously flagged as distressed
 
 	// remove from the slice
 	for i := range e.positionsCpy {
