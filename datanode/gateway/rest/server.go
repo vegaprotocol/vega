@@ -63,7 +63,7 @@ func NewProxyServer(log *logging.Logger, config gateway.Config, vegaPaths paths.
 
 // ReloadConf update the internal configuration of the server.
 func (s *ProxyServer) ReloadConf(cfg gateway.Config) {
-	s.log.Info("reloading confioguration")
+	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
 		s.log.Info("updating log level",
 			logging.String("old", s.log.GetLevel().String()),
@@ -144,7 +144,7 @@ func (s *ProxyServer) Start() error {
 	opts := []grpc.DialOption{
 		grpc.WithInsecure(),
 		// 20MB, this is in bytes
-		// not the greatest soluton, it x5 the default value.
+		// not the greatest solution, it x5 the default value.
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(1024 * 1024 * 20)),
 	}
 
@@ -153,7 +153,8 @@ func (s *ProxyServer) Start() error {
 			// if we are dealing with a stream, let's add some header to use the proper marshaller
 			if strings.HasPrefix(r.URL.Path, "/api/v2/stream/") {
 				r.Header.Set("Accept", "application/json+stream")
-			} else if strings.HasPrefix(r.URL.Path, "/api/v2/networkhistory/export") {
+			} else if strings.HasPrefix(r.URL.Path, "/api/v2/networkhistory/export") ||
+				strings.HasPrefix(r.URL.Path, "/api/v2/ledgerentry/export") {
 				r.Header.Set("Accept", "text/csv")
 			} else if _, ok := r.URL.Query()["pretty"]; ok {
 				// checking Values as map[string][]string also catches ?pretty and ?pretty=
@@ -228,7 +229,7 @@ func (s *ProxyServer) Stop() {
 func healthCheckMiddleware(f http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
-			w.Write([]byte("ok"))
+			_, _ = w.Write([]byte("ok"))
 			w.WriteHeader(http.StatusOK)
 			return
 		}

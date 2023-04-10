@@ -46,8 +46,6 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/pkg/errors"
-	"google.golang.org/genproto/googleapis/api/httpbody"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -275,33 +273,36 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 }
 
 // ExportLedgerEntries returns a list of ledger entries matching the request.
-func (t *TradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.ExportLedgerEntriesRequest) (*v2.ExportLedgerEntriesResponse, error) {
+func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRequest, stream v2.TradingDataService_ExportLedgerEntriesServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ExportLedgerEntriesV2")()
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
-	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
-	if err != nil {
-		return nil, formatE(ErrInvalidPagination, err)
+	timeFormat := strings.ReplaceAll(time.RFC3339, ":", "_")
+
+	var startDateStr, endDateStr string
+	if dateRange.Start != nil {
+		startDateStr = "_" + dateRange.Start.Format(timeFormat)
+	}
+	if dateRange.End != nil {
+		endDateStr = "-" + dateRange.End.Format(timeFormat)
 	}
 
-	raw, pageInfo, err := t.ledgerService.Export(ctx, req.PartyId, req.AssetId, dateRange, pagination)
-	if err != nil {
-		return nil, formatE(ErrLedgerServiceExport, err)
+	header := metadata.Pairs(
+		"Content-Disposition",
+		fmt.Sprintf("attachment;filename=ledger_entries_%s_%s%s%s.csv",
+			req.PartyId, req.AssetId, startDateStr, endDateStr))
+	if err := stream.SendHeader(header); err != nil {
+		return formatE(ErrSendingGRPCHeader, err)
 	}
 
-	header := metadata.New(map[string]string{
-		"Content-Type":        "text/csv",
-		"Content-Disposition": fmt.Sprintf("attachment;filename=%s", "ledger_entries_export.csv"),
-	})
+	httpWriter := &httpBodyWriter{chunkSize: httpBodyChunkSize, contentType: "text/csv", buf: &bytes.Buffer{}, stream: stream}
+	defer httpWriter.Close()
 
-	if err = grpc.SendHeader(ctx, header); err != nil {
-		return nil, formatE(ErrSendingGRPCHeader, err)
+	if err := t.ledgerService.Export(stream.Context(), req.PartyId, req.AssetId, dateRange, httpWriter); err != nil {
+		return formatE(ErrLedgerServiceExport, err)
 	}
 
-	return &v2.ExportLedgerEntriesResponse{
-		Data:     raw,
-		PageInfo: pageInfo.ToProto(),
-	}, nil
+	return nil
 }
 
 // ListBalanceChanges returns a list of balance changes matching the request.
@@ -3107,7 +3108,7 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 		return formatE(ErrSendingGRPCHeader, err)
 	}
 
-	grpcWriter := exportHistoryWriter{chunkSize: httpBodyChunkSize, contentType: "application/zip", buf: &bytes.Buffer{}, stream: stream}
+	grpcWriter := httpBodyWriter{chunkSize: httpBodyChunkSize, contentType: "application/zip", buf: &bytes.Buffer{}, stream: stream}
 	zipWriter := zip.NewWriter(&grpcWriter)
 	defer grpcWriter.Close()
 	defer zipWriter.Close()
@@ -3173,47 +3174,6 @@ func partitionSegmentsByDBVersion(segments []networkhistory.Segment) [][]network
 	}
 	partitioned = append(partitioned, segments[sliceStart:])
 	return partitioned
-}
-
-type exportHistoryWriter struct {
-	chunkSize   int
-	contentType string
-	buf         *bytes.Buffer
-	stream      v2.TradingDataService_ExportNetworkHistoryServer
-}
-
-func (w *exportHistoryWriter) Write(p []byte) (n int, err error) {
-	n = len(p)
-	w.buf.Write(p)
-
-	if w.buf.Len() >= w.chunkSize {
-		if err := w.sendChunk(); err != nil {
-			return 0, err
-		}
-	}
-
-	return n, nil
-}
-
-func (w *exportHistoryWriter) sendChunk() error {
-	msg := &httpbody.HttpBody{
-		ContentType: w.contentType,
-		Data:        w.buf.Bytes(),
-	}
-
-	if err := w.stream.Send(msg); err != nil {
-		return fmt.Errorf("error sending chunk: %w", err)
-	}
-
-	w.buf.Reset()
-	return nil
-}
-
-func (w *exportHistoryWriter) Close() error {
-	if w.buf.Len() > 0 {
-		return w.sendChunk()
-	}
-	return nil
 }
 
 // GetMostRecentNetworkHistorySegment returns the most recent network history segment.

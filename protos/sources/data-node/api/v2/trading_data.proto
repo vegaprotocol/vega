@@ -159,10 +159,11 @@ service TradingDataService {
     // Ledger entries can be exported by:
     //   - export ledger entries for a single party for a given asset within a given time range
     //   - export ledger entries for a single party for a given asset for all times
-    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (ExportLedgerEntriesResponse) {
-      option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-	tags: "Ledger entries";
-      };
+    // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+    rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (stream google.api.HttpBody) {
+        option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+            tags: "Ledger entries";
+        };
     }
 
     // List balance changes
@@ -1319,24 +1320,14 @@ message ExportLedgerEntriesRequest {
     string party_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Asset ID to export ledger entries for.
     string asset_id = 2;
-    // Optional pagination control.
-    optional Pagination pagination = 3;
     // Date range to export ledger entries for.
-    optional DateRange date_range = 4;
+    optional DateRange date_range = 3;
 }
 
 // A response that is received when listing ledger entries
 message ListLedgerEntriesResponse {
     // Represents the list of aggregated ledger entries data with the corresponding page information.
     AggregatedLedgerEntriesConnection ledger_entries = 1;
-}
-
-// A response that is received when exporting ledger entries
-message ExportLedgerEntriesResponse {
-    // Exported ledger entries data as byte stream.
-    bytes data = 1;
-    // Page information that is used for fetching further pages.
-    PageInfo page_info = 2;
 }
 
 // Represents the aggregated ledger entry data with corresponding cursor for it

@@ -15,9 +15,12 @@ package api_test
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/jackc/pgconn"
 
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
@@ -222,6 +225,10 @@ type dummyConnection struct {
 
 func (d dummyConnection) Query(context.Context, string, ...interface{}) (pgx.Rows, error) {
 	return nil, pgx.ErrNoRows
+}
+
+func (d dummyConnection) CopyTo(context.Context, io.Writer, string) (pgconn.CommandTag, error) {
+	return pgconn.CommandTag{}, nil
 }
 
 func TestSubmitTransaction(t *testing.T) {
