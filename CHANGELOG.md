@@ -24,6 +24,7 @@
 - [8024](https://github.com/vegaprotocol/vega/issues/8024) - Unify naming in `rpc` endpoints and add tags
 - [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
 - [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
+- [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
 
 ### 🐛 Fixes
 - [7859](https://github.com/vegaprotocol/vega/issues/7859) - Fix Ledger entries exporting `CSV` file. 
