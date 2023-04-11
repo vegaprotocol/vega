@@ -10,7 +10,7 @@ import (
 )
 
 func TestRateLimit(t *testing.T) {
-	url := "http://localhost:3009/api/v2/info"
+	url := "http://localhost:3008/api/v2/info"
 	for {
 		// keep making requests against the http API until we get a response that is not 200
 		// this response should be 429

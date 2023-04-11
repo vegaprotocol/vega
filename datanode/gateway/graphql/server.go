@@ -53,7 +53,6 @@ type GraphServer struct {
 
 	coreProxyClient     CoreProxyServiceClient
 	tradingDataClientV2 v2.TradingDataServiceClient
-	srv                 *http.Server
 	rl                  *gateway.SubscriptionRateLimiter
 	rateLimit           *ratelimit.RateLimit
 }

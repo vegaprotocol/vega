@@ -86,11 +86,8 @@ func (o *HTTPBodyDelimitedMarshaler) Delimiter() []byte {
 }
 
 // Start start the server.
-func (s *ProxyServer) Start() (http.Handler, error) {
+func (s *ProxyServer) Start(ctx context.Context) (http.Handler, error) {
 	logger := s.log
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	grpcAddr := net.JoinHostPort(s.Node.IP, strconv.Itoa(s.Node.Port))
 

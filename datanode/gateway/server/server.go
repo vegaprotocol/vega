@@ -80,11 +80,10 @@ func (srv *Server) Start(ctx context.Context) error {
 		srv.rest = rest.NewProxyServer(srv.log, *srv.cfg, srv.vegaPaths)
 
 		var err error
-		restHandler, err = srv.rest.Start()
+		restHandler, err = srv.rest.Start(ctx)
 		if err != nil {
 			return err
 		}
-
 	}
 
 	handlr := corz.Handler(
@@ -159,10 +158,13 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, h.gqlPrefix) {
 		if h.gqlHandler != nil {
 			h.gqlHandler.ServeHTTP(w, r)
+			return
 		}
+	} else if h.restHandler != nil {
+		h.restHandler.ServeHTTP(w, r)
 		return
 	}
-	if h.restHandler != nil {
-		h.restHandler.ServeHTTP(w, r)
-	}
+
+	// cover for unknow routes, or disabled servers
+	http.NotFound(w, r)
 }
