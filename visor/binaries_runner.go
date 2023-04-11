@@ -28,8 +28,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/config"
 	"code.vegaprotocol.io/vega/visor/utils"
-
-	"golang.org/x/sync/errgroup"
 )
 
 const snapshotBlockHeightFlagName = "--snapshot.load-from-block-height"
@@ -87,7 +85,7 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 		return fmt.Errorf("failed to start binary %s %v: %w", binPath, args, err)
 	}
 
-	// Ensures that if one binary failes all of them are killed
+	// Ensures that if one binary fails all of them are killed
 	go func() {
 		<-ctx.Done()
 
@@ -128,7 +126,7 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 	}()
 
 	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("failed to after waiting for binary %s %v: %w", binPath, args, err)
+		return fmt.Errorf("failed after waiting for binary %s %v: %w", binPath, args, err)
 	}
 
 	return nil
@@ -162,37 +160,24 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 	return args, nil
 }
 
-func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) chan error {
-	eg, ctx := errgroup.WithContext(ctx)
+func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) error {
+	r.log.Debug("Starting Vega binary")
 
-	eg.Go(func() error {
-		r.log.Debug("Starting Vega binary")
-		args, err := r.prepareVegaArgs(runConf, isRestart)
-		if err != nil {
-			return fmt.Errorf("failed to prepare args for Vega binary: %w", err)
-		}
-
-		return r.runBinary(ctx, runConf.Vega.Binary.Path, args, true)
-	})
-
-	if runConf.DataNode != nil {
-		eg.Go(func() error {
-			r.log.Debug("Starting Data Node binary")
-			// this can kill the datanode
-			return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args, isRestart)
-		})
+	args, err := r.prepareVegaArgs(runConf, isRestart)
+	if err != nil {
+		return fmt.Errorf("failed to prepare args for Vega binary: %w", err)
 	}
 
-	errChan := make(chan error)
+	if err := r.runBinary(ctx, runConf.Vega.Binary.Path, args, true); err != nil {
+		return fmt.Errorf("failed to run Vega binary: %w", err)
+	}
 
-	go func() {
-		err := eg.Wait()
-		if err != nil {
-			errChan <- err
-		}
-	}()
+	if runConf.DataNode != nil {
+		r.log.Debug("Starting Data Node binary")
+		return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args, isRestart)
+	}
 
-	return errChan
+	return nil
 }
 
 func (r *BinariesRunner) signal(signal syscall.Signal) error {

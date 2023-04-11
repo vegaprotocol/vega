@@ -107,11 +107,6 @@ func (v *Visor) Run(ctx context.Context) error {
 
 		v.conf.SetHasDataNode(runConf.DataNode != nil)
 
-		client := v.clientFactory.GetClient(
-			runConf.Vega.RCP.SocketPath,
-			runConf.Vega.RCP.HTTPPath,
-		)
-
 		maxNumberOfFirstConnectionRetries := v.conf.MaxNumberOfFirstConnectionRetries()
 
 		numOfUpgradeStatusErrs := 0
@@ -123,46 +118,52 @@ func (v *Visor) Run(ctx context.Context) error {
 		} else {
 			v.log.Info("Starting binaries")
 		}
+
 		binRunner := NewBinariesRunner(
 			v.log,
 			v.conf.CurrentFolder(),
 			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
 			currentReleaseInfo,
 		)
-		binErrs := binRunner.Run(ctx, runConf, isRestarting)
+
+		if err := binRunner.Run(ctx, runConf, isRestarting); err != nil {
+			v.log.Error("Binaries executions has failed", logging.Error(err))
+
+			if numOfRestarts >= maxNumRestarts {
+				return fmt.Errorf("maximum number of possible restarts has been reached: %w", err)
+			}
+
+			numOfRestarts++
+			v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
+			time.Sleep(restartsDelay)
+			v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
+
+			isRestarting = true
+			continue
+		}
 
 		upgradeTicker.Reset(upgradeAPICallTickerDuration)
 		isRestarting = false
+
+		c := v.clientFactory.GetClient(
+			runConf.Vega.RCP.SocketPath,
+			runConf.Vega.RCP.HTTPPath,
+		)
 
 	CheckLoop:
 		for {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
-			case err := <-binErrs:
-				v.log.Error("Binaries executions has failed", logging.Error(err))
-
-				if numOfRestarts >= maxNumRestarts {
-					return fmt.Errorf("maximum number of possible restarts has been reached: %w", err)
-				}
-
-				numOfRestarts++
-				v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
-				time.Sleep(restartsDelay)
-				v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
-
-				isRestarting = true
-
-				break CheckLoop
 			case <-upgradeTicker.C:
-				upStatus, err := client.UpgradeStatus(ctx)
+				upStatus, err := c.UpgradeStatus(ctx)
 				if err != nil {
 					// Binary has not started yet - waiting for first startup
 					if numOfRestarts == 0 {
 						if numOfUpgradeStatusErrs > maxNumberOfFirstConnectionRetries {
 							return failedToGetStatusErr(maxNumberOfFirstConnectionRetries, err)
 						}
-					} else { // Binary has been started already. Somethig has failed after the startup
+					} else { // Binary has been started already. Something has failed after the startup
 						if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
 							return failedToGetStatusErr(maxUpgradeStatusErrs, err)
 						}
@@ -170,7 +171,6 @@ func (v *Visor) Run(ctx context.Context) error {
 
 					v.log.Debug("failed to get upgrade status from API", logging.Error(err))
 					numOfUpgradeStatusErrs++
-
 					break
 				}
 
