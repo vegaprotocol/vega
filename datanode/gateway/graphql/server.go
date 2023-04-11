@@ -16,17 +16,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 	"runtime/debug"
-	"strconv"
 	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/datanode/ratelimit"
-	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
@@ -37,7 +34,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/99designs/gqlgen/handler"
 	"github.com/gorilla/websocket"
-	"github.com/rs/cors"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -132,10 +128,7 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args, reply inte
 }
 
 // Start starts the server in order receive http request.
-func (g *GraphServer) Start() error {
-	// <--- cors support - configure for production
-	corsOptions := libhttp.CORSOptions(g.CORS)
-	corz := cors.New(corsOptions)
+func (g *GraphServer) Start() (http.Handler, error) {
 	up := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -143,14 +136,7 @@ func (g *GraphServer) Start() error {
 			return true
 		},
 	}
-	// cors support - configure for production --->
 
-	port := g.GraphQL.Port
-	ip := g.GraphQL.IP
-
-	g.log.Info("Starting GraphQL based API", logging.String("addr", ip), logging.Int("port", port))
-
-	addr := net.JoinHostPort(ip, strconv.Itoa(port))
 	resolverRoot := NewResolverRoot(
 		g.log,
 		g.Config,
@@ -219,7 +205,7 @@ func (g *GraphServer) Start() error {
 
 	if g.GraphQLPlaygroundEnabled {
 		g.log.Warn("graphql playground enabled, this is not a recommended setting for production")
-		handlr.Handle("/", corz.Handler(playground.Handler("VEGA", g.GraphQL.Endpoint)))
+		handlr.Handle("/", playground.Handler("VEGA", g.GraphQL.Endpoint))
 	}
 	options := []handler.Option{
 		handler.WebsocketKeepAliveDuration(10 * time.Second),
@@ -240,49 +226,13 @@ func (g *GraphServer) Start() error {
 		options = append(options, handler.ComplexityLimit(g.GraphQL.ComplexityLimit))
 	}
 
-	middleware := corz.Handler(
-		gateway.Chain(
-			gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
-			gateway.WithAddHeadersMiddleware,
-			g.rl.WithSubscriptionRateLimiter,
-			g.rateLimit.HTTPMiddleware,
-		),
+	middleware := gateway.Chain(
+		gateway.RemoteAddrMiddleware(g.log, handler.GraphQL(NewExecutableSchema(config), options...)),
+		gateway.WithAddHeadersMiddleware,
+		g.rl.WithSubscriptionRateLimiter,
+		g.rateLimit.HTTPMiddleware,
 	)
 
-	// FIXME(jeremy): to be removed once everyone has move to the new endpoint
-	handlr.Handle("/query", middleware)
 	handlr.Handle(g.GraphQL.Endpoint, middleware)
-
-	tlsConfig, err := gateway.GenerateTlsConfig(&g.Config, g.vegaPaths)
-	if err != nil {
-		return fmt.Errorf("problem with HTTPS configuration: %w", err)
-	}
-	g.srv = &http.Server{
-		Addr:      addr,
-		Handler:   handlr,
-		TLSConfig: tlsConfig,
-	}
-
-	if g.srv.TLSConfig != nil {
-		err = g.srv.ListenAndServeTLS("", "")
-	} else {
-		g.log.Warn("GraphQL server is not configured to use HTTPS, which is required for subscriptions to work. Please see README.md for help configuring")
-		err = g.srv.ListenAndServe()
-	}
-	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("failed to listen and serve on graphQL server: %w", err)
-	}
-
-	return nil
-}
-
-// Stop will close the http server gracefully.
-func (g *GraphServer) Stop() {
-	if g.srv != nil {
-		g.log.Info("Stopping GraphQL based API")
-		if err := g.srv.Shutdown(context.Background()); err != nil {
-			g.log.Error("Failed to stop GraphQL based API cleanly",
-				logging.Error(err))
-		}
-	}
+	return handlr, nil
 }

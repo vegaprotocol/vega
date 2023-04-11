@@ -14,21 +14,18 @@ package rest
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
-	libhttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	protoapiv2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/rs/cors"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"go.elastic.co/apm/module/apmhttp"
 	"google.golang.org/grpc"
@@ -89,18 +86,12 @@ func (o *HTTPBodyDelimitedMarshaler) Delimiter() []byte {
 }
 
 // Start start the server.
-func (s *ProxyServer) Start() error {
+func (s *ProxyServer) Start() (http.Handler, error) {
 	logger := s.log
 
-	logger.Info("Starting REST<>GRPC based API",
-		logging.String("addr", s.REST.IP),
-		logging.Int("port", s.REST.Port))
-
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	restAddr := net.JoinHostPort(s.REST.IP, strconv.Itoa(s.REST.Port))
 	grpcAddr := net.JoinHostPort(s.Node.IP, strconv.Itoa(s.Node.Port))
 
 	mux := runtime.NewServeMux(
@@ -171,10 +162,7 @@ func (s *ProxyServer) Start() error {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 
-	// CORS support
-	corsOptions := libhttp.CORSOptions(s.CORS)
-	handler := cors.New(corsOptions).Handler(mux)
-	handler = marshalW(handler)
+	handler := marshalW(mux)
 	handler = healthCheckMiddleware(handler)
 	handler = gateway.RemoteAddrMiddleware(logger, handler)
 	// Gzip encoding support
@@ -188,41 +176,7 @@ func (s *ProxyServer) Start() error {
 		handler = apmhttp.Wrap(handler)
 	}
 
-	tlsConfig, err := gateway.GenerateTlsConfig(&s.Config, s.vegaPaths)
-	if err != nil {
-		return fmt.Errorf("problem with HTTPS configuration: %w", err)
-	}
-
-	s.srv = &http.Server{
-		Addr:      restAddr,
-		Handler:   handler,
-		TLSConfig: tlsConfig,
-	}
-
-	// Start http server on port specified
-	if s.srv.TLSConfig != nil {
-		err = s.srv.ListenAndServeTLS("", "")
-	} else {
-		err = s.srv.ListenAndServe()
-	}
-
-	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("failure serving REST proxy API %w", err)
-	}
-
-	return nil
-}
-
-// Stop stops the server.
-func (s *ProxyServer) Stop() {
-	if s.srv != nil {
-		s.log.Info("Stopping REST<>GRPC based API")
-
-		if err := s.srv.Shutdown(context.Background()); err != nil {
-			s.log.Error("Failed to stop REST<>GRPC based API cleanly",
-				logging.Error(err))
-		}
-	}
+	return handler, nil
 }
 
 func healthCheckMiddleware(f http.Handler) http.HandlerFunc {
