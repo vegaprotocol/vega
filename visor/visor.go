@@ -113,12 +113,6 @@ func (v *Visor) Run(ctx context.Context) error {
 		maxNumRestarts := v.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
 
-		if isRestarting {
-			v.log.Info("Restarting binaries")
-		} else {
-			v.log.Info("Starting binaries")
-		}
-
 		binRunner := NewBinariesRunner(
 			v.log,
 			v.conf.CurrentFolder(),
@@ -126,21 +120,16 @@ func (v *Visor) Run(ctx context.Context) error {
 			currentReleaseInfo,
 		)
 
-		if err := binRunner.Run(ctx, runConf, isRestarting); err != nil {
-			v.log.Error("Binaries executions has failed", logging.Error(err))
+		binErrs := make(chan error, 1)
 
-			if numOfRestarts >= maxNumRestarts {
-				return fmt.Errorf("maximum number of possible restarts has been reached: %w", err)
+		go func() {
+			if isRestarting {
+				v.log.Info("Restarting binaries")
+			} else {
+				v.log.Info("Starting binaries")
 			}
-
-			numOfRestarts++
-			v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
-			time.Sleep(restartsDelay)
-			v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
-
-			isRestarting = true
-			continue
-		}
+			binErrs <- binRunner.Run(ctx, runConf, isRestarting)
+		}()
 
 		upgradeTicker.Reset(upgradeAPICallTickerDuration)
 		isRestarting = false
@@ -155,6 +144,21 @@ func (v *Visor) Run(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
+			case err := <-binErrs:
+				v.log.Error("Binaries executions has failed", logging.Error(err))
+
+				if numOfRestarts >= maxNumRestarts {
+					return fmt.Errorf("maximum number of possible restarts has been reached: %w", err)
+				}
+
+				numOfRestarts++
+				v.log.Info("Binaries restart is scheduled", logging.Duration("restartDelay", restartsDelay))
+				time.Sleep(restartsDelay)
+				v.log.Info("Restarting binaries", logging.Int("remainingRestarts", maxNumRestarts-numOfRestarts))
+
+				isRestarting = true
+
+				break CheckLoop
 			case <-upgradeTicker.C:
 				upStatus, err := c.UpgradeStatus(ctx)
 				if err != nil {
@@ -171,6 +175,7 @@ func (v *Visor) Run(ctx context.Context) error {
 
 					v.log.Debug("failed to get upgrade status from API", logging.Error(err))
 					numOfUpgradeStatusErrs++
+
 					break
 				}
 
