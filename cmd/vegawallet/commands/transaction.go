@@ -13,6 +13,7 @@ func NewCmdTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 		Long:  "Provides utilities for interacting with transactions",
 	}
 
+	cmd.AddCommand(NewCmdCheckTransaction(w, rf))
 	cmd.AddCommand(NewCmdSendTransaction(w, rf))
 	cmd.AddCommand(NewCmdSignTransaction(w, rf))
 	return cmd

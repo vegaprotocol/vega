@@ -29,7 +29,7 @@ func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	network := vgrand.RandomStr(10)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
@@ -51,18 +51,17 @@ func testSendCommandFlagsValidFlagsSucceeds(t *testing.T) {
 		Wallet:      walletName,
 		PublicKey:   pubKey,
 		Retries:     10,
-		Passphrase:  passphrase,
 		Transaction: testTransaction(t),
 		SendingMode: "TYPE_ASYNC",
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
-
+	assert.Equal(t, expectedPassphrase, passphrase)
 	expectedJSON, _ := json.Marshal(expectedReq)
 	actualJSON, _ := json.Marshal(req)
 	assert.Equal(t, expectedJSON, actualJSON)
@@ -76,7 +75,7 @@ func testSendCommandFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -91,7 +90,7 @@ func testSendCommandFlagsMissingLogLevelFails(t *testing.T) {
 	f.LogLevel = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("level"))
@@ -106,7 +105,7 @@ func testSendCommandFlagsUnsupportedLogLevelFails(t *testing.T) {
 	f.LogLevel = vgrand.RandomStr(5)
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.EqualError(t, err, fmt.Sprintf("unsupported log level %q, supported levels: debug, info, warn, error", f.LogLevel))
@@ -122,7 +121,7 @@ func testSendCommandFlagsMissingNetworkAndNodeAddressFails(t *testing.T) {
 	f.NodeAddress = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address"))
@@ -138,7 +137,7 @@ func testSendCommandFlagsBothNetworkAndNodeAddressSpecifiedFails(t *testing.T) {
 	f.NodeAddress = vgrand.RandomStr(10)
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "node-address"))
@@ -153,7 +152,7 @@ func testSendCommandFlagsMissingPubKeyFails(t *testing.T) {
 	f.PubKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
@@ -168,7 +167,7 @@ func testSendCommandFlagsMissingRequestFails(t *testing.T) {
 	f.RawTransaction = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("transaction"))
@@ -183,7 +182,7 @@ func testSendCommandFlagsMalformedRequestFails(t *testing.T) {
 	f.RawTransaction = vgrand.RandomStr(5)
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.Error(t, err)

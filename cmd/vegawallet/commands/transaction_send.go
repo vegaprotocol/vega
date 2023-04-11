@@ -57,10 +57,12 @@ var (
 	`)
 )
 
-type SendTransactionHandler func(api.AdminSendTransactionParams, *zap.Logger) (api.AdminSendTransactionResult, error)
+type SendTransactionHandler func(api.AdminSendTransactionParams, string, *zap.Logger) (api.AdminSendTransactionResult, error)
 
 func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
-	handler := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
+	handler := func(params api.AdminSendTransactionParams, passphrase string, log *zap.Logger) (api.AdminSendTransactionResult, error) {
+		ctx := context.Background()
+
 		vegaPaths := paths.New(rf.Home)
 
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
@@ -74,11 +76,18 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
+		}
+
 		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
 			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
 		})
 
-		rawResult, errDetails := sendTx.Handle(context.Background(), params)
+		rawResult, errDetails := sendTx.Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
 		}
@@ -104,7 +113,7 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 			}
 			f.RawTransaction = args[0]
 
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
@@ -114,7 +123,7 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 				return fmt.Errorf("failed to build a logger: %w", err)
 			}
 
-			resp, err := handler(req, log)
+			resp, err := handler(req, pass, log)
 			if err != nil {
 				return err
 			}
@@ -189,37 +198,37 @@ type SendTransactionFlags struct {
 	NoVersionCheck bool
 }
 
-func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error) {
+func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminSendTransactionParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.LogLevel) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("level")
+		return api.AdminSendTransactionParams{}, "", flags.MustBeSpecifiedError("level")
 	}
 	if err := vgzap.EnsureIsSupportedLogLevel(f.LogLevel); err != nil {
-		return api.AdminSendTransactionParams{}, err
+		return api.AdminSendTransactionParams{}, "", err
 	}
 
 	if len(f.NodeAddress) == 0 && len(f.Network) == 0 {
-		return api.AdminSendTransactionParams{}, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
+		return api.AdminSendTransactionParams{}, "", flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return api.AdminSendTransactionParams{}, flags.MutuallyExclusiveError("network", "node-address")
+		return api.AdminSendTransactionParams{}, "", flags.MutuallyExclusiveError("network", "node-address")
 	}
 
 	if len(f.PubKey) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminSendTransactionParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 
 	if len(f.RawTransaction) == 0 {
-		return api.AdminSendTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
+		return api.AdminSendTransactionParams{}, "", flags.ArgMustBeSpecifiedError("transaction")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminSendTransactionParams{}, err
+		return api.AdminSendTransactionParams{}, "", err
 	}
 
 	// Encode transaction into a nested structure; this is a bit nasty but mirroring what happens
@@ -227,12 +236,11 @@ func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error
 	// json.RawMessage instead.
 	transaction := make(map[string]any)
 	if err := json.Unmarshal([]byte(f.RawTransaction), &transaction); err != nil {
-		return api.AdminSendTransactionParams{}, fmt.Errorf("couldn't unmarshal transaction: %w", err)
+		return api.AdminSendTransactionParams{}, "", fmt.Errorf("couldn't unmarshal transaction: %w", err)
 	}
 
 	params := api.AdminSendTransactionParams{
 		Wallet:      f.Wallet,
-		Passphrase:  passphrase,
 		PublicKey:   f.PubKey,
 		Network:     f.Network,
 		NodeAddress: f.NodeAddress,
@@ -241,7 +249,7 @@ func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error
 		SendingMode: "TYPE_ASYNC",
 	}
 
-	return params, nil
+	return params, passphrase, nil
 }
 
 func PrintSendTransactionResponse(w io.Writer, res api.AdminSendTransactionResult, rf *RootFlags) {
