@@ -18,9 +18,13 @@ import (
 )
 
 type DatabaseMetadata struct {
-	TableNameToMetaData          map[string]TableMetadata
-	ContinuousAggregatesMetaData []ContinuousAggregateMetaData
-	DatabaseVersion              int64
+	TableNameToMetaData                    map[string]TableMetadata
+	ContinuousAggregatesMetaData           []ContinuousAggregateMetaData
+	DatabaseVersion                        int64
+	CurrentStateTablesCreateConstraintsSql []string
+	CurrentStateTablesDropConstraintsSql   []string
+	HistoryStateTablesCreateConstraintsSql []string
+	HistoryStateTablesDropConstraintsSql   []string
 }
 
 type TableMetadata struct {
@@ -78,9 +82,23 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 		return DatabaseMetadata{}, fmt.Errorf("failed to get continuous aggregate view names:%w", err)
 	}
 
+	currentStateCreateConstraintsSql, historyCreateConstraintsSql, err := getCreateConstraintsSql(ctx, connPool, hyperTableNames)
+	if err != nil {
+		return DatabaseMetadata{}, fmt.Errorf("failed to get create constrains sql:%w", err)
+	}
+
+	currentStateDropConstraintsSql, historyDropConstraintsSql, err := getDropConstraintsSql(ctx, connPool, hyperTableNames)
+	if err != nil {
+		return DatabaseMetadata{}, fmt.Errorf("failed to get drop constrains sql:%w", err)
+	}
+
 	result := DatabaseMetadata{
 		TableNameToMetaData: map[string]TableMetadata{}, DatabaseVersion: dbVersion,
-		ContinuousAggregatesMetaData: caggsMeta,
+		ContinuousAggregatesMetaData:           caggsMeta,
+		CurrentStateTablesCreateConstraintsSql: currentStateCreateConstraintsSql,
+		CurrentStateTablesDropConstraintsSql:   currentStateDropConstraintsSql,
+		HistoryStateTablesCreateConstraintsSql: historyCreateConstraintsSql,
+		HistoryStateTablesDropConstraintsSql:   historyDropConstraintsSql,
 	}
 	for _, tableName := range tableNames {
 		partitionCol := ""
@@ -213,6 +231,66 @@ func getContinuousAggregatesMetaData(ctx context.Context, conn *pgxpool.Pool) ([
 	}
 
 	return metas, nil
+}
+
+func getCreateConstraintsSql(ctx context.Context, conn *pgxpool.Pool, hyperTableNames map[string]bool) (currentState []string,
+	history []string, err error,
+) {
+	var constraints []struct {
+		Tablename string
+		Sql       string
+	}
+
+	err = pgxscan.Select(ctx, conn, &constraints,
+		`SELECT relname as tablename, 'ALTER TABLE '||nspname||'.'||relname||' ADD CONSTRAINT '||conname||' '|| pg_get_constraintdef(pg_constraint.oid)||';' as sql
+		FROM pg_constraint 
+		INNER JOIN pg_class ON conrelid=pg_class.oid 
+		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public'
+		ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END DESC,contype DESC,nspname DESC,relname DESC,conname DESC`)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get create constraints sql:%w", err)
+	}
+
+	for _, constraint := range constraints {
+		if hyperTableNames[constraint.Tablename] {
+			history = append(history, constraint.Sql)
+		} else {
+			currentState = append(currentState, constraint.Sql)
+		}
+	}
+
+	return currentState, history, nil
+}
+
+func getDropConstraintsSql(ctx context.Context, conn *pgxpool.Pool, hyperTableNames map[string]bool) (currentState []string,
+	history []string, err error,
+) {
+	var constraints []struct {
+		Tablename string
+		Sql       string
+	}
+
+	err = pgxscan.Select(ctx, conn, &constraints,
+		`SELECT relname as tablename, 'ALTER TABLE '||nspname||'.'||relname||' DROP CONSTRAINT '||conname||';' as sql
+		FROM pg_constraint 
+		INNER JOIN pg_class ON conrelid=pg_class.oid 
+		INNER JOIN pg_namespace ON pg_namespace.oid=pg_class.relnamespace where pg_namespace.nspname='public' 
+		ORDER BY CASE WHEN contype='f' THEN 0 ELSE 1 END,contype,nspname,relname,conname`)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to get drop constraints sql:%w", err)
+	}
+
+	for _, constraint := range constraints {
+		if hyperTableNames[constraint.Tablename] {
+			history = append(history, constraint.Sql)
+		} else {
+			currentState = append(currentState, constraint.Sql)
+		}
+	}
+
+	return currentState, history, nil
 }
 
 func extractIntervalFromViewDefinition(viewDefinition string) (string, error) {
