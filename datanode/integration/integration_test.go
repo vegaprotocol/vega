@@ -115,7 +115,7 @@ func TestMain(m *testing.M) {
 		}
 	}()
 
-	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/query", cfg.Gateway.GraphQL.Port))
+	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/graphql", cfg.Gateway.Port))
 	if err = waitForEpoch(client, lastEpoch, playbackTimeout); err != nil {
 		log.Fatal("problem piping event stream: ", err)
 	}
