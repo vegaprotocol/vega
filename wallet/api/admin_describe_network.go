@@ -19,18 +19,18 @@ type AdminDescribeNetwork struct {
 func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeNetworkParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(params.Name); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrNetworkDoesNotExist)
+		return nil, InvalidParams(ErrNetworkDoesNotExist)
 	}
 
 	n, err := h.networkStore.GetNetwork(params.Name)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
+		return nil, InternalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
 	}
 
 	resp := AdminNetwork{

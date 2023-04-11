@@ -22,7 +22,7 @@ type AdminCloseConnection struct {
 func (h *AdminCloseConnection) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminCloseConnectionParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	h.connectionsManager.EndSessionConnection(params.Hostname, params.Wallet)

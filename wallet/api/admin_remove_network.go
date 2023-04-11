@@ -20,17 +20,17 @@ type AdminRemoveNetwork struct {
 func (h *AdminRemoveNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRemoveNetworkParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(params.Name); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrNetworkDoesNotExist)
+		return nil, InvalidParams(ErrNetworkDoesNotExist)
 	}
 
 	if err := h.networkStore.DeleteNetwork(params.Name); err != nil {
-		return nil, internalError(fmt.Errorf("could not remove the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not remove the wallet: %w", err))
 	}
 
 	return nil, nil

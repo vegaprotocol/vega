@@ -16,17 +16,17 @@ type AdminUpdateNetwork struct {
 func (h *AdminUpdateNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	updatedNetwork, err := validateUpdateNetworkParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exists, err := h.networkStore.NetworkExists(updatedNetwork.Name); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exists {
-		return nil, invalidParams(ErrNetworkDoesNotExist)
+		return nil, InvalidParams(ErrNetworkDoesNotExist)
 	}
 
 	if err := h.networkStore.SaveNetwork(&updatedNetwork); err != nil {
-		return nil, internalError(fmt.Errorf("could not save the network: %w", err))
+		return nil, InternalError(fmt.Errorf("could not save the network: %w", err))
 	}
 	return nil, nil
 }

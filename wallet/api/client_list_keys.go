@@ -54,18 +54,18 @@ func (h *ClientListKeys) Handle(ctx context.Context, connectedWallet ConnectedWa
 
 func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceID string, connectedWallet *ConnectedWallet) *jsonrpc.ErrorDetails {
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, PermissionRequestWorkflow, 2); err != nil {
-		return requestNotPermittedError(err)
+		return RequestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	freshWallet, err := h.walletStore.GetWallet(ctx, connectedWallet.Name())
 	if err != nil {
 		if errors.Is(err, ErrWalletIsLocked) {
-			h.interactor.NotifyError(ctx, traceID, ApplicationError, err)
+			h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, err)
 		} else {
-			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet for the permissions update: %w", err))
+			h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not retrieve the wallet for the permissions update: %w", err))
 		}
-		return internalError(ErrCouldNotListKeys)
+		return InternalError(ErrCouldNotListKeys)
 	}
 
 	perms := freshWallet.Permissions(connectedWallet.Hostname())
@@ -74,29 +74,29 @@ func (h *ClientListKeys) updatePublicKeysPermissions(ctx context.Context, traceI
 	perms.PublicKeys.Access = wallet.ReadAccess
 	approved, err := h.interactor.RequestPermissionsReview(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), perms.Summary())
 	if err != nil {
-		if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+		if errDetails := HandleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 			return errDetails
 		}
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the permissions review failed: %w", err))
-		return internalError(ErrCouldNotListKeys)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("requesting the permissions review failed: %w", err))
+		return InternalError(ErrCouldNotListKeys)
 	}
 	if !approved {
-		return userRejectionError(ErrUserRejectedAccessToKeys)
+		return UserRejectionError(ErrUserRejectedAccessToKeys)
 	}
 
 	if err := freshWallet.UpdatePermissions(connectedWallet.Hostname(), perms); err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not update the permissions on the wallet: %w", err))
-		return internalError(ErrCouldNotListKeys)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not update the permissions on the wallet: %w", err))
+		return InternalError(ErrCouldNotListKeys)
 	}
 
 	if err := connectedWallet.RefreshFromWallet(freshWallet); err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not refresh the connection information after the permissions update: %w", err))
-		return internalError(ErrCouldNotListKeys)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not refresh the connection information after the permissions update: %w", err))
+		return InternalError(ErrCouldNotListKeys)
 	}
 
 	if err := h.walletStore.UpdateWallet(ctx, freshWallet); err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not save the permissions update on the wallet: %w", err))
-		return internalError(ErrCouldNotListKeys)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not save the permissions update on the wallet: %w", err))
+		return InternalError(ErrCouldNotListKeys)
 	}
 
 	h.interactor.NotifySuccessfulRequest(ctx, traceID, 2, PermissionsSuccessfullyUpdated)

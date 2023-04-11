@@ -36,34 +36,34 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, WalletConnectionWorkflow, 4); err != nil {
-		return nil, requestNotPermittedError(err)
+		return nil, RequestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
 	availableWallets, err := h.walletStore.ListWallets(ctx)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not list the available wallets: %w", err))
-		return nil, internalError(ErrCouldNotConnectToWallet)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not list the available wallets: %w", err))
+		return nil, InternalError(ErrCouldNotConnectToWallet)
 	}
 	if len(availableWallets) == 0 {
-		h.interactor.NotifyError(ctx, traceID, ApplicationError, ErrNoWalletToConnectTo)
-		return nil, applicationCancellationError(ErrApplicationCancelledTheRequest)
+		h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, ErrNoWalletToConnectTo)
+		return nil, ApplicationCancellationError(ErrApplicationCancelledTheRequest)
 	}
 
 	var approval preferences.ConnectionApproval
 	for {
 		rawApproval, err := h.interactor.RequestWalletConnectionReview(ctx, traceID, 1, hostname)
 		if err != nil {
-			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+			if errDetails := HandleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
 			}
-			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("reviewing the wallet connection failed: %w", err))
-			return nil, internalError(ErrCouldNotConnectToWallet)
+			h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("reviewing the wallet connection failed: %w", err))
+			return nil, InternalError(ErrCouldNotConnectToWallet)
 		}
 
 		a, err := preferences.ParseConnectionApproval(rawApproval)
 		if err != nil {
-			h.interactor.NotifyError(ctx, traceID, UserError, err)
+			h.interactor.NotifyError(ctx, traceID, UserErrorType, err)
 			continue
 		}
 		approval = a
@@ -71,31 +71,31 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 	}
 
 	if isConnectionRejected(approval) {
-		return nil, userRejectionError(ErrUserRejectedWalletConnection)
+		return nil, UserRejectionError(ErrUserRejectedWalletConnection)
 	}
 
 	var walletName string
 	if len(availableWallets) > 1 {
 		for {
 			if ctx.Err() != nil {
-				h.interactor.NotifyError(ctx, traceID, ApplicationError, ErrRequestInterrupted)
-				return nil, requestInterruptedError(ErrRequestInterrupted)
+				h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, ErrRequestInterrupted)
+				return nil, RequestInterruptedError(ErrRequestInterrupted)
 			}
 
 			selectedWallet, err := h.interactor.RequestWalletSelection(ctx, traceID, 2, hostname, availableWallets)
 			if err != nil {
-				if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+				if errDetails := HandleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 					return nil, errDetails
 				}
-				h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the wallet selection failed: %w", err))
-				return nil, internalError(ErrCouldNotConnectToWallet)
+				h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("requesting the wallet selection failed: %w", err))
+				return nil, InternalError(ErrCouldNotConnectToWallet)
 			}
 
 			if exist, err := h.walletStore.WalletExists(ctx, selectedWallet); err != nil {
-				h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not verify the wallet existence: %w", err))
-				return nil, internalError(ErrCouldNotConnectToWallet)
+				h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not verify the wallet existence: %w", err))
+				return nil, InternalError(ErrCouldNotConnectToWallet)
 			} else if !exist {
-				h.interactor.NotifyError(ctx, traceID, UserError, ErrWalletDoesNotExist)
+				h.interactor.NotifyError(ctx, traceID, UserErrorType, ErrWalletDoesNotExist)
 				continue
 			}
 
@@ -110,36 +110,36 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 
 	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, walletName)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
-		return nil, internalError(ErrCouldNotConnectToWallet)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+		return nil, InternalError(ErrCouldNotConnectToWallet)
 	}
 
 	if !alreadyUnlocked {
 		for {
 			if ctx.Err() != nil {
-				h.interactor.NotifyError(ctx, traceID, ApplicationError, ErrRequestInterrupted)
-				return nil, requestInterruptedError(ErrRequestInterrupted)
+				h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, ErrRequestInterrupted)
+				return nil, RequestInterruptedError(ErrRequestInterrupted)
 			}
 
 			walletPassphrase, err := h.interactor.RequestPassphrase(ctx, traceID, 3, walletName, PassphraseRequestReasonUnlockWallet)
 			if err != nil {
-				if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+				if errDetails := HandleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 					return nil, errDetails
 				}
-				h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the wallet passphrase failed: %w", err))
-				return nil, internalError(ErrCouldNotConnectToWallet)
+				h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("requesting the wallet passphrase failed: %w", err))
+				return nil, InternalError(ErrCouldNotConnectToWallet)
 			}
 
 			if err := h.walletStore.UnlockWallet(ctx, walletName, walletPassphrase); err != nil {
 				if errors.Is(err, wallet.ErrWrongPassphrase) {
-					h.interactor.NotifyError(ctx, traceID, UserError, wallet.ErrWrongPassphrase)
+					h.interactor.NotifyError(ctx, traceID, UserErrorType, wallet.ErrWrongPassphrase)
 					continue
 				}
-				if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+				if errDetails := HandleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 					return nil, errDetails
 				}
-				h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not unlock the wallet: %w", err))
-				return nil, internalError(ErrCouldNotConnectToWallet)
+				h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not unlock the wallet: %w", err))
+				return nil, InternalError(ErrCouldNotConnectToWallet)
 			}
 			break
 		}
@@ -147,8 +147,8 @@ func (h *ClientConnectWallet) Handle(ctx context.Context, hostname string) (wall
 
 	w, err := h.walletStore.GetWallet(ctx, walletName)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet: %w", err))
-		return nil, internalError(ErrCouldNotConnectToWallet)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not retrieve the wallet: %w", err))
+		return nil, InternalError(ErrCouldNotConnectToWallet)
 	}
 
 	h.interactor.NotifySuccessfulRequest(ctx, traceID, 4, WalletConnectionSuccessfullyEstablished)

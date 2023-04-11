@@ -44,3 +44,9 @@ type WalletCredentials struct {
 	Name       string `json:"name"`
 	Passphrase string `json:"passphrase"`
 }
+
+type Session struct {
+	Token    Token  `json:"token"`
+	Hostname string `json:"hostname"`
+	Wallet   string `json:"wallet"`
+}

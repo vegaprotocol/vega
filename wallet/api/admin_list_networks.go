@@ -25,7 +25,7 @@ type AdminListNetworks struct {
 func (h *AdminListNetworks) Handle(_ context.Context, _ jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	networks, err := h.networkStore.ListNetworks()
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not list the networks: %w", err))
+		return nil, InternalError(fmt.Errorf("could not list the networks: %w", err))
 	}
 
 	netsWithMetadata := make([]AdminListNetworkResult, 0, len(networks))

@@ -21,23 +21,23 @@ type AdminRenameNetwork struct {
 func (h *AdminRenameNetwork) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRenameNetworkParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(params.Network); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrNetworkDoesNotExist)
+		return nil, InvalidParams(ErrNetworkDoesNotExist)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(params.NewName); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if exist {
-		return nil, invalidParams(ErrNetworkAlreadyExists)
+		return nil, InvalidParams(ErrNetworkAlreadyExists)
 	}
 
 	if err := h.networkStore.RenameNetwork(params.Network, params.NewName); err != nil {
-		return nil, internalError(fmt.Errorf("could not rename the network: %w", err))
+		return nil, InternalError(fmt.Errorf("could not rename the network: %w", err))
 	}
 
 	return nil, nil

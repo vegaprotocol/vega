@@ -21,7 +21,7 @@ type AdminCloseConnectionsToHostname struct {
 func (h *AdminCloseConnectionsToHostname) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminCloseConnectionsToHostnameParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	connections := h.connectionsManager.ListSessionConnections()

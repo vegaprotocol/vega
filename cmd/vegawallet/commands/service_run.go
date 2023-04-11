@@ -30,7 +30,8 @@ import (
 	serviceV1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	serviceV2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	"code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
+	sessionStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/session/v1"
 	"code.vegaprotocol.io/vega/wallet/version"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/golang/protobuf/jsonpb"
@@ -217,11 +218,17 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return fmt.Errorf("could not initialise service store: %w", err)
 	}
 
+	sessionStore, err := sessionStoreV1.InitialiseStore(vegaPaths)
+	if err != nil {
+		cliLog.Error("Could not initialise session store", zap.Error(err))
+		return fmt.Errorf("could not initialise session store: %w", err)
+	}
+
 	var tokenStore connections.TokenStore
 	if f.LoadTokens {
 		cliLog.Warn("Long-living tokens enabled")
 		p.Print(p.String().WarningBangMark().WarningText("Long-living tokens enabled").NextLine())
-		s, err := tokenStoreV1.InitialiseStore(vegaPaths, f.tokensPassphrase)
+		s, err := v1.InitialiseStore(vegaPaths, f.tokensPassphrase)
 		if err != nil {
 			if errors.Is(err, walletapi.ErrWrongPassphrase) {
 				return err
@@ -231,7 +238,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		closer.Add(s.Close)
 		tokenStore = s
 	} else {
-		s := tokenStoreV1.NewEmptyStore()
+		s := v1.NewEmptyStore()
 		tokenStore = s
 	}
 
@@ -269,25 +276,27 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		return interactor.NewSequentialInteractor(ctx, receptionChan, responseChan)
 	}
 
-	connectionsManager, err := connections.NewManager(serviceV2.NewStdTime(), walletStore, tokenStore)
-	if err != nil {
-		return err
+	connectionsManagerBuilderFunc := func(interactor walletapi.Interactor) (*connections.Manager, error) {
+		connectionsManager, err := connections.NewManager(serviceV2.NewStdTime(), walletStore, tokenStore, sessionStore, interactor)
+		if err != nil {
+			return nil, fmt.Errorf("could not create the connection manager: %w", err)
+		}
+		return connectionsManager, nil
 	}
-	closer.Add(connectionsManager.EndAllSessionConnections)
 
-	serviceStarter := service.NewStarter(walletStore, netStore, svcStore, connectionsManager, policyBuilderFunc, interactorBuilderFunc, loggerBuilderFunc)
+	serviceStarter := service.NewStarter(walletStore, netStore, svcStore, connectionsManagerBuilderFunc, policyBuilderFunc, interactorBuilderFunc, loggerBuilderFunc)
 
 	jobRunner := vgjob.NewRunner(context.Background())
 
-	svcURL, errChan, err := serviceStarter.Start(jobRunner, f.Network, f.NoVersionCheck)
+	rc, err := serviceStarter.Start(jobRunner, f.Network, f.NoVersionCheck)
 	if err != nil {
 		cliLog.Error("Failed to start HTTP server", zap.Error(err))
 		jobRunner.StopAllJobs()
 		return err
 	}
 
-	cliLog.Info("Starting HTTP service", zap.String("url", svcURL))
-	p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(svcURL).NextSection())
+	cliLog.Info("Starting HTTP service", zap.String("url", rc.ServiceURL))
+	p.Print(p.String().CheckMark().Text("Starting HTTP service at: ").SuccessText(rc.ServiceURL).NextSection())
 
 	jobRunner.Go(func(jobCtx context.Context) {
 		for {
@@ -303,7 +312,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		}
 	})
 
-	waitUntilInterruption(jobRunner.Ctx(), cliLog, p, errChan)
+	waitUntilInterruption(jobRunner.Ctx(), cliLog, p, rc.ErrCh)
 
 	// Wait for all goroutine to exit.
 	cliLog.Info("Waiting for the service to stop")
@@ -480,11 +489,11 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			},
 		}
 	case interactor.ErrorOccurred:
-		if data.Type == string(walletapi.InternalError) {
+		if data.Type == string(walletapi.InternalErrorType) {
 			str := p.String().DangerBangMark().DangerText("An internal error occurred: ").DangerText(data.Error).NextLine()
 			str.DangerBangMark().DangerText("The request has been canceled.").NextLine()
 			p.Print(str)
-		} else if data.Type == string(walletapi.UserError) {
+		} else if data.Type == string(walletapi.UserErrorType) {
 			p.Print(p.String().DangerBangMark().DangerText(data.Error).NextLine())
 		} else {
 			p.Print(p.String().DangerBangMark().DangerText(fmt.Sprintf("Error: %s (%s)", data.Error, data.Type)).NextLine())
