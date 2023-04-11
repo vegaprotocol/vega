@@ -5,6 +5,7 @@
 ### 🚨 Breaking changes
 - [8064](https://github.com/vegaprotocol/vega/issues/8064) - Remove `websocket` for rewards
 - [8093](https://github.com/vegaprotocol/vega/issues/8093) - Remove offset pagination
+- [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
@@ -24,6 +25,7 @@
 - [8024](https://github.com/vegaprotocol/vega/issues/8024) - Unify naming in `rpc` endpoints and add tags
 - [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
 - [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
+- [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
@@ -55,6 +57,7 @@
 - [8090](https://github.com/vegaprotocol/vega/issues/8090) - Rename network history `APIs` that did not follow the naming convention
 - [8060](https://github.com/vegaprotocol/vega/issues/8060) - Allow 0 decimals assets
 - [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
+- [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
 
 ## 0.70.0
 

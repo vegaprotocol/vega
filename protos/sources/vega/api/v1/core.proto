@@ -7,13 +7,14 @@ import "vega/vega.proto";
 import "vega/events/v1/events.proto";
 import "vega/commands/v1/transaction.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/api/field_behavior.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core APIs";
-    version: "v0.70.0";
+    version: "v0.71.0+dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz"
@@ -75,11 +76,11 @@ service CoreService {
 // Request for a new event sent by the blockchain queue to be propagated on Vega
 message PropagateChainEventRequest {
   // Chain event
-  bytes event = 1;
+  bytes event = 1 [(google.api.field_behavior) = REQUIRED];
   // Public key
-  string pub_key = 2;
+  string pub_key = 2 [(google.api.field_behavior) = REQUIRED];
   // Signature
-  bytes signature = 3;
+  bytes signature = 3 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response for a new event sent by the blockchain queue to be propagated on Vega
@@ -106,9 +107,9 @@ message SubmitTransactionRequest {
   }
 
   // A bundle of signed payload and signature, to form a transaction that will be submitted to the Vega blockchain
-  vega.commands.v1.Transaction tx = 1;
+  vega.commands.v1.Transaction tx = 1 [(google.api.field_behavior) = REQUIRED];
   // Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
-  Type type = 2;
+  Type type = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response for submitting a transaction v2 on Vega
@@ -130,7 +131,7 @@ message SubmitTransactionResponse {
 // Request for checking a transaction v2 on Vega
 message CheckTransactionRequest {
   // A bundle of signed payload and signature, to form a transaction that would be submitted to the Vega blockchain
-  vega.commands.v1.Transaction tx = 1;
+  vega.commands.v1.Transaction tx = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message CheckTransactionResponse {
@@ -167,9 +168,9 @@ message SubmitRawTransactionRequest {
   }
 
   // A bundle of signed payload and signature marshalled into a byte array, to form a transaction that will be submitted to the Vega blockchain
-  bytes tx = 1;
+  bytes tx = 1 [(google.api.field_behavior) = REQUIRED];
   // Type of transaction request, for example ASYNC, meaning the transaction will be submitted and not block on a response
-  Type type = 2;
+  Type type = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response for submitting a version agnostic transaction on Vega
@@ -189,7 +190,7 @@ message SubmitRawTransactionResponse {
 // Request for checking a version agnostic transaction on Vega
 message CheckRawTransactionRequest {
   // A bundle of signed payload and signature marshalled into a byte array, to form a transaction that would be submitted to the Vega blockchain
-  bytes tx = 1;
+  bytes tx = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response for checking a version agnostic transaction on Vega
@@ -359,7 +360,7 @@ message LastBlockHeightResponse {
 // A request to retrieve the spam statistics of a party for the given epoch
 message GetSpamStatisticsRequest {
   // Id for the party whose statistics are requested
-  string party_id = 1;
+  string party_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // The statistics for a given spam policy

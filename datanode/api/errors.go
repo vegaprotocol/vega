@@ -40,6 +40,8 @@ var (
 	ErrMissingPrice = newInvalidArgumentError("missing price")
 	// ErrInvalidOrderPrice signals to the caller that the request expected a valid price.
 	ErrInvalidOrderPrice = newInvalidArgumentError("invalid order price")
+	// ErrInvalidOrderSize signals to the caller that the request expected a valid size.
+	ErrInvalidOrderSize = newInvalidArgumentError("invalid order size")
 	// ErrServerShutdown signals to the client that the server  is shutting down.
 	ErrServerShutdown = errors.New("server shutdown")
 	// ErrStreamClosed signals to the users that the grpc stream is closing.
@@ -50,6 +52,8 @@ var (
 	ErrNotMapped = errors.New("error not found in error lookup table")
 	// ErrMissingPartyID signals that the payload is expected to contain a party id.
 	ErrMissingPartyID = newInvalidArgumentError("missing party id")
+	// ErrInvalidPartyID signals that the given party id is not a valid ID.
+	ErrInvalidPartyID = newInvalidArgumentError("invalid party id")
 	// ErrInvalidPagination signals that the pagination is invalid.
 	ErrInvalidPagination = newInvalidArgumentError("invalid pagination")
 	// ErrInvalidCandleID signals an invalid candle ID submitted.
@@ -62,6 +66,8 @@ var (
 	ErrMalformedRequest = newInvalidArgumentError("malformed request")
 	// ErrMissingOrderID signals that an order ID was required but not specified.
 	ErrMissingOrderID = newInvalidArgumentError("missing orderID parameter")
+	// ErrInvalidOrderID signals that an order ID provided was not a valid ID.
+	ErrInvalidOrderID = newInvalidArgumentError("invalid orderID parameter")
 	// ErrMissingCandleID returned if candle with this id is missing.
 	ErrMissingCandleID = newInvalidArgumentError("candle id is a required parameter")
 	// ErrMissingProposalID returned if proposal with this id is missing.
@@ -76,13 +82,18 @@ var (
 	ErrInvalidProposalID = newInvalidArgumentError("invalid proposal id")
 	// ErrMissingWithdrawalID is returned when the withdrawal ID is missing from the request.
 	ErrMissingWithdrawalID = newInvalidArgumentError("missing withdrawal ID")
+	// ErrInvalidWithdrawalID is returned when the withdrawal ID is not a valid vega ID.
+	ErrInvalidWithdrawalID = newInvalidArgumentError("invalid withdrawal ID")
 	// ErrMissingOracleSpecID is returned when the ID is missing from the request.
 	ErrMissingOracleSpecID = newInvalidArgumentError("missing oracle spec ID")
+	// ErrInvalidOracleSpecID is returned when the ID is not a valid ID.
+	ErrInvalidOracleSpecID = newInvalidArgumentError("invalid oracle spec ID")
 	// ErrMissingDepositID is returned when the deposit ID is missing from the request.
 	ErrMissingDepositID = newInvalidArgumentError("missing deposit ID")
 	// ErrMissingAssetID is returned when the Asset ID is missing from the request.
-	ErrMissingAssetID   = newInvalidArgumentError("missing asset ID")
-	ErrorInvalidAssetID = newInvalidArgumentError("invalid asset ID")
+	ErrMissingAssetID = newInvalidArgumentError("missing asset ID")
+	// ErrInvalidAssetID is returned when the Asset ID is not a valid ID.
+	ErrInvalidAssetID = newInvalidArgumentError("invalid asset ID")
 	// ErrMissingNodeID is returned when the node ID is missing from the request.
 	ErrMissingNodeID = newInvalidArgumentError("missing node id")
 	// ErrNegativeOrderVersion is returned when a request is made for an
@@ -109,7 +120,7 @@ var (
 	// NodeService...
 	ErrNodeServiceGetNodes    = errors.New("failed to get nodes")
 	ErrNodeServiceGetNodeData = errors.New("failed to get node data")
-	ErrNodeServicGetByTxHash  = errors.New("failed to get nodes for tx hash")
+	ErrNodeServiceGetByTxHash = errors.New("failed to get nodes for tx hash")
 	// TradeService...
 	ErrTradeServiceGetByParty          = errors.New("failed to get trades for party")
 	ErrTradeServiceGetByMarket         = errors.New("failed to get trades for market")
@@ -233,7 +244,7 @@ var (
 	// BlockService...
 	ErrBlockServiceGetLast = errors.New("failed to get last block")
 	// Positions...
-	ErrPostitionsGetByTxHash = errors.New("failed to get positions for tx hash")
+	ErrPositionsGetByTxHash = errors.New("failed to get positions for tx hash")
 	// Ledger entries...
 	ErrLedgerEntriesGetByTxHash = errors.New("failed to get ledger entries for tx hash")
 	// Transfers...
@@ -272,6 +283,8 @@ var (
 	ErrProtocolUpgradeProposalsGetByTxHash = errors.New("failed to get protocol upgrade proposals for tx hash")
 	// MarginLevels...
 	ErrMarginLevelsGetByTxHash = errors.New("failed to get margin levels for tx hash")
+
+	ErrMissingEmptyTxHash = errors.New("missing or empty tx hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
@@ -312,7 +325,7 @@ var errorMap = map[string]int32{
 	ErrInvalidOrderSide.Error():             10035,
 	ErrEpochIDParse.Error():                 10036,
 	ErrSendingGRPCHeader.Error():            10037,
-	ErrorInvalidAssetID.Error():             10038,
+	ErrInvalidAssetID.Error():               10038,
 	ErrEstimateFee.Error():                  10039,
 	ErrEstimateMargin.Error():               10040,
 	// Orders
