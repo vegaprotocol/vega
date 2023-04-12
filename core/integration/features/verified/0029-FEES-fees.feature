@@ -14,6 +14,10 @@ Feature: Fees calculations
     And the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+
+    When the following network parameters are set:
+      | name                                                | value |
+      | market.liquidity.providers.fee.distributionTimeStep | 0s   |
     And the markets:
       | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 1e6                    | 1e6                       |
@@ -41,6 +45,14 @@ Feature: Fees calculations
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
 
+    # check liquidity fee and infrastructure fee distribution during opening auction
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    #  When the network moves ahead "1" blocks
+       Then debug transfers
+    # And the following transfers should happen:
+    #   | from | to      | from account            | to account                       | market id | amount | asset |
+    #   | aux1 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 7      | ETH   |
+    
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | buy  | 910   | 10     |
@@ -56,6 +68,9 @@ Feature: Fees calculations
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |
       | 1000       | TRADING_MODE_CONTINUOUS |
+
+      When the network moves ahead "1" blocks
+      Then debug transfers
 
     And the parties amend the following orders:
       | party   | reference | price | size delta | tif     |
