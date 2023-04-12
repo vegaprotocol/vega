@@ -5364,7 +5364,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
-	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 
 	// Move into a price monitoring auction so that the pegged orders are parked and the other orders are cancelled
 	tm.market.StartPriceAuction(now)
@@ -5639,12 +5639,17 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 	require.Equal(t, 1, tm.market.GetLPSCount())
 
-	// Now move the mark price
 	o10 := getMarketOrder(tm, now, types.OrderTypeMarket, types.OrderTimeInForceIOC, "Order05", types.SideBuy, "party-B", 1, 0)
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NotNil(t, o10conf)
 	require.Equal(t, 1, len(o10conf.Trades))
 	require.NoError(t, err)
+
+	// Move the mark price and initiate a closeout at the end of the block
+	now = now.Add(time.Second)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
+	tm.market.BlockEnd(ctx)
 
 	require.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 	require.Equal(t, 0, tm.market.GetLPSCount())
@@ -5793,11 +5798,11 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 10),
 			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}

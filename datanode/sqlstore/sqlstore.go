@@ -131,6 +131,29 @@ func MigrateUpToSchemaVersion(log *logging.Logger, config Config, version int64,
 	return nil
 }
 
+func MigrateDownToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetVerbose(bool(config.VerboseMigration))
+	goose.SetVerbose(true)
+
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	log.Infof("Checking database version and migrating sql schema to version %d, please wait...", version)
+	if err = goose.DownTo(db, SQLMigrationsDir, version); err != nil {
+		return fmt.Errorf("error migrating sql schema: %w", err)
+	}
+	log.Info("Sql schema migration completed successfully")
+
+	return nil
+}
+
 func RevertToSchemaVersionZero(log *logging.Logger, config ConnectionConfig, fs fs.FS, verbose bool) error {
 	log = log.Named("revert-schema-to-version-0")
 	goose.SetBaseFS(fs)

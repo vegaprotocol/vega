@@ -107,27 +107,52 @@ func (ts *Trades) Add(t *entities.Trade) error {
 }
 
 func (ts *Trades) List(ctx context.Context,
-	marketID entities.MarketID,
-	partyID entities.PartyID,
-	orderID entities.OrderID,
+	marketIDs []entities.MarketID,
+	partyIDs []entities.PartyID,
+	orderIDs []entities.OrderID,
 	pagination entities.CursorPagination,
 	dateRange entities.DateRange,
 ) ([]entities.Trade, entities.PageInfo, error) {
 	args := []interface{}{}
 
 	conditions := []string{}
-	if marketID.String() != "" {
-		conditions = append(conditions, fmt.Sprintf("market_id=%s", nextBindVar(&args, marketID)))
+	if len(marketIDs) > 0 {
+		markets := make([][]byte, 0)
+		for _, m := range marketIDs {
+			bs, err := m.Bytes()
+			if err != nil {
+				return nil, entities.PageInfo{}, fmt.Errorf("received invalid market ID: %w", err)
+			}
+			markets = append(markets, bs)
+		}
+		conditions = append(conditions, fmt.Sprintf("market_id = ANY(%s::bytea[])", nextBindVar(&args, markets)))
 	}
 
-	if partyID.String() != "" {
-		bindVar := nextBindVar(&args, partyID)
-		conditions = append(conditions, fmt.Sprintf("(buyer=%s or seller=%s)", bindVar, bindVar))
+	if len(partyIDs) > 0 {
+		parties := make([][]byte, 0)
+		for _, p := range partyIDs {
+			bs, err := p.Bytes()
+			if err != nil {
+				return nil, entities.PageInfo{}, fmt.Errorf("received invalid party ID: %w", err)
+			}
+			parties = append(parties, bs)
+		}
+		bindVar := nextBindVar(&args, parties)
+
+		conditions = append(conditions, fmt.Sprintf("(buyer = ANY(%s::bytea[]) or seller = ANY(%s::bytea[]))", bindVar, bindVar))
 	}
 
-	if orderID.String() != "" {
-		bindVar := nextBindVar(&args, orderID)
-		conditions = append(conditions, fmt.Sprintf("(buy_order=%s or sell_order=%s)", bindVar, bindVar))
+	if len(orderIDs) > 0 {
+		orders := make([][]byte, 0)
+		for _, o := range orderIDs {
+			bs, err := o.Bytes()
+			if err != nil {
+				return nil, entities.PageInfo{}, fmt.Errorf("received invalid order ID: %w", err)
+			}
+			orders = append(orders, bs)
+		}
+		bindVar := nextBindVar(&args, orders)
+		conditions = append(conditions, fmt.Sprintf("(buy_order = ANY(%s::bytea[]) or sell_order = ANY(%s::bytea[]))", bindVar, bindVar))
 	}
 
 	query := `SELECT * from trades`
