@@ -503,6 +503,21 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Depo
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error) {
+	resp, err := r.tradingDataClientV2.ListTrades(ctx, &v2.ListTradesRequest{
+		MarketIds:  filter.MarketIds,
+		OrderIds:   filter.OrderIds,
+		PartyIds:   filter.PartyIds,
+		Pagination: pagination,
+		DateRange:  dateRange,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Trades, nil
+}
+
 func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error) {
 	resp, err := r.tradingDataClientV2.ListAllPositions(ctx, &v2.ListAllPositionsRequest{
 		Filter:     filter,
@@ -1351,9 +1366,13 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 }
 
 func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+	mkts := []string{}
+	if market != nil {
+		mkts = []string{*market}
+	}
 	req := v2.ListTradesRequest{
-		PartyId:    &party.Id,
-		MarketId:   market,
+		PartyIds:   []string{party.Id},
+		MarketIds:  mkts,
 		Pagination: pagination,
 		DateRange:  dateRange,
 	}
@@ -1655,7 +1674,11 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination, DateRange: dateRange}
+	req := v2.ListTradesRequest{
+		OrderIds:   []string{ord.Id},
+		Pagination: pagination,
+		DateRange:  dateRange,
+	}
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -2102,9 +2125,65 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 }
 
 func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
+	markets := []string{}
+	parties := []string{}
+	if market != nil {
+		markets = append(markets, *market)
+	}
+
+	if party != nil {
+		parties = append(parties, *party)
+	}
+
 	req := &v2.ObserveTradesRequest{
-		MarketId: market,
-		PartyId:  party,
+		MarketIds: markets,
+		PartyIds:  parties,
+	}
+
+	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan []*types.Trade)
+	sCtx := stream.Context()
+	go func() {
+		defer func() {
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+			}
+			close(c)
+		}()
+		for {
+			t, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("trades: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+				break
+			}
+			select {
+			case c <- t.Trades:
+				r.log.Debug("trades: data sent")
+			case <-ctx.Done():
+				r.log.Error("trades: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("trades: stream closed by server")
+				break
+			}
+		}
+	}()
+
+	return c, nil
+}
+
+func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*types.Trade, error) {
+	req := &v2.ObserveTradesRequest{
+		MarketIds: filter.MarketIds,
+		PartyIds:  filter.PartyIds,
 	}
 	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
 	if err != nil {
