@@ -66,7 +66,8 @@ func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHom
 		return nil, fmt.Errorf("failed to create network history store:%w", err)
 	}
 
-	return NewWithStore(ctx, log, chainID, cfg, connPool, snapshotService, networkHistoryStore, datanodeGrpcAPIPort, snapshotsCopyFromDir, snapshotsCopyToDir)
+	return NewWithStore(ctx, log, chainID, cfg, connPool, snapshotService, networkHistoryStore, datanodeGrpcAPIPort,
+		snapshotsCopyFromDir, snapshotsCopyToDir)
 }
 
 func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg Config, connPool *pgxpool.Pool,
@@ -117,6 +118,46 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 	}
 
 	return s, nil
+}
+
+func (d *Service) RollbackToHeight(ctx context.Context, log snapshot.LoadLog, height int64) error {
+	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromPath) }()
+
+	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
+	if err != nil {
+		return fmt.Errorf("failed to get data node block span: %w", err)
+	}
+
+	if height < datanodeBlockSpan.FromHeight || height >= datanodeBlockSpan.ToHeight {
+		return fmt.Errorf("rollback to height, %d, is not within the datanodes current block span, %d to %d",
+			height, datanodeBlockSpan.FromHeight, datanodeBlockSpan.ToHeight)
+	}
+
+	err = d.prepareCopyFromDir()
+	if err != nil {
+		return fmt.Errorf("failed to prepare copy from dir: %w", err)
+	}
+
+	rollbackToSegment, err := d.store.GetSegmentIndexEntryForHeight(height)
+	if err != nil {
+		return fmt.Errorf("failed to get history segment for height %d: %w", height, err)
+	}
+
+	currentStateSnapshots, _, err := d.copySegmentsIntoDir(ctx, []Segment{rollbackToSegment}, d.snapshotsCopyFromPath)
+	if err != nil {
+		return fmt.Errorf("failed to copy rollback segment into copy from path: %w", err)
+	}
+
+	err = d.snapshotService.RollbackToSegment(ctx, log, rollbackToSegment, currentStateSnapshots[0],
+		d.snapshotsCopyFromPath)
+
+	if err != nil {
+		return fmt.Errorf("failed to rollback to segment: %w", err)
+	}
+
+	log.Infof("finished rolling back to height %d", height)
+
+	return nil
 }
 
 func (d *Service) GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, error) {
@@ -239,6 +280,11 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 ) (snapshot.LoadResult, error) {
 	defer func() { _ = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromPath) }()
 
+	err := d.prepareCopyFromDir()
+	if err != nil {
+		return snapshot.LoadResult{}, fmt.Errorf("failed to prepare copy from dir: %w", err)
+	}
+
 	datanodeBlockSpan, err := sqlstore.GetDatanodeBlockSpan(ctx, d.connPool)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to get data node block span: %w", err)
@@ -248,19 +294,16 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 		logging.Int64("toHeight", contiguousHistory.HeightTo), logging.Int64("currentDatanodeFromHeight", datanodeBlockSpan.FromHeight),
 		logging.Int64("currentDatanodeToHeight", datanodeBlockSpan.ToHeight), logging.Bool("withIndexesAndOrderTriggers", withIndexesAndOrderTriggers))
 
-	err = os.MkdirAll(d.snapshotsCopyFromPath, fs.ModePerm)
-	if err != nil {
-		return snapshot.LoadResult{}, fmt.Errorf("failed to create staging directory:%w", err)
-	}
-
-	err = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromPath)
-	if err != nil {
-		return snapshot.LoadResult{}, fmt.Errorf("failed to empty staging directory:%w", err)
-	}
-
 	start := time.Now()
 
-	currentStateSnapshot, historySnapshots, err := d.copyLaterSegmentsIntoDir(ctx, contiguousHistory, datanodeBlockSpan, d.snapshotsCopyFromPath)
+	var segmentsToCopy []Segment
+	for _, segment := range contiguousHistory.SegmentsOldestFirst {
+		if segment.GetToHeight() > datanodeBlockSpan.ToHeight {
+			segmentsToCopy = append(segmentsToCopy, segment)
+		}
+	}
+
+	currentStateSnapshot, historySnapshots, err := d.copySegmentsIntoDir(ctx, segmentsToCopy, d.snapshotsCopyFromPath)
 	if err != nil {
 		return snapshot.LoadResult{}, fmt.Errorf("failed to copy all available data into copy from path: %w", err)
 	}
@@ -278,6 +321,19 @@ func (d *Service) LoadNetworkHistoryIntoDatanodeWithLog(ctx context.Context, loa
 	loadLog.Info("loaded all available data into datanode", logging.String("result", fmt.Sprintf("%+v", loadResult)),
 		logging.Duration("time taken", time.Since(start)))
 	return loadResult, err
+}
+
+func (d *Service) prepareCopyFromDir() error {
+	err := os.MkdirAll(d.snapshotsCopyFromPath, fs.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create staging directory:%w", err)
+	}
+
+	err = fsutil.RemoveAllFromDirectoryIfExists(d.snapshotsCopyFromPath)
+	if err != nil {
+		return fmt.Errorf("failed to empty staging directory:%w", err)
+	}
+	return nil
 }
 
 func (d *Service) GetMostRecentHistorySegmentFromPeers(ctx context.Context,
@@ -347,23 +403,20 @@ func (d *Service) publishSnapshots(ctx context.Context) error {
 	return nil
 }
 
-// copyLaterSegmentsIntoDir copies all contiguous history data later than that already in the datanode into the target directory.
-func (d *Service) copyLaterSegmentsIntoDir(ctx context.Context, contiguousHistory ContiguousHistory,
-	blockSpan sqlstore.DatanodeBlockSpan, targetDir string) ([]snapshot.CurrentState, []snapshot.History,
+// copySegmentsIntoDir copies all contiguous history data later than that already in the datanode into the target directory.
+func (d *Service) copySegmentsIntoDir(ctx context.Context, segments []Segment, targetDir string) ([]snapshot.CurrentState, []snapshot.History,
 	error,
 ) {
-	currentStateSnapshots := make([]snapshot.CurrentState, 0, len(contiguousHistory.SegmentsOldestFirst))
-	contiguousHistorySnapshots := make([]snapshot.History, 0, len(contiguousHistory.SegmentsOldestFirst))
-	for _, history := range contiguousHistory.SegmentsOldestFirst {
-		if history.GetToHeight() > blockSpan.ToHeight {
-			currentStateSnaphot, historySnapshot, err := d.extractSnapshotDataFromHistory(ctx, history, targetDir)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to extract data from history:%w", err)
-			}
-
-			currentStateSnapshots = append(currentStateSnapshots, currentStateSnaphot)
-			contiguousHistorySnapshots = append(contiguousHistorySnapshots, historySnapshot)
+	currentStateSnapshots := make([]snapshot.CurrentState, 0, len(segments))
+	contiguousHistorySnapshots := make([]snapshot.History, 0, len(segments))
+	for _, segment := range segments {
+		currentStateSnaphot, historySnapshot, err := d.extractSnapshotDataFromHistory(ctx, segment, targetDir)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to extract data from history:%w", err)
 		}
+
+		currentStateSnapshots = append(currentStateSnapshots, currentStateSnaphot)
+		contiguousHistorySnapshots = append(contiguousHistorySnapshots, historySnapshot)
 	}
 
 	return currentStateSnapshots, contiguousHistorySnapshots, nil

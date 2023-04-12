@@ -85,10 +85,10 @@ func testDescribingNetworkWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, network.Name, result.Name)
-	assert.Equal(t, network.API.GRPC.Hosts, result.API.GRPCConfig.Hosts)
-	assert.Equal(t, network.API.GRPC.Retries, result.API.GRPCConfig.Retries)
-	assert.Equal(t, network.API.REST.Hosts, result.API.RESTConfig.Hosts)
-	assert.Equal(t, network.API.GraphQL.Hosts, result.API.GraphQLConfig.Hosts)
+	assert.Equal(t, network.API.GRPC.Hosts, result.API.GRPC.Hosts)
+	assert.Equal(t, network.API.GRPC.Retries, result.API.GRPC.Retries)
+	assert.Equal(t, network.API.REST.Hosts, result.API.REST.Hosts)
+	assert.Equal(t, network.API.GraphQL.Hosts, result.API.GraphQL.Hosts)
 }
 
 func testDescribeNetworkEmptyHosts(t *testing.T) {
@@ -112,9 +112,9 @@ func testDescribeNetworkEmptyHosts(t *testing.T) {
 
 	// then
 	require.Nil(t, errorDetails)
-	assert.NotNil(t, result.API.GRPCConfig.Hosts)
-	assert.NotNil(t, result.API.RESTConfig.Hosts)
-	assert.NotNil(t, result.API.GraphQLConfig.Hosts)
+	assert.NotNil(t, result.API.GRPC.Hosts)
+	assert.NotNil(t, result.API.REST.Hosts)
+	assert.NotNil(t, result.API.GraphQL.Hosts)
 }
 
 func testDescribingNetworkThatDoesNotExistsFails(t *testing.T) {
@@ -187,18 +187,18 @@ type describeNetworkHandler struct {
 	networkStore *mocks.MockNetworkStore
 }
 
-func (h *describeNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminDescribeNetworkResult, *jsonrpc.ErrorDetails) {
+func (h *describeNetworkHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params) (api.AdminNetwork, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
 	rawResult, err := h.Handle(ctx, params)
 	if rawResult != nil {
-		result, ok := rawResult.(api.AdminDescribeNetworkResult)
+		result, ok := rawResult.(api.AdminNetwork)
 		if !ok {
-			t.Fatal("AdminDescribeNetwork handler result is not a AdminDescribeNetworkResult")
+			t.Fatal("AdminDescribeNetwork handler result is not a AdminNetwork")
 		}
 		return result, err
 	}
-	return api.AdminDescribeNetworkResult{}, err
+	return api.AdminNetwork{}, err
 }
 
 func newDescribeNetworkHandler(t *testing.T) *describeNetworkHandler {

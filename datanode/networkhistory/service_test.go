@@ -243,7 +243,7 @@ func TestMain(t *testing.M) {
 		// Here after exit of the broker because of protocol upgrade, we simulate a restart of the node by recreating
 		// the broker.
 		// First simulate a schema update
-		err = migrateDatabase(testMigrationVersionNum)
+		err = migrateUpToDatabaseVersion(testMigrationVersionNum)
 		if err != nil {
 			panic(err)
 		}
@@ -888,7 +888,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 
 	assert.Equal(t, int64(2500), lastCommittedBlockHeight)
 
-	err = migrateDatabase(testMigrationVersionNum)
+	err = migrateUpToDatabaseVersion(testMigrationVersionNum)
 	require.NoError(t, err)
 
 	// After protocol upgrade restart the broker
@@ -991,7 +991,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 
 	assert.Equal(t, int64(2500), lastCommittedBlockHeight)
 
-	err = migrateDatabase(testMigrationVersionNum)
+	err = migrateUpToDatabaseVersion(testMigrationVersionNum)
 	require.NoError(t, err)
 
 	// After protocol upgrade restart the broker
@@ -1053,6 +1053,67 @@ func fetchBlocks(ctx context.Context, log *logging.Logger, st *store.Store, root
 	}
 
 	return 0, fmt.Errorf("failed to fetch blocks:%w", err)
+}
+
+func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	log := logging.NewTestLogger()
+
+	networkHistoryStore.ResetIndex()
+	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+
+	snapshotCopyFromPath := t.TempDir()
+	snapshotCopyToPath := t.TempDir()
+	snapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+
+	ctxWithCancel, cancelFn := context.WithCancel(ctx)
+
+	evtSource := newTestEventSourceWithProtocolUpdateMessage()
+
+	pus := service.NewProtocolUpgrade(nil, log)
+	puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
+		toHeight int64,
+	) error {
+		return nil
+	})
+
+	// Run events to height 5000
+	broker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
+			if lastCommittedBlockHeight == 5000 {
+				cancelFn()
+			}
+		},
+		evtSource, puh)
+	require.NoError(t, err)
+
+	err = broker.Receive(ctxWithCancel)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		require.NoError(t, err)
+	}
+	updateAllContinuousAggregateData(ctx)
+
+	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[2000].HistorySegmentID, 1000)
+	require.NoError(t, err)
+	require.Equal(t, int64(1000), fetched)
+
+	snapshotCopyFromPath = t.TempDir()
+	snapshotCopyToPath = t.TempDir()
+
+	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+
+	// Rollback to a height pre protocol upgrade
+	err = networkhistoryService.RollbackToHeight(ctx, log, 2000)
+	require.NoError(t, err)
+
+	dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].currentTableSummaries, dbSummary.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].caggSummaries, dbSummary.caggSummaries)
 }
 
 func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputSnapshotService *snapshot.Service, store *store.Store,
@@ -1141,7 +1202,8 @@ func setupSnapshotServiceWithNetworkParamFunc(snapshotCopyFromPath string, snaps
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
 
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		networkHistoryConnPool, snapshotCopyFromPath, snapshotCopyToPath, migrateDatabase)
+		networkHistoryConnPool, snapshotCopyFromPath, snapshotCopyToPath, migrateUpToDatabaseVersion,
+		migrateDownToDatabaseVersion)
 	if err != nil {
 		panic(err)
 	}
@@ -1529,7 +1591,7 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 	return testMigrationVersionNum, os.DirFS(testMigrationsDir)
 }
 
-func migrateDatabase(version int64) error {
+func migrateUpToDatabaseVersion(version int64) error {
 	poolConfig, err := sqlConfig.ConnectionConfig.GetPoolConfig()
 	if err != nil {
 		return fmt.Errorf("failed to get pool config:%w", err)
@@ -1542,6 +1604,24 @@ func migrateDatabase(version int64) error {
 	err = goose.UpTo(db, filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), version)
 	if err != nil {
 		return fmt.Errorf("failed to migrate up to version %d:%w", version, err)
+	}
+
+	return nil
+}
+
+func migrateDownToDatabaseVersion(version int64) error {
+	poolConfig, err := sqlConfig.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	goose.SetBaseFS(nil)
+	err = goose.DownTo(db, filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), version)
+	if err != nil {
+		return fmt.Errorf("failed to migrate down to version %d:%w", version, err)
 	}
 
 	return nil

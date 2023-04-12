@@ -41,17 +41,17 @@ func testUpdatingNetworkWithInvalidParamsFails(t *testing.T) {
 		},
 		{
 			name: "with empty network name",
-			params: api.AdminUpdateNetworkParams{
+			params: api.AdminNetwork{
 				Name: "",
 			},
 			expectedError: api.ErrNetworkNameIsRequired,
 		},
 		{
 			name: "without a single GRPC node",
-			params: api.AdminUpdateNetworkParams{
+			params: api.AdminNetwork{
 				Name: "testnet",
-				API: network.APIConfig{
-					GRPC: network.GRPCConfig{
+				API: api.AdminAPIConfig{
+					GRPC: api.AdminGRPCConfig{
 						Hosts: []string{},
 					},
 				},
@@ -98,10 +98,10 @@ func testUpdatingNetworkWithValidParamsSucceeds(t *testing.T) {
 	}).Times(1).Return(nil)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
+	errorDetails := handler.handle(t, ctx, api.AdminNetwork{
 		Name: name,
-		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+		API: api.AdminAPIConfig{
+			GRPC: api.AdminGRPCConfig{
 				Hosts: []string{
 					"localhost:1234",
 				},
@@ -124,10 +124,10 @@ func testUpdatingNetworkThatDoesNotExistsFails(t *testing.T) {
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(false, nil)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
+	errorDetails := handler.handle(t, ctx, api.AdminNetwork{
 		Name: name,
-		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+		API: api.AdminAPIConfig{
+			GRPC: api.AdminGRPCConfig{
 				Hosts: []string{
 					"localhost:1234",
 				},
@@ -151,10 +151,10 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkVerificationFails(t 
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(false, assert.AnError)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
+	errorDetails := handler.handle(t, ctx, api.AdminNetwork{
 		Name: name,
-		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+		API: api.AdminAPIConfig{
+			GRPC: api.AdminGRPCConfig{
 				Hosts: []string{
 					"localhost:1234",
 				},
@@ -179,10 +179,10 @@ func testAdminUpdateNetworkGettingInternalErrorDuringNetworkSavingFails(t *testi
 	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(1).Return(assert.AnError)
 
 	// when
-	errorDetails := handler.handle(t, ctx, api.AdminUpdateNetworkParams{
+	errorDetails := handler.handle(t, ctx, api.AdminNetwork{
 		Name: name,
-		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+		API: api.AdminAPIConfig{
+			GRPC: api.AdminGRPCConfig{
 				Hosts: []string{
 					"localhost:1234",
 				},
