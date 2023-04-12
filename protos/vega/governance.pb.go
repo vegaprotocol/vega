@@ -20,39 +20,39 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A list of possible errors that can cause a proposal to be in state rejected or failed
+// List of possible errors that can cause a proposal to be in state rejected or failed
 type ProposalError int32
 
 const (
 	// Default value
 	ProposalError_PROPOSAL_ERROR_UNSPECIFIED ProposalError = 0
-	// The specified close time is too early based on network parameters
+	// Specified close time is too early based on network parameters
 	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON ProposalError = 1
-	// The specified close time is too late based on network parameters
+	// Specified close time is too late based on network parameters
 	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE ProposalError = 2
-	// The specified enactment time is too early based on network parameters
+	// Specified enactment time is too early based on network parameters
 	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON ProposalError = 3
-	// The specified enactment time is too late based on network parameters
+	// Specified enactment time is too late based on network parameters
 	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE ProposalError = 4
-	// The proposer for this proposal has insufficient tokens
+	// Proposer for this proposal has insufficient tokens
 	ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS ProposalError = 5
-	// The instrument quote name and base name were the same
+	// Instrument quote name and base name were the same
 	ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY ProposalError = 6
-	// The proposal has no product
+	// Proposal has no product
 	ProposalError_PROPOSAL_ERROR_NO_PRODUCT ProposalError = 7
-	// The specified product is not supported
+	// Specified product is not supported
 	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT ProposalError = 8
-	// The proposal has no trading mode
+	// Proposal has no trading mode
 	ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE ProposalError = 11
-	// The proposal has an unsupported trading mode
+	// Proposal has an unsupported trading mode
 	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE ProposalError = 12
-	// The proposal failed node validation
+	// Proposal failed node validation
 	ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED ProposalError = 13
-	// A field is missing in a builtin asset source
+	// Field is missing in a builtin asset source
 	ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD ProposalError = 14
-	// The contract address is missing in the ERC20 asset source
+	// Contract address is missing in the ERC20 asset source
 	ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS ProposalError = 15
-	// The asset ID is invalid or does not exist on the Vega network
+	// Asset ID is invalid or does not exist on the Vega network
 	ProposalError_PROPOSAL_ERROR_INVALID_ASSET ProposalError = 16
 	// Proposal terms timestamps are not compatible (Validation < Closing < Enactment)
 	ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS ProposalError = 17
@@ -86,24 +86,24 @@ const (
 	ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE ProposalError = 35
 	// Validation failed for freeform proposal
 	ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM ProposalError = 36
-	// The party doesn't have enough equity-like share to propose an update on the market
+	// Party doesn't have enough equity-like share to propose an update on the market
 	// targeted by the proposal
 	ProposalError_PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE ProposalError = 37
-	// The market targeted by the proposal does not exist or is not eligible for modification
+	// Market targeted by the proposal does not exist or is not eligible for modification
 	ProposalError_PROPOSAL_ERROR_INVALID_MARKET ProposalError = 38
-	// The market proposal decimal place is higher than the market settlement asset decimal places
+	// Market proposal decimal place is higher than the market settlement asset decimal places
 	ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES ProposalError = 39
-	// The market proposal contains too many price monitoring triggers
+	// Market proposal contains too many price monitoring triggers
 	ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS ProposalError = 40
-	// The market proposal contains too many price monitoring triggers
+	// Market proposal contains too many price monitoring triggers
 	ProposalError_PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE ProposalError = 41
-	// The LP price range must be larger than 0
+	// LP price range must be larger than 0
 	ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE ProposalError = 42
-	// The LP price range must not be larger than 100
+	// LP price range must not be larger than 100
 	ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE ProposalError = 43
-	// The linear slippage factor is out of range (either negative or too large)
+	// Linear slippage factor is out of range (either negative or too large)
 	ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE ProposalError = 44
-	// The quadratic slippage factor is out of range (either negative or too large)
+	// Quadratic slippage factor is out of range (either negative or too large)
 	ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE ProposalError = 45
 )
 
@@ -241,9 +241,9 @@ const (
 	Proposal_STATE_OPEN Proposal_State = 2
 	// Proposal has gained enough support to be executed
 	Proposal_STATE_PASSED Proposal_State = 3
-	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)
+	// Proposal wasn't accepted i.e. proposal terms failed validation due to wrong configuration or failed to meet network requirements.
 	Proposal_STATE_REJECTED Proposal_State = 4
-	// Proposal didn't get enough votes (either failing to gain required participation or majority level)
+	// Proposal didn't get enough votes, e.g. either failing to gain required participation or majority level.
 	Proposal_STATE_DECLINED Proposal_State = 5
 	// Proposal enacted
 	Proposal_STATE_ENACTED Proposal_State = 6
@@ -308,9 +308,9 @@ type Vote_Value int32
 const (
 	// Default value, always invalid
 	Vote_VALUE_UNSPECIFIED Vote_Value = 0
-	// A vote against the proposal
+	// Vote against the proposal
 	Vote_VALUE_NO Vote_Value = 1
-	// A vote in favour of the proposal
+	// Vote in favour of the proposal
 	Vote_VALUE_YES Vote_Value = 2
 )
 
@@ -365,11 +365,11 @@ type FutureProduct struct {
 	SettlementAsset string `protobuf:"bytes,1,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
 	// Product quote name.
 	QuoteName string `protobuf:"bytes,2,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
-	// The data source spec describing the data source for settlement.
+	// Data source spec describing the data source for settlement.
 	DataSourceSpecForSettlementData *DataSourceDefinition `protobuf:"bytes,3,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
 	// The external data source spec describing the data source of trading termination.
 	DataSourceSpecForTradingTermination *DataSourceDefinition `protobuf:"bytes,4,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
-	// The binding between the data source spec and the settlement data.
+	// Binding between the data source spec and the settlement data.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,5,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
 }
 
@@ -557,9 +557,9 @@ type NewMarketConfiguration struct {
 	// Percentage move up and down from the mid price which specifies the range of
 	// price levels over which automated liquidity provision orders will be deployed.
 	LpPriceRange string `protobuf:"bytes,8,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
-	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
+	// Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,9,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
-	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
+	// Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,10,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
 }
 
@@ -703,7 +703,7 @@ type NewMarket struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The configuration of the new market.
+	// Configuration of the new market.
 	Changes *NewMarketConfiguration `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -752,9 +752,9 @@ type UpdateMarket struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the market to update.
+	// Market ID the update is for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// The updated configuration of the market.
+	// Updated configuration of the market.
 	Changes *UpdateMarketConfiguration `protobuf:"bytes,2,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -828,9 +828,9 @@ type UpdateMarketConfiguration struct {
 	// Percentage move up and down from the mid price which specifies the range of
 	// price levels over which automated liquidity provision orders will be deployed.
 	LpPriceRange string `protobuf:"bytes,5,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
-	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
+	// Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,6,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
-	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
+	// Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,7,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
 }
 
@@ -1165,7 +1165,7 @@ type NewAsset struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The configuration of the new asset.
+	// Configuration of the new asset.
 	Changes *AssetDetails `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -1214,9 +1214,9 @@ type UpdateAsset struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the asset to be updated.
+	// Asset ID the update is for.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	// The changes to apply on an existing asset.
+	// Changes to apply on an existing asset.
 	Changes *AssetDetailsUpdate `protobuf:"bytes,2,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -1313,13 +1313,13 @@ type ProposalTerms struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp (Unix time in seconds) when voting closes for this proposal,
+	// Timestamp as Unix time in seconds when voting closes for this proposal,
 	// constrained by `minClose` and `maxClose` network parameters.
 	ClosingTimestamp int64 `protobuf:"varint,1,opt,name=closing_timestamp,json=closingTimestamp,proto3" json:"closing_timestamp,omitempty"`
-	// Timestamp (Unix time in seconds) when proposal gets enacted (if passed),
+	// Timestamp as Unix time in seconds when proposal gets enacted if passed,
 	// constrained by `minEnact` and `maxEnact` network parameters.
 	EnactmentTimestamp int64 `protobuf:"varint,2,opt,name=enactment_timestamp,json=enactmentTimestamp,proto3" json:"enactment_timestamp,omitempty"`
-	// Validation timestamp (Unix time in seconds).
+	// Validation timestamp as Unix time in seconds.
 	ValidationTimestamp int64 `protobuf:"varint,3,opt,name=validation_timestamp,json=validationTimestamp,proto3" json:"validation_timestamp,omitempty"`
 	// Changes being proposed.
 	//
@@ -1483,7 +1483,7 @@ func (*ProposalTerms_NewFreeform) isProposalTerms_Change() {}
 
 func (*ProposalTerms_UpdateAsset) isProposalTerms_Change() {}
 
-// The rationale behind a proposal.
+// Rationale behind a proposal.
 type ProposalRationale struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1551,18 +1551,18 @@ type GovernanceData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The governance proposal.
+	// Governance proposal.
 	Proposal *Proposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
 	// All YES votes in favour of the proposal above.
 	Yes []*Vote `protobuf:"bytes,2,rep,name=yes,proto3" json:"yes,omitempty"`
 	// All NO votes against the proposal above.
 	No []*Vote `protobuf:"bytes,3,rep,name=no,proto3" json:"no,omitempty"`
-	// All latest YES votes by party (guaranteed to be unique),
-	// where key (string) is the party ID (public key) and
+	// All latest YES votes by party which is guaranteed to be unique,
+	// where key (string) is the party ID i.e. public key and
 	// value (Vote) is the vote cast by the given party.
 	YesParty map[string]*Vote `protobuf:"bytes,4,rep,name=yes_party,json=yesParty,proto3" json:"yes_party,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// All latest NO votes by party (guaranteed to be unique),
-	// where key (string) is the party ID (public key) and
+	// All latest NO votes by party which is guaranteed to be unique,
+	// where key (string) is the party ID i.e. public key and
 	// value (Vote) is the vote cast by the given party.
 	NoParty map[string]*Vote `protobuf:"bytes,5,rep,name=no_party,json=noParty,proto3" json:"no_party,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
@@ -1640,31 +1640,31 @@ type Proposal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique proposal identifier.
+	// Unique proposal ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Proposal reference.
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Party identifier (public key) of the author (the party submitting the proposal).
+	// Party ID i.e. public key of the party submitting the proposal.
 	PartyId string `protobuf:"bytes,3,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Proposal state.
 	State Proposal_State `protobuf:"varint,4,opt,name=state,proto3,enum=vega.Proposal_State" json:"state,omitempty"`
-	// Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
+	// Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
 	Terms *ProposalTerms `protobuf:"bytes,6,opt,name=terms,proto3" json:"terms,omitempty"`
-	// A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
+	// Reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
 	Reason *ProposalError `protobuf:"varint,7,opt,name=reason,proto3,enum=vega.ProposalError,oneof" json:"reason,omitempty"`
-	// The detailed error associated to the reason.
+	// Detailed error associated to the reason.
 	ErrorDetails *string `protobuf:"bytes,8,opt,name=error_details,json=errorDetails,proto3,oneof" json:"error_details,omitempty"`
-	// The rationale behind a proposal.
+	// Rationale behind a proposal.
 	Rationale *ProposalRationale `protobuf:"bytes,9,opt,name=rationale,proto3" json:"rationale,omitempty"`
-	// The required vote participation for this proposal.
+	// Required vote participation for this proposal.
 	RequiredParticipation string `protobuf:"bytes,10,opt,name=required_participation,json=requiredParticipation,proto3" json:"required_participation,omitempty"`
-	// The required majority for this proposal.
+	// Required majority for this proposal.
 	RequiredMajority string `protobuf:"bytes,11,opt,name=required_majority,json=requiredMajority,proto3" json:"required_majority,omitempty"`
-	// The required participation from liquidity providers, optional (required for market update proposal).
+	// Required participation from liquidity providers, optional but is required for market update proposal.
 	RequiredLiquidityProviderParticipation *string `protobuf:"bytes,12,opt,name=required_liquidity_provider_participation,json=requiredLiquidityProviderParticipation,proto3,oneof" json:"required_liquidity_provider_participation,omitempty"`
-	// The require majority from liquidity providers, optional (required for market update proposal).
+	// Required majority from liquidity providers, optional but is required for market update proposal.
 	RequiredLiquidityProviderMajority *string `protobuf:"bytes,13,opt,name=required_liquidity_provider_majority,json=requiredLiquidityProviderMajority,proto3,oneof" json:"required_liquidity_provider_majority,omitempty"`
 }
 
@@ -1797,13 +1797,13 @@ type Vote struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Voter's party identifier.
+	// Voter's party ID.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Actual vote.
 	Value Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
-	// Identifier of the proposal being voted on.
+	// Proposal ID being voted on.
 	ProposalId string `protobuf:"bytes,3,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
-	// Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network.
+	// Vote timestamp for date and time as Unix time in nanoseconds when vote was submitted to the network.
 	Timestamp int64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Total number of governance token for the party that cast the vote.
 	TotalGovernanceTokenBalance string `protobuf:"bytes,5,opt,name=total_governance_token_balance,json=totalGovernanceTokenBalance,proto3" json:"total_governance_token_balance,omitempty"`

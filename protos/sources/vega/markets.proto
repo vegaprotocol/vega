@@ -5,7 +5,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 import "vega/data_source.proto";
 
-// An auction duration is used to configure 3 auction periods:
+// Auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:
 //   The auction will last for at least N seconds
 // 2. `duration == 0`, `volume > 0`:
@@ -21,17 +21,17 @@ message AuctionDuration {
 
 // Future product definition
 message Future {
-  // The asset for the future.
+  // Underlying asset for the future.
   string settlement_asset = 1;
   // Quote name of the instrument.
   string quote_name = 2;
-  // The data source specification that describes the settlement data source filter.
+  // Data source specification that describes the settlement data source filter.
   vega.DataSourceSpec data_source_spec_for_settlement_data = 3;
 
-  // The data source specification that describes the trading termination data source filter.
+  // Data source specification that describes the trading termination data source filter.
   vega.DataSourceSpec data_source_spec_for_trading_termination = 4;
 
-  // The binding between the data spec and the data source.
+  // Binding between the data spec and the data source.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
@@ -43,27 +43,27 @@ message DataSourceSpecToFutureBinding {
   // If it is set to "prices.BTC.value", then the Future will use the value of
   // this property as settlement data.
   string settlement_data_property = 1;
-  // the name of the property in the data source data that signals termination of trading.
+  // Name of the property in the data source data that signals termination of trading.
   string trading_termination_property = 2;
 }
 
 // Instrument metadata definition
 message InstrumentMetadata {
-  // A list of 0 or more tags.
+  // List of 0 or more tags.
   repeated string tags = 1;
 }
 
 // Instrument definition
 message Instrument {
-  // Instrument identifier.
+  // Instrument ID.
   string id = 1;
   // Code for the instrument.
   string code = 2;
   // Name of the instrument.
   string name = 3;
-  // A collection of instrument meta-data.
+  // Collection of instrument meta-data.
   InstrumentMetadata metadata = 4;
-  // The product the instrument is composed of.
+  // Product the instrument is composed of.
   oneof product {
     // Future.
     Future future = 100;
@@ -74,7 +74,8 @@ message Instrument {
 message LogNormalRiskModel {
   // Risk Aversion Parameter.
   double risk_aversion_parameter = 1;
-  // Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number.
+  // Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall
+  // calculation to obtain the maintenance margin, must be a strictly non-negative real number.
   double tau = 2;
   // Risk model parameters for log normal.
   LogNormalModelParams params = 3;
@@ -200,11 +201,11 @@ message TargetStakeParameters {
 
 // Market definition
 message Market {
-  // The current state of the market
+  // Current state of the market
   enum State {
     // Default value, invalid
     STATE_UNSPECIFIED = 0;
-    // The governance proposal valid and accepted
+    // Governance proposal valid and accepted
     STATE_PROPOSED = 1;
     // Outcome of governance votes is to reject the market
     STATE_REJECTED = 2;
@@ -226,7 +227,7 @@ message Market {
     STATE_SETTLED = 9;
   }
 
-  // The trading mode the market is currently running, also referred to as 'market state'
+  // Trading mode the market is currently running, also referred to as 'market state'
   enum TradingMode {
     // Default value, this is invalid
     TRADING_MODE_UNSPECIFIED = 0;
@@ -246,7 +247,7 @@ message Market {
     //       - gateway/graphql/schema.graphql (enum MarketTradingMode)
   }
 
-  // Unique identifier.
+  // Unique ID for the market.
   string id = 1;
   // Tradable instrument configuration.
   TradableInstrument tradable_instrument = 2;
@@ -274,9 +275,9 @@ message Market {
   // Percentage move up and down from the mid price which specifies the range of
   // price levels over which automated liquidity provision orders will be deployed.
   string lp_price_range = 12;
-  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
+  // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 13;
-  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
+  // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 14;
 }
 

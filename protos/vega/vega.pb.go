@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A side relates to the direction of an order, to Buy, or Sell
+// Side relates to the direction of an order, to Buy, or Sell
 type Side int32
 
 const (
@@ -79,7 +79,7 @@ type Interval int32
 const (
 	// Default value, always invalid
 	Interval_INTERVAL_UNSPECIFIED Interval = 0
-	// The block interval is not a fixed amount of time, rather it used to indicate grouping of events that occur in a single block. It is usually about a second.
+	// Block interval is not a fixed amount of time, rather it is used to indicate grouping of events that occur in a single block. It is usually about a second.
 	Interval_INTERVAL_BLOCK Interval = -1
 	// 1 minute.
 	Interval_INTERVAL_I1M Interval = 60
@@ -146,6 +146,7 @@ func (Interval) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{1}
 }
 
+// Represents the status of a position
 type PositionStatus int32
 
 const (
@@ -267,7 +268,7 @@ func (AuctionTrigger) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{3}
 }
 
-// A pegged reference defines which price point a pegged order is linked to - meaning
+// Pegged reference defines which price point a pegged order is linked to - meaning
 // the price for a pegged order is calculated from the value of the reference price point
 type PeggedReference int32
 
@@ -334,7 +335,7 @@ const (
 	OrderError_ORDER_ERROR_UNSPECIFIED OrderError = 0
 	// Order was submitted for a market that does not exist
 	OrderError_ORDER_ERROR_INVALID_MARKET_ID OrderError = 1
-	// Order was submitted with an invalid identifier
+	// Order was submitted with an invalid ID
 	OrderError_ORDER_ERROR_INVALID_ORDER_ID OrderError = 2
 	// Order was amended with a sequence number that was not previous version + 1
 	OrderError_ORDER_ERROR_OUT_OF_SEQUENCE OrderError = 3
@@ -344,18 +345,18 @@ const (
 	OrderError_ORDER_ERROR_TIME_FAILURE OrderError = 5
 	// Failed to remove an order from the book
 	OrderError_ORDER_ERROR_REMOVAL_FAILURE OrderError = 6
-	// An order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
+	// Order with `TimeInForce.TIME_IN_FORCE_GTT` was submitted or amended
 	// with an expiration that was badly formatted or otherwise invalid
 	OrderError_ORDER_ERROR_INVALID_EXPIRATION_DATETIME OrderError = 7
 	// Order was submitted or amended with an invalid reference field
 	OrderError_ORDER_ERROR_INVALID_ORDER_REFERENCE OrderError = 8
-	// Order amend was submitted for an order field that cannot not be amended (e.g. order identifier)
+	// Order amend was submitted for an order field that cannot not be amended (e.g. order ID)
 	OrderError_ORDER_ERROR_EDIT_NOT_ALLOWED OrderError = 9
 	// Amend failure because amend details do not match original order
 	OrderError_ORDER_ERROR_AMEND_FAILURE OrderError = 10
 	// Order not found in an order book or store
 	OrderError_ORDER_ERROR_NOT_FOUND OrderError = 11
-	// Order was submitted with an invalid or missing party identifier
+	// Order was submitted with an invalid or missing party ID
 	OrderError_ORDER_ERROR_INVALID_PARTY_ID OrderError = 12
 	// Order was submitted for a market that has closed
 	OrderError_ORDER_ERROR_MARKET_CLOSED OrderError = 13
@@ -379,9 +380,9 @@ const (
 	OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE OrderError = 22
 	// Order was submitted with invalid time in force
 	OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE OrderError = 23
-	// A GFN order has got to the market when it is in auction mode
+	// GFN order has reached the market when it is in auction mode
 	OrderError_ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION OrderError = 24
-	// A GFA order has got to the market when it is in continuous trading mode
+	// GFA order has reached the market when it is in continuous trading mode
 	OrderError_ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING OrderError = 25
 	// Attempt to amend order to GTT without ExpiryAt
 	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT OrderError = 26
@@ -413,7 +414,7 @@ const (
 	OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE OrderError = 41
 	// Pegged order offset must be > zero
 	OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_THAN_ZERO OrderError = 42
-	// The party has an insufficient balance, or does not have
+	// Party has an insufficient balance, or does not have
 	// a general account to submit the order (no deposits made
 	// for the required asset)
 	OrderError_ORDER_ERROR_INSUFFICIENT_ASSET_BALANCE OrderError = 43
@@ -423,13 +424,13 @@ const (
 	OrderError_ORDER_ERROR_UNABLE_TO_REPRICE_PEGGED_ORDER OrderError = 45
 	// It is not possible to amend the price of an existing pegged order
 	OrderError_ORDER_ERROR_UNABLE_TO_AMEND_PRICE_ON_PEGGED_ORDER OrderError = 46
-	// An FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
+	// FOK, IOC, or GFN order was rejected because it resulted in trades outside the price bounds
 	OrderError_ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS OrderError = 47
 	// Unable to submit pegged order, temporarily too many pegged orders across all markets
 	OrderError_ORDER_ERROR_TOO_MANY_PEGGED_ORDERS OrderError = 48
-	// The post order would trade
+	// Post order would trade
 	OrderError_ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE OrderError = 49
-	// The post order would trade
+	// Post order would trade
 	OrderError_ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE_POSITION OrderError = 50
 )
 
@@ -566,7 +567,7 @@ func (OrderError) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{5}
 }
 
-// The Vega blockchain status as reported by the node the caller is connected to
+// Vega blockchain status as reported by the node the caller is connected to
 type ChainStatus int32
 
 const (
@@ -635,10 +636,10 @@ const (
 	AccountType_ACCOUNT_TYPE_SETTLEMENT AccountType = 2
 	// Margin accounts contain funds set aside for the margin needed to support a party's open positions.
 	// Each party will have a margin account for each market they have traded in.
-	// The required initial margin is allocated to each market from your general account.
+	// Required initial margin is allocated to each market from users general account.
 	// Collateral in the margin account can't be withdrawn or used as margin on another market until
 	// it is released back to the general account.
-	// The Vega protocol uses an internal accounting system to segregate funds held as
+	// Vega protocol uses an internal accounting system to segregate funds held as
 	// margin from other funds to ensure they are never lost or 'double spent'
 	//
 	// Margin account funds will vary as margin requirements on positions change
@@ -791,9 +792,9 @@ const (
 	TransferType_TRANSFER_TYPE_BOND_SLASHING TransferType = 20
 	// Reward payout received
 	TransferType_TRANSFER_TYPE_REWARD_PAYOUT TransferType = 21
-	// A network internal instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
+	// Internal Vega network instruction for the collateral engine to move funds from a user's general account into the pending transfers pool
 	TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND TransferType = 22
-	// A network internal instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
+	// Internal Vega network instruction for the collateral engine to move funds from the pending transfers pool account into the destination account
 	TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE TransferType = 23
 	// Market-related accounts emptied because market has closed
 	TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT TransferType = 24
@@ -948,9 +949,9 @@ type NodeStatus int32
 
 const (
 	NodeStatus_NODE_STATUS_UNSPECIFIED NodeStatus = 0
-	// The node is validating
+	// Node is a validating node
 	NodeStatus_NODE_STATUS_VALIDATOR NodeStatus = 1
-	// The node is non-validating
+	// Node is a non-validating node
 	NodeStatus_NODE_STATUS_NON_VALIDATOR NodeStatus = 2
 )
 
@@ -1000,9 +1001,9 @@ type EpochAction int32
 
 const (
 	EpochAction_EPOCH_ACTION_UNSPECIFIED EpochAction = 0
-	// The epoch update is for a new epoch.
+	// Epoch update is for a new epoch.
 	EpochAction_EPOCH_ACTION_START EpochAction = 1
-	// The epoch update is for the end of an epoch.
+	// Epoch update is for the end of an epoch.
 	EpochAction_EPOCH_ACTION_END EpochAction = 2
 )
 
@@ -1052,11 +1053,11 @@ type ValidatorNodeStatus int32
 
 const (
 	ValidatorNodeStatus_VALIDATOR_NODE_STATUS_UNSPECIFIED ValidatorNodeStatus = 0
-	// The node is a tendermint validator
+	// Node is a tendermint validator
 	ValidatorNodeStatus_VALIDATOR_NODE_STATUS_TENDERMINT ValidatorNodeStatus = 1
-	// The node is an ersatz validator
+	// Node is an ersatz validator
 	ValidatorNodeStatus_VALIDATOR_NODE_STATUS_ERSATZ ValidatorNodeStatus = 2
-	// The node is a pending validator
+	// Node is a pending validator
 	ValidatorNodeStatus_VALIDATOR_NODE_STATUS_PENDING ValidatorNodeStatus = 3
 )
 
@@ -1119,8 +1120,8 @@ const (
 	// Immediate or cancel, the order trades any amount and as much as possible
 	// but does not remain on the book (whether it trades or not)
 	Order_TIME_IN_FORCE_IOC Order_TimeInForce = 3
-	// Fill or kill, The order either trades completely (remainingSize == 0 after adding)
-	// or not at all, does not remain on the book if it doesn't trade
+	// Fill or kill, the order either trades completely i.e. remainingSize == 0 after adding,
+	// or not at all, and does not remain on the book if it doesn't trade
 	Order_TIME_IN_FORCE_FOK Order_TimeInForce = 4
 	// Good for auction, this order is only accepted during an auction period
 	Order_TIME_IN_FORCE_GFA Order_TimeInForce = 5
@@ -1371,17 +1372,17 @@ func (Trade_Type) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{7, 0}
 }
 
-// The status of the deposit
+// Status of the deposit
 type Deposit_Status int32
 
 const (
 	// Default value, always invalid
 	Deposit_STATUS_UNSPECIFIED Deposit_Status = 0
-	// The deposit is being processed by the network
+	// Deposit is being processed by the network
 	Deposit_STATUS_OPEN Deposit_Status = 1
-	// The deposit has been cancelled by the network
+	// Deposit has been cancelled by the network
 	Deposit_STATUS_CANCELLED Deposit_Status = 2
-	// The deposit has been finalised and accounts have been updated
+	// Deposit has been finalised and accounts have been updated
 	Deposit_STATUS_FINALIZED Deposit_Status = 3
 )
 
@@ -1428,17 +1429,17 @@ func (Deposit_Status) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{16, 0}
 }
 
-// The status of the withdrawal
+// Status of the withdrawal
 type Withdrawal_Status int32
 
 const (
 	// Default value, always invalid
 	Withdrawal_STATUS_UNSPECIFIED Withdrawal_Status = 0
-	// The withdrawal is open and being processed by the network
+	// Withdrawal is open and being processed by the network
 	Withdrawal_STATUS_OPEN Withdrawal_Status = 1
-	// The withdrawal have been cancelled
+	// Withdrawal have been cancelled
 	Withdrawal_STATUS_REJECTED Withdrawal_Status = 2
-	// The withdrawal went through and is fully finalised, the funds are removed from the
+	// Withdrawal went through and is fully finalised, the funds are removed from the
 	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
 	Withdrawal_STATUS_FINALIZED Withdrawal_Status = 3
 )
@@ -1490,19 +1491,19 @@ func (Withdrawal_Status) EnumDescriptor() ([]byte, []int) {
 type LiquidityProvision_Status int32
 
 const (
-	// The default value
+	// Default value
 	LiquidityProvision_STATUS_UNSPECIFIED LiquidityProvision_Status = 0
-	// The liquidity provision is active
+	// Liquidity provision is active
 	LiquidityProvision_STATUS_ACTIVE LiquidityProvision_Status = 1
-	// The liquidity provision was stopped by the network
+	// Liquidity provision was stopped by the network
 	LiquidityProvision_STATUS_STOPPED LiquidityProvision_Status = 2
-	// The liquidity provision was cancelled by the liquidity provider
+	// Liquidity provision was cancelled by the liquidity provider
 	LiquidityProvision_STATUS_CANCELLED LiquidityProvision_Status = 3
-	// The liquidity provision was invalid and got rejected
+	// Liquidity provision was invalid and got rejected
 	LiquidityProvision_STATUS_REJECTED LiquidityProvision_Status = 4
-	// The liquidity provision is valid and accepted by network, but orders aren't deployed
+	// Liquidity provision is valid and accepted by network, but orders aren't deployed
 	LiquidityProvision_STATUS_UNDEPLOYED LiquidityProvision_Status = 5
-	// The liquidity provision is valid and accepted by network
+	// Liquidity provision is valid and accepted by network
 	// but has never been deployed. If when it's possible to deploy the orders for the first time
 	// margin check fails, then they will be cancelled without any penalties.
 	LiquidityProvision_STATUS_PENDING LiquidityProvision_Status = 6
@@ -1557,13 +1558,13 @@ func (LiquidityProvision_Status) EnumDescriptor() ([]byte, []int) {
 	return file_vega_vega_proto_rawDescGZIP(), []int{38, 0}
 }
 
-// A party represents an entity who wishes to trade on or query a Vega network
+// Party represents an entity who wishes to trade on or query a Vega network
 type Party struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A unique identifier for the party, typically represented by a public key.
+	// Unique ID for the party, typically represented by a public key.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 
@@ -1680,7 +1681,7 @@ type PeggedOrder struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The price point the order is linked to.
+	// Price point the order is linked to.
 	Reference PeggedReference `protobuf:"varint,1,opt,name=reference,proto3,enum=vega.PeggedReference" json:"reference,omitempty"`
 	// Offset from the price reference.
 	Offset string `protobuf:"bytes,2,opt,name=offset,proto3" json:"offset,omitempty"`
@@ -1732,17 +1733,17 @@ func (x *PeggedOrder) GetOffset() string {
 	return ""
 }
 
-// An order can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
+// Orders can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
 type Order struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier for the order (set by the system after consensus).
+	// Unique ID generated for the order. This is set by the system after consensus.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Market identifier for the order.
+	// Market ID for the order.
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party identifier for the order.
+	// Party ID for the order.
 	PartyId string `protobuf:"bytes,3,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Side for the order, e.g. SIDE_BUY or SIDE_SELL.
 	Side Side `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
@@ -1763,22 +1764,22 @@ type Order struct {
 	Type Order_Type `protobuf:"varint,9,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
 	// Timestamp for when the order was created at, in nanoseconds.
 	CreatedAt int64 `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// The current status for the order.
+	// Current status for the order.
 	// - For detail on `STATUS_REJECTED` please check the OrderError value given in the `reason` field.
 	Status Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
 	// Timestamp for when the order will expire, in nanoseconds.
 	ExpiresAt int64 `protobuf:"varint,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus
-	// - Currently set internally by the node to return a unique reference identifier for the order submission.
+	// - Currently set internally by the node to return a unique reference ID for the order submission.
 	Reference string `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
 	// If the Order `status` is `STATUS_REJECTED` then an OrderError reason will be specified
 	// - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors.
 	Reason *OrderError `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError,oneof" json:"reason,omitempty"`
 	// Timestamp for when the order was last updated, in nanoseconds.
 	UpdatedAt int64 `protobuf:"varint,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	// The version for the order, initial value is version 1 and is incremented after each successful amend
+	// Version for the order, initial value is version 1 and is incremented after each successful amend
 	Version uint64 `protobuf:"varint,16,opt,name=version,proto3" json:"version,omitempty"`
-	// Batch identifier for the order, used internally for orders submitted during auctions
+	// Batch ID for the order, used internally for orders submitted during auctions
 	// to keep track of the auction batch this order falls under (required for fees calculation)
 	BatchId uint64 `protobuf:"varint,17,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
 	// Pegged order details, used only if the order represents a pegged order.
@@ -1977,7 +1978,7 @@ type OrderCancellationConfirmation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The order that was cancelled.
+	// Order that was cancelled.
 	Order *Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 }
 
@@ -2026,7 +2027,7 @@ type OrderConfirmation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The order that was confirmed.
+	// Order that was confirmed.
 	Order *Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 	// 0 or more trades that were emitted.
 	Trades []*Trade `protobuf:"bytes,2,rep,name=trades,proto3" json:"trades,omitempty"`
@@ -2093,15 +2094,15 @@ type AuctionIndicativeState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The market identifier for which this state relates to.
+	// Market ID for which this state relates to.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// The Indicative Uncrossing Price is the price at which all trades would occur if the auction uncrossed now.
+	// Indicative Uncrossing Price is the price at which all trades would occur if the auction uncrossed now.
 	IndicativePrice string `protobuf:"bytes,2,opt,name=indicative_price,json=indicativePrice,proto3" json:"indicative_price,omitempty"`
-	// The Indicative Uncrossing Volume is the volume available at the Indicative crossing price if the auction uncrossed now.
+	// Indicative Uncrossing Volume is the volume available at the Indicative crossing price if the auction uncrossed now.
 	IndicativeVolume uint64 `protobuf:"varint,3,opt,name=indicative_volume,json=indicativeVolume,proto3" json:"indicative_volume,omitempty"`
-	// The timestamp at which the auction started.
+	// Timestamp at which the auction started.
 	AuctionStart int64 `protobuf:"varint,4,opt,name=auction_start,json=auctionStart,proto3" json:"auction_start,omitempty"`
-	// The timestamp at which the auction is meant to stop.
+	// Timestamp at which the auction is meant to stop.
 	AuctionEnd int64 `protobuf:"varint,5,opt,name=auction_end,json=auctionEnd,proto3" json:"auction_end,omitempty"`
 }
 
@@ -2178,9 +2179,9 @@ type Trade struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier for the trade (generated by Vega).
+	// Unique ID for the trade (generated by Vega).
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Market identifier (the market that the trade occurred on).
+	// Market ID (the market that the trade occurred on).
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Price for the trade, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
@@ -2189,9 +2190,9 @@ type Trade struct {
 	// Size filled for the trade
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
 	Size uint64 `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
-	// Unique party identifier for the buyer.
+	// Unique party ID for the buyer.
 	Buyer string `protobuf:"bytes,5,opt,name=buyer,proto3" json:"buyer,omitempty"`
-	// Unique party identifier for the seller.
+	// Unique party ID for the seller.
 	Seller string `protobuf:"bytes,6,opt,name=seller,proto3" json:"seller,omitempty"`
 	// Direction of the aggressive party e.g. SIDE_BUY or SIDE_SELL.
 	Aggressor Side `protobuf:"varint,7,opt,name=aggressor,proto3,enum=vega.Side" json:"aggressor,omitempty"`
@@ -2425,7 +2426,7 @@ type TradeSet struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A set of one or more trades.
+	// Set of one or more trades.
 	Trades []*Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 }
 
@@ -2477,7 +2478,7 @@ type Candle struct {
 
 	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// An ISO-8601 datetime with nanosecond precision for when the candle was last updated.
+	// ISO-8601 datetime with nanosecond precision for when the candle was last updated.
 	Datetime string `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
 	// Highest price for trading during the candle interval
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -2662,7 +2663,7 @@ type MarketDepth struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Collection of price levels for the buy side of the book.
 	Buy []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
@@ -2738,7 +2739,7 @@ type MarketDepthUpdate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Collection of updated price levels for the buy side of the book.
 	Buy []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
@@ -2823,9 +2824,9 @@ type Position struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party identifier.
+	// Party ID.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Open volume for the position, value is signed +ve for long and -ve for short
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
@@ -3003,24 +3004,24 @@ func (x *PositionTrade) GetPrice() string {
 	return ""
 }
 
-// A deposit on to the Vega network
+// Deposit on to the Vega network
 type Deposit struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier for the deposit.
+	// Unique ID for the deposit.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Status of the deposit.
 	Status Deposit_Status `protobuf:"varint,2,opt,name=status,proto3,enum=vega.Deposit_Status" json:"status,omitempty"`
-	// Party identifier of the user initiating the deposit.
+	// Party ID of the user initiating the deposit.
 	PartyId string `protobuf:"bytes,3,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// The Vega asset targeted by this deposit.
+	// Vega asset targeted by this deposit.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// The amount to be deposited
+	// Amount to be deposited
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The hash of the transaction from the foreign chain.
+	// Hash of the transaction from the foreign chain.
 	TxHash string `protobuf:"bytes,6,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	// Timestamp for when the Vega account was updated with the deposit.
 	CreditedTimestamp int64 `protobuf:"varint,7,opt,name=credited_timestamp,json=creditedTimestamp,proto3" json:"credited_timestamp,omitempty"`
@@ -3116,27 +3117,27 @@ func (x *Deposit) GetCreatedTimestamp() int64 {
 	return 0
 }
 
-// A withdrawal from the Vega network
+// Withdrawal from the Vega network
 type Withdrawal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier for the withdrawal.
+	// Unique ID for the withdrawal.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Unique party identifier of the user initiating the withdrawal.
+	// Unique party ID of the user initiating the withdrawal.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// The amount to be withdrawn
+	// Amount to be withdrawn
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The asset to withdraw funds from.
+	// Asset to withdraw funds from.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// The status of the withdrawal.
+	// Status of the withdrawal.
 	Status Withdrawal_Status `protobuf:"varint,5,opt,name=status,proto3,enum=vega.Withdrawal_Status" json:"status,omitempty"`
-	// The reference which is used by the foreign chain
+	// Reference which is used by the foreign chain
 	// to refer to this withdrawal.
 	Ref string `protobuf:"bytes,6,opt,name=ref,proto3" json:"ref,omitempty"`
-	// The hash of the foreign chain for this transaction.
+	// Hash of the foreign chain for this transaction.
 	TxHash string `protobuf:"bytes,8,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	// Timestamp for when the network started to process this withdrawal.
 	CreatedTimestamp int64 `protobuf:"varint,9,opt,name=created_timestamp,json=createdTimestamp,proto3" json:"created_timestamp,omitempty"`
@@ -3319,13 +3320,13 @@ type WithdrawExt_Erc20 struct {
 
 func (*WithdrawExt_Erc20) isWithdrawExt_Ext() {}
 
-// An extension of data required for the withdraw submissions
+// Extension of data required for the withdraw submissions
 type Erc20WithdrawExt struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address into which the bridge will release the funds.
+	// Address into which the bridge will release the funds.
 	ReceiverAddress string `protobuf:"bytes,1,opt,name=receiver_address,json=receiverAddress,proto3" json:"receiver_address,omitempty"`
 }
 
@@ -3374,9 +3375,9 @@ type Account struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique account identifier (used internally by Vega).
+	// Unique account ID (used internally by Vega).
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The party that the account belongs to, special values include `network`, which represents the Vega network and is
+	// Party that the account belongs to, special values include `network`, which represents the Vega network and is
 	// most commonly seen during liquidation of distressed trading positions.
 	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Balance of the asset, the balance is an integer, for example `123456` is a correctly
@@ -3384,11 +3385,11 @@ type Account struct {
 	// and importantly balances cannot be negative
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
-	// Asset identifier for the account.
+	// Asset ID for the account.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Market identifier for the account, if `AccountType.ACCOUNT_TYPE_GENERAL` this will be empty.
+	// Market ID for the account, if `AccountType.ACCOUNT_TYPE_GENERAL` this will be empty.
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// The account type related to this account.
+	// Account type related to this account.
 	Type AccountType `protobuf:"varint,6,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 }
 
@@ -3472,10 +3473,10 @@ type FinancialAmount struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// An unsigned integer amount of asset
+	// Unsigned integer amount of asset
 	// This field is passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// Asset identifier.
+	// Asset ID.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 }
 
@@ -3531,14 +3532,14 @@ type Transfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party identifier for the owner of the transfer.
+	// Party ID for the owner of the transfer.
 	Owner string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	// A financial amount (of an asset) to transfer
+	// Financial amount of an asset to transfer
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount *FinancialAmount `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The type of transfer, gives the reason for the transfer.
+	// Type of transfer, gives the reason for the transfer.
 	Type TransferType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
-	// A minimum amount
+	// Minimum amount
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
 	// optional dispatch strategy.
@@ -3617,9 +3618,9 @@ type DispatchStrategy struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The asset to use for metric.
+	// Asset to use for metric.
 	AssetForMetric string `protobuf:"bytes,1,opt,name=asset_for_metric,json=assetForMetric,proto3" json:"asset_for_metric,omitempty"`
-	// The metric to apply.
+	// Metric to apply.
 	Metric DispatchMetric `protobuf:"varint,2,opt,name=metric,proto3,enum=vega.DispatchMetric" json:"metric,omitempty"`
 	// Optional markets in scope.
 	Markets []string `protobuf:"bytes,3,rep,name=markets,proto3" json:"markets,omitempty"`
@@ -3688,15 +3689,15 @@ type TransferRequest struct {
 	FromAccount []*Account `protobuf:"bytes,1,rep,name=from_account,json=fromAccount,proto3" json:"from_account,omitempty"`
 	// One or more accounts to transfer to.
 	ToAccount []*Account `protobuf:"bytes,2,rep,name=to_account,json=toAccount,proto3" json:"to_account,omitempty"`
-	// An amount to transfer for the asset
+	// Amount to transfer for the asset
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error
+	// Minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
-	// Asset identifier.
+	// Asset ID.
 	Asset string `protobuf:"bytes,5,opt,name=asset,proto3" json:"asset,omitempty"`
-	// The type of the request for transfer.
+	// Type of the request for transfer.
 	Type TransferType `protobuf:"varint,7,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
 }
 
@@ -3779,13 +3780,13 @@ type AccountDetails struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The id of the asset of this account.
+	// Asset ID of this account.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	// The type of the account.
+	// Type of the account.
 	Type AccountType `protobuf:"varint,2,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
-	// not specified if network account.
+	// Not specified if network account.
 	Owner *string `protobuf:"bytes,3,opt,name=owner,proto3,oneof" json:"owner,omitempty"`
-	// not specified is account is not related to a market.
+	// Not specified if account is not related to a market.
 	MarketId *string `protobuf:"bytes,4,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
 }
 
@@ -3859,7 +3860,7 @@ type LedgerEntry struct {
 	FromAccount *AccountDetails `protobuf:"bytes,1,opt,name=from_account,json=fromAccount,proto3" json:"from_account,omitempty"`
 	// One or more accounts to transfer to.
 	ToAccount *AccountDetails `protobuf:"bytes,2,opt,name=to_account,json=toAccount,proto3" json:"to_account,omitempty"`
-	// An amount to transfer
+	// Amount to transfer
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Transfer type for this entry.
@@ -3959,9 +3960,9 @@ type PostTransferBalance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The account relating to the transfer.
+	// Account relating to the transfer.
 	Account *AccountDetails `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
-	// The balance relating to the transfer
+	// Balance relating to the transfer
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
 }
@@ -4019,7 +4020,7 @@ type LedgerMovement struct {
 
 	// All the entries for these ledger movements.
 	Entries []*LedgerEntry `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
-	// The resulting balances once the ledger movement are applied.
+	// Resulting balances once the ledger movement are applied.
 	Balances []*PostTransferBalance `protobuf:"bytes,2,rep,name=balances,proto3" json:"balances,omitempty"`
 }
 
@@ -4087,11 +4088,11 @@ type MarginLevels struct {
 	// Collateral release level value
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	CollateralReleaseLevel string `protobuf:"bytes,4,opt,name=collateral_release_level,json=collateralReleaseLevel,proto3" json:"collateral_release_level,omitempty"`
-	// Party identifier.
+	// Party ID.
 	PartyId string `protobuf:"bytes,5,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,6,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Asset identifier.
+	// Asset ID.
 	Asset string `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Timestamp for the time the ledger entry was created, in nanoseconds.
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -4228,11 +4229,11 @@ type MarketData struct {
 	// Arithmetic average of the best static bid price and best static offer price
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
 	StaticMidPrice string `protobuf:"bytes,11,opt,name=static_mid_price,json=staticMidPrice,proto3" json:"static_mid_price,omitempty"`
-	// Market identifier for the data
+	// Market ID for the data
 	Market string `protobuf:"bytes,12,opt,name=market,proto3" json:"market,omitempty"`
 	// Timestamp at which this mark price was relevant, in nanoseconds.
 	Timestamp int64 `protobuf:"varint,13,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The sum of the size of all positions greater than zero on the market
+	// Sum of the size of all positions greater than zero on the market
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
 	OpenInterest uint64 `protobuf:"varint,14,opt,name=open_interest,json=openInterest,proto3" json:"open_interest,omitempty"`
 	// Time in seconds until the end of the auction (zero if currently not in auction period).
@@ -4245,7 +4246,7 @@ type MarketData struct {
 	// Indicative volume (zero if not in auction)
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
 	IndicativeVolume uint64 `protobuf:"varint,18,opt,name=indicative_volume,json=indicativeVolume,proto3" json:"indicative_volume,omitempty"`
-	// The current trading mode for the market.
+	// Current trading mode for the market.
 	MarketTradingMode Market_TradingMode `protobuf:"varint,19,opt,name=market_trading_mode,json=marketTradingMode,proto3,enum=vega.Market_TradingMode" json:"market_trading_mode,omitempty"`
 	// When a market is in an auction trading mode, this field indicates what triggered the auction.
 	Trigger AuctionTrigger `protobuf:"varint,20,opt,name=trigger,proto3,enum=vega.AuctionTrigger" json:"trigger,omitempty"`
@@ -4263,7 +4264,7 @@ type MarketData struct {
 	MarketValueProxy string `protobuf:"bytes,25,opt,name=market_value_proxy,json=marketValueProxy,proto3" json:"market_value_proxy,omitempty"`
 	// the equity like share of liquidity fee for each liquidity provider.
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare `protobuf:"bytes,26,rep,name=liquidity_provider_fee_share,json=liquidityProviderFeeShare,proto3" json:"liquidity_provider_fee_share,omitempty"`
-	// The current state of the market.
+	// Current state of the market.
 	MarketState Market_State `protobuf:"varint,27,opt,name=market_state,json=marketState,proto3,enum=vega.Market_State" json:"market_state,omitempty"`
 	// next MTM timestamp.
 	NextMarkToMarket int64 `protobuf:"varint,28,opt,name=next_mark_to_market,json=nextMarkToMarket,proto3" json:"next_mark_to_market,omitempty"`
@@ -4507,19 +4508,19 @@ func (x *MarketData) GetLastTradedPrice() string {
 	return ""
 }
 
-// The equity like share of liquidity fee for each liquidity provider
+// Equity like share of liquidity fee for each liquidity provider
 type LiquidityProviderFeeShare struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The liquidity provider party id.
+	// Liquidity provider party ID.
 	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	// The share own by this liquidity provider (float).
+	// Share own by this liquidity provider (float).
 	EquityLikeShare string `protobuf:"bytes,2,opt,name=equity_like_share,json=equityLikeShare,proto3" json:"equity_like_share,omitempty"`
-	// The average entry valuation of the liquidity provider for the market.
+	// Average entry valuation of the liquidity provider for the market.
 	AverageEntryValuation string `protobuf:"bytes,3,opt,name=average_entry_valuation,json=averageEntryValuation,proto3" json:"average_entry_valuation,omitempty"`
-	// The average liquidity score.
+	// Average liquidity score.
 	AverageScore string `protobuf:"bytes,4,opt,name=average_score,json=averageScore,proto3" json:"average_score,omitempty"`
 }
 
@@ -4668,9 +4669,9 @@ type ErrorDetail struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A Vega API domain specific unique error code, useful for client side mappings, e.g. 10004.
+	// Vega API domain specific unique error code, useful for client side mappings, e.g. 10004.
 	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	// A message that describes the error in more detail, should describe the problem encountered.
+	// Message that describes the error in more detail, should describe the problem encountered.
 	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	// Any inner error information that could add more context, or be helpful for error reporting.
 	Inner string `protobuf:"bytes,3,opt,name=inner,proto3" json:"inner,omitempty"`
@@ -4735,9 +4736,9 @@ type NetworkParameter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unique key.
+	// Unique key of the network parameter.
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// The value for the network parameter.
+	// Value for the network parameter.
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 
@@ -4803,9 +4804,9 @@ type NetworkLimits struct {
 	ProposeAssetEnabled bool `protobuf:"varint,5,opt,name=propose_asset_enabled,json=proposeAssetEnabled,proto3" json:"propose_asset_enabled,omitempty"`
 	// True once the genesis file is loaded.
 	GenesisLoaded bool `protobuf:"varint,7,opt,name=genesis_loaded,json=genesisLoaded,proto3" json:"genesis_loaded,omitempty"`
-	// The date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set).
+	// Date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set).
 	ProposeMarketEnabledFrom int64 `protobuf:"varint,8,opt,name=propose_market_enabled_from,json=proposeMarketEnabledFrom,proto3" json:"propose_market_enabled_from,omitempty"`
-	// The date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
+	// Date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
 	ProposeAssetEnabledFrom int64 `protobuf:"varint,9,opt,name=propose_asset_enabled_from,json=proposeAssetEnabledFrom,proto3" json:"propose_asset_enabled_from,omitempty"`
 }
 
@@ -4896,11 +4897,11 @@ type LiquidityOrder struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The pegged reference point for the order.
+	// Pegged reference point for the order.
 	Reference PeggedReference `protobuf:"varint,1,opt,name=reference,proto3,enum=vega.PeggedReference" json:"reference,omitempty"`
-	// The relative proportion of the commitment to be allocated at a price level.
+	// Relative proportion of the commitment to be allocated at a price level.
 	Proportion uint32 `protobuf:"varint,2,opt,name=proportion,proto3" json:"proportion,omitempty"`
-	// The offset/amount of units away for the order
+	// Offset/amount of units away for the order
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
 	Offset string `protobuf:"bytes,3,opt,name=offset,proto3" json:"offset,omitempty"`
 }
@@ -4958,15 +4959,15 @@ func (x *LiquidityOrder) GetOffset() string {
 	return ""
 }
 
-// A pair of a liquidity order and the ID of the generated order by the core
+// Pair of a liquidity order and the ID of the generated order by the core
 type LiquidityOrderReference struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier of the pegged order generated by the core to fulfil this liquidity order.
+	// Unique ID of the pegged order generated by the core to fulfil this liquidity order.
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	// The liquidity order from the original submission.
+	// Liquidity order from the original submission.
 	LiquidityOrder *LiquidityOrder `protobuf:"bytes,2,opt,name=liquidity_order,json=liquidityOrder,proto3" json:"liquidity_order,omitempty"`
 }
 
@@ -5016,36 +5017,36 @@ func (x *LiquidityOrderReference) GetLiquidityOrder() *LiquidityOrder {
 	return nil
 }
 
-// An Liquidity provider commitment
+// Liquidity provider commitment
 type LiquidityProvision struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier.
+	// Unique ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Unique party identifier for the creator of the provision.
+	// Unique party ID for the creator of the provision.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Timestamp for when the order was created at, in nanoseconds.
 	CreatedAt int64 `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Timestamp for when the order was updated at, in nanoseconds.
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	// Market identifier for the order, required field.
+	// Market ID for the order, required field.
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of settlement asset of the market
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	CommitmentAmount string `protobuf:"bytes,6,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
 	Fee string `protobuf:"bytes,7,opt,name=fee,proto3" json:"fee,omitempty"`
-	// A set of liquidity sell orders to meet the liquidity provision obligation.
+	// Set of liquidity sell orders to meet the liquidity provision obligation.
 	Sells []*LiquidityOrderReference `protobuf:"bytes,8,rep,name=sells,proto3" json:"sells,omitempty"`
-	// A set of liquidity buy orders to meet the liquidity provision obligation.
+	// Set of liquidity buy orders to meet the liquidity provision obligation.
 	Buys []*LiquidityOrderReference `protobuf:"bytes,9,rep,name=buys,proto3" json:"buys,omitempty"`
 	// Version of this liquidity provision order.
 	Version uint64 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
 	// Status of this liquidity provision order.
 	Status LiquidityProvision_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.LiquidityProvision_Status" json:"status,omitempty"`
-	// A reference shared between this liquidity provision and all its orders.
+	// Reference shared between this liquidity provision and all its orders.
 	Reference string `protobuf:"bytes,12,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
@@ -5171,9 +5172,9 @@ type EthereumConfig struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Network identifier of this Ethereum network.
+	// Network ID of this Ethereum network.
 	NetworkId string `protobuf:"bytes,1,opt,name=network_id,json=networkId,proto3" json:"network_id,omitempty"`
-	// Chain identifier of this Ethereum network.
+	// Chain ID of this Ethereum network.
 	ChainId string `protobuf:"bytes,2,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
 	// // Contract configuration of the collateral bridge contract for this Ethereum network.
 	CollateralBridgeContract *EthereumContractConfig `protobuf:"bytes,3,opt,name=collateral_bridge_contract,json=collateralBridgeContract,proto3" json:"collateral_bridge_contract,omitempty"`
@@ -5419,7 +5420,7 @@ type Epoch struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Sequence is used as epoch identifier.
+	// Sequence is used as epoch ID.
 	Seq uint64 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
 	// Timestamps for start/end etc.
 	Timestamps *EpochTimestamps `protobuf:"bytes,2,opt,name=timestamps,proto3" json:"timestamps,omitempty"`
@@ -5817,7 +5818,7 @@ type Node struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The node ID (wallet ID).
+	// Node ID i.e. the node's wallet ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Pub key of the node operator.
 	PubKey string `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
@@ -5825,14 +5826,14 @@ type Node struct {
 	TmPubKey string `protobuf:"bytes,3,opt,name=tm_pub_key,json=tmPubKey,proto3" json:"tm_pub_key,omitempty"`
 	// Ethereum public key of the node.
 	EthereumAddress string `protobuf:"bytes,4,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
-	// URL where I can find out more info on the node.
+	// URL where users can find out more information on the node.
 	InfoUrl string `protobuf:"bytes,5,opt,name=info_url,json=infoUrl,proto3" json:"info_url,omitempty"`
 	// Country code for the location of the node.
 	Location string `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
-	// The amount the node has put up themselves
+	// Amount the node has put up themselves
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
 	StakedByOperator string `protobuf:"bytes,7,opt,name=staked_by_operator,json=stakedByOperator,proto3" json:"staked_by_operator,omitempty"`
-	// The amount of stake that has been delegated by token holders
+	// Amount of stake that has been delegated by token holders
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
 	StakedByDelegates string `protobuf:"bytes,8,opt,name=staked_by_delegates,json=stakedByDelegates,proto3" json:"staked_by_delegates,omitempty"`
 	// Total amount staked on node
@@ -6541,11 +6542,11 @@ type StateValueProposal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// state variable identifier.
+	// State variable ID.
 	StateVarId string `protobuf:"bytes,1,opt,name=state_var_id,json=stateVarId,proto3" json:"state_var_id,omitempty"`
-	// event identifier.
+	// Event ID.
 	EventId string `protobuf:"bytes,2,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
-	// key value tolerance triplets.
+	// Key value tolerance triplets.
 	Kvb []*KeyValueBundle `protobuf:"bytes,3,rep,name=kvb,proto3" json:"kvb,omitempty"`
 }
 

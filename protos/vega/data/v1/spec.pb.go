@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Type describes the type of properties that are supported by the data source
+// Type describes the data type of properties that are supported by the data source
 // engine.
 type PropertyKey_Type int32
 
@@ -90,7 +90,7 @@ func (PropertyKey_Type) EnumDescriptor() ([]byte, []int) {
 	return file_vega_data_v1_spec_proto_rawDescGZIP(), []int{1, 0}
 }
 
-// Comparator describes the type of comparison.
+// Operator describes the type of comparison.
 type Condition_Operator int32
 
 const (
@@ -223,11 +223,11 @@ type PropertyKey struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// name is the name of the property.
+	// Name of the property.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// type is the type of the property.
+	// Data type of the property.
 	Type PropertyKey_Type `protobuf:"varint,2,opt,name=type,proto3,enum=vega.data.v1.PropertyKey_Type" json:"type,omitempty"`
-	// An optional decimal place to be be applied on the provided value
+	// Optional decimal place to be be applied on the provided value
 	// valid only for PropertyType of type DECIMAL and INTEGER
 	NumberDecimalPlaces *uint64 `protobuf:"varint,3,opt,name=number_decimal_places,json=numberDecimalPlaces,proto3,oneof" json:"number_decimal_places,omitempty"`
 }
@@ -291,7 +291,7 @@ type Condition struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// comparator is the type of comparison to make on the value.
+	// operator is the type of comparison to make on the value.
 	Operator Condition_Operator `protobuf:"varint,1,opt,name=operator,proto3,enum=vega.data.v1.Condition_Operator" json:"operator,omitempty"`
 	// value is used by the comparator.
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`

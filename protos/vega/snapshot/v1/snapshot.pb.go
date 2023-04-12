@@ -166,13 +166,13 @@ type NodeHash struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The node's full key, for example epoch.all
+	// Node's full key, for example epoch.all
 	Key string `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
-	// The hash of the node's value
+	// Hash of the node's value
 	Hash string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
-	// The height of the node in the tree
+	// Height of the node in the tree
 	Height int32 `protobuf:"varint,5,opt,name=height,proto3" json:"height,omitempty"`
-	// The version of that node i.e., how many times its value has changed during tree updates
+	// Version of that node i.e., how many times its value has changed during tree updates
 	Version int64 `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
 	// Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
 	IsLeaf bool `protobuf:"varint,7,opt,name=is_leaf,json=isLeaf,proto3" json:"is_leaf,omitempty"`
@@ -4916,9 +4916,9 @@ type EpochState struct {
 
 	// Sequence number that increases by one each epoch
 	Seq uint64 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
-	// What time did this epoch start
+	// Time at which this epoch started
 	StartTime int64 `protobuf:"varint,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// What time should this epoch end
+	// Time at which this epoch should end
 	ExpireTime int64 `protobuf:"varint,4,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
 	// Ready to start a new epoch
 	ReadyToStartNewEpoch bool `protobuf:"varint,6,opt,name=ready_to_start_new_epoch,json=readyToStartNewEpoch,proto3" json:"ready_to_start_new_epoch,omitempty"`
@@ -5245,13 +5245,13 @@ type LimitState struct {
 
 	// Number of blocks into the bootstrapping phase
 	BlockCount uint32 `protobuf:"varint,1,opt,name=block_count,json=blockCount,proto3" json:"block_count,omitempty"`
-	// whether the limit on market proposals has been lifted
+	// Whether or not the limit on market proposals has been lifted
 	CanProposeMarket bool `protobuf:"varint,2,opt,name=can_propose_market,json=canProposeMarket,proto3" json:"can_propose_market,omitempty"`
-	// whether the limit on asset proposals has been lifted
+	// Whether or not the limit on asset proposals has been lifted
 	CanProposeAsset bool `protobuf:"varint,3,opt,name=can_propose_asset,json=canProposeAsset,proto3" json:"can_propose_asset,omitempty"`
-	// whether the genesis state is loaded
+	// Whether or not the genesis state is loaded
 	GenesisLoaded bool `protobuf:"varint,4,opt,name=genesis_loaded,json=genesisLoaded,proto3" json:"genesis_loaded,omitempty"`
-	// fields derived from the genesis state
+	// Fields derived from the genesis state
 	ProposeMarketEnabled     bool  `protobuf:"varint,5,opt,name=propose_market_enabled,json=proposeMarketEnabled,proto3" json:"propose_market_enabled,omitempty"`
 	ProposeAssetEnabled      bool  `protobuf:"varint,6,opt,name=propose_asset_enabled,json=proposeAssetEnabled,proto3" json:"propose_asset_enabled,omitempty"`
 	ProposeMarketEnabledFrom int64 `protobuf:"varint,7,opt,name=propose_market_enabled_from,json=proposeMarketEnabledFrom,proto3" json:"propose_market_enabled_from,omitempty"`
@@ -6790,7 +6790,7 @@ type LiquidityParameters struct {
 	MaxFee                  string `protobuf:"bytes,1,opt,name=max_fee,json=maxFee,proto3" json:"max_fee,omitempty"`
 	MaxShapeSize            string `protobuf:"bytes,2,opt,name=max_shape_size,json=maxShapeSize,proto3" json:"max_shape_size,omitempty"`
 	StakeToObligationFactor string `protobuf:"bytes,3,opt,name=stake_to_obligation_factor,json=stakeToObligationFactor,proto3" json:"stake_to_obligation_factor,omitempty"`
-	// required for key generation
+	// Required for key generation
 	MarketId string `protobuf:"bytes,4,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -6860,7 +6860,7 @@ type LiquidityPendingProvisions struct {
 	unknownFields protoimpl.UnknownFields
 
 	PendingProvisions []string `protobuf:"bytes,1,rep,name=pending_provisions,json=pendingProvisions,proto3" json:"pending_provisions,omitempty"`
-	// required for key generation
+	// Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -6916,7 +6916,7 @@ type LiquidityPartiesLiquidityOrders struct {
 	unknownFields protoimpl.UnknownFields
 
 	PartyOrders []*PartyOrders `protobuf:"bytes,1,rep,name=party_orders,json=partyOrders,proto3" json:"party_orders,omitempty"`
-	// required for key generation
+	// Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7027,7 +7027,7 @@ type LiquidityPartiesOrders struct {
 	unknownFields protoimpl.UnknownFields
 
 	PartyOrders []*PartyOrders `protobuf:"bytes,1,rep,name=party_orders,json=partyOrders,proto3" json:"party_orders,omitempty"`
-	// required for key generation
+	// Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7083,7 +7083,7 @@ type LiquidityProvisions struct {
 	unknownFields protoimpl.UnknownFields
 
 	LiquidityProvisions []*vega.LiquidityProvision `protobuf:"bytes,1,rep,name=liquidity_provisions,json=liquidityProvisions,proto3" json:"liquidity_provisions,omitempty"`
-	// required for key generation
+	// Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7251,7 +7251,7 @@ func (x *LiquidityScore) GetPartyId() string {
 	return ""
 }
 
-// snapshot payload for floating point consensus
+// Snapshot payload for floating point consensus
 type FloatingPointConsensus struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8281,9 +8281,9 @@ type AcceptedProtocolUpgradeProposal struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The block height at which to perform the upgrade
+	// Block height at which to perform the upgrade
 	UpgradeBlockHeight uint64 `protobuf:"varint,1,opt,name=upgrade_block_height,json=upgradeBlockHeight,proto3" json:"upgrade_block_height,omitempty"`
-	// the release tag for the vega binary
+	// Release tag for the vega binary
 	VegaReleaseTag string `protobuf:"bytes,2,opt,name=vega_release_tag,json=vegaReleaseTag,proto3" json:"vega_release_tag,omitempty"`
 }
 

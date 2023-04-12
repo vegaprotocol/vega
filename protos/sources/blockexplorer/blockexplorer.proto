@@ -36,13 +36,13 @@ service BlockExplorerService {
   rpc Info(InfoRequest) returns (InfoResponse);
 }
 
-// node info
+// node information
 message InfoRequest {}
 
 message InfoResponse {
     // A semver formatted version of the data node
     string version = 1;
-    // The commit hash from which the data-node was built
+    // The commit hash from which the data node was built
     string commit_hash = 2;
 }
 
@@ -63,7 +63,7 @@ message ListTransactionsRequest {
   optional string before = 2;
   // An optional cursor to paginate the request
   optional string after = 3;
-  // Filters to apply to the request
+  // The filters to apply to the request
   map<string, string> filters =4;
 }
 
@@ -79,19 +79,19 @@ message Transaction {
   uint32 index = 2;
   // The hash of the transaction
   string hash = 3;
-  // The submitter of the transaction (Vega public key)
+  // The Vega public key of the transaction's submitter
   string submitter = 4;
   // The type of transaction
   string type = 5;
-  // The results code of the transaction (0 is success)
+  // The results code of the transaction. 0 indicates the transaction was successful
   uint32 code = 6;
-  // The cursor for this transaction (in the page, used for paginated results)
+  // The cursor for this transaction. This is used for paginating results
   string cursor = 7;
   // The actual command of the transaction
   vega.commands.v1.InputData command = 8;
-  // Submitter's signature of transaction
+  // The submitter's signature of transaction
   vega.commands.v1.Signature signature = 9;
   // An optional error happening when processing / checking the transaction
-  // Should be set if error code is not 0
+  // This should be set if error code is not 0
   optional string error = 10;
 }

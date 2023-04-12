@@ -16,22 +16,22 @@ message PubKey {
 
 message Signer {
   oneof signer {
-    // pubKeys is the list of authorized public keys that signed the data for this
+    // List of authorized public keys that signed the data for this
     // source. All the public keys in the data should be contained in these
     // public keys.
     PubKey pub_key = 1;
-    // in case of an open oracle - Ethereum address will be submitted
+    // In case of an open oracle - Ethereum address will be submitted
     ETHAddress eth_address = 2;
   }
 }
 
 // Property describes one property of data spec with a key with its value.
 message Property {
-  // name is the name of the property.
+  // Name of the property.
   string name = 1;
-  // value is the value of the property.
+  // Value of the property.
   string value = 2;
-  // An optional decimal place to be be applied on the provided value
+  // Optional decimal place to be be applied on the provided value
   // valid only for PropertyType of type DECIMAL and INTEGER
   optional uint64 number_decimal_places = 3;
 }
@@ -40,7 +40,7 @@ message Property {
 // It represents both matched and unmatched data.
 message Data {
   repeated Signer signers = 1;
-  // data holds all the properties of the data
+  // Data holds all the properties of the data
   repeated Property data = 2;
   // matched_specs_ids lists all the specs that matched this data.
   // When the array is empty, it means no spec matched this data.

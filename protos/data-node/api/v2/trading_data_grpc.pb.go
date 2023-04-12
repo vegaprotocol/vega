@@ -32,7 +32,7 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of accounts
 	ObserveAccounts(ctx context.Context, in *ObserveAccountsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveAccountsClient, error)
-	// Data node info
+	// Data node information
 	//
 	// Retrieves information about the data node.
 	// Response contains a semver formatted version of the data node and the commit hash, from which the data node was built
@@ -54,14 +54,14 @@ type TradingDataServiceClient interface {
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
 	// Deprecated: Do not use.
-	// List positions (deprecated)
+	// Deprecated: List positions
 	//
-	// Get a list of positions by party (public key) using cursor based pagination
+	// Get a list of positions by party's public key using cursor based pagination
 	// Deprecated: use ListAllPositions instead
 	ListPositions(ctx context.Context, in *ListPositionsRequest, opts ...grpc.CallOption) (*ListPositionsResponse, error)
 	// List positions
 	//
-	// Get a list of positions by party (public key) using cursor based pagination
+	// Get a list of positions by party's public key using cursor based pagination
 	ListAllPositions(ctx context.Context, in *ListAllPositionsRequest, opts ...grpc.CallOption) (*ListAllPositionsResponse, error)
 	// Observe positions
 	//
@@ -71,7 +71,7 @@ type TradingDataServiceClient interface {
 	//
 	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
-	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
 	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
 	// for each of the sides - sending and receiving accounts, the query returns an error.
@@ -80,7 +80,7 @@ type TradingDataServiceClient interface {
 	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
-	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
+	//   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -95,16 +95,15 @@ type TradingDataServiceClient interface {
 	//
 	// `ListBalanceChanges` queries the change in account balances over a period of time.
 	//
-	// An account is defined as a set of (asset_id, type, party_id, market_id).
+	// An account is defined as a set of asset_id, type, party_id, and market_id.
 	//   - Every account has an associated asset and type.
-	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier 'network'
-	//   - Certain account types do not have an associated market (for example general party accounts).
-	//     These are denoted by the special market identifier ” (the empty string)
+	//   - Certain account types such as the global reward pool for example, do not have an associated party.
+	//     These are denoted by the special party ID 'network'
+	//   - Certain account types do not have an associated market such as the general party accounts, for example.
+	//     These are denoted by the special market ID ” (the empty string)
 	//
-	// `ListBalanceChangesRequest` will return a list of
-	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
-	// With a row for each block at which a given account's balance changes.
+	// `ListBalanceChangesRequest` will return a list of `AggregatedBalance` records,
+	// with a row for each block at which a given account's balance changes.
 	ListBalanceChanges(ctx context.Context, in *ListBalanceChangesRequest, opts ...grpc.CallOption) (*ListBalanceChangesResponse, error)
 	// Get latest market data
 	//
@@ -140,7 +139,7 @@ type TradingDataServiceClient interface {
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
 	// Get network limits
 	//
-	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
+	// Get the current network limits for example: is bootstrapping finished, are proposals enabled etc..
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
 	// List candle data
 	//
@@ -176,7 +175,8 @@ type TradingDataServiceClient interface {
 	GetERC20ListAssetBundle(ctx context.Context, in *GetERC20ListAssetBundleRequest, opts ...grpc.CallOption) (*GetERC20ListAssetBundleResponse, error)
 	// Get ERC20 set asset limits bundle
 	//
-	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
+	// Get the signature bundle to update the token limits. These are maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is
+	// already allowlisted in the collateral bridge.
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
 	// Get ERC20 withdrawal approval
 	//
@@ -244,17 +244,17 @@ type TradingDataServiceClient interface {
 	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
 	//
-	// Get a deposit by its identifier
+	// Get a deposit by its ID
 	GetDeposit(ctx context.Context, in *GetDepositRequest, opts ...grpc.CallOption) (*GetDepositResponse, error)
 	// List deposits
 	//
 	// Get a list of deposits for a given party.
 	// If a date range is provided, filtering will be based on the last time the deposit
-	// has been updated (in Vega time).
+	// has been updated in Vega time.
 	ListDeposits(ctx context.Context, in *ListDepositsRequest, opts ...grpc.CallOption) (*ListDepositsResponse, error)
 	// Get withdrawal
 	//
-	// Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
+	// Get a withdrawal by its ID. Use the withdrawals list query to get withdrawal IDs
 	GetWithdrawal(ctx context.Context, in *GetWithdrawalRequest, opts ...grpc.CallOption) (*GetWithdrawalResponse, error)
 	// List withdrawals
 	//
@@ -379,7 +379,7 @@ type TradingDataServiceClient interface {
 	GetMostRecentNetworkHistorySegment(ctx context.Context, in *GetMostRecentNetworkHistorySegmentRequest, opts ...grpc.CallOption) (*GetMostRecentNetworkHistorySegmentResponse, error)
 	// List all network history segments
 	//
-	// List all history segments stored by the data node you're connected to
+	// List all history segments stored by the data node currently connected to
 	ListAllNetworkHistorySegments(ctx context.Context, in *ListAllNetworkHistorySegmentsRequest, opts ...grpc.CallOption) (*ListAllNetworkHistorySegmentsResponse, error)
 	// Get active network history peer addresses
 	//
@@ -431,7 +431,7 @@ type TradingDataServiceClient interface {
 	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
 	// Thus the files are not strictly one line per table row like text-format files.
 	//
-	// The first row of the CSV file is a header that allows you to identify the columns
+	// The first row of the CSV file is a header that allows identification of the columns
 	// of subsequent rows.
 	//
 	// Usually the ZIP file will contain only a single CSV file. However it is possible that
@@ -1615,7 +1615,7 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of accounts
 	ObserveAccounts(*ObserveAccountsRequest, TradingDataService_ObserveAccountsServer) error
-	// Data node info
+	// Data node information
 	//
 	// Retrieves information about the data node.
 	// Response contains a semver formatted version of the data node and the commit hash, from which the data node was built
@@ -1637,14 +1637,14 @@ type TradingDataServiceServer interface {
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
 	// Deprecated: Do not use.
-	// List positions (deprecated)
+	// Deprecated: List positions
 	//
-	// Get a list of positions by party (public key) using cursor based pagination
+	// Get a list of positions by party's public key using cursor based pagination
 	// Deprecated: use ListAllPositions instead
 	ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error)
 	// List positions
 	//
-	// Get a list of positions by party (public key) using cursor based pagination
+	// Get a list of positions by party's public key using cursor based pagination
 	ListAllPositions(context.Context, *ListAllPositionsRequest) (*ListAllPositionsResponse, error)
 	// Observe positions
 	//
@@ -1654,7 +1654,7 @@ type TradingDataServiceServer interface {
 	//
 	// List ledger entries by asset, market, party, account type and transfer type within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
-	// It returns a time series (implemented as a list of AggregateLedgerEntry structs), with a row for every time
+	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
 	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
 	// for each of the sides - sending and receiving accounts, the query returns an error.
@@ -1663,7 +1663,7 @@ type TradingDataServiceServer interface {
 	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
 	//   - listing ledger entries with filtering on the sending AND receiving account
-	//   - listing ledger entries with filtering on the transfer type (on top of above filters or as a standalone option)
+	//   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -1678,16 +1678,15 @@ type TradingDataServiceServer interface {
 	//
 	// `ListBalanceChanges` queries the change in account balances over a period of time.
 	//
-	// An account is defined as a set of (asset_id, type, party_id, market_id).
+	// An account is defined as a set of asset_id, type, party_id, and market_id.
 	//   - Every account has an associated asset and type.
-	//   - Certain account types (for example, the global reward pool) do not have an associated party.
-	//     These are denoted by the special party identifier 'network'
-	//   - Certain account types do not have an associated market (for example general party accounts).
-	//     These are denoted by the special market identifier ” (the empty string)
+	//   - Certain account types such as the global reward pool for example, do not have an associated party.
+	//     These are denoted by the special party ID 'network'
+	//   - Certain account types do not have an associated market such as the general party accounts, for example.
+	//     These are denoted by the special market ID ” (the empty string)
 	//
-	// `ListBalanceChangesRequest` will return a list of
-	// `(vega_time, asset_id, account_type, party_id, market_id, balance)`
-	// With a row for each block at which a given account's balance changes.
+	// `ListBalanceChangesRequest` will return a list of `AggregatedBalance` records,
+	// with a row for each block at which a given account's balance changes.
 	ListBalanceChanges(context.Context, *ListBalanceChangesRequest) (*ListBalanceChangesResponse, error)
 	// Get latest market data
 	//
@@ -1723,7 +1722,7 @@ type TradingDataServiceServer interface {
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
 	// Get network limits
 	//
-	// Get the current network limits (is bootstrapping finished, are proposals enabled etc..)
+	// Get the current network limits for example: is bootstrapping finished, are proposals enabled etc..
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
 	// List candle data
 	//
@@ -1759,7 +1758,8 @@ type TradingDataServiceServer interface {
 	GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error)
 	// Get ERC20 set asset limits bundle
 	//
-	// Get the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
+	// Get the signature bundle to update the token limits. These are maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is
+	// already allowlisted in the collateral bridge.
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
 	// Get ERC20 withdrawal approval
 	//
@@ -1827,17 +1827,17 @@ type TradingDataServiceServer interface {
 	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
 	//
-	// Get a deposit by its identifier
+	// Get a deposit by its ID
 	GetDeposit(context.Context, *GetDepositRequest) (*GetDepositResponse, error)
 	// List deposits
 	//
 	// Get a list of deposits for a given party.
 	// If a date range is provided, filtering will be based on the last time the deposit
-	// has been updated (in Vega time).
+	// has been updated in Vega time.
 	ListDeposits(context.Context, *ListDepositsRequest) (*ListDepositsResponse, error)
 	// Get withdrawal
 	//
-	// Get a withdrawal by its ID. Use the withdrawls list query to get withdrawal IDs
+	// Get a withdrawal by its ID. Use the withdrawals list query to get withdrawal IDs
 	GetWithdrawal(context.Context, *GetWithdrawalRequest) (*GetWithdrawalResponse, error)
 	// List withdrawals
 	//
@@ -1962,7 +1962,7 @@ type TradingDataServiceServer interface {
 	GetMostRecentNetworkHistorySegment(context.Context, *GetMostRecentNetworkHistorySegmentRequest) (*GetMostRecentNetworkHistorySegmentResponse, error)
 	// List all network history segments
 	//
-	// List all history segments stored by the data node you're connected to
+	// List all history segments stored by the data node currently connected to
 	ListAllNetworkHistorySegments(context.Context, *ListAllNetworkHistorySegmentsRequest) (*ListAllNetworkHistorySegmentsResponse, error)
 	// Get active network history peer addresses
 	//
@@ -2014,7 +2014,7 @@ type TradingDataServiceServer interface {
 	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
 	// Thus the files are not strictly one line per table row like text-format files.
 	//
-	// The first row of the CSV file is a header that allows you to identify the columns
+	// The first row of the CSV file is a header that allows identification of the columns
 	// of subsequent rows.
 	//
 	// Usually the ZIP file will contain only a single CSV file. However it is possible that

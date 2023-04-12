@@ -13,43 +13,43 @@ import "vega/commands/v1/data.proto";
 import "vega/commands/v1/validator_commands.proto";
 
 message ERC20MultiSigSignerAdded {
-  // The identifier of the signature bundle
+  // ID of the signature bundle
   string signature_id = 1;
-  // The vega node ID of the node to be added
+  // Vega node ID of the node to be added
   string validator_id = 2;
-  // the time at which this happened
+  // Time at which this happened
   int64 timestamp = 3;
- // The ethereum address of the new signer
+ // Ethereum address of the new signer
   string new_signer = 4;
-  // The address of the submitter of the transaction
+  // Address of the submitter of the transaction
   string submitter = 5;
-  // The nonce used.
+  // Nonce used.
   string nonce = 6;
-  // The epoch that the node was added for
+  // Epoch that the node was added for
   string epoch_seq = 7;
 }
 
 message ERC20MultiSigSignerRemovedSubmitter {
-  // The ID of this signature bundle
+  // ID of this signature bundle
   string signature_id = 1;
-  // The address of the submitter of the transaction
+  // Address of the submitter of the transaction
   string submitter = 2;
 }
 
 message ERC20MultiSigSignerRemoved {
-  // A list containing all the IDs of bundle generated
+  // List containing all the IDs of bundle generated
   // There should be one bundle generated for every validators
   // in the validator set
   repeated ERC20MultiSigSignerRemovedSubmitter signature_submitters = 1;
-  // The vega node ID of the node which is to be removed
+  // Vega node ID of the node which is to be removed
   string validator_id = 2;
-  // the time at which this happened
+  // Time at which this happened
   int64 timestamp = 3;
-  // The ethereum address of the signer to be removed
+  // Ethereum address of the signer to be removed
   string old_signer = 4;
-  // The nonce used.
+  // Nonce used.
   string nonce = 5;
-  // The epoch that the node was removed for
+  // Epoch that the node was removed for
   string epoch_seq = 6;
 }
 
@@ -122,29 +122,29 @@ message StakeLinking {
     STATUS_REJECTED = 3;
   }
 
-  // The internal ID for this staking event
+  // Internal ID for this staking event
   string id = 1;
-  // The type of event
+  // Stake linking event type.
   Type type = 2;
-  // The timestamps at which the event was emitted by ethereum
+  // Timestamps at which the event was emitted by ethereum
   int64 ts = 3;
-  // The party to whom the event is directed at.
+  // Party to whom the event is directed at.
   string party = 4;
-  // The amount of stake deposited or removed
+  // Amount of stake deposited or removed
   string amount = 5;
-  // The status of the event
+  // Status of the event
   Status status = 6;
-  // The time at which the vega network finalized the state of the event
+  // Time at which the vega network finalized the state of the event
   int64 finalized_at = 7;
-  // The hash of the transaction from which the events happen
+  // Hash of the transaction from which the events happen
   string tx_hash = 8;
-  // The block when the event happened
+  // Block when the event happened
   uint64 block_height = 9;
-  // The block time
+  // Block time
   int64 block_time = 10;
-  // The log index
+  // Log index
   uint64 log_index = 11;
-  // the ethereum address from which the stake link was initiated
+  // Ethereum address from which the stake link was initiated
   string ethereum_address = 12;
 }
 
@@ -196,7 +196,7 @@ message RewardPayoutEvent {
   string market = 8;
 }
 
-//ValidatorScoreEvent is the score a validator gets for a given epoch
+// ValidatorScoreEvent is the score a validator gets for a given epoch
 message ValidatorScoreEvent {
   string node_id = 1;
   string epoch_seq = 2;
@@ -208,7 +208,7 @@ message ValidatorScoreEvent {
   string multisig_score = 8;
 }
 
-//DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
+// DelegationBalanceEvent - updates on the delegation balance of a party to a node in the current epoch in effect
 message DelegationBalanceEvent {
   string party = 1;
   string node_id = 2;
@@ -219,20 +219,20 @@ message DelegationBalanceEvent {
 // MarketEvent - the common denominator for all market events
 // interface has a method to return a string for logging
 message MarketEvent {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
   // Payload is a unique information string
   string payload = 2;
 }
 
 message TransactionResult {
-  // Unique party identifier for the related party
+  // Unique party ID for the related party
   string party_id = 1;
-  // The status of the transaction, did it succeed or an error was raised.
+  // Status of the transaction, did it succeed or an error was raised.
   bool status = 2;
-  // The hash of the transaction
+  // Hash of the transaction
   string hash = 3;
-  // The transaction itself as received by the network
+  // Transaction itself as received by the network
 
   oneof transaction {
     commands.v1.OrderSubmission order_submission = 101;
@@ -269,20 +269,20 @@ message TransactionResult {
   }
 
   message FailureDetails {
-    // An error message explaining the reason for the transaction failing processing
+    // Error message explaining the reason for the transaction failing processing
     string error = 1;
   }
 }
 
 message TxErrorEvent {
-  // this was the old restore checkpoint command
+  // This was the old restore checkpoint command
   reserved 110;
 
-  // Unique party identifier for the related party
+  // Unique party ID for the related party
   string party_id = 1;
-  // An error message describing what went wrong
+  // Error message describing what went wrong
   string err_msg = 2;
-  // The transaction that failed
+  // Transaction that failed
   oneof transaction {
     commands.v1.OrderSubmission order_submission = 101;
     commands.v1.OrderAmendment order_amendment = 102;
@@ -305,7 +305,7 @@ message TxErrorEvent {
   }
 }
 
-// A time update event contains the latest time update from Vega blockchain and indicates the start of a new block
+// Time update event contains the latest time update from Vega blockchain and indicates the start of a new block
 message TimeUpdate {
   // Timestamp containing latest update from Vega blockchain aka Vega-time
   int64 timestamp = 1;
@@ -317,23 +317,23 @@ message EpochEvent {
   uint64 seq = 1;
   // Action tells us what action is taking place
   vega.EpochAction action = 2;
-  // What time did this epoch start
+  // Time at which this epoch started
   int64  start_time = 3;
-  // What time should this epoch end
+  // Time at which this epoch should end
   int64  expire_time = 4;
-  // What time did it actually end
+  // Time at which this epoch did actually end
   int64  end_time = 5;
 }
 
-// A transfer responses event contains a collection of transfer information
+// Transfer responses event contains a collection of transfer information
 message LedgerMovements {
   // One or more entries containing internal transfer information
   repeated LedgerMovement ledger_movements = 1;
 }
 
-// A position resolution event contains information on distressed trades
+// Position resolution event contains information on distressed trades
 message PositionResolution {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
   // Number of distressed traders
   int64 distressed = 2;
@@ -343,17 +343,17 @@ message PositionResolution {
   string mark_price = 4;
 }
 
-// A loss socialization event contains details on the amount of wins unable to be distributed
+// Loss socialization event contains details on the amount of wins unable to be distributed
 message LossSocialization {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
-  // Party identifier (public key) for the event
+  // Party ID (public key) for the event
   string party_id = 2;
   // Amount distributed
   string amount = 3;
 }
 
-// A trade settlement is part of the settle position event
+// Trade settlement is part of the settle position event
 message TradeSettlement {
   // Size of trade settlement
   int64 size = 1;
@@ -363,11 +363,11 @@ message TradeSettlement {
   string market_price = 3;
 }
 
-// A settle position event contains position settlement information for a party
+// Settle position event contains position settlement information for a party
 message SettlePosition {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
-  // Party identifier (public key) for the event
+  // Party ID (public key) for the event
   string party_id = 2;
   // Price of settlement as a string
   string price = 3;
@@ -377,10 +377,10 @@ message SettlePosition {
   string position_factor = 5;
 }
 
-// A settle market event to notify data node that a market has been settled
+// Settle market event to notify data node that a market has been settled
 // so positions and PL can be updated accordingly
 message SettleMarket {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
   // Price of settlement as a string
   string price = 2;
@@ -388,11 +388,11 @@ message SettleMarket {
   string position_factor = 3;
 }
 
-// A position state event contains the current position state for a single party in a single market
+// Position state event contains the current position state for a single party in a single market
 message PositionStateEvent {
-  // Party identifier for this position update
+  // Party ID for this position update
   string party_id = 1;
-  // Market identifier for this position update
+  // Market ID for this position update
   string market_id = 2;
   // Current position
   int64 size = 3;
@@ -404,13 +404,13 @@ message PositionStateEvent {
   string vw_sell_price = 7;
 }
 
-// A settle distressed event contains information on distressed trading parties who are closed out
+// Settle distressed event contains information on distressed trading parties who are closed out
 message SettleDistressed {
   // Note: Any PositionResolution event (market level) will most likely be followed by a number of these events
 
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
-  // Party identifier (public key) for the event
+  // Party ID i.e. a party's public key for the event
   string party_id = 2;
   // Margin value as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
@@ -420,39 +420,39 @@ message SettleDistressed {
   string price = 4;
 }
 
-// A distressed order contains the party IDs for all parties that were distressed and had their orders closed,
+// Distressed order contains the party IDs for all parties that were distressed and had their orders closed,
 // but did not need to be closed out after cancelling their orders
 message DistressedOrders {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
-  // Slice of Party identifiers (public keys) for the event
+  // Slice of Party IDs i.e. each party's public key for the event
   repeated string parties = 2;
 }
 
-// A distressed positions event contains the party IDs for all parties that were distressed, had their orders closed but because of insufficient volume on the book
+// Distressed positions event contains the party IDs for all parties that were distressed, had their orders closed but because of insufficient volume on the book
 // could not be fully closed out. These parties are distressed, but still hold an active position on the book as a result. Once enough volume is on the book to close
 // them out, a SettleDistressed event will be sent. In case they manage to reduce their position, or meet the margin requirements, this status will be updated.
 // Parties that are no longer distressed but active will be listed in the safe_parties field.
 message DistressedPositions {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
-  // Slice of party identifiers (public keys) that are distressed but still have open volume
+  // Slice of party IDs i.e. each party's public key, that are distressed but still have open volume
   repeated string distressed_parties = 2;
-  // Slice of party identifiers (public keys) who were distressed but now can safely maintain their position
+  // Slice of party IDs i.e. each party's public key, who were distressed but now can safely maintain their position
   repeated string safe_parties = 3;
 }
 
-// A market ticket event contains the time value for when a particular market was last processed on Vega
+// Market tick event contains the time value for when a particular market was last processed on Vega
 message MarketTick {
-  // Market identifier for the event
+  // Market ID for the event
   string id = 1;
   // Timestamp containing latest update from Vega blockchain aka Vega-time
   int64 time = 2;
 }
 
-// An auction event indicating a change in auction state, for example starting or ending an auction
+// Auction event indicating a change in auction state, for example starting or ending an auction
 message AuctionEvent {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
   // True if the event indicates an auction opening and False otherwise
   bool opening_auction = 2;
@@ -462,16 +462,16 @@ message AuctionEvent {
   int64 start = 4;
   // Timestamp containing the end time for an auction
   int64 end = 5;
-  // the reason this market is/was in auction
+  // Reason this market is/was in auction
   AuctionTrigger trigger = 6;
   // If an auction was ongoing, but was extended for whatever reason, this field will
   // be set to the trigger type indicating which component extended the auction
   AuctionTrigger extension_trigger = 7;
 }
 
-// A validator update event contains information about validator node
+// Validator update event contains information about validator node
 message ValidatorUpdate {
-  // Node id of the node
+  // Node ID of the validator node
   string node_id = 1;
   // Vega public key of validator node
   string vega_pub_key = 2;
@@ -491,37 +491,37 @@ message ValidatorUpdate {
   uint32 vega_pub_key_index = 9;
   // Flag indicating if the validator has been added to or removed from vega
   bool added = 10;
-  // The epoch in which the announced pending node will start participating in the network
+  // Epoch in which the announced pending node will start participating in the network
   uint64 from_epoch = 11;
   // Ethereum public key being used as the submitter to allow automatic signature generation
   string submitter_address = 12;
-  // The epoch in which the node was announced or removed from the network
+  // Epoch in which the node was announced or removed from the network
   uint64 epoch_seq = 13;
 }
 
-// An event that explains the status of the validator for the coming epoch
+// Event that explains the status of the validator for the coming epoch
 message ValidatorRankingEvent {
   string node_id = 1;
-  // stake based score - no anti-whaling
+  // Stake based score - no anti-whaling
   string stake_score = 2;
-  // performance base score
+  // Performance base score
   string performance_score = 3;
-  // final score
+  // Final score
   string ranking_score = 4;
-  // the status of the validator in the previous epoch
+  // Status of the validator in the previous epoch
   string previous_status = 5;
-  // the status of the validator in the next epoch
+  // Status of the validator in the next epoch
   string next_status = 6;
-  // the epoch seq for which the status is valid
+  // Epoch seq for which the status is valid
   string epoch_seq = 7;
-  // tendermint voting power of the validator
+  // Tendermint voting power of the validator
   uint32 tm_voting_power = 8;
 }
 
 
 // Event that contains information about a Vega key rotation
 message KeyRotation {
-  // Identifier of the node that rotated their Vega key
+  // ID of the node that rotated their Vega key
   string node_id = 1;
   // Vega public key that was previously associated with the node
   string old_pub_key = 2;
@@ -533,7 +533,7 @@ message KeyRotation {
 
 // Event that contains information about an Ethereum key rotation
 message EthereumKeyRotation {
-  // Identifier of the node that rotated their Ethereum key
+  // ID of the node that rotated their Ethereum key
   string node_id = 1;
   // Ethereum address that was previously associated with the node
   string old_address= 2;
@@ -554,17 +554,17 @@ enum ProtocolUpgradeProposalStatus {
 }
 
 message ProtocolUpgradeEvent {
-  // The block height at which to perform the upgrade
+  // Block height at which to perform the upgrade
   uint64 upgrade_block_height = 1;
-  // the release tag for the vega binary
+  // Release tag for the vega binary
   string vega_release_tag = 2;
-  // tendermint validators that have agreed to the upgrade
+  // Tendermint validators that have agreed to the upgrade
   repeated string approvers = 3;
-  // the status of the proposal
+  // Status of the proposal
   ProtocolUpgradeProposalStatus status = 4;
 }
 
-//StateVarEvent - updates on state changes in state variable consensus
+// StateVar event updates on state changes in state variable consensus
 message StateVar {
   string id = 1;
   string event_id = 2;
@@ -583,12 +583,12 @@ message EndBlock {
   uint64 height = 1;
 }
 
-// The core is starting a protocol upgrade
+// Event indicating the core is starting a protocol upgrade
 message ProtocolUpgradeStarted {
   uint64 last_block_height = 1;
 }
 
-// The data node is ready fro protocol upgrade
+// Event indicating the data node is ready for protocol upgrade
 message ProtocolUpgradeDataNodeReady {
   uint64 last_block_height = 1;
 }
@@ -596,20 +596,17 @@ message ProtocolUpgradeDataNodeReady {
 
 // CoreSnapshotData represents the core snapshot data.
 message CoreSnapshotData {
-  // The block height at which snapshot was taken
+  // Block height at which snapshot was taken
   uint64 block_height = 1;
-
-  // The hash of the snapshot block
+  // Hash of the snapshot block
   string block_hash = 2;
-
   // Core version
   string core_version = 3;
-
   // Indicates if the snapshot is taken as part of protocol upgrade
   bool protocol_upgrade_block = 4;
 }
 
-// An (event) bus event type is used to specify a type of event
+// Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
 // Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items
@@ -712,20 +709,20 @@ enum BusEventType {
   BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION = 47;
   // Event indicating protocol upgrade proposal updates
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL = 48;
-  // The core is starting to process a new block
+  // Event indicating the core is starting to process a new block
   BUS_EVENT_TYPE_BEGIN_BLOCK = 49;
-  // The core finished to process a block
+  // Event indicating the core finished to process a block
   BUS_EVENT_TYPE_END_BLOCK = 50;
-  // The core is starting a protocol upgrade
+  // Event indicating the core is starting a protocol upgrade
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED = 51;
-  // The market has stopped and settled
+  // Event indicating the market has stopped and settled
   BUS_EVENT_TYPE_SETTLE_MARKET = 52;
-  // The result of a transaction processed by the network
+  // Event indicating the result of a transaction processed by the network
   BUS_EVENT_TYPE_TRANSACTION_RESULT = 53;
-  // Snapshot is taken at this block height
+  // Event indicating a snapshot was taken at this block height
   BUS_EVENT_TYPE_SNAPSHOT_TAKEN = 54;
 
-  // Data node notifies that it is ready to upgrade
+  // Event data node uses to notify that it is ready to upgrade
   BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY = 55;
 
   // Event indicating parties had orders closed because they were distressed, but were not closed out.
@@ -741,13 +738,13 @@ enum BusEventType {
   BUS_EVENT_TYPE_TX_ERROR = 201;
 }
 
-// A bus event is a container for event bus events emitted by Vega
+// Bus event is a container for event bus events emitted by Vega
 message BusEvent {
-  // A unique event identifier for the message
+  // Unique event ID for the message
   string id = 1;
-  // The batch (or block) of transactions that the events relate to
+  // The batch or block of transactions that the events relate to
   string block = 2;
-  // The type of bus event (one of the list below)
+  // The type of bus event. Must be one of the list below:
   BusEventType type = 3;
   oneof event {
     // Time update events
@@ -766,9 +763,9 @@ message BusEvent {
     Trade trade = 107;
     // Margin level update events
     MarginLevels margin_levels = 108;
-    // Proposal events (for governance)
+    // Proposal events for governance
     Proposal proposal = 109;
-    // Vote events (for governance)
+    // Vote events for governance
     Vote vote = 110;
     // Market data events
     MarketData market_data = 111;
@@ -842,19 +839,19 @@ message BusEvent {
     EthereumKeyRotation ethereum_key_rotation = 146;
     // Protocol upgrade proposal updates
     ProtocolUpgradeEvent protocol_upgrade_event = 147;
-    // The core is starting to process a new block
+    // Core is starting to process a new block
     BeginBlock begin_block= 148;
-    // The core finished to process a block
+    // Core finished processing a block
     EndBlock end_block = 149;
-    // The core is starting a protocol upgrade
+    // Core is starting a protocol upgrade
     ProtocolUpgradeStarted protocol_upgrade_started = 150;
     // Settle market event for data-node to update positions for settled markets
     SettleMarket settle_market = 151;
-    // The result of a transaction processed by the network
+    // Result of a transaction processed by the network
     TransactionResult transaction_result = 152;
-    // A core snapshot has been taken at the end of the block
+    // Core snapshot has been taken at the end of the block
     CoreSnapshotData core_snapshot_event = 153;
-    // A core snapshot has been taken at the end of the block
+    // Core snapshot has been taken at the end of the block
     ProtocolUpgradeDataNodeReady protocol_upgrade_data_node_ready = 154;
     // Parties that had their orders closed because they were distressed
     DistressedOrders distressed_orders = 155;
@@ -875,8 +872,8 @@ message BusEvent {
 }
 
 message ExpiredOrders {
-  // Market identifier for the event
+  // Market ID for the event
   string market_id = 1;
-  // Slice of expired order identifiers
+  // Slice of expired order IDs
   repeated string order_ids = 2;
 }

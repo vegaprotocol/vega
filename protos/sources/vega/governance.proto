@@ -14,11 +14,11 @@ message FutureProduct {
   string settlement_asset = 1;
   // Product quote name.
   string quote_name = 2;
-  // The data source spec describing the data source for settlement.
+  // Data source spec describing the data source for settlement.
   vega.DataSourceDefinition data_source_spec_for_settlement_data = 3;
   // The external data source spec describing the data source of trading termination.
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 4;
-  // The binding between the data source spec and the settlement data.
+  // Binding between the data source spec and the settlement data.
   DataSourceSpecToFutureBinding data_source_spec_binding = 5;
 }
 
@@ -59,23 +59,23 @@ message NewMarketConfiguration {
   // Percentage move up and down from the mid price which specifies the range of
   // price levels over which automated liquidity provision orders will be deployed.
   string lp_price_range = 8;
-  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
+  // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 9;
-  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
+  // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 10;
 }
 
 // New market on Vega
 message NewMarket {
-  // The configuration of the new market.
+  // Configuration of the new market.
   NewMarketConfiguration changes = 1;
 }
 
 // Update an existing market on Vega
 message UpdateMarket {
-  // The identifier of the market to update.
+  // Market ID the update is for.
   string market_id = 1;
-  // The updated configuration of the market.
+  // Updated configuration of the market.
   UpdateMarketConfiguration changes = 2;
 }
 
@@ -99,9 +99,9 @@ message UpdateMarketConfiguration {
   // Percentage move up and down from the mid price which specifies the range of
   // price levels over which automated liquidity provision orders will be deployed.
   string lp_price_range = 5;
-  // Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
+  // Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
   string linear_slippage_factor = 6;
-  // Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
+  // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 7;
 }
 
@@ -136,15 +136,15 @@ message UpdateNetworkParameter {
 
 // New asset on Vega
 message NewAsset {
-  // The configuration of the new asset.
+  // Configuration of the new asset.
   AssetDetails changes = 1;
 }
 
 // Update an existing asset on Vega
 message UpdateAsset {
-  // The ID of the asset to be updated.
+  // Asset ID the update is for.
   string asset_id = 1;
-  // The changes to apply on an existing asset.
+  // Changes to apply on an existing asset.
   AssetDetailsUpdate changes = 2;
 }
 
@@ -155,13 +155,13 @@ message NewFreeform {}
 
 // Terms for a governance proposal on Vega
 message ProposalTerms {
-  // Timestamp (Unix time in seconds) when voting closes for this proposal,
+  // Timestamp as Unix time in seconds when voting closes for this proposal,
   // constrained by `minClose` and `maxClose` network parameters.
   int64 closing_timestamp = 1;
-  // Timestamp (Unix time in seconds) when proposal gets enacted (if passed),
+  // Timestamp as Unix time in seconds when proposal gets enacted if passed,
   // constrained by `minEnact` and `maxEnact` network parameters.
   int64 enactment_timestamp = 2;
-  // Validation timestamp (Unix time in seconds).
+  // Validation timestamp as Unix time in seconds.
   int64 validation_timestamp = 3;
   // Changes being proposed.
   oneof change {
@@ -181,7 +181,7 @@ message ProposalTerms {
   };
 }
 
-// The rationale behind a proposal.
+// Rationale behind a proposal.
 message ProposalRationale {
   reserved 2, 3;
   // Description to show a short title / something in case the link goes offline.
@@ -196,18 +196,18 @@ message ProposalRationale {
 
 // Governance data
 message GovernanceData {
-  // The governance proposal.
+  // Governance proposal.
   Proposal proposal = 1;
   // All YES votes in favour of the proposal above.
   repeated Vote yes = 2;
   // All NO votes against the proposal above.
   repeated Vote no = 3;
-  // All latest YES votes by party (guaranteed to be unique),
-  // where key (string) is the party ID (public key) and
+  // All latest YES votes by party which is guaranteed to be unique,
+  // where key (string) is the party ID i.e. public key and
   // value (Vote) is the vote cast by the given party.
   map<string, Vote> yes_party = 4;
-  // All latest NO votes by party (guaranteed to be unique),
-  // where key (string) is the party ID (public key) and
+  // All latest NO votes by party which is guaranteed to be unique,
+  // where key (string) is the party ID i.e. public key and
   // value (Vote) is the vote cast by the given party.
   map<string, Vote> no_party = 5;
 }
@@ -231,9 +231,9 @@ message Proposal {
     STATE_OPEN = 2;
     // Proposal has gained enough support to be executed
     STATE_PASSED = 3;
-    // Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)
+    // Proposal wasn't accepted i.e. proposal terms failed validation due to wrong configuration or failed to meet network requirements.
     STATE_REJECTED = 4;
-    // Proposal didn't get enough votes (either failing to gain required participation or majority level)
+    // Proposal didn't get enough votes, e.g. either failing to gain required participation or majority level.
     STATE_DECLINED = 5;
     // Proposal enacted
     STATE_ENACTED = 6;
@@ -245,66 +245,66 @@ message Proposal {
     //       - gateway/graphql/schema.graphql (enum ProposalState)
   }
 
-  // Unique proposal identifier.
+  // Unique proposal ID.
   string id = 1;
   // Proposal reference.
   string reference = 2;
-  // Party identifier (public key) of the author (the party submitting the proposal).
+  // Party ID i.e. public key of the party submitting the proposal.
   string party_id = 3;
   // Proposal state.
   State state = 4;
-  // Proposal timestamp for date and time (in nanoseconds) when proposal was submitted to the network.
+  // Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
   int64 timestamp = 5;
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
   ProposalTerms terms = 6;
-  // A reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
+  // Reason for the current state of the proposal, this may be set in case of REJECTED and FAILED statuses.
   optional ProposalError reason = 7;
-  // The detailed error associated to the reason.
+  // Detailed error associated to the reason.
   optional string error_details = 8;
-  // The rationale behind a proposal.
+  // Rationale behind a proposal.
   ProposalRationale rationale = 9;
-  // The required vote participation for this proposal.
+  // Required vote participation for this proposal.
   string required_participation = 10;
-  // The required majority for this proposal.
+  // Required majority for this proposal.
   string required_majority = 11;
-  // The required participation from liquidity providers, optional (required for market update proposal).
+  // Required participation from liquidity providers, optional but is required for market update proposal.
   optional string required_liquidity_provider_participation = 12;
-  // The require majority from liquidity providers, optional (required for market update proposal).
+  // Required majority from liquidity providers, optional but is required for market update proposal.
   optional string required_liquidity_provider_majority = 13;
 }
 
-// A list of possible errors that can cause a proposal to be in state rejected or failed
+// List of possible errors that can cause a proposal to be in state rejected or failed
 enum ProposalError {
 
   // Default value
   PROPOSAL_ERROR_UNSPECIFIED = 0;
-  // The specified close time is too early based on network parameters
+  // Specified close time is too early based on network parameters
   PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON = 1;
-  // The specified close time is too late based on network parameters
+  // Specified close time is too late based on network parameters
   PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE = 2;
-  // The specified enactment time is too early based on network parameters
+  // Specified enactment time is too early based on network parameters
   PROPOSAL_ERROR_ENACT_TIME_TOO_SOON = 3;
-  // The specified enactment time is too late based on network parameters
+  // Specified enactment time is too late based on network parameters
   PROPOSAL_ERROR_ENACT_TIME_TOO_LATE = 4;
-  // The proposer for this proposal has insufficient tokens
+  // Proposer for this proposal has insufficient tokens
   PROPOSAL_ERROR_INSUFFICIENT_TOKENS = 5;
-  // The instrument quote name and base name were the same
+  // Instrument quote name and base name were the same
   PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY = 6;
-  // The proposal has no product
+  // Proposal has no product
   PROPOSAL_ERROR_NO_PRODUCT = 7;
-  // The specified product is not supported
+  // Specified product is not supported
   PROPOSAL_ERROR_UNSUPPORTED_PRODUCT = 8;
-  // The proposal has no trading mode
+  // Proposal has no trading mode
   PROPOSAL_ERROR_NO_TRADING_MODE = 11;
-  // The proposal has an unsupported trading mode
+  // Proposal has an unsupported trading mode
   PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE = 12;
-  // The proposal failed node validation
+  // Proposal failed node validation
   PROPOSAL_ERROR_NODE_VALIDATION_FAILED = 13;
-  // A field is missing in a builtin asset source
+  // Field is missing in a builtin asset source
   PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD = 14;
-  // The contract address is missing in the ERC20 asset source
+  // Contract address is missing in the ERC20 asset source
   PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS = 15;
-  // The asset ID is invalid or does not exist on the Vega network
+  // Asset ID is invalid or does not exist on the Vega network
   PROPOSAL_ERROR_INVALID_ASSET = 16;
   // Proposal terms timestamps are not compatible (Validation < Closing < Enactment)
   PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS = 17;
@@ -338,24 +338,24 @@ enum ProposalError {
   PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE = 35;
   // Validation failed for freeform proposal
   PROPOSAL_ERROR_INVALID_FREEFORM = 36;
-  // The party doesn't have enough equity-like share to propose an update on the market
+  // Party doesn't have enough equity-like share to propose an update on the market
   // targeted by the proposal
   PROPOSAL_ERROR_INSUFFICIENT_EQUITY_LIKE_SHARE = 37;
-  // The market targeted by the proposal does not exist or is not eligible for modification
+  // Market targeted by the proposal does not exist or is not eligible for modification
   PROPOSAL_ERROR_INVALID_MARKET = 38;
-  // The market proposal decimal place is higher than the market settlement asset decimal places
+  // Market proposal decimal place is higher than the market settlement asset decimal places
   PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES = 39;
-  // The market proposal contains too many price monitoring triggers
+  // Market proposal contains too many price monitoring triggers
   PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS = 40;
-  // The market proposal contains too many price monitoring triggers
+  // Market proposal contains too many price monitoring triggers
   PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE = 41;
-  // The LP price range must be larger than 0
+  // LP price range must be larger than 0
   PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE = 42;
-  // The LP price range must not be larger than 100
+  // LP price range must not be larger than 100
   PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE = 43;
-  // The linear slippage factor is out of range (either negative or too large)
+  // Linear slippage factor is out of range (either negative or too large)
   PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE = 44;
-  // The quadratic slippage factor is out of range (either negative or too large)
+  // Quadratic slippage factor is out of range (either negative or too large)
   PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE = 45;
 }
 
@@ -366,9 +366,9 @@ message Vote {
   enum Value {
     // Default value, always invalid
     VALUE_UNSPECIFIED = 0;
-    // A vote against the proposal
+    // Vote against the proposal
     VALUE_NO = 1;
-    // A vote in favour of the proposal
+    // Vote in favour of the proposal
     VALUE_YES = 2;
 
     // Note: If adding an enum value, add a matching entry in:
@@ -376,13 +376,13 @@ message Vote {
     //       - gateway/graphql/schema.graphql (enum VoteValue)
   }
 
-  // Voter's party identifier.
+  // Voter's party ID.
   string party_id = 1;
   // Actual vote.
   Value value = 2;
-  // Identifier of the proposal being voted on.
+  // Proposal ID being voted on.
   string proposal_id = 3;
-  // Vote timestamp for date and time (in nanoseconds) when vote was submitted to the network.
+  // Vote timestamp for date and time as Unix time in nanoseconds when vote was submitted to the network.
   int64 timestamp = 4;
   // Total number of governance token for the party that cast the vote.
   string total_governance_token_balance = 5;

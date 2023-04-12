@@ -23,7 +23,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// node info
+// node information
 type InfoRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -69,7 +69,7 @@ type InfoResponse struct {
 
 	// A semver formatted version of the data node
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// The commit hash from which the data-node was built
+	// The commit hash from which the data node was built
 	CommitHash string `protobuf:"bytes,2,opt,name=commit_hash,json=commitHash,proto3" json:"commit_hash,omitempty"`
 }
 
@@ -226,7 +226,7 @@ type ListTransactionsRequest struct {
 	Before *string `protobuf:"bytes,2,opt,name=before,proto3,oneof" json:"before,omitempty"`
 	// An optional cursor to paginate the request
 	After *string `protobuf:"bytes,3,opt,name=after,proto3,oneof" json:"after,omitempty"`
-	// Filters to apply to the request
+	// The filters to apply to the request
 	Filters map[string]string `protobuf:"bytes,4,rep,name=filters,proto3" json:"filters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
@@ -349,20 +349,20 @@ type Transaction struct {
 	Index uint32 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
 	// The hash of the transaction
 	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
-	// The submitter of the transaction (Vega public key)
+	// The Vega public key of the transaction's submitter
 	Submitter string `protobuf:"bytes,4,opt,name=submitter,proto3" json:"submitter,omitempty"`
 	// The type of transaction
 	Type string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
-	// The results code of the transaction (0 is success)
+	// The results code of the transaction. 0 indicates the transaction was successful
 	Code uint32 `protobuf:"varint,6,opt,name=code,proto3" json:"code,omitempty"`
-	// The cursor for this transaction (in the page, used for paginated results)
+	// The cursor for this transaction. This is used for paginating results
 	Cursor string `protobuf:"bytes,7,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	// The actual command of the transaction
 	Command *v1.InputData `protobuf:"bytes,8,opt,name=command,proto3" json:"command,omitempty"`
-	// Submitter's signature of transaction
+	// The submitter's signature of transaction
 	Signature *v1.Signature `protobuf:"bytes,9,opt,name=signature,proto3" json:"signature,omitempty"`
 	// An optional error happening when processing / checking the transaction
-	// Should be set if error code is not 0
+	// This should be set if error code is not 0
 	Error *string `protobuf:"bytes,10,opt,name=error,proto3,oneof" json:"error,omitempty"`
 }
 
