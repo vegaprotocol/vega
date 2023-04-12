@@ -23,6 +23,7 @@ type Cmd struct {
 	// Subcommands
 	Show                          showCmd                       `command:"show" description:"shows network history segments currently stored by the node"`
 	Load                          loadCmd                       `command:"load" description:"load [from height] [to height], loads the given span of network history into the datanode, if no span is specified the latest contiguous network history will be loaded"`
+	Rollback                      rollbackCmd                   `command:"rollback" description:"rollback [to height], rolls back the datanode to the given height, the rollback height must match the to height of a network history segment"`
 	Fetch                         fetchCmd                      `command:"fetch" description:"fetch <history segment id> <blocks to fetch>, fetches the given segment and all previous segments until <blocks to fetch> blocks have been retrieved"`
 	LatestHistorySegmentFromPeers latestHistorySegmentFromPeers `command:"latest-history-segment-from-peers" description:"latest-history-segment-from-peers returns the id of the networks latest history segment"`
 	LatestHistorySegment          latestHistorySegment          `command:"latest-history-segment" description:"latest-history-segment returns the id of the node's latest history segment"`

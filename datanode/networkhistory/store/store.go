@@ -609,6 +609,10 @@ func (p *Store) extractHistorySegmentToStagingArea(ctx context.Context, toHeight
 	return nil
 }
 
+func (p *Store) GetSegmentIndexEntryForHeight(toHeight int64) (SegmentIndexEntry, error) {
+	return p.index.Get(toHeight)
+}
+
 func (p *Store) getHistorySegmentForHeight(ctx context.Context, toHeight int64, toDir string) (pathToSegment string, err error) {
 	indexEntry, err := p.index.Get(toHeight)
 	if err != nil {
