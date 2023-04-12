@@ -123,12 +123,15 @@ func (v *Visor) Run(ctx context.Context) error {
 		binErrs := make(chan error, 1)
 
 		go func() {
+			defer close(binErrs)
 			if isRestarting {
 				v.log.Info("Restarting binaries")
 			} else {
 				v.log.Info("Starting binaries")
 			}
-			binErrs <- binRunner.Run(ctx, runConf, isRestarting)
+			if err := binRunner.Run(ctx, runConf, isRestarting); err != nil {
+				binErrs <- err
+			}
 		}()
 
 		upgradeTicker.Reset(upgradeAPICallTickerDuration)

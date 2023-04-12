@@ -16,8 +16,6 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/ipfs/kubo/core/node/libp2p/fd"
-	"go.uber.org/zap"
-
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -162,7 +160,7 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		return nil, fmt.Errorf("failed to setup paths:%w", err)
 	}
 
-	idxLog := log.With(zap.String("component", "index"))
+	idxLog := log.With(logging.String("component", "index"))
 	p.index, err = NewIndex(p.indexPath, idxLog)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create index:%w", err)
@@ -229,13 +227,13 @@ func (p *Store) Stop() {
 	if p.ipfsNode != nil {
 		p.log.Info("Closing IPFS node")
 		if err := p.ipfsNode.Close(); err != nil {
-			p.log.Errorf("Failed to close IPFS node:%s", err)
+			p.log.Error("Failed to close IPFS node", logging.Error(err))
 		}
 	}
 
 	if p.index != nil {
 		if err := p.index.Close(); err != nil {
-			p.log.Errorf("Failed to close LevelDB:%s", err)
+			p.log.Error("Failed to close LevelDB:%s", logging.Error(err))
 		}
 		p.log.Info("LevelDB closed")
 	}
@@ -319,7 +317,7 @@ func (p *Store) ResetIndex() error {
 		return fmt.Errorf("failed to create index path:%w", err)
 	}
 
-	idxLog := p.log.With(zap.String("component", "index"))
+	idxLog := p.log.With(logging.String("component", "index"))
 	p.index, err = NewIndex(p.indexPath, idxLog)
 	if err != nil {
 		return fmt.Errorf("failed to create index:%w", err)
