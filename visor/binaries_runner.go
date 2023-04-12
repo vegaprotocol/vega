@@ -28,6 +28,8 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/visor/config"
 	"code.vegaprotocol.io/vega/visor/utils"
+
+	"golang.org/x/sync/errgroup"
 )
 
 const snapshotBlockHeightFlagName = "--snapshot.load-from-block-height"
@@ -59,7 +61,7 @@ func (r *BinariesRunner) cleanBinaryPath(binPath string) string {
 	return binPath
 }
 
-func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []string, allowKill bool) error {
+func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []string) error {
 	binPath = r.cleanBinaryPath(binPath)
 
 	if err := utils.EnsureBinary(binPath); err != nil {
@@ -85,6 +87,8 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 		return fmt.Errorf("failed to start binary %s %v: %w", binPath, args, err)
 	}
 
+	processID := cmd.Process.Pid
+
 	// Ensures that if one binary fails all of them are killed
 	go func() {
 		<-ctx.Done()
@@ -98,22 +102,21 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 			return
 		}
 
-		if !allowKill {
-			r.log.Debug("Not allowed to kill binary", logging.String("binaryPath", binPath))
-			return
-		}
+		r.log.Debug("Stopping binary", logging.String("binaryPath", binPath))
 
-		r.log.Debug("Killing binary", logging.String("binaryPath", binPath))
-
-		if err := cmd.Process.Kill(); err != nil {
-			r.log.Debug("Failed to kill binary",
+		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+			r.log.Debug("Failed to stop binary, resorting to force kill",
 				logging.String("binaryPath", binPath),
 				logging.Error(err),
 			)
+			if err := cmd.Process.Kill(); err != nil {
+				r.log.Debug("Failed to force kill binary",
+					logging.String("binaryPath", binPath),
+					logging.Error(err),
+				)
+			}
 		}
 	}()
-
-	processID := cmd.Process.Pid
 
 	r.mut.Lock()
 	r.running[processID] = cmd
@@ -160,24 +163,37 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 	return args, nil
 }
 
-func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) error {
+func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) chan error {
 	r.log.Debug("Starting Vega binary")
 
-	args, err := r.prepareVegaArgs(runConf, isRestart)
-	if err != nil {
-		return fmt.Errorf("failed to prepare args for Vega binary: %w", err)
-	}
+	eg, ctx := errgroup.WithContext(ctx)
 
-	if err := r.runBinary(ctx, runConf.Vega.Binary.Path, args, true); err != nil {
-		return fmt.Errorf("failed to run Vega binary: %w", err)
-	}
+	eg.Go(func() error {
+		args, err := r.prepareVegaArgs(runConf, isRestart)
+		if err != nil {
+			return fmt.Errorf("failed to prepare args for Vega binary: %w", err)
+		}
+
+		return r.runBinary(ctx, runConf.Vega.Binary.Path, args)
+	})
 
 	if runConf.DataNode != nil {
-		r.log.Debug("Starting Data Node binary")
-		return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args, isRestart)
+		eg.Go(func() error {
+			r.log.Debug("Starting Data Node binary")
+			return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args)
+		})
 	}
 
-	return nil
+	errChan := make(chan error)
+
+	go func() {
+		err := eg.Wait()
+		if err != nil {
+			errChan <- err
+		}
+	}()
+
+	return errChan
 }
 
 func (r *BinariesRunner) signal(signal syscall.Signal) error {

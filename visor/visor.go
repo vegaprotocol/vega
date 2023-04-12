@@ -107,11 +107,22 @@ func (v *Visor) Run(ctx context.Context) error {
 
 		v.conf.SetHasDataNode(runConf.DataNode != nil)
 
+		c := v.clientFactory.GetClient(
+			runConf.Vega.RCP.SocketPath,
+			runConf.Vega.RCP.HTTPPath,
+		)
+
 		maxNumberOfFirstConnectionRetries := v.conf.MaxNumberOfFirstConnectionRetries()
 
 		numOfUpgradeStatusErrs := 0
 		maxNumRestarts := v.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
+
+		if isRestarting {
+			v.log.Info("Restarting binaries")
+		} else {
+			v.log.Info("Starting binaries")
+		}
 
 		binRunner := NewBinariesRunner(
 			v.log,
@@ -119,28 +130,10 @@ func (v *Visor) Run(ctx context.Context) error {
 			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
 			currentReleaseInfo,
 		)
-
-		binErrs := make(chan error, 1)
-
-		go func() {
-			defer close(binErrs)
-			if isRestarting {
-				v.log.Info("Restarting binaries")
-			} else {
-				v.log.Info("Starting binaries")
-			}
-			if err := binRunner.Run(ctx, runConf, isRestarting); err != nil {
-				binErrs <- err
-			}
-		}()
+		binErrs := binRunner.Run(ctx, runConf, isRestarting)
 
 		upgradeTicker.Reset(upgradeAPICallTickerDuration)
 		isRestarting = false
-
-		c := v.clientFactory.GetClient(
-			runConf.Vega.RCP.SocketPath,
-			runConf.Vega.RCP.HTTPPath,
-		)
 
 	CheckLoop:
 		for {
