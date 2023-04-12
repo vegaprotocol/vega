@@ -64,6 +64,7 @@
 - [8060](https://github.com/vegaprotocol/vega/issues/8060) - Allow 0 decimals assets
 - [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
 - [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
+- [8128](https://github.com/vegaprotocol/vega/issues/8128) - Assure price monitoring engine extends the auction one bound at a time
 
 ## 0.70.0
 
