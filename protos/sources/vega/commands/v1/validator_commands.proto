@@ -68,7 +68,7 @@ message NodeVote {
     TYPE_STAKE_DEPOSITED = 1;
     // Node vote for a new stake removed event
     TYPE_STAKE_REMOVED = 2;
-    // Node vote for a new collateral deposited
+    // Node vote for a new collateral deposit
     TYPE_FUNDS_DEPOSITED = 3;
     // Node vote for a new signer added to the erc20 bridge
     TYPE_SIGNER_ADDED = 4;

@@ -7,7 +7,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 message BuiltinAssetDeposit {
   // Vega network internal asset ID.
   string vega_asset_id = 1;
-  // Vega party ID i.e. pub-key.
+  // Vega party ID i.e. public key.
   string party_id = 2;
   // Amount to be deposited
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -18,7 +18,7 @@ message BuiltinAssetDeposit {
 message BuiltinAssetWithdrawal {
   // Vega network internal asset ID.
   string vega_asset_id = 1;
-  // Vega network party ID i.e. pub-key.
+  // Vega network party ID i.e. public key.
   string party_id = 2;
   // The amount to be withdrawn
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -66,7 +66,7 @@ message ERC20Deposit {
   string vega_asset_id = 1;
   // Ethereum wallet that initiated the deposit.
   string source_ethereum_address = 2;
-  // Vega party ID i.e. pub-key which is the target of the deposit.
+  // Vega party ID i.e. public key that is the target of the deposit.
   string target_party_id = 3;
   // Amount to be deposited.
   string amount = 4;
@@ -88,7 +88,7 @@ message ERC20Event {
   uint64 index = 1;
   // Block in which the transaction was added.
   uint64 block = 2;
-  // Action undertaken by the event.
+  // Action undertaken as a result of the event.
   oneof action {
     // List an ERC20 asset.
     ERC20AssetList asset_list = 1001;
@@ -149,7 +149,7 @@ message ERC20MultiSigEvent {
   uint64 index = 1;
   // Block in which the transaction was added
   uint64 block = 2;
-  // Action undertaken by the event.
+  // Action undertaken as a result of the event.
   oneof action {
     // Add a signer to the erc20 bridge
     ERC20SignerAdded signer_added = 1001;

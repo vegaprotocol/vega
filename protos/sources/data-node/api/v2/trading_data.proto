@@ -258,7 +258,7 @@ service TradingDataService {
 
     // Get network limits
     //
-    // Get the current network limits for example: is bootstrapping finished, are proposals enabled etc..
+    // Get the current network limits, for example: is bootstrapping finished, are proposals enabled etc.
     rpc GetNetworkLimits(GetNetworkLimitsRequest) returns (GetNetworkLimitsResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Network";
@@ -339,7 +339,7 @@ service TradingDataService {
 
     // Get ERC20 set asset limits bundle
     //
-    // Get the signature bundle to update the token limits. These are maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is
+    // Get the signature bundle to update the token limits. These are `maxLifetimeDeposit` and `withdrawThreshold` for a given ERC20 token that is
     // already allowlisted in the collateral bridge.
     rpc GetERC20SetAssetLimitsBundle(GetERC20SetAssetLimitsBundleRequest) returns (GetERC20SetAssetLimitsBundleResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -877,8 +877,8 @@ service TradingDataService {
     // Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
     // Thus the files are not strictly one line per table row like text-format files.
     //
-    // The first row of the CSV file is a header that allows identification of the columns
-    // of subsequent rows.
+    // The first row of the CSV file is a header that describes the contents of each column
+    // in subsequent rows.
     //
     // Usually the ZIP file will contain only a single CSV file. However it is possible that
     // the (from_block, to_block) request spans over a range of blocks in which the underlying
@@ -1577,7 +1577,7 @@ enum TransferDirection {
 message ListTransfersRequest {
     // Public key for which to request transfers.
     optional string pubkey = 1;
-    // Transfer directions i.e. sender, receiver to include in the response data
+    // Transfer directions - i.e. sender, receiver - to include in the response data
     TransferDirection direction = 2;
     // Optional pagination control
     optional Pagination pagination = 3;
@@ -1756,9 +1756,9 @@ message ObserveVotesResponse {
 message ListERC20MultiSigSignerAddedBundlesRequest {
     // Node ID of the validator for which a signature bundle is required.
     string node_id = 1;
-    // Ethereum address of the validator which will submit the bundle.
+    // Ethereum address of the validator that will submit the bundle.
     string submitter = 2;
-    // Epoch which generated the bundle i.e the epoch in which the node was promoted to tendermint validator.
+    // Epoch in which the bundle was generated, i.e. the epoch in which the node was promoted to consensus validator.
     string epoch_seq = 3;
     // Pagination controls.
     Pagination pagination = 4;
@@ -1814,9 +1814,9 @@ message ERC20MultiSigSignerAddedBundle {
 message ListERC20MultiSigSignerRemovedBundlesRequest {
     // Node ID of the validator of which a signature bundle is required.
     string node_id = 1;
-    // Ethereum address of the validator which will submit the bundle.
+    // Ethereum address of the validator that will submit the bundle.
     string submitter = 2;
-    // Epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator.
+    // Epoch in which the bundle was generated, i.e. the epoch in which the node was demoted from a consensus validator.
     string epoch_seq = 3;
 
     // Pagination controls.
@@ -1871,7 +1871,7 @@ message ERC20MultiSigSignerRemovedBundle {
 
 // Request for listing the signature bundle to an ERC-20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
-  // Asset ID requested.
+  // ID of the asset requested.
   string asset_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2087,7 +2087,7 @@ message GetMarketRequest {
 
 // Response from getting a market by ID
 message GetMarketResponse {
-    // Information about to the market requested.
+    // Information about the market requested.
     vega.Market market = 1;
 }
 
@@ -2477,7 +2477,7 @@ message AssetsConnection {
 
 // Request for listing liquidity provisions
 message ListLiquidityProvisionsRequest {
-    //  Target market for the liquidity provision orders.
+    // Target market for the liquidity provision orders.
     optional string market_id = 1;
     // Party which submitted the liquidity provision orders.
     optional string party_id = 2;
@@ -2817,7 +2817,7 @@ message ListNetworkParametersRequest {
     optional Pagination pagination = 1;
 }
 
-// Response containing all of the vega network parameters
+// Response containing all of the Vega network parameters
 message ListNetworkParametersResponse {
     // List of network parameters with corresponding page information.
     NetworkParameterConnection network_parameters = 1;
@@ -3228,11 +3228,11 @@ enum Table {
 message ExportNetworkHistoryRequest {
     // Block to begin exporting from. Must be the first block of a history segment,
     // which by default are 1000 blocks each; in that case - 1, 1001, 2001 etc. are valid values.
-    // This can check by first calling the API to list all network history segments.
+    // This can be checked by first calling the API to list all network history segments.
     int64 from_block = 1;
     // Last block to export up to and including. Must be the last block of a history segment
     // which by default are 1000 blocks each; in that case - 1000, 2000, 3000 etc. are valid values.
-    // This can check by first calling the API to list all network history segments.
+    // This can be checked by first calling the API to list all network history segments.
     int64 to_block = 2;
     // Table to export data from.
     Table table = 3;

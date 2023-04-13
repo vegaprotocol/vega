@@ -254,9 +254,9 @@ message OrderConfirmation {
 message AuctionIndicativeState {
   // Market ID for which this state relates to.
   string market_id = 1;
-  // Indicative Uncrossing Price is the price at which all trades would occur if the auction uncrossed now.
+  // Indicative uncrossing price is the price at which all trades would occur if the auction uncrossed now.
   string indicative_price = 2;
-  // Indicative Uncrossing Volume is the volume available at the Indicative crossing price if the auction uncrossed now.
+  // Indicative uncrossing volume is the volume available at the indicative crossing price if the auction uncrossed now.
   uint64 indicative_volume = 3;
   // Timestamp at which the auction started.
   int64 auction_start = 4;
@@ -318,9 +318,9 @@ enum OrderError {
   ORDER_ERROR_INCORRECT_MARKET_TYPE = 22;
   // Order was submitted with invalid time in force
   ORDER_ERROR_INVALID_TIME_IN_FORCE = 23;
-  // GFN order has reached the market when it is in auction mode
+  // Good For Normal order has reached the market when it is in auction mode
   ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION = 24;
-  // GFA order has reached the market when it is in continuous trading mode
+  // Good For Auction order has reached the market when it is in continuous trading mode
   ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING = 25;
   // Attempt to amend order to GTT without ExpiryAt
   ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT = 26;
@@ -666,7 +666,7 @@ enum AccountType {
   ACCOUNT_TYPE_SETTLEMENT = 2;
   // Margin accounts contain funds set aside for the margin needed to support a party's open positions.
   // Each party will have a margin account for each market they have traded in.
-  // Required initial margin is allocated to each market from users general account.
+  // Required initial margin is allocated to each market from user's general account.
   // Collateral in the margin account can't be withdrawn or used as margin on another market until
   // it is released back to the general account.
   // Vega protocol uses an internal accounting system to segregate funds held as
@@ -723,7 +723,7 @@ enum AccountType {
 
 // Represents an account for an asset on Vega for a particular owner or party
 message Account {
-  // Unique account ID (used internally by Vega).
+  // Unique account ID, used internally by Vega.
   string id = 1;
   // Party that the account belongs to, special values include `network`, which represents the Vega network and is
   // most commonly seen during liquidation of distressed trading positions.
@@ -1286,7 +1286,7 @@ message Node {
   string info_url = 5;
   // Country code for the location of the node.
   string location = 6;
-  // Amount the node has put up themselves
+  // Amount the node operator has put up themselves
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
   string staked_by_operator = 7;
   // Amount of stake that has been delegated by token holders

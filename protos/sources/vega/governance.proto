@@ -233,7 +233,7 @@ message Proposal {
     STATE_PASSED = 3;
     // Proposal wasn't accepted i.e. proposal terms failed validation due to wrong configuration or failed to meet network requirements.
     STATE_REJECTED = 4;
-    // Proposal didn't get enough votes, e.g. either failing to gain required participation or majority level.
+    // Proposal didn't get enough votes, e.g. either failed to gain required participation or majority level.
     STATE_DECLINED = 5;
     // Proposal enacted
     STATE_ENACTED = 6;
@@ -353,9 +353,9 @@ enum ProposalError {
   PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE = 42;
   // LP price range must not be larger than 100
   PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE = 43;
-  // Linear slippage factor is out of range (either negative or too large)
+  // Linear slippage factor is out of range, either negative or too large
   PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE = 44;
-  // Quadratic slippage factor is out of range (either negative or too large)
+  // Quadratic slippage factor is out of range, either negative or too large
   PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE = 45;
 }
 

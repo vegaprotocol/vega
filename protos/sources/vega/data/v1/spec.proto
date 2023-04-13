@@ -45,9 +45,9 @@ message PropertyKey {
 
 // Condition describes the condition that must be validated by the network
 message Condition {
-  // operator is the type of comparison to make on the value.
+  // Type of comparison to make on the value.
   Operator operator = 1;
-  // value is used by the comparator.
+  // Value to be compared with by the operator.
   string value = 2;
   // Operator describes the type of comparison.
   enum Operator {

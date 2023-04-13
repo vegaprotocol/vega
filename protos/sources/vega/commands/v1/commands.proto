@@ -166,7 +166,7 @@ message VoteSubmission {
 
 // Command to submit an instruction to delegate some stake to a node
 message DelegateSubmission {
-  // Delegate to the specified Node ID.
+  // Delegate to the specified node ID.
   string node_id = 1;
   // Amount of stake to delegate
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.

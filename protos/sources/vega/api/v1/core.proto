@@ -398,7 +398,7 @@ message VoteSpamStatistic {
   string min_tokens_required = 3;
 }
 
-// PoW state for a given block
+// Proof of Work state for a given block
 message PoWBlockState {
   // Block height for the current Proof of Work state statistics
   uint64 block_height = 1;

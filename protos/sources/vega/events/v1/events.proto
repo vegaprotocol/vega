@@ -317,11 +317,11 @@ message EpochEvent {
   uint64 seq = 1;
   // Action tells us what action is taking place
   vega.EpochAction action = 2;
-  // Time at which this epoch started
+  // Vega time at which this epoch started
   int64  start_time = 3;
-  // Time at which this epoch should end
+  // Vega time at which this epoch should end
   int64  expire_time = 4;
-  // Time at which this epoch did actually end
+  // Vega time at which this epoch actually ended
   int64  end_time = 5;
 }
 
