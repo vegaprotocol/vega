@@ -4536,7 +4536,7 @@ type ListTransfersRequest struct {
 
 	// Public key for which to request transfers.
 	Pubkey *string `protobuf:"bytes,1,opt,name=pubkey,proto3,oneof" json:"pubkey,omitempty"`
-	// Transfer directions i.e. sender, receiver to include in the response data
+	// Transfer directions - i.e. sender, receiver - to include in the response data
 	Direction TransferDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=datanode.api.v2.TransferDirection" json:"direction,omitempty"`
 	// Optional pagination control
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -5793,9 +5793,9 @@ type ListERC20MultiSigSignerAddedBundlesRequest struct {
 
 	// Node ID of the validator for which a signature bundle is required.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Ethereum address of the validator which will submit the bundle.
+	// Ethereum address of the validator that will submit the bundle.
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// Epoch which generated the bundle i.e the epoch in which the node was promoted to tendermint validator.
+	// Epoch in which the bundle was generated, i.e. the epoch in which the node was promoted to consensus validator.
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -6186,9 +6186,9 @@ type ListERC20MultiSigSignerRemovedBundlesRequest struct {
 
 	// Node ID of the validator of which a signature bundle is required.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Ethereum address of the validator which will submit the bundle.
+	// Ethereum address of the validator that will submit the bundle.
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// Epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator.
+	// Epoch in which the bundle was generated, i.e. the epoch in which the node was demoted from a consensus validator.
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -6577,7 +6577,7 @@ type GetERC20ListAssetBundleRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Asset ID requested.
+	// ID of the asset requested.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 }
 
@@ -8030,7 +8030,7 @@ type GetMarketResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Information about to the market requested.
+	// Information about the market requested.
 	Market *vega.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 }
 
@@ -13143,7 +13143,7 @@ func (x *ListNetworkParametersRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response containing all of the vega network parameters
+// Response containing all of the Vega network parameters
 type ListNetworkParametersResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15942,11 +15942,11 @@ type ExportNetworkHistoryRequest struct {
 
 	// Block to begin exporting from. Must be the first block of a history segment,
 	// which by default are 1000 blocks each; in that case - 1, 1001, 2001 etc. are valid values.
-	// This can check by first calling the API to list all network history segments.
+	// This can be checked by first calling the API to list all network history segments.
 	FromBlock int64 `protobuf:"varint,1,opt,name=from_block,json=fromBlock,proto3" json:"from_block,omitempty"`
 	// Last block to export up to and including. Must be the last block of a history segment
 	// which by default are 1000 blocks each; in that case - 1000, 2000, 3000 etc. are valid values.
-	// This can check by first calling the API to list all network history segments.
+	// This can be checked by first calling the API to list all network history segments.
 	ToBlock int64 `protobuf:"varint,2,opt,name=to_block,json=toBlock,proto3" json:"to_block,omitempty"`
 	// Table to export data from.
 	Table Table `protobuf:"varint,3,opt,name=table,proto3,enum=datanode.api.v2.Table" json:"table,omitempty"`

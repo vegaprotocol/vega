@@ -902,7 +902,7 @@ type DelegateSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Delegate to the specified Node ID.
+	// Delegate to the specified node ID.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Amount of stake to delegate
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.

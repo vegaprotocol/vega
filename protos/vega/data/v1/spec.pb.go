@@ -291,9 +291,9 @@ type Condition struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// operator is the type of comparison to make on the value.
+	// Type of comparison to make on the value.
 	Operator Condition_Operator `protobuf:"varint,1,opt,name=operator,proto3,enum=vega.data.v1.Condition_Operator" json:"operator,omitempty"`
-	// value is used by the comparator.
+	// Value to be compared with by the operator.
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 }
 

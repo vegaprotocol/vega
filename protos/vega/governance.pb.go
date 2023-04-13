@@ -101,9 +101,9 @@ const (
 	ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_NONPOSITIVE ProposalError = 42
 	// LP price range must not be larger than 100
 	ProposalError_PROPOSAL_ERROR_LP_PRICE_RANGE_TOO_LARGE ProposalError = 43
-	// Linear slippage factor is out of range (either negative or too large)
+	// Linear slippage factor is out of range, either negative or too large
 	ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE ProposalError = 44
-	// Quadratic slippage factor is out of range (either negative or too large)
+	// Quadratic slippage factor is out of range, either negative or too large
 	ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE ProposalError = 45
 )
 
@@ -243,7 +243,7 @@ const (
 	Proposal_STATE_PASSED Proposal_State = 3
 	// Proposal wasn't accepted i.e. proposal terms failed validation due to wrong configuration or failed to meet network requirements.
 	Proposal_STATE_REJECTED Proposal_State = 4
-	// Proposal didn't get enough votes, e.g. either failing to gain required participation or majority level.
+	// Proposal didn't get enough votes, e.g. either failed to gain required participation or majority level.
 	Proposal_STATE_DECLINED Proposal_State = 5
 	// Proposal enacted
 	Proposal_STATE_ENACTED Proposal_State = 6

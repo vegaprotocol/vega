@@ -1967,7 +1967,7 @@ func (x *VoteSpamStatistic) GetMinTokensRequired() string {
 	return ""
 }
 
-// PoW state for a given block
+// Proof of Work state for a given block
 type PoWBlockState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

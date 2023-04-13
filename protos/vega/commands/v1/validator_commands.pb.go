@@ -95,7 +95,7 @@ const (
 	NodeVote_TYPE_STAKE_DEPOSITED NodeVote_Type = 1
 	// Node vote for a new stake removed event
 	NodeVote_TYPE_STAKE_REMOVED NodeVote_Type = 2
-	// Node vote for a new collateral deposited
+	// Node vote for a new collateral deposit
 	NodeVote_TYPE_FUNDS_DEPOSITED NodeVote_Type = 3
 	// Node vote for a new signer added to the erc20 bridge
 	NodeVote_TYPE_SIGNER_ADDED NodeVote_Type = 4

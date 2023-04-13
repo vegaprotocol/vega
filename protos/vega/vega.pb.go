@@ -380,9 +380,9 @@ const (
 	OrderError_ORDER_ERROR_INCORRECT_MARKET_TYPE OrderError = 22
 	// Order was submitted with invalid time in force
 	OrderError_ORDER_ERROR_INVALID_TIME_IN_FORCE OrderError = 23
-	// GFN order has reached the market when it is in auction mode
+	// Good For Normal order has reached the market when it is in auction mode
 	OrderError_ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION OrderError = 24
-	// GFA order has reached the market when it is in continuous trading mode
+	// Good For Auction order has reached the market when it is in continuous trading mode
 	OrderError_ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING OrderError = 25
 	// Attempt to amend order to GTT without ExpiryAt
 	OrderError_ORDER_ERROR_CANNOT_AMEND_TO_GTT_WITHOUT_EXPIRYAT OrderError = 26
@@ -636,7 +636,7 @@ const (
 	AccountType_ACCOUNT_TYPE_SETTLEMENT AccountType = 2
 	// Margin accounts contain funds set aside for the margin needed to support a party's open positions.
 	// Each party will have a margin account for each market they have traded in.
-	// Required initial margin is allocated to each market from users general account.
+	// Required initial margin is allocated to each market from user's general account.
 	// Collateral in the margin account can't be withdrawn or used as margin on another market until
 	// it is released back to the general account.
 	// Vega protocol uses an internal accounting system to segregate funds held as
@@ -2096,9 +2096,9 @@ type AuctionIndicativeState struct {
 
 	// Market ID for which this state relates to.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Indicative Uncrossing Price is the price at which all trades would occur if the auction uncrossed now.
+	// Indicative uncrossing price is the price at which all trades would occur if the auction uncrossed now.
 	IndicativePrice string `protobuf:"bytes,2,opt,name=indicative_price,json=indicativePrice,proto3" json:"indicative_price,omitempty"`
-	// Indicative Uncrossing Volume is the volume available at the Indicative crossing price if the auction uncrossed now.
+	// Indicative uncrossing volume is the volume available at the indicative crossing price if the auction uncrossed now.
 	IndicativeVolume uint64 `protobuf:"varint,3,opt,name=indicative_volume,json=indicativeVolume,proto3" json:"indicative_volume,omitempty"`
 	// Timestamp at which the auction started.
 	AuctionStart int64 `protobuf:"varint,4,opt,name=auction_start,json=auctionStart,proto3" json:"auction_start,omitempty"`
@@ -3375,7 +3375,7 @@ type Account struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique account ID (used internally by Vega).
+	// Unique account ID, used internally by Vega.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Party that the account belongs to, special values include `network`, which represents the Vega network and is
 	// most commonly seen during liquidation of distressed trading positions.
@@ -5830,7 +5830,7 @@ type Node struct {
 	InfoUrl string `protobuf:"bytes,5,opt,name=info_url,json=infoUrl,proto3" json:"info_url,omitempty"`
 	// Country code for the location of the node.
 	Location string `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
-	// Amount the node has put up themselves
+	// Amount the node operator has put up themselves
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
 	StakedByOperator string `protobuf:"bytes,7,opt,name=staked_by_operator,json=stakedByOperator,proto3" json:"staked_by_operator,omitempty"`
 	// Amount of stake that has been delegated by token holders

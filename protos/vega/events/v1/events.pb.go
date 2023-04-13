@@ -2711,11 +2711,11 @@ type EpochEvent struct {
 	Seq uint64 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
 	// Action tells us what action is taking place
 	Action vega.EpochAction `protobuf:"varint,2,opt,name=action,proto3,enum=vega.EpochAction" json:"action,omitempty"`
-	// Time at which this epoch started
+	// Vega time at which this epoch started
 	StartTime int64 `protobuf:"varint,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// Time at which this epoch should end
+	// Vega time at which this epoch should end
 	ExpireTime int64 `protobuf:"varint,4,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
-	// Time at which this epoch did actually end
+	// Vega time at which this epoch actually ended
 	EndTime int64 `protobuf:"varint,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 }
 

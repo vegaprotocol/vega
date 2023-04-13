@@ -139,7 +139,7 @@ type TradingDataServiceClient interface {
 	ListTransfers(ctx context.Context, in *ListTransfersRequest, opts ...grpc.CallOption) (*ListTransfersResponse, error)
 	// Get network limits
 	//
-	// Get the current network limits for example: is bootstrapping finished, are proposals enabled etc..
+	// Get the current network limits, for example: is bootstrapping finished, are proposals enabled etc.
 	GetNetworkLimits(ctx context.Context, in *GetNetworkLimitsRequest, opts ...grpc.CallOption) (*GetNetworkLimitsResponse, error)
 	// List candle data
 	//
@@ -175,7 +175,7 @@ type TradingDataServiceClient interface {
 	GetERC20ListAssetBundle(ctx context.Context, in *GetERC20ListAssetBundleRequest, opts ...grpc.CallOption) (*GetERC20ListAssetBundleResponse, error)
 	// Get ERC20 set asset limits bundle
 	//
-	// Get the signature bundle to update the token limits. These are maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is
+	// Get the signature bundle to update the token limits. These are `maxLifetimeDeposit` and `withdrawThreshold` for a given ERC20 token that is
 	// already allowlisted in the collateral bridge.
 	GetERC20SetAssetLimitsBundle(ctx context.Context, in *GetERC20SetAssetLimitsBundleRequest, opts ...grpc.CallOption) (*GetERC20SetAssetLimitsBundleResponse, error)
 	// Get ERC20 withdrawal approval
@@ -431,8 +431,8 @@ type TradingDataServiceClient interface {
 	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
 	// Thus the files are not strictly one line per table row like text-format files.
 	//
-	// The first row of the CSV file is a header that allows identification of the columns
-	// of subsequent rows.
+	// The first row of the CSV file is a header that describes the contents of each column
+	// in subsequent rows.
 	//
 	// Usually the ZIP file will contain only a single CSV file. However it is possible that
 	// the (from_block, to_block) request spans over a range of blocks in which the underlying
@@ -1722,7 +1722,7 @@ type TradingDataServiceServer interface {
 	ListTransfers(context.Context, *ListTransfersRequest) (*ListTransfersResponse, error)
 	// Get network limits
 	//
-	// Get the current network limits for example: is bootstrapping finished, are proposals enabled etc..
+	// Get the current network limits, for example: is bootstrapping finished, are proposals enabled etc.
 	GetNetworkLimits(context.Context, *GetNetworkLimitsRequest) (*GetNetworkLimitsResponse, error)
 	// List candle data
 	//
@@ -1758,7 +1758,7 @@ type TradingDataServiceServer interface {
 	GetERC20ListAssetBundle(context.Context, *GetERC20ListAssetBundleRequest) (*GetERC20ListAssetBundleResponse, error)
 	// Get ERC20 set asset limits bundle
 	//
-	// Get the signature bundle to update the token limits. These are maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is
+	// Get the signature bundle to update the token limits. These are `maxLifetimeDeposit` and `withdrawThreshold` for a given ERC20 token that is
 	// already allowlisted in the collateral bridge.
 	GetERC20SetAssetLimitsBundle(context.Context, *GetERC20SetAssetLimitsBundleRequest) (*GetERC20SetAssetLimitsBundleResponse, error)
 	// Get ERC20 withdrawal approval
@@ -2014,8 +2014,8 @@ type TradingDataServiceServer interface {
 	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
 	// Thus the files are not strictly one line per table row like text-format files.
 	//
-	// The first row of the CSV file is a header that allows identification of the columns
-	// of subsequent rows.
+	// The first row of the CSV file is a header that describes the contents of each column
+	// in subsequent rows.
 	//
 	// Usually the ZIP file will contain only a single CSV file. However it is possible that
 	// the (from_block, to_block) request spans over a range of blocks in which the underlying

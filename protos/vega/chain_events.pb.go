@@ -28,7 +28,7 @@ type BuiltinAssetDeposit struct {
 
 	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// Vega party ID i.e. pub-key.
+	// Vega party ID i.e. public key.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Amount to be deposited
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -96,7 +96,7 @@ type BuiltinAssetWithdrawal struct {
 
 	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// Vega network party ID i.e. pub-key.
+	// Vega network party ID i.e. public key.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be withdrawn
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -432,7 +432,7 @@ type ERC20Deposit struct {
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
 	// Ethereum wallet that initiated the deposit.
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=source_ethereum_address,json=sourceEthereumAddress,proto3" json:"source_ethereum_address,omitempty"`
-	// Vega party ID i.e. pub-key which is the target of the deposit.
+	// Vega party ID i.e. public key that is the target of the deposit.
 	TargetPartyId string `protobuf:"bytes,3,opt,name=target_party_id,json=targetPartyId,proto3" json:"target_party_id,omitempty"`
 	// Amount to be deposited.
 	Amount string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
@@ -575,7 +575,7 @@ type ERC20Event struct {
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	// Block in which the transaction was added.
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
-	// Action undertaken by the event.
+	// Action undertaken as a result of the event.
 	//
 	// Types that are assignable to Action:
 	//
@@ -961,7 +961,7 @@ type ERC20MultiSigEvent struct {
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	// Block in which the transaction was added
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
-	// Action undertaken by the event.
+	// Action undertaken as a result of the event.
 	//
 	// Types that are assignable to Action:
 	//
