@@ -75,7 +75,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		latestSegment = response.Segments[0]
 	} else {
 		networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store,
-			vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), false, cmd.Config.MaxMemoryPercent)
+			vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), cmd.Config.MaxMemoryPercent)
 		if err != nil {
 			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
 			os.Exit(1)

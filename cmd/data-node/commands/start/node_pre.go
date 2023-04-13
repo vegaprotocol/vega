@@ -15,6 +15,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -90,11 +91,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(preLog, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
-			bool(l.conf.SQLStore.VerboseMigration)); err != nil {
-			return fmt.Errorf("failed to wiped database:%w", err)
+		if ResetDatabaseAndNetworkHistory(l.ctx, l.Log, l.vegaPaths, l.conf.SQLStore.ConnectionConfig); err != nil {
+			return fmt.Errorf("failed to reset database and network history: %w", err)
 		}
-		preLog.Info("Wiped all existing data from the datanode")
 	}
 
 	initialisedFromNetworkHistory := false
@@ -351,5 +350,20 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}
 
+	return nil
+}
+
+func ResetDatabaseAndNetworkHistory(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths, connConfig sqlstore.ConnectionConfig) error {
+	err := os.RemoveAll(vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome))
+	if err != nil {
+		return fmt.Errorf("failed to remove network history dir: %w", err)
+	}
+
+	log.Info("Wiped all network history")
+
+	if err := sqlstore.RecreateVegaDatabase(ctx, log, connConfig); err != nil {
+		return fmt.Errorf("failed to wipe database:%w", err)
+	}
+	log.Info("Wiped all existing data from the database")
 	return nil
 }

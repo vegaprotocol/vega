@@ -154,14 +154,6 @@ Usage example:
     HTTPPath = "/datanode/rpc"
 ```
 
-**_SQLStore.WipeOnStartup_** - This setting would delete the Postgres database on every restart, clearing all state. We recommend setting this to `false`.
-
-Usage example:
-```Toml
-[SQLStore]
- WipeOnStartup = false
-```
-
 **_SQLStore.ConnectionRetryConfig_**, **_SQLStore.LogRotationConfig_** - Advanced configuration for the Postgres connector. We recommend using the default setting created when running the `init` command.
 
 **_Gateway.MaxSubscriptionPerClient_** - The maximum number of GraphQL subscriptions allowed per client connection. The default is set to 250.

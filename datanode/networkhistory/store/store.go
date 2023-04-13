@@ -102,26 +102,30 @@ type Store struct {
 // issue when running tests as we only have one IPFS node instance when running datanode.
 var plugins *loader.PluginLoader
 
-func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, networkHistoryHome string,
-	wipeOnStartup bool, maxMemoryPercent uint8,
+func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, networkHistoryHome string, maxMemoryPercent uint8,
 ) (*Store, error) {
 	if log.IsDebug() {
 		ipfslogging.SetDebugLogging()
 	}
 
-	networkHistoryStorePath := filepath.Join(networkHistoryHome, "store")
+	storePath := filepath.Join(networkHistoryHome, "store")
 
 	p := &Store{
 		log:        log,
 		cfg:        cfg,
-		indexPath:  filepath.Join(networkHistoryStorePath, "index"),
-		stagingDir: filepath.Join(networkHistoryStorePath, "staging"),
-		ipfsPath:   filepath.Join(networkHistoryStorePath, "ipfs"),
+		indexPath:  filepath.Join(storePath, "index"),
+		stagingDir: filepath.Join(storePath, "staging"),
+		ipfsPath:   filepath.Join(storePath, "ipfs"),
 	}
 
-	err := p.setupPaths(networkHistoryStorePath, wipeOnStartup)
+	err := os.MkdirAll(p.indexPath, os.ModePerm)
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup paths:%w", err)
+		return nil, fmt.Errorf("failed to create index path:%w", err)
+	}
+
+	err = os.MkdirAll(p.stagingDir, os.ModePerm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create staging path:%w", err)
 	}
 
 	idxLog := log.With(logging.String("component", "index"))
