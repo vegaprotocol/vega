@@ -15,7 +15,7 @@
 ### 🛠 Improvements
 - [8030](https://github.com/vegaprotocol/vega/issues/8030) - Add `API` for fetching `CSV` data from network history.
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
-- [7759](https://github.com/vegaprotocol/vega/issues/7759) - Support for rolling back data node to a previous network history segment 
+- [7759](https://github.com/vegaprotocol/vega/issues/7759) - Support for rolling back data node to a previous network history segment
 - [7505](https://github.com/vegaprotocol/vega/issues/7505) - `Datanode` batcher statistics
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 - [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
@@ -29,6 +29,9 @@
 - [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
 - [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
 - [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
+- [7987](https://github.com/vegaprotocol/vega/issues/7987) - Make terms consistent in `API` documentation.
+- [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
+- [7999](https://github.com/vegaprotocol/vega/issues/7999) - Review `DateRange API` documentation.
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet

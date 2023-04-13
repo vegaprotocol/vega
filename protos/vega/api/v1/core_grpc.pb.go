@@ -60,7 +60,7 @@ type CoreServiceClient interface {
 	CheckRawTransaction(ctx context.Context, in *CheckRawTransactionRequest, opts ...grpc.CallOption) (*CheckRawTransactionResponse, error)
 	// Get Spam statistics
 	//
-	// Retrieve the spam statistics for a given party
+	// Get the spam statistics for a given party
 	GetSpamStatistics(ctx context.Context, in *GetSpamStatisticsRequest, opts ...grpc.CallOption) (*GetSpamStatisticsResponse, error)
 }
 
@@ -226,7 +226,7 @@ type CoreServiceServer interface {
 	CheckRawTransaction(context.Context, *CheckRawTransactionRequest) (*CheckRawTransactionResponse, error)
 	// Get Spam statistics
 	//
-	// Retrieve the spam statistics for a given party
+	// Get the spam statistics for a given party
 	GetSpamStatistics(context.Context, *GetSpamStatisticsRequest) (*GetSpamStatisticsResponse, error)
 	mustEmbedUnimplementedCoreServiceServer()
 }
