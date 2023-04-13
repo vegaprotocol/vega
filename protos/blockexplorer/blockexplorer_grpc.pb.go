@@ -32,7 +32,7 @@ type BlockExplorerServiceClient interface {
 	ListTransactions(ctx context.Context, in *ListTransactionsRequest, opts ...grpc.CallOption) (*ListTransactionsResponse, error)
 	// Info
 	//
-	// Retrieves information about the block explorer.
+	// Get information about the block explorer.
 	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built
 	Info(ctx context.Context, in *InfoRequest, opts ...grpc.CallOption) (*InfoResponse, error)
 }
@@ -86,7 +86,7 @@ type BlockExplorerServiceServer interface {
 	ListTransactions(context.Context, *ListTransactionsRequest) (*ListTransactionsResponse, error)
 	// Info
 	//
-	// Retrieves information about the block explorer.
+	// Get information about the block explorer.
 	// Response contains a semver formatted version of the data node and the commit hash, from which the block explorer was built
 	Info(context.Context, *InfoRequest) (*InfoResponse, error)
 	mustEmbedUnimplementedBlockExplorerServiceServer()

@@ -69,7 +69,7 @@ service CoreService {
 
   // Get Spam statistics
   //
-  // Retrieve the spam statistics for a given party
+  // Get the spam statistics for a given party
   rpc GetSpamStatistics(GetSpamStatisticsRequest) returns (GetSpamStatisticsResponse);
 }
 
