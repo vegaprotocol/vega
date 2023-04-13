@@ -30,6 +30,7 @@
 - [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
 - [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
 - [7987](https://github.com/vegaprotocol/vega/issues/7987) - Make terms consistent in `API` documentation.
+- [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
