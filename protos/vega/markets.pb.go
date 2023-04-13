@@ -20,13 +20,13 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The current state of the market
+// Current state of the market
 type Market_State int32
 
 const (
 	// Default value, invalid
 	Market_STATE_UNSPECIFIED Market_State = 0
-	// The governance proposal valid and accepted
+	// Governance proposal valid and accepted
 	Market_STATE_PROPOSED Market_State = 1
 	// Outcome of governance votes is to reject the market
 	Market_STATE_REJECTED Market_State = 2
@@ -103,7 +103,7 @@ func (Market_State) EnumDescriptor() ([]byte, []int) {
 	return file_vega_markets_proto_rawDescGZIP(), []int{19, 0}
 }
 
-// The trading mode the market is currently running, also referred to as 'market state'
+// Trading mode the market is currently running, also referred to as 'market state'
 type Market_TradingMode int32
 
 const (
@@ -168,7 +168,7 @@ func (Market_TradingMode) EnumDescriptor() ([]byte, []int) {
 	return file_vega_markets_proto_rawDescGZIP(), []int{19, 1}
 }
 
-// An auction duration is used to configure 3 auction periods:
+// Auction duration is used to configure 3 auction periods:
 //  1. `duration > 0`, `volume == 0`:
 //     The auction will last for at least N seconds
 //  2. `duration == 0`, `volume > 0`:
@@ -238,15 +238,15 @@ type Future struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The asset for the future.
+	// Underlying asset for the future.
 	SettlementAsset string `protobuf:"bytes,1,opt,name=settlement_asset,json=settlementAsset,proto3" json:"settlement_asset,omitempty"`
 	// Quote name of the instrument.
 	QuoteName string `protobuf:"bytes,2,opt,name=quote_name,json=quoteName,proto3" json:"quote_name,omitempty"`
-	// The data source specification that describes the settlement data source filter.
+	// Data source specification that describes the settlement data source filter.
 	DataSourceSpecForSettlementData *DataSourceSpec `protobuf:"bytes,3,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
-	// The data source specification that describes the trading termination data source filter.
+	// Data source specification that describes the trading termination data source filter.
 	DataSourceSpecForTradingTermination *DataSourceSpec `protobuf:"bytes,4,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
-	// The binding between the data spec and the data source.
+	// Binding between the data spec and the data source.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,5,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
 }
 
@@ -329,7 +329,7 @@ type DataSourceSpecToFutureBinding struct {
 	// If it is set to "prices.BTC.value", then the Future will use the value of
 	// this property as settlement data.
 	SettlementDataProperty string `protobuf:"bytes,1,opt,name=settlement_data_property,json=settlementDataProperty,proto3" json:"settlement_data_property,omitempty"`
-	// the name of the property in the data source data that signals termination of trading.
+	// Name of the property in the data source data that signals termination of trading.
 	TradingTerminationProperty string `protobuf:"bytes,2,opt,name=trading_termination_property,json=tradingTerminationProperty,proto3" json:"trading_termination_property,omitempty"`
 }
 
@@ -385,7 +385,7 @@ type InstrumentMetadata struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more tags.
+	// List of 0 or more tags.
 	Tags []string `protobuf:"bytes,1,rep,name=tags,proto3" json:"tags,omitempty"`
 }
 
@@ -434,15 +434,15 @@ type Instrument struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument identifier.
+	// Instrument ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Code for the instrument.
 	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
 	// Name of the instrument.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	// A collection of instrument meta-data.
+	// Collection of instrument meta-data.
 	Metadata *InstrumentMetadata `protobuf:"bytes,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	// The product the instrument is composed of.
+	// Product the instrument is composed of.
 	//
 	// Types that are assignable to Product:
 	//
@@ -543,7 +543,8 @@ type LogNormalRiskModel struct {
 
 	// Risk Aversion Parameter.
 	RiskAversionParameter float64 `protobuf:"fixed64,1,opt,name=risk_aversion_parameter,json=riskAversionParameter,proto3" json:"risk_aversion_parameter,omitempty"`
-	// Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall calculation to obtain the maintenance margin, must be a strictly non-negative real number.
+	// Tau parameter of the risk model, projection horizon measured as a year fraction used in the expected shortfall
+	// calculation to obtain the maintenance margin, must be a strictly non-negative real number.
 	Tau float64 `protobuf:"fixed64,2,opt,name=tau,proto3" json:"tau,omitempty"`
 	// Risk model parameters for log normal.
 	Params *LogNormalModelParams `protobuf:"bytes,3,opt,name=params,proto3" json:"params,omitempty"`
@@ -1436,7 +1437,7 @@ type Market struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier.
+	// Unique ID for the market.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Tradable instrument configuration.
 	TradableInstrument *TradableInstrument `protobuf:"bytes,2,opt,name=tradable_instrument,json=tradableInstrument,proto3" json:"tradable_instrument,omitempty"`
@@ -1464,9 +1465,9 @@ type Market struct {
 	// Percentage move up and down from the mid price which specifies the range of
 	// price levels over which automated liquidity provision orders will be deployed.
 	LpPriceRange string `protobuf:"bytes,12,opt,name=lp_price_range,json=lpPriceRange,proto3" json:"lp_price_range,omitempty"`
-	// Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume.
+	// Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume.
 	LinearSlippageFactor string `protobuf:"bytes,13,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
-	// Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume.
+	// Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,14,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
 }
 

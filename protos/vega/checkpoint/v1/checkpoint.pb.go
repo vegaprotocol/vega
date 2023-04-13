@@ -22,7 +22,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CheckpointState is the entire checkpoint serialised (basically serialised the Checkpoint message + hash)
+// CheckpointState is the entire checkpoint serialised. Basically it is the serialisation of the Checkpoint message + hash.
 type CheckpointState struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -688,7 +688,7 @@ func (x *Delegate) GetAutoDelegation() []string {
 }
 
 // Block message contains data related to block at which the checkpoint
-// was created (ie block height)
+// was created i.e. the block height
 type Block struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

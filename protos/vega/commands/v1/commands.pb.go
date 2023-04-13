@@ -70,7 +70,7 @@ func (UndelegateSubmission_Method) EnumDescriptor() ([]byte, []int) {
 	return file_vega_commands_v1_commands_proto_rawDescGZIP(), []int{11, 0}
 }
 
-// A batch of order instructions.
+// Batch of order instructions.
 // This command accepts only the following batches of commands
 // and will be processed in the following order:
 // - OrderCancellation
@@ -84,11 +84,11 @@ type BatchMarketInstructions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of order cancellations to be processed sequentially.
+	// List of order cancellations to be processed sequentially.
 	Cancellations []*OrderCancellation `protobuf:"bytes,1,rep,name=cancellations,proto3" json:"cancellations,omitempty"`
-	// A list of order amendments to be processed sequentially.
+	// List of order amendments to be processed sequentially.
 	Amendments []*OrderAmendment `protobuf:"bytes,2,rep,name=amendments,proto3" json:"amendments,omitempty"`
-	// A list of order submissions to be processed sequentially.
+	// List of order submissions to be processed sequentially.
 	Submissions []*OrderSubmission `protobuf:"bytes,3,rep,name=submissions,proto3" json:"submissions,omitempty"`
 }
 
@@ -145,17 +145,17 @@ func (x *BatchMarketInstructions) GetSubmissions() []*OrderSubmission {
 	return nil
 }
 
-// An order submission is a request to submit or create a new order on Vega
+// Order submission is a request to submit or create a new order on Vega
 type OrderSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the order, required field.
+	// Market ID for the order, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
-	// , required field for limit orders, however it is not required for market orders
+	// required field for limit orders, however it is not required for market orders
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 	// Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
@@ -171,7 +171,7 @@ type OrderSubmission struct {
 	// Type for the order, required field - See `Order.Type`.
 	Type vega.Order_Type `protobuf:"varint,7,opt,name=type,proto3,enum=vega.Order_Type" json:"type,omitempty"`
 	// Reference given for the order, this is typically used to retrieve an order submitted through consensus, currently
-	// set internally by the node to return a unique reference identifier for the order submission.
+	// set internally by the node to return a unique reference ID for the order submission.
 	Reference string `protobuf:"bytes,8,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Used to specify the details for a pegged order.
 	PeggedOrder *vega.PeggedOrder `protobuf:"bytes,9,opt,name=pegged_order,json=peggedOrder,proto3" json:"pegged_order,omitempty"`
@@ -291,15 +291,15 @@ func (x *OrderSubmission) GetReduceOnly() bool {
 	return false
 }
 
-// An order cancellation is a request to cancel an existing order on Vega
+// Order cancellation is a request to cancel an existing order on Vega
 type OrderCancellation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique identifier for the order (set by the system after consensus), required field.
+	// Unique ID for the order. This is set by the system after consensus. Required field.
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	// Market identifier for the order, required field.
+	// Market ID for the order, required field.
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -355,9 +355,9 @@ type OrderAmendment struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Order identifier, this is required to find the order and will not be updated, required field.
+	// Order ID, this is required to find the order and will not be updated, required field.
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	// Market identifier, this is required to find the order and will not be updated.
+	// Market ID, this is required to find the order and will not be updated.
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Amend the price for the order if the price value is set, otherwise price will remain unchanged.
 	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
@@ -473,18 +473,18 @@ type LiquidityProvisionSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the order, required field.
+	// Market ID for the order, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of settlement asset of the market
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
 	CommitmentAmount string `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
 	Fee string `protobuf:"bytes,3,opt,name=fee,proto3" json:"fee,omitempty"`
-	// A set of liquidity sell orders to meet the liquidity provision obligation.
+	// Set of liquidity sell orders to meet the liquidity provision obligation.
 	Sells []*vega.LiquidityOrder `protobuf:"bytes,4,rep,name=sells,proto3" json:"sells,omitempty"`
-	// A set of liquidity buy orders to meet the liquidity provision obligation.
+	// Set of liquidity buy orders to meet the liquidity provision obligation.
 	Buys []*vega.LiquidityOrder `protobuf:"bytes,5,rep,name=buys,proto3" json:"buys,omitempty"`
-	// A reference to be added to every order created out of this liquidityProvisionSubmission.
+	// Reference to be added to every order created out of this liquidityProvisionSubmission.
 	Reference string `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 
@@ -620,8 +620,8 @@ type LiquidityProvisionAmendment struct {
 	// Unique ID for the market with the liquidity provision to be amended.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// From here at least one of the following is required to consider the command valid.
-	CommitmentAmount string                 `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"` // an empty strings means no change
-	Fee              string                 `protobuf:"bytes,3,opt,name=fee,proto3" json:"fee,omitempty"`                                                   // an empty strings means no change
+	CommitmentAmount string                 `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"` // empty strings means no change
+	Fee              string                 `protobuf:"bytes,3,opt,name=fee,proto3" json:"fee,omitempty"`                                                   // empty strings means no change
 	Sells            []*vega.LiquidityOrder `protobuf:"bytes,4,rep,name=sells,proto3" json:"sells,omitempty"`                                               // empty slice means no change
 	Buys             []*vega.LiquidityOrder `protobuf:"bytes,5,rep,name=buys,proto3" json:"buys,omitempty"`                                                 // empty slice means no change
 	Reference        string                 `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`                                       // empty string means no change
@@ -707,10 +707,10 @@ type WithdrawSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The amount to be withdrawn
+	// Amount to be withdrawn
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The asset to be withdrawn.
+	// Asset to be withdrawn.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Foreign chain specifics.
 	Ext *vega.WithdrawExt `protobuf:"bytes,3,opt,name=ext,proto3" json:"ext,omitempty"`
@@ -769,7 +769,7 @@ func (x *WithdrawSubmission) GetExt() *vega.WithdrawExt {
 	return nil
 }
 
-// A command to submit a new proposal for the
+// Command to submit a new proposal for the
 // Vega network governance
 type ProposalSubmission struct {
 	state         protoimpl.MessageState
@@ -780,7 +780,7 @@ type ProposalSubmission struct {
 	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
 	Terms *vega.ProposalTerms `protobuf:"bytes,2,opt,name=terms,proto3" json:"terms,omitempty"`
-	// The rationale behind a proposal.
+	// Rationale behind a proposal.
 	Rationale *vega.ProposalRationale `protobuf:"bytes,3,opt,name=rationale,proto3" json:"rationale,omitempty"`
 }
 
@@ -837,16 +837,16 @@ func (x *ProposalSubmission) GetRationale() *vega.ProposalRationale {
 	return nil
 }
 
-// A command to submit a new vote for a governance
+// Command to submit a new vote for a governance
 // proposal.
 type VoteSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the proposal to vote for.
+	// Submit vote for the specified proposal ID.
 	ProposalId string `protobuf:"bytes,1,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
-	// The actual value of the vote.
+	// Actual value of the vote.
 	Value vega.Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
 }
 
@@ -896,15 +896,15 @@ func (x *VoteSubmission) GetValue() vega.Vote_Value {
 	return vega.Vote_Value(0)
 }
 
-// A command to submit an instruction to delegate some stake to a node
+// Command to submit an instruction to delegate some stake to a node
 type DelegateSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID for the node to delegate to.
+	// Delegate to the specified node ID.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// The amount of stake to delegate
+	// Amount of stake to delegate
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 }
@@ -960,12 +960,12 @@ type UndelegateSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The id of the node to delegate to.
+	// Node ID to delegate to.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// optional, if not specified = ALL
+	// Optional, if not specified = ALL
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The method of delegation.
+	// Method of delegation.
 	Method UndelegateSubmission_Method `protobuf:"varint,3,opt,name=method,proto3,enum=vega.commands.v1.UndelegateSubmission_Method" json:"method,omitempty"`
 }
 
@@ -1022,25 +1022,25 @@ func (x *UndelegateSubmission) GetMethod() UndelegateSubmission_Method {
 	return UndelegateSubmission_METHOD_UNSPECIFIED
 }
 
-// A transfer initiated by a party
+// Transfer initiated by a party
 type Transfer struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The account type from which the funds of the party
+	// Account type from which the funds of the party
 	// should be taken.
 	FromAccountType vega.AccountType `protobuf:"varint,1,opt,name=from_account_type,json=fromAccountType,proto3,enum=vega.AccountType" json:"from_account_type,omitempty"`
-	// The public key of the destination account.
+	// Public key of the destination account.
 	To string `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
-	// The type of the destination account.
+	// Type of the destination account.
 	ToAccountType vega.AccountType `protobuf:"varint,3,opt,name=to_account_type,json=toAccountType,proto3,enum=vega.AccountType" json:"to_account_type,omitempty"`
-	// The asset
+	// Asset ID of the asset to be transferred.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// The amount to be taken from the source account
+	// Amount to be taken from the source account
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The reference to be attached to the transfer.
+	// Reference to be attached to the transfer.
 	Reference string `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Specific details of the transfer.
 	//
@@ -1168,7 +1168,7 @@ type OneOffTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A unix timestamp in nanoseconds. Time at which the
+	// Unix timestamp in nanoseconds. Time at which the
 	// transfer should be delivered into the To account.
 	DeliverOn int64 `protobuf:"varint,1,opt,name=deliver_on,json=deliverOn,proto3" json:"deliver_on,omitempty"`
 }
@@ -1218,13 +1218,13 @@ type RecurringTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The first epoch from which this transfer shall be paid.
+	// First epoch from which this transfer shall be paid.
 	StartEpoch uint64 `protobuf:"varint,1,opt,name=start_epoch,json=startEpoch,proto3" json:"start_epoch,omitempty"`
-	// The last epoch at which this transfer shall be paid.
+	// Last epoch at which this transfer shall be paid.
 	EndEpoch *uint64 `protobuf:"varint,2,opt,name=end_epoch,json=endEpoch,proto3,oneof" json:"end_epoch,omitempty"`
-	// factor needs to be > 0.
+	// Factor needs to be > 0.
 	Factor string `protobuf:"bytes,3,opt,name=factor,proto3" json:"factor,omitempty"`
-	// optional parameter defining how a transfer is dispatched.
+	// Optional parameter defining how a transfer is dispatched.
 	DispatchStrategy *vega.DispatchStrategy `protobuf:"bytes,4,opt,name=dispatch_strategy,json=dispatchStrategy,proto3" json:"dispatch_strategy,omitempty"`
 }
 
@@ -1288,13 +1288,13 @@ func (x *RecurringTransfer) GetDispatchStrategy() *vega.DispatchStrategy {
 	return nil
 }
 
-// A request for cancelling a recurring transfer
+// Request for cancelling a recurring transfer
 type CancelTransfer struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the transfer to cancel.
+	// ID of the transfer to cancel.
 	TransferId string `protobuf:"bytes,1,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
 }
 
@@ -1337,17 +1337,17 @@ func (x *CancelTransfer) GetTransferId() string {
 	return ""
 }
 
-// A transaction for a validator to submit signatures to a smart contract
+// Transaction for a validator to submit signatures to a smart contract
 type IssueSignatures struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ethereum address which will submit the signatures to the smart contract.
+	// Ethereum address which will submit the signatures to the smart contract.
 	Submitter string `protobuf:"bytes,1,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The kind of signatures to generate, namely for whether a signer is being added or removed.
+	// What kind of signatures to generate, namely for whether a signer is being added or removed.
 	Kind NodeSignatureKind `protobuf:"varint,2,opt,name=kind,proto3,enum=vega.commands.v1.NodeSignatureKind" json:"kind,omitempty"`
-	// The ID of the node that will be signed in or out of the smart contract.
+	// ID of the validator node that will be signed in or out of the smart contract.
 	ValidatorNodeId string `protobuf:"bytes,3,opt,name=validator_node_id,json=validatorNodeId,proto3" json:"validator_node_id,omitempty"` // the node for which to emit the signatures.
 }
 

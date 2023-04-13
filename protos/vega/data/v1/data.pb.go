@@ -186,14 +186,14 @@ type isSigner_Signer interface {
 }
 
 type Signer_PubKey struct {
-	// pubKeys is the list of authorized public keys that signed the data for this
+	// List of authorized public keys that signed the data for this
 	// source. All the public keys in the data should be contained in these
 	// public keys.
 	PubKey *PubKey `protobuf:"bytes,1,opt,name=pub_key,json=pubKey,proto3,oneof"`
 }
 
 type Signer_EthAddress struct {
-	// in case of an open oracle - Ethereum address will be submitted
+	// In case of an open oracle - Ethereum address will be submitted
 	EthAddress *ETHAddress `protobuf:"bytes,2,opt,name=eth_address,json=ethAddress,proto3,oneof"`
 }
 
@@ -207,11 +207,11 @@ type Property struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// name is the name of the property.
+	// Name of the property.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// value is the value of the property.
+	// Value of the property.
 	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
-	// An optional decimal place to be be applied on the provided value
+	// Optional decimal place to be be applied on the provided value
 	// valid only for PropertyType of type DECIMAL and INTEGER
 	NumberDecimalPlaces *uint64 `protobuf:"varint,3,opt,name=number_decimal_places,json=numberDecimalPlaces,proto3,oneof" json:"number_decimal_places,omitempty"`
 }
@@ -277,7 +277,7 @@ type Data struct {
 	unknownFields protoimpl.UnknownFields
 
 	Signers []*Signer `protobuf:"bytes,1,rep,name=signers,proto3" json:"signers,omitempty"`
-	// data holds all the properties of the data
+	// Data holds all the properties of the data
 	Data []*Property `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty"`
 	// matched_specs_ids lists all the specs that matched this data.
 	// When the array is empty, it means no spec matched this data.

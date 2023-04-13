@@ -9,7 +9,7 @@ import "vega/governance.proto";
 import "vega/events/v1/events.proto";
 import "vega/chain_events.proto";
 
-// CheckpointState is the entire checkpoint serialised (basically serialised the Checkpoint message + hash)
+// CheckpointState is the entire checkpoint serialised. Basically it is the serialisation of the Checkpoint message + hash.
 message CheckpointState {
   bytes hash = 1;
   bytes state = 2;
@@ -85,7 +85,7 @@ message Delegate {
 }
 
 // Block message contains data related to block at which the checkpoint
-// was created (ie block height)
+// was created i.e. the block height
 message Block {
   int64 height = 1;
 }
