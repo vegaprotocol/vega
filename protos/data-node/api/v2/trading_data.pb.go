@@ -1630,7 +1630,7 @@ func (x *ListOrderVersionsResponse) GetOrders() *OrderConnection {
 
 // Request to subscribe to a stream of orders
 //
-// Request fields for market ID and party ID are optional filters:
+// Request fields market ID and party ID are both optional filters:
 // If omitted all orders, for all parties on all markets will be returned on the stream
 // If a market ID is provided, the orders from that market will be returned on the stream
 // If a party ID is provided, the orders from that party will be returned on the stream
@@ -14771,7 +14771,7 @@ func (x *GetVegaTimeResponse) GetTimestamp() int64 {
 }
 
 // Date range for queries that can return historical data
-// Dates should be provided in nanoseconds past the Unix epoch and are inclusive.
+// Timestamps should be provided as unix time in nanoseconds and are inclusive.
 type DateRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

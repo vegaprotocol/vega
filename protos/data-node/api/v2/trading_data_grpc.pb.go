@@ -93,7 +93,7 @@ type TradingDataServiceClient interface {
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
 	// List balance changes
 	//
-	// Get a list of the change in account balances over a period of time.
+	// Get a list of the changes in account balances over a period of time.
 	//
 	// An account is defined as a set of asset_id, type, party_id, and market_id.
 	//   - Every account has an associated asset and type.
@@ -163,7 +163,7 @@ type TradingDataServiceClient interface {
 	ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error)
 	// List ERC20 multi-sig signer added bundles
 	//
-	// Get a list of the signature bundle to add a particular validator to the signer list of the multisig contract
+	// Get a list of the signature bundles to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(ctx context.Context, in *ListERC20MultiSigSignerAddedBundlesRequest, opts ...grpc.CallOption) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
 	// List ERC20 multi-sig signer removed bundles
 	//
@@ -282,7 +282,7 @@ type TradingDataServiceClient interface {
 	GetGovernanceData(ctx context.Context, in *GetGovernanceDataRequest, opts ...grpc.CallOption) (*GetGovernanceDataResponse, error)
 	// List governance data
 	//
-	// Get a list proposals
+	// Get a list of proposals
 	ListGovernanceData(ctx context.Context, in *ListGovernanceDataRequest, opts ...grpc.CallOption) (*ListGovernanceDataResponse, error)
 	// Observe governance
 	//
@@ -1676,7 +1676,7 @@ type TradingDataServiceServer interface {
 	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
 	// List balance changes
 	//
-	// Get a list of the change in account balances over a period of time.
+	// Get a list of the changes in account balances over a period of time.
 	//
 	// An account is defined as a set of asset_id, type, party_id, and market_id.
 	//   - Every account has an associated asset and type.
@@ -1746,7 +1746,7 @@ type TradingDataServiceServer interface {
 	ObserveVotes(*ObserveVotesRequest, TradingDataService_ObserveVotesServer) error
 	// List ERC20 multi-sig signer added bundles
 	//
-	// Get a list of the signature bundle to add a particular validator to the signer list of the multisig contract
+	// Get a list of the signature bundles to add a particular validator to the signer list of the multisig contract
 	ListERC20MultiSigSignerAddedBundles(context.Context, *ListERC20MultiSigSignerAddedBundlesRequest) (*ListERC20MultiSigSignerAddedBundlesResponse, error)
 	// List ERC20 multi-sig signer removed bundles
 	//
@@ -1865,7 +1865,7 @@ type TradingDataServiceServer interface {
 	GetGovernanceData(context.Context, *GetGovernanceDataRequest) (*GetGovernanceDataResponse, error)
 	// List governance data
 	//
-	// Get a list proposals
+	// Get a list of proposals
 	ListGovernanceData(context.Context, *ListGovernanceDataRequest) (*ListGovernanceDataResponse, error)
 	// Observe governance
 	//

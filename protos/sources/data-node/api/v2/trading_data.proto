@@ -167,7 +167,7 @@ service TradingDataService {
 
     // List balance changes
     //
-    // Get a list of the change in account balances over a period of time.
+    // Get a list of the changes in account balances over a period of time.
     //
     // An account is defined as a set of asset_id, type, party_id, and market_id.
     // - Every account has an associated asset and type.
@@ -312,7 +312,7 @@ service TradingDataService {
 
     // List ERC20 multi-sig signer added bundles
     //
-    // Get a list of the signature bundle to add a particular validator to the signer list of the multisig contract
+    // Get a list of the signature bundles to add a particular validator to the signer list of the multisig contract
     rpc ListERC20MultiSigSignerAddedBundles(ListERC20MultiSigSignerAddedBundlesRequest) returns (ListERC20MultiSigSignerAddedBundlesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "ERC20 bridge";
@@ -576,7 +576,7 @@ service TradingDataService {
 
     // List governance data
     //
-    // Get a list proposals
+    // Get a list of proposals
     rpc ListGovernanceData(ListGovernanceDataRequest) returns (ListGovernanceDataResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Governance";
@@ -1117,7 +1117,7 @@ message ListOrderVersionsResponse {
 
 // Request to subscribe to a stream of orders
 //
-// Request fields for market ID and party ID are optional filters:
+// Request fields market ID and party ID are both optional filters:
 // If omitted all orders, for all parties on all markets will be returned on the stream
 // If a market ID is provided, the orders from that market will be returned on the stream
 // If a party ID is provided, the orders from that party will be returned on the stream
@@ -1988,7 +1988,7 @@ message TradeEdge {
 
 // Request to subscribe to a stream of trades
 message ObserveTradesRequest {
-    // Request fields for market ID and party ID are optional filters:
+    // Request fields market ID and party ID are both optional filters:
     // If omitted all trades, for all parties on all markets will be returned on the stream
     // If market ID is given, trades from that market will be returned on the stream
     // If party ID is given, trades from that party will be returned on the stream
@@ -3048,7 +3048,7 @@ message GetVegaTimeResponse {
 }
 
 // Date range for queries that can return historical data
-// Dates should be provided in nanoseconds past the Unix epoch and are inclusive.
+// Timestamps should be provided as unix time in nanoseconds and are inclusive.
 message DateRange {
     optional int64 start_timestamp = 1;
     optional int64 end_timestamp = 2;
