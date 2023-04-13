@@ -3048,13 +3048,9 @@ message GetVegaTimeResponse {
 }
 
 // Date range for queries that can return historical data
-// If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
-// If only the end_timestamp is provided, results up to the given end should be returned (inclusive).
-// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (inclusive).
+// Dates should be provided in nanoseconds past the Unix epoch and are inclusive.
 message DateRange {
-    // Optional start timestamp in nanoseconds past the epoch.
     optional int64 start_timestamp = 1;
-    // Optional end timestamp in nanoseconds past the epoch.
     optional int64 end_timestamp = 2;
 }
 

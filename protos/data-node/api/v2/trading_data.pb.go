@@ -14771,18 +14771,14 @@ func (x *GetVegaTimeResponse) GetTimestamp() int64 {
 }
 
 // Date range for queries that can return historical data
-// If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
-// If only the end_timestamp is provided, results up to the given end should be returned (inclusive).
-// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (inclusive).
+// Dates should be provided in nanoseconds past the Unix epoch and are inclusive.
 type DateRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Optional start timestamp in nanoseconds past the epoch.
 	StartTimestamp *int64 `protobuf:"varint,1,opt,name=start_timestamp,json=startTimestamp,proto3,oneof" json:"start_timestamp,omitempty"`
-	// Optional end timestamp in nanoseconds past the epoch.
-	EndTimestamp *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
+	EndTimestamp   *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
 }
 
 func (x *DateRange) Reset() {
