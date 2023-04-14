@@ -65,6 +65,7 @@
 - [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
 - [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
 - [8125](https://github.com/vegaprotocol/vega/issues/8125) - Ensure network compatibility can be checked against TLS nodes
+- [8128](https://github.com/vegaprotocol/vega/issues/8128) - Assure price monitoring engine extends the auction one bound at a time
 
 ## 0.70.0
 
