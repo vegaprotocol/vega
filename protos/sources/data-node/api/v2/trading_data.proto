@@ -990,7 +990,7 @@ message AccountsConnection {
     PageInfo page_info = 2;
 }
 
-// Account data item with corresponding cursor for it
+// Account data item with the corresponding cursor.
 message AccountEdge {
     // Account balance data.
     AccountBalance node = 1;
@@ -1198,7 +1198,7 @@ message ListAllPositionsResponse {
     PositionConnection positions = 1;
 }
 
-// Position data with corresponding cursor for it
+// Position data with the corresponding cursor.
 message PositionEdge {
     // Represents position data for a party on the specified market on Vega.
     vega.Position node = 1;
@@ -1339,7 +1339,7 @@ message ExportLedgerEntriesResponse {
     PageInfo page_info = 2;
 }
 
-// Aggregated ledger entry data with corresponding cursor for it
+// Aggregated ledger entry data with the corresponding cursor.
 message AggregatedLedgerEntriesEdge {
     // 'AggregatedLedgerEntry' data.
     AggregatedLedgerEntry node = 1;
@@ -1391,7 +1391,7 @@ message GetBalanceHistoryResponse {
     AggregatedBalanceConnection balances = 1;
 }
 
-// Aggregated balance data with corresponding cursor for it
+// Aggregated balance data with the corresponding cursor.
 message AggregatedBalanceEdge {
     // AggregatedBalance data.
     AggregatedBalance node = 1;
@@ -1547,7 +1547,7 @@ message GetMarketDataHistoryByIDResponse {
     MarketDataConnection market_data = 1;
 }
 
-// Market data with corresponding cursor for it
+// Market data with the corresponding cursor.
 message MarketDataEdge {
     // 'MarketData'.
     vega.MarketData node = 1;
@@ -1589,7 +1589,7 @@ message ListTransfersResponse {
     TransferConnection transfers = 1;
 }
 
-// Transfers data with a corresponding cursor for it
+// Transfers data with the corresponding cursor.
 message TransferEdge {
     // Transfer data.
     vega.events.v1.Transfer node = 1;
@@ -1688,7 +1688,7 @@ message ListCandleDataResponse {
     CandleDataConnection candles = 1;
 }
 
-// Candle data with the corresponding cursor for it
+// Candle data with the corresponding cursor.
 message CandleEdge {
     // Candle data.
     Candle node = 1;
@@ -1723,7 +1723,7 @@ message ListVotesResponse {
     VoteConnection votes = 1;
 }
 
-// Votes data with the corresponding cursor for it
+// Votes data with the corresponding cursor.
 message VoteEdge {
     // Vote data.
     vega.Vote node = 1;
@@ -1771,7 +1771,7 @@ message ListERC20MultiSigSignerAddedBundlesResponse {
     ERC20MultiSigSignerAddedConnection bundles = 1;
 }
 
-// Signature data that is to be added with the corresponding cursor for it
+// Signature data that is to be added with the corresponding cursor.
 message ERC20MultiSigSignerAddedEdge {
     // Signature data to be added.
     vega.events.v1.ERC20MultiSigSignerAdded node = 1;
@@ -1779,7 +1779,7 @@ message ERC20MultiSigSignerAddedEdge {
     string cursor = 2;
 }
 
-// Signature bundle data that is to be added the corresponding cursor for it
+// Signature bundle data that is to be added with the corresponding cursor.
 message ERC20MultiSigSignerAddedBundleEdge {
     // Signature bundle data to be added.
     ERC20MultiSigSignerAddedBundle node = 1;
@@ -1830,7 +1830,7 @@ message ListERC20MultiSigSignerRemovedBundlesResponse {
     ERC20MultiSigSignerRemovedConnection bundles = 1;
 }
 
-// Signature data to be removed with the corresponding cursor for it
+// Signature data to be removed with the corresponding cursor.
 message ERC20MultiSigSignerRemovedEdge {
     // Signature data to be removed.
     vega.events.v1.ERC20MultiSigSignerRemoved node = 1;
@@ -1838,7 +1838,7 @@ message ERC20MultiSigSignerRemovedEdge {
     string cursor = 2;
 }
 
-// Signature bundle data to be removed, with the corresponding cursor for it
+// Signature bundle data to be removed, with the corresponding cursor.
 message ERC20MultiSigSignerRemovedBundleEdge {
     // Signature bundle data to be added.
     ERC20MultiSigSignerRemovedBundle node = 1;
@@ -1979,7 +1979,7 @@ message TradeConnection {
     PageInfo page_info = 2;
 }
 
-// Trade data item with corresponding cursor for it.
+// Trade data item with the corresponding cursor..
 message TradeEdge {
     // Trade data.
     vega.Trade node = 1;
@@ -2046,7 +2046,7 @@ message ListOracleDataResponse {
     OracleDataConnection oracle_data = 1;
 }
 
-// Oracle specs data item with corresponding cursor for it
+// Oracle specs data item with the corresponding cursor.
 message OracleSpecEdge {
     // Oracle spec data.
     vega.OracleSpec node = 1;
@@ -2062,7 +2062,7 @@ message OracleSpecsConnection {
     PageInfo page_info = 2;
 }
 
-// Oracle data item with corresponding cursor for it
+// Oracle data item with the corresponding cursor.
 message OracleDataEdge {
     // Oracle data.
     vega.OracleData node = 1;
@@ -2106,7 +2106,7 @@ message ListMarketsResponse {
     MarketConnection markets = 1;
 }
 
-// Market information with corresponding cursor for it
+// Market information with the corresponding cursor.
 message MarketEdge {
     // Information about the market.
     vega.Market node = 1;
@@ -2150,7 +2150,7 @@ message ListPartiesResponse {
     PartyConnection parties = 1;
 }
 
-// Party data with corresponding cursor for it
+// Party data with the corresponding cursor.
 message PartyEdge {
     // Party data.
     vega.Party node = 1;
@@ -2166,7 +2166,7 @@ message PartyConnection {
     PageInfo page_info = 2;
 }
 
-// Order data with corresponding cursor for it
+// Order data with the corresponding cursor.
 message OrderEdge {
     // Order data.
     vega.Order node = 1;
@@ -2213,7 +2213,7 @@ message OrderConnection {
     PageInfo page_info = 2;
 }
 
-// Margin data with corresponding cursor for it
+// Margin data with the corresponding cursor.
 message MarginEdge {
     // Margin levels data.
     vega.MarginLevels node = 1;
@@ -2249,7 +2249,7 @@ message ListRewardsResponse {
     RewardsConnection rewards = 1;
 }
 
-// Rewards data with corresponding cursor for it
+// Rewards data with the corresponding cursor.
 message RewardEdge {
     // Rewards data.
     vega.Reward node = 1;
@@ -2315,7 +2315,7 @@ message EpochRewardSummaryConnection {
     PageInfo page_info = 2;
 }
 
-// Rewards summary data for epoch with corresponding cursor for it
+// Rewards summary data for epoch with the corresponding cursor.
 message EpochRewardSummaryEdge {
     // Rewards summary data for epoch.
     vega.EpochRewardSummary node = 1;
@@ -2368,7 +2368,7 @@ message ListDepositsResponse {
     DepositsConnection deposits = 1;
 }
 
-// Deposits data with corresponding cursor for it
+// Deposits data with the corresponding cursor.
 message DepositEdge {
     // Deposit data.
     vega.Deposit node = 1;
@@ -2415,7 +2415,7 @@ message ListWithdrawalsResponse {
     WithdrawalsConnection withdrawals = 1;
 }
 
-// Withdrawals data with corresponding cursor for it
+// Withdrawals data with the corresponding cursor.
 message WithdrawalEdge {
     // Withdrawals data.
     vega.Withdrawal node = 1;
@@ -2459,7 +2459,7 @@ message ListAssetsResponse {
     AssetsConnection assets = 1;
 }
 
-// Assets data with corresponding cursor for it
+// Assets data with the corresponding cursor.
 message AssetEdge {
     // Asset data returned.
     vega.Asset node = 1;
@@ -2497,7 +2497,7 @@ message ListLiquidityProvisionsResponse {
     LiquidityProvisionsConnection liquidity_provisions = 1;
 }
 
-// Liquidity provision data with corresponding cursor for it
+// Liquidity provision data with the corresponding cursor.
 message LiquidityProvisionsEdge {
     // Liquidity provision data.
     vega.LiquidityProvision node = 1;
@@ -2580,7 +2580,7 @@ message ListGovernanceDataResponse {
     GovernanceDataConnection connection = 1;
 }
 
-// Governance data with corresponding cursor for it
+// Governance data with the corresponding cursor.
 message GovernanceDataEdge {
     // Governance data content.
     vega.GovernanceData node = 1;
@@ -2626,7 +2626,7 @@ message ListDelegationsResponse {
     DelegationsConnection delegations = 1;
 }
 
-// Delegation data with corresponding cursor for it
+// Delegation data with the corresponding cursor.
 message DelegationEdge {
     // Delegation data.
     vega.Delegation node = 1;
@@ -2715,7 +2715,7 @@ message ListNodesResponse {
     NodesConnection nodes = 1;
 }
 
-// Node data with corresponding cursor for it
+// Node data with the corresponding cursor.
 message NodeEdge {
     // Node data.
     vega.Node node = 1;
@@ -2745,7 +2745,7 @@ message ListNodeSignaturesResponse {
     NodeSignaturesConnection signatures = 1;
 }
 
-// Nodes signature edge with corresponding cursor for it
+// Nodes signature edge with the corresponding cursor.
 message NodeSignatureEdge {
     // Node signature data.
     vega.commands.v1.NodeSignature node = 1;
@@ -2838,7 +2838,7 @@ message GetNetworkParameterResponse {
   vega.NetworkParameter network_parameter = 1;
 }
 
-// Network parameter with corresponding cursor for it
+// Network parameter with the corresponding cursor.
 message NetworkParameterEdge {
     // Network parameter data.
     vega.NetworkParameter node = 1;
@@ -2878,7 +2878,7 @@ message ListCheckpointsResponse {
     CheckpointsConnection checkpoints = 1;
 }
 
-// Checkpoint data with corresponding cursor for it
+// Checkpoint data with the corresponding cursor.
 message CheckpointEdge {
     // Checkpoint data.
     Checkpoint node = 1;
@@ -2910,7 +2910,7 @@ message GetStakeResponse {
     StakesConnection stake_linkings = 2;
 }
 
-// Stake linking data with corresponding cursor for it
+// Stake linking data with the corresponding cursor.
 message StakeLinkingEdge {
     // Stake linking represent the intent from a party to deposit.
     vega.events.v1.StakeLinking node = 1;
@@ -2991,7 +2991,7 @@ message ListKeyRotationsResponse {
     KeyRotationConnection rotations = 1;
 }
 
-// Key rotation data with corresponding cursor for it
+// Key rotation data with the corresponding cursor.
 message KeyRotationEdge {
     // Key rotation data.
     vega.events.v1.KeyRotation node = 1;
@@ -3031,7 +3031,7 @@ message EthereumKeyRotationsConnection {
     PageInfo page_info = 2;
 }
 
-// Ethereum key rotation data with corresponding cursor for it
+// Ethereum key rotation data with the corresponding cursor.
 message EthereumKeyRotationEdge {
     // Ethereuem key rotation data.
     vega.events.v1.EthereumKeyRotation node = 1;
@@ -3091,7 +3091,7 @@ message ProtocolUpgradeProposalConnection {
     PageInfo page_info = 2;
 }
 
-// Protocol upgrade proposal data with corresponding cursor for it
+// Protocol upgrade proposal data with the corresponding cursor.
 message ProtocolUpgradeProposalEdge {
     // Protocol upgrade proposal data.
     vega.events.v1.ProtocolUpgradeEvent node = 1;
@@ -3119,7 +3119,7 @@ message CoreSnapshotConnection {
     PageInfo page_info = 2;
 }
 
-// Core snapshot data with corresponding cursor for it
+// Core snapshot data with the corresponding cursor.
 message CoreSnapshotEdge {
     // Core snapshot data.
     vega.events.v1.CoreSnapshotData node = 1;

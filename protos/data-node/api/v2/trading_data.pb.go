@@ -764,7 +764,7 @@ func (x *AccountsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Account data item with corresponding cursor for it
+// Account data item with the corresponding cursor.
 type AccountEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2178,7 +2178,7 @@ func (x *ListAllPositionsResponse) GetPositions() *PositionConnection {
 	return nil
 }
 
-// Position data with corresponding cursor for it
+// Position data with the corresponding cursor.
 type PositionEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3022,7 +3022,7 @@ func (x *ExportLedgerEntriesResponse) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Aggregated ledger entry data with corresponding cursor for it
+// Aggregated ledger entry data with the corresponding cursor.
 type AggregatedLedgerEntriesEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3378,7 +3378,7 @@ func (x *GetBalanceHistoryResponse) GetBalances() *AggregatedBalanceConnection {
 	return nil
 }
 
-// Aggregated balance data with corresponding cursor for it
+// Aggregated balance data with the corresponding cursor.
 type AggregatedBalanceEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4412,7 +4412,7 @@ func (x *GetMarketDataHistoryByIDResponse) GetMarketData() *MarketDataConnection
 	return nil
 }
 
-// Market data with corresponding cursor for it
+// Market data with the corresponding cursor.
 type MarketDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4644,7 +4644,7 @@ func (x *ListTransfersResponse) GetTransfers() *TransferConnection {
 	return nil
 }
 
-// Transfers data with a corresponding cursor for it
+// Transfers data with the corresponding cursor.
 type TransferEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5331,7 +5331,7 @@ func (x *ListCandleDataResponse) GetCandles() *CandleDataConnection {
 	return nil
 }
 
-// Candle data with the corresponding cursor for it
+// Candle data with the corresponding cursor.
 type CandleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5563,7 +5563,7 @@ func (x *ListVotesResponse) GetVotes() *VoteConnection {
 	return nil
 }
 
-// Votes data with the corresponding cursor for it
+// Votes data with the corresponding cursor.
 type VoteEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5911,7 +5911,7 @@ func (x *ListERC20MultiSigSignerAddedBundlesResponse) GetBundles() *ERC20MultiSi
 	return nil
 }
 
-// Signature data that is to be added with the corresponding cursor for it
+// Signature data that is to be added with the corresponding cursor.
 type ERC20MultiSigSignerAddedEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5969,7 +5969,7 @@ func (x *ERC20MultiSigSignerAddedEdge) GetCursor() string {
 	return ""
 }
 
-// Signature bundle data that is to be added the corresponding cursor for it
+// Signature bundle data that is to be added with the corresponding cursor.
 type ERC20MultiSigSignerAddedBundleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6304,7 +6304,7 @@ func (x *ListERC20MultiSigSignerRemovedBundlesResponse) GetBundles() *ERC20Multi
 	return nil
 }
 
-// Signature data to be removed with the corresponding cursor for it
+// Signature data to be removed with the corresponding cursor.
 type ERC20MultiSigSignerRemovedEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6362,7 +6362,7 @@ func (x *ERC20MultiSigSignerRemovedEdge) GetCursor() string {
 	return ""
 }
 
-// Signature bundle data to be removed, with the corresponding cursor for it
+// Signature bundle data to be removed, with the corresponding cursor.
 type ERC20MultiSigSignerRemovedBundleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7277,7 +7277,7 @@ func (x *TradeConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Trade data item with corresponding cursor for it.
+// Trade data item with the corresponding cursor..
 type TradeEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7744,7 +7744,7 @@ func (x *ListOracleDataResponse) GetOracleData() *OracleDataConnection {
 	return nil
 }
 
-// Oracle specs data item with corresponding cursor for it
+// Oracle specs data item with the corresponding cursor.
 type OracleSpecEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7860,7 +7860,7 @@ func (x *OracleSpecsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Oracle data item with corresponding cursor for it
+// Oracle data item with the corresponding cursor.
 type OracleDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8181,7 +8181,7 @@ func (x *ListMarketsResponse) GetMarkets() *MarketConnection {
 	return nil
 }
 
-// Market information with corresponding cursor for it
+// Market information with the corresponding cursor.
 type MarketEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8502,7 +8502,7 @@ func (x *ListPartiesResponse) GetParties() *PartyConnection {
 	return nil
 }
 
-// Party data with corresponding cursor for it
+// Party data with the corresponding cursor.
 type PartyEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8618,7 +8618,7 @@ func (x *PartyConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Order data with corresponding cursor for it
+// Order data with the corresponding cursor.
 type OrderEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8958,7 +8958,7 @@ func (x *OrderConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Margin data with corresponding cursor for it
+// Margin data with the corresponding cursor.
 type MarginEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9208,7 +9208,7 @@ func (x *ListRewardsResponse) GetRewards() *RewardsConnection {
 	return nil
 }
 
-// Rewards data with corresponding cursor for it
+// Rewards data with the corresponding cursor.
 type RewardEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9681,7 +9681,7 @@ func (x *EpochRewardSummaryConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Rewards summary data for epoch with corresponding cursor for it
+// Rewards summary data for epoch with the corresponding cursor.
 type EpochRewardSummaryEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10061,7 +10061,7 @@ func (x *ListDepositsResponse) GetDeposits() *DepositsConnection {
 	return nil
 }
 
-// Deposits data with corresponding cursor for it
+// Deposits data with the corresponding cursor.
 type DepositEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10392,7 +10392,7 @@ func (x *ListWithdrawalsResponse) GetWithdrawals() *WithdrawalsConnection {
 	return nil
 }
 
-// Withdrawals data with corresponding cursor for it
+// Withdrawals data with the corresponding cursor.
 type WithdrawalEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10713,7 +10713,7 @@ func (x *ListAssetsResponse) GetAssets() *AssetsConnection {
 	return nil
 }
 
-// Assets data with corresponding cursor for it
+// Assets data with the corresponding cursor.
 type AssetEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10963,7 +10963,7 @@ func (x *ListLiquidityProvisionsResponse) GetLiquidityProvisions() *LiquidityPro
 	return nil
 }
 
-// Liquidity provision data with corresponding cursor for it
+// Liquidity provision data with the corresponding cursor.
 type LiquidityProvisionsEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11426,7 +11426,7 @@ func (x *ListGovernanceDataResponse) GetConnection() *GovernanceDataConnection {
 	return nil
 }
 
-// Governance data with corresponding cursor for it
+// Governance data with the corresponding cursor.
 type GovernanceDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11765,7 +11765,7 @@ func (x *ListDelegationsResponse) GetDelegations() *DelegationsConnection {
 	return nil
 }
 
-// Delegation data with corresponding cursor for it
+// Delegation data with the corresponding cursor.
 type DelegationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12402,7 +12402,7 @@ func (x *ListNodesResponse) GetNodes() *NodesConnection {
 	return nil
 }
 
-// Node data with corresponding cursor for it
+// Node data with the corresponding cursor.
 type NodeEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12625,7 +12625,7 @@ func (x *ListNodeSignaturesResponse) GetSignatures() *NodeSignaturesConnection {
 	return nil
 }
 
-// Nodes signature edge with corresponding cursor for it
+// Nodes signature edge with the corresponding cursor.
 type NodeSignatureEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13293,7 +13293,7 @@ func (x *GetNetworkParameterResponse) GetNetworkParameter() *vega.NetworkParamet
 	return nil
 }
 
-// Network parameter with corresponding cursor for it
+// Network parameter with the corresponding cursor.
 type NetworkParameterEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13574,7 +13574,7 @@ func (x *ListCheckpointsResponse) GetCheckpoints() *CheckpointsConnection {
 	return nil
 }
 
-// Checkpoint data with corresponding cursor for it
+// Checkpoint data with the corresponding cursor.
 type CheckpointEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13806,7 +13806,7 @@ func (x *GetStakeResponse) GetStakeLinkings() *StakesConnection {
 	return nil
 }
 
-// Stake linking data with corresponding cursor for it
+// Stake linking data with the corresponding cursor.
 type StakeLinkingEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14346,7 +14346,7 @@ func (x *ListKeyRotationsResponse) GetRotations() *KeyRotationConnection {
 	return nil
 }
 
-// Key rotation data with corresponding cursor for it
+// Key rotation data with the corresponding cursor.
 type KeyRotationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14627,7 +14627,7 @@ func (x *EthereumKeyRotationsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Ethereum key rotation data with corresponding cursor for it
+// Ethereum key rotation data with the corresponding cursor.
 type EthereumKeyRotationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15093,7 +15093,7 @@ func (x *ProtocolUpgradeProposalConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Protocol upgrade proposal data with corresponding cursor for it
+// Protocol upgrade proposal data with the corresponding cursor.
 type ProtocolUpgradeProposalEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15307,7 +15307,7 @@ func (x *CoreSnapshotConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Core snapshot data with corresponding cursor for it
+// Core snapshot data with the corresponding cursor.
 type CoreSnapshotEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
