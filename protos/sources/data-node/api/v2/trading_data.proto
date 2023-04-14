@@ -978,19 +978,19 @@ message ListAccountsRequest {
 
 // Response that is received from listing accounts query
 message ListAccountsResponse {
-    // Page with accounts data for 0 or more accounts.
+    // Page of accounts data and corresponding page information.
     AccountsConnection accounts = 1;
 }
 
-// Represents the list of accounts with the corresponding page information
+// Page of accounts data and corresponding page information.
 message AccountsConnection {
-    // List of accounts and their cursors.
+    // Page of accounts data and their corresponding cursors.
     repeated AccountEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Represents the account with corresponding cursor for it
+// Account data item with the corresponding cursor.
 message AccountEdge {
     // Account balance data.
     AccountBalance node = 1;
@@ -1096,7 +1096,7 @@ message ListOrdersRequest {
 
 // Response that is received from the query to list orders
 message ListOrdersResponse {
-    // Paged orders data with 0 or more orders.
+    // Page of orders data and corresponding page information.
     OrderConnection orders = 1;
 }
 
@@ -1111,7 +1111,7 @@ message ListOrderVersionsRequest {
 
 // Response that is received when listing possible order versions
 message ListOrderVersionsResponse {
-    // Paged orders data with 0 or more order versions.
+    // Page of order versions and corresponding page information.
     OrderConnection orders = 1;
 }
 
@@ -1172,7 +1172,7 @@ message ListPositionsRequest {
 // Response for a list of positions for a party
 message ListPositionsResponse {
     option deprecated = true;
-    // List of 0 or more positions.
+    // Page of positions data and corresponding page information.
     PositionConnection positions = 1;
 }
 
@@ -1194,11 +1194,11 @@ message ListAllPositionsRequest {
 
 // Response to query for listing of positions, given the filter is supplied
 message ListAllPositionsResponse {
-    // List of 0 or more positions.
+    // Page of positions data and corresponding page information.
     PositionConnection positions = 1;
 }
 
-// Represents the position data with corresponding cursor for it
+// Position data with the corresponding cursor.
 message PositionEdge {
     // Represents position data for a party on the specified market on Vega.
     vega.Position node = 1;
@@ -1206,9 +1206,9 @@ message PositionEdge {
     string cursor = 2;
 }
 
-// Represents the list of positions with the corresponding page information
+// Page of positions and corresponding page information
 message PositionConnection {
-    // List of positions data.
+    // Page of positions data and their corresponding cursors.
     repeated PositionEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1327,7 +1327,7 @@ message ExportLedgerEntriesRequest {
 
 // Response that is received when listing ledger entries
 message ListLedgerEntriesResponse {
-    // Represents the list of aggregated ledger entries data with the corresponding page information.
+    // Page of aggregated ledger entries data and corresponding page information.
     AggregatedLedgerEntriesConnection ledger_entries = 1;
 }
 
@@ -1339,7 +1339,7 @@ message ExportLedgerEntriesResponse {
     PageInfo page_info = 2;
 }
 
-// Represents the aggregated ledger entry data with corresponding cursor for it
+// Aggregated ledger entry data with the corresponding cursor.
 message AggregatedLedgerEntriesEdge {
     // 'AggregatedLedgerEntry' data.
     AggregatedLedgerEntry node = 1;
@@ -1347,9 +1347,9 @@ message AggregatedLedgerEntriesEdge {
     string cursor = 2;
 }
 
-// Represents the list of aggregated ledger entries data with the corresponding page information
+// Page of aggregated ledger entries data and corresponding page information
 message AggregatedLedgerEntriesConnection {
-    // List of 'AggregatedLedgerEntry' data.
+    // Page of 'AggregatedLedgerEntry' data and their corresponding cursors.
     repeated AggregatedLedgerEntriesEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1367,7 +1367,7 @@ message ListBalanceChangesRequest{
 
 // Response that is received when querying balances changes
 message ListBalanceChangesResponse {
-    // List of aggregated balances with the corresponding page information.
+    // Page of aggregated balances data and corresponding page information.
     AggregatedBalanceConnection balances = 1;
 }
 
@@ -1387,11 +1387,11 @@ message GetBalanceHistoryRequest {
 
 // Response that is received when querying for balance history
 message GetBalanceHistoryResponse {
-    // List of aggregated balances with the corresponding page information.
+    // Page of aggregated balances with the corresponding page information.
     AggregatedBalanceConnection balances = 1;
 }
 
-// Represents the AggregatedBalanceEdge data with corresponding cursor for it
+// Aggregated balance data with the corresponding cursor.
 message AggregatedBalanceEdge {
     // AggregatedBalance data.
     AggregatedBalance node = 1;
@@ -1399,9 +1399,9 @@ message AggregatedBalanceEdge {
     string cursor = 2;
 }
 
-// Represents the list of aggregated balance objects with the corresponding page information
+// Page of aggregated balance objects and corresponding page information
 message AggregatedBalanceConnection {
-    // List of aggregated balance data chunks.
+    // Page of aggregated balance data and their corresponding cursors.
     repeated AggregatedBalanceEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1543,11 +1543,11 @@ message GetMarketDataHistoryByIDRequest {
 
 // Response that is received when querying Market Data History
 message GetMarketDataHistoryByIDResponse {
-    // List of market data history with the corresponding page information.
+    // Page of market data history with the corresponding page information.
     MarketDataConnection market_data = 1;
 }
 
-// Represents the market data with corresponding cursor for it
+// Market data with the corresponding cursor.
 message MarketDataEdge {
     // 'MarketData'.
     vega.MarketData node = 1;
@@ -1555,9 +1555,9 @@ message MarketDataEdge {
     string cursor = 2;
 }
 
-// Represents the list of market data objects with the corresponding page information
+// Page of market data items and corresponding page information
 message MarketDataConnection {
-    // List of market data chunks.
+    // Page of market data items and their corresponding cursors.
     repeated MarketDataEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1585,10 +1585,11 @@ message ListTransfersRequest {
 
 // Response that is received when listing  transfers
 message ListTransfersResponse {
+    // Page of transfers data and corresponding page information.
     TransferConnection transfers = 1;
 }
 
-// Represents the transfers data with a corresponding cursor for it
+// Transfers data with the corresponding cursor.
 message TransferEdge {
     // Transfer data.
     vega.events.v1.Transfer node = 1;
@@ -1596,9 +1597,9 @@ message TransferEdge {
     string cursor = 2;
 }
 
-// Represents the list of transfers data objects with the corresponding page information
+// Page of transfers data items and corresponding page information
 message TransferConnection {
-    // List of transfers data chunks.
+    // Page of transfers data and their corresponding cursors.
     repeated TransferEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1683,21 +1684,21 @@ message ListCandleDataRequest {
 
 // Response for list of candles for a market at an interval
 message ListCandleDataResponse {
-    // List of 0 or more candles.
+    // Page of candle data and corresponding page information.
     CandleDataConnection candles = 1;
 }
 
-// Represents the candle data with the corresponding cursor for it
+// Candle data with the corresponding cursor.
 message CandleEdge {
-    // List of candle data chunks.
+    // Candle data.
     Candle node = 1;
     // Cursor that can be used to fetch further pages.
     string cursor = 2;
 }
 
-// Represents the list of candles with the page information of the listing
+// Page of candles data and corresponding page information
 message CandleDataConnection {
-    // List of candle data.
+    // Page of candle data items and their corresponding cursors.
     repeated CandleEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1718,11 +1719,11 @@ message ListVotesRequest {
 
 // Response that is received when listing Votes
 message ListVotesResponse {
-    // Votes data received.
+    // Page of votes data received and corresponding page information.
     VoteConnection votes = 1;
 }
 
-// Votes data with the corresponding cursor for it
+// Votes data with the corresponding cursor.
 message VoteEdge {
     // Vote data.
     vega.Vote node = 1;
@@ -1730,9 +1731,9 @@ message VoteEdge {
     string cursor = 2;
 }
 
-// Represents the list of Vote data chunks with the corresponding list page information
+// Page of vote data items and corresponding page information
 message VoteConnection {
-    // List of Vote data.
+    // Page of vote data and their corresponding cursors.
     repeated VoteEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1766,11 +1767,11 @@ message ListERC20MultiSigSignerAddedBundlesRequest {
 
 // Response from adding a signature bundle to the signer list of a multisig contract for a particular validator
 message ListERC20MultiSigSignerAddedBundlesResponse {
-    // List of bundles for that validator, it may have been added multiple times if removed in between.
+    // Page of bundles for that validator - it may have been added multiple times if removed in between - and corresponding page information.
     ERC20MultiSigSignerAddedConnection bundles = 1;
 }
 
-// Represents the signature data that is to be added with the corresponding cursor for it
+// Signature data that is to be added with the corresponding cursor.
 message ERC20MultiSigSignerAddedEdge {
     // Signature data to be added.
     vega.events.v1.ERC20MultiSigSignerAdded node = 1;
@@ -1778,7 +1779,7 @@ message ERC20MultiSigSignerAddedEdge {
     string cursor = 2;
 }
 
-// Represents the signature bundle data that is to be added the corresponding cursor for it
+// Signature bundle data that is to be added with the corresponding cursor.
 message ERC20MultiSigSignerAddedBundleEdge {
     // Signature bundle data to be added.
     ERC20MultiSigSignerAddedBundle node = 1;
@@ -1786,9 +1787,9 @@ message ERC20MultiSigSignerAddedBundleEdge {
     string cursor = 2;
 }
 
-// Represents the list of signature data chunks to be added with the corresponding list page information
+// Page of signature data items to be added and corresponding page information
 message ERC20MultiSigSignerAddedConnection {
-    // List of signature bundle data parts.
+    // Page of signature bundle data and their corresponding cursors.
     repeated ERC20MultiSigSignerAddedBundleEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1825,11 +1826,11 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
 
 // Response when removing a signature bundle from the signer list of the multisig contract for a particular validator
 message ListERC20MultiSigSignerRemovedBundlesResponse {
-    // List of signer bundle data parts for that validator.
+    // Page of signer bundle data items for that validator and corresponding page information.
     ERC20MultiSigSignerRemovedConnection bundles = 1;
 }
 
-// Represents the signature data to be removed with the corresponding cursor for it
+// Signature data to be removed with the corresponding cursor.
 message ERC20MultiSigSignerRemovedEdge {
     // Signature data to be removed.
     vega.events.v1.ERC20MultiSigSignerRemoved node = 1;
@@ -1837,7 +1838,7 @@ message ERC20MultiSigSignerRemovedEdge {
     string cursor = 2;
 }
 
-// Represents the signature bundle data to be removed, with the corresponding cursor for it
+// Signature bundle data to be removed, with the corresponding cursor.
 message ERC20MultiSigSignerRemovedBundleEdge {
     // Signature bundle data to be added.
     ERC20MultiSigSignerRemovedBundle node = 1;
@@ -1845,9 +1846,9 @@ message ERC20MultiSigSignerRemovedBundleEdge {
     string cursor = 2;
 }
 
-// Represents the list of signature data chunks to be removed, with the corresponding list page information
+// Page of signature data items to be removed and corresponding page information.
 message ERC20MultiSigSignerRemovedConnection {
-    // List of signature bundle data parts.
+    // Page of signature bundle data and their corresponding cursors.
     repeated ERC20MultiSigSignerRemovedBundleEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -1966,19 +1967,19 @@ message ListTradesRequest {
 
 // Response from listing trades
 message ListTradesResponse {
-    // Listed trades.
+    // Page of trades data and corresponding page information.
     TradeConnection trades = 1;
 }
 
-// List of trades with the corresponding list page information
+// Page of trades and corresponding page information
 message TradeConnection {
-    // List of trades data.
+    // Page of trades and their corresponding cursors.
     repeated TradeEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// List of trades
+// Trade data item with the corresponding cursor..
 message TradeEdge {
     // Trade data.
     vega.Trade node = 1;
@@ -2028,7 +2029,7 @@ message ListOracleSpecsRequest {
 
 // Response to get all active oracle specs
 message ListOracleSpecsResponse {
-    // List of active oracle specs.
+    // Page of active oracle specs and corresponding page information.
     OracleSpecsConnection oracle_specs = 1;
 }
 
@@ -2041,27 +2042,27 @@ message ListOracleDataRequest {
 
 // Response to get all seen oracle data
 message ListOracleDataResponse {
-    // List of seen oracle data.
+    // Page of seen oracle data and corresponding page information.
     OracleDataConnection oracle_data = 1;
 }
 
-// Oracle specs with cursor
+// Oracle specs data item with the corresponding cursor.
 message OracleSpecEdge {
-    // List of oracle spec data.
+    // Oracle spec data.
     vega.OracleSpec node = 1;
     // Cursor that can be used to fetch further pages.
     string cursor = 2;
 }
 
-// Oracle specs with corresponding list page information
+// Page of oracle specs and corresponding page information
 message OracleSpecsConnection {
-    // Oracle specs.
+    // Page of oracle specs data and their corresponding cursors.
     repeated OracleSpecEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Oracle data with corresponding cursor
+// Oracle data item with the corresponding cursor.
 message OracleDataEdge {
     // Oracle data.
     vega.OracleData node = 1;
@@ -2069,9 +2070,9 @@ message OracleDataEdge {
     string cursor = 2;
 }
 
-// Oracle data with page information
+// Page of oracle data and corresponding page information.
 message OracleDataConnection {
-    // List of oracle data parts.
+    // Page of oracle data and their corresponding cursors.
     repeated OracleDataEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2101,21 +2102,21 @@ message ListMarketsRequest {
 
 // Response from listing markets
 message ListMarketsResponse {
-    // List of markets data.
+    // Page of markets and corresponding page information.
     MarketConnection markets = 1;
 }
 
-// Market data with corresponding cursor
+// Market information with the corresponding cursor.
 message MarketEdge {
-    // Market data.
+    // Information about the market.
     vega.Market node = 1;
     // Cursor that can be used to fetch further pages.
     string cursor = 2;
 }
 
-// Market data list with corresponding list page information
+// Page of markets and corresponding page information.
 message MarketConnection {
-    // List of markets data.
+    // Page of markets and their corresponding cursors.
     repeated MarketEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2145,11 +2146,11 @@ message ListPartiesRequest {
 
 // Response from listing parties
 message ListPartiesResponse {
-    // Parties data.
+    // Page of parties data and corresponding page information.
     PartyConnection parties = 1;
 }
 
-// Party data with corresponding cursors
+// Party data with the corresponding cursor.
 message PartyEdge {
     // Party data.
     vega.Party node = 1;
@@ -2157,15 +2158,15 @@ message PartyEdge {
     string cursor = 2;
 }
 
-// List of parties data with page information
+// Page of parties data and corresponding page information.
 message PartyConnection {
-    // List of parties data.
+    // Page of parties and their corresponding cursors.
     repeated PartyEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Order data with corresponding cursor
+// Order data with the corresponding cursor.
 message OrderEdge {
     // Order data.
     vega.Order node = 1;
@@ -2185,7 +2186,7 @@ message ListMarginLevelsRequest {
 
 // Response from listing margin levels
 message ListMarginLevelsResponse {
-    // Margin levels data.
+    // Page of margin levels data and corresponding page information.
     MarginConnection margin_levels = 1;
 }
 
@@ -2204,15 +2205,15 @@ message ObserveMarginLevelsResponse {
     vega.MarginLevels margin_levels = 1;
 }
 
-// List of orders data with corresponding page information
+// Page of orders data and corresponding page information.
 message OrderConnection {
-    // Orders data list.
+    // Page of orders and their corresponding cursors.
     repeated OrderEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Margin data with corresponding cursors
+// Margin data with the corresponding cursor.
 message MarginEdge {
     // Margin levels data.
     vega.MarginLevels node = 1;
@@ -2220,9 +2221,9 @@ message MarginEdge {
     string cursor = 2;
 }
 
-// List of margins data with corresponding page information
+// Page of margins data and corresponding page information.
 message MarginConnection {
-    // List of margins.
+    // Page of margins data and their corresponding cursors.
     repeated MarginEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2244,11 +2245,11 @@ message ListRewardsRequest {
 
 // Response for listing reward details for a single party
 message ListRewardsResponse {
-    // Rewards data.
+    // Page of rewards data and corresponding page information.
     RewardsConnection rewards = 1;
 }
 
-// Rewards data with corresponding cursor
+// Rewards data with the corresponding cursor.
 message RewardEdge {
     // Rewards data.
     vega.Reward node = 1;
@@ -2256,9 +2257,9 @@ message RewardEdge {
     string cursor = 2;
 }
 
-// Paged rewards data with corresponding page information
+// Page of rewards data and corresponding page information.
 message RewardsConnection {
-    // List of rewards data parts.
+    // Page of rewards data items and their corresponding cursors.
     repeated RewardEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2276,7 +2277,7 @@ message ListRewardSummariesRequest {
 
 // Response from listing reward details in for a single party
 message ListRewardSummariesResponse {
-    // Rewards details data.
+    // Page of rewards details data and corresponding page information.
     repeated vega.RewardSummary summaries = 1;
 }
 
@@ -2302,18 +2303,19 @@ message ListEpochRewardSummariesRequest {
 
 // Return message with reward details in for a single party
 message ListEpochRewardSummariesResponse {
+    // Page of rewards details for a single party and corresponding page information.
     EpochRewardSummaryConnection summaries = 1;
 }
 
-// Paged rewards summary data for epoch with corresponding page information
+// Page of rewards summary data for epoch and corresponding page information
 message EpochRewardSummaryConnection {
-    // Rewards summary data parts for epochs.
+    // Page of rewards summary data for epochs and their corresponding cursors.
     repeated EpochRewardSummaryEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Rewards summary data for epoch with corresponding cursors
+// Rewards summary data for epoch with the corresponding cursor.
 message EpochRewardSummaryEdge {
     // Rewards summary data for epoch.
     vega.EpochRewardSummary node = 1;
@@ -2362,11 +2364,11 @@ message ListDepositsRequest {
 
 // Response from listing deposits
 message ListDepositsResponse {
-    // Deposits data.
+    // Page of deposits data and corresponding page information.
     DepositsConnection deposits = 1;
 }
 
-// Deposits data with corresponding cursor
+// Deposits data with the corresponding cursor.
 message DepositEdge {
     // Deposit data.
     vega.Deposit node = 1;
@@ -2374,9 +2376,9 @@ message DepositEdge {
     string cursor = 2;
 }
 
-// Paged deposits data received with the corresponding page information
+// Page of deposits data received and corresponding page information
 message DepositsConnection {
-    // Deposits data parts.
+    // Page of deposits data and their corresponding cursors.
     repeated DepositEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2409,11 +2411,11 @@ message ListWithdrawalsRequest {
 
 // Response from listing withdrawals data
 message ListWithdrawalsResponse {
-    // List of withdrawals data parts.
+    // Page of withdrawals data and corresponding page information.
     WithdrawalsConnection withdrawals = 1;
 }
 
-// Withdrawals data with corresponding cursor
+// Withdrawals data with the corresponding cursor.
 message WithdrawalEdge {
     // Withdrawals data.
     vega.Withdrawal node = 1;
@@ -2421,9 +2423,9 @@ message WithdrawalEdge {
     string cursor = 2;
 }
 
-// List of withdrawals data with corresponding page information
+// Page of withdrawals data and corresponding page information
 message WithdrawalsConnection {
-    // List of withdrawals data parts.
+    // Page of withdrawals data and their corresponding cursors.
     repeated WithdrawalEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2453,11 +2455,11 @@ message ListAssetsRequest {
 
 // Response from listing assets
 message ListAssetsResponse {
-    // Assets data with page information.
+    // Page of assets data and corresponding page information.
     AssetsConnection assets = 1;
 }
 
-// Assets data with corresponding cursor data
+// Assets data with the corresponding cursor.
 message AssetEdge {
     // Asset data returned.
     vega.Asset node = 1;
@@ -2465,9 +2467,9 @@ message AssetEdge {
     string cursor = 2;
 }
 
-// Paged list of asset data with corresponding page information
+// Page of asset data and corresponding page information
 message AssetsConnection {
-    // List of assets data chunks.
+    // Page of assets data and their corresponding cursors.
     repeated AssetEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2491,11 +2493,11 @@ message ListLiquidityProvisionsRequest {
 
 // Response from listing liquidity provisions
 message ListLiquidityProvisionsResponse {
-    // List liquidity provisions data with corresponding page information.
+    // Page of liquidity provisions data and corresponding page information.
     LiquidityProvisionsConnection liquidity_provisions = 1;
 }
 
-// Paged liquidity provision data with corresponding cursor
+// Liquidity provision data with the corresponding cursor.
 message LiquidityProvisionsEdge {
     // Liquidity provision data.
     vega.LiquidityProvision node = 1;
@@ -2503,8 +2505,9 @@ message LiquidityProvisionsEdge {
     string cursor = 2;
 }
 
-// List of liquidity provisions data chunks with corresponding page information
+// Page of liquidity provisions data and corresponding page information
 message LiquidityProvisionsConnection {
+    // Page of liquidity provisions data and their corresponding cursors.
     repeated LiquidityProvisionsEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2573,11 +2576,11 @@ message ListGovernanceDataRequest {
 
 // Response from listing governance data
 message ListGovernanceDataResponse {
-    // Paged governance data with corresponding page information.
+    // Page of governance data and corresponding page information.
     GovernanceDataConnection connection = 1;
 }
 
-// Governance data with corresponding cursor
+// Governance data with the corresponding cursor.
 message GovernanceDataEdge {
     // Governance data content.
     vega.GovernanceData node = 1;
@@ -2585,9 +2588,9 @@ message GovernanceDataEdge {
     string cursor = 2;
 }
 
-// Paged list of governance data with corresponding page information
+// Page of governance data and corresponding page information
 message GovernanceDataConnection {
-    // List of governance data parts with corresponding cursors.
+    // Page of governance data and their corresponding cursors.
     repeated GovernanceDataEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2619,11 +2622,11 @@ message ListDelegationsRequest {
 
 // Response from listing delegations
 message ListDelegationsResponse {
-    // Delegations data with corresponding page information.
+    // Page of delegations data and corresponding page information.
     DelegationsConnection delegations = 1;
 }
 
-// Delegation data with corresponding cursors
+// Delegation data with the corresponding cursor.
 message DelegationEdge {
     // Delegation data.
     vega.Delegation node = 1;
@@ -2631,9 +2634,9 @@ message DelegationEdge {
     string cursor = 2;
 }
 
-// List of delegations data with corresponding page information
+// Page of delegations data and corresponding page information
 message DelegationsConnection {
-    // List of delegations data.
+    // Page of delegations data and their corresponding cursors.
     repeated DelegationEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2708,11 +2711,11 @@ message ListNodesRequest {
 
 // Response from listing nodes
 message ListNodesResponse {
-    // Node data with corresponding page information.
+    // Page of node data and corresponding page information.
     NodesConnection nodes = 1;
 }
 
-// Node data with corresponding cursor
+// Node data with the corresponding cursor.
 message NodeEdge {
     // Node data.
     vega.Node node = 1;
@@ -2720,9 +2723,9 @@ message NodeEdge {
     string cursor = 2;
 }
 
-// Paged list of nodes data with corresponding page information
+// Page of node data and corresponding page information
 message NodesConnection {
-    // List of nodes data.
+    // Page of node data and their corresponding cursors.
     repeated NodeEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2738,11 +2741,11 @@ message ListNodeSignaturesRequest {
 
 // Response to specify the ID of the resource to retrieve aggregated signatures for
 message ListNodeSignaturesResponse {
-    // List of nodes signatures with corresponding page information.
+    // Page of nodes signatures and corresponding page information.
     NodeSignaturesConnection signatures = 1;
 }
 
-// Nodes signature edge with corresponding cursor
+// Nodes signature edge with the corresponding cursor.
 message NodeSignatureEdge {
     // Node signature data.
     vega.commands.v1.NodeSignature node = 1;
@@ -2750,9 +2753,9 @@ message NodeSignatureEdge {
     string cursor = 2;
 }
 
-// List of nodes signatures with corresponding page information
+// Page of node signatures and corresponding page information.
 message NodeSignaturesConnection {
-    // List of 0 or more signatures.
+    // Page of node signatures and their corresponding cursors.
     repeated NodeSignatureEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2819,7 +2822,7 @@ message ListNetworkParametersRequest {
 
 // Response containing all of the Vega network parameters
 message ListNetworkParametersResponse {
-    // List of network parameters with corresponding page information.
+    // Page of network parameters and corresponding page information.
     NetworkParameterConnection network_parameters = 1;
 }
 
@@ -2835,7 +2838,7 @@ message GetNetworkParameterResponse {
   vega.NetworkParameter network_parameter = 1;
 }
 
-// Network parameter with corresponding cursor
+// Network parameter with the corresponding cursor.
 message NetworkParameterEdge {
     // Network parameter data.
     vega.NetworkParameter node = 1;
@@ -2843,9 +2846,9 @@ message NetworkParameterEdge {
     string cursor = 2;
 }
 
-// List of network parameters with corresponding page information
+// Page of network parameters and corresponding page information
 message NetworkParameterConnection {
-    // List of network parameters data.
+    // Page of network parameters data and their corresponding cursors.
     repeated NetworkParameterEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2871,11 +2874,11 @@ message ListCheckpointsRequest {
 
 // Response message containing all checkpoints requested
 message ListCheckpointsResponse {
-    // List of checkpoints data with corresponding page information.
+    // Page of checkpoints data and corresponding page information.
     CheckpointsConnection checkpoints = 1;
 }
 
-// Checkpoint data with corresponding cursor
+// Checkpoint data with the corresponding cursor.
 message CheckpointEdge {
     // Checkpoint data.
     Checkpoint node = 1;
@@ -2883,8 +2886,9 @@ message CheckpointEdge {
     string cursor = 2;
 }
 
-// List of checkpoints data with corresponding page information
+// Page of checkpoints data and corresponding page information
 message CheckpointsConnection {
+    // Page of checkpoints data and their corresponding cursors.
     repeated CheckpointEdge edges= 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2906,7 +2910,7 @@ message GetStakeResponse {
     StakesConnection stake_linkings = 2;
 }
 
-// Stake linking data with corresponding cursor
+// Stake linking data with the corresponding cursor.
 message StakeLinkingEdge {
     // Stake linking represent the intent from a party to deposit.
     vega.events.v1.StakeLinking node = 1;
@@ -2914,9 +2918,9 @@ message StakeLinkingEdge {
     string cursor = 2;
 }
 
-// Paged list of stake data with corresponding page information
+// Page of stake data and corresponding page information.
 message StakesConnection {
-    // List of stake data.
+    // Page of stake data and their corresponding cursors.
     repeated StakeLinkingEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -2983,11 +2987,11 @@ message ListKeyRotationsRequest {
 
 // Response message containing Vega key rotations
 message ListKeyRotationsResponse {
-    // Key rotations data with corresponding page information.
+    // Page of key rotations data and corresponding page information.
     KeyRotationConnection rotations = 1;
 }
 
-// Key rotation data with corresponding cursor
+// Key rotation data with the corresponding cursor.
 message KeyRotationEdge {
     // Key rotation data.
     vega.events.v1.KeyRotation node = 1;
@@ -2995,9 +2999,9 @@ message KeyRotationEdge {
     string cursor = 2;
 }
 
-// Key rotations data with corresponding page information
+// Page of key rotations data and corresponding page information
 message KeyRotationConnection {
-    // Key rotation data with corresponding cursor.
+    // Page of key rotation data and their corresponding cursors.
     repeated KeyRotationEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
@@ -3015,19 +3019,19 @@ message ListEthereumKeyRotationsRequest {
 
 // Response message containing Ethereum key rotations
 message ListEthereumKeyRotationsResponse {
-    // List of Ethereum key rotations data with corresponding page information.
+    // Page of Ethereum key rotations data and corresponding page information.
     EthereumKeyRotationsConnection key_rotations = 1;
 }
 
-// List of Ethereum key rotations data with corresponding page information
+// Page of Ethereum key rotations data and corresponding page information
 message EthereumKeyRotationsConnection {
-    // List of Ethereum key rotations data with corresponding cursors.
+    // Page of Ethereum key rotations data and their corresponding cursors.
     repeated EthereumKeyRotationEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Ethereum key rotation data with corresponding cursor
+// Ethereum key rotation data with the corresponding cursor.
 message EthereumKeyRotationEdge {
     // Ethereuem key rotation data.
     vega.events.v1.EthereumKeyRotation node = 1;
@@ -3075,19 +3079,19 @@ message ListProtocolUpgradeProposalsRequest {
 
 // Response type from a ListProtocolUpgradeProposals RPC call; a paginated list of protocol upgrade proposals
 message ListProtocolUpgradeProposalsResponse {
-    // Page of protocol upgrade proposals, with page information.
+    // Page of protocol upgrade proposals and corresponding page information.
     ProtocolUpgradeProposalConnection protocol_upgrade_proposals = 1;
 }
 
-// Page of protocol upgrade proposals, with page information
+// Page of protocol upgrade proposals and corresponding page information
 message ProtocolUpgradeProposalConnection {
-    // Protocol upgrade proposals page data.
+    // Page of protocol upgrade proposals data and their corresponding cursors.
     repeated ProtocolUpgradeProposalEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Protocol upgrade proposal data with a corresponding cursor
+// Protocol upgrade proposal data with the corresponding cursor.
 message ProtocolUpgradeProposalEdge {
     // Protocol upgrade proposal data.
     vega.events.v1.ProtocolUpgradeEvent node = 1;
@@ -3103,18 +3107,19 @@ message ListCoreSnapshotsRequest {
 
 // Response from a ListCoreSnapshots RPC call; a paginated list of the core snapshots.
 message ListCoreSnapshotsResponse {
-    // Page of core snapshot data, with page information.
+    // Page of core snapshot data and corresponding page information.
     CoreSnapshotConnection core_snapshots = 1;
 }
 
-// Page of core snapshot data, with page information
+// Page of core snapshot data and corresponding page information.
 message CoreSnapshotConnection {
+    // Page of core snapshot data and their corresponding cursors.
     repeated CoreSnapshotEdge edges = 1;
     // Page information that is used for fetching further pages.
     PageInfo page_info = 2;
 }
 
-// Core snapshot data with a corresponding cursor
+// Core snapshot data with the corresponding cursor.
 message CoreSnapshotEdge {
     // Core snapshot data.
     vega.events.v1.CoreSnapshotData node = 1;
@@ -3163,7 +3168,7 @@ message ListAllNetworkHistorySegmentsRequest {
 
 // Response with a list of all the nodes history segments
 message ListAllNetworkHistorySegmentsResponse {
-    // List of history segments data.
+    // Page of history segments data and corresponding page information.
     repeated HistorySegment segments = 1;
 }
 

@@ -663,7 +663,7 @@ type ListAccountsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Page with accounts data for 0 or more accounts.
+	// Page of accounts data and corresponding page information.
 	Accounts *AccountsConnection `protobuf:"bytes,1,opt,name=accounts,proto3" json:"accounts,omitempty"`
 }
 
@@ -706,13 +706,13 @@ func (x *ListAccountsResponse) GetAccounts() *AccountsConnection {
 	return nil
 }
 
-// Represents the list of accounts with the corresponding page information
+// Page of accounts data and corresponding page information.
 type AccountsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of accounts and their cursors.
+	// Page of accounts data and their corresponding cursors.
 	Edges []*AccountEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -764,7 +764,7 @@ func (x *AccountsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Represents the account with corresponding cursor for it
+// Account data item with the corresponding cursor.
 type AccountEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1478,7 +1478,7 @@ type ListOrdersResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Paged orders data with 0 or more orders.
+	// Page of orders data and corresponding page information.
 	Orders *OrderConnection `protobuf:"bytes,1,opt,name=orders,proto3" json:"orders,omitempty"`
 }
 
@@ -1585,7 +1585,7 @@ type ListOrderVersionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Paged orders data with 0 or more order versions.
+	// Page of order versions and corresponding page information.
 	Orders *OrderConnection `protobuf:"bytes,1,opt,name=orders,proto3" json:"orders,omitempty"`
 }
 
@@ -1970,7 +1970,7 @@ type ListPositionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of 0 or more positions.
+	// Page of positions data and corresponding page information.
 	Positions *PositionConnection `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 }
 
@@ -2135,7 +2135,7 @@ type ListAllPositionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of 0 or more positions.
+	// Page of positions data and corresponding page information.
 	Positions *PositionConnection `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 }
 
@@ -2178,7 +2178,7 @@ func (x *ListAllPositionsResponse) GetPositions() *PositionConnection {
 	return nil
 }
 
-// Represents the position data with corresponding cursor for it
+// Position data with the corresponding cursor.
 type PositionEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2236,13 +2236,13 @@ func (x *PositionEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of positions with the corresponding page information
+// Page of positions and corresponding page information
 type PositionConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of positions data.
+	// Page of positions data and their corresponding cursors.
 	Edges []*PositionEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -2921,7 +2921,7 @@ type ListLedgerEntriesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Represents the list of aggregated ledger entries data with the corresponding page information.
+	// Page of aggregated ledger entries data and corresponding page information.
 	LedgerEntries *AggregatedLedgerEntriesConnection `protobuf:"bytes,1,opt,name=ledger_entries,json=ledgerEntries,proto3" json:"ledger_entries,omitempty"`
 }
 
@@ -3022,7 +3022,7 @@ func (x *ExportLedgerEntriesResponse) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Represents the aggregated ledger entry data with corresponding cursor for it
+// Aggregated ledger entry data with the corresponding cursor.
 type AggregatedLedgerEntriesEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3080,13 +3080,13 @@ func (x *AggregatedLedgerEntriesEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of aggregated ledger entries data with the corresponding page information
+// Page of aggregated ledger entries data and corresponding page information
 type AggregatedLedgerEntriesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of 'AggregatedLedgerEntry' data.
+	// Page of 'AggregatedLedgerEntry' data and their corresponding cursors.
 	Edges []*AggregatedLedgerEntriesEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -3211,7 +3211,7 @@ type ListBalanceChangesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of aggregated balances with the corresponding page information.
+	// Page of aggregated balances data and corresponding page information.
 	Balances *AggregatedBalanceConnection `protobuf:"bytes,1,opt,name=balances,proto3" json:"balances,omitempty"`
 }
 
@@ -3335,7 +3335,7 @@ type GetBalanceHistoryResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of aggregated balances with the corresponding page information.
+	// Page of aggregated balances with the corresponding page information.
 	Balances *AggregatedBalanceConnection `protobuf:"bytes,1,opt,name=balances,proto3" json:"balances,omitempty"`
 }
 
@@ -3378,7 +3378,7 @@ func (x *GetBalanceHistoryResponse) GetBalances() *AggregatedBalanceConnection {
 	return nil
 }
 
-// Represents the AggregatedBalanceEdge data with corresponding cursor for it
+// Aggregated balance data with the corresponding cursor.
 type AggregatedBalanceEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3436,13 +3436,13 @@ func (x *AggregatedBalanceEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of aggregated balance objects with the corresponding page information
+// Page of aggregated balance objects and corresponding page information
 type AggregatedBalanceConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of aggregated balance data chunks.
+	// Page of aggregated balance data and their corresponding cursors.
 	Edges []*AggregatedBalanceEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -4369,7 +4369,7 @@ type GetMarketDataHistoryByIDResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of market data history with the corresponding page information.
+	// Page of market data history with the corresponding page information.
 	MarketData *MarketDataConnection `protobuf:"bytes,1,opt,name=market_data,json=marketData,proto3" json:"market_data,omitempty"`
 }
 
@@ -4412,7 +4412,7 @@ func (x *GetMarketDataHistoryByIDResponse) GetMarketData() *MarketDataConnection
 	return nil
 }
 
-// Represents the market data with corresponding cursor for it
+// Market data with the corresponding cursor.
 type MarketDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4470,13 +4470,13 @@ func (x *MarketDataEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of market data objects with the corresponding page information
+// Page of market data items and corresponding page information
 type MarketDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of market data chunks.
+	// Page of market data items and their corresponding cursors.
 	Edges []*MarketDataEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -4601,6 +4601,7 @@ type ListTransfersResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of transfers data and corresponding page information.
 	Transfers *TransferConnection `protobuf:"bytes,1,opt,name=transfers,proto3" json:"transfers,omitempty"`
 }
 
@@ -4643,7 +4644,7 @@ func (x *ListTransfersResponse) GetTransfers() *TransferConnection {
 	return nil
 }
 
-// Represents the transfers data with a corresponding cursor for it
+// Transfers data with the corresponding cursor.
 type TransferEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4701,13 +4702,13 @@ func (x *TransferEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of transfers data objects with the corresponding page information
+// Page of transfers data items and corresponding page information
 type TransferConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of transfers data chunks.
+	// Page of transfers data and their corresponding cursors.
 	Edges []*TransferEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -5287,7 +5288,7 @@ type ListCandleDataResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of 0 or more candles.
+	// Page of candle data and corresponding page information.
 	Candles *CandleDataConnection `protobuf:"bytes,1,opt,name=candles,proto3" json:"candles,omitempty"`
 }
 
@@ -5330,13 +5331,13 @@ func (x *ListCandleDataResponse) GetCandles() *CandleDataConnection {
 	return nil
 }
 
-// Represents the candle data with the corresponding cursor for it
+// Candle data with the corresponding cursor.
 type CandleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of candle data chunks.
+	// Candle data.
 	Node *Candle `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -5388,13 +5389,13 @@ func (x *CandleEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of candles with the page information of the listing
+// Page of candles data and corresponding page information
 type CandleDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of candle data.
+	// Page of candle data items and their corresponding cursors.
 	Edges []*CandleEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -5519,7 +5520,7 @@ type ListVotesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Votes data received.
+	// Page of votes data received and corresponding page information.
 	Votes *VoteConnection `protobuf:"bytes,1,opt,name=votes,proto3" json:"votes,omitempty"`
 }
 
@@ -5562,7 +5563,7 @@ func (x *ListVotesResponse) GetVotes() *VoteConnection {
 	return nil
 }
 
-// Votes data with the corresponding cursor for it
+// Votes data with the corresponding cursor.
 type VoteEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5620,13 +5621,13 @@ func (x *VoteEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of Vote data chunks with the corresponding list page information
+// Page of vote data items and corresponding page information
 type VoteConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Vote data.
+	// Page of vote data and their corresponding cursors.
 	Edges []*VoteEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -5867,7 +5868,7 @@ type ListERC20MultiSigSignerAddedBundlesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of bundles for that validator, it may have been added multiple times if removed in between.
+	// Page of bundles for that validator - it may have been added multiple times if removed in between - and corresponding page information.
 	Bundles *ERC20MultiSigSignerAddedConnection `protobuf:"bytes,1,opt,name=bundles,proto3" json:"bundles,omitempty"`
 }
 
@@ -5910,7 +5911,7 @@ func (x *ListERC20MultiSigSignerAddedBundlesResponse) GetBundles() *ERC20MultiSi
 	return nil
 }
 
-// Represents the signature data that is to be added with the corresponding cursor for it
+// Signature data that is to be added with the corresponding cursor.
 type ERC20MultiSigSignerAddedEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5968,7 +5969,7 @@ func (x *ERC20MultiSigSignerAddedEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the signature bundle data that is to be added the corresponding cursor for it
+// Signature bundle data that is to be added with the corresponding cursor.
 type ERC20MultiSigSignerAddedBundleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6026,13 +6027,13 @@ func (x *ERC20MultiSigSignerAddedBundleEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of signature data chunks to be added with the corresponding list page information
+// Page of signature data items to be added and corresponding page information
 type ERC20MultiSigSignerAddedConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of signature bundle data parts.
+	// Page of signature bundle data and their corresponding cursors.
 	Edges []*ERC20MultiSigSignerAddedBundleEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -6260,7 +6261,7 @@ type ListERC20MultiSigSignerRemovedBundlesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of signer bundle data parts for that validator.
+	// Page of signer bundle data items for that validator and corresponding page information.
 	Bundles *ERC20MultiSigSignerRemovedConnection `protobuf:"bytes,1,opt,name=bundles,proto3" json:"bundles,omitempty"`
 }
 
@@ -6303,7 +6304,7 @@ func (x *ListERC20MultiSigSignerRemovedBundlesResponse) GetBundles() *ERC20Multi
 	return nil
 }
 
-// Represents the signature data to be removed with the corresponding cursor for it
+// Signature data to be removed with the corresponding cursor.
 type ERC20MultiSigSignerRemovedEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6361,7 +6362,7 @@ func (x *ERC20MultiSigSignerRemovedEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the signature bundle data to be removed, with the corresponding cursor for it
+// Signature bundle data to be removed, with the corresponding cursor.
 type ERC20MultiSigSignerRemovedBundleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6419,13 +6420,13 @@ func (x *ERC20MultiSigSignerRemovedBundleEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of signature data chunks to be removed, with the corresponding list page information
+// Page of signature data items to be removed and corresponding page information.
 type ERC20MultiSigSignerRemovedConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of signature bundle data parts.
+	// Page of signature bundle data and their corresponding cursors.
 	Edges []*ERC20MultiSigSignerRemovedBundleEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -7175,7 +7176,7 @@ type ListTradesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Listed trades.
+	// Page of trades data and corresponding page information.
 	Trades *TradeConnection `protobuf:"bytes,1,opt,name=trades,proto3" json:"trades,omitempty"`
 }
 
@@ -7218,13 +7219,13 @@ func (x *ListTradesResponse) GetTrades() *TradeConnection {
 	return nil
 }
 
-// List of trades with the corresponding list page information
+// Page of trades and corresponding page information
 type TradeConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of trades data.
+	// Page of trades and their corresponding cursors.
 	Edges []*TradeEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -7276,7 +7277,7 @@ func (x *TradeConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// List of trades
+// Trade data item with the corresponding cursor..
 type TradeEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7594,7 +7595,7 @@ type ListOracleSpecsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of active oracle specs.
+	// Page of active oracle specs and corresponding page information.
 	OracleSpecs *OracleSpecsConnection `protobuf:"bytes,1,opt,name=oracle_specs,json=oracleSpecs,proto3" json:"oracle_specs,omitempty"`
 }
 
@@ -7700,7 +7701,7 @@ type ListOracleDataResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of seen oracle data.
+	// Page of seen oracle data and corresponding page information.
 	OracleData *OracleDataConnection `protobuf:"bytes,1,opt,name=oracle_data,json=oracleData,proto3" json:"oracle_data,omitempty"`
 }
 
@@ -7743,13 +7744,13 @@ func (x *ListOracleDataResponse) GetOracleData() *OracleDataConnection {
 	return nil
 }
 
-// Oracle specs with cursor
+// Oracle specs data item with the corresponding cursor.
 type OracleSpecEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of oracle spec data.
+	// Oracle spec data.
 	Node *vega.OracleSpec `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -7801,13 +7802,13 @@ func (x *OracleSpecEdge) GetCursor() string {
 	return ""
 }
 
-// Oracle specs with corresponding list page information
+// Page of oracle specs and corresponding page information
 type OracleSpecsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Oracle specs.
+	// Page of oracle specs data and their corresponding cursors.
 	Edges []*OracleSpecEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -7859,7 +7860,7 @@ func (x *OracleSpecsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Oracle data with corresponding cursor
+// Oracle data item with the corresponding cursor.
 type OracleDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7917,13 +7918,13 @@ func (x *OracleDataEdge) GetCursor() string {
 	return ""
 }
 
-// Oracle data with page information
+// Page of oracle data and corresponding page information.
 type OracleDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of oracle data parts.
+	// Page of oracle data and their corresponding cursors.
 	Edges []*OracleDataEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8137,7 +8138,7 @@ type ListMarketsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of markets data.
+	// Page of markets and corresponding page information.
 	Markets *MarketConnection `protobuf:"bytes,1,opt,name=markets,proto3" json:"markets,omitempty"`
 }
 
@@ -8180,13 +8181,13 @@ func (x *ListMarketsResponse) GetMarkets() *MarketConnection {
 	return nil
 }
 
-// Market data with corresponding cursor
+// Market information with the corresponding cursor.
 type MarketEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market data.
+	// Information about the market.
 	Node *vega.Market `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -8238,13 +8239,13 @@ func (x *MarketEdge) GetCursor() string {
 	return ""
 }
 
-// Market data list with corresponding list page information
+// Page of markets and corresponding page information.
 type MarketConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of markets data.
+	// Page of markets and their corresponding cursors.
 	Edges []*MarketEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8458,7 +8459,7 @@ type ListPartiesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Parties data.
+	// Page of parties data and corresponding page information.
 	Parties *PartyConnection `protobuf:"bytes,1,opt,name=parties,proto3" json:"parties,omitempty"`
 }
 
@@ -8501,7 +8502,7 @@ func (x *ListPartiesResponse) GetParties() *PartyConnection {
 	return nil
 }
 
-// Party data with corresponding cursors
+// Party data with the corresponding cursor.
 type PartyEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8559,13 +8560,13 @@ func (x *PartyEdge) GetCursor() string {
 	return ""
 }
 
-// List of parties data with page information
+// Page of parties data and corresponding page information.
 type PartyConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of parties data.
+	// Page of parties and their corresponding cursors.
 	Edges []*PartyEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8617,7 +8618,7 @@ func (x *PartyConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Order data with corresponding cursor
+// Order data with the corresponding cursor.
 type OrderEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8748,7 +8749,7 @@ type ListMarginLevelsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Margin levels data.
+	// Page of margin levels data and corresponding page information.
 	MarginLevels *MarginConnection `protobuf:"bytes,1,opt,name=margin_levels,json=marginLevels,proto3" json:"margin_levels,omitempty"`
 }
 
@@ -8899,13 +8900,13 @@ func (x *ObserveMarginLevelsResponse) GetMarginLevels() *vega.MarginLevels {
 	return nil
 }
 
-// List of orders data with corresponding page information
+// Page of orders data and corresponding page information.
 type OrderConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Orders data list.
+	// Page of orders and their corresponding cursors.
 	Edges []*OrderEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8957,7 +8958,7 @@ func (x *OrderConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Margin data with corresponding cursors
+// Margin data with the corresponding cursor.
 type MarginEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9015,13 +9016,13 @@ func (x *MarginEdge) GetCursor() string {
 	return ""
 }
 
-// List of margins data with corresponding page information
+// Page of margins data and corresponding page information.
 type MarginConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of margins.
+	// Page of margins data and their corresponding cursors.
 	Edges []*MarginEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -9164,7 +9165,7 @@ type ListRewardsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Rewards data.
+	// Page of rewards data and corresponding page information.
 	Rewards *RewardsConnection `protobuf:"bytes,1,opt,name=rewards,proto3" json:"rewards,omitempty"`
 }
 
@@ -9207,7 +9208,7 @@ func (x *ListRewardsResponse) GetRewards() *RewardsConnection {
 	return nil
 }
 
-// Rewards data with corresponding cursor
+// Rewards data with the corresponding cursor.
 type RewardEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9265,13 +9266,13 @@ func (x *RewardEdge) GetCursor() string {
 	return ""
 }
 
-// Paged rewards data with corresponding page information
+// Page of rewards data and corresponding page information.
 type RewardsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of rewards data parts.
+	// Page of rewards data items and their corresponding cursors.
 	Edges []*RewardEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -9396,7 +9397,7 @@ type ListRewardSummariesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Rewards details data.
+	// Page of rewards details data and corresponding page information.
 	Summaries []*vega.RewardSummary `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
 }
 
@@ -9579,6 +9580,7 @@ type ListEpochRewardSummariesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of rewards details for a single party and corresponding page information.
 	Summaries *EpochRewardSummaryConnection `protobuf:"bytes,1,opt,name=summaries,proto3" json:"summaries,omitempty"`
 }
 
@@ -9621,13 +9623,13 @@ func (x *ListEpochRewardSummariesResponse) GetSummaries() *EpochRewardSummaryCon
 	return nil
 }
 
-// Paged rewards summary data for epoch with corresponding page information
+// Page of rewards summary data for epoch and corresponding page information
 type EpochRewardSummaryConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Rewards summary data parts for epochs.
+	// Page of rewards summary data for epochs and their corresponding cursors.
 	Edges []*EpochRewardSummaryEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -9679,7 +9681,7 @@ func (x *EpochRewardSummaryConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Rewards summary data for epoch with corresponding cursors
+// Rewards summary data for epoch with the corresponding cursor.
 type EpochRewardSummaryEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10016,7 +10018,7 @@ type ListDepositsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Deposits data.
+	// Page of deposits data and corresponding page information.
 	Deposits *DepositsConnection `protobuf:"bytes,1,opt,name=deposits,proto3" json:"deposits,omitempty"`
 }
 
@@ -10059,7 +10061,7 @@ func (x *ListDepositsResponse) GetDeposits() *DepositsConnection {
 	return nil
 }
 
-// Deposits data with corresponding cursor
+// Deposits data with the corresponding cursor.
 type DepositEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10117,13 +10119,13 @@ func (x *DepositEdge) GetCursor() string {
 	return ""
 }
 
-// Paged deposits data received with the corresponding page information
+// Page of deposits data received and corresponding page information
 type DepositsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Deposits data parts.
+	// Page of deposits data and their corresponding cursors.
 	Edges []*DepositEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -10347,7 +10349,7 @@ type ListWithdrawalsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of withdrawals data parts.
+	// Page of withdrawals data and corresponding page information.
 	Withdrawals *WithdrawalsConnection `protobuf:"bytes,1,opt,name=withdrawals,proto3" json:"withdrawals,omitempty"`
 }
 
@@ -10390,7 +10392,7 @@ func (x *ListWithdrawalsResponse) GetWithdrawals() *WithdrawalsConnection {
 	return nil
 }
 
-// Withdrawals data with corresponding cursor
+// Withdrawals data with the corresponding cursor.
 type WithdrawalEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10448,13 +10450,13 @@ func (x *WithdrawalEdge) GetCursor() string {
 	return ""
 }
 
-// List of withdrawals data with corresponding page information
+// Page of withdrawals data and corresponding page information
 type WithdrawalsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of withdrawals data parts.
+	// Page of withdrawals data and their corresponding cursors.
 	Edges []*WithdrawalEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -10668,7 +10670,7 @@ type ListAssetsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Assets data with page information.
+	// Page of assets data and corresponding page information.
 	Assets *AssetsConnection `protobuf:"bytes,1,opt,name=assets,proto3" json:"assets,omitempty"`
 }
 
@@ -10711,7 +10713,7 @@ func (x *ListAssetsResponse) GetAssets() *AssetsConnection {
 	return nil
 }
 
-// Assets data with corresponding cursor data
+// Assets data with the corresponding cursor.
 type AssetEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10769,13 +10771,13 @@ func (x *AssetEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of asset data with corresponding page information
+// Page of asset data and corresponding page information
 type AssetsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of assets data chunks.
+	// Page of assets data and their corresponding cursors.
 	Edges []*AssetEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -10918,7 +10920,7 @@ type ListLiquidityProvisionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List liquidity provisions data with corresponding page information.
+	// Page of liquidity provisions data and corresponding page information.
 	LiquidityProvisions *LiquidityProvisionsConnection `protobuf:"bytes,1,opt,name=liquidity_provisions,json=liquidityProvisions,proto3" json:"liquidity_provisions,omitempty"`
 }
 
@@ -10961,7 +10963,7 @@ func (x *ListLiquidityProvisionsResponse) GetLiquidityProvisions() *LiquidityPro
 	return nil
 }
 
-// Paged liquidity provision data with corresponding cursor
+// Liquidity provision data with the corresponding cursor.
 type LiquidityProvisionsEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11019,12 +11021,13 @@ func (x *LiquidityProvisionsEdge) GetCursor() string {
 	return ""
 }
 
-// List of liquidity provisions data chunks with corresponding page information
+// Page of liquidity provisions data and corresponding page information
 type LiquidityProvisionsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of liquidity provisions data and their corresponding cursors.
 	Edges []*LiquidityProvisionsEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -11380,7 +11383,7 @@ type ListGovernanceDataResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Paged governance data with corresponding page information.
+	// Page of governance data and corresponding page information.
 	Connection *GovernanceDataConnection `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
 }
 
@@ -11423,7 +11426,7 @@ func (x *ListGovernanceDataResponse) GetConnection() *GovernanceDataConnection {
 	return nil
 }
 
-// Governance data with corresponding cursor
+// Governance data with the corresponding cursor.
 type GovernanceDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11481,13 +11484,13 @@ func (x *GovernanceDataEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of governance data with corresponding page information
+// Page of governance data and corresponding page information
 type GovernanceDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of governance data parts with corresponding cursors.
+	// Page of governance data and their corresponding cursors.
 	Edges []*GovernanceDataEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -11719,7 +11722,7 @@ type ListDelegationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Delegations data with corresponding page information.
+	// Page of delegations data and corresponding page information.
 	Delegations *DelegationsConnection `protobuf:"bytes,1,opt,name=delegations,proto3" json:"delegations,omitempty"`
 }
 
@@ -11762,7 +11765,7 @@ func (x *ListDelegationsResponse) GetDelegations() *DelegationsConnection {
 	return nil
 }
 
-// Delegation data with corresponding cursors
+// Delegation data with the corresponding cursor.
 type DelegationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11820,13 +11823,13 @@ func (x *DelegationEdge) GetCursor() string {
 	return ""
 }
 
-// List of delegations data with corresponding page information
+// Page of delegations data and corresponding page information
 type DelegationsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of delegations data.
+	// Page of delegations data and their corresponding cursors.
 	Edges []*DelegationEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -12356,7 +12359,7 @@ type ListNodesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node data with corresponding page information.
+	// Page of node data and corresponding page information.
 	Nodes *NodesConnection `protobuf:"bytes,1,opt,name=nodes,proto3" json:"nodes,omitempty"`
 }
 
@@ -12399,7 +12402,7 @@ func (x *ListNodesResponse) GetNodes() *NodesConnection {
 	return nil
 }
 
-// Node data with corresponding cursor
+// Node data with the corresponding cursor.
 type NodeEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12457,13 +12460,13 @@ func (x *NodeEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of nodes data with corresponding page information
+// Page of node data and corresponding page information
 type NodesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of nodes data.
+	// Page of node data and their corresponding cursors.
 	Edges []*NodeEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -12579,7 +12582,7 @@ type ListNodeSignaturesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of nodes signatures with corresponding page information.
+	// Page of nodes signatures and corresponding page information.
 	Signatures *NodeSignaturesConnection `protobuf:"bytes,1,opt,name=signatures,proto3" json:"signatures,omitempty"`
 }
 
@@ -12622,7 +12625,7 @@ func (x *ListNodeSignaturesResponse) GetSignatures() *NodeSignaturesConnection {
 	return nil
 }
 
-// Nodes signature edge with corresponding cursor
+// Nodes signature edge with the corresponding cursor.
 type NodeSignatureEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12680,13 +12683,13 @@ func (x *NodeSignatureEdge) GetCursor() string {
 	return ""
 }
 
-// List of nodes signatures with corresponding page information
+// Page of node signatures and corresponding page information.
 type NodeSignaturesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of 0 or more signatures.
+	// Page of node signatures and their corresponding cursors.
 	Edges []*NodeSignatureEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13149,7 +13152,7 @@ type ListNetworkParametersResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of network parameters with corresponding page information.
+	// Page of network parameters and corresponding page information.
 	NetworkParameters *NetworkParameterConnection `protobuf:"bytes,1,opt,name=network_parameters,json=networkParameters,proto3" json:"network_parameters,omitempty"`
 }
 
@@ -13290,7 +13293,7 @@ func (x *GetNetworkParameterResponse) GetNetworkParameter() *vega.NetworkParamet
 	return nil
 }
 
-// Network parameter with corresponding cursor
+// Network parameter with the corresponding cursor.
 type NetworkParameterEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13348,13 +13351,13 @@ func (x *NetworkParameterEdge) GetCursor() string {
 	return ""
 }
 
-// List of network parameters with corresponding page information
+// Page of network parameters and corresponding page information
 type NetworkParameterConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of network parameters data.
+	// Page of network parameters data and their corresponding cursors.
 	Edges []*NetworkParameterEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13528,7 +13531,7 @@ type ListCheckpointsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of checkpoints data with corresponding page information.
+	// Page of checkpoints data and corresponding page information.
 	Checkpoints *CheckpointsConnection `protobuf:"bytes,1,opt,name=checkpoints,proto3" json:"checkpoints,omitempty"`
 }
 
@@ -13571,7 +13574,7 @@ func (x *ListCheckpointsResponse) GetCheckpoints() *CheckpointsConnection {
 	return nil
 }
 
-// Checkpoint data with corresponding cursor
+// Checkpoint data with the corresponding cursor.
 type CheckpointEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13629,12 +13632,13 @@ func (x *CheckpointEdge) GetCursor() string {
 	return ""
 }
 
-// List of checkpoints data with corresponding page information
+// Page of checkpoints data and corresponding page information
 type CheckpointsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of checkpoints data and their corresponding cursors.
 	Edges []*CheckpointEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13802,7 +13806,7 @@ func (x *GetStakeResponse) GetStakeLinkings() *StakesConnection {
 	return nil
 }
 
-// Stake linking data with corresponding cursor
+// Stake linking data with the corresponding cursor.
 type StakeLinkingEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13860,13 +13864,13 @@ func (x *StakeLinkingEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of stake data with corresponding page information
+// Page of stake data and corresponding page information.
 type StakesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of stake data.
+	// Page of stake data and their corresponding cursors.
 	Edges []*StakeLinkingEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -14299,7 +14303,7 @@ type ListKeyRotationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Key rotations data with corresponding page information.
+	// Page of key rotations data and corresponding page information.
 	Rotations *KeyRotationConnection `protobuf:"bytes,1,opt,name=rotations,proto3" json:"rotations,omitempty"`
 }
 
@@ -14342,7 +14346,7 @@ func (x *ListKeyRotationsResponse) GetRotations() *KeyRotationConnection {
 	return nil
 }
 
-// Key rotation data with corresponding cursor
+// Key rotation data with the corresponding cursor.
 type KeyRotationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14400,13 +14404,13 @@ func (x *KeyRotationEdge) GetCursor() string {
 	return ""
 }
 
-// Key rotations data with corresponding page information
+// Page of key rotations data and corresponding page information
 type KeyRotationConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Key rotation data with corresponding cursor.
+	// Page of key rotation data and their corresponding cursors.
 	Edges []*KeyRotationEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -14522,7 +14526,7 @@ type ListEthereumKeyRotationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Ethereum key rotations data with corresponding page information.
+	// Page of Ethereum key rotations data and corresponding page information.
 	KeyRotations *EthereumKeyRotationsConnection `protobuf:"bytes,1,opt,name=key_rotations,json=keyRotations,proto3" json:"key_rotations,omitempty"`
 }
 
@@ -14565,13 +14569,13 @@ func (x *ListEthereumKeyRotationsResponse) GetKeyRotations() *EthereumKeyRotatio
 	return nil
 }
 
-// List of Ethereum key rotations data with corresponding page information
+// Page of Ethereum key rotations data and corresponding page information
 type EthereumKeyRotationsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Ethereum key rotations data with corresponding cursors.
+	// Page of Ethereum key rotations data and their corresponding cursors.
 	Edges []*EthereumKeyRotationEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -14623,7 +14627,7 @@ func (x *EthereumKeyRotationsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Ethereum key rotation data with corresponding cursor
+// Ethereum key rotation data with the corresponding cursor.
 type EthereumKeyRotationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14988,7 +14992,7 @@ type ListProtocolUpgradeProposalsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Page of protocol upgrade proposals, with page information.
+	// Page of protocol upgrade proposals and corresponding page information.
 	ProtocolUpgradeProposals *ProtocolUpgradeProposalConnection `protobuf:"bytes,1,opt,name=protocol_upgrade_proposals,json=protocolUpgradeProposals,proto3" json:"protocol_upgrade_proposals,omitempty"`
 }
 
@@ -15031,13 +15035,13 @@ func (x *ListProtocolUpgradeProposalsResponse) GetProtocolUpgradeProposals() *Pr
 	return nil
 }
 
-// Page of protocol upgrade proposals, with page information
+// Page of protocol upgrade proposals and corresponding page information
 type ProtocolUpgradeProposalConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Protocol upgrade proposals page data.
+	// Page of protocol upgrade proposals data and their corresponding cursors.
 	Edges []*ProtocolUpgradeProposalEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -15089,7 +15093,7 @@ func (x *ProtocolUpgradeProposalConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Protocol upgrade proposal data with a corresponding cursor
+// Protocol upgrade proposal data with the corresponding cursor.
 type ProtocolUpgradeProposalEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15202,7 +15206,7 @@ type ListCoreSnapshotsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Page of core snapshot data, with page information.
+	// Page of core snapshot data and corresponding page information.
 	CoreSnapshots *CoreSnapshotConnection `protobuf:"bytes,1,opt,name=core_snapshots,json=coreSnapshots,proto3" json:"core_snapshots,omitempty"`
 }
 
@@ -15245,12 +15249,13 @@ func (x *ListCoreSnapshotsResponse) GetCoreSnapshots() *CoreSnapshotConnection {
 	return nil
 }
 
-// Page of core snapshot data, with page information
+// Page of core snapshot data and corresponding page information.
 type CoreSnapshotConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of core snapshot data and their corresponding cursors.
 	Edges []*CoreSnapshotEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -15302,7 +15307,7 @@ func (x *CoreSnapshotConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Core snapshot data with a corresponding cursor
+// Core snapshot data with the corresponding cursor.
 type CoreSnapshotEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15596,7 +15601,7 @@ type ListAllNetworkHistorySegmentsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of history segments data.
+	// Page of history segments data and corresponding page information.
 	Segments []*HistorySegment `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
 }
 
