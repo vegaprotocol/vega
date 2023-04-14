@@ -163,7 +163,7 @@ func ExampleRunConfig(name string, withDataNode bool) *RunConfig {
 	if withDataNode {
 		c.DataNode = &DataNodeConfig{
 			Binary: BinaryConfig{
-				Path: "data-node",
+				Path: "vega data-node",
 				Args: []string{"arg1", "arg2", "..."},
 			},
 		}

@@ -37,7 +37,7 @@ func Init(log *logging.Logger, homeFolder string, withDataNode bool) error {
 		return fmt.Errorf("home folder %q already exists", homePath)
 	}
 
-	visorConf := config.DefaultVisorConfig(log, homePath, withDataNode)
+	visorConf := config.DefaultVisorConfig(log, homePath)
 
 	log.Info("Initiating genesis folder")
 	if err := initDefaultFolder(visorConf.GenesisFolder(), "genesis", withDataNode); err != nil {

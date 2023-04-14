@@ -61,14 +61,8 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 		return err
 	}
 
-	if conf.Assets.Vega.AssetName == "" {
+	if conf.Asset.Name == "" {
 		return missingAutoInstallAssetError("vega")
-	}
-
-	if runConf.DataNode != nil {
-		if conf.Assets.DataNode == nil || conf.Assets.DataNode.AssetName == "" {
-			return missingAutoInstallAssetError("data node")
-		}
 	}
 
 	if err := os.MkdirAll(folder, 0o755); err != nil {
@@ -78,19 +72,19 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 	assetsFetcher := github.NewAssetsFetcher(
 		conf.GithubRepositoryOwner,
 		conf.GithubRepository,
-		conf.Assets.AssetsNames(),
+		[]string{conf.Asset.Name},
 	)
 
-	v.log.Info("Downloading assets from Github", logging.Strings("assets", conf.Assets.AssetsNames()))
+	v.log.Info("Downloading asset from Github", logging.String("asset", conf.Asset.Name))
 	if err := assetsFetcher.Download(ctx, releaseTag, folder); err != nil {
 		return fmt.Errorf("failed to download release assets for tag %q: %w", releaseTag, err)
 	}
 
 	runConf.Name = releaseTag
-	runConf.Vega.Binary.Path = conf.Assets.Vega.GetBinaryPath()
+	runConf.Vega.Binary.Path = conf.Asset.GetBinaryPath()
 
 	if runConf.DataNode != nil {
-		runConf.DataNode.Binary.Path = conf.Assets.DataNode.GetBinaryPath()
+		runConf.DataNode.Binary.Path = conf.Asset.GetBinaryPath()
 
 		if len(runConf.DataNode.Binary.Args) != 0 && runConf.DataNode.Binary.Args[0] != vegaDataNodeStartCmdArgs[0] {
 			runConf.DataNode.Binary.Args = append(vegaDataNodeStartCmdArgs, runConf.DataNode.Binary.Args[1:]...)

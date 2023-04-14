@@ -105,8 +105,6 @@ func (v *Visor) Run(ctx context.Context) error {
 			return fmt.Errorf("failed to parse run config: %w", err)
 		}
 
-		v.conf.SetHasDataNode(runConf.DataNode != nil)
-
 		client := v.clientFactory.GetClient(
 			runConf.Vega.RCP.SocketPath,
 			runConf.Vega.RCP.HTTPPath,
