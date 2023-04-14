@@ -219,7 +219,7 @@ type VisorConfig struct {
 	log         *logging.Logger
 }
 
-func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
+func DefaultVisorConfig(log *logging.Logger, homePath string, withDataNode bool) *VisorConfig {
 	return &VisorConfig{
 		log:        log,
 		homePath:   homePath,
@@ -234,15 +234,28 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 				Enabled:               true,
 				GithubRepositoryOwner: "vegaprotocol",
 				GithubRepository:      "vega",
-				Assets: AssetsConfig{
-					Vega: Asset{
-						AssetName:  fmt.Sprintf("vega-%s-%s.zip", runtime.GOOS, "amd64"),
-						BinaryName: toPointer("vega"),
-					},
-				},
+				Assets:                defaultAssetConfig(withDataNode),
 			},
 		},
 	}
+}
+
+func defaultAssetConfig(withDataNode bool) AssetsConfig {
+	ac := AssetsConfig{
+		Vega: Asset{
+			AssetName:  fmt.Sprintf("vega-%s-%s.zip", runtime.GOOS, "amd64"),
+			BinaryName: toPointer("vega"),
+		},
+	}
+
+	if withDataNode {
+		ac.DataNode = &Asset{
+			AssetName:  fmt.Sprintf("data-node-%s-%s.zip", runtime.GOOS, "amd64"),
+			BinaryName: toPointer("data-node"),
+		}
+	}
+
+	return ac
 }
 
 func NewVisorConfig(log *logging.Logger, homePath string) (*VisorConfig, error) {
