@@ -92,6 +92,7 @@ type TradingDataServiceClient interface {
 	//   - export ledger entries for a single party for a given asset for all times
 	//
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (TradingDataService_ExportLedgerEntriesClient, error)
 	// List balance changes
 	//
@@ -461,6 +462,7 @@ type TradingDataServiceClient interface {
 	//
 	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error)
 	// Ping
 	//
@@ -1700,6 +1702,7 @@ type TradingDataServiceServer interface {
 	//   - export ledger entries for a single party for a given asset for all times
 	//
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportLedgerEntries(*ExportLedgerEntriesRequest, TradingDataService_ExportLedgerEntriesServer) error
 	// List balance changes
 	//
@@ -2069,6 +2072,7 @@ type TradingDataServiceServer interface {
 	//
 	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error
 	// Ping
 	//
