@@ -133,18 +133,17 @@ service TradingDataService {
 
     // List ledger entries
     //
-    // Get a list of ledger entries by asset, market, party, account type and transfer type within the given date range.
     // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
     // It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
     // the summed ledger entries of the set of specified accounts changes.
-    // Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
-    // for each of the sides - sending and receiving accounts, the query returns an error.
+    // Listed entries should be limited to a single party from each side only.
+    // Only one party per side (sender/receiver) is allowed; otherwise, an error is returned.
     //
-    // Entries can be queried by:
-    //   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
-    //   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
-    //   - listing ledger entries with filtering on the sending AND receiving account
-    //   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
+    // Filter options include:
+    //   - Sending account (market ID, asset ID, account type)
+    //   - Receiving account (market ID, asset ID, account type)
+    //   - Both sending and receiving account
+    //   - Transfer type (combined with other filters or used alone)
     rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Ledger entries";
@@ -153,31 +152,23 @@ service TradingDataService {
 
     // Export ledger entries
     //
-    // Export ledger entries records ledger entries to a csv file.
-    // May or may not contain a date range - if no date range is provided, list all records for all times.
-    //
-    // Ledger entries can be exported by:
-    //   - export ledger entries for a single party for a given asset within a given time range
-    //   - export ledger entries for a single party for a given asset for all times
+    // Exports ledger entries to a CSV file, optionally filtered by date range.
+    // Supports exporting for a single party and asset, within a specific time range or for all times.
     rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (ExportLedgerEntriesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Ledger entries";
       };
     }
 
-    // List balance changes
+    // List Balance Changes
     //
-    // Get a list of the changes in account balances over a period of time.
+    // `ListBalanceChanges` retrieves account balance changes over time, with accounts defined by (asset_id, type, party_id, market_id).
+    //  - Accounts have an associated asset and type.
+    //  - Some account types use 'network' as a special party identifier (e.g., global reward pool).
+    //  - Some account types use an empty string as a special market identifier (e.g., general party accounts).
     //
-    // An account is defined as a set of asset_id, type, party_id, and market_id.
-    // - Every account has an associated asset and type.
-    // - Certain account types such as the global reward pool for example, do not have an associated party.
-    //   These are denoted by the special party ID 'network'
-    // - Certain account types do not have an associated market such as the general party accounts, for example.
-    //   These are denoted by the special market ID '' (the empty string)
-    //
-    // `ListBalanceChangesRequest` will return a list of `AggregatedBalance` records,
-    // with a row for each block at which a given account's balance changes.
+    // `ListBalanceChangesRequest` returns a list of (vega_time, asset_id, account_type, party_id, market_id, balance),
+    // including rows for each block where an account's balance changes.
     rpc ListBalanceChanges(ListBalanceChangesRequest) returns (ListBalanceChangesResponse) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
 	tags: "Accounts";
@@ -948,23 +939,21 @@ message PageInfo {
 
 // -- Accounts --
 
-// Represents the current balance of an account for an asset on Vega, for a particular owner or party
+// Account Balance: Represents an account's asset balance on Vega for a specific owner/party
 message AccountBalance {
-    // Unique account ID used internally by Vega
-    // string id = 1;
-    // Party that owns the account.
-    // Special values include `network` - represents the Vega network and is
-    // most commonly seen during liquidation of a distressed trading position.
+    // Owner of the account (special value: "network" for Vega network during liquidation)
     string owner = 2;
-    // Asset balance represented as an integer, for example `123456` is a correctly
-    // formatted price of `1.23456` assuming market configured to 5 decimal places.
-    // Balances cannot be negative.
+
+    // Asset balance as an integer (e.g., "123456" represents "1.23456" with 5 decimal places)
     string balance = 3;
-    // Asset ID for the account.
+
+    // Asset identifier for the account
     string asset = 4;
-    // Market ID for the account, this field will be empty if the asset is in a general account.
+
+    // Market ID for account (empty if asset is in a general account)
     string market_id = 5;
-    // Account type of this account.
+
+    // Account type of this account
     vega.AccountType type = 6;
 }
 
@@ -1006,7 +995,7 @@ message ObserveAccountsRequest {
     string party_id = 2;
     // Asset ID.
     string asset = 3;
-    // Account type to subscribe to, required field.
+    // Required: Account type to subscribe to.
     vega.AccountType type = 4;
 }
 
@@ -1051,10 +1040,10 @@ message InfoResponse {
 
 // Request that is sent when executing the query for getting a single order
 message GetOrderRequest {
-  // Order ID.
+  // Required: Order identifier.
   string order_id = 1 [(google.api.field_behavior) = REQUIRED];
 
-  // Optional version of the order.
+  // Optional: version of the order.
   optional int32 version = 2;
 }
 
@@ -1064,34 +1053,43 @@ message GetOrderResponse {
     vega.Order order = 1;
 }
 
-// Order filter that contains all filtering conditions and values that are applied to the orders listing
+// Order Filter: Contains filtering conditions/values for orders listing
 message OrderFilter {
-    // List of order statuses the orders can be filtered by.
+    // Order statuses for filtering
     repeated vega.Order.Status statuses = 1;
-    // List of order types the orders can be filtered by.
+
+    // Order types for filtering
     repeated vega.Order.Type types = 2;
-    // List of timings the orders can be filtered by.
+
+    // Order timings for filtering
     repeated vega.Order.TimeInForce time_in_forces = 3;
-    // Indicator if liquidity provision orders should be included or not in the list.
+
+    // Include/exclude liquidity provision orders
     bool exclude_liquidity = 4;
-    // List of party IDs to filter on.
+
+    // Party IDs filter, if provided
     repeated string party_ids = 5;
-    // List of market IDs to filter on.
+
+    // Market IDs filter, if provided.
     repeated string market_ids = 6;
-    // Reference.
+
+    // Optional: reference for filtering
     optional string reference = 7;
-    // Date range of the orders being listed.
+
+    // Date range for filtering
     optional DateRange date_range = 8;
-    // Indicator for listing only live orders, if set to true.
+
+    // List only live orders when true
     optional bool live_only = 9;
 }
 
-// Request that is sent when executing a query for a list of orders
+// Request for a list of orders with optional filters
 message ListOrdersRequest {
-    // Optional pagination control.
-    optional Pagination pagination = 2;
-    // Order filter contains all filtering conditions and values that are applied to the orders listing.
-    optional OrderFilter filter = 5;
+    // Optional: pagination control
+    optional Pagination pagination = 1;
+
+    // Order filter with filtering conditions/values
+    optional OrderFilter filter = 2;
 }
 
 // Response that is received from the query to list orders
@@ -1102,7 +1100,7 @@ message ListOrdersResponse {
 
 // Request that is sent when listing possible order versions
 message ListOrderVersionsRequest {
-    // Order ID as string.
+    // Required: Order identifier.
     string order_id = 1 [(google.api.field_behavior) = REQUIRED];
 
     // Optional pagination control.
@@ -1115,17 +1113,17 @@ message ListOrderVersionsResponse {
     OrderConnection orders = 1;
 }
 
-// Request to subscribe to a stream of orders
+// Subscribe to Orders Stream Request
 //
-// Request fields market ID and party ID are both optional filters:
-// If omitted all orders, for all parties on all markets will be returned on the stream
-// If a market ID is provided, the orders from that market will be returned on the stream
-// If a party ID is provided, the orders from that party will be returned on the stream
-// Both filters can be combined
+// Optional filters: market identifier, party identifier.
+// - No filters: returns all orders for all parties and markets.
+// - Market ID: returns orders from specified market.
+// - Party ID: returns orders from specified party.
+// - Both filters can be combined for more specific results.
 message ObserveOrdersRequest {
-    // Market ID.
+    // Market IDs filter, if provided.
     repeated string market_ids = 1;
-    // Party ID.
+    // Party IDs filter, if provided
     repeated string party_ids = 2;
     // Exclude liquidity.
     optional bool exclude_liquidity = 3;
@@ -1161,7 +1159,7 @@ message OrderUpdates{
 // Optionally, if a market ID is set, the results will be filtered for that market only
 message ListPositionsRequest {
     option deprecated = true;
-    // Party ID, required field.
+    // Party identifier.
     string party_id = 1;
     // Market ID.
     string market_id = 2;
@@ -1178,9 +1176,9 @@ message ListPositionsResponse {
 
 // Filter to apply to the ListAllPositionsRequest
 message PositionsFilter {
-    // List of party IDs to filter on.
+    // Party IDs filter, if provided
     repeated string party_ids = 1;
-    // List of market IDs to filter on.
+    // Market IDs filter, if provided
     repeated string market_ids = 2;
 }
 
@@ -1246,12 +1244,13 @@ message PositionUpdates{
     repeated vega.Position positions = 1;
 }
 
-// Ledger entry filter sets filters on returned set of ledger entries.
-// Ledger entry data can be filtered by asset ID, market ID, party ID for sending and receiving account, as well as by transfer type.
+// Ledger Entry Filter
+//
+// Filters ledger entries by asset ID, market ID, sending/receiving party ID, and transfer type.
 message LedgerEntryFilter {
-    // close_on_account_filters determines whether an entry must have accounts matching both the account_from_filter
-    // and the account_to_filter. If set to 'true', entries must have matches in both filters.
-    // If set to `false`, entries matching only the account_from_filter or the account_to_filter will also be included.
+    // close_on_account_filters decides if entries must match both account_from_filter and account_to_filter.
+    // - 'true': entries require matches in both filters.
+    // - 'false': entries matching either filter are included.
     bool close_on_account_filters = 1;
     // `AccountFilter` object used to set values for filtering sender accounts.
     AccountFilter from_account_filter = 2;
@@ -1315,7 +1314,7 @@ message ListLedgerEntriesRequest {
 
 // Request that is sent when exporting ledger entries to csv
 message ExportLedgerEntriesRequest {
-    // Party ID to export ledger entries for.
+    // Required: Party identifier.
     string party_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Asset ID to export ledger entries for.
     string asset_id = 2;
@@ -1378,8 +1377,8 @@ message ListBalanceChangesResponse {
 message GetBalanceHistoryRequest {
     // AccountFilter contains values that can be set in order to limit balance history data to them.
     AccountFilter filter = 1;
-    // By default the net balances of all the accounts specified by the filter are returned.
-    // If a list of fields is given in group_by, split out those balances by the supplied criteria.
+    // Default behavior returns net balances for accounts matching the filter.
+    // If group_by has fields, balances are split based on provided criteria.
     repeated AccountField group_by = 2;
     optional Pagination pagination = 3;
     optional DateRange date_range = 4;
@@ -1411,9 +1410,9 @@ message AggregatedBalanceConnection {
 message AccountFilter{
     // Restrict accounts to those holding balances in this asset ID.
     string asset_id = 1;
-    // Restrict accounts to those owned by the parties in this list. Pass an empty list for no filter.
+    // Party IDs filter, if provided
     repeated string party_ids = 2;
-    // Restrict accounts to those connected to the markets in this list. Pass an empty list for no filter.
+    // Market IDs filter, if provided.
     repeated string market_ids = 3;
     // Restrict accounts to those connected to any of the types in this list. Pass an empty list for no filter.
     repeated vega.AccountType account_types = 4;
@@ -1429,28 +1428,33 @@ enum AccountField {
     ACCOUNT_FIELD_TYPE = 5;
 }
 
-// AggregatedBalance data contains the balance of the set of requested accounts combined with corresponding
-// party ID, market ID and account type details
+// AggregatedBalance: Combined balance for a set of requested accounts with details
 message AggregatedBalance {
-    // Timestamp to of block the balance is referring to, in nanoseconds.
+    // Timestamp (ns) of the block the balance refers to
     int64 timestamp = 1;
-    // Balance of the set of requested accounts at the time above.
+
+    // Balance of the set of requested accounts at the specified time
     string balance = 2;
-    // If grouping by party, the party ID.
+
+    // Party ID if grouped by party
     optional string party_id = 4;
-    // If grouping by asset, the asset ID.
+
+    // Asset ID if grouped by asset
     optional string asset_id = 5;
-    // If grouping by market, the market ID
+
+    // Market ID if grouped by market
     optional string market_id = 6;
-    // If grouping by account type, the account type.
+
+    // Account type if grouped by account type
     optional vega.AccountType account_type = 7;
+
 }
 
 // -- Market Data --
 
 // Request that is sent to get market depth subscription
 message ObserveMarketsDepthRequest {
-    // List of market IDs to be obtained in the subscription.
+    // Market IDs filter, if provided.
     repeated string market_ids = 1;
 }
 
@@ -1462,7 +1466,7 @@ message ObserveMarketsDepthResponse {
 
 // Request that is sent for market depth update subscription
 message ObserveMarketsDepthUpdatesRequest {
-    // List of market IDs to be obtained in the subscription.
+    // Market IDs filter, if provided.
     repeated string market_ids = 1;
 }
 
@@ -1474,7 +1478,7 @@ message ObserveMarketsDepthUpdatesResponse {
 
 // Request that is sent for market data subscription
 message ObserveMarketsDataRequest {
-    // List of market IDs to be obtained in the subscription.
+    // Market IDs filter, if provided.
     repeated string market_ids = 1;
 }
 
@@ -1486,24 +1490,29 @@ message ObserveMarketsDataResponse {
 
 // Request that is sent when requesting latest market depth data
 message GetLatestMarketDepthRequest {
-    // Market ID, required field.
+    // Required: Market identifier.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Optional field to indicate the maximum market depth.
     optional uint64 max_depth = 2;
 }
 
-// Response that is received when latest market depth data is queried
+// Response for latest market depth data query
 message GetLatestMarketDepthResponse {
     // Market ID.
     string market_id = 1;
-    // Zero or more price levels for the buy side of the market depth data.
+
+    // Buy side price levels
     repeated vega.PriceLevel buy = 2;
-    // Zero or more price levels for the sell side of the market depth data.
+
+    // Sell side price levels
     repeated vega.PriceLevel sell = 3;
-    // Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
+
+    // Last trade recorded on Vega at the time of retrieval
     vega.Trade last_trade = 4;
-    // Sequence number incremented after each update.
+
+    // Sequence number incremented after each update
     uint64 sequence_number = 5;
+
 }
 
 // Request that is sent when listing the latest market data for every market
@@ -1517,13 +1526,13 @@ message ListLatestMarketDataResponse {
 
 // Request that is sent when listing the latest market data for a given market
 message GetLatestMarketDataRequest {
-    // Market ID, required field.
+    // Required: Market identifier.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 // Response that is received when listing the latest market data for a given market
 message GetLatestMarketDataResponse {
-    // Market ID, required field.
+    // Required: Market identifier.
     vega.MarketData market_data = 1;
 }
 
@@ -1531,7 +1540,7 @@ message GetLatestMarketDataResponse {
 message GetMarketDataHistoryByIDRequest {
   reserved 5;
 
-  // Market ID, required field.
+  // Required: Market identifier.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Optional Unix time in nanoseconds.
   optional int64 start_timestamp = 2;
@@ -1620,7 +1629,7 @@ message GetNetworkLimitsResponse {
 
 // Request that is used to fetch a list of supported intervals for the given market along with the corresponding candle ID
 message ListCandleIntervalsRequest {
-    // Unique ID for the market.
+    // Required: market identifier.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -1638,28 +1647,27 @@ message ListCandleIntervalsResponse {
     repeated IntervalToCandleId interval_to_candle_id = 1;
 }
 
-// Represents the high, low, open, and closing prices for an interval of trading,
-// referred to commonly as a candlestick or candle
+// Candlestick: Represents trading prices & volume for a specific interval
 message Candle {
-    // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
+    // Candle creation/opening timestamp (ns).
     int64 start = 1;
-    // Timestamp for the point in time when the candle was last updated, in nanoseconds.
+    // Candle last update timestamp (ns).
     int64 last_update = 2;
-    // Highest price for trading during the candle interval.
+    // Highest trading price in interval.
     string high = 3;
-    // Lowest price for trading during the candle interval.
+    // Lowest trading price in interval.
     string low = 4;
-    // Open trade price.
+    // Opening trade price.
     string open = 5;
     // Closing trade price.
     string close = 6;
-    // Total trading volume during the candle interval.
+    // Total trading volume in interval.
     uint64 volume = 7;
 }
 
 // Request that is used to subscribe to a stream of candles
 message ObserveCandleDataRequest {
-    // Unique ID for the candle.
+    // Required: Candle identifier.
     string candle_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -1669,16 +1677,19 @@ message ObserveCandleDataResponse {
     Candle candle = 1;
 }
 
-// Request that is used when listing candles for a market at an interval
+// List Candles Request for a market at an interval
 message ListCandleDataRequest {
     reserved 4;
-    // Candle ID, required field.
+    // Required: Candle identifier.
     string candle_id = 1 [(google.api.field_behavior) = REQUIRED];
-    // Timestamp to retrieve candles since, in nanoseconds since the epoch.
+
+    // Timestamp (ns since epoch) to retrieve candles from
     int64 from_timestamp = 2;
-    // Timestamp to retrieve candles to, in nanoseconds since the epoch.
+
+    // Timestamp (ns since epoch) to retrieve candles to
     int64 to_timestamp = 3;
-    // pagination controls
+
+    // Pagination controls
     optional Pagination pagination = 5;
 }
 
@@ -1872,7 +1883,7 @@ message ERC20MultiSigSignerRemovedBundle {
 
 // Request for listing the signature bundle to an ERC-20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
-  // ID of the asset requested.
+  // Required: The ID of the asset.
   string asset_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -1891,7 +1902,7 @@ message GetERC20ListAssetBundleResponse {
 
 // Request for the signature bundle to update the token limits i.e. maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is already allowlisted in the collateral bridge
 message GetERC20SetAssetLimitsBundleRequest {
-  // Proposal ID of the asset update proposal.
+  // Required: The ID of the proposal.
   string proposal_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -1914,7 +1925,7 @@ message GetERC20SetAssetLimitsBundleResponse {
 
 // Request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 message GetERC20WithdrawalApprovalRequest {
-    // Withdrawal ID to retrieve.
+    // Required: Withdrawal ID.
     string withdrawal_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -1941,7 +1952,7 @@ message GetERC20WithdrawalApprovalResponse {
 
 // Request for the latest trade that occurred on Vega for a given market
 message GetLastTradeRequest {
-    // Market ID, required field.
+    // Required: market identifier.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -1951,17 +1962,17 @@ message GetLastTradeResponse {
     vega.Trade trade = 1;
 }
 
-// Request to list trades
+// Request to List Trades
 message ListTradesRequest {
-    // List of Market IDs for which to list trades for, if provided.
+    // Market IDs filter, if provided.
     repeated string market_ids = 1;
-    // List of Order IDs for which to list trades for, if provided.
+    // Order IDs filter, if provided.
     repeated string order_ids = 2;
-    // List of Party ID for which to list trades for, if provided.
+    // Party IDs filter, if provided.
     repeated string party_ids = 3;
     // Pagination control.
     optional Pagination pagination = 4;
-    // Date range for the listing, if provided.
+    // Date range filter, if provided.
     optional DateRange date_range = 5;
 }
 
@@ -1987,17 +1998,17 @@ message TradeEdge {
     string cursor = 2;
 }
 
-// Request to subscribe to a stream of trades
+// Subscribe to Trades Stream Request
 message ObserveTradesRequest {
-    // Request fields market ID and party ID are both optional filters:
-    // If omitted all trades, for all parties on all markets will be returned on the stream
-    // If market ID is given, trades from that market will be returned on the stream
-    // If party ID is given, trades from that party will be returned on the stream
+    // Optional filters: market ID, party ID.
+    // - No filters: returns all trades for all parties and markets.
+    // - Market ID: returns trades from specified markets.
+    // - Party ID: returns trades from specified parties.
     // Both filters can be combined.
 
-    // List of Market ID to filter by.
+    // Market IDs filter, if provided.
     repeated string market_ids = 1;
-    // List of Party IDs to filter by.
+    // Party IDs filter, if provided
     repeated string party_ids = 2;
 }
 
@@ -2011,7 +2022,7 @@ message ObserveTradesResponse {
 
 // Request to get a specific oracle spec by its ID
 message GetOracleSpecRequest {
-    // Oracle spec ID to request data for.
+    // Required: Oracle spec ID.
     string oracle_spec_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2082,7 +2093,7 @@ message OracleDataConnection {
 
 // Request for getting a market by ID
 message GetMarketRequest {
-    // Market ID of the market to retrieve data for.
+    // Required: market identifier.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2126,7 +2137,7 @@ message MarketConnection {
 
 // Request to get party by ID
 message GetPartyRequest {
-    // Party ID to retrieve party information for.
+    // Required: Party ID.
     string party_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2176,9 +2187,9 @@ message OrderEdge {
 
 // Request for listing margin levels
 message ListMarginLevelsRequest {
-    // Party ID for which to list the margin levels
+    // Party identifier.
     string party_id = 1;
-    // Market ID for which to list the margin levels
+    // Market identifier.
     string market_id = 2;
     // Pagination control
     Pagination pagination = 3;
@@ -2190,14 +2201,14 @@ message ListMarginLevelsResponse {
     MarginConnection margin_levels = 1;
 }
 
-// Request to subscribe to a stream of MarginLevels data.
-// If a party ID is provided, the stream will contain margin levels for that party only.
-// Optionally, the list can be additionally filtered by market
-message ObserveMarginLevelsRequest {
-    // Party ID, required field.
-    string party_id = 1;
-    // Market ID.
-    optional string market_id = 2;
+// Request to subscribe to a stream of MarginLevels data
+// Stream can be filtered by party and optionally by market
+message ObserveMarginLevelsReques {
+  // Required: Party identifier
+  string party_id = 1;
+
+  // Optional: Market identifier
+  optional string market_id = 2;
 }
 
 // Response from subscribing to margin levels data
@@ -2281,23 +2292,23 @@ message ListRewardSummariesResponse {
     repeated vega.RewardSummary summaries = 1;
 }
 
-// Filter to restrict the results returned by the ListEpochRewardSummaries
+// RewardSummaryFilter for ListEpochRewardSummaries results
 message RewardSummaryFilter {
-    // Restrict the results to those connected to the assets in this list. Pass an empty list for no filter.
+    // Filter by asset IDs (empty list for no filter).
     repeated string asset_ids = 1;
-    // Restrict the results to those connected to the markets in this list. Pass an empty list for no filter.
+    // Market IDs filter, if provided.
     repeated string market_ids = 2;
-    // Optional range of epochs to filter on.
+    // Starting epoch filter, if provided.
     optional uint64 from_epoch = 3;
-    // Epoch to which to filter rewards summaries.
+    // Ending epoch filter, if provided.
     optional uint64 to_epoch = 4;
 }
 
-// Request to get summary of reward per epoch for a given range of epochs
+// Request for reward summaries per epoch in a given range
 message ListEpochRewardSummariesRequest {
-    // Limit the results considered according to the filter supplied.
+    // Filter for limiting results.
     RewardSummaryFilter filter = 1;
-    // Optional pagination information to limit the data that is returned.
+    // Optional pagination to limit returned data.
     optional Pagination pagination = 4;
 }
 
@@ -2341,7 +2352,7 @@ message ObserveRewardsResponse {
 
 // Request to get data about a specific deposit by ID
 message GetDepositRequest {
-    // Deposit ID, which can be obtained using the List Deposits query.
+    // Required: Deposit ID - can be obtained using the List Deposits query.
     string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2388,7 +2399,7 @@ message DepositsConnection {
 
 // Request to get a specific withdrawal by ID
 message GetWithdrawalRequest {
-    // Withdrawal ID to retrieve data for.
+    // Required: Withdrawal ID.
     string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2435,7 +2446,7 @@ message WithdrawalsConnection {
 
 // Request for obtaining asset
 message GetAssetRequest {
-    // Asset ID to get data for.
+    // Required: Asset ID.
     string asset_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2691,7 +2702,7 @@ message GetNetworkDataResponse {
 
 // Request to get node data
 message GetNodeRequest {
-    // Node ID to get data for.
+    // Required: Node ID.
     string id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2733,7 +2744,7 @@ message NodesConnection {
 
 // Request to specify the ID of the resource to retrieve aggregated signatures for
 message ListNodeSignaturesRequest {
-    // Resource ID, required field.
+    // Required: Resource ID.
     string id = 1 [(google.api.field_behavior) = REQUIRED];
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
@@ -2778,11 +2789,11 @@ message GetEpochResponse {
 
 // Request to fetch the estimated fee if an order were to trade immediately
 message EstimateFeeRequest {
-  // Market ID, used to specify the fee factors.
+  // Required: Market ID, used to specify the fee factors.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // Price at which the potential order is expected to trade.
+  // Required: Price of the potential order.
   string price = 2 [(google.api.field_behavior) = REQUIRED];
-  // Size at which the potential order is expected to trade.
+  // Required: Size of the potential order.
   uint64 size = 3 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2794,17 +2805,17 @@ message EstimateFeeResponse {
 
 // Request to fetch the estimated MarginLevels if an order were to trade immediately
 message EstimateMarginRequest {
-    // Market ID for the order.
+    // Required: Market ID for the order.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-    // Party ID of the order.
+    // Required: Party ID of the order.
     string party_id = 2 [(google.api.field_behavior) = REQUIRED];
-    // Order side - indicator for Seller or Buyer side.
+    // Required: Order side - indicator for Seller or Buyer side.
     vega.Side side = 3 [(google.api.field_behavior) = REQUIRED];
-    // Type of the order.
+    // Required: Type of the order.
     vega.Order.Type type = 4 [(google.api.field_behavior) = REQUIRED];
-    // Size of order.
+    // Required: Size of order.
     uint64 size = 5 [(google.api.field_behavior) = REQUIRED];
-    // Price of the asset.
+    // Required: Price of the asset.
     string price = 6 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2828,7 +2839,7 @@ message ListNetworkParametersResponse {
 
 // Request for a single network parameter
 message GetNetworkParameterRequest {
-  // Key identifying the network parameter.
+  // Required: The key identifying the network parameter.
   string key = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2896,7 +2907,7 @@ message CheckpointsConnection {
 
 // Request to get stake
 message GetStakeRequest {
-    // Party ID for which the stake information is requested.
+    // Required: Party ID for which the stake information is requested.
     string party_id = 1 [(google.api.field_behavior) = REQUIRED];
     // Optional pagination information to limit the data that is returned.
     optional Pagination pagination = 2;
@@ -2928,7 +2939,7 @@ message StakesConnection {
 
 // Request to get risk factor
 message GetRiskFactorsRequest {
-    // Market ID to get the risk factor for.
+    // Required: Market ID to get the risk factor for.
     string market_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
@@ -2942,8 +2953,8 @@ message GetRiskFactorsResponse {
 
 // Request to subscribe to a stream of one or more event types from the Vega event bus
 message ObserveEventBusRequest {
-    // One or more types of event, required field.
-    repeated vega.events.v1.BusEventType type = 1;
+    // Required: One or more types of event.
+    repeated vega.events.v1.BusEventType type = 1 [(google.api.field_behavior) = REQUIRED];
     // Market ID, optional field.
     string market_id = 2;
     // Party ID, optional field.
@@ -3242,6 +3253,7 @@ message ExportNetworkHistoryRequest {
 
 // Request to list all entities that were created by the given transaction hash
 message ListEntitiesRequest {
+    // Required: the transaction hash.
     string transaction_hash = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
