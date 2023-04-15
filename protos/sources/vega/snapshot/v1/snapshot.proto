@@ -34,13 +34,13 @@ message Snapshot {
 // NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
 // AVL tree after it's been serialised
 message NodeHash {
-  // The node's full key, for example epoch.all
+  // Node's full key, for example epoch.all
   string key = 3;
-  // The hash of the node's value
+  // Hash of the node's value
   string hash = 4;
-  // The height of the node in the tree
+  // Height of the node in the tree
   int32 height = 5;
-  // The version of that node i.e., how many times its value has changed during tree updates
+  // Version of that node i.e., how many times its value has changed during tree updates
   int64 version = 6;
   // Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
   bool is_leaf = 7;
@@ -477,9 +477,9 @@ message AppState {
 message EpochState {
   // Sequence number that increases by one each epoch
   uint64 seq = 1;
-  // What time did this epoch start
+  // Time at which this epoch started
   int64  start_time = 3;
-  // What time should this epoch end
+  // Time at which this epoch should end
   int64  expire_time = 4;
   // Ready to start a new epoch
   bool ready_to_start_new_epoch = 6;
@@ -514,13 +514,13 @@ message RewardsPartyAmount {
 message LimitState {
   // Number of blocks into the bootstrapping phase
   uint32 block_count = 1;
-  // whether the limit on market proposals has been lifted
+  // Whether or not the limit on market proposals has been lifted
   bool can_propose_market = 2;
-  // whether the limit on asset proposals has been lifted
+  // Whether or not the limit on asset proposals has been lifted
   bool can_propose_asset = 3;
-  // whether the genesis state is loaded
+  // Whether or not the genesis state is loaded
   bool genesis_loaded = 4;
-  // fields derived from the genesis state
+  // Fields derived from the genesis state
   bool  propose_market_enabled = 5;
   bool  propose_asset_enabled = 6;
   int64 propose_market_enabled_from = 7;
@@ -676,19 +676,19 @@ message LiquidityParameters {
   string max_fee = 1;
   string max_shape_size = 2;
   string stake_to_obligation_factor = 3;
-  // required for key generation
+  // Required for key generation
   string market_id = 4;
 }
 
 message LiquidityPendingProvisions {
   repeated string pending_provisions = 1;
-  // required for key generation
+  // Required for key generation
   string market_id = 2;
 }
 
 message LiquidityPartiesLiquidityOrders {
   repeated PartyOrders party_orders = 1;
-  // required for key generation
+  // Required for key generation
   string market_id = 2;
 }
 
@@ -699,13 +699,13 @@ message PartyOrders {
 
 message LiquidityPartiesOrders {
   repeated PartyOrders party_orders = 1;
-  // required for key generation
+  // Required for key generation
   string market_id = 2;
 }
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
-  // required for key generation
+  // Required for key generation
   string market_id = 2;
 }
 
@@ -720,7 +720,7 @@ message LiquidityScore{
   string party_id = 2;
 }
 
-// snapshot payload for floating point consensus
+// Snapshot payload for floating point consensus
 message FloatingPointConsensus {
   repeated NextTimeTrigger next_time_trigger = 1;
   repeated StateVarInternalState state_variables = 2;
@@ -809,8 +809,6 @@ message ProofOfWorkPartyStateForBlock {
   uint64 observed_difficulty = 3;
 }
 
-
-
 message TransactionsAtHeight {
   uint64 height = 1;
   repeated string transactions = 2;
@@ -822,8 +820,8 @@ message ProtocolUpgradeProposals {
 }
 
 message AcceptedProtocolUpgradeProposal {
-    // The block height at which to perform the upgrade
+    // Block height at which to perform the upgrade
     uint64 upgrade_block_height = 1;
-    // the release tag for the vega binary
+    // Release tag for the vega binary
     string vega_release_tag = 2;
 }

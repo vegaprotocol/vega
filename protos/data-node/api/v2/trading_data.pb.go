@@ -26,7 +26,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A list of fields for a ledger entry
+// List of fields for a ledger entry
 type LedgerEntryField int32
 
 const (
@@ -79,7 +79,7 @@ func (LedgerEntryField) EnumDescriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{0}
 }
 
-// A list of the properties of an account, used for grouping
+// List of the properties of an account, used for grouping
 type AccountField int32
 
 const (
@@ -138,7 +138,7 @@ func (AccountField) EnumDescriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{1}
 }
 
-// The direction of a transfer
+// Direction of a transfer
 type TransferDirection int32
 
 const (
@@ -279,7 +279,7 @@ func (Table) EnumDescriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{3}
 }
 
-// Filter for the type(s) of governance proposals to view
+// Filter for the types of governance proposals to view
 type ListGovernanceDataRequest_Type int32
 
 const (
@@ -514,9 +514,9 @@ type AccountBalance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique account identifier (used internally by Vega)
+	// Unique account ID used internally by Vega
 	// string id = 1;
-	// The party that owns the account.
+	// Party that owns the account.
 	// Special values include `network` - represents the Vega network and is
 	// most commonly seen during liquidation of a distressed trading position.
 	Owner string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
@@ -524,11 +524,11 @@ type AccountBalance struct {
 	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	// Balances cannot be negative.
 	Balance string `protobuf:"bytes,3,opt,name=balance,proto3" json:"balance,omitempty"`
-	// Asset identifier for the account.
+	// Asset ID for the account.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Market identifier for the account, this field will be empty if the asset is in a general account.
+	// Market ID for the account, this field will be empty if the asset is in a general account.
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// The account type of this account.
+	// Account type of this account.
 	Type vega.AccountType `protobuf:"varint,6,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
 }
 
@@ -663,7 +663,7 @@ type ListAccountsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Page with accounts data for 0 or more accounts.
+	// Page of accounts data and corresponding page information.
 	Accounts *AccountsConnection `protobuf:"bytes,1,opt,name=accounts,proto3" json:"accounts,omitempty"`
 }
 
@@ -706,13 +706,13 @@ func (x *ListAccountsResponse) GetAccounts() *AccountsConnection {
 	return nil
 }
 
-// Represents the list of accounts with the corresponding page information
+// Page of accounts data and corresponding page information.
 type AccountsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of accounts and their cursors.
+	// Page of accounts data and their corresponding cursors.
 	Edges []*AccountEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -764,15 +764,15 @@ func (x *AccountsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Represents the account with corresponding cursor for it
+// Account data item with the corresponding cursor.
 type AccountEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The account balance data.
+	// Account balance data.
 	Node *AccountBalance `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
-	// A cursor which can be used to fetch further pages with reference to this account.
+	// Cursor that can be used to fetch further pages with reference to this account.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 }
 
@@ -828,11 +828,11 @@ type ObserveAccountsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party identifier.
+	// Party ID.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Asset identifier.
+	// Asset ID.
 	Asset string `protobuf:"bytes,3,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Account type to subscribe to, required field.
 	Type vega.AccountType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`
@@ -898,7 +898,7 @@ func (x *ObserveAccountsRequest) GetType() vega.AccountType {
 	return vega.AccountType(0)
 }
 
-// The response that is received when subscribing to a stream of accounts
+// Response that is received when subscribing to a stream of accounts
 type ObserveAccountsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -969,12 +969,12 @@ type isObserveAccountsResponse_Response interface {
 }
 
 type ObserveAccountsResponse_Snapshot struct {
-	// An 'initial image' snapshot containing current account balances.
+	// 'Initial image' snapshot containing current account balances.
 	Snapshot *AccountSnapshotPage `protobuf:"bytes,1,opt,name=snapshot,proto3,oneof"`
 }
 
 type ObserveAccountsResponse_Updates struct {
-	// A list of account updates in the last block.
+	// List of account updates in the last block.
 	Updates *AccountUpdates `protobuf:"bytes,2,opt,name=updates,proto3,oneof"`
 }
 
@@ -982,7 +982,7 @@ func (*ObserveAccountsResponse_Snapshot) isObserveAccountsResponse_Response() {}
 
 func (*ObserveAccountsResponse_Updates) isObserveAccountsResponse_Response() {}
 
-// An 'initial image' snapshot containing current account balances - may be sent over several response messages
+// 'Initial image' snapshot containing current account balances - may be sent over several response messages
 type AccountSnapshotPage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1040,7 +1040,7 @@ func (x *AccountSnapshotPage) GetLastPage() bool {
 	return false
 }
 
-// A list of account updates in the last block
+// List of account updates in the last block
 type AccountUpdates struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1089,7 +1089,7 @@ func (x *AccountUpdates) GetAccounts() []*AccountBalance {
 	return nil
 }
 
-// Request that is sent when querying node info
+// Request that is sent when querying node information
 type InfoRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1128,15 +1128,15 @@ func (*InfoRequest) Descriptor() ([]byte, []int) {
 	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{11}
 }
 
-// Response that is received from the node info query
+// Response that is received from the node information query
 type InfoResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A semver formatted version of the data node.
+	// Semver formatted version of the data node.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
-	// The commit hash from which the data node was built.
+	// Commit hash from which the data node was built.
 	CommitHash string `protobuf:"bytes,2,opt,name=commit_hash,json=commitHash,proto3" json:"commit_hash,omitempty"`
 }
 
@@ -1186,13 +1186,13 @@ func (x *InfoResponse) GetCommitHash() string {
 	return ""
 }
 
-// A request that is sent when executing the query for getting a single order
+// Request that is sent when executing the query for getting a single order
 type GetOrderRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Order identifier.
+	// Order ID.
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	// Optional version of the order.
 	Version *int32 `protobuf:"varint,2,opt,name=version,proto3,oneof" json:"version,omitempty"`
@@ -1244,13 +1244,13 @@ func (x *GetOrderRequest) GetVersion() int32 {
 	return 0
 }
 
-// The response received from the query for getting a single order
+// Response received from the query for getting a single order
 type GetOrderResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The order, if one was found.
+	// Order details, if one was found.
 	Order *vega.Order `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
 }
 
@@ -1299,11 +1299,11 @@ type OrderFilter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of order statuses the orders can be filtered by.
+	// List of order statuses the orders can be filtered by.
 	Statuses []vega.Order_Status `protobuf:"varint,1,rep,packed,name=statuses,proto3,enum=vega.Order_Status" json:"statuses,omitempty"`
-	// The list of order types the orders can be filtered by.
+	// List of order types the orders can be filtered by.
 	Types []vega.Order_Type `protobuf:"varint,2,rep,packed,name=types,proto3,enum=vega.Order_Type" json:"types,omitempty"`
-	// The list of timings the orders can be filtered by.
+	// List of timings the orders can be filtered by.
 	TimeInForces []vega.Order_TimeInForce `protobuf:"varint,3,rep,packed,name=time_in_forces,json=timeInForces,proto3,enum=vega.Order_TimeInForce" json:"time_in_forces,omitempty"`
 	// Indicator if liquidity provision orders should be included or not in the list.
 	ExcludeLiquidity bool `protobuf:"varint,4,opt,name=exclude_liquidity,json=excludeLiquidity,proto3" json:"exclude_liquidity,omitempty"`
@@ -1313,7 +1313,7 @@ type OrderFilter struct {
 	MarketIds []string `protobuf:"bytes,6,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 	// Reference.
 	Reference *string `protobuf:"bytes,7,opt,name=reference,proto3,oneof" json:"reference,omitempty"`
-	// The date range of the orders being listed.
+	// Date range of the orders being listed.
 	DateRange *DateRange `protobuf:"bytes,8,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
 	// Indicator for listing only live orders, if set to true.
 	LiveOnly *bool `protobuf:"varint,9,opt,name=live_only,json=liveOnly,proto3,oneof" json:"live_only,omitempty"`
@@ -1414,7 +1414,7 @@ func (x *OrderFilter) GetLiveOnly() bool {
 	return false
 }
 
-// A request that is sent when executing a query for a list of orders
+// Request that is sent when executing a query for a list of orders
 type ListOrdersRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1422,7 +1422,7 @@ type ListOrdersRequest struct {
 
 	// Optional pagination control.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// The order filter contains all filtering conditions and values that are applied to the orders listing.
+	// Order filter contains all filtering conditions and values that are applied to the orders listing.
 	Filter *OrderFilter `protobuf:"bytes,5,opt,name=filter,proto3,oneof" json:"filter,omitempty"`
 }
 
@@ -1472,13 +1472,13 @@ func (x *ListOrdersRequest) GetFilter() *OrderFilter {
 	return nil
 }
 
-// A response that is received from the query to list orders
+// Response that is received from the query to list orders
 type ListOrdersResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Paged orders data with 0 or more orders.
+	// Page of orders data and corresponding page information.
 	Orders *OrderConnection `protobuf:"bytes,1,opt,name=orders,proto3" json:"orders,omitempty"`
 }
 
@@ -1521,13 +1521,13 @@ func (x *ListOrdersResponse) GetOrders() *OrderConnection {
 	return nil
 }
 
-// A request that is sent when listing possible order versions
+// Request that is sent when listing possible order versions
 type ListOrderVersionsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Order identifier as string.
+	// Order ID as string.
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	// Optional pagination control.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -1579,13 +1579,13 @@ func (x *ListOrderVersionsRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// A response that is received when listing possible order versions
+// Response that is received when listing possible order versions
 type ListOrderVersionsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Paged orders data with 0 or more order versions.
+	// Page of order versions and corresponding page information.
 	Orders *OrderConnection `protobuf:"bytes,1,opt,name=orders,proto3" json:"orders,omitempty"`
 }
 
@@ -1630,19 +1630,19 @@ func (x *ListOrderVersionsResponse) GetOrders() *OrderConnection {
 
 // Request to subscribe to a stream of orders
 //
-// The fields for market identifier and party identifier are optional filters:
+// Request fields market ID and party ID are both optional filters:
 // If omitted all orders, for all parties on all markets will be returned on the stream
-// If a market identifier is provided, the orders from that market will be returned on the stream
-// If a party identifier is provided, the orders from that party will be returned on the stream
+// If a market ID is provided, the orders from that market will be returned on the stream
+// If a party ID is provided, the orders from that party will be returned on the stream
 // Both filters can be combined
 type ObserveOrdersRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier.
+	// Market ID.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// Party identifier.
+	// Party ID.
 	PartyIds []string `protobuf:"bytes,2,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
 	// Exclude liquidity.
 	ExcludeLiquidity *bool `protobuf:"varint,3,opt,name=exclude_liquidity,json=excludeLiquidity,proto3,oneof" json:"exclude_liquidity,omitempty"`
@@ -1701,7 +1701,7 @@ func (x *ObserveOrdersRequest) GetExcludeLiquidity() bool {
 	return false
 }
 
-// The response that is received from an orders subscription
+// Response that is received from an orders subscription
 type ObserveOrdersResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1777,7 +1777,7 @@ type ObserveOrdersResponse_Snapshot struct {
 }
 
 type ObserveOrdersResponse_Updates struct {
-	// A list of order updates in the last block.
+	// List of order updates in the last block.
 	Updates *OrderUpdates `protobuf:"bytes,2,opt,name=updates,proto3,oneof"`
 }
 
@@ -1893,7 +1893,7 @@ func (x *OrderUpdates) GetOrders() []*vega.Order {
 }
 
 // Request used to list all positions for a party
-// Optionally, if a market identifier is set, the results will be filtered for that market only
+// Optionally, if a market ID is set, the results will be filtered for that market only
 //
 // Deprecated: Do not use.
 type ListPositionsRequest struct {
@@ -1901,9 +1901,9 @@ type ListPositionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party identifier, required field.
+	// Party ID, required field.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Optional pagination control.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -1970,7 +1970,7 @@ type ListPositionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more positions.
+	// Page of positions data and corresponding page information.
 	Positions *PositionConnection `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 }
 
@@ -2135,7 +2135,7 @@ type ListAllPositionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more positions.
+	// Page of positions data and corresponding page information.
 	Positions *PositionConnection `protobuf:"bytes,1,opt,name=positions,proto3" json:"positions,omitempty"`
 }
 
@@ -2178,7 +2178,7 @@ func (x *ListAllPositionsResponse) GetPositions() *PositionConnection {
 	return nil
 }
 
-// Represents the position data with corresponding cursor for it
+// Position data with the corresponding cursor.
 type PositionEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2186,7 +2186,7 @@ type PositionEdge struct {
 
 	// Represents position data for a party on the specified market on Vega.
 	Node *vega.Position `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
-	// A cursor that can be used to fetch further pages.
+	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 }
 
@@ -2236,13 +2236,13 @@ func (x *PositionEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of positions with the corresponding page information
+// Page of positions and corresponding page information
 type PositionConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of positions data.
+	// Page of positions data and their corresponding cursors.
 	Edges []*PositionEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -2352,7 +2352,7 @@ func (x *ObservePositionsRequest) GetMarketId() string {
 	return ""
 }
 
-// A response that is received from a positions subscription request
+// Response that is received from a positions subscription request
 type ObservePositionsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2428,7 +2428,7 @@ type ObservePositionsResponse_Snapshot struct {
 }
 
 type ObservePositionsResponse_Updates struct {
-	// A list of position updates in the last block.
+	// List of position updates in the last block.
 	Updates *PositionUpdates `protobuf:"bytes,2,opt,name=updates,proto3,oneof"`
 }
 
@@ -2494,7 +2494,7 @@ func (x *PositionSnapshotPage) GetLastPage() bool {
 	return false
 }
 
-// A list of position updates in the last block
+// List of position updates in the last block
 type PositionUpdates struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2558,7 +2558,7 @@ type LedgerEntryFilter struct {
 	FromAccountFilter *AccountFilter `protobuf:"bytes,2,opt,name=from_account_filter,json=fromAccountFilter,proto3" json:"from_account_filter,omitempty"`
 	// `AccountFilter` object used to set values for filtering receiver accounts.
 	ToAccountFilter *AccountFilter `protobuf:"bytes,3,opt,name=to_account_filter,json=toAccountFilter,proto3" json:"to_account_filter,omitempty"`
-	// A list of transfer types that is used for filtering sender and receiver accounts.
+	// List of transfer types that is used for filtering sender and receiver accounts.
 	TransferTypes []vega.TransferType `protobuf:"varint,5,rep,packed,name=transfer_types,json=transferTypes,proto3,enum=vega.TransferType" json:"transfer_types,omitempty"`
 }
 
@@ -2631,23 +2631,23 @@ type AggregatedLedgerEntry struct {
 
 	// Timestamp to of block the result is referring to, in nanoseconds.
 	Timestamp int64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The amount of ledger entries for the set of requested accounts at the time above.
+	// Amount of ledger entries for the set of requested accounts at the time above.
 	Quantity string `protobuf:"bytes,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	// The transfer type.
+	// Transfer type.
 	TransferType vega.TransferType `protobuf:"varint,4,opt,name=transfer_type,json=transferType,proto3,enum=vega.TransferType" json:"transfer_type,omitempty"`
-	// The asset ID.
+	// Asset ID.
 	AssetId *string `protobuf:"bytes,5,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
-	// The type of account sent from.
+	// Type of account sent from.
 	FromAccountType vega.AccountType `protobuf:"varint,6,opt,name=from_account_type,json=fromAccountType,proto3,enum=vega.AccountType" json:"from_account_type,omitempty"`
-	// The type of account received to.
+	// Type of account received to.
 	ToAccountType vega.AccountType `protobuf:"varint,7,opt,name=to_account_type,json=toAccountType,proto3,enum=vega.AccountType" json:"to_account_type,omitempty"`
-	// The sender's party ID.
+	// Sender's party ID.
 	FromAccountPartyId *string `protobuf:"bytes,8,opt,name=from_account_party_id,json=fromAccountPartyId,proto3,oneof" json:"from_account_party_id,omitempty"`
-	// The receiver's party ID.
+	// Receiver's party ID.
 	ToAccountPartyId *string `protobuf:"bytes,9,opt,name=to_account_party_id,json=toAccountPartyId,proto3,oneof" json:"to_account_party_id,omitempty"`
-	// The sender market ID.
+	// Sender market ID.
 	FromAccountMarketId *string `protobuf:"bytes,10,opt,name=from_account_market_id,json=fromAccountMarketId,proto3,oneof" json:"from_account_market_id,omitempty"`
-	// The receiver market ID.
+	// Receiver market ID.
 	ToAccountMarketId *string `protobuf:"bytes,11,opt,name=to_account_market_id,json=toAccountMarketId,proto3,oneof" json:"to_account_market_id,omitempty"`
 	// Sender account balance after the transfer.
 	FromAccountBalance string `protobuf:"bytes,12,opt,name=from_account_balance,json=fromAccountBalance,proto3" json:"from_account_balance,omitempty"`
@@ -2771,7 +2771,7 @@ func (x *AggregatedLedgerEntry) GetToAccountBalance() string {
 	return ""
 }
 
-// A request that is sent when listing ledger entries
+// Request that is sent when listing ledger entries
 type ListLedgerEntriesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2839,7 +2839,7 @@ func (x *ListLedgerEntriesRequest) GetDateRange() *DateRange {
 	return nil
 }
 
-// A request that is sent when exporting ledger entries to csv
+// Request that is sent when exporting ledger entries to csv
 type ExportLedgerEntriesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2906,13 +2906,13 @@ func (x *ExportLedgerEntriesRequest) GetDateRange() *DateRange {
 	return nil
 }
 
-// A response that is received when listing ledger entries
+// Response that is received when listing ledger entries
 type ListLedgerEntriesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Represents the list of aggregated ledger entries data with the corresponding page information.
+	// Page of aggregated ledger entries data and corresponding page information.
 	LedgerEntries *AggregatedLedgerEntriesConnection `protobuf:"bytes,1,opt,name=ledger_entries,json=ledgerEntries,proto3" json:"ledger_entries,omitempty"`
 }
 
@@ -2963,7 +2963,7 @@ type AggregatedLedgerEntriesEdge struct {
 
 	// 'AggregatedLedgerEntry' data.
 	Node *AggregatedLedgerEntry `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
-	// A cursor that can be used to fetch further pages.
+	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 }
 
@@ -3013,13 +3013,13 @@ func (x *AggregatedLedgerEntriesEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of aggregated ledger entries data with the corresponding page information
+// Page of aggregated ledger entries data and corresponding page information
 type AggregatedLedgerEntriesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of 'AggregatedLedgerEntry' data.
+	// Page of 'AggregatedLedgerEntry' data and their corresponding cursors.
 	Edges []*AggregatedLedgerEntriesEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -3071,7 +3071,7 @@ func (x *AggregatedLedgerEntriesConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// A request that is received when querying balances changes
+// Request that is received when querying balances changes
 type ListBalanceChangesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3138,13 +3138,13 @@ func (x *ListBalanceChangesRequest) GetDateRange() *DateRange {
 	return nil
 }
 
-// A response that is received when querying balances changes
+// Response that is received when querying balances changes
 type ListBalanceChangesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of aggregated balances with the corresponding page information.
+	// Page of aggregated balances data and corresponding page information.
 	Balances *AggregatedBalanceConnection `protobuf:"bytes,1,opt,name=balances,proto3" json:"balances,omitempty"`
 }
 
@@ -3187,7 +3187,7 @@ func (x *ListBalanceChangesResponse) GetBalances() *AggregatedBalanceConnection 
 	return nil
 }
 
-// A request that is used when querying balance history
+// Request that is used when querying balance history
 type GetBalanceHistoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3262,13 +3262,13 @@ func (x *GetBalanceHistoryRequest) GetDateRange() *DateRange {
 	return nil
 }
 
-// A response that is received when querying for balance history
+// Response that is received when querying for balance history
 type GetBalanceHistoryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of aggregated balances with the corresponding page information.
+	// Page of aggregated balances with the corresponding page information.
 	Balances *AggregatedBalanceConnection `protobuf:"bytes,1,opt,name=balances,proto3" json:"balances,omitempty"`
 }
 
@@ -3311,7 +3311,7 @@ func (x *GetBalanceHistoryResponse) GetBalances() *AggregatedBalanceConnection {
 	return nil
 }
 
-// Represents the AggregatedBalanceEdge data with corresponding cursor for it
+// Aggregated balance data with the corresponding cursor.
 type AggregatedBalanceEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3319,7 +3319,7 @@ type AggregatedBalanceEdge struct {
 
 	// AggregatedBalance data.
 	Node *AggregatedBalance `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
-	// A cursor that can be used to fetch further pages.
+	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 }
 
@@ -3369,13 +3369,13 @@ func (x *AggregatedBalanceEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of aggregated balance objects with the corresponding page information
+// Page of aggregated balance objects and corresponding page information
 type AggregatedBalanceConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of aggregated balance data chunks.
+	// Page of aggregated balance data and their corresponding cursors.
 	Edges []*AggregatedBalanceEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -3427,7 +3427,7 @@ func (x *AggregatedBalanceConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// The filter that is used to filter account data by asset ID, party ID, market ID and account type
+// Filter that is used to filter account data by asset ID, party ID, market ID and account type
 type AccountFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3435,11 +3435,11 @@ type AccountFilter struct {
 
 	// Restrict accounts to those holding balances in this asset ID.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	// Restrict accounts to those owned by the parties in this list (pass an empty list for no filter).
+	// Restrict accounts to those owned by the parties in this list. Pass an empty list for no filter.
 	PartyIds []string `protobuf:"bytes,2,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
-	// Restrict accounts to those connected to the markets in this list (pass an empty list for no filter).
+	// Restrict accounts to those connected to the markets in this list. Pass an empty list for no filter.
 	MarketIds []string `protobuf:"bytes,3,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// Restrict accounts to those connected to any of the types in this list (pass an empty list for no filter).
+	// Restrict accounts to those connected to any of the types in this list. Pass an empty list for no filter.
 	AccountTypes []vega.AccountType `protobuf:"varint,4,rep,packed,name=account_types,json=accountTypes,proto3,enum=vega.AccountType" json:"account_types,omitempty"`
 }
 
@@ -3512,7 +3512,7 @@ type AggregatedBalance struct {
 
 	// Timestamp to of block the balance is referring to, in nanoseconds.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The balance of the set of requested accounts at the time above.
+	// Balance of the set of requested accounts at the time above.
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
 	// If grouping by party, the party ID.
 	PartyId *string `protobuf:"bytes,4,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
@@ -3898,9 +3898,9 @@ type GetLatestMarketDepthRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier, required field.
+	// Market ID, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// An optional field to indicate the maximum market depth.
+	// Optional field to indicate the maximum market depth.
 	MaxDepth *uint64 `protobuf:"varint,2,opt,name=max_depth,json=maxDepth,proto3,oneof" json:"max_depth,omitempty"`
 }
 
@@ -3956,7 +3956,7 @@ type GetLatestMarketDepthResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier.
+	// Market ID.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Zero or more price levels for the buy side of the market depth data.
 	Buy []*vega.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
@@ -4128,7 +4128,7 @@ type GetLatestMarketDataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier, required field.
+	// Market ID, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -4177,7 +4177,7 @@ type GetLatestMarketDataResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier, required field.
+	// Market ID, required field.
 	MarketData *vega.MarketData `protobuf:"bytes,1,opt,name=market_data,json=marketData,proto3" json:"market_data,omitempty"`
 }
 
@@ -4226,7 +4226,7 @@ type GetMarketDataHistoryByIDRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier, required field.
+	// Market ID, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Optional Unix time in nanoseconds.
 	StartTimestamp *int64 `protobuf:"varint,2,opt,name=start_timestamp,json=startTimestamp,proto3,oneof" json:"start_timestamp,omitempty"`
@@ -4302,7 +4302,7 @@ type GetMarketDataHistoryByIDResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of market data history with the corresponding page information.
+	// Page of market data history with the corresponding page information.
 	MarketData *MarketDataConnection `protobuf:"bytes,1,opt,name=market_data,json=marketData,proto3" json:"market_data,omitempty"`
 }
 
@@ -4345,7 +4345,7 @@ func (x *GetMarketDataHistoryByIDResponse) GetMarketData() *MarketDataConnection
 	return nil
 }
 
-// Represents the market data with corresponding cursor for it
+// Market data with the corresponding cursor.
 type MarketDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4403,13 +4403,13 @@ func (x *MarketDataEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of market data objects with the corresponding page information
+// Page of market data items and corresponding page information
 type MarketDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of market data chunks.
+	// Page of market data items and their corresponding cursors.
 	Edges []*MarketDataEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -4469,7 +4469,7 @@ type ListTransfersRequest struct {
 
 	// Public key for which to request transfers.
 	Pubkey *string `protobuf:"bytes,1,opt,name=pubkey,proto3,oneof" json:"pubkey,omitempty"`
-	// Transfer directions (sender, receiver) to include in the response data
+	// Transfer directions - i.e. sender, receiver - to include in the response data
 	Direction TransferDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=datanode.api.v2.TransferDirection" json:"direction,omitempty"`
 	// Optional pagination control
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -4534,6 +4534,7 @@ type ListTransfersResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of transfers data and corresponding page information.
 	Transfers *TransferConnection `protobuf:"bytes,1,opt,name=transfers,proto3" json:"transfers,omitempty"`
 }
 
@@ -4576,7 +4577,7 @@ func (x *ListTransfersResponse) GetTransfers() *TransferConnection {
 	return nil
 }
 
-// Represents the transfers data with a corresponding cursor for it
+// Transfers data with the corresponding cursor.
 type TransferEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4634,13 +4635,13 @@ func (x *TransferEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of transfers data objects with the corresponding page information
+// Page of transfers data items and corresponding page information
 type TransferConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of transfers data chunks.
+	// Page of transfers data and their corresponding cursors.
 	Edges []*TransferEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -4786,7 +4787,7 @@ type ListCandleIntervalsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unique identifier for the market.
+	// Unique ID for the market.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -4835,9 +4836,9 @@ type IntervalToCandleId struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The interval for the candle.
+	// Interval for the candle.
 	Interval string `protobuf:"bytes,1,opt,name=interval,proto3" json:"interval,omitempty"`
-	// The unique id of the candle.
+	// Unique id of the candle.
 	CandleId string `protobuf:"bytes,2,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
 }
 
@@ -4887,7 +4888,7 @@ func (x *IntervalToCandleId) GetCandleId() string {
 	return ""
 }
 
-// A list of mapped pairs `interval` -> `candle ID` for a given market
+// List of mapped pairs `interval` -> `candle ID` for a given market
 type ListCandleIntervalsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5046,7 +5047,7 @@ type ObserveCandleDataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The unique identifier for the candle.
+	// Unique ID for the candle.
 	CandleId string `protobuf:"bytes,1,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
 }
 
@@ -5220,7 +5221,7 @@ type ListCandleDataResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more candles.
+	// Page of candle data and corresponding page information.
 	Candles *CandleDataConnection `protobuf:"bytes,1,opt,name=candles,proto3" json:"candles,omitempty"`
 }
 
@@ -5263,13 +5264,13 @@ func (x *ListCandleDataResponse) GetCandles() *CandleDataConnection {
 	return nil
 }
 
-// Represents the candle data with the corresponding cursor for it
+// Candle data with the corresponding cursor.
 type CandleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of candle data chunks.
+	// Candle data.
 	Node *Candle `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -5321,13 +5322,13 @@ func (x *CandleEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of candles with the page information of the listing
+// Page of candles data and corresponding page information
 type CandleDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of candle data.
+	// Page of candle data items and their corresponding cursors.
 	Edges []*CandleEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -5387,7 +5388,7 @@ type ListVotesRequest struct {
 
 	// Party for which the votes are requested.
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// A proposal ID to list votes for.
+	// Proposal ID to list votes for.
 	ProposalId *string `protobuf:"bytes,2,opt,name=proposal_id,json=proposalId,proto3,oneof" json:"proposal_id,omitempty"`
 	// Optional pagination control.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -5452,7 +5453,7 @@ type ListVotesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Votes data received.
+	// Page of votes data received and corresponding page information.
 	Votes *VoteConnection `protobuf:"bytes,1,opt,name=votes,proto3" json:"votes,omitempty"`
 }
 
@@ -5495,7 +5496,7 @@ func (x *ListVotesResponse) GetVotes() *VoteConnection {
 	return nil
 }
 
-// Votes data with the corresponding cursor for it
+// Votes data with the corresponding cursor.
 type VoteEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5553,13 +5554,13 @@ func (x *VoteEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of Vote data chunks with the corresponding list page information
+// Page of vote data items and corresponding page information
 type VoteConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Vote data.
+	// Page of vote data and their corresponding cursors.
 	Edges []*VoteEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -5724,11 +5725,11 @@ type ListERC20MultiSigSignerAddedBundlesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The node ID of the validator for which a signature bundle is required.
+	// Node ID of the validator for which a signature bundle is required.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// The ethereum address of the validator which will submit the bundle.
+	// Ethereum address of the validator that will submit the bundle.
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The epoch which generated the bundle i.e the epoch in which the node was promoted to tendermint validator.
+	// Epoch in which the bundle was generated, i.e. the epoch in which the node was promoted to consensus validator.
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -5800,7 +5801,7 @@ type ListERC20MultiSigSignerAddedBundlesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of bundles for that validator, it may have been added multiple times if removed in between.
+	// Page of bundles for that validator - it may have been added multiple times if removed in between - and corresponding page information.
 	Bundles *ERC20MultiSigSignerAddedConnection `protobuf:"bytes,1,opt,name=bundles,proto3" json:"bundles,omitempty"`
 }
 
@@ -5843,7 +5844,7 @@ func (x *ListERC20MultiSigSignerAddedBundlesResponse) GetBundles() *ERC20MultiSi
 	return nil
 }
 
-// Represents the signature data that is to be added with the corresponding cursor for it
+// Signature data that is to be added with the corresponding cursor.
 type ERC20MultiSigSignerAddedEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5901,7 +5902,7 @@ func (x *ERC20MultiSigSignerAddedEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the signature bundle data that is to be added the corresponding cursor for it
+// Signature bundle data that is to be added with the corresponding cursor.
 type ERC20MultiSigSignerAddedBundleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -5959,13 +5960,13 @@ func (x *ERC20MultiSigSignerAddedBundleEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of signature data chunks to be added with the corresponding list page information
+// Page of signature data items to be added and corresponding page information
 type ERC20MultiSigSignerAddedConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of signature bundle data parts.
+	// Page of signature bundle data and their corresponding cursors.
 	Edges []*ERC20MultiSigSignerAddedBundleEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -6023,17 +6024,17 @@ type ERC20MultiSigSignerAddedBundle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ethereum address of the signer to be removed.
+	// Ethereum address of the signer to be removed.
 	NewSigner string `protobuf:"bytes,1,opt,name=new_signer,json=newSigner,proto3" json:"new_signer,omitempty"`
-	// The ethereum address of the submitter.
+	// Ethereum address of the submitter.
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The nonce used in the signing operation.
+	// Nonce used in the signing operation.
 	Nonce string `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// unixnano timestamp for when the validator was added.
+	// Unixnano timestamp for when the validator was added.
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The bundle of signatures from current validators to sign in the new signer.
+	// Bundle of signatures from current validators to sign in the new signer.
 	Signatures string `protobuf:"bytes,6,opt,name=signatures,proto3" json:"signatures,omitempty"`
-	// The epoch in which the validator was added.
+	// Epoch in which the validator was added.
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 }
 
@@ -6117,11 +6118,11 @@ type ListERC20MultiSigSignerRemovedBundlesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The node ID of the validator of which a signature bundle is required.
+	// Node ID of the validator of which a signature bundle is required.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// The ethereum address of the validator which will submit the bundle.
+	// Ethereum address of the validator that will submit the bundle.
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The epoch which generated the bundle i.e the epoch in which the node was demoted from a tendermint validator.
+	// Epoch in which the bundle was generated, i.e. the epoch in which the node was demoted from a consensus validator.
 	EpochSeq string `protobuf:"bytes,3,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -6193,7 +6194,7 @@ type ListERC20MultiSigSignerRemovedBundlesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of signer bundle data parts for that validator.
+	// Page of signer bundle data items for that validator and corresponding page information.
 	Bundles *ERC20MultiSigSignerRemovedConnection `protobuf:"bytes,1,opt,name=bundles,proto3" json:"bundles,omitempty"`
 }
 
@@ -6236,7 +6237,7 @@ func (x *ListERC20MultiSigSignerRemovedBundlesResponse) GetBundles() *ERC20Multi
 	return nil
 }
 
-// Represents the signature data to be removed with the corresponding cursor for it
+// Signature data to be removed with the corresponding cursor.
 type ERC20MultiSigSignerRemovedEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6294,7 +6295,7 @@ func (x *ERC20MultiSigSignerRemovedEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the signature bundle data to be removed, with the corresponding cursor for it
+// Signature bundle data to be removed, with the corresponding cursor.
 type ERC20MultiSigSignerRemovedBundleEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -6352,13 +6353,13 @@ func (x *ERC20MultiSigSignerRemovedBundleEdge) GetCursor() string {
 	return ""
 }
 
-// Represents the list of signature data chunks to be removed, with the corresponding list page information
+// Page of signature data items to be removed and corresponding page information.
 type ERC20MultiSigSignerRemovedConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of signature bundle data parts.
+	// Page of signature bundle data and their corresponding cursors.
 	Edges []*ERC20MultiSigSignerRemovedBundleEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -6416,17 +6417,17 @@ type ERC20MultiSigSignerRemovedBundle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ethereum address of the signer to be removed.
+	// Ethereum address of the signer to be removed.
 	OldSigner string `protobuf:"bytes,1,opt,name=old_signer,json=oldSigner,proto3" json:"old_signer,omitempty"`
-	// The ethereum address of the submitter.
+	// Ethereum address of the submitter.
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The nonce used in the signing operation.
+	// Nonce used in the signing operation.
 	Nonce string `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// unixnano timestamp for when the validator was added.
+	// Unixnano timestamp for when the validator was added.
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The bundle of signatures from current validators to sign in the new signer.
+	// Bundle of signatures from current validators to sign in the new signer.
 	Signatures string `protobuf:"bytes,6,opt,name=signatures,proto3" json:"signatures,omitempty"`
-	// The epoch in which the validator was removed.
+	// Epoch in which the validator was removed.
 	EpochSeq string `protobuf:"bytes,7,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 }
 
@@ -6510,7 +6511,7 @@ type GetERC20ListAssetBundleRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the asset requested.
+	// ID of the asset requested.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 }
 
@@ -6559,13 +6560,13 @@ type GetERC20ListAssetBundleResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address of the asset on ethereum.
+	// Address of the asset on ethereum.
 	AssetSource string `protobuf:"bytes,1,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
-	// The ID of the vega asset.
+	// Vega asset ID.
 	VegaAssetId string `protobuf:"bytes,2,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The nonce, which is actually the internal reference for the proposal.
+	// Nonce, which is actually the internal reference for the proposal.
 	Nonce string `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The signatures bundle as hex encoded data, forward by 0x
+	// Signatures bundle as hex encoded data, forward by 0x
 	// e.g: 0x + sig1 + sig2 + ... + sixN.
 	Signatures string `protobuf:"bytes,4,opt,name=signatures,proto3" json:"signatures,omitempty"`
 }
@@ -6630,13 +6631,13 @@ func (x *GetERC20ListAssetBundleResponse) GetSignatures() string {
 	return ""
 }
 
-// Request for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
+// Request for the signature bundle to update the token limits i.e. maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is already allowlisted in the collateral bridge
 type GetERC20SetAssetLimitsBundleRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the proposal to update an asset.
+	// Proposal ID of the asset update proposal.
 	ProposalId string `protobuf:"bytes,1,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
 }
 
@@ -6679,23 +6680,23 @@ func (x *GetERC20SetAssetLimitsBundleRequest) GetProposalId() string {
 	return ""
 }
 
-// Response for the signature bundle to update the token limits (maxLifetimeDeposit and withdrawThreshold) for a given ERC20 token (already allowlisted) in the collateral bridge
+// Response for the signature bundle to update the token limits i.e. maxLifetimeDeposit and withdrawThreshold for a given ERC20 token that is already allowlisted in the collateral bridge
 type GetERC20SetAssetLimitsBundleResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address of the asset on ethereum.
+	// Address of the asset on ethereum.
 	AssetSource string `protobuf:"bytes,1,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
-	// The ID of the vega asset.
+	// Vega asset ID.
 	VegaAssetId string `protobuf:"bytes,2,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The nonce, which is actually the internal reference for the proposal.
+	// Nonce, which is actually the internal reference for the proposal.
 	Nonce string `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The lifetime limit deposit for this asset.
+	// Lifetime limit deposit for this asset.
 	LifetimeLimit string `protobuf:"bytes,4,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
-	// The threshold withdraw for this asset.
+	// Threshold withdraw for this asset.
 	Threshold string `protobuf:"bytes,5,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	// The signatures bundle as hex encoded data, forward by 0x
+	// Signatures bundle as hex encoded data, forward by 0x
 	// e.g: 0x + sig1 + sig2 + ... + sixN.
 	Signatures string `protobuf:"bytes,6,opt,name=signatures,proto3" json:"signatures,omitempty"`
 }
@@ -6774,13 +6775,13 @@ func (x *GetERC20SetAssetLimitsBundleResponse) GetSignatures() string {
 	return ""
 }
 
-// The request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
+// Request to get all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 type GetERC20WithdrawalApprovalRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the withdrawal.
+	// Withdrawal ID to retrieve.
 	WithdrawalId string `protobuf:"bytes,1,opt,name=withdrawal_id,json=withdrawalId,proto3" json:"withdrawal_id,omitempty"`
 }
 
@@ -6823,25 +6824,25 @@ func (x *GetERC20WithdrawalApprovalRequest) GetWithdrawalId() string {
 	return ""
 }
 
-// The response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
+// Response with all information required to bundle the call to finalise the withdrawal on the erc20 bridge
 // function withdraw_asset(address asset_source, uint256 asset_id, uint256 amount, uint256 expiry, uint256 nonce, bytes memory signatures)
 type GetERC20WithdrawalApprovalResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address of asset on ethereum.
+	// Address of asset on ethereum.
 	AssetSource string `protobuf:"bytes,1,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
-	// The amount to be withdrawn.
+	// Amount to be withdrawn.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The nonce, which is actually the internal reference for the withdrawal.
+	// Nonce, which is actually the internal reference for the withdrawal.
 	Nonce string `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The signatures bundle as hex encoded data, forward by 0x
+	// Signatures bundle as hex encoded data, forward by 0x
 	// e.g: 0x + sig1 + sig2 + ... + sixN.
 	Signatures string `protobuf:"bytes,5,opt,name=signatures,proto3" json:"signatures,omitempty"`
-	// The ethereum address to withdraw the funds to, 0x prefixed.
+	// Ethereum address to withdraw the funds to, 0x prefixed.
 	TargetAddress string `protobuf:"bytes,6,opt,name=target_address,json=targetAddress,proto3" json:"target_address,omitempty"`
-	// The creation timestamps.
+	// Creation timestamps.
 	Creation int64 `protobuf:"varint,7,opt,name=creation,proto3" json:"creation,omitempty"`
 }
 
@@ -6974,7 +6975,7 @@ type GetLastTradeResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A trade, if one is found.
+	// Information about the trade, if one is found.
 	Trade *vega.Trade `protobuf:"bytes,1,opt,name=trade,proto3" json:"trade,omitempty"`
 }
 
@@ -7108,7 +7109,7 @@ type ListTradesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Listed trades.
+	// Page of trades data and corresponding page information.
 	Trades *TradeConnection `protobuf:"bytes,1,opt,name=trades,proto3" json:"trades,omitempty"`
 }
 
@@ -7151,13 +7152,13 @@ func (x *ListTradesResponse) GetTrades() *TradeConnection {
 	return nil
 }
 
-// List of trades with the corresponding list page information
+// Page of trades and corresponding page information
 type TradeConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of trades data.
+	// Page of trades and their corresponding cursors.
 	Edges []*TradeEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -7209,7 +7210,7 @@ func (x *TradeConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// List of trades
+// Trade data item with the corresponding cursor..
 type TradeEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7325,13 +7326,13 @@ func (x *ObserveTradesRequest) GetPartyIds() []string {
 	return nil
 }
 
-// A stream of trades
+// Stream of trades
 type ObserveTradesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more trades.
+	// List of 0 or more trades.
 	Trades []*vega.Trade `protobuf:"bytes,1,rep,name=trades,proto3" json:"trades,omitempty"`
 }
 
@@ -7374,13 +7375,13 @@ func (x *ObserveTradesResponse) GetTrades() []*vega.Trade {
 	return nil
 }
 
-// The request to get a specific oracle spec by its ID
+// Request to get a specific oracle spec by its ID
 type GetOracleSpecRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID to get the oracle spec for.
+	// Oracle spec ID to request data for.
 	OracleSpecId string `protobuf:"bytes,1,opt,name=oracle_spec_id,json=oracleSpecId,proto3" json:"oracle_spec_id,omitempty"`
 }
 
@@ -7423,13 +7424,13 @@ func (x *GetOracleSpecRequest) GetOracleSpecId() string {
 	return ""
 }
 
-// The response for a oracle spec
+// Response for a oracle spec
 type GetOracleSpecResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The external data spec matching the ID.
+	// External data spec matching the ID.
 	OracleSpec *vega.OracleSpec `protobuf:"bytes,1,opt,name=oracle_spec,json=oracleSpec,proto3" json:"oracle_spec,omitempty"`
 }
 
@@ -7472,7 +7473,7 @@ func (x *GetOracleSpecResponse) GetOracleSpec() *vega.OracleSpec {
 	return nil
 }
 
-// The request to get all active oracle specs
+// Request to get all active oracle specs
 type ListOracleSpecsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7521,13 +7522,13 @@ func (x *ListOracleSpecsRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// The response to get all active oracle specs
+// Response to get all active oracle specs
 type ListOracleSpecsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of active oracle specs.
+	// Page of active oracle specs and corresponding page information.
 	OracleSpecs *OracleSpecsConnection `protobuf:"bytes,1,opt,name=oracle_specs,json=oracleSpecs,proto3" json:"oracle_specs,omitempty"`
 }
 
@@ -7570,7 +7571,7 @@ func (x *ListOracleSpecsResponse) GetOracleSpecs() *OracleSpecsConnection {
 	return nil
 }
 
-// The request to get all seen oracle data
+// Request to get all seen oracle data
 type ListOracleDataRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7627,13 +7628,13 @@ func (x *ListOracleDataRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// The response to get all seen oracle data
+// Response to get all seen oracle data
 type ListOracleDataResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of seen oracle data.
+	// Page of seen oracle data and corresponding page information.
 	OracleData *OracleDataConnection `protobuf:"bytes,1,opt,name=oracle_data,json=oracleData,proto3" json:"oracle_data,omitempty"`
 }
 
@@ -7676,13 +7677,13 @@ func (x *ListOracleDataResponse) GetOracleData() *OracleDataConnection {
 	return nil
 }
 
-// Oracle specs with cursor
+// Oracle specs data item with the corresponding cursor.
 type OracleSpecEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of oracle spec data.
+	// Oracle spec data.
 	Node *vega.OracleSpec `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -7734,13 +7735,13 @@ func (x *OracleSpecEdge) GetCursor() string {
 	return ""
 }
 
-// Oracle specs with corresponding list page information
+// Page of oracle specs and corresponding page information
 type OracleSpecsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Oracle specs.
+	// Page of oracle specs data and their corresponding cursors.
 	Edges []*OracleSpecEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -7792,7 +7793,7 @@ func (x *OracleSpecsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Oracle data with corresponding cursor
+// Oracle data item with the corresponding cursor.
 type OracleDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -7850,13 +7851,13 @@ func (x *OracleDataEdge) GetCursor() string {
 	return ""
 }
 
-// Oracle data with page info
+// Page of oracle data and corresponding page information.
 type OracleDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of oracle data parts.
+	// Page of oracle data and their corresponding cursors.
 	Edges []*OracleDataEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -7914,7 +7915,7 @@ type GetMarketRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The market ID.
+	// Market ID of the market to retrieve data for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7963,7 +7964,7 @@ type GetMarketResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The market.
+	// Information about the market requested.
 	Market *vega.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
 }
 
@@ -8070,7 +8071,7 @@ type ListMarketsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of markets data.
+	// Page of markets and corresponding page information.
 	Markets *MarketConnection `protobuf:"bytes,1,opt,name=markets,proto3" json:"markets,omitempty"`
 }
 
@@ -8113,13 +8114,13 @@ func (x *ListMarketsResponse) GetMarkets() *MarketConnection {
 	return nil
 }
 
-// Market data with corresponding cursor
+// Market information with the corresponding cursor.
 type MarketEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market data.
+	// Information about the market.
 	Node *vega.Market `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -8171,13 +8172,13 @@ func (x *MarketEdge) GetCursor() string {
 	return ""
 }
 
-// Market data list with corresponding list page information
+// Page of markets and corresponding page information.
 type MarketConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of markets data.
+	// Page of markets and their corresponding cursors.
 	Edges []*MarketEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8235,7 +8236,7 @@ type GetPartyRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The party ID.
+	// Party ID to retrieve party information for.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 }
 
@@ -8284,7 +8285,7 @@ type GetPartyResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The party data.
+	// Data for the party requested.
 	Party *vega.Party `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
 }
 
@@ -8391,7 +8392,7 @@ type ListPartiesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Parties data.
+	// Page of parties data and corresponding page information.
 	Parties *PartyConnection `protobuf:"bytes,1,opt,name=parties,proto3" json:"parties,omitempty"`
 }
 
@@ -8434,7 +8435,7 @@ func (x *ListPartiesResponse) GetParties() *PartyConnection {
 	return nil
 }
 
-// Party data with corresponding cursors
+// Party data with the corresponding cursor.
 type PartyEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8492,13 +8493,13 @@ func (x *PartyEdge) GetCursor() string {
 	return ""
 }
 
-// List of parties data with page info
+// Page of parties data and corresponding page information.
 type PartyConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of parties data.
+	// Page of parties and their corresponding cursors.
 	Edges []*PartyEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8550,7 +8551,7 @@ func (x *PartyConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Order data with corresponding cursor
+// Order data with the corresponding cursor.
 type OrderEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8681,7 +8682,7 @@ type ListMarginLevelsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Margin levels data.
+	// Page of margin levels data and corresponding page information.
 	MarginLevels *MarginConnection `protobuf:"bytes,1,opt,name=margin_levels,json=marginLevels,proto3" json:"margin_levels,omitempty"`
 }
 
@@ -8732,9 +8733,9 @@ type ObserveMarginLevelsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party identifier, required field.
+	// Party ID, required field.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Market identifier.
+	// Market ID.
 	MarketId *string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
 }
 
@@ -8832,13 +8833,13 @@ func (x *ObserveMarginLevelsResponse) GetMarginLevels() *vega.MarginLevels {
 	return nil
 }
 
-// List of orders data with corresponding page information
+// Page of orders data and corresponding page information.
 type OrderConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Orders data list.
+	// Page of orders and their corresponding cursors.
 	Edges []*OrderEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -8890,7 +8891,7 @@ func (x *OrderConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Margin data with corresponding cursors
+// Margin data with the corresponding cursor.
 type MarginEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -8948,13 +8949,13 @@ func (x *MarginEdge) GetCursor() string {
 	return ""
 }
 
-// List of margins data with corresponding page information
+// Page of margins data and corresponding page information.
 type MarginConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of margins.
+	// Page of margins data and their corresponding cursors.
 	Edges []*MarginEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -9006,7 +9007,7 @@ func (x *MarginConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// A request to get reward details for a party
+// Request to get reward details for a party
 type ListRewardsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9091,13 +9092,13 @@ func (x *ListRewardsRequest) GetToEpoch() uint64 {
 	return 0
 }
 
-// The response for listing reward details for a single party
+// Response for listing reward details for a single party
 type ListRewardsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Rewards data.
+	// Page of rewards data and corresponding page information.
 	Rewards *RewardsConnection `protobuf:"bytes,1,opt,name=rewards,proto3" json:"rewards,omitempty"`
 }
 
@@ -9140,7 +9141,7 @@ func (x *ListRewardsResponse) GetRewards() *RewardsConnection {
 	return nil
 }
 
-// Rewards data with corresponding cursor
+// Rewards data with the corresponding cursor.
 type RewardEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9198,13 +9199,13 @@ func (x *RewardEdge) GetCursor() string {
 	return ""
 }
 
-// Paged rewards data with corresponding page information
+// Page of rewards data and corresponding page information.
 type RewardsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of rewards data parts.
+	// Page of rewards data items and their corresponding cursors.
 	Edges []*RewardEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -9256,7 +9257,7 @@ func (x *RewardsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// A request to get reward details for a party
+// Request to get reward details for a party
 type ListRewardSummariesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9323,13 +9324,13 @@ func (x *ListRewardSummariesRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// The response from listing reward details in for a single party
+// Response from listing reward details in for a single party
 type ListRewardSummariesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Rewards details data.
+	// Page of rewards details data and corresponding page information.
 	Summaries []*vega.RewardSummary `protobuf:"bytes,1,rep,name=summaries,proto3" json:"summaries,omitempty"`
 }
 
@@ -9372,15 +9373,15 @@ func (x *ListRewardSummariesResponse) GetSummaries() []*vega.RewardSummary {
 	return nil
 }
 
-// A filter to restrict the results returned by the ListEpochRewardSummaries
+// Filter to restrict the results returned by the ListEpochRewardSummaries
 type RewardSummaryFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Restrict the results to those connected to the assets in this list (pass an empty list for no filter).
+	// Restrict the results to those connected to the assets in this list. Pass an empty list for no filter.
 	AssetIds []string `protobuf:"bytes,1,rep,name=asset_ids,json=assetIds,proto3" json:"asset_ids,omitempty"`
-	// Restrict the results to those connected to the markets in this list (pass an empty list for no filter).
+	// Restrict the results to those connected to the markets in this list. Pass an empty list for no filter.
 	MarketIds []string `protobuf:"bytes,2,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 	// Optional range of epochs to filter on.
 	FromEpoch *uint64 `protobuf:"varint,3,opt,name=from_epoch,json=fromEpoch,proto3,oneof" json:"from_epoch,omitempty"`
@@ -9448,7 +9449,7 @@ func (x *RewardSummaryFilter) GetToEpoch() uint64 {
 	return 0
 }
 
-// A request to get summary of reward per epoch for a given range of epochs
+// Request to get summary of reward per epoch for a given range of epochs
 type ListEpochRewardSummariesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9506,12 +9507,13 @@ func (x *ListEpochRewardSummariesRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// The return message with reward details in for a single party
+// Return message with reward details in for a single party
 type ListEpochRewardSummariesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of rewards details for a single party and corresponding page information.
 	Summaries *EpochRewardSummaryConnection `protobuf:"bytes,1,opt,name=summaries,proto3" json:"summaries,omitempty"`
 }
 
@@ -9554,13 +9556,13 @@ func (x *ListEpochRewardSummariesResponse) GetSummaries() *EpochRewardSummaryCon
 	return nil
 }
 
-// Paged rewards summary data for epoch with corresponding page information
+// Page of rewards summary data for epoch and corresponding page information
 type EpochRewardSummaryConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Rewards summary data parts for epochs.
+	// Page of rewards summary data for epochs and their corresponding cursors.
 	Edges []*EpochRewardSummaryEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -9612,7 +9614,7 @@ func (x *EpochRewardSummaryConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Rewards summary data for epoch with corresponding cursors
+// Rewards summary data for epoch with the corresponding cursor.
 type EpochRewardSummaryEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -9777,13 +9779,13 @@ func (x *ObserveRewardsResponse) GetReward() *vega.Reward {
 	return nil
 }
 
-// A request to get data about a specific deposit by ID
+// Request to get data about a specific deposit by ID
 type GetDepositRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The deposit ID, which can be obtained using the List Deposits query.
+	// Deposit ID, which can be obtained using the List Deposits query.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 
@@ -9826,13 +9828,13 @@ func (x *GetDepositRequest) GetId() string {
 	return ""
 }
 
-// A response that is received from getting deposit data
+// Response that is received from getting deposit data
 type GetDepositResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The deposit matching the ID from the request.
+	// Deposit matching the ID from the request.
 	Deposit *vega.Deposit `protobuf:"bytes,1,opt,name=deposit,proto3" json:"deposit,omitempty"`
 }
 
@@ -9875,13 +9877,13 @@ func (x *GetDepositResponse) GetDeposit() *vega.Deposit {
 	return nil
 }
 
-// A request to list all deposits for a given party
+// Request to list all deposits for a given party
 type ListDepositsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the party whose deposits are to be retrieved.
+	// Party ID whose deposits are to be retrieved.
 	// If not provided, deposits for all parties will be provided.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Optional pagination information to limit the data that is returned.
@@ -9949,7 +9951,7 @@ type ListDepositsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Deposits data.
+	// Page of deposits data and corresponding page information.
 	Deposits *DepositsConnection `protobuf:"bytes,1,opt,name=deposits,proto3" json:"deposits,omitempty"`
 }
 
@@ -9992,7 +9994,7 @@ func (x *ListDepositsResponse) GetDeposits() *DepositsConnection {
 	return nil
 }
 
-// Deposits data with corresponding cursor
+// Deposits data with the corresponding cursor.
 type DepositEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10050,13 +10052,13 @@ func (x *DepositEdge) GetCursor() string {
 	return ""
 }
 
-// Paged deposits data received with the corresponding page information
+// Page of deposits data received and corresponding page information
 type DepositsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Deposits data parts.
+	// Page of deposits data and their corresponding cursors.
 	Edges []*DepositEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -10108,13 +10110,13 @@ func (x *DepositsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// A request to get a specific withdrawal by identifier
+// Request to get a specific withdrawal by ID
 type GetWithdrawalRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the withdrawal to get.
+	// Withdrawal ID to retrieve data for.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 
@@ -10157,13 +10159,13 @@ func (x *GetWithdrawalRequest) GetId() string {
 	return ""
 }
 
-// A response for a withdrawal request
+// Response for a withdrawal request
 type GetWithdrawalResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The withdrawal matching the identifier from the request.
+	// Withdrawal matching the ID from the request.
 	Withdrawal *vega.Withdrawal `protobuf:"bytes,1,opt,name=withdrawal,proto3" json:"withdrawal,omitempty"`
 }
 
@@ -10212,7 +10214,7 @@ type ListWithdrawalsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The party ID whose withdrawals we want to retrieve.
+	// Party ID whose withdrawals are to retrieved.
 	// If not provided, withdrawals for all parties will be returned.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Optional pagination information to limit the data that is returned.
@@ -10280,7 +10282,7 @@ type ListWithdrawalsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of withdrawals data parts.
+	// Page of withdrawals data and corresponding page information.
 	Withdrawals *WithdrawalsConnection `protobuf:"bytes,1,opt,name=withdrawals,proto3" json:"withdrawals,omitempty"`
 }
 
@@ -10323,7 +10325,7 @@ func (x *ListWithdrawalsResponse) GetWithdrawals() *WithdrawalsConnection {
 	return nil
 }
 
-// Withdrawals data with corresponding cursor
+// Withdrawals data with the corresponding cursor.
 type WithdrawalEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10381,13 +10383,13 @@ func (x *WithdrawalEdge) GetCursor() string {
 	return ""
 }
 
-// List of withdrawals data with corresponding page information
+// Page of withdrawals data and corresponding page information
 type WithdrawalsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of withdrawals data parts.
+	// Page of withdrawals data and their corresponding cursors.
 	Edges []*WithdrawalEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -10601,7 +10603,7 @@ type ListAssetsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Assets data with page information.
+	// Page of assets data and corresponding page information.
 	Assets *AssetsConnection `protobuf:"bytes,1,opt,name=assets,proto3" json:"assets,omitempty"`
 }
 
@@ -10644,13 +10646,13 @@ func (x *ListAssetsResponse) GetAssets() *AssetsConnection {
 	return nil
 }
 
-// Assets data with corresponding cursor data
+// Assets data with the corresponding cursor.
 type AssetEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The asset data returned.
+	// Asset data returned.
 	Node *vega.Asset `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -10702,13 +10704,13 @@ func (x *AssetEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of asset data with corresponding page information
+// Page of asset data and corresponding page information
 type AssetsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of assets data chunks.
+	// Page of assets data and their corresponding cursors.
 	Edges []*AssetEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -10766,13 +10768,13 @@ type ListLiquidityProvisionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The target market for the liquidity provision orders.
+	// Target market for the liquidity provision orders.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// The party which submitted the liquidity provision orders.
+	// Party which submitted the liquidity provision orders.
 	PartyId *string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// The reference of the liquidity provision.
+	// Reference of the liquidity provision.
 	Reference *string `protobuf:"bytes,3,opt,name=reference,proto3,oneof" json:"reference,omitempty"`
-	// The indicator if the listed liquidity provision orders will include live orders or not.
+	// Indicator if the listed liquidity provision orders will include live orders or not.
 	Live *bool `protobuf:"varint,4,opt,name=live,proto3,oneof" json:"live,omitempty"`
 	// Optional pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -10851,7 +10853,7 @@ type ListLiquidityProvisionsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List liquidity provisions data with corresponding page information.
+	// Page of liquidity provisions data and corresponding page information.
 	LiquidityProvisions *LiquidityProvisionsConnection `protobuf:"bytes,1,opt,name=liquidity_provisions,json=liquidityProvisions,proto3" json:"liquidity_provisions,omitempty"`
 }
 
@@ -10894,7 +10896,7 @@ func (x *ListLiquidityProvisionsResponse) GetLiquidityProvisions() *LiquidityPro
 	return nil
 }
 
-// Paged liquidity provision data with corresponding cursor
+// Liquidity provision data with the corresponding cursor.
 type LiquidityProvisionsEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -10952,12 +10954,13 @@ func (x *LiquidityProvisionsEdge) GetCursor() string {
 	return ""
 }
 
-// List of liquidity provisions data chunks with corresponding page information
+// Page of liquidity provisions data and corresponding page information
 type LiquidityProvisionsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of liquidity provisions data and their corresponding cursors.
 	Edges []*LiquidityProvisionsEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -11015,9 +11018,9 @@ type ObserveLiquidityProvisionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The target market to observe for liquidity provision orders.
+	// Target market to observe for liquidity provision orders.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// The target party to observe for submitted liquidity provision orders.
+	// Target party to observe for submitted liquidity provision orders.
 	PartyId *string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
 }
 
@@ -11313,7 +11316,7 @@ type ListGovernanceDataResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Paged governance data with corresponding page information.
+	// Page of governance data and corresponding page information.
 	Connection *GovernanceDataConnection `protobuf:"bytes,1,opt,name=connection,proto3" json:"connection,omitempty"`
 }
 
@@ -11356,7 +11359,7 @@ func (x *ListGovernanceDataResponse) GetConnection() *GovernanceDataConnection {
 	return nil
 }
 
-// Governance data with corresponding cursor
+// Governance data with the corresponding cursor.
 type GovernanceDataEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11414,13 +11417,13 @@ func (x *GovernanceDataEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of governance data with corresponding page information
+// Page of governance data and corresponding page information
 type GovernanceDataConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of governance data parts with corresponding cursors.
+	// Page of governance data and their corresponding cursors.
 	Edges []*GovernanceDataEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -11652,7 +11655,7 @@ type ListDelegationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Delegations data with corresponding page information.
+	// Page of delegations data and corresponding page information.
 	Delegations *DelegationsConnection `protobuf:"bytes,1,opt,name=delegations,proto3" json:"delegations,omitempty"`
 }
 
@@ -11695,7 +11698,7 @@ func (x *ListDelegationsResponse) GetDelegations() *DelegationsConnection {
 	return nil
 }
 
-// Delegation data with corresponding cursors
+// Delegation data with the corresponding cursor.
 type DelegationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -11753,13 +11756,13 @@ func (x *DelegationEdge) GetCursor() string {
 	return ""
 }
 
-// List of delegations data with corresponding page information
+// Page of delegations data and corresponding page information
 type DelegationsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of delegations data.
+	// Page of delegations data and their corresponding cursors.
 	Edges []*DelegationEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -11924,7 +11927,7 @@ type NodeBasic struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The node ID.
+	// Node ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Node operator's public key.
 	PubKey string `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
@@ -12289,7 +12292,7 @@ type ListNodesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node data with corresponding page information.
+	// Page of node data and corresponding page information.
 	Nodes *NodesConnection `protobuf:"bytes,1,opt,name=nodes,proto3" json:"nodes,omitempty"`
 }
 
@@ -12332,7 +12335,7 @@ func (x *ListNodesResponse) GetNodes() *NodesConnection {
 	return nil
 }
 
-// Node data with corresponding cursor
+// Node data with the corresponding cursor.
 type NodeEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12390,13 +12393,13 @@ func (x *NodeEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of nodes data with corresponding page information
+// Page of node data and corresponding page information
 type NodesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of nodes data.
+	// Page of node data and their corresponding cursors.
 	Edges []*NodeEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -12448,7 +12451,7 @@ func (x *NodesConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Request to specify the identifier of the resource to retrieve aggregated signatures for
+// Request to specify the ID of the resource to retrieve aggregated signatures for
 type ListNodeSignaturesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12506,13 +12509,13 @@ func (x *ListNodeSignaturesRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response to specify the identifier of the resource to retrieve aggregated signatures for
+// Response to specify the ID of the resource to retrieve aggregated signatures for
 type ListNodeSignaturesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of nodes signatures with corresponding page information.
+	// Page of nodes signatures and corresponding page information.
 	Signatures *NodeSignaturesConnection `protobuf:"bytes,1,opt,name=signatures,proto3" json:"signatures,omitempty"`
 }
 
@@ -12555,7 +12558,7 @@ func (x *ListNodeSignaturesResponse) GetSignatures() *NodeSignaturesConnection {
 	return nil
 }
 
-// Nodes signature edge with corresponding cursor
+// Nodes signature edge with the corresponding cursor.
 type NodeSignatureEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -12613,13 +12616,13 @@ func (x *NodeSignatureEdge) GetCursor() string {
 	return ""
 }
 
-// List of nodes signatures with corresponding page info
+// Page of node signatures and corresponding page information.
 type NodeSignaturesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list of 0 or more signatures.
+	// Page of node signatures and their corresponding cursors.
 	Edges []*NodeSignatureEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13027,7 +13030,7 @@ func (x *EstimateMarginResponse) GetMarginLevels() *vega.MarginLevels {
 	return nil
 }
 
-// A message requesting for the list of all network parameters
+// Message requesting for the list of all network parameters
 type ListNetworkParametersRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13076,13 +13079,13 @@ func (x *ListNetworkParametersRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// A response containing all of the vega network parameters
+// Response containing all of the Vega network parameters
 type ListNetworkParametersResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of network parameters with corresponding page info.
+	// Page of network parameters and corresponding page information.
 	NetworkParameters *NetworkParameterConnection `protobuf:"bytes,1,opt,name=network_parameters,json=networkParameters,proto3" json:"network_parameters,omitempty"`
 }
 
@@ -13125,13 +13128,13 @@ func (x *ListNetworkParametersResponse) GetNetworkParameters() *NetworkParameter
 	return nil
 }
 
-// A message requesting a single network parameter
+// Request for a single network parameter
 type GetNetworkParameterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The key identifying the network parameter.
+	// Key identifying the network parameter.
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 }
 
@@ -13180,7 +13183,7 @@ type GetNetworkParameterResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The network parameter key and value.
+	// Network parameter key and value.
 	NetworkParameter *vega.NetworkParameter `protobuf:"bytes,1,opt,name=network_parameter,json=networkParameter,proto3" json:"network_parameter,omitempty"`
 }
 
@@ -13223,7 +13226,7 @@ func (x *GetNetworkParameterResponse) GetNetworkParameter() *vega.NetworkParamet
 	return nil
 }
 
-// Network parameter with corresponding cursor
+// Network parameter with the corresponding cursor.
 type NetworkParameterEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13281,13 +13284,13 @@ func (x *NetworkParameterEdge) GetCursor() string {
 	return ""
 }
 
-// List of network parameters with corresponding page information
+// Page of network parameters and corresponding page information
 type NetworkParameterConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of network parameters data.
+	// Page of network parameters data and their corresponding cursors.
 	Edges []*NetworkParameterEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13339,7 +13342,7 @@ func (x *NetworkParameterConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// The actual data regarding a checkpoint
+// Actual data regarding a checkpoint
 type Checkpoint struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13461,7 +13464,7 @@ type ListCheckpointsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of checkpoints data with corresponding page information.
+	// Page of checkpoints data and corresponding page information.
 	Checkpoints *CheckpointsConnection `protobuf:"bytes,1,opt,name=checkpoints,proto3" json:"checkpoints,omitempty"`
 }
 
@@ -13504,7 +13507,7 @@ func (x *ListCheckpointsResponse) GetCheckpoints() *CheckpointsConnection {
 	return nil
 }
 
-// Checkpoint data with corresponding cursor
+// Checkpoint data with the corresponding cursor.
 type CheckpointEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -13562,12 +13565,13 @@ func (x *CheckpointEdge) GetCursor() string {
 	return ""
 }
 
-// List of checkpoints data with corresponding page information
+// Page of checkpoints data and corresponding page information
 type CheckpointsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of checkpoints data and their corresponding cursors.
 	Edges []*CheckpointEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13683,7 +13687,7 @@ type GetStakeResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Current stake available info.
+	// Current stake available information.
 	CurrentStakeAvailable string `protobuf:"bytes,1,opt,name=current_stake_available,json=currentStakeAvailable,proto3" json:"current_stake_available,omitempty"`
 	// Paged list of stake data with corresponding page information.
 	StakeLinkings *StakesConnection `protobuf:"bytes,2,opt,name=stake_linkings,json=stakeLinkings,proto3" json:"stake_linkings,omitempty"`
@@ -13735,13 +13739,13 @@ func (x *GetStakeResponse) GetStakeLinkings() *StakesConnection {
 	return nil
 }
 
-// Stake linking data with corresponding cursor
+// Stake linking data with the corresponding cursor.
 type StakeLinkingEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A stake linking represent the intent from a party to deposit.
+	// Stake linking represent the intent from a party to deposit.
 	Node *v1.StakeLinking `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -13793,13 +13797,13 @@ func (x *StakeLinkingEdge) GetCursor() string {
 	return ""
 }
 
-// Paged list of stake data with corresponding page info
+// Page of stake data and corresponding page information.
 type StakesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of stake data.
+	// Page of stake data and their corresponding cursors.
 	Edges []*StakeLinkingEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -13906,7 +13910,7 @@ type GetRiskFactorsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A risk factor emitted by the risk model for a given market.
+	// Risk factor emitted by the risk model for a given market.
 	RiskFactor *vega.RiskFactor `protobuf:"bytes,1,opt,name=risk_factor,json=riskFactor,proto3" json:"risk_factor,omitempty"`
 }
 
@@ -14174,7 +14178,7 @@ type ListKeyRotationsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node identifier to get key rotations for, if provided.
+	// Node ID to get key rotations for, if provided.
 	NodeId *string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3,oneof" json:"node_id,omitempty"`
 	// Optional pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -14232,7 +14236,7 @@ type ListKeyRotationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Key rotations data with corresponding page information.
+	// Page of key rotations data and corresponding page information.
 	Rotations *KeyRotationConnection `protobuf:"bytes,1,opt,name=rotations,proto3" json:"rotations,omitempty"`
 }
 
@@ -14275,7 +14279,7 @@ func (x *ListKeyRotationsResponse) GetRotations() *KeyRotationConnection {
 	return nil
 }
 
-// Key rotation data with corresponding cursor
+// Key rotation data with the corresponding cursor.
 type KeyRotationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14333,13 +14337,13 @@ func (x *KeyRotationEdge) GetCursor() string {
 	return ""
 }
 
-// Key rotations data with corresponding page information
+// Page of key rotations data and corresponding page information
 type KeyRotationConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Key rotation data with corresponding cursor.
+	// Page of key rotation data and their corresponding cursors.
 	Edges []*KeyRotationEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -14455,7 +14459,7 @@ type ListEthereumKeyRotationsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Ethereum key rotations data with corresponding page information.
+	// Page of Ethereum key rotations data and corresponding page information.
 	KeyRotations *EthereumKeyRotationsConnection `protobuf:"bytes,1,opt,name=key_rotations,json=keyRotations,proto3" json:"key_rotations,omitempty"`
 }
 
@@ -14498,13 +14502,13 @@ func (x *ListEthereumKeyRotationsResponse) GetKeyRotations() *EthereumKeyRotatio
 	return nil
 }
 
-// List of Ethereum key rotations data with corresponding page information
+// Page of Ethereum key rotations data and corresponding page information
 type EthereumKeyRotationsConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Ethereum key rotations data with corresponding cursors.
+	// Page of Ethereum key rotations data and their corresponding cursors.
 	Edges []*EthereumKeyRotationEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -14556,7 +14560,7 @@ func (x *EthereumKeyRotationsConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Ethereum key rotation data with corresponding cursor
+// Ethereum key rotation data with the corresponding cursor.
 type EthereumKeyRotationEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -14703,19 +14707,15 @@ func (x *GetVegaTimeResponse) GetTimestamp() int64 {
 	return 0
 }
 
-// A date range for queries that can return historical data
-// If only the start_timestamp is provided, results from the given start up to the most current timestamp should be returned.
-// If only the end_timestamp is provided, results up to the given end should be returned (inclusive).
-// If both the start_timestamp and end_timestamp are provided, results from within the date range should be returned (inclusive).
+// Date range for queries that can return historical data
+// Timestamps should be provided as unix time in nanoseconds and are inclusive.
 type DateRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Optional start timestamp in nanoseconds past the epoch.
 	StartTimestamp *int64 `protobuf:"varint,1,opt,name=start_timestamp,json=startTimestamp,proto3,oneof" json:"start_timestamp,omitempty"`
-	// Optional end timestamp in nanoseconds past the epoch.
-	EndTimestamp *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
+	EndTimestamp   *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
 }
 
 func (x *DateRange) Reset() {
@@ -14925,7 +14925,7 @@ type ListProtocolUpgradeProposalsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A page of protocol upgrade proposals, with page information.
+	// Page of protocol upgrade proposals and corresponding page information.
 	ProtocolUpgradeProposals *ProtocolUpgradeProposalConnection `protobuf:"bytes,1,opt,name=protocol_upgrade_proposals,json=protocolUpgradeProposals,proto3" json:"protocol_upgrade_proposals,omitempty"`
 }
 
@@ -14968,13 +14968,13 @@ func (x *ListProtocolUpgradeProposalsResponse) GetProtocolUpgradeProposals() *Pr
 	return nil
 }
 
-// A page of protocol upgrade proposals, with page information
+// Page of protocol upgrade proposals and corresponding page information
 type ProtocolUpgradeProposalConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Protocol upgrade proposals page data.
+	// Page of protocol upgrade proposals data and their corresponding cursors.
 	Edges []*ProtocolUpgradeProposalEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -15026,7 +15026,7 @@ func (x *ProtocolUpgradeProposalConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// A protocol upgrade proposal data with a corresponding cursor
+// Protocol upgrade proposal data with the corresponding cursor.
 type ProtocolUpgradeProposalEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15139,7 +15139,7 @@ type ListCoreSnapshotsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A page of core snapshot data, with page information.
+	// Page of core snapshot data and corresponding page information.
 	CoreSnapshots *CoreSnapshotConnection `protobuf:"bytes,1,opt,name=core_snapshots,json=coreSnapshots,proto3" json:"core_snapshots,omitempty"`
 }
 
@@ -15182,12 +15182,13 @@ func (x *ListCoreSnapshotsResponse) GetCoreSnapshots() *CoreSnapshotConnection {
 	return nil
 }
 
-// A page of core snapshot data, with page information
+// Page of core snapshot data and corresponding page information.
 type CoreSnapshotConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Page of core snapshot data and their corresponding cursors.
 	Edges []*CoreSnapshotEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
@@ -15239,7 +15240,7 @@ func (x *CoreSnapshotConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Core snapshot data with a corresponding cursor
+// Core snapshot data with the corresponding cursor.
 type CoreSnapshotEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -15307,9 +15308,9 @@ type HistorySegment struct {
 	FromHeight int64 `protobuf:"varint,1,opt,name=from_height,json=fromHeight,proto3" json:"from_height,omitempty"`
 	// Ending height of the history segment.
 	ToHeight int64 `protobuf:"varint,2,opt,name=to_height,json=toHeight,proto3" json:"to_height,omitempty"`
-	// ID of the history segment.
+	// History segment ID.
 	HistorySegmentId string `protobuf:"bytes,3,opt,name=history_segment_id,json=historySegmentId,proto3" json:"history_segment_id,omitempty"`
-	// ID of the previous history segment.
+	// Previous history segment ID.
 	PreviousHistorySegmentId string `protobuf:"bytes,4,opt,name=previous_history_segment_id,json=previousHistorySegmentId,proto3" json:"previous_history_segment_id,omitempty"`
 	// Database schema version of the history segment.
 	DatabaseVersion int64 `protobuf:"varint,5,opt,name=database_version,json=databaseVersion,proto3" json:"database_version,omitempty"`
@@ -15533,7 +15534,7 @@ type ListAllNetworkHistorySegmentsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of history segments data.
+	// Page of history segments data and corresponding page information.
 	Segments []*HistorySegment `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
 }
 
@@ -15709,13 +15710,13 @@ type GetNetworkHistoryStatusResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The IPFS address of the data node you're connecting to.
+	// IPFS address of the data node currently connected to.
 	IpfsAddress string `protobuf:"bytes,1,opt,name=ipfs_address,json=ipfsAddress,proto3" json:"ipfs_address,omitempty"`
-	// The swarm key.
+	// Swarm key.
 	SwarmKey string `protobuf:"bytes,2,opt,name=swarm_key,json=swarmKey,proto3" json:"swarm_key,omitempty"`
-	// The swarm key seed.
+	// Swarm key seed.
 	SwarmKeySeed string `protobuf:"bytes,3,opt,name=swarm_key_seed,json=swarmKeySeed,proto3" json:"swarm_key_seed,omitempty"`
-	// The connected peers.
+	// Connected peers.
 	ConnectedPeers []string `protobuf:"bytes,5,rep,name=connected_peers,json=connectedPeers,proto3" json:"connected_peers,omitempty"`
 }
 
@@ -15824,7 +15825,7 @@ type GetNetworkHistoryBootstrapPeersResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The bootstrap peers.
+	// Bootstrap peers.
 	BootstrapPeers []string `protobuf:"bytes,1,rep,name=bootstrap_peers,json=bootstrapPeers,proto3" json:"bootstrap_peers,omitempty"`
 }
 
@@ -15874,14 +15875,14 @@ type ExportNetworkHistoryRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Block to begin exporting from. Must be the first block of a history segment,
-	// which by default are 1000 blocks each; in that case - 1, 1001, 2001 etc. are valid values
-	// you can check by first calling the API to list all network history segments.
+	// which by default are 1000 blocks each; in that case - 1, 1001, 2001 etc. are valid values.
+	// This can be checked by first calling the API to list all network history segments.
 	FromBlock int64 `protobuf:"varint,1,opt,name=from_block,json=fromBlock,proto3" json:"from_block,omitempty"`
 	// Last block to export up to and including. Must be the last block of a history segment
-	// which by default are 1000 blocks each; in that case - 1000, 2000, 3000 etc. are valid values
-	// you can check by first calling the API to list all network history segments.
+	// which by default are 1000 blocks each; in that case - 1000, 2000, 3000 etc. are valid values.
+	// This can be checked by first calling the API to list all network history segments.
 	ToBlock int64 `protobuf:"varint,2,opt,name=to_block,json=toBlock,proto3" json:"to_block,omitempty"`
-	// The table you would like to export data from.
+	// Table to export data from.
 	Table Table `protobuf:"varint,3,opt,name=table,proto3,enum=datanode.api.v2.Table" json:"table,omitempty"`
 }
 

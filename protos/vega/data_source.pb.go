@@ -25,7 +25,7 @@ const (
 type DataSourceSpec_Status int32
 
 const (
-	// The default value.
+	// Default value.
 	DataSourceSpec_STATUS_UNSPECIFIED DataSourceSpec_Status = 0
 	// STATUS_ACTIVE describes an active data source spec.
 	DataSourceSpec_STATUS_ACTIVE DataSourceSpec_Status = 1
@@ -357,11 +357,11 @@ type DataSourceSpecConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// signers is the list of authorized signatures that signed the data for this
+	// Signers is the list of authorized signatures that signed the data for this
 	// source. All the signatures in the data source data should be contained in this
 	// external source. All the signatures in the data should be contained in this list.
 	Signers []*v1.Signer `protobuf:"bytes,1,rep,name=signers,proto3" json:"signers,omitempty"`
-	// filters describes which source data are considered of interest or not for
+	// Filters describes which source data are considered of interest or not for
 	// the product (or the risk model).
 	Filters []*v1.Filter `protobuf:"bytes,2,rep,name=filters,proto3" json:"filters,omitempty"`
 }
@@ -412,7 +412,7 @@ func (x *DataSourceSpecConfiguration) GetFilters() []*v1.Filter {
 	return nil
 }
 
-// A data source spec describes the data source base that a product (or a risk model)
+// Data source spec describes the data source base that a product or a risk model
 // wants to get from the data source engine.
 // This message contains additional information used by the API.
 type DataSourceSpec struct {
@@ -420,14 +420,14 @@ type DataSourceSpec struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// id is a hash generated from the DataSpec data.
+	// Hash generated from the DataSpec data.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Creation Date time
+	// Creation date and time
 	CreatedAt int64 `protobuf:"varint,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Last Updated timestamp
 	UpdatedAt int64                 `protobuf:"varint,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	Data      *DataSourceDefinition `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
-	// status describes the status of the data source spec
+	// Status describes the status of the data source spec
 	Status DataSourceSpec_Status `protobuf:"varint,5,opt,name=status,proto3,enum=vega.DataSourceSpec_Status" json:"status,omitempty"`
 }
 

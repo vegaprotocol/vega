@@ -18,7 +18,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @SupStake
-  Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction. (0032-PRIM-002, 0032-PRIM-005)
+  Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction. (0032-PRIM-020, 0032-PRIM-005)
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
       | party1 | ETH   | 10000000000  |
@@ -51,7 +51,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC20"
 
-    #T0 + 10 min
+    #T1 = T0 + 10 min
     When time is updated to "2020-10-16T00:10:00Z"
 
     Then the parties place the following orders:
@@ -87,19 +87,26 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    #T0 + 10min 10s
-    Then time is updated to "2020-10-16T00:16:10Z"
+    #T1 + 04min00s (last second of first trigger)
+    When time is updated to "2020-10-16T00:14:00Z"
+    Then the market data for the market "ETH/DEC20" should be:
+    | trading mode                    | auction trigger       | extension trigger           | auction end | horizon | min bound | max bound |
+    | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 240         | 600     | 97776     | 102267    |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    #T1 + 04min01s (auction extended)
+    When time is updated to "2020-10-16T00:14:01Z"
+    Then the market data for the market "ETH/DEC20" should be:
+    | trading mode                    | auction trigger       | extension trigger     | auction end |
+    | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 600         |
 
-    #T0 + 11min01s
+    #T1 + 10min01s
     Then time is updated to "2020-10-16T00:20:01Z"
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     And the mark price should be "111000" for the market "ETH/DEC20"
 
-  Scenario: Persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes. (0032-PRIM-004)
+  Scenario: Persistent order results in an auction (both triggers breached), orders placed during auction result in a trade with indicative price within the price monitoring bounds, hence auction concludes. (0032-PRIM-021)
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -125,43 +132,49 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    #T0 + 10 min
+    #T1 = T0 + 10 min
     When time is updated to "2020-10-16T00:10:00Z"
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | sell | 1      | 100000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | buy  | 1      | 100000 | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | sell | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | buy  | 1      | 111000 | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
-    And the parties place the following orders:
-      | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party2 | ETH/DEC20 | buy  | 1      | 112000 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
-
-    #T0 + 10min + 1m (min auction duration)
-    Then time is updated to "2020-10-16T00:11:00Z"
-
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
-
+    #T1 + 04min00s (last second of initial duration)
+    When time is updated to "2020-10-16T00:14:00Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | trading mode                    | auction trigger       | extension trigger           | auction end | horizon | min bound | max bound |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 240         | 600     | 97776     | 102267    |
     And the mark price should be "100000" for the market "ETH/DEC20"
 
+    #T1 + 04min01s (auction extended)
+    When time is updated to "2020-10-16T00:14:01Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | trading mode                    | auction trigger       | extension trigger     | auction end |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE | 600         |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux    | ETH/DEC20 | buy  | 10     | 112000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2   | ETH/DEC20 | sell | 10     | 112000 | 0                | TYPE_LIMIT | TIF_GTC |
     #T0 + 11min01s (opening period, min auction duration + 1 second, auction is over)
-    Then time is updated to "2020-10-16T00:20:01Z"
+    And time is updated to "2020-10-16T00:20:01Z"
 
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
-
-    And the mark price should be "111500" for the market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+    | trading mode            | auction trigger             | extension trigger           | auction end |
+    | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 0           |
 
   Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction, auction terminates with a trade from order that originally triggered the auction. (0032-PRIM-006)
 

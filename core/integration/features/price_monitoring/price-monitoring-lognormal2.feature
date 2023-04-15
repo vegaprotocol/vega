@@ -594,10 +594,15 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
+    And the market data for the market "ETH/DEC20" should be:
+      | horizon | min bound | max bound |
+      | 3600    | 95878     | 104251    |
+      | 7200    | 90497     | 110401    |
+
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
-      | party1 | ETH/DEC20 | sell | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | party2 | ETH/DEC20 | buy  | 1      | 110402 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | party1 | ETH/DEC20 | sell | 1      | 110437 | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | party2 | ETH/DEC20 | buy  | 1      | 110437 | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
     And the mark price should be "100000" for the market "ETH/DEC20"
 
@@ -607,6 +612,10 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
     Then time is updated to "2020-10-16T02:04:00Z"
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+
+    And the market data for the market "ETH/DEC20" should be:
+      | horizon | min bound | max bound |
+      | 7200    | 90526     | 110436    |
 
     #T0 + 4min01s
     Then time is updated to "2020-10-16T02:04:01Z"
@@ -625,7 +634,7 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
 
-    And the mark price should be "110402" for the market "ETH/DEC20"
+    And the mark price should be "110437" for the market "ETH/DEC20"
 
   Scenario: Auction triggered by 1st trigger (lower bound breached), extended by second (upper bound)
     Given the parties deposit on asset's general account the following amount:

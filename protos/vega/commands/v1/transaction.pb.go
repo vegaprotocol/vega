@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The current supported version of the transaction inside the network.
+// Current supported version of the transaction inside the network.
 type TxVersion int32
 
 const (
@@ -79,7 +79,7 @@ type InputData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A number to provide uniqueness to prevent accidental replays and,
+	// Number to provide uniqueness to prevent accidental replays and,
 	// in combination with `block_height`, deliberate attacks.
 	// A nonce provides uniqueness for otherwise identical transactions,
 	// ensuring that the transaction hash uniquely identifies a specific transaction.
@@ -90,7 +90,7 @@ type InputData struct {
 	// and therefore different libraries or binaries may encode the same message
 	// slightly differently, causing a different hash.
 	Nonce uint64 `protobuf:"varint,1,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The block height at which the transaction was made.
+	// Block height at which the transaction was made.
 	// This should be the current block height. The transaction will be valid
 	// from the block and up to the `tolerance` block height.
 	// Example: If the network has a tolerance of 150 blocks and `block_height`
@@ -362,7 +362,7 @@ type isInputData_Command interface {
 }
 
 type InputData_OrderSubmission struct {
-	// A command for submitting an order.
+	// Command for submitting an order.
 	OrderSubmission *OrderSubmission `protobuf:"bytes,1001,opt,name=order_submission,json=orderSubmission,proto3,oneof"`
 }
 
@@ -423,17 +423,17 @@ type InputData_Transfer struct {
 }
 
 type InputData_CancelTransfer struct {
-	// A command to request cancelling a recurring transfer.
+	// Command to request cancelling a recurring transfer.
 	CancelTransfer *CancelTransfer `protobuf:"bytes,1013,opt,name=cancel_transfer,json=cancelTransfer,proto3,oneof"`
 }
 
 type InputData_AnnounceNode struct {
-	// A command used by a node operator to announce its node as a pending validator.
+	// Command used by a node operator to announce its node as a pending validator.
 	AnnounceNode *AnnounceNode `protobuf:"bytes,1014,opt,name=announce_node,json=announceNode,proto3,oneof"`
 }
 
 type InputData_BatchMarketInstructions struct {
-	// A command to submit a batch of order instructions to a market.
+	// Command to submit a batch of order instructions to a market.
 	BatchMarketInstructions *BatchMarketInstructions `protobuf:"bytes,1015,opt,name=batch_market_instructions,json=batchMarketInstructions,proto3,oneof"`
 }
 
@@ -554,9 +554,9 @@ type Transaction struct {
 	//
 	//	chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command.
 	InputData []byte `protobuf:"bytes,1,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
-	// The signature of the inputData.
+	// Signature of the input data.
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-	// The sender of the transaction.
+	// Sender of the transaction.
 	// Any of the following would be valid.
 	//
 	// Types that are assignable to From:
@@ -564,7 +564,7 @@ type Transaction struct {
 	//	*Transaction_Address
 	//	*Transaction_PubKey
 	From isTransaction_From `protobuf_oneof:"from"`
-	// A version of the transaction, to be used in the future in case changes are implemented
+	// Version of the transaction, to be used in the future in case changes are implemented
 	// to the transaction format.
 	Version TxVersion `protobuf:"varint,2000,opt,name=version,proto3,enum=vega.commands.v1.TxVersion" json:"version,omitempty"`
 	// Proof of work contains the random transaction id used by the client and the nonce.
@@ -657,12 +657,12 @@ type isTransaction_From interface {
 }
 
 type Transaction_Address struct {
-	// The address of the sender (hex-encoded). Not supported yet.
+	// Hex-encoded address of the sender. Not supported yet.
 	Address string `protobuf:"bytes,1001,opt,name=address,proto3,oneof"`
 }
 
 type Transaction_PubKey struct {
-	// The public key of the sender (hex-encoded).
+	// Hex-encoded public key of the sender.
 	PubKey string `protobuf:"bytes,1002,opt,name=pub_key,json=pubKey,proto3,oneof"`
 }
 
@@ -676,9 +676,9 @@ type ProofOfWork struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A unique transaction identifier used to seed the proof-of-work hash.
+	// Unique transaction identifier used to seed the proof-of-work hash.
 	Tid string `protobuf:"bytes,1,opt,name=tid,proto3" json:"tid,omitempty"`
-	// A number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
+	// Number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
 }
 
