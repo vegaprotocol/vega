@@ -160,6 +160,7 @@ service TradingDataService {
     //   - export ledger entries for a single party for a given asset within a given time range
     //   - export ledger entries for a single party for a given asset for all times
     // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+    // buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
     rpc ExportLedgerEntries(ExportLedgerEntriesRequest) returns (stream google.api.HttpBody) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
           tags: "Ledger entries";
@@ -906,6 +907,7 @@ service TradingDataService {
     //
     // It is worth noting that the schema will not change within a single network history segment.
     // buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+    // buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
     rpc ExportNetworkHistory(ExportNetworkHistoryRequest) returns (stream google.api.HttpBody) {
       option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
         tags: "Network history";
@@ -1318,8 +1320,8 @@ message ListLedgerEntriesRequest {
 message ExportLedgerEntriesRequest {
     // Party ID to export ledger entries for.
     string party_id = 1 [(google.api.field_behavior) = REQUIRED];
-    // Asset ID to export ledger entries for.
-    string asset_id = 2;
+    // Optional: Asset ID.
+    optional string asset_id = 2;
     // Date range to export ledger entries for.
     optional DateRange date_range = 3;
 }

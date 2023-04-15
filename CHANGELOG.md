@@ -3,6 +3,7 @@
 ## Unreleased 0.71.0
 
 ### 🚨 Breaking changes
+- [7859](https://github.com/vegaprotocol/vega/issues/7859) - Fix Ledger entries exporting `CSV` file.
 - [8064](https://github.com/vegaprotocol/vega/issues/8064) - Remove `websocket` for rewards
 - [8093](https://github.com/vegaprotocol/vega/issues/8093) - Remove offset pagination
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
@@ -35,7 +36,6 @@
 - [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
 
 ### 🐛 Fixes
-- [7859](https://github.com/vegaprotocol/vega/issues/7859) - Fix Ledger entries exporting `CSV` file. 
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
 - [7954](https://github.com/vegaprotocol/vega/issues/7954) - Don't error if subscribing to a market/party that has no position yet

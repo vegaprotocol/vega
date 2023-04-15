@@ -7,7 +7,6 @@ lint:
   except:
     - PACKAGE_DIRECTORY_MATCH
     - PACKAGE_VERSION_SUFFIX
-    - RPC_REQUEST_RESPONSE_UNIQUE
 breaking:
   use:
     - FILE
