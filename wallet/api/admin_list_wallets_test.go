@@ -16,9 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdminListWallet(t *testing.T) {
+func TestAdminListWallets(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminListWalletsSchemaCorrect)
 	t.Run("Listing wallets succeeds", testListingWalletsSucceeds)
 	t.Run("Getting internal error during listing fails", testGettingInternalErrorDuringListingFails)
+}
+
+func testAdminListWalletsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.list_wallets", nil, api.AdminListWalletsResult{})
 }
 
 func testListingWalletsSucceeds(t *testing.T) {

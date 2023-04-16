@@ -16,12 +16,17 @@ import (
 )
 
 func TestAdminRevokePermissions(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRevokePermissionsSchemaCorrect)
 	t.Run("Revoking permissions with invalid params fails", testRevokingPermissionsWithInvalidParamsFails)
 	t.Run("Revoking permissions with valid params succeeds", testRevokingPermissionsWithValidParamsSucceeds)
 	t.Run("Revoking permissions from wallet that does not exists fails", testRevokingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Getting internal error during wallet saving fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails)
+}
+
+func testAdminRevokePermissionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.revoke_permissions", api.AdminRevokePermissionsParams{}, nil)
 }
 
 func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {

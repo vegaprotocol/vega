@@ -15,10 +15,15 @@ import (
 )
 
 func TestAdminRemoveWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRemoveWalletSchemaCorrect)
 	t.Run("Removing a wallet with invalid params fails", testRemovingWalletWithInvalidParamsFails)
 	t.Run("Removing a wallet with valid params succeeds", testRemovingWalletWithValidParamsSucceeds)
 	t.Run("Removing a wallet that does not exists fails", testRemovingWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification does not remove the wallet", testGettingInternalErrorDuringVerificationDoesNotRemoveWallet)
+}
+
+func testAdminRemoveWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.remove_wallet", api.AdminRemoveWalletParams{}, nil)
 }
 
 func testRemovingWalletWithInvalidParamsFails(t *testing.T) {

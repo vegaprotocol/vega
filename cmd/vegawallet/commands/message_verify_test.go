@@ -34,7 +34,7 @@ func testVerifyMessageFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminVerifyMessageParams{
-		PubKey:           pubKey,
+		PublicKey:        pubKey,
 		EncodedMessage:   f.Message,
 		EncodedSignature: f.Signature,
 	}

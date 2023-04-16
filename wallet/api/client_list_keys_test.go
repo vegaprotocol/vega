@@ -15,7 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestListKeys(t *testing.T) {
+func TestClientListKeys(t *testing.T) {
+	t.Run("Documentation matches the code", testClientListKeysSchemaCorrect)
 	t.Run("Listing keys with enough permissions succeeds", testListingKeysWithEnoughPermissionsSucceeds)
 	t.Run("Listing keys without enough permissions succeeds", testListingKeysWithoutEnoughPermissionsSucceeds)
 	t.Run("Getting internal error during wallet retrieval does not update the permissions", testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions)
@@ -25,6 +26,10 @@ func TestListKeys(t *testing.T) {
 	t.Run("Interrupting the request does not update the permissions", testListingKeysInterruptingTheRequestDoesNotUpdatePermissions)
 	t.Run("Getting internal error during the review does not update the permissions", testListingKeysGettingInternalErrorDuringReviewDoesNotUpdatePermissions)
 	t.Run("Getting internal error during the wallet update does not update the permissions", testListingKeysGettingInternalErrorDuringWalletUpdateDoesNotUpdatePermissions)
+}
+
+func testClientListKeysSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "client.list_keys", nil, api.ClientListKeysResult{})
 }
 
 func testListingKeysWithEnoughPermissionsSucceeds(t *testing.T) {

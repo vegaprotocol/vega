@@ -17,7 +17,6 @@ type AdminDescribeWalletResult struct {
 	ID                   string `json:"id"`
 	Type                 string `json:"type"`
 	KeyDerivationVersion uint32 `json:"keyDerivationVersion"`
-	Version              uint32 `json:"version"`
 }
 
 type AdminDescribeWallet struct {
@@ -54,7 +53,6 @@ func (h *AdminDescribeWallet) Handle(ctx context.Context, rawParams jsonrpc.Para
 		ID:                   w.ID(),
 		Type:                 w.Type(),
 		KeyDerivationVersion: w.KeyDerivationVersion(),
-		Version:              w.KeyDerivationVersion(),
 	}, nil
 }
 
