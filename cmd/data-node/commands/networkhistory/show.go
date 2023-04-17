@@ -6,16 +6,14 @@ import (
 	"os"
 	"sort"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	coreConfig "code.vegaprotocol.io/vega/core/config"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
-	"code.vegaprotocol.io/vega/paths"
-
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -31,7 +29,7 @@ type showCmd struct {
 
 type showOutput struct {
 	Segments            []*v2.HistorySegment
-	ContiguousHistories []*networkhistory.ContiguousHistory
+	ContiguousHistories []segment.ContiguousHistory[*v2.HistorySegment]
 	DataNodeBlockStart  int64
 	DataNodeBlockEnd    int64
 }
@@ -43,12 +41,12 @@ func (o *showOutput) printHuman(allSegments bool) {
 			fmt.Printf("\n\nContiguous history from block height %d to %d, from segment id: %s to %s\n",
 				contiguousHistory.HeightFrom,
 				contiguousHistory.HeightTo,
-				contiguousHistory.SegmentsOldestFirst[0].GetHistorySegmentId(),
-				contiguousHistory.SegmentsOldestFirst[len(contiguousHistory.SegmentsOldestFirst)-1].GetHistorySegmentId(),
+				contiguousHistory.Segments[0].GetHistorySegmentId(),
+				contiguousHistory.Segments[len(contiguousHistory.Segments)-1].GetHistorySegmentId(),
 			)
 
 			if allSegments {
-				for _, segment := range contiguousHistory.SegmentsOldestFirst {
+				for _, segment := range contiguousHistory.Segments {
 					fmt.Printf("\n%d to %d, id: %s, previous segment id: %s",
 						segment.GetFromHeight(),
 						segment.GetToHeight(),
@@ -112,7 +110,8 @@ func (cmd *showCmd) Execute(_ []string) error {
 		return output.Segments[i].ToHeight < output.Segments[j].ToHeight
 	})
 
-	output.ContiguousHistories = networkhistory.GetContiguousHistories(response.Segments)
+	segments := segment.Segments[*v2.HistorySegment](response.Segments)
+	output.ContiguousHistories = segments.AllContigousHistories()
 
 	pool, err := getCommandConnPool(cmd.Config.SQLStore.ConnectionConfig)
 	if err != nil {

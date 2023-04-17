@@ -34,6 +34,7 @@
 - [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
 - [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
 - [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
+- [8039](https://github.com/vegaprotocol/vega/issues/8039) - Write network history segments in the `datanode` process instead of requesting `postgres` to write them.
 - [7987](https://github.com/vegaprotocol/vega/issues/7987) - Make terms consistent in `API` documentation.
 - [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
 - [7999](https://github.com/vegaprotocol/vega/issues/7999) - Review `DateRange API` documentation.

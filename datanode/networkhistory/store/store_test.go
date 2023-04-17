@@ -1,14 +1,16 @@
 package store_test
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
-	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -17,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const expectedSizeOnDiskWithNoGc = 56000
+const expectedSizeOnDiskWithNoGc = 20016
 
 func TestRemoveWithNoEligibleSegments(t *testing.T) {
 	chainID := uuid.NewV4().String()
@@ -52,7 +54,7 @@ func TestPartialRemoveOfOldSegments(t *testing.T) {
 	dirSize, err := dirSize(networkhistoryHome)
 	require.NoError(t, err)
 
-	assertRoughlyEqual(t, 41000, dirSize)
+	assertRoughlyEqual(t, 18463, dirSize)
 
 	segments, err := s.ListAllIndexEntriesOldestFirst()
 	require.NoError(t, err)
@@ -74,7 +76,7 @@ func TestRemoveAllOldSegments(t *testing.T) {
 	dirSize, err := dirSize(networkhistoryHome)
 	require.NoError(t, err)
 
-	assertRoughlyEqual(t, 22000, dirSize)
+	assertRoughlyEqual(t, 17504, dirSize)
 
 	segments, err := s.ListAllIndexEntriesOldestFirst()
 	require.NoError(t, err)
@@ -89,14 +91,32 @@ func addTestData(t *testing.T, chainID string, snapshotsDir string, s *store.Sto
 	for i := int64(0); i < 10; i++ {
 		from := (i * 1000) + 1
 		to := (i + 1) * 1000
-		css := snapshot.NewCurrentSnapshot(chainID, to)
-		hss := snapshot.NewHistorySnapshot(chainID, 1, from, to)
+		segment := segment.Unpublished{
+			Base: segment.Base{
+				HeightFrom:      from,
+				HeightTo:        to,
+				ChainID:         chainID,
+				DatabaseVersion: 1,
+			},
+			Directory: snapshotsDir,
+		}
 
-		err := os.WriteFile(filepath.Join(snapshotsDir, css.CompressedFileName()), []byte(fmt.Sprintf("%d", to)), fs.ModePerm)
+		buf := new(bytes.Buffer)
+		zipWriter := zip.NewWriter(buf)
+
+		f, err := zipWriter.Create("dummy.txt")
 		require.NoError(t, err)
-		err = os.WriteFile(filepath.Join(snapshotsDir, hss.CompressedFileName()), []byte(fmt.Sprintf("%d to %d", from, to)), fs.ModePerm)
+
+		_, err = io.WriteString(f, "This is some dummy data.")
 		require.NoError(t, err)
-		err = s.AddSnapshotData(context.Background(), hss, css, snapshotsDir)
+
+		err = zipWriter.Close()
+		require.NoError(t, err)
+
+		err = os.WriteFile(segment.ZipFilePath(), buf.Bytes(), fs.ModePerm)
+		require.NoError(t, err)
+
+		err = s.AddSnapshotData(context.Background(), segment)
 		require.NoError(t, err)
 	}
 }
