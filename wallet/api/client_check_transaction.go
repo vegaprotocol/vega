@@ -43,7 +43,7 @@ type ClientCheckTransaction struct {
 	spam         SpamHandler
 }
 
-func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
 	params, err := validateCheckTransactionParams(rawParams)
@@ -131,7 +131,11 @@ func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.P
 	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction passes the anti-spam rules.")
 
 	// Sign the payload.
-	rawInputData := wcommands.ToInputData(request, stats.LastBlockHeight)
+	rawInputData := wcommands.ToInputData(request, stats.LastBlockHeight, ttl)
+	// always set TTL if it wasn't previously set, and override the specified value if it's > the max set by network params
+	if rawInputData.GoodForBlocks == 0 || rawInputData.GoodForBlocks > stats.MaxTTL {
+		rawInputData.GoodForBlocks = stats.MaxTTL
+	}
 	inputData, err := commands.MarshalInputData(rawInputData)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))

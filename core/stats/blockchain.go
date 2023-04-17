@@ -37,6 +37,7 @@ type Blockchain struct {
 	lastBlockEventCount    uint64
 	currentBlockEventCount uint64
 	eventsPerSecond        uint64
+	txMaxTTL               uint64
 }
 
 // NewBlockchain instantiate a new Blockchain.
@@ -140,6 +141,10 @@ func (b *Blockchain) TotalEventsLastBatch() uint64 {
 
 func (b *Blockchain) EventsPerSecond() uint64 {
 	return b.eventsPerSecond
+}
+
+func (b *Blockchain) TxMaxTTL() uint64 {
+	return b.txMaxTTL
 }
 
 // TotalTxLastBatch return the number of transaction
@@ -308,4 +313,8 @@ func (b *Blockchain) SetBlockDuration(val uint64) {
 
 func (b *Blockchain) SetEventsPerSecond(val uint64) {
 	b.eventsPerSecond = val
+}
+
+func (b *Blockchain) SetTxMaxTTL(val uint64) {
+	b.txMaxTTL = val
 }

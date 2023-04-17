@@ -21,7 +21,6 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/banking"
 	"code.vegaprotocol.io/vega/core/blockchain"
-	"code.vegaprotocol.io/vega/core/blockchain/abci"
 	"code.vegaprotocol.io/vega/core/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/core/bridges"
 	"code.vegaprotocol.io/vega/core/broker"
@@ -97,7 +96,7 @@ type allServices struct {
 	spam                  *spam.Engine
 	pow                   processor.PoWEngine
 	builtinOracle         *oracles.Builtin
-	codec                 abci.Codec
+	codec                 processor.Codec
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -231,14 +230,20 @@ func newServices(
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
+	// contains common fields and methods like maxTTL
+	baseCodec := processor.BaseCodec{}
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
-		svcs.codec = &processor.NullBlockchainTxCodec{}
+		svcs.codec = &processor.NullBlockchainTxCodec{
+			BaseCodec: baseCodec,
+		}
 		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 	} else {
-		svcs.codec = &processor.TxCodec{}
+		svcs.codec = &processor.TxCodec{
+			BaseCodec: baseCodec,
+		}
 		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
