@@ -8,7 +8,7 @@
 - [8093](https://github.com/vegaprotocol/vega/issues/8093) - Remove offset pagination
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
 - [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated `TradesConnection GraphQL sub-queries` in favour of an `un-nested` Trades query with a filter parameter. This requires a change in the underlying `gRPC` request message. Trades subscription takes a `TradesSubscriptionFilter` that allows multiple `MarketID` and `PartyID` filters to be specified.
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8143](https://github.com/vegaprotocol/vega/issues/8143) - Merge GraphQL and REST servers
 
 ### 🗑️ Deprecation
 
