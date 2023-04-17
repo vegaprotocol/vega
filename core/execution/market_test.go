@@ -6238,6 +6238,35 @@ func TestLPOrdersRollback(t *testing.T) {
 				price:  s1Price,
 				size:   s1Size,
 			},
+			// The initially submitted limit orders get cancelled now
+			{
+				side:   types.SideBuy,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  b1Price,
+				size:   b1Size,
+			},
+			{
+				side:   types.SideBuy,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  b2Price,
+				size:   b2Size,
+			},
+			{
+				side:   types.SideSell,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  s1Price,
+				size:   s1Size,
+			},
+			{
+				side:   types.SideSell,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  s2Price,
+				size:   s2Size,
+			},
 		}
 		//	TestLiquidityScoresMechanics
 
@@ -6245,9 +6274,9 @@ func TestLPOrdersRollback(t *testing.T) {
 
 		for i, exp := range expected {
 			got := found[i]
-			assert.Equal(t, exp.side, got.Side, "Side:", got.Side.String())
-			assert.Equal(t, exp.status, got.Status, "Status:", got.Status.String())
-			assert.Equal(t, exp.ref, got.Reference, "Status:", got.Reference)
+			assert.Equal(t, exp.side, got.Side, fmt.Sprintf("index: %v - %v", i, got.Side.String()))
+			assert.Equal(t, exp.status, got.Status, got.Status.String())
+			assert.Equal(t, exp.ref, got.Reference, got.Reference)
 		}
 	})
 }

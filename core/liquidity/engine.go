@@ -224,7 +224,36 @@ func (e *Engine) stopLiquidityProvision(
 		return errors.New("party have no liquidity provision orders")
 	}
 
+	var orderStatus types.OrderStatus
+	switch status {
+	case types.LiquidityProvisionStatusCancelled:
+		orderStatus = types.OrderStatusCancelled
+	case types.LiquidityProvisionStatusStopped:
+		orderStatus = types.OrderStatusStopped
+	case types.LiquidityProvisionStatusRejected:
+		orderStatus = types.OrderStatusRejected
+	default:
+		e.log.Panic("unsupported liquidity provisions status", logging.String("status", status.String()))
+	}
+
+	now := e.timeService.GetTimeNow().UnixNano()
+
+	// get list of orders in the book so we do not send duplicates events
+	cancels := e.orderBook.GetLiquidityOrders(party)
+	sort.Slice(cancels, func(i, j int) bool {
+		return cancels[i].ID < cancels[j].ID
+	})
+
+	cancelsM := map[string]struct{}{}
+	for _, c := range cancels {
+		cancelsM[c.ID] = struct{}{}
+	}
+
+	evts := e.getCancelAllLiquidityOrders(ctx, lp, cancelsM, orderStatus, now)
+	e.broker.SendBatch(evts)
+
 	lp.Status = status
+	lp.UpdatedAt = now
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
 	// now delete all stuff
@@ -405,6 +434,7 @@ func (e *Engine) SubmitLiquidityProvision(
 	lp.Status = types.LiquidityProvisionStatusPending
 
 	orderEvts := e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lps.Buys, lps.Sells, idgen)
+
 	// seed the dummy orders with the generated IDs in order to avoid broken references
 	e.broker.SendBatch(orderEvts)
 
@@ -434,6 +464,7 @@ func (e *Engine) SetShapesReferencesOnLiquidityProvision(
 			Reference:            lp.Reference,
 			LiquidityProvisionID: lp.ID,
 			CreatedAt:            lp.CreatedAt,
+			Type:                 types.OrderTypeLimit,
 		}
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
@@ -454,6 +485,7 @@ func (e *Engine) SetShapesReferencesOnLiquidityProvision(
 			Reference:            lp.Reference,
 			LiquidityProvisionID: lp.ID,
 			CreatedAt:            lp.CreatedAt,
+			Type:                 types.OrderTypeLimit,
 		}
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
@@ -917,4 +949,69 @@ func (e *Engine) GetLPShapeCount() uint64 {
 		total += uint64(len(v.Buys) + len(v.Sells))
 	}
 	return total
+}
+
+func (e *Engine) getCancelAllLiquidityOrders(
+	ctx context.Context,
+	lp *types.LiquidityProvision,
+	excludeIDs map[string]struct{},
+	cancelWithStatus types.OrderStatus,
+	canceledAt int64,
+) []events.Event {
+	if excludeIDs == nil {
+		excludeIDs = map[string]struct{}{}
+	}
+
+	// here we will cancel the orders which are not in the book
+	evts := []events.Event{}
+	for _, o := range lp.Buys {
+		if _, ok := excludeIDs[o.OrderID]; ok {
+			// this order was on the book
+			// nothing to do, it'll be cancelled
+			// later by the market hopefully
+			continue
+		}
+
+		evts = append(evts, events.NewOrderEvent(ctx, &types.Order{
+			ID:                   o.OrderID,
+			MarketID:             e.marketID,
+			Party:                lp.Party,
+			Side:                 types.SideBuy,
+			Price:                num.UintZero(),
+			Size:                 0,
+			Status:               cancelWithStatus,
+			Reference:            lp.Reference,
+			LiquidityProvisionID: lp.ID,
+			CreatedAt:            lp.CreatedAt,
+			UpdatedAt:            canceledAt,
+			Type:                 types.OrderTypeLimit,
+			TimeInForce:          types.OrderTimeInForceGTC,
+		}))
+	}
+
+	for _, o := range lp.Sells {
+		if _, ok := excludeIDs[o.OrderID]; ok {
+			// this order was on the book
+			// nothing to do, it'll be cancelled
+			// later by the market hopefully
+			continue
+		}
+		evts = append(evts, events.NewOrderEvent(ctx, &types.Order{
+			ID:                   o.OrderID,
+			MarketID:             e.marketID,
+			Party:                lp.Party,
+			Side:                 types.SideSell,
+			Price:                num.UintZero(),
+			Size:                 0,
+			Status:               cancelWithStatus,
+			Reference:            lp.Reference,
+			LiquidityProvisionID: lp.ID,
+			CreatedAt:            lp.CreatedAt,
+			UpdatedAt:            canceledAt,
+			Type:                 types.OrderTypeLimit,
+			TimeInForce:          types.OrderTimeInForceGTC,
+		}))
+	}
+
+	return evts
 }
