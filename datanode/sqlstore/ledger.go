@@ -17,7 +17,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -178,14 +177,7 @@ func (ls *Ledger) Export(
 
 	query := fmt.Sprintf("copy (%s %s) to STDOUT (FORMAT csv, HEADER)", dynamicQuery, whereQuery)
 
-	for i, arg := range args {
-		if s, ok := toHexString(arg); ok {
-			arg = s
-		}
-		query = strings.Replace(query, fmt.Sprintf("$%d", i+1), fmt.Sprintf("'%v'", arg), 1)
-	}
-
-	tag, err := ls.Connection.CopyTo(ctx, writer, query)
+	tag, err := ls.Connection.CopyTo(ctx, writer, query, args)
 	if err != nil {
 		return fmt.Errorf("copying to stdout: %w", err)
 	}

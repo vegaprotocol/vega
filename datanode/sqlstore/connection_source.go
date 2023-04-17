@@ -47,7 +47,7 @@ type Connection interface {
 
 type copyingConnection interface {
 	Connection
-	CopyTo(ctx context.Context, w io.Writer, sql string) (pgconn.CommandTag, error)
+	CopyTo(ctx context.Context, w io.Writer, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
 type ConnectionSource struct {
@@ -272,7 +272,12 @@ func (t *delegatingConnection) QueryFunc(ctx context.Context, sql string, args [
 	return t.pool.QueryFunc(ctx, sql, args, scans, f)
 }
 
-func (t *delegatingConnection) CopyTo(ctx context.Context, w io.Writer, sql string) (pgconn.CommandTag, error) {
+func (t *delegatingConnection) CopyTo(ctx context.Context, w io.Writer, sql string, args ...any) (pgconn.CommandTag, error) {
+	var err error
+	sql, err = SanitizeSql(sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sanitize sql: %w", err)
+	}
 	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
 		return tx.Conn().PgConn().CopyTo(ctx, w, sql)
 	}
