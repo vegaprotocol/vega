@@ -196,8 +196,8 @@ type ClientAPI struct {
 	sendTransaction  *ClientSendTransaction
 }
 
-func (a *ClientAPI) CheckTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	return a.checkTransaction.Handle(ctx, rawParams, connectedWallet)
+func (a *ClientAPI) CheckTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.checkTransaction.Handle(ctx, rawParams, connectedWallet, ttl)
 }
 
 func (a *ClientAPI) ConnectWallet(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails) {
@@ -212,12 +212,12 @@ func (a *ClientAPI) ListKeys(ctx context.Context, connectedWallet ConnectedWalle
 	return a.listKeys.Handle(ctx, connectedWallet)
 }
 
-func (a *ClientAPI) SignTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	return a.signTransaction.Handle(ctx, rawParams, connectedWallet)
+func (a *ClientAPI) SignTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.signTransaction.Handle(ctx, rawParams, connectedWallet, ttl)
 }
 
-func (a *ClientAPI) SendTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
-	return a.sendTransaction.Handle(ctx, rawParams, connectedWallet)
+func (a *ClientAPI) SendTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+	return a.sendTransaction.Handle(ctx, rawParams, connectedWallet, ttl)
 }
 
 func BuildClientAPI(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, spam SpamHandler) (*ClientAPI, error) {

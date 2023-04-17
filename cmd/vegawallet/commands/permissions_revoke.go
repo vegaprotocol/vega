@@ -31,19 +31,26 @@ var (
 	`)
 )
 
-type RevokePermissionsHandler func(api.AdminRevokePermissionsParams) error
+type RevokePermissionsHandler func(api.AdminRevokePermissionsParams, string) error
 
 func NewCmdRevokePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminRevokePermissionsParams) error {
+	h := func(params api.AdminRevokePermissionsParams, passphrase string) error {
+		ctx := context.Background()
+
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		revokePermissions := api.NewAdminRevokePermissions(walletStore)
-		_, errDetails := revokePermissions.Handle(context.Background(), params)
-		if errDetails != nil {
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+
+		if _, errDetails := api.NewAdminRevokePermissions(walletStore).Handle(ctx, params); errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
 		return nil
@@ -60,7 +67,7 @@ func BuildCmdRevokePermissions(w io.Writer, handler RevokePermissionsHandler, rf
 		Long:    revokePermissionsLong,
 		Example: revokePermissionsExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
@@ -71,7 +78,7 @@ func BuildCmdRevokePermissions(w io.Writer, handler RevokePermissionsHandler, rf
 				}
 			}
 
-			if err = handler(req); err != nil {
+			if err = handler(req, pass); err != nil {
 				return err
 			}
 
@@ -116,25 +123,24 @@ type RevokePermissionsFlags struct {
 	PassphraseFile string
 }
 
-func (f *RevokePermissionsFlags) Validate() (api.AdminRevokePermissionsParams, error) {
+func (f *RevokePermissionsFlags) Validate() (api.AdminRevokePermissionsParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminRevokePermissionsParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminRevokePermissionsParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.Hostname) == 0 {
-		return api.AdminRevokePermissionsParams{}, flags.MustBeSpecifiedError("hostname")
+		return api.AdminRevokePermissionsParams{}, "", flags.MustBeSpecifiedError("hostname")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminRevokePermissionsParams{}, err
+		return api.AdminRevokePermissionsParams{}, "", err
 	}
 
 	return api.AdminRevokePermissionsParams{
-		Wallet:     f.Wallet,
-		Passphrase: passphrase,
-		Hostname:   f.Hostname,
-	}, nil
+		Wallet:   f.Wallet,
+		Hostname: f.Hostname,
+	}, passphrase, nil
 }
 
 func PrintRevokePermissionsResponse(w io.Writer, req api.AdminRevokePermissionsParams) {

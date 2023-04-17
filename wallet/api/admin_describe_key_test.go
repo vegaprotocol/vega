@@ -41,25 +41,15 @@ func testAdminDescribingKeyWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminDescribeKeyParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				Wallet:    "",
+				PublicKey: "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminDescribeKeyParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty public key",
 			params: api.AdminDescribeKeyParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
-				PublicKey:  "",
+				Wallet:    vgrand.RandomStr(5),
+				PublicKey: "",
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
@@ -86,21 +76,19 @@ func testAdminDescribingKeyWithInvalidParamsFails(t *testing.T) {
 func testAdminDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 
 	// setup
 	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  firstKey.PublicKey(),
+		Wallet:    expectedWallet.Name(),
+		PublicKey: firstKey.PublicKey(),
 	})
 
 	// then
@@ -120,7 +108,6 @@ func testAdminDescribingKeyWithValidParamsSucceeds(t *testing.T) {
 func testAdminDescribeKeyDescribingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -130,9 +117,8 @@ func testAdminDescribeKeyDescribingKeyFromWalletThatDoesNotExistsFails(t *testin
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		PublicKey:  vgrand.RandomStr(5),
+		Wallet:    name,
+		PublicKey: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -144,7 +130,6 @@ func testAdminDescribeKeyDescribingKeyFromWalletThatDoesNotExistsFails(t *testin
 func testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -154,9 +139,8 @@ func testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails(t *te
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		PublicKey:  vgrand.RandomStr(5),
+		Wallet:    name,
+		PublicKey: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -168,21 +152,19 @@ func testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails(t *te
 func testAdminDescribeKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		PublicKey:  vgrand.RandomStr(5),
+		Wallet:    name,
+		PublicKey: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -194,21 +176,19 @@ func testAdminDescribeKeyGettingInternalErrorDuringWalletRetrievalFails(t *testi
 func testAdminDescribingKeyThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 
 	// setup
 	handler := newDescribeKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  vgrand.RandomStr(5),
+		Wallet:    expectedWallet.Name(),
+		PublicKey: vgrand.RandomStr(5),
 	})
 
 	// then

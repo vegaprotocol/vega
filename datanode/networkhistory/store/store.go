@@ -1,24 +1,22 @@
 package store
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
-	"code.vegaprotocol.io/vega/libs/memory"
-
 	"github.com/dustin/go-humanize"
 	"github.com/ipfs/kubo/core/node/libp2p/fd"
-
 	"github.com/libp2p/go-libp2p/core/peer"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -27,9 +25,10 @@ import (
 
 	"github.com/ipfs/kubo/core/corerepo"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
-	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+	"code.vegaprotocol.io/vega/libs/memory"
 	"code.vegaprotocol.io/vega/logging"
+
 	"github.com/ipfs/kubo/core/node/libp2p"
 	"github.com/ipfs/kubo/repo/fsrepo"
 
@@ -54,49 +53,12 @@ const segmentMetaDataFile = "metadata.json"
 var ErrSegmentNotFound = errors.New("segment not found")
 
 type index interface {
-	Get(height int64) (SegmentIndexEntry, error)
-	Add(metaData SegmentIndexEntry) error
-	Remove(indexEntry SegmentIndexEntry) error
-	ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error)
-	GetHighestBlockHeightEntry() (SegmentIndexEntry, error)
+	Get(height int64) (segment.Full, error)
+	Add(metaData segment.Full) error
+	Remove(indexEntry segment.Full) error
+	ListAllEntriesOldestFirst() (segment.Segments[segment.Full], error)
+	GetHighestBlockHeightEntry() (segment.Full, error)
 	Close() error
-}
-
-type SegmentMetaData struct {
-	HeightFrom               int64
-	HeightTo                 int64
-	DatabaseVersion          int64
-	ChainID                  string
-	PreviousHistorySegmentID string
-}
-
-func (m SegmentMetaData) GetFromHeight() int64 {
-	return m.HeightFrom
-}
-
-func (m SegmentMetaData) GetToHeight() int64 {
-	return m.HeightTo
-}
-
-func (m SegmentMetaData) GetDatabaseVersion() int64 {
-	return m.DatabaseVersion
-}
-
-func (m SegmentMetaData) GetChainId() string {
-	return m.ChainID
-}
-
-func (i SegmentIndexEntry) GetPreviousHistorySegmentId() string {
-	return i.PreviousHistorySegmentID
-}
-
-type SegmentIndexEntry struct {
-	SegmentMetaData
-	HistorySegmentID string
-}
-
-func (i SegmentIndexEntry) GetHistorySegmentId() string {
-	return i.HistorySegmentID
 }
 
 type IpfsNode struct {
@@ -161,7 +123,8 @@ func New(ctx context.Context, log *logging.Logger, chainID string, cfg Config, n
 		return nil, fmt.Errorf("failed to setup paths:%w", err)
 	}
 
-	p.index, err = NewIndex(p.indexPath)
+	idxLog := log.With(logging.String("component", "index"))
+	p.index, err = NewIndex(p.indexPath, idxLog)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create index:%w", err)
 	}
@@ -226,12 +189,16 @@ func (p *Store) Stop() {
 	p.log.Info("Cleaning up network history store")
 	if p.ipfsNode != nil {
 		p.log.Info("Closing IPFS node")
-		_ = p.ipfsNode.Close()
+		if err := p.ipfsNode.Close(); err != nil {
+			p.log.Error("Failed to close IPFS node", logging.Error(err))
+		}
 	}
 
 	if p.index != nil {
-		p.log.Info("Closing LevelDB")
-		_ = p.index.Close()
+		if err := p.index.Close(); err != nil {
+			p.log.Error("Failed to close LevelDB:%s", logging.Error(err))
+		}
+		p.log.Info("LevelDB closed")
 	}
 }
 
@@ -260,11 +227,11 @@ func (p *Store) GetLocalNode() (IpfsNode, error) {
 	}
 
 	tcpProtocol := ma.ProtocolWithName("tcp")
-	for _, peer := range connectedPeers {
-		port, err := peer.Local.Addr.ValueForProtocol(tcpProtocol.Code)
+	for _, cp := range connectedPeers {
+		port, err := cp.Local.Addr.ValueForProtocol(tcpProtocol.Code)
 		if err == nil {
 			if port == strconv.Itoa(p.cfg.SwarmPort) {
-				localNode.Addr = peer.Local.Addr
+				localNode.Addr = cp.Local.Addr
 				break
 			}
 		}
@@ -313,7 +280,8 @@ func (p *Store) ResetIndex() error {
 		return fmt.Errorf("failed to create index path:%w", err)
 	}
 
-	p.index, err = NewIndex(p.indexPath)
+	idxLog := p.log.With(logging.String("component", "index"))
+	p.index, err = NewIndex(p.indexPath, idxLog)
 	if err != nil {
 		return fmt.Errorf("failed to create index:%w", err)
 	}
@@ -336,90 +304,41 @@ func (p *Store) ConnectedToPeer(peerIDStr string) (bool, error) {
 	return false, nil
 }
 
-func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.History, currentState snapshot.CurrentState,
-	sourceDir string,
-) (err error) {
-	historyID := fmt.Sprintf("%s-%d-%d", historySnapshot.ChainID, historySnapshot.HeightFrom, historySnapshot.HeightTo)
+func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err error) {
+	historyID := fmt.Sprintf("%s-%d-%d", s.ChainID, s.HeightFrom, s.HeightTo)
 
 	p.log.Infof("adding history %s", historyID)
 
-	historyStagingDir := filepath.Join(p.stagingDir, historyID)
-	historyStagingSnapshotDir := filepath.Join(historyStagingDir, "snapshotData")
-
-	compressedCurrentStateSnapshotFile := filepath.Join(sourceDir, currentState.CompressedFileName())
-	compressedHistorySnapshotFile := filepath.Join(sourceDir, historySnapshot.CompressedFileName())
-
 	defer func() {
-		_ = os.RemoveAll(historyStagingDir)
-		_ = os.RemoveAll(compressedCurrentStateSnapshotFile)
-		_ = os.RemoveAll(compressedHistorySnapshotFile)
+		_ = os.RemoveAll(s.ZipFilePath())
 	}()
 
-	historySegment := SegmentMetaData{
-		HeightFrom:      historySnapshot.HeightFrom,
-		HeightTo:        historySnapshot.HeightTo,
-		DatabaseVersion: historySnapshot.DatabaseVersion,
-		ChainID:         historySnapshot.ChainID,
-
-		PreviousHistorySegmentID: "",
-	}
-
-	historySegment.PreviousHistorySegmentID, err = p.getPreviousHistorySegmentID(historySegment)
+	previousHistorySegmentID, err := p.GetPreviousHistorySegmentID(s.HeightFrom)
 	if err != nil {
 		if !errors.Is(err, ErrSegmentNotFound) {
 			return fmt.Errorf("failed to get previous history segment id:%w", err)
 		}
 	}
 
-	if err = os.MkdirAll(historyStagingDir, fs.ModePerm); err != nil {
-		return fmt.Errorf("failed to make history staging directory:%w", err)
+	metaData := segment.MetaData{
+		Base:                     s.Base,
+		PreviousHistorySegmentID: previousHistorySegmentID,
 	}
 
-	if err = os.MkdirAll(historyStagingSnapshotDir, fs.ModePerm); err != nil {
-		return fmt.Errorf("failed to make history staging snapshot directory:%w", err)
-	}
-
-	metaDataBytes, err := json.Marshal(historySegment)
-	if err != nil {
-		return fmt.Errorf("failed to marshal meta data:%w", err)
-	}
-
-	if err = os.WriteFile(filepath.Join(historyStagingSnapshotDir, segmentMetaDataFile), metaDataBytes, fs.ModePerm); err != nil {
-		return fmt.Errorf("failed to write meta data:%w", err)
-	}
-
-	err = os.Rename(compressedCurrentStateSnapshotFile, filepath.Join(historyStagingSnapshotDir, currentState.CompressedFileName()))
-	if err != nil {
-		return fmt.Errorf("failed to move currentState into publish staging directory:%w", err)
-	}
-
-	err = os.Rename(compressedHistorySnapshotFile, filepath.Join(historyStagingSnapshotDir, historySnapshot.CompressedFileName()))
-	if err != nil {
-		return fmt.Errorf("failed to move history into publish staging directory:%w", err)
-	}
-
-	tarFileName := filepath.Join(historyStagingDir, historyID+".tar")
-	tarFile, err := os.Create(tarFileName)
-	if err != nil {
-		return fmt.Errorf("failed to create tar file:%w", err)
-	}
-
-	if err = fsutil.TarDirectoryWithDeterministicHeader(tarFile, 0, historyStagingSnapshotDir); err != nil {
-		return fmt.Errorf("failed to create tar staging directory:%w", err)
-	}
-
-	contentID, err := p.addHistorySegment(ctx, tarFileName, historySegment)
+	contentID, err := p.addHistorySegment(ctx, s.ZipFilePath(), metaData)
 	if err != nil {
 		return fmt.Errorf("failed to add file:%w", err)
 	}
 
 	p.log.Info("finished adding history to network history store",
 		logging.String("history segment id", contentID.String()),
-		logging.String("chain id", historySegment.ChainID),
-		logging.Int64("from height", historySegment.HeightFrom),
-		logging.Int64("to height", historySegment.HeightTo),
-		logging.String("previous history segment id", historySegment.PreviousHistorySegmentID),
+		logging.String("chain id", s.ChainID),
+		logging.Int64("from height", s.HeightFrom),
+		logging.Int64("to height", s.HeightTo),
+		logging.String("previous history segment id", previousHistorySegmentID),
 	)
+
+	p.log.Debug("AddSnapshotData: removing old history segments")
 
 	segments, err := p.removeOldHistorySegments(ctx)
 	if err != nil {
@@ -436,53 +355,21 @@ func (p *Store) AddSnapshotData(ctx context.Context, historySnapshot snapshot.Hi
 	return nil
 }
 
-func (p *Store) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
+func (p *Store) GetHighestBlockHeightEntry() (segment.Full, error) {
 	entry, err := p.index.GetHighestBlockHeightEntry()
 	if err != nil {
 		if errors.Is(err, ErrIndexEntryNotFound) {
-			return SegmentIndexEntry{}, ErrSegmentNotFound
+			return segment.Full{}, ErrSegmentNotFound
 		}
 
-		return SegmentIndexEntry{}, fmt.Errorf("failed to get highest block height entry from index:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to get highest block height entry from index:%w", err)
 	}
 
 	return entry, nil
 }
 
-func (p *Store) ListAllIndexEntriesOldestFirst() ([]SegmentIndexEntry, error) {
+func (p *Store) ListAllIndexEntriesOldestFirst() (segment.Segments[segment.Full], error) {
 	return p.index.ListAllEntriesOldestFirst()
-}
-
-func (p *Store) CopySnapshotDataIntoDir(ctx context.Context, toHeight int64, targetDir string) (currentStateSnapshot snapshot.CurrentState,
-	historySnapshot snapshot.History, err error,
-) {
-	defer func() {
-		deferErr := fsutil.RemoveAllFromDirectoryIfExists(p.stagingDir)
-		if err == nil {
-			err = deferErr
-		}
-	}()
-
-	err = fsutil.RemoveAllFromDirectoryIfExists(p.stagingDir)
-	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to empty staging directory:%w", err)
-	}
-
-	err = p.extractHistorySegmentToStagingArea(ctx, toHeight)
-	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to extract history segment to staging area:%w", err)
-	}
-
-	currentStateSnapshot, historySnapshot, err = p.getSnapshotsFromStagingArea(toHeight)
-	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to get snapshots from staging area:%w", err)
-	}
-
-	if err = moveSnapshotData(currentStateSnapshot, historySnapshot, p.stagingDir, targetDir); err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to move snapshots from staging area to target directory %s:%w", targetDir, err)
-	}
-
-	return currentStateSnapshot, historySnapshot, nil
 }
 
 func setupMetrics(ipfsNode *core.IpfsNode) error {
@@ -496,11 +383,11 @@ func setupMetrics(ipfsNode *core.IpfsNode) error {
 	return nil
 }
 
-func (p *Store) getPreviousHistorySegmentID(history SegmentMetaData) (string, error) {
+func (p *Store) GetPreviousHistorySegmentID(fromHeight int64) (string, error) {
 	var err error
-	var previousHistorySegment SegmentIndexEntry
-	if history.HeightFrom > 0 {
-		height := history.HeightFrom - 1
+	var previousHistorySegment segment.Full
+	if fromHeight > 0 {
+		height := fromHeight - 1
 		previousHistorySegment, err = p.index.Get(height)
 		if errors.Is(err, ErrIndexEntryNotFound) {
 			return "", ErrSegmentNotFound
@@ -513,19 +400,81 @@ func (p *Store) getPreviousHistorySegmentID(history SegmentMetaData) (string, er
 	return previousHistorySegment.HistorySegmentID, nil
 }
 
-func (p *Store) addHistorySegment(ctx context.Context, historySegmentFile string, fileIndexEntry SegmentMetaData) (cid.Cid, error) {
-	contentID, err := p.addFileToIpfs(ctx, historySegmentFile)
+func (p *Store) addHistorySegment(ctx context.Context, zipFilePath string, metadata segment.MetaData) (cid.Cid, error) {
+	newZipFile, err := p.rewriteZipWithMetadata(zipFilePath, metadata)
+	defer os.Remove(newZipFile)
 	if err != nil {
-		return cid.Cid{}, fmt.Errorf("failed to add history segement %s to ipfs:%w", historySegmentFile, err)
+		return cid.Cid{}, fmt.Errorf("rewriting zip to include metadata:%w", err)
 	}
 
-	if err = p.index.Add(SegmentIndexEntry{
-		SegmentMetaData:  fileIndexEntry,
+	contentID, err := p.addFileToIpfs(ctx, newZipFile)
+	if err != nil {
+		return cid.Cid{}, fmt.Errorf("failed to add history segement %s to ipfs:%w", zipFilePath, err)
+	}
+
+	if err = p.index.Add(segment.Full{
+		MetaData:         metadata,
 		HistorySegmentID: contentID.String(),
 	}); err != nil {
 		return cid.Cid{}, fmt.Errorf("failed to update meta data store:%w", err)
 	}
 	return contentID, nil
+}
+
+func (p *Store) rewriteZipWithMetadata(oldZip string, metadata segment.MetaData) (string, error) {
+	// Create a temporary zip file for including the metadata JSON file
+	tmpfile, err := ioutil.TempFile("", metadata.ZipFileName())
+	if err != nil {
+		return "", fmt.Errorf("failed add history segment; unable to create temp file:%w", err)
+	}
+
+	defer tmpfile.Close()
+
+	zipWriter := zip.NewWriter(tmpfile)
+	defer zipWriter.Close()
+
+	metaDataBytes, err := json.Marshal(metadata)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal meta data:%w", err)
+	}
+
+	metaDataWriter, err := zipWriter.Create("metadata.json")
+	if err != nil {
+		return "", fmt.Errorf("failed to create metadata.json:%w", err)
+	}
+
+	_, err = metaDataWriter.Write(metaDataBytes)
+	if err != nil {
+		return "", fmt.Errorf("failed to write metadata.json:%w", err)
+	}
+
+	zipReader, err := zip.OpenReader(oldZip)
+	if err != nil {
+		return "", fmt.Errorf("failed to open zip file:%w", err)
+	}
+
+	// Copy the contents of the existing zip file to the new zip file
+	for _, f := range zipReader.File {
+		fr, err := f.Open()
+		if err != nil {
+			return "", fmt.Errorf("error reading reading file from zip archive: %w", err)
+		}
+		defer fr.Close()
+
+		// Create a new file header based on the existing file header and write it to the new zip file
+		fw, err := zipWriter.CreateHeader(&f.FileHeader)
+		if err != nil {
+			return "", fmt.Errorf("error creating file header: %w", err)
+		}
+
+		// Copy the contents of the existing file to the new file
+		_, err = io.Copy(fw, fr)
+		if err != nil {
+			return "", fmt.Errorf("error copying data from zip file: %w", err)
+		}
+	}
+
+	return tmpfile.Name(), nil
 }
 
 func (p *Store) setupPaths(networkHistoryStorePath string, wipeOnStartup bool) error {
@@ -549,98 +498,27 @@ func (p *Store) setupPaths(networkHistoryStorePath string, wipeOnStartup bool) e
 	return nil
 }
 
-func moveSnapshotData(currentStateSnapshot snapshot.CurrentState, historySnapshot snapshot.History, sourceDir, targetDir string) error {
-	if err := os.Rename(filepath.Join(sourceDir, currentStateSnapshot.CompressedFileName()),
-		filepath.Join(targetDir, currentStateSnapshot.CompressedFileName())); err != nil {
-		return fmt.Errorf("failed to move current state snapshot:%w", err)
-	}
-
-	if err := os.Rename(filepath.Join(sourceDir, historySnapshot.CompressedFileName()), filepath.Join(targetDir, historySnapshot.CompressedFileName())); err != nil {
-		return fmt.Errorf("failed to move history snapshot:%w", err)
-	}
-
-	return nil
-}
-
-func (p *Store) getSnapshotsFromStagingArea(toHeight int64) (snapshot.CurrentState, snapshot.History, error) {
-	_, currentStateSnapshots, err := snapshot.GetCurrentStateSnapshots(p.stagingDir)
-	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to get current state snapshot from staging area:%w", err)
-	}
-
-	if len(currentStateSnapshots) != 1 {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("expected 1 current state snapshot in staging area, found %d", len(currentStateSnapshots))
-	}
-
-	currentStateSnapshot, ok := currentStateSnapshots[toHeight]
-	if !ok {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to find current state snapshot for height %d in the staging area", toHeight)
-	}
-
-	_, historySnapshots, err := snapshot.GetHistorySnapshots(p.stagingDir)
-	if err != nil {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("failed to get history snapshot from staging area:%w", err)
-	}
-
-	if len(historySnapshots) != 1 {
-		return snapshot.CurrentState{}, snapshot.History{}, fmt.Errorf("expected 1 history state snapshot in staging area, found %d", len(historySnapshots))
-	}
-	historySnapshot := historySnapshots[0]
-
-	return currentStateSnapshot, historySnapshot, nil
-}
-
-func (p *Store) extractHistorySegmentToStagingArea(ctx context.Context, toHeight int64) error {
-	historySegmentPath, err := p.getHistorySegmentForHeight(ctx, toHeight, p.stagingDir)
-	if err != nil {
-		return fmt.Errorf("failed to get history segment:%w", err)
-	}
-
-	stagingFile, err := os.Open(historySegmentPath)
-	if err != nil {
-		return fmt.Errorf("failed to open staging file:%w", err)
-	}
-	defer func() { _ = stagingFile.Close() }()
-
-	err = fsutil.UntarFile(stagingFile, p.stagingDir)
-	if err != nil {
-		return fmt.Errorf("failed to untar staging file:%w", err)
-	}
-	return nil
-}
-
-func (p *Store) GetSegmentIndexEntryForHeight(toHeight int64) (SegmentIndexEntry, error) {
+func (p *Store) GetSegmentForHeight(toHeight int64) (segment.Full, error) {
 	return p.index.Get(toHeight)
 }
 
-func (p *Store) getHistorySegmentForHeight(ctx context.Context, toHeight int64, toDir string) (pathToSegment string, err error) {
-	indexEntry, err := p.index.Get(toHeight)
-	if err != nil {
-		return "", fmt.Errorf("failed to get index entry for height:%d:%w", toHeight, err)
-	}
-	segmentFileName := fmt.Sprintf("%s-%d-%d.tar", indexEntry.ChainID, indexEntry.HeightFrom, indexEntry.HeightTo)
-
-	historySegmentID := indexEntry.HistorySegmentID
-	pathToSegment = filepath.Join(toDir, segmentFileName)
-	err = p.CopyHistorySegmentToFile(ctx, historySegmentID, pathToSegment)
-	if err != nil {
-		return "", fmt.Errorf("failed to get history segment:%w", err)
-	}
-	return pathToSegment, nil
-}
-
-func (p *Store) GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, error) {
+func (p *Store) GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, int64, error) {
 	ipfsCid, err := cid.Parse(historySegmentID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse history segment id:%w", err)
+		return nil, 0, fmt.Errorf("failed to parse history segment id:%w", err)
 	}
 
 	ipfsFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(ipfsCid))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ipfs file:%w", err)
+		return nil, 0, fmt.Errorf("failed to get ipfs file:%w", err)
 	}
 
-	return files.ToFile(ipfsFile), nil
+	fileSize, err := ipfsFile.Size()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get ipfs file size:%w", err)
+	}
+
+	return files.ToFile(ipfsFile), fileSize, nil
 }
 
 func (p *Store) CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, targetFile string) error {
@@ -660,7 +538,7 @@ func (p *Store) CopyHistorySegmentToFile(ctx context.Context, historySegmentID s
 	return nil
 }
 
-func (p *Store) removeOldHistorySegments(ctx context.Context) ([]SegmentIndexEntry, error) {
+func (p *Store) removeOldHistorySegments(ctx context.Context) ([]segment.Full, error) {
 	latestSegment, err := p.index.GetHighestBlockHeightEntry()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest segment:%w", err)
@@ -671,7 +549,7 @@ func (p *Store) removeOldHistorySegments(ctx context.Context) ([]SegmentIndexEnt
 		return nil, fmt.Errorf("failed to list all entries:%w", err)
 	}
 
-	var removedSegments []SegmentIndexEntry
+	var removedSegments []segment.Full
 	for _, segment := range entries {
 		if segment.HeightTo < (latestSegment.HeightTo - p.cfg.HistoryRetentionBlockSpan) {
 			err = p.unpinSegment(ctx, segment)
@@ -706,24 +584,27 @@ func (p *Store) removeOldHistorySegments(ctx context.Context) ([]SegmentIndexEnt
 	return removedSegments, nil
 }
 
-func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string) (SegmentIndexEntry, error) {
-	historySegment := filepath.Join(p.stagingDir, "historySegment.tar")
+func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error) {
+	// We don't know what the filename is yet as that gets lost in IPFS - so we just use a generic name
+	// until we peek at the metadata.json file inside to figure out the proper name and rename it.
+
+	historySegment := filepath.Join(p.stagingDir, "segment.zip")
 
 	err := os.RemoveAll(historySegment)
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to remove existing history segment tar: %w", err)
+		return segment.Full{}, fmt.Errorf("failed to remove existing history segment zip: %w", err)
 	}
 
 	contentID, err := cid.Parse(historySegmentID)
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to parse snapshotId into CID:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to parse snapshotId into CID:%w", err)
 	}
 
 	rootNodeFile, err := p.ipfsAPI.Unixfs().Get(ctx, path.IpfsPath(contentID))
 	if err != nil {
 		connInfo, swarmError := p.ipfsAPI.Swarm().Peers(ctx)
 		if swarmError != nil {
-			return SegmentIndexEntry{}, fmt.Errorf("failed to get peers: %w", err)
+			return segment.Full{}, fmt.Errorf("failed to get peers: %w", err)
 		}
 
 		peerAddrs := ""
@@ -731,7 +612,7 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 			peerAddrs += fmt.Sprintf(",%s", peer.Address())
 		}
 
-		return SegmentIndexEntry{}, fmt.Errorf("could not get file with CID, connected peer addresses %s: %w", peerAddrs, err)
+		return segment.Full{}, fmt.Errorf("could not get file with CID, connected peer addresses %s: %w", peerAddrs, err)
 	}
 
 	err = files.WriteTo(rootNodeFile, historySegment)
@@ -741,54 +622,77 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 		if statErr == nil {
 			remErr := os.Remove(historySegment)
 			if remErr != nil {
-				return SegmentIndexEntry{}, fmt.Errorf("could not write out the fetched history segment: %w, and could not remove existing history segment: %v", err, remErr)
+				return segment.Full{}, fmt.Errorf("could not write out the fetched history segment: %w, and could not remove existing history segment: %v", err, remErr)
 			}
 		}
 
-		return SegmentIndexEntry{}, fmt.Errorf("could not write out the fetched history segment: %w", err)
+		return segment.Full{}, fmt.Errorf("could not write out the fetched history segment: %w", err)
 	}
 
-	tarFile, err := os.Open(historySegment)
+	zipReader, err := zip.OpenReader(historySegment)
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to open history segment: %w", err)
+		return segment.Full{}, fmt.Errorf("failed to open history segment: %w", err)
 	}
-	defer func() { _ = tarFile.Close() }()
+	defer func() { _ = zipReader.Close() }()
 
-	historySegmentDir := filepath.Join(p.stagingDir, "historySegment")
-	err = os.RemoveAll(historySegmentDir)
+	metaFile, err := zipReader.Open(segmentMetaDataFile)
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to remove exisiting history segment dir: %w", err)
+		return segment.Full{}, fmt.Errorf("failed to open history segment metadata file: %w", err)
 	}
 
-	err = os.Mkdir(historySegmentDir, os.ModePerm)
+	metaBytes, err := io.ReadAll(metaFile)
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to create history segment dir: %w", err)
+		return segment.Full{}, fmt.Errorf("failed to read index entry:%w", err)
 	}
-	err = fsutil.UntarFile(tarFile, historySegmentDir)
+
+	var metaData segment.MetaData
+	if err = json.Unmarshal(metaBytes, &metaData); err != nil {
+		return segment.Full{}, fmt.Errorf("failed to unmarshal index entry:%w", err)
+	}
+
+	renamedSegmentPath := filepath.Join(p.stagingDir, metaData.ZipFileName())
+	err = os.Rename(historySegment, renamedSegmentPath)
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to untar history segment:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to rename history segment: %w", err)
 	}
 
-	indexEntryBytes, err := os.ReadFile(filepath.Join(historySegmentDir, segmentMetaDataFile))
-	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to read index entry:%w", err)
-	}
-
-	var fileIndex SegmentMetaData
-	if err = json.Unmarshal(indexEntryBytes, &fileIndex); err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to unmarshal index entry:%w", err)
-	}
-
-	indexEntry := SegmentIndexEntry{
-		SegmentMetaData:  fileIndex,
+	indexEntry := segment.Full{
+		MetaData:         metaData,
 		HistorySegmentID: historySegmentID,
 	}
 
 	if err = p.index.Add(indexEntry); err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to add index entry:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to add index entry:%w", err)
 	}
 
 	return indexEntry, nil
+}
+
+func (p *Store) StagedSegment(s segment.Full) (segment.Staged, error) {
+	ss := segment.Staged{
+		Full:      s,
+		Directory: p.stagingDir,
+	}
+	if _, err := os.Stat(ss.ZipFilePath()); err != nil {
+		return segment.Staged{}, fmt.Errorf("segment %v not fetched into staging area:%w", s, err)
+	}
+	return ss, nil
+}
+
+func (p *Store) StagedContiguousHistory(chunk segment.ContiguousHistory[segment.Full]) (segment.ContiguousHistory[segment.Staged], error) {
+	staged := segment.ContiguousHistory[segment.Staged]{}
+
+	for _, s := range chunk.Segments {
+		ss, err := p.StagedSegment(s)
+		if err != nil {
+			return segment.ContiguousHistory[segment.Staged]{}, err
+		}
+		if ok := staged.Add(ss); !ok {
+			return segment.ContiguousHistory[segment.Staged]{}, fmt.Errorf("failed to build staged chunk; input chunk not contiguous")
+		}
+	}
+
+	return staged, nil
 }
 
 func createIpfsNodeConfiguration(log *logging.Logger, identity config.Identity, bootstrapPeers []string, swarmPort int) (*config.Config, error) {
@@ -1030,7 +934,7 @@ func (p *Store) addFileToIpfs(ctx context.Context, path string) (cid.Cid, error)
 	return fileCid.Cid(), nil
 }
 
-func (p *Store) unpinSegment(ctx context.Context, segment SegmentIndexEntry) error {
+func (p *Store) unpinSegment(ctx context.Context, segment segment.Full) error {
 	contentID, err := cid.Decode(segment.HistorySegmentID)
 	if err != nil {
 		return fmt.Errorf("failed to decode history segment id:%w", err)

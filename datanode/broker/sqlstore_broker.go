@@ -41,6 +41,7 @@ type TransactionManager interface {
 	WithConnection(ctx context.Context) (context.Context, error)
 	WithTransaction(ctx context.Context) (context.Context, error)
 	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
 }
 
 type BlockStore interface {
@@ -208,6 +209,8 @@ func (b *SQLStoreBroker) processBlock(ctx context.Context, dbContext context.Con
 	defer cancel()
 
 	blockCtx, err := b.transactionManager.WithTransaction(blockCtx)
+	defer b.transactionManager.Rollback(blockCtx)
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to add transaction to context:%w", err)
 	}

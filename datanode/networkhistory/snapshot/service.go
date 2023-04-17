@@ -19,26 +19,17 @@ type Service struct {
 	connPool *pgxpool.Pool
 
 	createSnapshotLock         mutex.CtxMutex
-	absSnapshotsCopyFromPath   string
-	absSnapshotsCopyToPath     string
+	copyToPath                 string
 	migrateSchemaUpToVersion   func(version int64) error
 	migrateSchemaDownToVersion func(version int64) error
 }
 
 func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
-	snapshotsCopyFromPath string,
 	snapshotsCopyToPath string,
 	migrateDatabaseToVersion func(version int64) error,
 	migrateSchemaDownToVersion func(version int64) error,
 ) (*Service, error) {
 	var err error
-	// As these paths are passed to postgres, they need to be absolute as it will likely have
-	// a different current working directory than the datanode process. Note; if postgres is
-	// containerized, it is up to the container launcher to ensure that the snapshotsCopy{From|To}Path
-	// is accessible with the same path inside and outside the container.
-	if snapshotsCopyFromPath, err = filepath.Abs(snapshotsCopyFromPath); err != nil {
-		return nil, err
-	}
 
 	if snapshotsCopyToPath, err = filepath.Abs(snapshotsCopyToPath); err != nil {
 		return nil, err
@@ -49,15 +40,14 @@ func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Po
 		config:                     config,
 		connPool:                   connPool,
 		createSnapshotLock:         mutex.New(),
-		absSnapshotsCopyFromPath:   snapshotsCopyFromPath,
-		absSnapshotsCopyToPath:     snapshotsCopyToPath,
+		copyToPath:                 snapshotsCopyToPath,
 		migrateSchemaUpToVersion:   migrateDatabaseToVersion,
 		migrateSchemaDownToVersion: migrateSchemaDownToVersion,
 	}
 
-	err = os.MkdirAll(s.absSnapshotsCopyToPath, fs.ModePerm)
+	err = os.MkdirAll(s.copyToPath, fs.ModePerm)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the snapshots dir %s: %w", s.absSnapshotsCopyToPath, err)
+		return nil, fmt.Errorf("failed to create the snapshots dir %s: %w", s.copyToPath, err)
 	}
 
 	return s, nil

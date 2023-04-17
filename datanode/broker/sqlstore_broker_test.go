@@ -531,6 +531,10 @@ func (t *testTransactionManager) Commit(ctx context.Context) error {
 	return nil
 }
 
+func (t *testTransactionManager) Rollback(ctx context.Context) error {
+	return nil
+}
+
 type errorTestSQLBrokerSubscriber struct {
 	*testSQLBrokerSubscriber
 }
