@@ -272,7 +272,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount         |
       | traderA | USD   | 10000000000000 |
-      | traderB | USD   | 3100000        |
+      | traderB | USD   | 21700000       |
       | traderC | USD   | 10000000000000 |
       | traderD | USD   | 10000          |
       | traderE | USD   | 10000          |
@@ -304,8 +304,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     # margin for the long position/orders is larger than the short size, so we take the margin for long side which is 1449759
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin  | general | bond   |
-      | traderB | USD   | ETH/DEC23 | 2899518 | 50482   | 150000 |
+      | party   | asset | market id | margin  | general  | bond   |
+      | traderB | USD   | ETH/DEC23 | 2899518 | 18650482 | 150000 |
 
     Then the parties should have the following margin levels:
       | party   | market id | maintenance | search  | initial | release |
@@ -316,8 +316,8 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | traderA | 350   | 1    | traderB |
 
     And the market data for the market "ETH/DEC23" should be:
-      | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
+      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
+      | 350        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 12449        | 150000         | 1             |
 
     Then the order book should have the following volumes for market "ETH/DEC23":
       | side | price | volume |
@@ -340,13 +340,13 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     # margin_short= 13516.23368+1207118.66=1220634.894
 
     And the parties should have the following account balances:
-      | party   | asset | market id | margin | general       | 
-      | traderA | USD   | ETH/DEC23 | 13754  | 9999999985946 | 
-      | traderB | USD   | ETH/DEC23 | 2899818| 50476         | 
+      | party   | asset | market id | margin  | general       | 
+      | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 
+      | traderB | USD   | ETH/DEC23 | 2441270 | 19109024      | 
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | traderB | ETH/DEC23 | 1220635     | 1830952| 2441270 | 3661905  |
+      | party   | market id | maintenance | search  | initial | release |
+      | traderB | ETH/DEC23 | 1220635     | 1830952 | 2441270 | 3661905 |
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
@@ -385,7 +385,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general       | 
       | traderA | USD   | ETH/DEC23 | 13754   | 9999999985946 | 
-      | traderB | USD   | ETH/DEC23 | 2899818 | 50476         | 
+      | traderB | USD   | ETH/DEC23 | 2441270 | 19109024      | 
       | traderC | USD   | ETH/DEC23 | 42684   | 9999999957316 | 
 
     Then the parties should have the following margin levels:

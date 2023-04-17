@@ -23,13 +23,6 @@ var defaultPageSize int32 = 1000
 
 type Pagination interface{}
 
-type OffsetPagination struct {
-	Pagination
-	Skip       uint64
-	Limit      uint64
-	Descending bool
-}
-
 type Cursor struct {
 	cursor string
 }
@@ -71,14 +64,6 @@ func (c *Cursor) Value() string {
 	return c.cursor
 }
 
-func OffsetPaginationFromProto(pp *v2.OffsetPagination) OffsetPagination {
-	return OffsetPagination{
-		Skip:       pp.Skip,
-		Limit:      pp.Limit,
-		Descending: pp.Descending,
-	}
-}
-
 type CursorPagination struct {
 	Pagination
 	Forward     *offset
@@ -112,6 +97,10 @@ func CursorPaginationFromProto(cp *v2.Pagination) (CursorPagination, error) {
 	var after, before Cursor
 	var err error
 	var forwardOffset, backwardOffset *offset
+
+	if cp.Before != nil && cp.After != nil {
+		return CursorPagination{}, errors.New("cannot set both a before and after cursor")
+	}
 
 	if cp.First != nil {
 		forwardOffset = &offset{

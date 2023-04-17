@@ -29,6 +29,7 @@ type Config struct {
 	LogOrderAmendDebug  encoding.Bool     `long:"log-order-amend-debug"`
 	LogOrderCancelDebug encoding.Bool     `long:"log-order-cancel-debug"`
 	Ratelimit           ratelimit.Config  `group:"Ratelimit" namespace:"ratelimit"`
+	KeepCheckpointsMax  uint              `long:"keep-checkpoints-max"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -38,5 +39,6 @@ func NewDefaultConfig() Config {
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		LogOrderSubmitDebug: true,
 		Ratelimit:           ratelimit.NewDefaultConfig(),
+		KeepCheckpointsMax:  20,
 	}
 }

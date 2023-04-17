@@ -198,7 +198,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	closer := vgclose.NewCloser()
 	defer closer.CloseAll()
 
-	walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths)
+	walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths, true)
 	if err != nil {
 		cliLog.Error("Could not initialise wallets store", zap.Error(err))
 		return fmt.Errorf("could not initialise wallets store: %w", err)
@@ -567,6 +567,29 @@ func handleAPIv2Request(interaction interactor.Interaction, responseChan chan<- 
 			p.Print(p.String().CheckMark().Text("Signing approved.").NextLine())
 		} else {
 			p.Print(p.String().CrossMark().Text("Signing rejected.").NextLine())
+		}
+		responseChan <- interactor.Interaction{
+			TraceID: interaction.TraceID,
+			Name:    interactor.DecisionName,
+			Data: interactor.Decision{
+				Approved: approved,
+			},
+		}
+	case interactor.RequestTransactionReviewForChecking:
+		str := p.String().BlueArrow().Text("The application \"").InfoText(data.Hostname).Text("\" wants to check the following transaction:").NextLine()
+		str.Pad().Text("Using the key: ").InfoText(data.PublicKey).NextLine()
+		str.Pad().Text("From the wallet: ").InfoText(data.Wallet).NextLine()
+		fmtCmd := strings.Replace("  "+data.Transaction, "\n", "\n  ", -1)
+		str.InfoText(fmtCmd).NextLine()
+		p.Print(str)
+		approved := true
+		if !enableAutomaticConsent {
+			approved = yesOrNo(p.String().QuestionMark().Text("Do you allow the network to check this transaction?"), p)
+		}
+		if approved {
+			p.Print(p.String().CheckMark().Text("Checking approved.").NextLine())
+		} else {
+			p.Print(p.String().CrossMark().Text("Checking rejected.").NextLine())
 		}
 		responseChan <- interactor.Interaction{
 			TraceID: interaction.TraceID,

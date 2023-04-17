@@ -128,6 +128,11 @@ Feature: Closeout scenarios
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
+
+    And the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | status                        |
+      | trader2 | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
+
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the parties should have the following profit and loss:
       | party      | volume | unrealised pnl | realised pnl |
@@ -140,7 +145,7 @@ Feature: Closeout scenarios
       | mark price | trading mode                    | auction trigger                            |
       | 100        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS |
 
-  Scenario: 002, Position becomes distressed upon exiting an auction (0012-POSR-007, 0007-POSN-016)
+  Scenario: 002, Position becomes distressed upon exiting an auction (0007-POSN-016, 0012-POSR-008)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
     Given the parties deposit on asset's general account the following amount:
       | party      | asset | amount        |
@@ -207,7 +212,7 @@ Feature: Closeout scenarios
     And the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 0      | 0       |
-
+      
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 0           | 0      | 0       | 0       |
@@ -303,6 +308,3 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4623         | 400            | 13            |
 
-
-    
-   

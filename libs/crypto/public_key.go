@@ -35,13 +35,17 @@ func (p PublicKey) Bytes() []byte {
 }
 
 func IsValidVegaPubKey(pkey string) bool {
+	return IsValidVegaID(pkey)
+}
+
+func IsValidVegaID(id string) bool {
 	// should be exactly 64 chars
-	if len(pkey) != 64 {
+	if len(id) != 64 {
 		return false
 	}
 
 	// should be strictly hex encoded
-	if _, err := hex.DecodeString(pkey); err != nil {
+	if _, err := hex.DecodeString(id); err != nil {
 		return false
 	}
 

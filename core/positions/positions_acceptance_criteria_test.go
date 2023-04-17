@@ -48,6 +48,7 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	t.Run("Active sell order, an order initiated by another party causes the full amount of the existing sell order to trade.", testTradeCauseTheFullAmountOfOrderToTrade)
 	t.Run("Active buy orders, an existing order is cancelled", testOrderCancelled)
 	t.Run("Active sell orders, an existing order is cancelled", testOrderCancelled)
+	t.Run("Aggressive order gets partially filled", testNewTradePartialAmountOfIncomingOrderTraded)
 
 	// NOTE: these next tests needs the integration test to be ran
 	// Active buy orders, an existing buy order is amended which increases its size.
@@ -103,9 +104,9 @@ func testTradeOccurIncreaseShortAndLong(t *testing.T) {
 
 	for _, c := range cases {
 		// call an update on the positions with the trade
-		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(context.Background(), &c.trade)
+		passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+		positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -168,9 +169,9 @@ func testTradeOccurDecreaseShortAndLong(t *testing.T) {
 
 	for _, c := range cases {
 		// call an update on the positions with the trade
-		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(context.Background(), &c.trade)
+		passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+		positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -232,9 +233,9 @@ func testTradeOccurClosingShortAndLong(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(context.Background(), &c.trade)
+		passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+		positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -296,10 +297,10 @@ func testTradeOccurShortBecomeLongAndLongBecomeShort(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+		passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
-		positions := engine.Update(context.Background(), &c.trade)
+		positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -344,9 +345,9 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 	assert.Empty(t, engine.Positions())
 
 	// now create a trade an make sure the positions are created an correct
-	registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-	registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-	positions := engine.Update(context.Background(), &c.trade)
+	passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+	aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+	positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
@@ -434,9 +435,9 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
-		positions := engine.Update(context.Background(), &c.trade)
+		passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+		positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 		pos := engine.Positions()
 		assert.Equal(t, c.posSize, len(pos), fmt.Sprintf("all pos trade: %v", c.trade.ID))
 		assert.Equal(t, 2, len(positions), fmt.Sprintf("chan trade: %v", c.trade.ID))
@@ -501,10 +502,10 @@ func testWashTradeDoNotChangePosition(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
-		registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
+		passive := registerOrder(engine, types.SideBuy, c.trade.Buyer, c.trade.Price, c.trade.Size)
+		aggressive := registerOrder(engine, types.SideSell, c.trade.Seller, c.trade.Price, c.trade.Size)
 		// call an update on the positions with the trade
-		positions := engine.Update(context.Background(), &c.trade)
+		positions := engine.Update(context.Background(), &c.trade, passive, aggressive)
 		pos := engine.Positions()
 		assert.Equal(t, 2, len(pos))
 		assert.Equal(t, 2, len(positions))
@@ -599,62 +600,84 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 	engine := getTestEngine(t)
 	partyA := "party_a"
 	partyB := "party_b"
+	matchingPrice := num.NewUint(100)
+	tradeSize := uint64(3)
+
+	passive := &types.Order{
+		Size:      7 + tradeSize,
+		Remaining: 7 + tradeSize,
+		Party:     partyA,
+		Side:      types.SideBuy,
+		Price:     matchingPrice,
+	}
+
+	aggressive := &types.Order{
+		Size:      tradeSize,
+		Remaining: tradeSize,
+		Party:     partyB,
+		Side:      types.SideSell,
+		Price:     matchingPrice,
+	}
+
 	cases := struct {
-		orders  []types.Order
+		orders  []*types.Order
 		expects map[string]struct {
-			expectedBuy  int64
-			expectedSell int64
-			expectedSize int64
+			expectedBuy    int64
+			expectedSell   int64
+			expectedSize   int64
+			expectedVwBuy  *num.Uint
+			expectedVwSell *num.Uint
 		}
 	}{
-		orders: []types.Order{
+		orders: []*types.Order{
+			passive,
+			aggressive,
 			{
-				Size:      10,
-				Remaining: 10,
-				Party:     partyA,
-				Side:      types.SideBuy,
-				Price:     num.UintZero(),
-			},
-			{
-				Size:      16,
-				Remaining: 16,
+				Size:      16 - tradeSize,
+				Remaining: 16 - tradeSize,
 				Party:     partyB,
 				Side:      types.SideSell,
-				Price:     num.UintZero(),
+				Price:     num.NewUint(1000),
 			},
 		},
 		expects: map[string]struct {
-			expectedBuy  int64
-			expectedSell int64
-			expectedSize int64
+			expectedBuy    int64
+			expectedSell   int64
+			expectedSize   int64
+			expectedVwBuy  *num.Uint
+			expectedVwSell *num.Uint
 		}{
 			partyA: {
-				expectedBuy:  10,
-				expectedSell: 0,
-				expectedSize: 0,
+				expectedBuy:    10,
+				expectedSell:   0,
+				expectedSize:   0,
+				expectedVwBuy:  passive.Price,
+				expectedVwSell: num.UintZero(),
 			},
 			partyB: {
-				expectedBuy:  0,
-				expectedSell: 16,
-				expectedSize: 0,
+				expectedBuy:    0,
+				expectedSell:   16,
+				expectedSize:   0,
+				expectedVwBuy:  num.UintOne(),
+				expectedVwSell: num.NewUint(831), // 831.25
 			},
 		},
 	}
 
-	// no potions exists at the moment:
+	// no positions exists at the moment:
 	assert.Empty(t, engine.Positions())
 
-	for i, c := range cases.orders {
-		engine.RegisterOrder(context.TODO(), &c)
-		// ensure we have 1 position with 1 potential buy of size 10 for partyA
-		pos := engine.Positions()
-		assert.Len(t, pos, i+1)
-		for _, v := range pos {
-			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
-			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
-			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
-		}
+	for _, c := range cases.orders {
+		engine.RegisterOrder(context.TODO(), c)
 	}
+	pos := engine.Positions()
+	assert.Len(t, pos, len(cases.expects))
+	for _, v := range pos {
+		assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
+		assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
+		assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
+	}
+
 	// add a trade for a size of 3,
 	// potential buy should be 7, size 3
 	trade := types.Trade{
@@ -672,8 +695,8 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 
 	// add the trade
 	// call an update on the positions with the trade
-	positions := engine.Update(context.Background(), &trade)
-	pos := engine.Positions()
+	positions := engine.Update(context.Background(), &trade, passive, aggressive)
+	pos = engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
 
@@ -682,9 +705,133 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 		if p.Party() == partyA {
 			assert.Equal(t, int64(3), p.Size())
 			assert.Equal(t, int64(7), p.Buy())
+			assert.Equal(t, cases.orders[0].Price, p.VWBuy())
+			assert.Equal(t, num.UintZero(), p.VWSell())
 		} else if p.Party() == partyB {
 			assert.Equal(t, int64(-3), p.Size())
 			assert.Equal(t, int64(13), p.Sell())
+			assert.Equal(t, num.UintZero(), p.VWBuy())
+			assert.Equal(t, cases.orders[len(cases.orders)-1].Price, p.VWSell())
+		}
+	}
+}
+
+func testNewTradePartialAmountOfIncomingOrderTraded(t *testing.T) {
+	engine := getTestEngine(t)
+	partyA := "party_a"
+	partyB := "party_b"
+	matchingPrice := num.NewUint(100)
+	tradeSize := uint64(3)
+
+	passive := &types.Order{
+		Size:      tradeSize,
+		Remaining: tradeSize,
+		Party:     partyB,
+		Side:      types.SideSell,
+		Price:     matchingPrice,
+	}
+
+	aggressive := &types.Order{
+		Size:      5 + tradeSize,
+		Remaining: 5 + tradeSize,
+		Party:     partyA,
+		Side:      types.SideBuy,
+		Price:     matchingPrice,
+	}
+
+	cases := struct {
+		orders  []*types.Order
+		expects map[string]struct {
+			expectedBuy    int64
+			expectedSell   int64
+			expectedSize   int64
+			expectedVwBuy  *num.Uint
+			expectedVwSell *num.Uint
+		}
+	}{
+		orders: []*types.Order{
+			{
+				Size:      16,
+				Remaining: 16,
+				Party:     partyB,
+				Side:      types.SideSell,
+				Price:     num.NewUint(1000),
+			},
+			passive,
+			aggressive,
+		},
+		expects: map[string]struct {
+			expectedBuy    int64
+			expectedSell   int64
+			expectedSize   int64
+			expectedVwBuy  *num.Uint
+			expectedVwSell *num.Uint
+		}{
+			partyA: {
+				expectedBuy:    8,
+				expectedSell:   0,
+				expectedSize:   0,
+				expectedVwBuy:  aggressive.Price,
+				expectedVwSell: num.UintZero(),
+			},
+			partyB: {
+				expectedBuy:    0,
+				expectedSell:   19,
+				expectedSize:   0,
+				expectedVwBuy:  num.UintOne(),
+				expectedVwSell: num.NewUint(857), // 857.8947368421
+			},
+		},
+	}
+
+	// no positions exists at the moment:
+	assert.Empty(t, engine.Positions())
+
+	for _, c := range cases.orders {
+		engine.RegisterOrder(context.TODO(), c)
+	}
+	pos := engine.Positions()
+	assert.Len(t, pos, len(cases.expects))
+	for _, v := range pos {
+		assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
+		assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
+		assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
+	}
+
+	// add a trade for a size of 3,
+	// potential buy should be 5, size 3
+	trade := types.Trade{
+		Type:      types.TradeTypeDefault,
+		ID:        "trade_i1",
+		MarketID:  "market_id",
+		Price:     num.NewUint(100),
+		Size:      3,
+		Buyer:     partyA,
+		Seller:    partyB,
+		BuyOrder:  "buy_order_id1",
+		SellOrder: "sell_order_id1",
+		Timestamp: time.Now().Unix(),
+	}
+
+	// add the trade
+	// call an update on the positions with the trade
+	positions := engine.Update(context.Background(), &trade, passive, aggressive)
+	pos = engine.Positions()
+	assert.Equal(t, 2, len(pos))
+	assert.Equal(t, 2, len(positions))
+
+	// check size of positions
+	for _, p := range pos {
+		if p.Party() == partyA {
+			assert.Equal(t, int64(3), p.Size())
+			assert.Equal(t, int64(5), p.Buy())
+			assert.Equal(t, matchingPrice, p.VWBuy())
+			assert.Equal(t, num.UintZero(), p.VWSell())
+		} else if p.Party() == partyB {
+			assert.Equal(t, int64(-3), p.Size())
+			assert.Equal(t, int64(16), p.Sell())
+			assert.Equal(t, num.UintZero(), p.VWBuy())
+			assert.Equal(t, cases.orders[0].Price, p.VWSell())
 		}
 	}
 }
@@ -766,7 +913,7 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 
 	// add the trade
 	// call an update on the positions with the trade
-	positions := engine.Update(context.Background(), &trade)
+	positions := engine.Update(context.Background(), &trade, &cases.orders[0], &cases.orders[1])
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))

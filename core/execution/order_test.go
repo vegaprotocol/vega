@@ -30,6 +30,245 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestReduceOnly(t *testing.T) {
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+	lpparty3 := "lp-party-3"
+
+	p1 := "p1"
+	p2 := "p2"
+
+	party1 := "party1"
+
+	now := time.Unix(10, 0)
+	auctionEnd := now.Add(10001 * time.Second)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000).
+		WithAccountAndAmount(lpparty3, 500000000000).
+		WithAccountAndAmount(p1, 500000000000).
+		WithAccountAndAmount(p2, 500000000000)
+	addAccountWithAmount(tm, "lpprov", 10000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(55000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 50),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 53),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 53),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	addAccountWithAmount(tm, party1, 10000000000)
+
+	volumeOrder := &types.Order{
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       lpparty,
+		MarketID:    tm.market.GetID(),
+		Size:        100,
+		Price:       num.NewUint(900),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+	}
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), volumeOrder)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+	volumeOrder.Price = num.NewUint(1100)
+	volumeOrder.Side = types.SideSell
+
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), volumeOrder)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	orderBuy := &types.Order{
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeMarket,
+		TimeInForce: types.OrderTimeInForceIOC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        5,
+		Price:       num.UintZero(),
+		Remaining:   5,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+		ReduceOnly:  true,
+	}
+
+	// Submit the original order, it will return an error
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.Nil(t, confirmation)
+	assert.EqualError(t, err, "OrderError: reduce only order would not reduce position")
+
+	orderBuy.TimeInForce = types.OrderTimeInForceFOK
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.Nil(t, confirmation)
+	assert.EqualError(t, err, "OrderError: reduce only order would not reduce position")
+
+	// now open a position
+	orderBuy.ReduceOnly = false
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// now try to reduce the position fully with an FOK bigger than the position
+	orderBuy.TimeInForce = types.OrderTimeInForceFOK
+	orderBuy.Side = types.SideSell
+	orderBuy.ReduceOnly = true
+	orderBuy.Size = 10
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.Nil(t, confirmation)
+	assert.EqualError(t, err, "OrderError: reduce only order would not reduce position")
+
+	// now try to reduce the position a little with FOK
+	orderBuy.TimeInForce = types.OrderTimeInForceFOK
+	orderBuy.ReduceOnly = true
+	orderBuy.Size = 2
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// now fully clear with FOK
+	orderBuy.TimeInForce = types.OrderTimeInForceFOK
+	orderBuy.ReduceOnly = true
+	orderBuy.Size = 3
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// now fully do it again just to make sure we are done with it
+	orderBuy.TimeInForce = types.OrderTimeInForceFOK
+	orderBuy.ReduceOnly = true
+	orderBuy.Size = 1
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.Nil(t, confirmation)
+	assert.EqualError(t, err, "OrderError: reduce only order would not reduce position")
+
+	// Now try again with IOC and the inverse situation
+	// we start by selling
+	orderSell := orderBuy
+	orderSell.TimeInForce = types.OrderTimeInForceIOC
+	orderSell.Side = types.SideSell
+	orderSell.Size = 5
+	orderSell.ReduceOnly = false
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// now try to reduce it a little
+	// we should have a position of 2 after
+	orderSell.Side = types.SideBuy
+	orderSell.Size = 3
+	orderSell.ReduceOnly = true
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+
+	// now try to reduce which would flip the position
+	// this will trade just enough to get to 0
+	// we should have a position of 0 after
+	orderSell.Side = types.SideBuy
+	orderSell.Size = 5
+	orderSell.ReduceOnly = true
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+	assert.Equal(t, int(confirmation.Order.Remaining), 3)
+}
+
+func TestPostOnly(t *testing.T) {
+	lpparty := "lp-party-1"
+	lpparty2 := "lp-party-2"
+	lpparty3 := "lp-party-3"
+
+	p1 := "p1"
+	p2 := "p2"
+
+	party1 := "party1"
+
+	now := time.Unix(10, 0)
+	auctionEnd := now.Add(10001 * time.Second)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mktCfg := getMarket(defaultPriceMonitorSettings, &types.AuctionDuration{
+		Duration: 10000,
+	})
+	tm := newTestMarket(t, now).Run(ctx, mktCfg)
+	tm.StartOpeningAuction().
+		// the liquidity provider
+		WithAccountAndAmount(lpparty, 500000000000).
+		WithAccountAndAmount(lpparty2, 500000000000).
+		WithAccountAndAmount(lpparty3, 500000000000).
+		WithAccountAndAmount(p1, 500000000000).
+		WithAccountAndAmount(p2, 500000000000)
+	addAccountWithAmount(tm, "lpprov", 10000000)
+
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
+	lp := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(55000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 50),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 53),
+		},
+		Buys: []*types.LiquidityOrder{
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 53),
+		},
+	}
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+	tm.EndOpeningAuction(t, auctionEnd, false)
+
+	addAccountWithAmount(tm, party1, 10000000000)
+
+	orderBuy := &types.Order{
+		Status:      types.OrderStatusActive,
+		Type:        types.OrderTypeLimit,
+		TimeInForce: types.OrderTimeInForceGTC,
+		ID:          "someid",
+		Side:        types.SideBuy,
+		Party:       party1,
+		MarketID:    tm.market.GetID(),
+		Size:        1,
+		Price:       num.NewUint(1100),
+		Remaining:   100,
+		CreatedAt:   now.UnixNano(),
+		Reference:   "party1-buy-order",
+		PostOnly:    true,
+	}
+
+	// Submit the original order, this would trade, so expect an error
+	confirmation, err := tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.Nil(t, confirmation)
+	assert.EqualError(t, err, "OrderError: post only order would trade")
+
+	// Submit the original order this would not trade, so we expect a success
+	orderBuy.Price = num.NewUint(100)
+	confirmation, err = tm.market.SubmitOrder(context.TODO(), orderBuy)
+	assert.NotNil(t, confirmation)
+	assert.NoError(t, err)
+}
+
 func TestAmendMarginCheckFails(t *testing.T) {
 	lpparty := "lp-party-1"
 	lpparty2 := "lp-party-2"
@@ -1903,39 +2142,39 @@ func testPeggedOrderOutputMessages(t *testing.T) {
 	confirmation, err := tm.market.SubmitOrder(ctx, &order)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, 13, int(tm.orderEventCount))
+	assert.Equal(t, 11, int(tm.orderEventCount))
 
 	order2 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user2", 10, 0)
 	order2.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 15)
 	confirmation2, err := tm.market.SubmitOrder(ctx, &order2)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation2)
-	assert.Equal(t, 16, int(tm.orderEventCount))
+	assert.Equal(t, 12, int(tm.orderEventCount))
 
 	order3 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user3", 10, 0)
 	order3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 10)
 	confirmation3, err := tm.market.SubmitOrder(ctx, &order3)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation3)
-	assert.Equal(t, 19, int(tm.orderEventCount))
+	assert.Equal(t, 13, int(tm.orderEventCount))
 
 	order4 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user4", 10, 0)
 	order4.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 10)
 	confirmation4, err := tm.market.SubmitOrder(ctx, &order4)
 	require.NoError(t, err)
 	assert.NotNil(t, confirmation4)
-	assert.Equal(t, 22, int(tm.orderEventCount))
+	assert.Equal(t, 14, int(tm.orderEventCount))
 
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user5", 1000, 120)
 	require.NotEmpty(t, limitOrder)
 	// force reference price  checks result in more events
 	// assert.Equal(t, int(28), int(tm.orderEventCount))
-	assert.Equal(t, 31, int(tm.orderEventCount))
+	assert.Equal(t, 21, int(tm.orderEventCount))
 
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user6", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
 	// assert.Equal(t, int(35), int(tm.orderEventCount))
-	assert.Equal(t, 39, int(tm.orderEventCount))
+	assert.Equal(t, 27, int(tm.orderEventCount))
 }
 
 func testPeggedOrderOutputMessages2(t *testing.T) {
@@ -1997,30 +2236,30 @@ func testPeggedOrderOutputMessages2(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, 13, int(tm.orderEventCount))
+	assert.Equal(t, 11, int(tm.orderEventCount))
 
 	// Send normal order to unpark the pegged order
 	limitOrder := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 120)
 	require.NotEmpty(t, limitOrder)
-	assert.Equal(t, 17, int(tm.orderEventCount))
+	assert.Equal(t, 15, int(tm.orderEventCount))
 	assert.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
 
 	// Cancel the normal order to park the pegged order
 	tm.market.CancelOrder(ctx, "user2", limitOrder, vgcrypto.RandomHash())
 	require.Equal(t, types.OrderStatusParked, confirmation.Order.Status)
-	assert.Equal(t, 21, int(tm.orderEventCount))
+	assert.Equal(t, 19, int(tm.orderEventCount))
 
 	// Send a new normal order to unpark the pegged order
 	limitOrder2 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "user2", 1000, 80)
 	require.NotEmpty(t, limitOrder2)
 	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
-	assert.Equal(t, 25, int(tm.orderEventCount))
+	assert.Equal(t, 23, int(tm.orderEventCount))
 
 	// Fill that order to park the pegged order
 	limitOrder3 := sendOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideSell, "user1", 1000, 80)
 	require.NotEmpty(t, limitOrder3)
 	require.Equal(t, types.OrderStatusActive, confirmation.Order.Status)
-	assert.Equal(t, 32, int(tm.orderEventCount))
+	assert.Equal(t, 27, int(tm.orderEventCount))
 	// assert.Equal(t, int(34), int(tm.orderEventCount))
 }
 
@@ -2817,10 +3056,11 @@ func TestPeggedOrderCancelledWhenPartyCannotAffordTheMarginOnceDeployed(t *testi
 	assert.Equal(t, 2, tm.market.GetParkedOrderCount())
 
 	bestBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 10)
+	matchingPrice := uint64(2000)
 	auxOrders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux1", types.SideSell, auxParty1, 1, 10000),
-		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, 2000),
-		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty1, 1, 2000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideBuy, auxParty2, 1, matchingPrice),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "aux2", types.SideSell, auxParty1, 1, matchingPrice),
 	}
 	bestBidConf, err := tm.market.SubmitOrder(ctx, bestBid)
 	require.NoError(t, err)
@@ -2851,6 +3091,7 @@ func TestPeggedOrderCancelledWhenPartyCannotAffordTheMarginOnceDeployed(t *testi
 	md := tm.market.GetMarketData()
 	require.NotNil(t, md)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
+	require.Equal(t, num.NewUint(matchingPrice), md.MarkPrice)
 
 	assert.Equal(t, confirmationPeggedBuy.Order.Status, types.OrderStatusCancelled)
 	assert.Equal(t, confirmationPeggedSell.Order.Status, types.OrderStatusCancelled)

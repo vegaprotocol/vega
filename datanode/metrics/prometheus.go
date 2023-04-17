@@ -80,6 +80,13 @@ var (
 	networkHistoryIpfsStoreBytes prometheus.Gauge
 	// Data Node HTTP bindings that we will check against when updating HTTP metrics.
 	httpBindings *protos.Bindings
+
+	// Per table segment creation time.
+	networkHistoryCopiedRowsCounter *prometheus.CounterVec
+	networkHistoryCopyTimeCounter   *prometheus.CounterVec
+
+	batcherAddedEntities   *prometheus.CounterVec
+	batcherFlushedEntities *prometheus.CounterVec
 )
 
 // abstract prometheus types.
@@ -452,6 +459,66 @@ func setupMetrics() error {
 		return err
 	}
 	eventCounter = ec
+
+	h, err = addInstrument(
+		Counter,
+		"network_history_copied_rows_total",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	cr, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	networkHistoryCopiedRowsCounter = cr
+
+	h, err = addInstrument(
+		Counter,
+		"network_history_copy_time_total",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	ct, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	networkHistoryCopyTimeCounter = ct
+
+	h, err = addInstrument(
+		Counter,
+		"batcher_added_entities",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	baet, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	batcherAddedEntities = baet
+
+	h, err = addInstrument(
+		Counter,
+		"batcher_flushed_entities",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	bfe, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	batcherFlushedEntities = bfe
 
 	// sqlQueryTime
 	h, err = addInstrument(
@@ -875,6 +942,38 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 		apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
 		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
+	}
+}
+
+func IncrementBatcherAddedEntities(table string) {
+	if batcherAddedEntities == nil {
+		return
+	}
+	batcherAddedEntities.WithLabelValues(table).Add(1)
+}
+
+func BatcherFlushedEntitiesAdd(table string, flushed int) {
+	if batcherFlushedEntities == nil {
+		return
+	}
+	batcherFlushedEntities.WithLabelValues(table).Add(float64(flushed))
+}
+
+func NetworkHistoryRowsCopied(table string, rowsCopied int64) {
+	if networkHistoryCopiedRowsCounter == nil {
+		return
+	}
+	networkHistoryCopiedRowsCounter.WithLabelValues(table).Add(float64(rowsCopied))
+}
+
+func StartNetworkHistoryCopy(table string) func() {
+	startTime := time.Now()
+	return func() {
+		if networkHistoryCopyTimeCounter == nil {
+			return
+		}
+		duration := time.Since(startTime).Seconds()
+		networkHistoryCopyTimeCounter.WithLabelValues(table).Add(duration)
 	}
 }
 

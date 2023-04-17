@@ -488,13 +488,13 @@ type DescribeNetworkResponse struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
 			Retries uint64   `json:"retries"`
-		} `json:"grpcConfig"`
+		} `json:"grpc"`
 		RESTConfig struct {
 			Hosts []string `json:"hosts"`
-		} `json:"restConfig"`
+		} `json:"rest"`
 		GraphQLConfig struct {
 			Hosts []string `json:"hosts"`
-		} `json:"graphQLConfig"`
+		} `json:"graphQL"`
 	} `json:"api"`
 }
 

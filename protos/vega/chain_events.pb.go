@@ -20,17 +20,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A deposit for a Vega built-in asset
+// Deposit for a Vega built-in asset
 type BuiltinAssetDeposit struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A Vega network internal asset identifier
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// A Vega party identifier (pub-key)
+	// Vega party ID i.e. public key.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// The amount to be deposited
+	// Amount to be deposited
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 }
@@ -88,15 +88,15 @@ func (x *BuiltinAssetDeposit) GetAmount() string {
 	return ""
 }
 
-// A withdrawal for a Vega built-in asset
+// Withdrawal for a Vega built-in asset
 type BuiltinAssetWithdrawal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A Vega network internal asset identifier
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// A Vega network party identifier (pub-key)
+	// Vega network party ID i.e. public key.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// The amount to be withdrawn
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
@@ -156,7 +156,7 @@ func (x *BuiltinAssetWithdrawal) GetAmount() string {
 	return ""
 }
 
-// An event related to a Vega built-in asset
+// Event related to a Vega built-in asset
 type BuiltinAssetEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -227,12 +227,12 @@ type isBuiltinAssetEvent_Action interface {
 }
 
 type BuiltinAssetEvent_Deposit struct {
-	// Built-in asset deposit
+	// Built-in asset deposit.
 	Deposit *BuiltinAssetDeposit `protobuf:"bytes,1001,opt,name=deposit,proto3,oneof"`
 }
 
 type BuiltinAssetEvent_Withdrawal struct {
-	// Built-in asset withdrawal
+	// Built-in asset withdrawal.
 	Withdrawal *BuiltinAssetWithdrawal `protobuf:"bytes,1002,opt,name=withdrawal,proto3,oneof"`
 }
 
@@ -240,15 +240,15 @@ func (*BuiltinAssetEvent_Deposit) isBuiltinAssetEvent_Action() {}
 
 func (*BuiltinAssetEvent_Withdrawal) isBuiltinAssetEvent_Action() {}
 
-// An asset allow-listing for an ERC20 token
+// Asset allow-listing for an ERC20 token
 type ERC20AssetList struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The ethereum address of the asset
+	// Ethereum address of the asset.
 	AssetSource string `protobuf:"bytes,2,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
 }
 
@@ -298,13 +298,13 @@ func (x *ERC20AssetList) GetAssetSource() string {
 	return ""
 }
 
-// An asset deny-listing for an ERC20 token
+// Asset deny-listing for an ERC20 token
 type ERC20AssetDelist struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
 }
 
@@ -352,13 +352,13 @@ type ERC20AssetLimitsUpdated struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The Ethereum wallet that initiated the deposit
+	// Ethereum wallet that initiated the deposit.
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=source_ethereum_address,json=sourceEthereumAddress,proto3" json:"source_ethereum_address,omitempty"`
-	// The updated lifetime limits
+	// Updated lifetime limits.
 	LifetimeLimits string `protobuf:"bytes,3,opt,name=lifetime_limits,json=lifetimeLimits,proto3" json:"lifetime_limits,omitempty"`
-	// The updated withdrawal threshold
+	// Updated withdrawal threshold.
 	WithdrawThreshold string `protobuf:"bytes,4,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }
 
@@ -422,19 +422,19 @@ func (x *ERC20AssetLimitsUpdated) GetWithdrawThreshold() string {
 	return ""
 }
 
-// An asset deposit for an ERC20 token
+// Asset deposit for an ERC20 token
 type ERC20Deposit struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The vega network internal identifier of the asset
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The Ethereum wallet that initiated the deposit
+	// Ethereum wallet that initiated the deposit.
 	SourceEthereumAddress string `protobuf:"bytes,2,opt,name=source_ethereum_address,json=sourceEthereumAddress,proto3" json:"source_ethereum_address,omitempty"`
-	// The Vega party identifier (pub-key) which is the target of the deposit
+	// Vega party ID i.e. public key that is the target of the deposit.
 	TargetPartyId string `protobuf:"bytes,3,opt,name=target_party_id,json=targetPartyId,proto3" json:"target_party_id,omitempty"`
-	// The amount to be deposited
+	// Amount to be deposited.
 	Amount string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -498,17 +498,17 @@ func (x *ERC20Deposit) GetAmount() string {
 	return ""
 }
 
-// An asset withdrawal for an ERC20 token
+// Asset withdrawal for an ERC20 token
 type ERC20Withdrawal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The Vega network internal identifier of the asset
+	// Vega network internal asset ID.
 	VegaAssetId string `protobuf:"bytes,1,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// The target Ethereum wallet address
+	// Target Ethereum wallet address.
 	TargetEthereumAddress string `protobuf:"bytes,2,opt,name=target_ethereum_address,json=targetEthereumAddress,proto3" json:"target_ethereum_address,omitempty"`
-	// The reference nonce used for the transaction
+	// Reference nonce used for the transaction.
 	ReferenceNonce string `protobuf:"bytes,3,opt,name=reference_nonce,json=referenceNonce,proto3" json:"reference_nonce,omitempty"`
 }
 
@@ -565,17 +565,17 @@ func (x *ERC20Withdrawal) GetReferenceNonce() string {
 	return ""
 }
 
-// An event related to an ERC20 token
+// Event related to an ERC20 token
 type ERC20Event struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Index of the log in the transaction
+	// Index of the log in the transaction.
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	// The block in which the transaction was added
+	// Block in which the transaction was added.
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
-	// The action
+	// Action undertaken as a result of the event.
 	//
 	// Types that are assignable to Action:
 	//
@@ -696,37 +696,37 @@ type isERC20Event_Action interface {
 }
 
 type ERC20Event_AssetList struct {
-	// List an ERC20 asset
+	// List an ERC20 asset.
 	AssetList *ERC20AssetList `protobuf:"bytes,1001,opt,name=asset_list,json=assetList,proto3,oneof"`
 }
 
 type ERC20Event_AssetDelist struct {
-	// De-list an ERC20 asset
+	// De-list an ERC20 asset.
 	AssetDelist *ERC20AssetDelist `protobuf:"bytes,1002,opt,name=asset_delist,json=assetDelist,proto3,oneof"`
 }
 
 type ERC20Event_Deposit struct {
-	// Deposit ERC20 asset
+	// Deposit ERC20 asset.
 	Deposit *ERC20Deposit `protobuf:"bytes,1003,opt,name=deposit,proto3,oneof"`
 }
 
 type ERC20Event_Withdrawal struct {
-	// Withdraw ERC20 asset
+	// Withdraw ERC20 asset.
 	Withdrawal *ERC20Withdrawal `protobuf:"bytes,1004,opt,name=withdrawal,proto3,oneof"`
 }
 
 type ERC20Event_AssetLimitsUpdated struct {
-	// Update an ERC20 asset
+	// Update an ERC20 asset.
 	AssetLimitsUpdated *ERC20AssetLimitsUpdated `protobuf:"bytes,1005,opt,name=asset_limits_updated,json=assetLimitsUpdated,proto3,oneof"`
 }
 
 type ERC20Event_BridgeStopped struct {
-	// Bridge operations has been stopped
+	// Bridge operations has been stopped.
 	BridgeStopped bool `protobuf:"varint,1006,opt,name=bridge_stopped,json=bridgeStopped,proto3,oneof"`
 }
 
 type ERC20Event_BridgeResumed struct {
-	// Bridge operations has been resumed
+	// Bridge operations has been resumed.
 	BridgeResumed bool `protobuf:"varint,1007,opt,name=bridge_resumed,json=bridgeResumed,proto3,oneof"`
 }
 
@@ -744,17 +744,17 @@ func (*ERC20Event_BridgeStopped) isERC20Event_Action() {}
 
 func (*ERC20Event_BridgeResumed) isERC20Event_Action() {}
 
-// A new signer added to the ERC20 bridge
+// New signer added to the ERC20 bridge
 type ERC20SignerAdded struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ethereum address of the new signer
+	// Ethereum address of the new signer
 	NewSigner string `protobuf:"bytes,1,opt,name=new_signer,json=newSigner,proto3" json:"new_signer,omitempty"`
-	// The nonce create by the vega network used for this new signer
+	// Nonce created by the Vega network used for this new signer
 	Nonce string `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The time at which the block was produced
+	// Time at which the block was produced
 	// will be used to inform the core at what time
 	// the stake was made unavailable.
 	BlockTime int64 `protobuf:"varint,3,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
@@ -813,18 +813,18 @@ func (x *ERC20SignerAdded) GetBlockTime() int64 {
 	return 0
 }
 
-// A signer removed from the ERC20 bridge
+// Signer removed from the ERC20 bridge
 type ERC20SignerRemoved struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ethereum address of the old signer
+	// Ethereum address of the old signer
 	OldSigner string `protobuf:"bytes,1,opt,name=old_signer,json=oldSigner,proto3" json:"old_signer,omitempty"`
-	// The nonce create by the vega network used for this old signer
+	// Nonce created by the Vega network used for this old signer
 	Nonce string `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The time at which the block was produced
-	// will be used to inform the core at what time
+	// Time at which the block was produced.
+	// Will be used to inform the core at what time
 	// the stake was made unavailable.
 	BlockTime int64 `protobuf:"varint,3,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
 }
@@ -882,18 +882,18 @@ func (x *ERC20SignerRemoved) GetBlockTime() int64 {
 	return 0
 }
 
-// The threshold has been updated on the multisig control
+// Threshold has been updated on the multisig control
 type ERC20ThresholdSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The new threshold
+	// New threshold value to set
 	NewThreshold uint32 `protobuf:"varint,1,opt,name=new_threshold,json=newThreshold,proto3" json:"new_threshold,omitempty"`
-	// The nonce created by the Vega network
+	// Nonce created by the Vega network
 	Nonce string `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The time at which the block was produced
-	// will be used to inform the core at what time
+	// Time at which the block was produced.
+	// Will be used to inform the core at what time
 	// the stake was made unavailable.
 	BlockTime int64 `protobuf:"varint,3,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
 }
@@ -951,7 +951,7 @@ func (x *ERC20ThresholdSet) GetBlockTime() int64 {
 	return 0
 }
 
-// An event related to the ERC20 MultiSig
+// Event related to the ERC20 MultiSig
 type ERC20MultiSigEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -959,9 +959,9 @@ type ERC20MultiSigEvent struct {
 
 	// Index of the log in the transaction
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	// The block in which the transaction was added
+	// Block in which the transaction was added
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
-	// The action
+	// Action undertaken as a result of the event.
 	//
 	// Types that are assignable to Action:
 	//
@@ -1070,15 +1070,18 @@ func (*ERC20MultiSigEvent_SignerRemoved) isERC20MultiSigEvent_Action() {}
 
 func (*ERC20MultiSigEvent_ThresholdSet) isERC20MultiSigEvent_Action() {}
 
+// Event related to staking on the Vega network.
 type StakingEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Index of the log in the transaction
+	// Index of the log in the transaction.
 	Index uint64 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
-	// The block in which the transaction was added
+	// Block in which the transaction was added.
 	Block uint64 `protobuf:"varint,2,opt,name=block,proto3" json:"block,omitempty"`
+	// Action undertaken by the event.
+	//
 	// Types that are assignable to Action:
 	//
 	//	*StakingEvent_StakeDeposited
@@ -1190,13 +1193,13 @@ type StakeDeposited struct {
 
 	// Ethereum Address of the user depositing stake (hex encode with 0x prefix)
 	EthereumAddress string `protobuf:"bytes,1,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
-	// The public of the party receiving the stake deposit (hex encode)
+	// Hex encoded public key of the party receiving the stake deposit.
 	VegaPublicKey string `protobuf:"bytes,2,opt,name=vega_public_key,json=vegaPublicKey,proto3" json:"vega_public_key,omitempty"`
-	// The amount deposited (base 10)
+	// Amount deposited as an unsigned base 10 integer.
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The time at which the block was produced
-	// will be used to inform the core at what time
+	// Time at which the block was produced.
+	// Will be used to inform the core at what time
 	// the stake started to be available.
 	BlockTime int64 `protobuf:"varint,4,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
 }
@@ -1266,11 +1269,11 @@ type StakeRemoved struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Ethereum address of the user removing stake (hex encode with 0x prefix)
+	// Ethereum address of the user removing stake. This should be hex encoded with 0x prefix.
 	EthereumAddress string `protobuf:"bytes,1,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
-	// The public key of the party from which to remove stake (hex encode)
+	// Hex encoded public key of the party from which to remove stake.
 	VegaPublicKey string `protobuf:"bytes,2,opt,name=vega_public_key,json=vegaPublicKey,proto3" json:"vega_public_key,omitempty"`
-	// The amount removed (base 10)
+	// Amount removed as a base 10 unsigned integer.
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the staking token.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// The time at which the block was produced
@@ -1344,9 +1347,9 @@ type StakeTotalSupply struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address of the staking asset
+	// Address of the staking asset
 	TokenAddress string `protobuf:"bytes,1,opt,name=token_address,json=tokenAddress,proto3" json:"token_address,omitempty"`
-	// The total supply observed for the token
+	// Total supply observed for the token as an unsigned based 10 integer.
 	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the staking token.
 	TotalSupply string `protobuf:"bytes,2,opt,name=total_supply,json=totalSupply,proto3" json:"total_supply,omitempty"`
 }

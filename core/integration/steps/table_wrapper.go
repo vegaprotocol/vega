@@ -484,6 +484,24 @@ func OrderStatus(rawValue string) (types.OrderStatus, error) {
 	return types.OrderStatus(ty), nil
 }
 
+func (r RowWrapper) MustPositionStatus(name string) proto.PositionStatus {
+	// account for empty values
+	if v := r.Str(name); len(v) == 0 {
+		return proto.PositionStatus_POSITION_STATUS_UNSPECIFIED
+	}
+	p, err := PositionStatus(r.MustStr(name))
+	panicW(name, err)
+	return p
+}
+
+func PositionStatus(rawValue string) (proto.PositionStatus, error) {
+	ty, ok := proto.PositionStatus_value[rawValue]
+	if !ok {
+		return proto.PositionStatus(ty), fmt.Errorf("invalid position status: %v", rawValue)
+	}
+	return proto.PositionStatus(ty), nil
+}
+
 func (r RowWrapper) MustLiquidityStatus(name string) types.LiquidityProvisionStatus {
 	s, err := LiquidityStatus(r.MustStr(name))
 	panicW(name, err)

@@ -41,6 +41,7 @@ func addTestDelegation(t *testing.T, ctx context.Context, ds *sqlstore.Delegatio
 		Amount:   decimal.NewFromInt(100),
 		VegaTime: block.VegaTime,
 		SeqNum:   seqNum,
+		TxHash:   generateTxHash(),
 	}
 	err := ds.Add(ctx, r)
 	require.NoError(t, err)
@@ -100,6 +101,18 @@ func TestDelegations(t *testing.T) {
 		assertDelegationsMatch(t, expected, actual)
 	})
 
+	t.Run("GetByTxHash", func(t *testing.T) {
+		expected := []entities.Delegation{delegation1}
+		actual, err := ds.GetByTxHash(ctx, delegation1.TxHash)
+		require.NoError(t, err)
+		assertDelegationsMatch(t, expected, actual)
+
+		expected = []entities.Delegation{delegation2}
+		actual, err = ds.GetByTxHash(ctx, delegation2.TxHash)
+		require.NoError(t, err)
+		assertDelegationsMatch(t, expected, actual)
+	})
+
 	t.Run("GetByParty", func(t *testing.T) {
 		expected := []entities.Delegation{delegation1, delegation2}
 		actual, _, err := ds.Get(ctx, &party1ID, nil, nil, nil)
@@ -135,14 +148,6 @@ func TestDelegations(t *testing.T) {
 		actual, _, err := ds.Get(ctx, &party2ID, &node2ID, &four, nil)
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
-	})
-
-	t.Run("GetPagination", func(t *testing.T) {
-		expected := []entities.Delegation{delegation4, delegation3, delegation2}
-		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
-		actual, _, err := ds.Get(ctx, nil, nil, nil, &p)
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual) // Explicitly check the order on this one
 	})
 }
 

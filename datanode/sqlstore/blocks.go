@@ -45,6 +45,7 @@ func NewBlocks(connectionSource *ConnectionSource) *Blocks {
 
 func (bs *Blocks) Add(ctx context.Context, b entities.Block) error {
 	defer metrics.StartSQLQuery("Blocks", "Add")()
+
 	_, err := bs.Connection.Exec(ctx,
 		`insert into blocks(vega_time, height, hash) values ($1, $2, $3)`,
 		b.VegaTime, b.Height, b.Hash)
@@ -67,6 +68,7 @@ func (bs *Blocks) GetAll(ctx context.Context) ([]entities.Block, error) {
 }
 
 func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block, error) {
+	connection := bs.Connection
 	defer metrics.StartSQLQuery("Blocks", "GetAtHeight")()
 
 	// Check if it's in our cache first
@@ -75,7 +77,13 @@ func (bs *Blocks) GetAtHeight(ctx context.Context, height int64) (entities.Block
 		return block, nil
 	}
 
-	return block, bs.wrapE(pgxscan.Get(ctx, bs.Connection, &block,
+	return GetAtHeightUsingConnection(ctx, connection, height)
+}
+
+func GetAtHeightUsingConnection(ctx context.Context, connection Connection, height int64) (entities.Block, error) {
+	block := entities.Block{}
+
+	return block, wrapE(pgxscan.Get(ctx, connection, &block,
 		`SELECT vega_time, height, hash
 		FROM blocks
 		WHERE height=$1`, height))

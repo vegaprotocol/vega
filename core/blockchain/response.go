@@ -24,6 +24,9 @@ const (
 	// AbciTxnInternalError code is returned when CheckTx or DeliverTx fail to process the Txn.
 	AbciTxnInternalError uint32 = 70
 
+	// AbciTxnPartialProcessingError code is return when a batch instruction partially fail.
+	AbciTxnPartialProcessingError uint32 = 71
+
 	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
 	AbciUnknownCommandError uint32 = 80
 

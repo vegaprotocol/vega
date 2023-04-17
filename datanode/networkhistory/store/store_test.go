@@ -90,7 +90,7 @@ func addTestData(t *testing.T, chainID string, snapshotsDir string, s *store.Sto
 		from := (i * 1000) + 1
 		to := (i + 1) * 1000
 		css := snapshot.NewCurrentSnapshot(chainID, to)
-		hss := snapshot.NewHistorySnapshot(chainID, from, to)
+		hss := snapshot.NewHistorySnapshot(chainID, 1, from, to)
 
 		err := os.WriteFile(filepath.Join(snapshotsDir, css.CompressedFileName()), []byte(fmt.Sprintf("%d", to)), fs.ModePerm)
 		require.NoError(t, err)
@@ -118,7 +118,7 @@ func createStore(t *testing.T, historyRetentionBlockSpan int64, chainID string, 
 	cfg.HistoryRetentionBlockSpan = historyRetentionBlockSpan
 	snapshotsDir := t.TempDir()
 
-	s, err := store.New(context.Background(), log, chainID, cfg, networkhistoryHome, false)
+	s, err := store.New(context.Background(), log, chainID, cfg, networkhistoryHome, false, 33)
 	require.NoError(t, err)
 	return s, snapshotsDir
 }

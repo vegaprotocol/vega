@@ -56,9 +56,11 @@ func DataSourceDefinitionExternalFromProto(protoConfig *vegapb.DataSourceDefinit
 	}
 
 	if protoConfig != nil {
-		switch tp := protoConfig.SourceType.(type) {
-		case *vegapb.DataSourceDefinitionExternal_Oracle:
-			ds.SourceType = DataSourceDefinitionExternalOracleFromProto(tp)
+		if protoConfig.SourceType != nil {
+			switch tp := protoConfig.SourceType.(type) {
+			case *vegapb.DataSourceDefinitionExternal_Oracle:
+				ds.SourceType = DataSourceDefinitionExternalOracleFromProto(tp)
+			}
 		}
 	}
 

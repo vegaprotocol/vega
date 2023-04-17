@@ -145,7 +145,7 @@ Feature:
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 10260        | 49000          | 41            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 10250        | 49000          | 41            |
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -645,7 +645,7 @@ Feature:
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 7507         | 50000          | 30            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 7500         | 50000          | 30            |
 
     # -------------------------------------------------------------------------------------------------------------------
 

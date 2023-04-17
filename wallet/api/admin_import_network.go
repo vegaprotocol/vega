@@ -128,8 +128,8 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 	net := &network.Network{}
 	rs := NewReaders()
 
-	s, filePath, contains := strings.Cut(params.URL, FileSchemePrefix)
-	if contains && len(s) == 0 {
+	s, filePath, isFile := strings.Cut(params.URL, FileSchemePrefix)
+	if isFile && len(s) == 0 {
 		exists, err := vgfs.FileExists(filePath)
 		if err != nil {
 			return nil, fmt.Errorf("could not check file's existence at %q: %w", filePath, err)

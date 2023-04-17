@@ -85,8 +85,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | lp1    | USD   | ETH/MAR22 | 2400   | 999987212 | 10000 |
+      | party1 | USD   | ETH/MAR22 | 1200   | 99998805  |       |
       | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
@@ -327,7 +327,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5205         | 9000           | 52            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5200         | 9000           | 52            |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:

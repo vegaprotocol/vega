@@ -92,7 +92,7 @@ func (r *RateLimit) HTTPMiddleware(next http.Handler) http.Handler {
 		ip := r.ipForRequest(req)
 
 		if r.naughtyStep.isBanned(ip) {
-			r.expressDisappointment(w, banMsg, ip, http.StatusTooManyRequests, true)
+			r.expressDisappointment(w, banMsg, ip, http.StatusForbidden, true)
 			return
 		}
 
@@ -168,13 +168,15 @@ func (r *RateLimit) GRPCInterceptor(
 			r.log.Error("failed to set header", logging.Error(err))
 		}
 
-		return nil, status.Error(codes.Unavailable, banMsg)
+		// codes.PermissionDenied is translated to HTTP 403 Forbidden
+		return nil, status.Error(codes.PermissionDenied, banMsg)
 	}
 
 	if r.lmt.LimitReached(ip) {
 		r.naughtyStep.smackBottom(ip)
 		setRateLimitResponseHeaders(ctx, r.log, r.lmt, 0, ip)
-		return nil, status.Error(codes.Unavailable, limitMsg)
+		// code.ResourceExhausted is translated to HTTP 429 Too Many Requests
+		return nil, status.Error(codes.ResourceExhausted, limitMsg)
 	}
 
 	tokensLeft := r.lmt.Tokens(ip)

@@ -179,6 +179,13 @@ func (ps *Positions) GetByPartyConnection(ctx context.Context, partyIDRaw []stri
 	return positions, pageInfo, nil
 }
 
+func (ps *Positions) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Position, error) {
+	defer metrics.StartSQLQuery("Positions", "GetByTxHash")()
+	positions := []entities.Position{}
+	err := pgxscan.Select(ctx, ps.Connection, &positions, `SELECT * FROM positions WHERE tx_hash=$1`, txHash)
+	return positions, err
+}
+
 func (ps *Positions) GetAll(ctx context.Context) ([]entities.Position, error) {
 	defer metrics.StartSQLQuery("Positions", "GetAll")()
 	positions := []entities.Position{}

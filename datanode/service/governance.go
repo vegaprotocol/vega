@@ -24,6 +24,7 @@ type ProposalStore interface {
 	Add(ctx context.Context, p entities.Proposal) error
 	GetByID(ctx context.Context, id string) (entities.Proposal, error)
 	GetByReference(ctx context.Context, ref string) (entities.Proposal, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error)
 	Get(ctx context.Context, inState *entities.ProposalState, partyIDStr *string, proposalType *entities.ProposalType,
 		pagination entities.CursorPagination) ([]entities.Proposal, entities.PageInfo, error)
 }
@@ -33,6 +34,7 @@ type VoteStore interface {
 	GetYesVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error)
 	GetNoVotesForProposal(ctx context.Context, proposalIDStr string) ([]entities.Vote, error)
 	GetByParty(ctx context.Context, partyIDStr string) ([]entities.Vote, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Vote, error)
 	GetByPartyConnection(ctx context.Context, partyIDStr string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error)
 	Get(ctx context.Context, proposalID, partyID *string, value *entities.VoteValue) ([]entities.Vote, error)
 	GetConnection(
@@ -71,6 +73,10 @@ func (g *Governance) GetProposalByID(ctx context.Context, id string) (entities.P
 	return g.pStore.GetByID(ctx, id)
 }
 
+func (g *Governance) GetProposalsByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Proposal, error) {
+	return g.pStore.GetByTxHash(ctx, txHash)
+}
+
 func (g *Governance) GetProposalByReference(ctx context.Context, ref string) (entities.Proposal, error) {
 	return g.pStore.GetByReference(ctx, ref)
 }
@@ -107,6 +113,10 @@ func (g *Governance) GetNoVotesForProposal(ctx context.Context, proposalID strin
 
 func (g *Governance) GetVotesByParty(ctx context.Context, partyID string) ([]entities.Vote, error) {
 	return g.vStore.GetByParty(ctx, partyID)
+}
+
+func (g *Governance) GetVotesByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Vote, error) {
+	return g.vStore.GetByTxHash(ctx, txHash)
 }
 
 func (g *Governance) GetByPartyConnection(ctx context.Context, partyID string, pagination entities.CursorPagination) ([]entities.Vote, entities.PageInfo, error) {

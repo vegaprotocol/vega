@@ -105,7 +105,7 @@ func LiquidityProvisionFromProto(lpProto *vega.LiquidityProvision, txHash TxHash
 	}, nil
 }
 
-func (lp *LiquidityProvision) ToProto() *vega.LiquidityProvision {
+func (lp LiquidityProvision) ToProto() *vega.LiquidityProvision {
 	sells := make([]*vega.LiquidityOrderReference, 0, len(lp.Sells))
 	buys := make([]*vega.LiquidityOrderReference, 0, len(lp.Buys))
 

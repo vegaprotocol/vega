@@ -14,5 +14,5 @@ In the case of tendermint, is should be set to the `"app_state"` field of the ge
 
 The command can also update the genesis file directly using the following option:
 ```bash
-vega genesis --in-place=/PATH/TO/.tendermint/config/genesis.json
+vega genesis --in-place=/PATH/TO/.cometbft/config/genesis.json
 ```

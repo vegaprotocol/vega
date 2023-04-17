@@ -15,6 +15,11 @@ type CurrentState struct {
 	Height  int64
 }
 
+type TableCopySql struct {
+	metaData TableMetadata
+	copySql  string
+}
+
 const currentStateSnapshotIdentifier = "currentstatesnapshot"
 
 func NewCurrentSnapshot(chainID string, height int64) CurrentState {
@@ -36,14 +41,14 @@ func (s CurrentState) String() string {
 	return fmt.Sprintf("{Current State Snapshot Chain ID:%s Height:%d}", s.ChainID, s.Height)
 }
 
-func (s CurrentState) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []string {
-	var copySQL []string
+func (s CurrentState) GetCopySQL(dbMetaData DatabaseMetadata, databaseSnapshotsPath string) []TableCopySql {
+	var copySQL []TableCopySql
 	for tableName, meta := range dbMetaData.TableNameToMetaData {
 		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
 			snapshotFile := filepath.Join(databaseSnapshotsPath, s.UncompressedDataDir(), tableName)
-			tableCopySQL := fmt.Sprintf(`copy (select * from %s order by %s) to '%s'`, tableName,
+			tableCopySQL := fmt.Sprintf(`copy (select * from %s order by %s) to '%s' (FORMAT csv, HEADER)`, tableName,
 				meta.SortOrder, snapshotFile)
-			copySQL = append(copySQL, tableCopySQL)
+			copySQL = append(copySQL, TableCopySql{meta, tableCopySQL})
 		}
 	}
 

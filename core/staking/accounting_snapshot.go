@@ -14,6 +14,7 @@ package staking
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
@@ -41,8 +42,14 @@ func (a *Accounting) serialiseStakingAccounts() ([]byte, error) {
 			})
 	}
 
+	var psts *types.StakeTotalSupply
+	if a.pendingStakeTotalSupply != nil {
+		psts = a.pendingStakeTotalSupply.sts
+	}
+
 	pl := types.Payload{
 		Data: &types.PayloadStakingAccounts{
+			PendingStakeTotalSupply: psts,
 			StakingAccounts: &types.StakingAccounts{
 				Accounts:                accounts,
 				StakingAssetTotalSupply: a.stakingAssetTotalSupply.Clone(),
@@ -102,13 +109,13 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadStakingAccounts:
-		return nil, a.restoreStakingAccounts(ctx, pl.StakingAccounts, payload)
+		return nil, a.restoreStakingAccounts(ctx, pl.StakingAccounts, pl.PendingStakeTotalSupply, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts, p *types.Payload) error {
+func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts, pendingSupply *types.StakeTotalSupply, p *types.Payload) error {
 	a.hashableAccounts = make([]*Account, 0, len(accounts.Accounts))
 	a.log.Debug("restoring staking accounts",
 		logging.Int("n", len(accounts.Accounts)),
@@ -127,6 +134,29 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 		for _, e := range acc.Events {
 			evts = append(evts, events.NewStakeLinking(ctx, *e))
 		}
+	}
+
+	if pendingSupply != nil {
+		expectedSupply := pendingSupply.TotalSupply.Clone()
+		a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
+			sts: pendingSupply,
+			check: func() error {
+				totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
+				if err != nil {
+					return err
+				}
+
+				if totalSupply.NEQ(expectedSupply) {
+					return fmt.Errorf(
+						"invalid stake asset total supply, expected %s got %s",
+						expectedSupply.String(), totalSupply.String(),
+					)
+				}
+
+				return nil
+			},
+		}
+		a.witness.RestoreResource(a.pendingStakeTotalSupply, a.onStakeTotalSupplyVerified)
 	}
 
 	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()

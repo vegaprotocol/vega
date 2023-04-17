@@ -1,6 +1,110 @@
 # Changelog
 
-## Unreleased 0.69.0
+## Unreleased 0.71.0
+
+### 🚨 Breaking changes
+- [8064](https://github.com/vegaprotocol/vega/issues/8064) - Remove `websocket` for rewards
+- [8093](https://github.com/vegaprotocol/vega/issues/8093) - Remove offset pagination
+- [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
+- [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated `TradesConnection GraphQL sub-queries` in favour of an `un-nested` Trades query with a filter parameter. This requires a change in the underlying `gRPC` request message. Trades subscription takes a `TradesSubscriptionFilter` that allows multiple `MarketID` and `PartyID` filters to be specified.
+- [8143](https://github.com/vegaprotocol/vega/issues/8143) - Merge GraphQL and REST servers
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+- [8030](https://github.com/vegaprotocol/vega/issues/8030) - Add `API` for fetching `CSV` data from network history.
+- [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
+- [7759](https://github.com/vegaprotocol/vega/issues/7759) - Support for rolling back data node to a previous network history segment
+- [7505](https://github.com/vegaprotocol/vega/issues/7505) - `Datanode` batcher statistics
+- [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
+- [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
+- [7990](https://github.com/vegaprotocol/vega/issues/7990) - Remove reference to `postgres` in the `protobuf` documentation comments
+- [7992](https://github.com/vegaprotocol/vega/issues/7992) - Improve Candles related `APIs`
+- [7986](https://github.com/vegaprotocol/vega/issues/7986) - Remove cross `protobuf` files documentation references
+- [7982](https://github.com/vegaprotocol/vega/issues/7982) - Fix behaviour of endpoints with `marketIds` and `partyIds` filters
+- [7846](https://github.com/vegaprotocol/vega/issues/7846) - Add event indicating distressed parties that are still holding an active position.
+- [7985](https://github.com/vegaprotocol/vega/issues/7985) - Add full stop on all fields documentation to get it properly generated
+- [8024](https://github.com/vegaprotocol/vega/issues/8024) - Unify naming in `rpc` endpoints and add tags
+- [7989](https://github.com/vegaprotocol/vega/issues/7989) - Remove reference to cursor based pagination in `rpc` documentations
+- [7991](https://github.com/vegaprotocol/vega/issues/7991) - Improve `EstimateFees` documentation
+- [7108](https://github.com/vegaprotocol/vega/issues/7108) - Annotate required fields in `API` requests.
+- [7987](https://github.com/vegaprotocol/vega/issues/7987) - Make terms consistent in `API` documentation.
+- [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
+- [7999](https://github.com/vegaprotocol/vega/issues/7999) - Review `DateRange API` documentation.
+- [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
+
+### 🐛 Fixes
+- [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
+- [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
+- [7954](https://github.com/vegaprotocol/vega/issues/7954) - Don't error if subscribing to a market/party that has no position yet
+- [7899](https://github.com/vegaprotocol/vega/issues/7899) - Fixes inconsistency in the `HTTP` status codes returned when rate limited
+- [7968](https://github.com/vegaprotocol/vega/issues/7968) - Ready for protocol upgrade flag set without going through memory barrier
+- [7962](https://github.com/vegaprotocol/vega/issues/7962) - Set `isValidator` when loading from a checkpoint
+- [7950](https://github.com/vegaprotocol/vega/issues/7950) - Fix the restore of deposits from checkpoint
+- [7933](https://github.com/vegaprotocol/vega/issues/7933) - Ensure the wallet store is closed to avoid "too many opened files" error
+- [8069](https://github.com/vegaprotocol/vega/issues/8069) - Handle zero return value for memory when setting IPFS resource limits
+- [7956](https://github.com/vegaprotocol/vega/issues/7956) - Floor negative slippage per unit at 0
+- [7964](https://github.com/vegaprotocol/vega/issues/7964) - Use mark price for all margin calculations
+- [8003](https://github.com/vegaprotocol/vega/issues/8003) - Fix `ListGovernanceData` does not honour `TYPE_ALL`
+- [8057](https://github.com/vegaprotocol/vega/issues/8057) - Load history and current state in one transaction
+- [8058](https://github.com/vegaprotocol/vega/issues/8058) - Continuous aggregates should be updated according to the watermark and span of history loaded
+- [8001](https://github.com/vegaprotocol/vega/issues/8001) - Fix issues with order subscriptions
+- [7980](https://github.com/vegaprotocol/vega/issues/7980) - Visor - prevent panic when auto install configuration is missing assets
+- [7995](https://github.com/vegaprotocol/vega/issues/7995) - Validate order price input to `estimateFee` and `estimateMargin`
+- [8011](https://github.com/vegaprotocol/vega/issues/8011) - Return a not found error for an invalid network parameter key for the API
+- [8012](https://github.com/vegaprotocol/vega/issues/8012) - Ensure client do not specify both a before and after cursor
+- [8017](https://github.com/vegaprotocol/vega/issues/8017) - Return an error when requesting order with negative version
+- [8020](https://github.com/vegaprotocol/vega/issues/8020) - Update default `tendermint` home path to `cometbft`
+- [7919](https://github.com/vegaprotocol/vega/issues/7919) - Avoid sending empty ledger movements
+- [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
+- [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate signatures exist in announce node command
+- [8046](https://github.com/vegaprotocol/vega/issues/8046) - Update GraphQL schema with new order rejection reason
+- [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
+- [8074](https://github.com/vegaprotocol/vega/issues/8074) - Add missing order rejection reason to `graphql` schema
+- [8090](https://github.com/vegaprotocol/vega/issues/8090) - Rename network history `APIs` that did not follow the naming convention
+- [8060](https://github.com/vegaprotocol/vega/issues/8060) - Allow 0 decimals assets
+- [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
+- [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
+- [8125](https://github.com/vegaprotocol/vega/issues/8125) - Ensure network compatibility can be checked against TLS nodes
+- [8128](https://github.com/vegaprotocol/vega/issues/8128) - Assure price monitoring engine extends the auction one bound at a time
+
+## 0.70.0
+
+### 🚨 Breaking changes
+- [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter.
+- [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else.
+- [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions` and add a `live` option
+
+
+### 🛠 Improvements
+- [7862](https://github.com/vegaprotocol/vega/issues/7862) - Add per table statistics for network history segment creation
+- [7834](https://github.com/vegaprotocol/vega/issues/7834) - Support TLS connection for gRPC endpoints in wallet when prefixed with `tls://`
+- [7851](https://github.com/vegaprotocol/vega/issues/7851) - Implement post only and reduce only orders
+- [7768](https://github.com/vegaprotocol/vega/issues/7768) - Set sensible defaults for the IPFS resource manager
+- [7863](https://github.com/vegaprotocol/vega/issues/7863) - Rework positions indexes so that snapshot creation does not slow down
+- [7829](https://github.com/vegaprotocol/vega/issues/7829) - Get precision for reference price from price monitoring bounds when getting market data
+- [7670](https://github.com/vegaprotocol/vega/issues/7670) - Removes the need for the buffered event source to hold a large buffer of sequence numbers
+- [7904](https://github.com/vegaprotocol/vega/issues/7904) - Add a default system test template for integration tests
+- [7894](https://github.com/vegaprotocol/vega/issues/7894) - Use slippage cap when market is in auction mode
+- [7923](https://github.com/vegaprotocol/vega/issues/7923) - Subscription rate limiter is enabled on `gRPC` and `REST` subscriptions
+
+### 🐛 Fixes
+- [7910](https://github.com/vegaprotocol/vega/issues/7910) - Store heartbeats in the checkpoint so that validator sets do not reorder unexpectedly after loading
+- [7835](https://github.com/vegaprotocol/vega/issues/7835) - Ensure the command errors have the same format on arrays
+- [7871](https://github.com/vegaprotocol/vega/issues/7871) - Bad `SQL` generated when paginating reward summaries
+- [7908](https://github.com/vegaprotocol/vega/issues/7908) - Expired `heartbeats` no longer invalidate subsequent `heartbeats`
+- [7880](https://github.com/vegaprotocol/vega/issues/7880) - Update volume-weighted average price party's of open orders after a trade
+- [7883](https://github.com/vegaprotocol/vega/issues/7883) - Fix snapshot issue with witness on accounting
+- [7921](https://github.com/vegaprotocol/vega/issues/7921) - Fix streams batches
+- [7895](https://github.com/vegaprotocol/vega/issues/7895) - Fix margin calculation during auction
+- [7940](https://github.com/vegaprotocol/vega/issues/7940) - Enhance validation of tendermint public keys
+- [7930](https://github.com/vegaprotocol/vega/issues/7930) - Fix typo in the `Vegavisor` configuration and improve Visor binaries runner logging
+- [7981](https://github.com/vegaprotocol/vega/issues/7981) - Ensure LP order events are not sent when nothing changes
+
+
+
+## 0.69.0
 
 ### 🚨 Breaking changes
 - [7798](https://github.com/vegaprotocol/vega/issues/7798) - Remove redundant headers from the rate limiter response.
@@ -10,9 +114,7 @@
 - [7731](https://github.com/vegaprotocol/vega/issues/7731) - Upgrade the interplanetary file system library to latest release
 - [7802](https://github.com/vegaprotocol/vega/issues/7802) - Split liquidity auction trigger into two cases
 - [7728](https://github.com/vegaprotocol/vega/issues/7728) - Remove current order flag from table - adds restrictions to how orders can be paged
-
-### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7816](https://github.com/vegaprotocol/vega/issues/7816) - Require slippage factors to always be set
 
 ### 🛠 Improvements
 - [6942](https://github.com/vegaprotocol/vega/issues/6942) - Add `admin.rename_network` with `vega wallet network rename`
@@ -22,6 +124,7 @@
 - [7681](https://github.com/vegaprotocol/vega/issues/7681) - Remove unnecessary `protobuf` marshalling in event pipeline
 - [7288](https://github.com/vegaprotocol/vega/issues/7288) - Add `block` interval for trade candles
 - [7696](https://github.com/vegaprotocol/vega/issues/7696) - Cache `ListMarket` store queries
+- [7532](https://github.com/vegaprotocol/vega/issues/7532) - Load network history in a transaction
 - [7413](https://github.com/vegaprotocol/vega/issues/7413) - Add foreign block height to stake linkings in `GraphQL`
 - [7675](https://github.com/vegaprotocol/vega/issues/7675) - Migrate to comet `bft`
 - [7792](https://github.com/vegaprotocol/vega/issues/7792) - An attempt to import a network when the `url` is to `github` and not the raw file contents is caught early with a suggested `url`
@@ -34,6 +137,7 @@
 - [7763](https://github.com/vegaprotocol/vega/issues/7763) - Remove separate LP close out code path.
 - [7686](https://github.com/vegaprotocol/vega/issues/7686) - Network History load will retry when IPFS cannot connect to peers.
 - [7804](https://github.com/vegaprotocol/vega/issues/7804) - Headers include `Retry-After` when banned for exceeding rate limit.
+- [7840](https://github.com/vegaprotocol/vega/issues/7840) - Make chunk time interval configurable.
 
 ### 🐛 Fixes
 - [7688](https://github.com/vegaprotocol/vega/issues/7688) - Fix `BlockExplorer` case insensitive transaction retrieval.
@@ -82,6 +186,8 @@
 
 ### 🛠 Improvements
 - [7501](https://github.com/vegaprotocol/vega/issues/7501) - Make logs more clear
+- [7555](https://github.com/vegaprotocol/vega/issues/7555) - Clean up code, add missing metrics and comments
+- [7477](https://github.com/vegaprotocol/vega/issues/7477) - Improve `gRPC` service error handling and formatting
 - [7386](https://github.com/vegaprotocol/vega/issues/7386) - Add indexed filtering by command type to block explorer
 - [6962](https://github.com/vegaprotocol/vega/issues/6962) - Add a dedicated configuration for the wallet service
 - [7434](https://github.com/vegaprotocol/vega/issues/7434) - Update design architecture diagram

@@ -178,9 +178,6 @@ func checkNewAssetChanges(change *protoTypes.ProposalTerms_NewAsset) Errors {
 	if len(change.NewAsset.Changes.Symbol) == 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.symbol", ErrIsRequired)
 	}
-	if change.NewAsset.Changes.Decimals == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.decimals", ErrIsRequired)
-	}
 
 	if len(change.NewAsset.Changes.Quantum) <= 0 {
 		errs.AddForProperty("proposal_submission.terms.change.new_asset.changes.quantum", ErrIsRequired)
@@ -609,8 +606,8 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future", false))
 	errs.Merge(checkNewOracleBinding(future))
 
 	return errs
@@ -627,14 +624,14 @@ func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
 	}
 
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
-	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future"))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false))
 	errs.Merge(checkUpdateOracleBinding(future))
 
 	return errs
 }
 
-func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string) Errors {
+func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentProperty string, tryToSettle bool) Errors {
 	errs := NewErrors()
 	if spec == nil {
 		return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsRequired)
@@ -646,7 +643,9 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 	switch tp := spec.SourceType.(type) {
 	case *vegapb.DataSourceDefinition_Internal:
-		// If the data source type is internal - check only filters content.
+		if tryToSettle {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s", parentProperty, name), ErrIsNotValid)
+		}
 
 		t := tp.Internal.GetTime()
 		if t == nil {
@@ -660,14 +659,14 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		if len(t.Conditions) != 0 {
 			for j, condition := range t.Conditions {
 				if len(condition.Value) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].value", parentProperty, name, j), ErrIsRequired)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
 				}
 				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsRequired)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
 				}
 
 				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions[%d].operator", parentProperty, name, j), ErrIsNotValid)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
 				}
 			}
 		}

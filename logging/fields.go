@@ -19,6 +19,7 @@ import (
 
 	ptypes "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"github.com/ethereum/go-ethereum/common"
 
 	"go.uber.org/zap"
 )
@@ -125,6 +126,15 @@ func BigUint(key string, val fmt.Stringer) zap.Field {
 // BigInt constructs a field with the given key and value.
 func BigInt(key string, val fmt.Stringer) zap.Field {
 	return String(key, val.String())
+}
+
+func EthereumAddresses(addresses []common.Address) zap.Field {
+	strings := []string{}
+	for _, v := range addresses {
+		strings = append(strings, v.String())
+	}
+
+	return Strings("addresses", strings)
 }
 
 // Uint constructs a field with the given key and value.

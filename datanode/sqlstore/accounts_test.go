@@ -13,15 +13,17 @@
 package sqlstore_test
 
 import (
+	"encoding/hex"
 	"testing"
+
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAccount(t *testing.T) {
@@ -43,15 +45,20 @@ func TestAccount(t *testing.T) {
 	block := addTestBlock(t, ctx, blockStore)
 	asset := addTestAsset(t, ctx, assetStore, block)
 	party := addTestParty(t, ctx, partyStore, block)
-	account := helpers.AddTestAccount(t, ctx, accountStore, party, asset, types.AccountTypeInsurance, block)
+	accTxHash := entities.TxHash(hex.EncodeToString([]byte("account_hash_1")))
+	account := helpers.AddTestAccountWithTxHash(t, ctx, accountStore, party, asset, types.AccountTypeInsurance, block, accTxHash)
 
 	// Add a second account, same asset - different party
 	party2 := addTestParty(t, ctx, partyStore, block)
-	account2 := helpers.AddTestAccount(t, ctx, accountStore, party2, asset, types.AccountTypeInsurance, block)
+
+	accTxHash2 := entities.TxHash(hex.EncodeToString([]byte("account_hash_2")))
+	account2 := helpers.AddTestAccountWithTxHash(t, ctx, accountStore, party2, asset, types.AccountTypeInsurance, block, accTxHash2)
 
 	// Add a couple of test balances
-	addTestBalance(t, balanceStore, block, account, 10)
-	addTestBalance(t, balanceStore, block, account2, 100)
+	balTxHash := txHashFromString("balance_hash_1")
+	balTxHash2 := txHashFromString("balance_hash_2")
+	addTestBalance(t, balanceStore, block, account, 10, balTxHash)
+	addTestBalance(t, balanceStore, block, account2, 100, balTxHash2)
 	_, err = balanceStore.Flush(ctx)
 	require.NoError(t, err)
 
@@ -94,11 +101,16 @@ func TestAccount(t *testing.T) {
 		assert.Len(t, accs, 0)
 	})
 
-	t.Run("query account balance v1", func(t *testing.T) {
-		// QueryBalanceV1 correctly filters on marketID
-		filter := entities.AccountFilter{AssetID: asset.ID, MarketIDs: []entities.MarketID{account.MarketID}}
-		_, err := accountStore.QueryBalancesV1(ctx, filter, entities.OffsetPagination{})
+	t.Run("get by tx hash", func(t *testing.T) {
+		accounts, err := accountStore.GetByTxHash(ctx, accTxHash)
 		require.NoError(t, err)
+		require.Len(t, accounts, 1)
+		assert.Equal(t, accounts[0], account)
+
+		accounts2, err := accountStore.GetByTxHash(ctx, accTxHash2)
+		require.NoError(t, err)
+		require.Len(t, accounts2, 1)
+		assert.Equal(t, accounts2[0], account2)
 	})
 
 	accBal1 := entities.AccountBalance{Account: &account, Balance: decimal.NewFromInt(10)}
@@ -112,6 +124,18 @@ func TestAccount(t *testing.T) {
 		require.True(t, accBal1.Equal(balances[0]))
 		require.False(t, pageInfo.HasNextPage)
 		require.False(t, pageInfo.HasPreviousPage)
+	})
+
+	t.Run("get balances by tx hash", func(t *testing.T) {
+		balances1, err := accountStore.GetBalancesByTxHash(ctx, balTxHash)
+		require.NoError(t, err)
+		require.Len(t, balances1, 1)
+		require.True(t, accBal1.Equal(balances1[0]))
+
+		balances2, err := accountStore.GetBalancesByTxHash(ctx, balTxHash2)
+		require.NoError(t, err)
+		require.Len(t, balances2, 1)
+		require.True(t, accBal2.Equal(balances2[0]))
 	})
 
 	one := int32(1)

@@ -48,6 +48,20 @@ func (mr *MockMarketPositionMockRecorder) Buy() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Buy", reflect.TypeOf((*MockMarketPosition)(nil).Buy))
 }
 
+// BuySumProduct mocks base method.
+func (m *MockMarketPosition) BuySumProduct() *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuySumProduct")
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// BuySumProduct indicates an expected call of BuySumProduct.
+func (mr *MockMarketPositionMockRecorder) BuySumProduct() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuySumProduct", reflect.TypeOf((*MockMarketPosition)(nil).BuySumProduct))
+}
+
 // ClearPotentials mocks base method.
 func (m *MockMarketPosition) ClearPotentials() {
 	m.ctrl.T.Helper()
@@ -100,6 +114,20 @@ func (m *MockMarketPosition) Sell() int64 {
 func (mr *MockMarketPositionMockRecorder) Sell() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sell", reflect.TypeOf((*MockMarketPosition)(nil).Sell))
+}
+
+// SellSumProduct mocks base method.
+func (m *MockMarketPosition) SellSumProduct() *num.Uint {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SellSumProduct")
+	ret0, _ := ret[0].(*num.Uint)
+	return ret0
+}
+
+// SellSumProduct indicates an expected call of SellSumProduct.
+func (mr *MockMarketPositionMockRecorder) SellSumProduct() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SellSumProduct", reflect.TypeOf((*MockMarketPosition)(nil).SellSumProduct))
 }
 
 // Size mocks base method.

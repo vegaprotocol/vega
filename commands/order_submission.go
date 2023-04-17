@@ -19,6 +19,10 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		return errs.FinalAddForProperty("order_submission", ErrIsRequired)
 	}
 
+	if len(cmd.Reference) > ReferenceMaxLen {
+		errs.AddForProperty("order_submission.reference", ErrReferenceTooLong)
+	}
+
 	if len(cmd.MarketId) == 0 {
 		errs.AddForProperty("order_submission.market_id", ErrIsRequired)
 	} else if !IsVegaPubkey(cmd.MarketId) {
@@ -61,6 +65,35 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		errs.AddForProperty("order_submission.expires_at",
 			errors.New("is only available when the time in force is of type GTT"),
 		)
+	}
+
+	if cmd.PostOnly && cmd.ReduceOnly {
+		errs.AddForProperty("order_submission.post_only",
+			errors.New("cannot be true at the same time as order_submission.reduce_only"))
+	} else {
+		if cmd.PostOnly {
+			if cmd.Type != types.Order_TYPE_LIMIT {
+				errs.AddForProperty("order_submission.post_only",
+					errors.New("only valid for limit orders"))
+			}
+			if cmd.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+				cmd.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
+				errs.AddForProperty("order_submission.post_only",
+					errors.New("only valid for persistent orders"))
+			}
+		}
+
+		if cmd.ReduceOnly {
+			if cmd.TimeInForce != types.Order_TIME_IN_FORCE_FOK &&
+				cmd.TimeInForce != types.Order_TIME_IN_FORCE_IOC {
+				errs.AddForProperty("order_submission.reduce_only",
+					errors.New("only valid for non-persistent orders"))
+			}
+			if cmd.PeggedOrder != nil {
+				errs.AddForProperty("order_submission.reduce_only",
+					errors.New("cannot be pegged"))
+			}
+		}
 	}
 
 	if cmd.PeggedOrder != nil {

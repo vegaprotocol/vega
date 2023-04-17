@@ -68,6 +68,18 @@ func (rs *Rewards) GetAll(ctx context.Context) ([]entities.Reward, error) {
 	return rewards, err
 }
 
+func (rs *Rewards) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Reward, error) {
+	defer metrics.StartSQLQuery("Rewards", "GetByTxHash")()
+
+	var rewards []entities.Reward
+	err := pgxscan.Select(ctx, rs.Connection, &rewards, `SELECT * FROM rewards WHERE tx_hash = $1`, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return rewards, nil
+}
+
 func (rs *Rewards) GetByCursor(ctx context.Context,
 	partyIDHex *string,
 	assetIDHex *string,
@@ -124,7 +136,8 @@ func (rs *Rewards) GetEpochSummaries(ctx context.Context,
 	}
 
 	query = fmt.Sprintf("%s %s GROUP BY epoch_id, asset_id, market_id, reward_type", query, where)
-	query, _, err = PaginateQuery[entities.EpochRewardSummaryCursor](query, []interface{}{}, rewardsOrdering, pagination)
+	query = fmt.Sprintf("WITH subquery AS (%s) SELECT * FROM subquery", query)
+	query, args, err = PaginateQuery[entities.EpochRewardSummaryCursor](query, args, rewardsOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
 	}

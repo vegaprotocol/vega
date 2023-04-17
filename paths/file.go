@@ -15,8 +15,10 @@ import (
 )
 
 var (
-	ErrEmptyResponse = errors.New("empty response")
-	ErrEmptyFile     = errors.New("empty file")
+	ErrEmptyResponse        = errors.New("empty response")
+	ErrEmptyFile            = errors.New("empty file")
+	ErrContentLooksLikeHTML = errors.New("the content looks like it contains HTML, be sure your file has TOML formatting")
+	ErrContentLooksLikeJSON = errors.New("the content looks like it contains JSON, be sure your file has TOML formatting")
 )
 
 func FetchStructuredFile(url string, v interface{}) error {
@@ -39,7 +41,23 @@ func FetchStructuredFile(url string, v interface{}) error {
 		return ErrEmptyResponse
 	}
 
-	if _, err := toml.Decode(string(body), v); err != nil {
+	if err := decodeTOMLFile(body, v); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func decodeTOMLFile(content []byte, v interface{}) error {
+	if content[0] == '<' {
+		return ErrContentLooksLikeHTML
+	}
+
+	if content[0] == '{' {
+		return ErrContentLooksLikeJSON
+	}
+
+	if _, err := toml.Decode(string(content), v); err != nil {
 		return fmt.Errorf("invalid TOML document: %w", err)
 	}
 
@@ -56,8 +74,8 @@ func ReadStructuredFile(path string, v interface{}) error {
 		return ErrEmptyFile
 	}
 
-	if _, err := toml.Decode(string(buf), v); err != nil {
-		return fmt.Errorf("invalid TOML file: %w", err)
+	if err := decodeTOMLFile(buf, v); err != nil {
+		return err
 	}
 
 	return nil

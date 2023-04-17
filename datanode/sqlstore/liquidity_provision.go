@@ -37,7 +37,7 @@ type LiquidityProvision struct {
 }
 
 const (
-	sqlOracleLiquidityProvisionColumns = `id, party_id, created_at, updated_at, market_id, 
+	sqlOracleLiquidityProvisionColumns = `id, party_id, created_at, updated_at, market_id,
 		commitment_amount, fee, sells, buys, version, status, reference, tx_hash, vega_time`
 )
 
@@ -82,6 +82,7 @@ func (lp *LiquidityProvision) Upsert(ctx context.Context, liquidityProvision ent
 
 func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
 	reference string,
+	live bool,
 	pagination entities.Pagination,
 ) ([]entities.LiquidityProvision, entities.PageInfo, error) {
 	if len(partyID) == 0 && len(marketID) == 0 {
@@ -89,19 +90,31 @@ func (lp *LiquidityProvision) Get(ctx context.Context, partyID entities.PartyID,
 	}
 
 	switch p := pagination.(type) {
-	case entities.OffsetPagination:
-		return lp.getWithOffsetPagination(ctx, partyID, marketID, reference, p)
 	case entities.CursorPagination:
-		return lp.getWithCursorPagination(ctx, partyID, marketID, reference, p)
+		return lp.getWithCursorPagination(ctx, partyID, marketID, reference, live, p)
 	default:
-		return lp.getWithOffsetPagination(ctx, partyID, marketID, reference, entities.OffsetPagination{})
+		panic("unsupported pagination")
 	}
 }
 
+func (lp *LiquidityProvision) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LiquidityProvision, error) {
+	defer metrics.StartSQLQuery("LiquidityProvision", "GetByTxHash")()
+
+	var liquidityProvisions []entities.LiquidityProvision
+	query := fmt.Sprintf(`SELECT %s FROM liquidity_provisions WHERE tx_hash = $1`, sqlOracleLiquidityProvisionColumns)
+
+	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return liquidityProvisions, nil
+}
+
 func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
-	reference string, pagination entities.CursorPagination,
+	reference string, live bool, pagination entities.CursorPagination,
 ) ([]entities.LiquidityProvision, entities.PageInfo, error) {
-	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference)
+	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference, live)
 
 	var err error
 	var pageInfo entities.PageInfo
@@ -120,31 +133,18 @@ func (lp *LiquidityProvision) getWithCursorPagination(ctx context.Context, party
 	return pagedLiquidityProvisions, pageInfo, nil
 }
 
-func (lp *LiquidityProvision) getWithOffsetPagination(ctx context.Context, partyID entities.PartyID, marketID entities.MarketID,
-	reference string, pagination entities.OffsetPagination) ([]entities.LiquidityProvision,
-	entities.PageInfo, error,
-) {
-	var bindVars []interface{}
-	var pageInfo entities.PageInfo
-
-	query, bindVars := lp.buildLiquidityProvisionsSelect(partyID, marketID, reference)
-
-	query, bindVars = orderAndPaginateQuery(query, []string{"id", "vega_time"}, pagination, bindVars...)
-
-	var liquidityProvisions []entities.LiquidityProvision
-
-	defer metrics.StartSQLQuery("LiquidityProvision", "Get")()
-	err := pgxscan.Select(ctx, lp.Connection, &liquidityProvisions, query, bindVars...)
-	return liquidityProvisions, pageInfo, err
-}
-
 func (lp *LiquidityProvision) buildLiquidityProvisionsSelect(partyID entities.PartyID, marketID entities.MarketID,
-	reference string,
+	reference string, live bool,
 ) (string, []interface{}) {
 	var bindVars []interface{}
-
-	selectSQL := fmt.Sprintf(`select %s
-from current_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
+	selectSQL := ""
+	if live {
+		selectSQL = fmt.Sprintf(`select %s
+from live_liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
+	} else {
+		selectSQL = fmt.Sprintf(`select %s
+from liquidity_provisions`, sqlOracleLiquidityProvisionColumns)
+	}
 
 	where := ""
 

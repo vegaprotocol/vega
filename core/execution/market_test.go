@@ -2778,9 +2778,6 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		},
 	}
 	openEnd := now.Add(time.Duration(extension)*time.Second + time.Second)
-	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
-	// we don't have to add both anymore, the first auction period is determined by network parameter
-	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(600)
 	auctionTriggeringPrice := initialPrice + mmu.Uint64() + 1
@@ -2955,10 +2952,10 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
+	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension) * time.Second)
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
-
-	require.Empty(t, md.PriceMonitoringBounds)
+	require.Equal(t, 1, len(md.PriceMonitoringBounds))
 
 	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
@@ -2970,7 +2967,28 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
-	require.Empty(t, md.PriceMonitoringBounds)
+	require.Equal(t, 1, len(md.PriceMonitoringBounds))
+
+	tm.now = auctionEndTime.Add(time.Nanosecond)
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
+	assert.False(t, closed)
+
+	auctionEndTime = openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
+	md = tm.market.GetMarketData()
+	require.NotNil(t, md)
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.MarketStateSuspended, tm.market.State())
+
+	tm.now = auctionEndTime
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
+	assert.False(t, closed)
+
+	md = tm.market.GetMarketData()
+	require.NotNil(t, md)
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
 	tm.now = auctionEndTime.Add(time.Nanosecond)
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
@@ -3130,9 +3148,10 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 
 	auxParty := "auxParty"
 	auxParty2 := "auxParty2"
+	lpprov := "lpprov"
 	addAccount(t, tm, auxParty)
 	addAccount(t, tm, auxParty2)
-	addAccountWithAmount(tm, "lpprov", 10000000)
+	addAccountWithAmount(tm, lpprov, 10000000)
 
 	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), num.DecimalFromFloat(0))
@@ -3170,7 +3189,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 			newLiquidityOrder(types.PeggedReferenceMid, 15, 23),
 		},
 	}
-	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, "lpprov", vgcrypto.RandomHash()))
+	require.NoError(t, tm.market.SubmitLiquidityProvision(context.Background(), lp, lpprov, vgcrypto.RandomHash()))
 	// leave opening auction
 	now = now.Add(2 * time.Second)
 	tm.now = now
@@ -3243,7 +3262,6 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	assert.NoError(t, err)
 	require.Equal(t, 0, len(confirmationSell.Trades))
 
-	// TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,
@@ -3283,7 +3301,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 
 	lp = &types.LiquidityProvisionSubmission{
 		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(2000),
+		CommitmentAmount: num.NewUint(2475),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
 			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
@@ -3300,12 +3318,23 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	// this will make current target stake returns 2475
 	err = tm.market.TSCalc().RecordOpenInterest(10, now)
 	require.NoError(t, err)
+	md := tm.market.GetMarketData()
+	require.Equal(t, "2475", md.TargetStake)
+	require.Equal(t, "502475", md.SuppliedStake)
 
-	// by set a very low commitment we should fail
+	// Cancel the provision by other LP
+	lpc := &types.LiquidityProvisionCancellation{
+		MarketID: lp.MarketID,
+	}
+	require.NoError(t, tm.market.CancelLiquidityProvision(ctx, lpc, lpprov))
+	md = tm.market.GetMarketData()
+	require.Equal(t, "2475", md.TargetStake)
+	require.Equal(t, "2475", md.SuppliedStake)
 
+	// amending below current target stake not allowed
 	lpa := &types.LiquidityProvisionAmendment{
 		MarketID:         lp.MarketID,
-		CommitmentAmount: num.NewUint(1),
+		CommitmentAmount: num.NewUint(2474),
 		Fee:              lp.Fee,
 		Buys:             lp.Buys,
 		Sells:            lp.Sells,
@@ -3314,18 +3343,8 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		tm.market.AmendLiquidityProvision(ctx, lpa, party1, vgcrypto.RandomHash()),
 	)
 
-	// 2000 + 600 should be enough to get us on top of the
-	// target stake
-	lpa.CommitmentAmount = num.NewUint(2000 + 600)
-	require.NoError(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, party1, vgcrypto.RandomHash()),
-	)
-	// mktD := tm.market.GetMarketData()
-	// fmt.Printf("TS: %s\nSS: %s\n", mktD.TargetStake, mktD.SuppliedStake)
-
-	// 2600 - 125 should be enough to get just at the required stake
-	// Don't know why, but the target stake is now vastly different
-	lpa.CommitmentAmount = num.NewUint(1249650)
+	// amending just above current target stake is fine
+	lpa.CommitmentAmount = num.NewUint(2476)
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(ctx, lpa, party1, vgcrypto.RandomHash()),
 	)
@@ -3344,7 +3363,6 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	addAccount(t, tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,
@@ -5364,7 +5382,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
-	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 
 	// Move into a price monitoring auction so that the pegged orders are parked and the other orders are cancelled
 	tm.market.StartPriceAuction(now)
@@ -5639,12 +5657,17 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 	require.Equal(t, 1, tm.market.GetLPSCount())
 
-	// Now move the mark price
 	o10 := getMarketOrder(tm, now, types.OrderTypeMarket, types.OrderTimeInForceIOC, "Order05", types.SideBuy, "party-B", 1, 0)
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NotNil(t, o10conf)
 	require.Equal(t, 1, len(o10conf.Trades))
 	require.NoError(t, err)
+
+	// Move the mark price and initiate a closeout at the end of the block
+	now = now.Add(time.Second)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
+	tm.market.BlockEnd(ctx)
 
 	require.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 	require.Equal(t, 0, tm.market.GetLPSCount())
@@ -5793,11 +5816,11 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 10),
 			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}

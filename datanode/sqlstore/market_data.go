@@ -121,66 +121,29 @@ func (md *MarketData) GetBetweenDatesByID(ctx context.Context, marketID string, 
 	}
 
 	switch p := pagination.(type) {
-	case entities.OffsetPagination:
-		return md.getBetweenDatesByIDOffset(ctx, marketID, &start, &end, p)
 	case entities.CursorPagination:
 		return md.getBetweenDatesByID(ctx, marketID, &start, &end, p)
+	default:
+		panic("unsupported pagination")
 	}
-
-	return nil, entities.PageInfo{}, errors.New("invalid pagination")
 }
 
 func (md *MarketData) GetFromDateByID(ctx context.Context, marketID string, start time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	switch p := pagination.(type) {
-	case entities.OffsetPagination:
-		return md.getBetweenDatesByIDOffset(ctx, marketID, &start, nil, p)
 	case entities.CursorPagination:
 		return md.getBetweenDatesByID(ctx, marketID, &start, nil, p)
+	default:
+		panic("unsupported pagination")
 	}
-	return nil, entities.PageInfo{}, errors.New("invalid pagination")
 }
 
 func (md *MarketData) GetToDateByID(ctx context.Context, marketID string, end time.Time, pagination entities.Pagination) ([]entities.MarketData, entities.PageInfo, error) {
 	switch p := pagination.(type) {
-	case entities.OffsetPagination:
-		return md.getBetweenDatesByIDOffset(ctx, marketID, nil, &end, p)
 	case entities.CursorPagination:
 		return md.getBetweenDatesByID(ctx, marketID, nil, &end, p)
+	default:
+		panic("unsupported pagination")
 	}
-	return nil, entities.PageInfo{}, errors.New("invalid pagination")
-}
-
-func (md *MarketData) getBetweenDatesByIDOffset(ctx context.Context, marketID string, start, end *time.Time, pagination entities.OffsetPagination) ([]entities.MarketData, entities.PageInfo, error) {
-	defer metrics.StartSQLQuery("MarketData", "getBetweenDatesByID")()
-	market := entities.MarketID(marketID)
-
-	selectStatement := `select * from market_data`
-
-	var results []entities.MarketData
-	var err error
-
-	if start != nil && end != nil {
-		query, args := orderAndPaginateQuery(
-			fmt.Sprintf(`%s where market = $1 and synthetic_time between $2 and $3`, selectStatement),
-			[]string{"synthetic_time"}, pagination,
-			market, *start, *end)
-
-		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
-	} else if start != nil && end == nil {
-		query, args := orderAndPaginateQuery(fmt.Sprintf(`%s where market = $1 and vega_time >= $2`, selectStatement),
-			[]string{"synthetic_time"}, pagination,
-			market, *start)
-
-		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
-	} else if start == nil && end != nil {
-		query, args := orderAndPaginateQuery(fmt.Sprintf(`%s where market = $1 and vega_time <= $2`, selectStatement),
-			[]string{"synthetic_time"}, pagination,
-			market, *end)
-
-		err = pgxscan.Select(ctx, md.Connection, &results, query, args...)
-	}
-
-	return results, entities.PageInfo{}, err
 }
 
 func (md *MarketData) getBetweenDatesByID(ctx context.Context, marketID string, start, end *time.Time, pagination entities.CursorPagination) ([]entities.MarketData, entities.PageInfo, error) {

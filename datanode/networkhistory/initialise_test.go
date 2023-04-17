@@ -39,6 +39,14 @@ func (m TestSegment) GetToHeight() int64 {
 	return m.HeightTo
 }
 
+func (m TestSegment) GetDatabaseVersion() int64 {
+	return 1
+}
+
+func (m TestSegment) GetChainId() string {
+	return "test-chain-id"
+}
+
 func TestInitialiseEmptyDataNode(t *testing.T) {
 	log := logging.NewTestLogger()
 	cfg := networkhistory.NewDefaultInitializationConfig()

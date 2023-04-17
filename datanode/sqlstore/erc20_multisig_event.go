@@ -173,3 +173,29 @@ func (m *ERC20MultiSigSignerEvent) GetRemovedEvents(ctx context.Context, validat
 	}
 	return events, pageInfo, nil
 }
+
+func (m *ERC20MultiSigSignerEvent) GetRemovedByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.ERC20MultiSigSignerRemovedEvent, error) {
+	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetRemovedByTxHash")()
+
+	var events []entities.ERC20MultiSigSignerRemovedEvent
+	query := `SELECT * FROM erc20_multisig_signer_events WHERE event=$1 AND tx_hash = $2`
+
+	if err := pgxscan.Select(ctx, m.Connection, &events, query, entities.ERC20MultiSigSignerEventTypeRemoved, txHash); err != nil {
+		return nil, fmt.Errorf("failed to retrieve multisig removed signer events: %w", err)
+	}
+
+	return events, nil
+}
+
+func (m *ERC20MultiSigSignerEvent) GetAddedByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.ERC20MultiSigSignerAddedEvent, error) {
+	defer metrics.StartSQLQuery("ERC20MultiSigSignerEvent", "GetAddedByTxHash")()
+
+	var events []entities.ERC20MultiSigSignerAddedEvent
+	query := `SELECT * FROM erc20_multisig_signer_events WHERE event=$1 AND tx_hash = $2`
+
+	if err := pgxscan.Select(ctx, m.Connection, &events, query, entities.ERC20MultiSigSignerEventTypeAdded, txHash); err != nil {
+		return nil, fmt.Errorf("failed to retrieve multisig added signer events: %w", err)
+	}
+
+	return events, nil
+}

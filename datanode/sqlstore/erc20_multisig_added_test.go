@@ -30,6 +30,7 @@ func TestERC20MultiSigEvent(t *testing.T) {
 	t.Run("Adding a single bundle", testAddSigner)
 	t.Run("Get with filters", testGetWithFilters)
 	t.Run("Get with add and removed events", testGetWithAddAndRemoveEvents)
+	t.Run("Get by tx hash with add and removed events", testGetByTxHashWithAddAndRemoveEvents)
 }
 
 func setupERC20MultiSigEventStoreTests(t *testing.T) (*sqlstore.ERC20MultiSigSignerEvent, sqlstore.Connection) {
@@ -147,6 +148,41 @@ func testGetWithAddAndRemoveEvents(t *testing.T) {
 	res, _, err = ms.GetRemovedEvents(ctx, vID1, wrongSubmitter, nil, entities.CursorPagination{})
 	require.NoError(t, err)
 	require.Len(t, res, 0)
+}
+
+func testGetByTxHashWithAddAndRemoveEvents(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	ms, conn := setupERC20MultiSigEventStoreTests(t)
+
+	var rowCount int
+	vID1 := "fc677151d0c93726"
+	submitter := generateEthereumAddress()
+
+	err := conn.QueryRow(ctx, `select count(*) from erc20_multisig_signer_events`).Scan(&rowCount)
+	require.NoError(t, err)
+	assert.Equal(t, 0, rowCount)
+
+	event1 := getTestSignerEvent(t, vgcrypto.RandomHash(), vID1, submitter, "12", true)
+	err = ms.Add(ctx, event1)
+	require.NoError(t, err)
+
+	event2 := getTestSignerEvent(t, vgcrypto.RandomHash(), vID1, submitter, "24", false)
+	err = ms.Add(ctx, event2)
+	require.NoError(t, err)
+
+	res, err := ms.GetAddedByTxHash(ctx, event1.TxHash)
+	require.NoError(t, err)
+	require.Len(t, res, 1)
+	assert.Equal(t, event1.TxHash, res[0].TxHash)
+	assert.Equal(t, event1.Event, res[0].Event)
+
+	res2, err := ms.GetRemovedByTxHash(ctx, event2.TxHash)
+	require.NoError(t, err)
+	require.Len(t, res2, 1)
+	assert.Equal(t, event2.TxHash, res2[0].TxHash)
+	assert.Equal(t, event2.Event, res2[0].Event)
 }
 
 func getTestSignerEvent(t *testing.T, signatureID string, validatorID string, submitter string, epochSeq string, addedEvent bool) *entities.ERC20MultiSigSignerEvent {

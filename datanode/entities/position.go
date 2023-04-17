@@ -115,6 +115,16 @@ func (p *Position) UpdateOrdersClosed() {
 	p.DistressedStatus = PositionStatusOrdersClosed
 }
 
+func (p *Position) ToggleDistressedStatus() {
+	// if currently marked as distressed -> mark as safe
+	if p.DistressedStatus == PositionStatusDistressed {
+		p.DistressedStatus = PositionStatusUnspecified
+		return
+	}
+	// was safe, is now distressed
+	p.DistressedStatus = PositionStatusDistressed
+}
+
 func (p *Position) UpdateWithPositionSettlement(e positionSettlement) {
 	pf := e.PositionFactor()
 	for _, t := range e.Trades() {
@@ -184,7 +194,7 @@ func (p *Position) UpdateWithSettleMarket(e settleMarket) {
 	p.syncPending()
 }
 
-func (p *Position) ToProto() *vega.Position {
+func (p Position) ToProto() *vega.Position {
 	var timestamp int64
 	if !p.VegaTime.IsZero() {
 		timestamp = p.VegaTime.UnixNano()

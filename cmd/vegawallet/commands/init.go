@@ -73,7 +73,7 @@ type InitFlags struct {
 }
 
 func Init(home string, f *InitFlags) error {
-	walletStore, err := wallets.InitialiseStore(home)
+	walletStore, err := wallets.InitialiseStore(home, false)
 	if err != nil {
 		return fmt.Errorf("couldn't initialise wallets store: %w", err)
 	}

@@ -80,17 +80,17 @@ func (Asset_Status) EnumDescriptor() ([]byte, []int) {
 	return file_vega_assets_proto_rawDescGZIP(), []int{0, 0}
 }
 
-// The Vega representation of an external asset
+// Vega representation of an external asset
 type Asset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Internal identifier of the asset
+	// Internal identifier of the asset.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The definition of the external source for this asset
+	// Definition of the external source for this asset.
 	Details *AssetDetails `protobuf:"bytes,2,opt,name=details,proto3" json:"details,omitempty"`
-	// Status of the asset
+	// Status of the asset.
 	Status Asset_Status `protobuf:"varint,3,opt,name=status,proto3,enum=vega.Asset_Status" json:"status,omitempty"`
 }
 
@@ -147,21 +147,21 @@ func (x *Asset) GetStatus() Asset_Status {
 	return Asset_STATUS_UNSPECIFIED
 }
 
-// The Vega representation of an external asset
+// Vega representation of an external asset
 type AssetDetails struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Name of the asset (e.g: Great British Pound)
+	// Name of the asset (e.g: Great British Pound).
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Symbol of the asset (e.g: GBP)
+	// Symbol of the asset (e.g: GBP).
 	Symbol string `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
-	// Number of decimal / precision handled by this asset
+	// Number of decimal / precision handled by this asset.
 	Decimals uint64 `protobuf:"varint,4,opt,name=decimals,proto3" json:"decimals,omitempty"`
-	// The minimum economically meaningful amount in the asset
+	// Minimum economically meaningful amount in the asset.
 	Quantum string `protobuf:"bytes,5,opt,name=quantum,proto3" json:"quantum,omitempty"`
-	// The source
+	// Source of the asset
 	//
 	// Types that are assignable to Source:
 	//
@@ -256,12 +256,12 @@ type isAssetDetails_Source interface {
 }
 
 type AssetDetails_BuiltinAsset struct {
-	// A built-in asset
+	// Vega built-in asset.
 	BuiltinAsset *BuiltinAsset `protobuf:"bytes,101,opt,name=builtin_asset,json=builtinAsset,proto3,oneof"`
 }
 
 type AssetDetails_Erc20 struct {
-	// An Ethereum ERC20 asset
+	// Ethereum ERC20 asset.
 	Erc20 *ERC20 `protobuf:"bytes,102,opt,name=erc20,proto3,oneof"`
 }
 
@@ -269,13 +269,13 @@ func (*AssetDetails_BuiltinAsset) isAssetDetails_Source() {}
 
 func (*AssetDetails_Erc20) isAssetDetails_Source() {}
 
-// A Vega internal asset
+// Vega internal asset
 type BuiltinAsset struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Maximum amount that can be requested by a party through the built-in asset faucet at a time
+	// Maximum amount that can be requested by a party through the built-in asset faucet at a time.
 	MaxFaucetAmountMint string `protobuf:"bytes,1,opt,name=max_faucet_amount_mint,json=maxFaucetAmountMint,proto3" json:"max_faucet_amount_mint,omitempty"`
 }
 
@@ -318,20 +318,20 @@ func (x *BuiltinAsset) GetMaxFaucetAmountMint() string {
 	return ""
 }
 
-// An ERC20 token based asset, living on the ethereum network
+// ERC20 token based asset, living on the ethereum network
 type ERC20 struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The address of the contract for the token, on the ethereum network
+	// Address of the contract for the token, on the ethereum network.
 	ContractAddress string `protobuf:"bytes,1,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
-	// The lifetime limits deposit per address
-	// note: this is a temporary measure that can be changed by governance
+	// Lifetime limits deposit per address
+	// note: this is a temporary measure that can be changed by governance.
 	LifetimeLimit string `protobuf:"bytes,2,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
-	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+	// Maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
 	// There’s no limit on the size of a withdrawal
-	// note: this is a temporary measure that can be changed by governance
+	// note: this is a temporary measure that can be changed by governance.
 	WithdrawThreshold string `protobuf:"bytes,3,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }
 
@@ -388,15 +388,15 @@ func (x *ERC20) GetWithdrawThreshold() string {
 	return ""
 }
 
-// The changes to apply on an existing asset.
+// Changes to apply on an existing asset.
 type AssetDetailsUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The minimum economically meaningful amount in the asset
+	// Minimum economically meaningful amount in the asset.
 	Quantum string `protobuf:"bytes,5,opt,name=quantum,proto3" json:"quantum,omitempty"`
-	// The source
+	// Source of the asset update
 	//
 	// Types that are assignable to Source:
 	//
@@ -462,7 +462,7 @@ type isAssetDetailsUpdate_Source interface {
 }
 
 type AssetDetailsUpdate_Erc20 struct {
-	// An Ethereum ERC20 asset
+	// Ethereum ERC20 asset update.
 	Erc20 *ERC20Update `protobuf:"bytes,101,opt,name=erc20,proto3,oneof"`
 }
 
@@ -473,13 +473,13 @@ type ERC20Update struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The lifetime limits deposit per address.
+	// Lifetime limits deposit per address.
 	// This will be interpreted against the asset decimals.
-	// note: this is a temporary measure that can be changed by governance
+	// note: this is a temporary measure that can be changed by governance.
 	LifetimeLimit string `protobuf:"bytes,1,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
-	// The maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
+	// Maximum you can withdraw instantly. All withdrawals over the threshold will be delayed by the withdrawal delay.
 	// There’s no limit on the size of a withdrawal
-	// note: this is a temporary measure that can be changed by governance
+	// note: this is a temporary measure that can be changed by governance.
 	WithdrawThreshold string `protobuf:"bytes,2,opt,name=withdraw_threshold,json=withdrawThreshold,proto3" json:"withdraw_threshold,omitempty"`
 }
 

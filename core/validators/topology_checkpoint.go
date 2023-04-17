@@ -49,7 +49,7 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 	t.validators = make(map[string]*valState, len(ckp.ValidatorState))
 	nextValidators := []string{}
 	for _, node := range ckp.ValidatorState {
-		t.validators[node.ValidatorUpdate.NodeId] = &valState{
+		vs := &valState{
 			data: ValidatorData{
 				ID:              node.ValidatorUpdate.NodeId,
 				VegaPubKey:      node.ValidatorUpdate.VegaPubKey,
@@ -68,13 +68,29 @@ func (t *Topology) Load(ctx context.Context, data []byte) error {
 			lastBlockWithPositiveRanking:    int64(t.currentBlockHeight - 1),
 			numberOfEthereumEventsForwarded: node.EthEventsForwarded,
 			heartbeatTracker: &validatorHeartbeatTracker{
-				blockIndex:            0,
+				blockIndex:            int(node.HeartbeatBlockIndex),
 				expectedNextHash:      "",
 				expectedNexthashSince: time.Time{},
 			},
 			validatorPower: node.ValidatorPower,
 			rankingScore:   node.RankingScore,
 		}
+
+		// we check if its populate so that we remain compatible with old checkpoints
+		if len(node.HeartbeatBlockSigs) == 10 {
+			for i := 0; i < 10; i++ {
+				vs.heartbeatTracker.blockSigs[i] = node.HeartbeatBlockSigs[i]
+			}
+		}
+
+		// this node is started and expect to be a validator
+		// but so far we haven't seen ourselves as validators for
+		// this network.
+		if t.isValidatorSetup && !t.isValidator {
+			t.checkValidatorDataWithSelfWallets(vs.data)
+		}
+
+		t.validators[node.ValidatorUpdate.NodeId] = vs
 		if t.validators[node.ValidatorUpdate.NodeId].validatorPower > 0 {
 			nextValidators = append(nextValidators, node.ValidatorUpdate.NodeId)
 		}
@@ -235,10 +251,12 @@ func (t *Topology) getValidatorStateCheckpoint() []*checkpoint.ValidatorState {
 				AvatarUrl:       node.data.AvatarURL,
 				FromEpoch:       node.data.FromEpoch,
 			},
-			Status:             int32(node.status),
-			EthEventsForwarded: node.numberOfEthereumEventsForwarded,
-			ValidatorPower:     node.validatorPower,
-			RankingScore:       node.rankingScore,
+			Status:              int32(node.status),
+			EthEventsForwarded:  node.numberOfEthereumEventsForwarded,
+			ValidatorPower:      node.validatorPower,
+			RankingScore:        node.rankingScore,
+			HeartbeatBlockIndex: int32(node.heartbeatTracker.blockIndex),
+			HeartbeatBlockSigs:  node.heartbeatTracker.blockSigs[:],
 		})
 	}
 	return vsSlice

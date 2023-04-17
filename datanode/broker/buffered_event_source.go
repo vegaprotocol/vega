@@ -76,13 +76,13 @@ func NewBufferedEventSource(ctx context.Context, log *logging.Logger, config Buf
 		log:                log.Named("buffered-event-source"),
 		source:             source,
 		config:             config,
-		lastBufferedSeqNum: make(chan uint64, config.MaxBufferedEvents),
+		lastBufferedSeqNum: make(chan uint64, 100),
 		bufferFilePath:     bufferFilesDir,
 		archiveFilesPath:   archiveFilesDir,
 	}
 
-	fb.log.Infof("Starting buffered event source with a max buffered event count of %d, and events per buffer file size %d",
-		config.MaxBufferedEvents, config.EventsPerFile)
+	fb.log.Info("Starting buffered event source with a max buffered event, and events per buffer file size",
+		logging.Int("events-per-file", config.EventsPerFile))
 
 	return fb, nil
 }
@@ -152,21 +152,17 @@ func (m *FileBufferedEventSource) writeEventsToBuffer(ctx context.Context, sourc
 				sinkErrorCh <- fmt.Errorf("failed to write events to buffer:%w", err)
 			}
 
-			select {
-			case m.lastBufferedSeqNum <- bufferSeqNum:
-			default:
-			loop:
-				for {
-					select {
-					case <-m.lastBufferedSeqNum:
-					case <-ctx.Done():
-						return
-					default:
-						break loop
-					}
+		loop:
+			for {
+				select {
+				case <-m.lastBufferedSeqNum:
+				case <-ctx.Done():
+					return
+				default:
+					break loop
 				}
-				m.lastBufferedSeqNum <- bufferSeqNum
 			}
+			m.lastBufferedSeqNum <- bufferSeqNum
 
 		case srcErr, ok := <-sourceErrCh:
 			if !ok {

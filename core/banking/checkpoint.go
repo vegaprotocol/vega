@@ -16,7 +16,6 @@ import (
 	"context"
 	"sort"
 	"sync/atomic"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -151,6 +150,12 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 		}
 
 		e.assetActs[v.ID] = aa
+		// store the deposit in the deposits
+		if v.BuiltinD != nil {
+			e.deposits[v.ID] = e.newDeposit(v.ID, v.BuiltinD.PartyID, v.BuiltinD.VegaAssetID, v.BuiltinD.Amount, v.Hash)
+		} else if v.Erc20D != nil {
+			e.deposits[v.ID] = e.newDeposit(v.ID, v.Erc20D.TargetPartyID, v.Erc20D.VegaAssetID, v.Erc20D.Amount, v.Hash)
+		}
 	}
 }
 
@@ -186,7 +191,7 @@ func (e *Engine) loadScheduledTransfers(
 			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
 			transfers = append(transfers, transfer)
 		}
-		e.scheduledTransfers[time.Unix(v.DeliverOn, 0).UnixNano()] = transfers
+		e.scheduledTransfers[v.DeliverOn] = transfers
 	}
 
 	return evts, nil
@@ -233,11 +238,7 @@ func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 		for _, v := range v {
 			transfers = append(transfers, v.ToProto())
 		}
-
-		// k is a Unix nano timestamp, and we want a Unix timestamp.
-		deliverOnAsUnix := k / int64(time.Second)
-
-		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: deliverOnAsUnix, Transfers: transfers})
+		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: k, Transfers: transfers})
 	}
 
 	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })

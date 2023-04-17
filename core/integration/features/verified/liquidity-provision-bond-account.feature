@@ -34,8 +34,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.24             | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/MAR22 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | updated-lqm-params   | 0.7                    | 0                         |
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.2   |
@@ -82,8 +82,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 253354   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
-      | party2 | USD   | ETH/MAR22 | 51630  | 99948370 |       |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
+      | party2 | USD   | ETH/MAR22 | 51690  | 99948310 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
       | party  | market id | maintenance | initial |
@@ -115,7 +115,7 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general  | bond  |
       | party0 | USD   | ETH/MAR22 | 209146 | 253354   | 50000 |
-      | party1 | USD   | ETH/MAR22 | 11415  | 99988585 |       |
+      | party1 | USD   | ETH/MAR22 | 11425  | 99988575 |       |
       | party2 | USD   | ETH/MAR22 | 264970 | 99734850 |       |
     #check the margin levels
     Then the parties should have the following margin levels:
@@ -170,8 +170,8 @@ Feature: Replicate LP getting distressed during continuous trading, check if pen
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.1              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/MAR22 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/MAR22 | updated-lqm-params   | 0.7                    | 0                         |
     And the following network parameters are set:
       | name                                  | value |
       | market.liquidity.bondPenaltyParameter | 0.5   |

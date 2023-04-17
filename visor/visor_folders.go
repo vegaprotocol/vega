@@ -27,7 +27,7 @@ import (
 var vegaDataNodeStartCmdArgs = []string{"datanode", "start"}
 
 func (v *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
-	v.log.Info("setting current folder",
+	v.log.Info("Setting current folder",
 		logging.String("sourceFolder", sourceFolder),
 		logging.String("currentFolder", currentFolder),
 	)
@@ -54,13 +54,25 @@ func (v *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
 }
 
 func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag string, conf config.AutoInstallConfig) error {
-	if err := os.MkdirAll(folder, 0o755); err != nil {
-		return fmt.Errorf("failed to create upgrade folder %q, %w", folder, err)
-	}
+	v.log.Info("Automatically installing upgrade folder")
 
 	runConf, err := config.ParseRunConfig(v.conf.CurrentRunConfigPath())
 	if err != nil {
 		return err
+	}
+
+	if conf.Assets.Vega.AssetName == "" {
+		return missingAutoInstallAssetError("vega")
+	}
+
+	if runConf.DataNode != nil {
+		if conf.Assets.DataNode == nil || conf.Assets.DataNode.AssetName == "" {
+			return missingAutoInstallAssetError("data node")
+		}
+	}
+
+	if err := os.MkdirAll(folder, 0o755); err != nil {
+		return fmt.Errorf("failed to create upgrade folder %q, %w", folder, err)
 	}
 
 	assetsFetcher := github.NewAssetsFetcher(
@@ -69,6 +81,7 @@ func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag str
 		conf.Assets.AssetsNames(),
 	)
 
+	v.log.Info("Downloading assets from Github", logging.Strings("assets", conf.Assets.AssetsNames()))
 	if err := assetsFetcher.Download(ctx, releaseTag, folder); err != nil {
 		return fmt.Errorf("failed to download release assets for tag %q: %w", releaseTag, err)
 	}
@@ -119,4 +132,8 @@ func (v *Visor) prepareNextUpgradeFolder(ctx context.Context, releaseTag string)
 	}
 
 	return nil
+}
+
+func missingAutoInstallAssetError(asset string) error {
+	return fmt.Errorf("missing required auto install %s asset definition in Visor config", asset)
 }

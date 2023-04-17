@@ -59,22 +59,6 @@ func (ml *MarginLevels) Flush(ctx context.Context) ([]entities.MarginLevels, err
 	return ml.batcher.Flush(ctx, ml.Connection)
 }
 
-func (ml *MarginLevels) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
-	whereClause, bindVars := buildAccountWhereClause(partyID, marketID)
-
-	query := fmt.Sprintf(`select  %s
-		from current_margin_levels
-		%s
-		order by account_id, vega_time desc`, sqlMarginLevelColumns,
-		whereClause)
-
-	query, bindVars = orderAndPaginateQuery(query, nil, pagination, bindVars...)
-	defer metrics.StartSQLQuery("MarginLevels", "GetByID")()
-	var marginLevels []entities.MarginLevels
-	err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, bindVars...)
-	return marginLevels, err
-}
-
 func buildAccountWhereClause(partyID, marketID string) (string, []interface{}) {
 	party := entities.PartyID(partyID)
 	market := entities.MarketID(marketID)
@@ -126,4 +110,15 @@ func (ml *MarginLevels) GetMarginLevelsByIDWithCursorPagination(ctx context.Cont
 
 	pagedMargins, pageInfo := entities.PageEntities[*v2.MarginEdge](marginLevels, pagination)
 	return pagedMargins, pageInfo, nil
+}
+
+func (ml *MarginLevels) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error) {
+	var marginLevels []entities.MarginLevels
+	query := fmt.Sprintf(`SELECT %s FROM margin_levels WHERE tx_hash = $1`, sqlMarginLevelColumns)
+
+	if err := pgxscan.Select(ctx, ml.Connection, &marginLevels, query, txHash); err != nil {
+		return nil, err
+	}
+
+	return marginLevels, nil
 }

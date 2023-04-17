@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/plugins"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 func PartiesHaveTheFollowingProfitAndLoss(
@@ -41,16 +42,26 @@ func positionAPIProduceTheFollowingRow(positionService *plugins.Positions, row p
 	sleepTimeMs := 100
 
 	var pos []*types.Position
+
+	// check position status if needed
+	ps, checkPS := row.positionState()
+	party := row.party()
 	for retries > 0 {
-		pos, err = positionService.GetPositionsByParty(row.party())
+		pos, err = positionService.GetPositionsByParty(party)
 		if err != nil {
-			return errCannotGetPositionForParty(row.party(), err)
+			return errCannotGetPositionForParty(party, err)
 		}
 
 		if areSamePosition(pos, row) {
-			return nil
+			if !checkPS {
+				return nil
+			}
+			// check state if required
+			states, _ := positionService.GetPositionStatesByParty(party)
+			if len(states) == 1 && states[0] == ps {
+				return nil
+			}
 		}
-
 		time.Sleep(time.Duration(sleepTimeMs) * time.Millisecond)
 		sleepTimeMs *= 2
 		retries--
@@ -100,7 +111,9 @@ func parseProfitAndLossTable(table *godog.Table) []RowWrapper {
 		"volume",
 		"unrealised pnl",
 		"realised pnl",
-	}, []string{})
+	}, []string{
+		"status",
+	})
 }
 
 type pnlRow struct {
@@ -121,4 +134,12 @@ func (r pnlRow) unrealisedPNL() num.Decimal {
 
 func (r pnlRow) realisedPNL() num.Decimal {
 	return r.row.MustDecimal("realised pnl")
+}
+
+func (r pnlRow) positionState() (vega.PositionStatus, bool) {
+	if !r.row.HasColumn("status") {
+		// we do not have the status column sepcified
+		return vega.PositionStatus_POSITION_STATUS_UNSPECIFIED, false
+	}
+	return r.row.MustPositionStatus("status"), true
 }

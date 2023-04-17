@@ -66,6 +66,12 @@ type settleMarket interface {
 	PositionFactor() num.Decimal
 }
 
+type distressedPositions interface {
+	MarketID() string
+	SafeParties() []string
+	DistressedParties() []string
+}
+
 type PositionStore interface {
 	Add(context.Context, entities.Position) error
 	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)
@@ -101,6 +107,7 @@ func (p *Position) Types() []events.Type {
 		events.SettleMarketEvent,
 		events.TradeEvent,
 		events.DistressedOrdersClosedEvent,
+		events.DistressedPositionsEvent,
 	}
 }
 
@@ -123,9 +130,28 @@ func (p *Position) Push(ctx context.Context, evt events.Event) error {
 		return p.handleTradeEvent(ctx, event)
 	case ordersClosed:
 		return p.handleOrdersClosedEvent(ctx, event)
+	case distressedPositions:
+		return p.handleDistressedPositions(ctx, event)
 	default:
 		return errors.Errorf("unknown event type %s", evt.Type().String())
 	}
+}
+
+func (p *Position) handleDistressedPositions(ctx context.Context, event distressedPositions) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	parties := append(event.DistressedParties(), event.SafeParties()...)
+	positions, err := p.store.GetByMarketAndParties(ctx, event.MarketID(), parties)
+	if err != nil {
+		return fmt.Errorf("failed to get positions: %w", err)
+	}
+	for _, pos := range positions {
+		pos.ToggleDistressedStatus()
+		if err := p.updatePosition(ctx, pos); err != nil {
+			return fmt.Errorf("failed to update position: %w", err)
+		}
+	}
+	return nil
 }
 
 func (p *Position) handleOrdersClosedEvent(ctx context.Context, event ordersClosed) error {

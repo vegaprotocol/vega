@@ -32,7 +32,7 @@ type SignMessageHandler func(api.AdminSignMessageParams) (api.AdminSignMessageRe
 
 func NewCmdSignMessage(w io.Writer, rf *RootFlags) *cobra.Command {
 	h := func(params api.AdminSignMessageParams) (api.AdminSignMessageResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminSignMessageResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}

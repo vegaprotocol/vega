@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The current supported version of the transaction inside the network.
+// Current supported version of the transaction inside the network.
 type TxVersion int32
 
 const (
@@ -79,7 +79,7 @@ type InputData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A number to provide uniqueness to prevent accidental replays and,
+	// Number to provide uniqueness to prevent accidental replays and,
 	// in combination with `block_height`, deliberate attacks.
 	// A nonce provides uniqueness for otherwise identical transactions,
 	// ensuring that the transaction hash uniquely identifies a specific transaction.
@@ -90,7 +90,7 @@ type InputData struct {
 	// and therefore different libraries or binaries may encode the same message
 	// slightly differently, causing a different hash.
 	Nonce uint64 `protobuf:"varint,1,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The block height at which the transaction was made.
+	// Block height at which the transaction was made.
 	// This should be the current block height. The transaction will be valid
 	// from the block and up to the `tolerance` block height.
 	// Example: If the network has a tolerance of 150 blocks and `block_height`
@@ -362,134 +362,134 @@ type isInputData_Command interface {
 }
 
 type InputData_OrderSubmission struct {
-	// A command for submitting an order
+	// Command for submitting an order.
 	OrderSubmission *OrderSubmission `protobuf:"bytes,1001,opt,name=order_submission,json=orderSubmission,proto3,oneof"`
 }
 
 type InputData_OrderCancellation struct {
 	// User commands
-	// Command to cancel an order
+	// Command to cancel an order.
 	OrderCancellation *OrderCancellation `protobuf:"bytes,1002,opt,name=order_cancellation,json=orderCancellation,proto3,oneof"`
 }
 
 type InputData_OrderAmendment struct {
-	// Command to amend an order
+	// Command to amend an order.
 	OrderAmendment *OrderAmendment `protobuf:"bytes,1003,opt,name=order_amendment,json=orderAmendment,proto3,oneof"`
 }
 
 type InputData_WithdrawSubmission struct {
-	// Command to submit a withdrawal
+	// Command to submit a withdrawal.
 	WithdrawSubmission *WithdrawSubmission `protobuf:"bytes,1004,opt,name=withdraw_submission,json=withdrawSubmission,proto3,oneof"`
 }
 
 type InputData_ProposalSubmission struct {
-	// Command to submit a governance proposal
+	// Command to submit a governance proposal.
 	ProposalSubmission *ProposalSubmission `protobuf:"bytes,1005,opt,name=proposal_submission,json=proposalSubmission,proto3,oneof"`
 }
 
 type InputData_VoteSubmission struct {
-	// Command to submit a vote on a governance proposal
+	// Command to submit a vote on a governance proposal.
 	VoteSubmission *VoteSubmission `protobuf:"bytes,1006,opt,name=vote_submission,json=voteSubmission,proto3,oneof"`
 }
 
 type InputData_LiquidityProvisionSubmission struct {
-	// Command to submit a liquidity commitment
+	// Command to submit a liquidity commitment.
 	LiquidityProvisionSubmission *LiquidityProvisionSubmission `protobuf:"bytes,1007,opt,name=liquidity_provision_submission,json=liquidityProvisionSubmission,proto3,oneof"`
 }
 
 type InputData_DelegateSubmission struct {
-	// Command to delegate tokens to a validator
+	// Command to delegate tokens to a validator.
 	DelegateSubmission *DelegateSubmission `protobuf:"bytes,1008,opt,name=delegate_submission,json=delegateSubmission,proto3,oneof"`
 }
 
 type InputData_UndelegateSubmission struct {
-	// Command to remove tokens delegated to a validator
+	// Command to remove tokens delegated to a validator.
 	UndelegateSubmission *UndelegateSubmission `protobuf:"bytes,1009,opt,name=undelegate_submission,json=undelegateSubmission,proto3,oneof"`
 }
 
 type InputData_LiquidityProvisionCancellation struct {
-	// Command to request cancelling a liquidity commitment
+	// Command to request cancelling a liquidity commitment.
 	LiquidityProvisionCancellation *LiquidityProvisionCancellation `protobuf:"bytes,1010,opt,name=liquidity_provision_cancellation,json=liquidityProvisionCancellation,proto3,oneof"`
 }
 
 type InputData_LiquidityProvisionAmendment struct {
-	// Command to request amending a liquidity commitment
+	// Command to request amending a liquidity commitment.
 	LiquidityProvisionAmendment *LiquidityProvisionAmendment `protobuf:"bytes,1011,opt,name=liquidity_provision_amendment,json=liquidityProvisionAmendment,proto3,oneof"`
 }
 
 type InputData_Transfer struct {
-	// Command to submit a transfer
+	// Command to submit a transfer.
 	Transfer *Transfer `protobuf:"bytes,1012,opt,name=transfer,proto3,oneof"`
 }
 
 type InputData_CancelTransfer struct {
-	// A command to request cancelling a recurring transfer
+	// Command to request cancelling a recurring transfer.
 	CancelTransfer *CancelTransfer `protobuf:"bytes,1013,opt,name=cancel_transfer,json=cancelTransfer,proto3,oneof"`
 }
 
 type InputData_AnnounceNode struct {
-	// A command used by a node operator to announce its node as a pending validator
+	// Command used by a node operator to announce its node as a pending validator.
 	AnnounceNode *AnnounceNode `protobuf:"bytes,1014,opt,name=announce_node,json=announceNode,proto3,oneof"`
 }
 
 type InputData_BatchMarketInstructions struct {
-	// A command to submit a batch of order instructions to a market
+	// Command to submit a batch of order instructions to a market.
 	BatchMarketInstructions *BatchMarketInstructions `protobuf:"bytes,1015,opt,name=batch_market_instructions,json=batchMarketInstructions,proto3,oneof"`
 }
 
 type InputData_NodeVote struct {
 	// Validator commands
 	// Command used by a validator when a node votes for validating that a given resource exists or is valid,
-	// for example, an ERC20 deposit is valid and exists on ethereum
+	// for example, an ERC20 deposit is valid and exists on ethereum.
 	NodeVote *NodeVote `protobuf:"bytes,2002,opt,name=node_vote,json=nodeVote,proto3,oneof"`
 }
 
 type InputData_NodeSignature struct {
-	// Command used by a validator to submit a signature, to be used by a foreign chain to recognise a decision taken by the Vega network
+	// Command used by a validator to submit a signature, to be used by a foreign chain to recognise a decision taken by the Vega network.
 	NodeSignature *NodeSignature `protobuf:"bytes,2003,opt,name=node_signature,json=nodeSignature,proto3,oneof"`
 }
 
 type InputData_ChainEvent struct {
 	// Command used by a validator to submit an event forwarded to the Vega network to provide information
 	// on events happening on other networks, to be used by a foreign chain
-	// to recognise a decision taken by the Vega network
+	// to recognise a decision taken by the Vega network.
 	ChainEvent *ChainEvent `protobuf:"bytes,2004,opt,name=chain_event,json=chainEvent,proto3,oneof"`
 }
 
 type InputData_KeyRotateSubmission struct {
-	// Command used by a validator to allow given validator to rotate their Vega keys
+	// Command used by a validator to allow given validator to rotate their Vega keys.
 	KeyRotateSubmission *KeyRotateSubmission `protobuf:"bytes,2005,opt,name=key_rotate_submission,json=keyRotateSubmission,proto3,oneof"`
 }
 
 type InputData_StateVariableProposal struct {
-	// Command used by a validator to submit a floating point value
+	// Command used by a validator to submit a floating point value.
 	StateVariableProposal *StateVariableProposal `protobuf:"bytes,2006,opt,name=state_variable_proposal,json=stateVariableProposal,proto3,oneof"`
 }
 
 type InputData_ValidatorHeartbeat struct {
 	// Command used by a validator to signal they are still online and validating blocks
-	// or ready to validate blocks when they are still a pending validator
+	// or ready to validate blocks when they are still a pending validator.
 	ValidatorHeartbeat *ValidatorHeartbeat `protobuf:"bytes,2007,opt,name=validator_heartbeat,json=validatorHeartbeat,proto3,oneof"`
 }
 
 type InputData_EthereumKeyRotateSubmission struct {
-	// Command used by a validator to allow given validator to rotate their Ethereum keys
+	// Command used by a validator to allow given validator to rotate their Ethereum keys.
 	EthereumKeyRotateSubmission *EthereumKeyRotateSubmission `protobuf:"bytes,2008,opt,name=ethereum_key_rotate_submission,json=ethereumKeyRotateSubmission,proto3,oneof"`
 }
 
 type InputData_ProtocolUpgradeProposal struct {
-	// Command used by a validator to propose a protocol upgrade
+	// Command used by a validator to propose a protocol upgrade.
 	ProtocolUpgradeProposal *ProtocolUpgradeProposal `protobuf:"bytes,2009,opt,name=protocol_upgrade_proposal,json=protocolUpgradeProposal,proto3,oneof"`
 }
 
 type InputData_IssueSignatures struct {
-	// Command used by a validator to submit signatures to a smart contract
+	// Command used by a validator to submit signatures to a smart contract.
 	IssueSignatures *IssueSignatures `protobuf:"bytes,2010,opt,name=issue_signatures,json=issueSignatures,proto3,oneof"`
 }
 
 type InputData_OracleDataSubmission struct {
 	// Oracles
-	// Command to submit new oracle data from third party providers
+	// Command to submit new oracle data from third party providers.
 	OracleDataSubmission *OracleDataSubmission `protobuf:"bytes,3001,opt,name=oracle_data_submission,json=oracleDataSubmission,proto3,oneof"`
 }
 
@@ -552,19 +552,19 @@ type Transaction struct {
 	// One of the set of Vega commands.
 	// These bytes are should be built as follows:
 	//
-	//	chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command
+	//	chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command.
 	InputData []byte `protobuf:"bytes,1,opt,name=input_data,json=inputData,proto3" json:"input_data,omitempty"`
-	// The signature of the inputData.
+	// Signature of the input data.
 	Signature *Signature `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
-	// The sender of the transaction.
-	// Any of the following would be valid:
+	// Sender of the transaction.
+	// Any of the following would be valid.
 	//
 	// Types that are assignable to From:
 	//
 	//	*Transaction_Address
 	//	*Transaction_PubKey
 	From isTransaction_From `protobuf_oneof:"from"`
-	// A version of the transaction, to be used in the future in case changes are implemented
+	// Version of the transaction, to be used in the future in case changes are implemented
 	// to the transaction format.
 	Version TxVersion `protobuf:"varint,2000,opt,name=version,proto3,enum=vega.commands.v1.TxVersion" json:"version,omitempty"`
 	// Proof of work contains the random transaction id used by the client and the nonce.
@@ -657,12 +657,12 @@ type isTransaction_From interface {
 }
 
 type Transaction_Address struct {
-	// The address of the sender (hex-encoded). Not supported yet.
+	// Hex-encoded address of the sender. Not supported yet.
 	Address string `protobuf:"bytes,1001,opt,name=address,proto3,oneof"`
 }
 
 type Transaction_PubKey struct {
-	// The public key of the sender (hex-encoded).
+	// Hex-encoded public key of the sender.
 	PubKey string `protobuf:"bytes,1002,opt,name=pub_key,json=pubKey,proto3,oneof"`
 }
 
@@ -676,9 +676,9 @@ type ProofOfWork struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A unique transaction identifier used to seed the proof-of-work hash.
+	// Unique transaction identifier used to seed the proof-of-work hash.
 	Tid string `protobuf:"bytes,1,opt,name=tid,proto3" json:"tid,omitempty"`
-	// A number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
+	// Number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
 	Nonce uint64 `protobuf:"varint,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
 }
 

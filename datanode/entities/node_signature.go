@@ -13,6 +13,7 @@
 package entities
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -31,6 +32,22 @@ type NodeSignature struct {
 	Kind       NodeSignatureKind
 	TxHash     TxHash
 	VegaTime   time.Time
+}
+
+// packNodeSignatures packs a list signatures into the form form:
+// 0x + sig1 + sig2 + ... + sigN in hex encoded form
+// If the list is empty, return an empty string instead.
+func PackNodeSignatures(signatures []NodeSignature) string {
+	pack := ""
+	if len(signatures) > 0 {
+		pack = "0x"
+	}
+
+	for _, v := range signatures {
+		pack = fmt.Sprintf("%v%v", pack, hex.EncodeToString(v.Sig))
+	}
+
+	return pack
 }
 
 func NodeSignatureFromProto(ns *commandspb.NodeSignature, txHash TxHash, vegaTime time.Time) (*NodeSignature, error) {

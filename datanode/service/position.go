@@ -30,6 +30,7 @@ type PositionStore interface {
 	GetByMarket(ctx context.Context, marketID string) ([]entities.Position, error)
 	GetByParty(ctx context.Context, partyID string) ([]entities.Position, error)
 	GetByPartyConnection(ctx context.Context, partyID []string, marketID []string, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Position, error)
 	GetAll(ctx context.Context) ([]entities.Position, error)
 }
 
@@ -133,6 +134,10 @@ func (p *Position) GetByMarket(ctx context.Context, marketID string) ([]entities
 
 func (p *Position) GetByParty(ctx context.Context, partyID entities.PartyID) ([]entities.Position, error) {
 	return p.store.GetByParty(ctx, partyID.String())
+}
+
+func (p *Position) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Position, error) {
+	return p.store.GetByTxHash(ctx, txHash)
 }
 
 func (p *Position) GetByPartyConnection(ctx context.Context, partyIDs []entities.PartyID, marketIDs []entities.MarketID, pagination entities.CursorPagination) ([]entities.Position, entities.PageInfo, error) {

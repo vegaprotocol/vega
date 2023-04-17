@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/datanode/metrics"
+
 	"github.com/jackc/pgx/v4"
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
@@ -44,6 +46,7 @@ type entity[K entityKey] interface {
 }
 
 func (b *MapBatcher[K, V]) Add(e V) {
+	metrics.IncrementBatcherAddedEntities(b.tableName)
 	key := e.Key()
 	_, present := b.pending.Set(key, e)
 	if present {
@@ -82,5 +85,8 @@ func (b *MapBatcher[K, V]) Flush(ctx context.Context, connection Connection) ([]
 	}
 
 	b.pending = orderedmap.New[K, V]()
+
+	metrics.BatcherFlushedEntitiesAdd(b.tableName, len(rows))
+
 	return values, nil
 }

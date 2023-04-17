@@ -60,12 +60,12 @@ func (e *SnapshotEngine) AmendOrder(ctx context.Context, originalOrder, newOrder
 	return e.Engine.AmendOrder(ctx, originalOrder, newOrder)
 }
 
-func (e *SnapshotEngine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
-	return e.Engine.UpdateNetwork(ctx, trade)
+func (e *SnapshotEngine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
+	return e.Engine.UpdateNetwork(ctx, trade, passiveOrder)
 }
 
-func (e *SnapshotEngine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
-	return e.Engine.Update(ctx, trade)
+func (e *SnapshotEngine) Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition {
+	return e.Engine.Update(ctx, trade, passiveOrder, aggressiveOrder)
 }
 
 func (e *SnapshotEngine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
@@ -117,11 +117,14 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 			pos.buy = p.Buy
 			pos.sell = p.Sell
 			pos.size = p.Size
-			pos.vwBuyPrice = p.VwBuy
-			pos.vwSellPrice = p.VwSell
-
+			pos.buySumProduct = p.BuySumProduct
+			pos.sellSumProduct = p.SellSumProduct
+			pos.distressed = p.Distressed
 			e.positionsCpy = append(e.positionsCpy, pos)
 			e.positions[p.PartyID] = pos
+			if p.Distressed {
+				e.distressedPos[p.PartyID] = struct{}{}
+			}
 		}
 		e.data, err = proto.Marshal(payload.IntoProto())
 		return nil, err
@@ -142,14 +145,17 @@ func (e *SnapshotEngine) serialise() ([]byte, error) {
 	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
 
 	for _, evt := range e.positionsCpy {
+		party := evt.Party()
+		_, distressed := e.distressedPos[party]
 		pos := &types.MarketPosition{
-			PartyID: evt.Party(),
-			Price:   evt.Price(),
-			Buy:     evt.Buy(),
-			Sell:    evt.Sell(),
-			Size:    evt.Size(),
-			VwBuy:   evt.VWBuy(),
-			VwSell:  evt.VWSell(),
+			PartyID:        party,
+			Price:          evt.Price(),
+			Buy:            evt.Buy(),
+			Sell:           evt.Sell(),
+			Size:           evt.Size(),
+			BuySumProduct:  evt.BuySumProduct(),
+			SellSumProduct: evt.SellSumProduct(),
+			Distressed:     distressed,
 		}
 		positions = append(positions, pos)
 	}

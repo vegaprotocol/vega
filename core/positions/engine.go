@@ -62,6 +62,10 @@ type Engine struct {
 	positionUpdated  func(context.Context, *MarketPosition)
 
 	broker Broker
+
+	// keep track of open, but distressed positions, this speeds things up when creating the event data
+	// and when generating snapshots
+	distressedPos map[string]struct{}
 }
 
 // New instantiates a new positions engine.
@@ -78,6 +82,7 @@ func New(log *logging.Logger, config Config, marketID string, broker Broker) *En
 		positionsCpy:     []events.MarketPosition{},
 		broker:           broker,
 		updatedPositions: map[string]struct{}{},
+		distressedPos:    map[string]struct{}{},
 	}
 	e.positionUpdated = e.bufferPosition
 	if config.StreamPositionVerbose {
@@ -138,10 +143,10 @@ func (e *Engine) Hash() []byte {
 		}
 
 		// Add bytes for VWBuy and VWSell here
-		b := p.VWBuy().Bytes()
+		b := p.BuySumProduct().Bytes()
 		copy(output[i:], b[:])
 		i += 32
-		s := p.VWBuy().Bytes()
+		s := p.SellSumProduct().Bytes()
 		copy(output[i:], s[:])
 		i += 32
 	}
@@ -179,7 +184,7 @@ func (e *Engine) RegisterOrder(ctx context.Context, order *types.Order) *MarketP
 		e.positionsCpy = append(e.positionsCpy, pos)
 	}
 
-	pos.RegisterOrder(order)
+	pos.RegisterOrder(e.log, order)
 	e.positionUpdated(ctx, pos)
 	return pos
 }
@@ -216,7 +221,7 @@ func (e *Engine) AmendOrder(ctx context.Context, originalOrder, newOrder *types.
 // party in the trade (whether it be buyer or seller). This could be incorporated into the Update
 // function, but we know when we're adding network trades, and having this check every time is
 // wasteful, and would only serve to add complexity to the Update func, and slow it down.
-func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events.MarketPosition {
+func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade, passiveOrder *types.Order) []events.MarketPosition {
 	// there's only 1 position
 	var (
 		ok  bool
@@ -236,9 +241,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 				logging.Int64("potential-buy", pos.buy),
 				logging.Trade(*trade))
 		}
-
-		// potential buy pos is smaller now
-		pos.buy -= int64(trade.Size)
+		pos.size += size
 	} else {
 		pos, ok = e.positions[trade.Seller]
 		if !ok {
@@ -252,13 +255,11 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 				logging.Int64("potential-sell", pos.sell),
 				logging.Trade(*trade))
 		}
-
-		// potential sell pos is smaller now
-		pos.sell -= int64(trade.Size)
 		// size is negative in case of a sale
-		size = -size
+		pos.size -= size
 	}
-	pos.size += size
+
+	pos.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
 
 	e.positionUpdated(ctx, pos)
 	cpy := pos.Clone()
@@ -266,7 +267,7 @@ func (e *Engine) UpdateNetwork(ctx context.Context, trade *types.Trade) []events
 }
 
 // Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
-func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.MarketPosition {
+func (e *Engine) Update(ctx context.Context, trade *types.Trade, passiveOrder, aggressiveOrder *types.Order) []events.MarketPosition {
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
 		e.log.Panic("could not find buyer position",
@@ -300,9 +301,16 @@ func (e *Engine) Update(ctx context.Context, trade *types.Trade) []events.Market
 	buyer.size += int64(trade.Size)
 	seller.size -= int64(trade.Size)
 
-	// Update potential positions. Potential positions decrease for both buyer and seller.
-	buyer.buy -= int64(trade.Size)
-	seller.sell -= int64(trade.Size)
+	aggressive := buyer
+	passive := seller
+	if aggressiveOrder.Side == types.SideSell {
+		aggressive = seller
+		passive = buyer
+	}
+
+	// Update potential positions & vwaps. Potential positions decrease for both buyer and seller.
+	aggressive.UpdateOnOrderChange(e.log, aggressiveOrder.Side, aggressiveOrder.Price, trade.Size, false)
+	passive.UpdateOnOrderChange(e.log, passiveOrder.Side, passiveOrder.Price, trade.Size, false)
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
@@ -334,6 +342,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 		}
 		// remove from the map
 		delete(e.positions, party)
+		delete(e.distressedPos, party)
 		// remove from the slice
 		for i := range e.positionsCpy {
 			if e.positionsCpy[i].Party() == party {
@@ -416,6 +425,47 @@ func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy
 }
 
+// MarkDistressed - mark any distressed parties as such, returns the IDs of the parties who weren't distressed before.
+func (e *Engine) MarkDistressed(closed []string) ([]string, []string) {
+	// assume number of distressed parties is roughly equal, it isn't but should overall reduce reallocs
+	// create a copy, otherwise newly distressed positions are unmarked
+	prevDistressed := make(map[string]struct{}, len(e.distressedPos))
+	for k := range e.distressedPos {
+		prevDistressed[k] = struct{}{}
+	}
+	nIDs := make([]string, 0, len(closed))
+	for _, c := range closed {
+		if _, ok := prevDistressed[c]; ok {
+			// this party was already known to be distressed, leave it as-is
+			// delete from this map, so we are left with only parties who were distressed, but aren't anymore
+			delete(prevDistressed, c)
+			continue
+		}
+		// not in distressed map -> get position, mark as distressed
+		e.positions[c].distressed = true
+		// add the new distressed party to the map
+		e.distressedPos[c] = struct{}{}
+		// add the ID to the slice of distressed ID's for the event
+		nIDs = append(nIDs, c)
+	}
+	// if we didn't have any previously distressed parties to update, we're done
+	if len(prevDistressed) == 0 {
+		return nIDs, nil
+	}
+	// mark parties who are no longer distressed accoringly
+	nd := make([]string, 0, len(prevDistressed))
+	for k := range prevDistressed {
+		// mark as no longer distressed
+		e.positions[k].distressed = false
+		// remove from the map
+		delete(e.distressedPos, k)
+		nd = append(nd, k)
+	}
+	sort.Strings(nIDs)
+	sort.Strings(nd)
+	return nIDs, nd
+}
+
 // GetPositionByPartyID - return current position for a given party, it's used in margin checks during auctions
 // we're not specifying an interface of the return type, and we return a pointer to a copy for the nil.
 func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
@@ -477,6 +527,7 @@ func (e *Engine) GetOpenPositionCount() uint64 {
 func (e *Engine) remove(p *MarketPosition) {
 	// delete from the map first
 	delete(e.positions, p.partyID)
+	delete(e.distressedPos, p.partyID) // in case party was previously flagged as distressed
 
 	// remove from the slice
 	for i := range e.positionsCpy {

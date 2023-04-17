@@ -30,24 +30,29 @@ type MarketPosition struct {
 	partyID string
 	price   *num.Uint
 
-	// volume weighted buy/sell prices
-	vwBuyPrice, vwSellPrice *num.Uint
+	// sum of size*price for party's buy/sell orders
+	buySumProduct, sellSumProduct *num.Uint
+
+	// this doesn't have to be included in checkpoints or snapshots
+	// yes, it's technically state, but the main reason for this field is to cut down on the number
+	// of events we send out.
+	distressed bool
 }
 
 func NewMarketPosition(party string) *MarketPosition {
 	return &MarketPosition{
-		partyID:     party,
-		price:       num.UintZero(),
-		vwBuyPrice:  num.UintZero(),
-		vwSellPrice: num.UintZero(),
+		partyID:        party,
+		price:          num.UintZero(),
+		buySumProduct:  num.UintZero(),
+		sellSumProduct: num.UintZero(),
 	}
 }
 
 func (p MarketPosition) Clone() *MarketPosition {
 	cpy := p
 	cpy.price = p.price.Clone()
-	cpy.vwBuyPrice = p.vwBuyPrice.Clone()
-	cpy.vwSellPrice = p.vwSellPrice.Clone()
+	cpy.buySumProduct = p.buySumProduct.Clone()
+	cpy.sellSumProduct = p.sellSumProduct.Clone()
 	return &cpy
 }
 
@@ -59,74 +64,58 @@ func (p *MarketPosition) Closed() bool {
 
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
-func (p *MarketPosition) RegisterOrder(order *types.Order) {
-	if order.Side == types.SideBuy {
-		// calculate vwBuyPrice: total worth of orders divided by total size
-		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {
-			var a, b, c num.Uint
-			// (p.vwBuyPrice*uint64(p.buy) + order.Price*order.Remaining) / buyVol
-			a.Mul(p.vwBuyPrice, num.NewUint(uint64(p.buy)))
-			b.Mul(order.Price, num.NewUint(order.Remaining))
-			c.Add(&a, &b)
-			p.vwBuyPrice.Div(&c, num.NewUint(buyVol))
-		} else {
-			p.vwBuyPrice.SetUint64(0)
-		}
-		p.buy += int64(order.Remaining)
-		return
-	}
-	// calculate vwSellPrice: total worth of orders divided by total size
-	if sellVol := uint64(p.sell) + order.Remaining; sellVol != 0 {
-		var a, b, c num.Uint
-		// (p.vwSellPrice*uint64(p.sell) + order.Price*order.Remaining) / sellVol
-		a.Mul(p.vwSellPrice, num.NewUint(uint64(p.sell)))
-		b.Mul(order.Price, num.NewUint(order.Remaining))
-		c.Add(&a, &b)
-		p.vwSellPrice.Div(&c, num.NewUint(sellVol))
-	} else {
-		p.vwSellPrice.SetUint64(0)
-	}
-	p.sell += int64(order.Remaining)
+func (p *MarketPosition) RegisterOrder(log *logging.Logger, order *types.Order) {
+	p.UpdateOnOrderChange(log, order.Side, order.Price, order.Remaining, true)
 }
 
 func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order) {
-	if order.Side == types.SideBuy {
-		if uint64(p.buy) < order.Remaining {
-			log.Panic("cannot unregister order with remaining > potential buy",
-				logging.Order(*order),
-				logging.Int64("potential-buy", p.buy))
+	p.UpdateOnOrderChange(log, order.Side, order.Price, order.Remaining, false)
+}
+
+func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Side, price *num.Uint, sizeChange uint64, add bool) {
+	if sizeChange == 0 {
+		return
+	}
+	iSizeChange := int64(sizeChange)
+	if side == types.SideBuy {
+		if !add && p.buy < iSizeChange {
+			log.Panic("cannot unregister order with potential buy + size change < 0",
+				logging.Int64("potential-buy", p.buy),
+				logging.Uint64("size-change", sizeChange))
 		}
-		// recalculate vwap
-		var a, b, vwap num.Uint
-		// p.vwBuyPrice*uint64(p.buy) - order.Price*order.Remaining
-		a.Mul(p.vwBuyPrice, num.NewUint(uint64(p.buy)))
-		b.Mul(order.Price, num.NewUint(order.Remaining))
-		vwap.Sub(&a, &b)
-		p.buy -= int64(order.Remaining)
-		if p.buy != 0 {
-			p.vwBuyPrice.Div(&vwap, num.NewUint(uint64(p.buy)))
+		// recalculate sumproduct
+		if add {
+			p.buySumProduct.Add(p.buySumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
+			p.buy += iSizeChange
 		} else {
-			p.vwBuyPrice.SetUint64(0)
+			p.buySumProduct.Sub(p.buySumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
+			p.buy -= iSizeChange
+		}
+		if p.buy == 0 && !p.buySumProduct.IsZero() {
+			log.Panic("Non-zero buy sum-product with no buy orders",
+				logging.PartyID(p.partyID),
+				logging.BigUint("buy-sum-product", p.buySumProduct))
 		}
 		return
 	}
 
-	if uint64(p.sell) < order.Remaining {
-		log.Panic("cannot unregister order with remaining > potential sell",
-			logging.Order(*order),
-			logging.Int64("potential-sell", p.sell))
+	if !add && p.sell < iSizeChange {
+		log.Panic("cannot unregister order with potential sell + size change < 0",
+			logging.Int64("potential-sell", p.sell),
+			logging.Uint64("size-change", sizeChange))
 	}
-
-	var a, b, vwap num.Uint
-	// p.vwSellPrice*uint64(p.sell) - order.Price*order.Remaining
-	a.Mul(p.vwSellPrice, num.NewUint(uint64(p.sell)))
-	b.Mul(order.Price, num.NewUint(order.Remaining))
-	vwap.Sub(&a, &b)
-	p.sell -= int64(order.Remaining)
-	if p.sell != 0 {
-		p.vwSellPrice.Div(&vwap, num.NewUint(uint64(p.sell)))
+	// recalculate sumproduct
+	if add {
+		p.sellSumProduct.Add(p.sellSumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
+		p.sell += iSizeChange
 	} else {
-		p.vwSellPrice.SetUint64(0)
+		p.sellSumProduct.Sub(p.sellSumProduct, num.UintZero().Mul(price, num.NewUint(sizeChange)))
+		p.sell -= iSizeChange
+	}
+	if p.sell == 0 && !p.sellSumProduct.IsZero() {
+		log.Panic("Non-zero sell sum-product with no sell orders",
+			logging.PartyID(p.partyID),
+			logging.BigUint("sell-sum-product", p.sellSumProduct))
 	}
 }
 
@@ -149,7 +138,7 @@ func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder
 	}
 
 	p.UnregisterOrder(log, originalOrder)
-	p.RegisterOrder(newOrder)
+	p.RegisterOrder(log, newOrder)
 }
 
 // String returns a string representation of a market.
@@ -186,18 +175,36 @@ func (p MarketPosition) Price() *num.Uint {
 	return num.UintZero()
 }
 
+// BuySumProduct - get sum of size * price of party's buy orders.
+func (p MarketPosition) BuySumProduct() *num.Uint {
+	if p.buySumProduct != nil {
+		return p.buySumProduct.Clone()
+	}
+	return num.UintZero()
+}
+
+// SellSumProduct - get sum of size * price of party's sell orders.
+func (p MarketPosition) SellSumProduct() *num.Uint {
+	if p.sellSumProduct != nil {
+		return p.sellSumProduct.Clone()
+	}
+	return num.UintZero()
+}
+
 // VWBuy - get volume weighted buy price for unmatched buy orders.
 func (p MarketPosition) VWBuy() *num.Uint {
-	if p.vwBuyPrice != nil {
-		return p.vwBuyPrice.Clone()
+	if p.buySumProduct != nil && p.buy != 0 {
+		vol := num.NewUint(uint64(p.buy))
+		return vol.Div(p.buySumProduct, vol)
 	}
 	return num.UintZero()
 }
 
 // VWSell - get volume weighted sell price for unmatched sell orders.
 func (p MarketPosition) VWSell() *num.Uint {
-	if p.vwSellPrice != nil {
-		return p.vwSellPrice.Clone()
+	if p.sellSumProduct != nil && p.sell != 0 {
+		vol := num.NewUint(uint64(p.sell))
+		return vol.Div(p.sellSumProduct, vol)
 	}
 	return num.UintZero()
 }
@@ -229,4 +236,21 @@ func (p MarketPosition) OrderReducesExposure(ord *types.Order) bool {
 		}
 	}
 	return false
+}
+
+// OrderReducesOnlyExposure returns true if the order reduce the position and the extra size if it was to flip the position side.
+func (p MarketPosition) OrderReducesOnlyExposure(ord *types.Order) (reduce bool, extraSize uint64) {
+	// if already closed, or increasing position, we shortcut
+	if p.Size() == 0 || (p.Size() < 0 && ord.Side == types.SideSell) || (p.Size() > 0 && ord.Side == types.SideBuy) {
+		return false, 0
+	}
+
+	size := p.Size()
+	if size < 0 {
+		size = -size
+	}
+	if extraSizeI := size - int64(ord.Remaining); extraSizeI < 0 {
+		return true, uint64(-extraSizeI)
+	}
+	return true, 0
 }

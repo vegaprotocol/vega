@@ -82,10 +82,14 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 	signersFromSpec := []*types.Signer{}
 
 	isExtType := false
+	var err error
 	if originalSpec.Spec != nil {
 		if originalSpec.Spec.Data != nil {
 			filtersFromSpec = originalSpec.Spec.Data.GetFilters()
-			isExtType = originalSpec.Spec.Data.IsExternal()
+			isExtType, err = originalSpec.Spec.Data.IsExternal()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -142,7 +146,7 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 			if err != nil {
 				return nil, err
 			}
-			typedFilters[f.String()] = &filter{
+			typedFilters[f.Key.Name] = &filter{
 				propertyName: "vegaprotocol.builtin.timestamp",
 				propertyType: datapb.PropertyKey_TYPE_TIMESTAMP,
 				conditions:   conditions,

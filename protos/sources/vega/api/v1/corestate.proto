@@ -14,7 +14,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core state APIs";
-    version: "v0.69.0-dev";
+    version: "v0.71.0+dev";
   }
   schemes: [HTTP, HTTPS]
   host: "lb.testnet.vega.xyz"
@@ -23,62 +23,62 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 service CoreStateService {
   // Accounts list
   //
-  // Return a list of accounts
+  // Get a list of accounts
   rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse);
 
   // Assets list
   //
-  // Return a list of assets
+  // Get a list of assets
   rpc ListAssets(ListAssetsRequest) returns (ListAssetsResponse);
 
   // Network parameters list
   //
-  // Return a list of network parameters
+  // Get a list of network parameters
   rpc ListNetworkParameters(ListNetworkParametersRequest) returns (ListNetworkParametersResponse);
 
   // Network limits list
   //
-  // Return a list of network limits
+  // Get a list of network limits
   rpc ListNetworkLimits(ListNetworkLimitsRequest) returns (ListNetworkLimitsResponse);
 
   // Parties list
   //
-  // Return a list of parties
+  // Get a list of parties
   rpc ListParties(ListPartiesRequest) returns (ListPartiesResponse);
 
   // Validators list
   //
-  // Return a list of validators
+  // Get a list of validators
   rpc ListValidators(ListValidatorsRequest) returns (ListValidatorsResponse);
 
   // Markets list
   //
-  // Return a list of markets
+  // Get a list of markets
   rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse);
 
   // Proposals list
   //
-  // Return a list of proposals
+  // Get a list of proposals
   rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
 
   // Markets data list
   //
-  // Return a list of markets data
+  // Get a list of markets data
   rpc ListMarketsData(ListMarketsDataRequest) returns (ListMarketsDataResponse);
 
   // Votes list
   //
-  // Return a list of votes
+  // Get a list of votes
   rpc ListVotes(ListVotesRequest) returns (ListVotesResponse);
 
   // Parties stake list
   //
-  // Return a list of parties stake
+  // Get a list of parties stake
   rpc ListPartiesStake(ListPartiesStakeRequest) returns (ListPartiesStakeResponse);
 
   // Delegations list
   //
-  // Return a list of delegations
+  // Get a list of delegations
   rpc ListDelegations(ListDelegationsRequest) returns (ListDelegationsResponse);
 }
 

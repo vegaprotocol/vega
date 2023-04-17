@@ -45,10 +45,11 @@ func TestFileStoreV1(t *testing.T) {
 func testInitialisingStoreSucceeds(t *testing.T) {
 	walletsDir := t.TempDir()
 
-	s, err := storev1.InitialiseStore(walletsDir)
+	s, err := storev1.InitialiseStore(walletsDir, false)
 
 	require.NoError(t, err)
 	assert.NotNil(t, s)
+	s.Close()
 }
 
 func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
@@ -56,6 +57,7 @@ func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	passphrase := vgrand.RandomStr(5)
 
 	var expectedWallets []string
@@ -85,6 +87,7 @@ func testFileStoreV1ListWalletsDoesNotShowHiddenFiles(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	passphrase := vgrand.RandomStr(5)
 
 	var expectedWallets []string
@@ -122,6 +125,7 @@ func testFileStoreV1ListWalletsDoesNotShowDirectories(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	passphrase := vgrand.RandomStr(5)
 
 	var expectedWallets []string
@@ -159,6 +163,8 @@ func testFileStoreV1UnlockingWalletSucceeds(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
+
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 
@@ -186,6 +192,7 @@ func testFileStoreV1UnlockingWalletWithWrongPassphraseFails(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 	othPassphrase := "not-original-passphrase"
@@ -214,6 +221,7 @@ func testFileStoreV1LockedWalletIsNotAccessibleAnymore(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 
@@ -242,6 +250,7 @@ func testFileStoreV1GetUnlockedWalletSucceeds(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 
@@ -264,6 +273,7 @@ func testFileStoreV1GetLockedWalletFails(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 
@@ -292,6 +302,7 @@ func testFileStoreV1GetNonExistingWalletFails(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	name := vgrand.RandomStr(5)
 
 	// when
@@ -453,6 +464,7 @@ func testFileStoreV1RenamingNonExistingWalletFails(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	unknownName := vgrand.RandomStr(5)
 	newName := vgrand.RandomStr(5)
 
@@ -470,6 +482,7 @@ func testFileStoreV1RenamingWalletWithInvalidNameFails(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 
@@ -517,6 +530,7 @@ func testFileStoreV1DeletingWalletSucceeds(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 
@@ -540,6 +554,7 @@ func testFileStoreV1UpdatingPassphraseSucceeds(t *testing.T) {
 
 	// given
 	s := newTestFileStore(t, walletsDir)
+	defer s.Close()
 	w := newHDWalletWithKeys(t)
 	passphrase := vgrand.RandomStr(5)
 	newPassphrase := vgrand.RandomStr(5)
@@ -573,10 +588,13 @@ func testFileStoreV1UpdatingPassphraseSucceeds(t *testing.T) {
 
 func newTestFileStore(t *testing.T, walletsDir string) *storev1.FileStore {
 	t.Helper()
-	s, err := storev1.InitialiseStore(walletsDir)
+	s, err := storev1.InitialiseStore(walletsDir, true)
 	if err != nil {
 		t.Fatalf("couldn't initialise store: %v", err)
 	}
+	t.Cleanup(func() {
+		s.Close()
+	})
 
 	return s
 }

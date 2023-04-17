@@ -186,7 +186,7 @@ Definitions of the assets that should be downloaded from the GitHub repository.
  repository = "vega"
  [autoInstall.assets]
   [autoInstall.assets.vega]
-   assset_name = "vega-darwin-amd64.zip"
+   asset_name = "vega-darwin-amd64.zip"
    binary_name = "vega"
 
 ```
@@ -237,7 +237,7 @@ Allows you to define the name of the asset to be downloaded.
 
 <dl>
 <dt>
-	<code>assset_name</code>  <strong>string</strong>  - required
+	<code>asset_name</code>  <strong>string</strong>  - required
 </dt>
 
 <dd>

@@ -46,24 +46,27 @@ func TestGetOpenInterest(t *testing.T) {
 		size   uint64 = 10
 		price         = num.NewUint(10000)
 	)
-	engine.RegisterOrder(context.TODO(), &types.Order{
+	passive1 := &types.Order{
 		Party:     buyer,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideBuy,
-	})
-	engine.RegisterOrder(context.TODO(), &types.Order{
+	}
+	passive2 := &types.Order{
 		Party:     buyer2,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideBuy,
-	})
-	engine.RegisterOrder(context.TODO(), &types.Order{
+	}
+	aggressive := &types.Order{
 		Party:     seller,
 		Remaining: size * 2,
 		Price:     price,
 		Side:      types.SideSell,
-	})
+	}
+	engine.RegisterOrder(context.TODO(), passive1)
+	engine.RegisterOrder(context.TODO(), passive2)
+	engine.RegisterOrder(context.TODO(), aggressive)
 
 	trade := types.Trade{
 		Type:      types.TradeTypeDefault,
@@ -77,7 +80,7 @@ func TestGetOpenInterest(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	_ = engine.Update(context.Background(), &trade)
+	_ = engine.Update(context.Background(), &trade, passive1, aggressive)
 	trade = types.Trade{
 		Type:      types.TradeTypeDefault,
 		ID:        "trade_id",
@@ -90,7 +93,7 @@ func TestGetOpenInterest(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	_ = engine.Update(context.Background(), &trade)
+	_ = engine.Update(context.Background(), &trade, passive2, aggressive)
 	// 3 positions
 	// 2 at + 10
 	// 1 at -20
@@ -108,18 +111,20 @@ func testUpdatePositionRegular(t *testing.T) {
 		size   uint64 = 10
 		price         = num.NewUint(10000)
 	)
-	engine.RegisterOrder(context.TODO(), &types.Order{
+	passive := &types.Order{
 		Party:     buyer,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideBuy,
-	})
-	engine.RegisterOrder(context.TODO(), &types.Order{
+	}
+	aggressive := &types.Order{
 		Party:     seller,
 		Remaining: size,
 		Price:     price,
 		Side:      types.SideSell,
-	})
+	}
+	engine.RegisterOrder(context.TODO(), passive)
+	engine.RegisterOrder(context.TODO(), aggressive)
 
 	trade := types.Trade{
 		Type:      types.TradeTypeDefault,
@@ -133,15 +138,17 @@ func testUpdatePositionRegular(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	positions := engine.Update(context.Background(), &trade)
+	positions := engine.Update(context.Background(), &trade, passive, aggressive)
 	pos := engine.Positions()
 	assert.Equal(t, 2, len(pos))
 	assert.Equal(t, 2, len(positions))
 	for _, p := range pos {
 		if p.Party() == buyer {
 			assert.Equal(t, int64(size), p.Size())
+			assert.Equal(t, num.UintZero(), p.VWBuy())
 		} else {
 			assert.Equal(t, int64(-size), p.Size())
+			assert.Equal(t, num.UintZero(), p.VWSell())
 		}
 	}
 }
@@ -164,8 +171,8 @@ func testUpdatePositionNetworkBuy(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	registerOrder(engine, types.SideSell, seller, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(context.Background(), &trade)
+	passiveOrder := registerOrder(engine, types.SideSell, seller, num.NewUint(10000), uint64(size))
+	positions := engine.UpdateNetwork(context.Background(), &trade, passiveOrder)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
 	assert.Equal(t, 1, len(positions))
@@ -191,8 +198,8 @@ func testUpdatePositionNetworkSell(t *testing.T) {
 		SellOrder: "sell_order_id",
 		Timestamp: time.Now().Unix(),
 	}
-	registerOrder(engine, types.SideBuy, buyer, num.NewUint(10000), uint64(size))
-	positions := engine.UpdateNetwork(context.Background(), &trade)
+	passiveOrder := registerOrder(engine, types.SideBuy, buyer, num.NewUint(10000), uint64(size))
+	positions := engine.UpdateNetwork(context.Background(), &trade, passiveOrder)
 	pos := engine.Positions()
 	assert.Equal(t, 1, len(pos))
 	assert.Equal(t, 1, len(positions))
@@ -559,17 +566,17 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		e := getTestEngine(t)
 
 		for _, tr := range tc.ExistingPositions {
-			registerOrder(e, types.SideBuy, tr.Buyer, tr.Price, tr.Size)
-			registerOrder(e, types.SideSell, tr.Seller, tr.Price, tr.Size)
-			e.Update(context.Background(), tr)
+			passive := registerOrder(e, types.SideBuy, tr.Buyer, tr.Price, tr.Size)
+			aggressive := registerOrder(e, types.SideSell, tr.Seller, tr.Price, tr.Size)
+			e.Update(context.Background(), tr, passive, aggressive)
 		}
 
 		oiGivenTrades := e.GetOpenInterestGivenTrades(tc.Trades)
 
 		for _, tr := range tc.Trades {
-			registerOrder(e, types.SideBuy, tr.Buyer, tr.Price, tr.Size)
-			registerOrder(e, types.SideSell, tr.Seller, tr.Price, tr.Size)
-			e.Update(context.Background(), tr)
+			passive := registerOrder(e, types.SideBuy, tr.Buyer, tr.Price, tr.Size)
+			aggressive := registerOrder(e, types.SideSell, tr.Seller, tr.Price, tr.Size)
+			e.Update(context.Background(), tr, passive, aggressive)
 		}
 
 		// Now check it matches once those trades are registered as positions
@@ -609,6 +616,14 @@ func (m mp) Price() *num.Uint {
 
 func (m mp) ClearPotentials() {}
 
+func (m mp) BuySumProduct() *num.Uint {
+	return num.UintZero()
+}
+
+func (m mp) SellSumProduct() *num.Uint {
+	return num.UintZero()
+}
+
 func (m mp) VWBuy() *num.Uint {
 	return num.UintZero()
 }
@@ -619,7 +634,7 @@ func (m mp) VWSell() *num.Uint {
 
 func TestHash(t *testing.T) {
 	e := getTestEngine(t)
-	orders := []types.Order{
+	orders := []*types.Order{
 		{
 			Party:     "test_party_1",
 			Side:      types.SideBuy,
@@ -634,43 +649,51 @@ func TestHash(t *testing.T) {
 			Remaining: uint64(200),
 			Price:     num.UintZero(),
 		},
-		{
-			Party:     "test_party_3",
-			Side:      types.SideBuy,
-			Size:      uint64(300),
-			Remaining: uint64(300),
-			Price:     num.UintZero(),
-		},
-		{
-			Party:     "test_party_1",
-			Side:      types.SideSell,
-			Size:      uint64(1000),
-			Remaining: uint64(1000),
-			Price:     num.UintZero(),
-		},
 	}
 
+	matchingPrice := num.NewUint(10000)
+	tradeSize := uint64(15)
+	passiveOrder := &types.Order{
+		ID:        "buy_order_id",
+		Party:     "test_party_3",
+		Side:      types.SideBuy,
+		Size:      tradeSize,
+		Remaining: tradeSize,
+		Price:     matchingPrice,
+	}
+
+	aggresiveOrder := &types.Order{
+		ID:        "sell_order_id",
+		Party:     "test_party_1",
+		Side:      types.SideSell,
+		Size:      tradeSize,
+		Remaining: tradeSize,
+		Price:     matchingPrice,
+	}
+
+	orders = append(orders, passiveOrder, aggresiveOrder)
+
 	for _, order := range orders {
-		e.RegisterOrder(context.TODO(), &order)
+		e.RegisterOrder(context.TODO(), order)
 	}
 
 	trade := types.Trade{
 		Type:      types.TradeTypeDefault,
 		ID:        "trade_id",
 		MarketID:  "market_id",
-		Price:     num.NewUint(10000),
-		Size:      uint64(15),
-		Buyer:     "test_party_3",
-		Seller:    "test_party_1",
-		BuyOrder:  "buy_order_id",
-		SellOrder: "sell_order_id",
+		Price:     matchingPrice,
+		Size:      tradeSize,
+		Buyer:     passiveOrder.Party,
+		Seller:    aggresiveOrder.Party,
+		BuyOrder:  passiveOrder.ID,
+		SellOrder: aggresiveOrder.ID,
 		Timestamp: time.Now().Unix(),
 	}
-	e.Update(context.Background(), &trade)
+	e.Update(context.Background(), &trade, passiveOrder, aggresiveOrder)
 
 	hash := e.Hash()
 	require.Equal(t,
-		"6ad38d53e438c8a0c5d67f6304c1e29e436b24491a72934e3b748bd1e21768e4",
+		"05f6edb5f12dff7edd911da41da5962631283a01e13a717d193109454d22d10a",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
@@ -682,11 +705,13 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func registerOrder(e *positions.SnapshotEngine, side types.Side, party string, price *num.Uint, size uint64) {
-	e.RegisterOrder(context.TODO(), &types.Order{
+func registerOrder(e *positions.SnapshotEngine, side types.Side, party string, price *num.Uint, size uint64) *types.Order {
+	order := &types.Order{
 		Party:     party,
 		Side:      side,
 		Price:     price,
 		Remaining: size,
-	})
+	}
+	e.RegisterOrder(context.TODO(), order)
+	return order
 }

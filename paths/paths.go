@@ -47,6 +47,7 @@ var DataNodeCacheHome = CachePath("data-node")
 // 	├── wallet-cli/
 // 	│	└── config.toml
 // 	├── wallet-app/
+// 	│	├── config.fairground.toml
 // 	│	└── config.toml
 // 	└── wallet-service/
 //		├── config.toml
@@ -118,6 +119,10 @@ var (
 	// WalletAppConfigHome is the folder containing the configuration files
 	// used by the wallet app application.
 	WalletAppConfigHome = ConfigPath("wallet-app")
+
+	// WalletAppFairgroundConfigFile is the Fairground configuration file for the
+	// wallet app application.
+	WalletAppFairgroundConfigFile = JoinConfigPath(WalletAppConfigHome, "config.fairground.toml")
 
 	// WalletAppDefaultConfigFile is the default configuration file for the
 	// wallet app application.
@@ -228,8 +233,17 @@ var (
 //
 // STATE_HOME
 // 	├── data-node/
+// 	│	├── archivedeventbuffers/
+// 	│	├── autocert/
+// 	│	├── eventsbuffer/
 // 	│	├── logs/
+// 	│	├── networkhistory/
+// 	│	│	├── snapshotscopyfrom/
+// 	│	│	└── snapshotscopyto/
 // 	│	└── storage/
+// 	│		├── postgres/
+// 	│		└── sqlstore/
+// 	│			└── node-data/
 // 	├── node/
 // 	│	├── logs/
 // 	│	├── checkpoints/
@@ -267,12 +281,23 @@ var (
 	// data-node.
 	DataNodeStateHome = StatePath("data-node")
 
+	// DataNodeAutoCertHome is the folder containing the automatically generated SSL certificates.
+	DataNodeAutoCertHome = StatePath(filepath.Join(DataNodeStateHome.String(), "autocert"))
+
 	// DataNodeLogsHome is the folder containing the logs of the data-node.
 	DataNodeLogsHome = StatePath(filepath.Join(DataNodeStateHome.String(), "logs"))
 
 	// DataNodeStorageHome is the folder containing the data storage of the
 	// data-node.
 	DataNodeStorageHome = StatePath(filepath.Join(DataNodeStateHome.String(), "storage"))
+
+	// DataNodeStorageSQLStoreHome is the folder containing the data of the
+	// SQL store.
+	DataNodeStorageSQLStoreHome = StatePath(filepath.Join(DataNodeStateHome.String(), "sqlstore"))
+
+	// DataNodeStorageSQLStoreNodeDataHome is the folder containing the data of the
+	// SQL store.
+	DataNodeStorageSQLStoreNodeDataHome = StatePath(filepath.Join(DataNodeStorageSQLStoreHome.String(), "node-data"))
 
 	// DataNodeEmbeddedPostgresRuntimeDir is the runtime directory for embedded postgres.
 	DataNodeEmbeddedPostgresRuntimeDir = StatePath(filepath.Join(DataNodeStorageHome.String(), "postgres"))

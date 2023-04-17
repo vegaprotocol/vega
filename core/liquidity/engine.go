@@ -241,9 +241,8 @@ func (e *Engine) IsLiquidityProvider(party string) bool {
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
-	err := e.stopLiquidityProvision(
+	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusRejected)
-	return err
 }
 
 // CancelLiquidityProvision removes a parties commitment of liquidity

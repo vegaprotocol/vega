@@ -154,22 +154,37 @@ Feature: Test mark to market settlement with periodicity, takes the first scenar
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_IOC |
-    When the parties place the following orders:
+    And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party3 | ETH/DEC19 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_FOK |
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | last traded price | trading mode            | 
+      | 1000       | 2000              | TRADING_MODE_CONTINUOUS |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party3 | ETH/DEC19 | 1061000     | 1273200 |
 
     When the network moves ahead "6" blocks
     ## Now mark to market, the mark price should be 2,000 at this point, dramatically changing the balances
     ## The interval is set to 5s, so 6 blocks should do the trick
 
+    Then the market data for the market "ETH/DEC19" should be:
+      | mark price | last traded price | trading mode            | 
+      | 2000       | 2000              | TRADING_MODE_CONTINUOUS |
     And the following transfers should happen:
       | from   | to     | from account            | to account              | market id | amount  | asset |
       | party3 | party3 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 360000  | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 2245200 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1332000 | ETH   |
       | aux    | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000000 | ETH   |
       | party1 | market | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC19 | 1000000 | ETH   |
       | market | aux2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1000000 | ETH   |
       | market | party2 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN     | ETH/DEC19 | 1000000 | ETH   |
+    And the parties should have the following margin levels:
+      | party  | market id | maintenance | initial |
+      | party3 | ETH/DEC19 | 2171000     | 2605200 |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin  | general |
+      | party3 | ETH   | ETH/DEC19 | 2605200 | 7392800 |
 
     And the cumulated balance for all accounts should be worth "330000000"
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"

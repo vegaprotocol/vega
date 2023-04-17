@@ -208,7 +208,8 @@ type PayloadExecutionMarkets struct {
 }
 
 type PayloadStakingAccounts struct {
-	StakingAccounts *StakingAccounts
+	StakingAccounts         *StakingAccounts
+	PendingStakeTotalSupply *StakeTotalSupply
 }
 
 type PayloadStakeVerifierDeposited struct {
@@ -565,10 +566,11 @@ type MarketPositions struct {
 }
 
 type MarketPosition struct {
-	PartyID         string
-	Size, Buy, Sell int64
-	Price           *num.Uint
-	VwBuy, VwSell   *num.Uint
+	PartyID                       string
+	Size, Buy, Sell               int64
+	Price                         *num.Uint
+	BuySumProduct, SellSumProduct *num.Uint
+	Distressed                    bool
 }
 
 type StakingAccounts struct {
@@ -583,10 +585,11 @@ type StakingAccount struct {
 }
 
 type NotarySigs struct {
-	ID   string
-	Kind int32
-	Node string
-	Sig  string
+	ID      string
+	Kind    int32
+	Node    string
+	Sig     string
+	Pending bool
 }
 
 type Notary struct {
@@ -1939,15 +1942,24 @@ func (*PayloadLimitState) Namespace() SnapshotNamespace {
 }
 
 func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
+	var psts *StakeTotalSupply
+	if sa.StakingAccounts.PendingStakeTotalSupply != nil {
+		psts, _ = StakeTotalSupplyFromProto(sa.StakingAccounts.PendingStakeTotalSupply)
+	}
 	return &PayloadStakingAccounts{
-		StakingAccounts: StakingAccountsFromProto(sa.StakingAccounts),
+		StakingAccounts:         StakingAccountsFromProto(sa.StakingAccounts),
+		PendingStakeTotalSupply: psts,
 	}
 }
 
 func (p PayloadStakingAccounts) IntoProto() *snapshot.Payload_StakingAccounts {
-	return &snapshot.Payload_StakingAccounts{
+	sa := &snapshot.Payload_StakingAccounts{
 		StakingAccounts: p.StakingAccounts.IntoProto(),
 	}
+	if p.PendingStakeTotalSupply != nil {
+		sa.StakingAccounts.PendingStakeTotalSupply = p.PendingStakeTotalSupply.IntoProto()
+	}
+	return sa
 }
 
 func (*PayloadStakingAccounts) isPayload() {}
@@ -2440,28 +2452,30 @@ func (g GovernanceActive) IntoProto() *snapshot.GovernanceActive {
 
 func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 	price, _ := num.UintFromString(p.Price, 10)
-	vwBuy, _ := num.UintFromString(p.VwBuyPrice, 10)
-	vwSell, _ := num.UintFromString(p.VwSellPrice, 10)
+	buySumProduct, _ := num.UintFromString(p.BuySumProduct, 10)
+	sellSumProduct, _ := num.UintFromString(p.SellSumProduct, 10)
 	return &MarketPosition{
-		PartyID: p.PartyId,
-		Size:    p.Size,
-		Buy:     p.Buy,
-		Sell:    p.Sell,
-		Price:   price,
-		VwBuy:   vwBuy,
-		VwSell:  vwSell,
+		PartyID:        p.PartyId,
+		Size:           p.Size,
+		Buy:            p.Buy,
+		Sell:           p.Sell,
+		Price:          price,
+		BuySumProduct:  buySumProduct,
+		SellSumProduct: sellSumProduct,
+		Distressed:     p.Distressed,
 	}
 }
 
 func (p MarketPosition) IntoProto() *snapshot.Position {
 	return &snapshot.Position{
-		PartyId:     p.PartyID,
-		Size:        p.Size,
-		Buy:         p.Buy,
-		Sell:        p.Sell,
-		Price:       p.Price.String(),
-		VwBuyPrice:  p.VwBuy.String(),
-		VwSellPrice: p.VwSell.String(),
+		PartyId:        p.PartyID,
+		Size:           p.Size,
+		Buy:            p.Buy,
+		Sell:           p.Sell,
+		Price:          p.Price.String(),
+		BuySumProduct:  p.BuySumProduct.String(),
+		SellSumProduct: p.SellSumProduct.String(),
+		Distressed:     p.Distressed,
 	}
 }
 
@@ -3480,10 +3494,11 @@ func NotaryFromProto(n *snapshot.Notary) *Notary {
 
 func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
 	return &NotarySigs{
-		ID:   sk.Id,
-		Kind: sk.Kind,
-		Node: sk.Node,
-		Sig:  sk.Sig,
+		ID:      sk.Id,
+		Kind:    sk.Kind,
+		Node:    sk.Node,
+		Sig:     sk.Sig,
+		Pending: sk.Pending,
 	}
 }
 
@@ -3505,10 +3520,11 @@ func (n Notary) IntoProto() *snapshot.Notary {
 
 func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
 	return &snapshot.NotarySigs{
-		Id:   sk.ID,
-		Kind: sk.Kind,
-		Node: sk.Node,
-		Sig:  sk.Sig,
+		Id:      sk.ID,
+		Kind:    sk.Kind,
+		Node:    sk.Node,
+		Sig:     sk.Sig,
+		Pending: sk.Pending,
 	}
 }
 

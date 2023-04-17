@@ -155,8 +155,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -224,8 +224,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -260,7 +260,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     # verify that we don't enter liquidity auction immediately, but at the end of block as per 0035-LIQM-003
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3030         | 1000           | 30            |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 3000         | 1000           | 30            |
 
     # move to the next block to perform liquidity check
     Then the network moves ahead "1" blocks
@@ -280,7 +280,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | AuctionEvent            |
       | MarketUpdatedEvent      |
     # LP repricing, checking, and cancelling emits a ton of events
-    And a total of "121" events should be emitted
+    And a total of "110" events should be emitted
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -300,8 +300,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -343,7 +343,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     And the market data for the market "ETH/DEC21" should be:
       | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1414         | 1000           | 14            |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1400         | 1000           | 14            |
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger                          | target stake | supplied stake | open interest |
@@ -406,7 +406,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
 
     And the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1009              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 403          | 2000           | 4             |
+      | 1000       | 1009              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 400          | 2000           | 4             |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -459,7 +459,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | 1      | 0              | 0            |
     And the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 505          | 2000           | 5             |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 500          | 2000           | 5             |
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1010  | 0      |
@@ -545,8 +545,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -586,7 +586,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | ETH/DEC21 | buy  | 4      | 1010  | 3                | TYPE_LIMIT | TIF_FOK |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1414         | 1000           | 14            |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 100     | 990       | 1010      | 1400         | 1000           | 14            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -638,8 +638,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -679,7 +679,7 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | party1 | ETH/DEC21 | buy  | 10     | 1010  | 3                | TYPE_LIMIT | TIF_GTC | trigger-liq |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | last traded price | trading mode            | target stake | supplied stake | open interest |
-      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 1414         | 1000           | 14            |
+      | 1000       | 1010              | TRADING_MODE_CONTINUOUS | 1400         | 1000           | 14            |
 
     When the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
@@ -747,8 +747,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     Then the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -805,8 +805,8 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
       | name               | triggering ratio | time window | scaling factor |
       | updated-lqm-params | 0.8              | 24h         | 1              |
     When the markets are updated:
-      | id        | liquidity monitoring |
-      | ETH/DEC21 | updated-lqm-params   |
+      | id        | liquidity monitoring | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC21 | updated-lqm-params   | 0.5                    | 0                         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
@@ -902,4 +902,3 @@ Feature: Test interactions between different auction types (0035-LIQM-001)
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 100     | 1010      | 1030      | 6120         | 6120           | 60            |
-

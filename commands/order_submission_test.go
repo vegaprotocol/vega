@@ -47,6 +47,99 @@ func TestCheckOrderSubmission(t *testing.T) {
 	t.Run("Submitting a pegged order with side sell and best ask reference and non negative offset succeeds", testPeggedOrderSubmissionWithSideSellAndBestAskReferenceAndNonNegativeOffsetSucceeds)
 	t.Run("Submitting a pegged order with side sell and mid reference and non-positive offset fails", testPeggedOrderSubmissionWithSideSellAndMidReferenceAndNonPositiveOffsetFails)
 	t.Run("Submitting a pegged order with side sell and mid reference and positive offset succeeds", testPeggedOrderSubmissionWithSideSellAndMidReferenceAndPositiveOffsetSucceeds)
+	t.Run("Submitting Post or Reduce only orders", testSubmittingPostOrReduceOnlyOrders)
+}
+
+func testSubmittingPostOrReduceOnlyOrders(t *testing.T) {
+	testCases := []struct {
+		submission commandspb.OrderSubmission
+		errString  string
+		field      string
+	}{
+		{
+			submission: commandspb.OrderSubmission{
+				PostOnly:   true,
+				ReduceOnly: true,
+			},
+			errString: "cannot be true at the same time as order_submission.reduce_only",
+			field:     "order_submission.post_only",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Type:     types.Order_TYPE_MARKET,
+				PostOnly: true,
+			},
+			errString: "only valid for limit orders",
+			field:     "order_submission.post_only",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Type:        types.Order_TYPE_MARKET,
+				TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+				PostOnly:    true,
+			},
+			errString: "only valid for persistent orders",
+			field:     "order_submission.post_only",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Type:        types.Order_TYPE_MARKET,
+				TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+				PostOnly:    true,
+			},
+			errString: "only valid for persistent orders",
+			field:     "order_submission.post_only",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Type:        types.Order_TYPE_LIMIT,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+				ReduceOnly:  true,
+			},
+			errString: "only valid for non-persistent orders",
+			field:     "order_submission.reduce_only",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Type:        types.Order_TYPE_LIMIT,
+				TimeInForce: types.Order_TIME_IN_FORCE_IOC,
+				ReduceOnly:  true,
+				PeggedOrder: &types.PeggedOrder{
+					Reference: types.PeggedReference_PEGGED_REFERENCE_BEST_ASK,
+				},
+			},
+			errString: "cannot be pegged",
+			field:     "order_submission.reduce_only",
+		},
+		// valid cases
+		{
+			submission: commandspb.OrderSubmission{
+				Type:        types.Order_TYPE_LIMIT,
+				TimeInForce: types.Order_TIME_IN_FORCE_IOC,
+				ReduceOnly:  true,
+			},
+			errString: "",
+			field:     "order_submission.reduce_only",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Type:        types.Order_TYPE_LIMIT,
+				TimeInForce: types.Order_TIME_IN_FORCE_GTC,
+				PostOnly:    true,
+			},
+			errString: "",
+			field:     "order_submission.post_only",
+		},
+	}
+
+	for _, tc := range testCases {
+		errs := checkOrderSubmission(&tc.submission).Get(tc.field)
+		if len(tc.errString) == 0 {
+			assert.Len(t, errs, 0)
+			continue
+		}
+		assert.Contains(t, errs, errors.New(tc.errString))
+	}
 }
 
 func testEmptyOrderSubmissionFails(t *testing.T) {
