@@ -26,7 +26,7 @@ type ledgerStore interface {
 	Flush(ctx context.Context) ([]entities.LedgerEntry, error)
 	Add(le entities.LedgerEntry) error
 	Query(ctx context.Context, filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error)
-	Export(ctx context.Context, partyID, assetID string, dateRange entities.DateRange, writer io.Writer) error
+	Export(ctx context.Context, partyID string, assetID *string, dateRange entities.DateRange, writer io.Writer) error
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LedgerEntry, error)
 }
 
@@ -98,7 +98,8 @@ func (l *Ledger) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]ent
 
 func (l *Ledger) Export(
 	ctx context.Context,
-	partyID, assetID string,
+	partyID string,
+	assetID *string,
 	dateRange entities.DateRange,
 	writer io.Writer,
 ) error {

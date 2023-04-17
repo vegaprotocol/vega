@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
@@ -151,8 +152,8 @@ func (ls *Ledger) Query(
 
 func (ls *Ledger) Export(
 	ctx context.Context,
-	partyID,
-	assetID string,
+	partyID string,
+	assetID *string,
 	dateRange entities.DateRange,
 	writer io.Writer,
 ) error {
@@ -162,9 +163,12 @@ func (ls *Ledger) Export(
 
 	filter := &entities.LedgerEntryFilter{
 		FromAccountFilter: entities.AccountFilter{
-			AssetID:  entities.AssetID(assetID),
 			PartyIDs: []entities.PartyID{entities.PartyID(partyID)},
 		},
+	}
+
+	if assetID != nil {
+		filter.FromAccountFilter.AssetID = entities.AssetID(ptr.UnBox(assetID))
 	}
 
 	dynamicQuery, whereQuery, args, err := prepareQuery(filter, dateRange)
