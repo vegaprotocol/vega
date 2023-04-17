@@ -32,6 +32,9 @@ const (
 
 	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests.
 	AbciSpamError uint32 = 89
+
+	// AbciExpiredCommandError code is returned when the command was not processed within the specified time/number of blocks.
+	AbciExpiredCommandError uint32 = 90
 )
 
 func NewResponseCheckTx(code uint32, info string) types.ResponseCheckTx {

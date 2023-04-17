@@ -21,7 +21,7 @@ func testDescribePermissionsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 	walletName := vgrand.RandomStr(10)
 	hostname := vgrand.RandomStr(10)
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 
 	f := &cmd.DescribePermissionsFlags{
 		Wallet:         walletName,
@@ -30,16 +30,16 @@ func testDescribePermissionsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminDescribePermissionsParams{
-		Wallet:     walletName,
-		Hostname:   hostname,
-		Passphrase: passphrase,
+		Wallet:   walletName,
+		Hostname: hostname,
 	}
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testDescribePermissionsWithMissingFlagsFails(t *testing.T) {
@@ -75,7 +75,7 @@ func testDescribePermissionsWithMissingFlagsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			req, err := tc.flags.Validate()
+			req, _, err := tc.flags.Validate()
 
 			// then
 			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))

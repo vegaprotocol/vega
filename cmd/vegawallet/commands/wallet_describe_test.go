@@ -20,7 +20,7 @@ func testGetWalletInfoFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 
 	f := &cmd.DescribeWalletFlags{
@@ -29,17 +29,17 @@ func testGetWalletInfoFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminDescribeWalletParams{
-		Wallet:     walletName,
-		Passphrase: passphrase,
+		Wallet: walletName,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testGetWalletInfoFlagsMissingWalletFails(t *testing.T) {
@@ -50,7 +50,7 @@ func testGetWalletInfoFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))

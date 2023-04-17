@@ -22,7 +22,7 @@ func testGenerateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	// given
 	testDir := t.TempDir()
 	walletName := vgrand.RandomStr(10)
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 
 	f := &cmd.GenerateKeyFlags{
 		Wallet:         walletName,
@@ -36,16 +36,16 @@ func testGenerateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 			{Key: "name", Value: "my-wallet"},
 			{Key: "role", Value: "validation"},
 		},
-		Passphrase: passphrase,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testGenerateKeyFlagsMissingWalletFails(t *testing.T) {
@@ -54,7 +54,7 @@ func testGenerateKeyFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -67,7 +67,7 @@ func testGenerateKeyFlagsInvalidMetadataFails(t *testing.T) {
 	f.RawMetadata = []string{"is=invalid"}
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.InvalidFlagFormatError("meta"))

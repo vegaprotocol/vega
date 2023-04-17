@@ -28,7 +28,7 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
@@ -45,20 +45,20 @@ func testSignCommandFlagsValidFlagsSucceeds(t *testing.T) {
 
 	expectedReq := api.AdminSignTransactionParams{
 		Wallet:      walletName,
-		Passphrase:  passphrase,
 		Network:     "fairground",
 		PublicKey:   pubKey,
 		Transaction: expectedTx,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
 
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testSignCommandFlagsMissingWalletFails(t *testing.T) {
@@ -69,7 +69,7 @@ func testSignCommandFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -84,7 +84,7 @@ func testSignCommandFlagsMissingChainIDFails(t *testing.T) {
 	f.ChainID = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("chain-id"))
@@ -99,7 +99,7 @@ func testSignCommandFlagsMissingPubKeyFails(t *testing.T) {
 	f.PubKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
@@ -114,7 +114,7 @@ func testSignCommandFlagsMissingTxBlockHeightFails(t *testing.T) {
 	f.TxBlockHeight = 0
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-height"))
@@ -129,7 +129,7 @@ func testSignCommandFlagsMissingTxBlockHashFails(t *testing.T) {
 	f.TxBlockHash = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-block-hash"))
@@ -144,7 +144,7 @@ func testSignCommandFlagsMissingPoWDifficultyFails(t *testing.T) {
 	f.PowDifficulty = 0
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pow-difficulty"))
@@ -159,7 +159,7 @@ func testSignCommandFlagsNetworkPoWMutuallyExclusive(t *testing.T) {
 	f.Network = "fairground"
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("network", "tx-height"))
@@ -174,7 +174,7 @@ func testSignCommandFlagsMissingRequestFails(t *testing.T) {
 	f.RawTransaction = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.ArgMustBeSpecifiedError("transaction"))

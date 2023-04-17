@@ -38,8 +38,11 @@ func (t *ProtocolUpgradeHandler) OnProtocolUpgradeEvent(ctx context.Context, cha
 	lastCommittedBlockHeight int64,
 ) error {
 	if err := t.createAndPublishSegment(ctx, chainID, lastCommittedBlockHeight); err != nil {
+		t.log.Error("Failed to create and publish segment", logging.Error(err))
 		return fmt.Errorf("failed to create and publish segment: %w", err)
 	}
+
+	t.log.Debug("Created and published segment", logging.Int64("last_committed_block_height", lastCommittedBlockHeight))
 
 	t.protocolUpgradeService.SetProtocolUpgradeStarted()
 
@@ -47,6 +50,8 @@ func (t *ProtocolUpgradeHandler) OnProtocolUpgradeEvent(ctx context.Context, cha
 		t.log.Error("Failed to send data node upgrade event", logging.Error(err))
 		return err
 	}
+
+	t.log.Debug("Notified Core about being ready for protocol upgrade", logging.Int64("last_committed_block_height", lastCommittedBlockHeight))
 
 	return nil
 }

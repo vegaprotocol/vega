@@ -4,13 +4,15 @@ import (
 	"sort"
 	"testing"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 func TestOrderingOfEntries(t *testing.T) {
-	index, err := store.NewIndex(t.TempDir())
+	index, err := store.NewIndex(t.TempDir(), logging.NewTestLogger())
 	require.NoError(t, err)
 	defer func() { _ = index.Close() }()
 
@@ -57,7 +59,7 @@ func TestOrderingOfEntries(t *testing.T) {
 }
 
 func TestGetHighestHeightEntry(t *testing.T) {
-	index, err := store.NewIndex(t.TempDir())
+	index, err := store.NewIndex(t.TempDir(), logging.NewTestLogger())
 	require.NoError(t, err)
 	defer func() { _ = index.Close() }()
 
@@ -93,7 +95,7 @@ func TestGetHighestHeightEntry(t *testing.T) {
 }
 
 func TestGetEntryByHeight(t *testing.T) {
-	index, err := store.NewIndex(t.TempDir())
+	index, err := store.NewIndex(t.TempDir(), logging.NewTestLogger())
 	require.NoError(t, err)
 	defer func() { _ = index.Close() }()
 

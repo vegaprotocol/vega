@@ -11,22 +11,26 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var ErrIndexEntryNotFound = errors.New("index entry not found")
 
 type LevelDbBackedIndex struct {
-	db *leveldb.DB
+	db  *leveldb.DB
+	log *logging.Logger
 }
 
-func NewIndex(dataDir string) (*LevelDbBackedIndex, error) {
+func NewIndex(dataDir string, log *logging.Logger) (*LevelDbBackedIndex, error) {
 	db, err := leveldb.OpenFile(filepath.Join(dataDir, "index.db"), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open level db file:%w", err)
 	}
 
 	return &LevelDbBackedIndex{
-		db: db,
+		db:  db,
+		log: log,
 	}, nil
 }
 
@@ -79,11 +83,15 @@ func (l LevelDbBackedIndex) Remove(indexEntry SegmentIndexEntry) error {
 }
 
 func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error) {
+	l.log.Debug("Creating iterator")
 	iter := l.db.NewIterator(&util.Range{
 		Start: nil,
 		Limit: nil,
 	}, &opt.ReadOptions{})
-	defer iter.Release()
+	defer func() {
+		l.log.Debug("Closing iterator")
+		iter.Release()
+	}()
 
 	var segments []SegmentIndexEntry
 	if !iter.Last() {

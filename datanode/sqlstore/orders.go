@@ -158,11 +158,7 @@ func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p e
 // from the orders data in the database.
 func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetLiveOrders")()
-	query := fmt.Sprintf(`select %s from orders_live
-where type = 1
-and time_in_force not in (3, 4)
-and status in (1, 7)
-order by vega_time, seq_num`, sqlOrderColumns)
+	query := fmt.Sprintf(`select %s from orders_live order by vega_time, seq_num`, sqlOrderColumns)
 	return os.queryOrders(ctx, query, nil)
 }
 

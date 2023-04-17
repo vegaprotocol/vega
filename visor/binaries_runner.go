@@ -84,10 +84,12 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 	)
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, args, err)
+		return fmt.Errorf("failed to start binary %s %v: %w", binPath, args, err)
 	}
 
-	// Ensures that if one binary failes all of them are killed
+	processID := cmd.Process.Pid
+
+	// Ensures that if one binary fails all of them are killed
 	go func() {
 		<-ctx.Done()
 
@@ -100,17 +102,21 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 			return
 		}
 
-		r.log.Debug("Killing binary", logging.String("binaryPath", binPath))
+		r.log.Debug("Stopping binary", logging.String("binaryPath", binPath))
 
-		if err := cmd.Process.Kill(); err != nil {
-			r.log.Debug("Failed to kill binary",
+		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+			r.log.Debug("Failed to stop binary, resorting to force kill",
 				logging.String("binaryPath", binPath),
 				logging.Error(err),
 			)
+			if err := cmd.Process.Kill(); err != nil {
+				r.log.Debug("Failed to force kill binary",
+					logging.String("binaryPath", binPath),
+					logging.Error(err),
+				)
+			}
 		}
 	}()
-
-	processID := cmd.Process.Pid
 
 	r.mut.Lock()
 	r.running[processID] = cmd
@@ -123,7 +129,7 @@ func (r *BinariesRunner) runBinary(ctx context.Context, binPath string, args []s
 	}()
 
 	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("failed to execute binary %s %v: %w", binPath, args, err)
+		return fmt.Errorf("failed after waiting for binary %s %v: %w", binPath, args, err)
 	}
 
 	return nil
@@ -135,10 +141,13 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 	// if a node restart happens (not due protocol upgrade) and data node is present
 	// we need to make sure that they will start on the block that data node has already processed.
 	if isRestart && runConf.DataNode != nil {
+		r.log.Debug("Getting latest history segment from data node (will lock the latest LevelDB snapshot!)")
+		// this locks the levelDB file
 		latestSegment, err := latestDataNodeHistorySegment(
 			r.cleanBinaryPath(runConf.DataNode.Binary.Path),
 			runConf.DataNode.Binary.Args,
 		)
+		r.log.Debug("Got latest history segment from data node", logging.Bool("success", err == nil))
 		if err != nil {
 			return nil, fmt.Errorf("failed to get latest history segment from data node: %w", err)
 		}
@@ -155,6 +164,8 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 }
 
 func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isRestart bool) chan error {
+	r.log.Debug("Starting Vega binary")
+
 	eg, ctx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
@@ -168,6 +179,7 @@ func (r *BinariesRunner) Run(ctx context.Context, runConf *config.RunConfig, isR
 
 	if runConf.DataNode != nil {
 		eg.Go(func() error {
+			r.log.Debug("Starting Data Node binary")
 			return r.runBinary(ctx, runConf.DataNode.Binary.Path, runConf.DataNode.Binary.Args)
 		})
 	}

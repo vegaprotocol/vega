@@ -116,7 +116,12 @@ func (v *Visor) Run(ctx context.Context) error {
 		maxNumRestarts := v.conf.MaxNumberOfRestarts()
 		restartsDelay := time.Second * time.Duration(v.conf.RestartsDelaySeconds())
 
-		v.log.Info("Starting binaries")
+		if isRestarting {
+			v.log.Info("Restarting binaries")
+		} else {
+			v.log.Info("Starting binaries")
+		}
+
 		binRunner := NewBinariesRunner(
 			v.log,
 			v.conf.CurrentFolder(),
@@ -149,14 +154,14 @@ func (v *Visor) Run(ctx context.Context) error {
 
 				break CheckLoop
 			case <-upgradeTicker.C:
-				upStatus, err := client.UpgradeStatus(ctx)
+				upStatus, err := c.UpgradeStatus(ctx)
 				if err != nil {
 					// Binary has not started yet - waiting for first startup
 					if numOfRestarts == 0 {
 						if numOfUpgradeStatusErrs > maxNumberOfFirstConnectionRetries {
 							return failedToGetStatusErr(maxNumberOfFirstConnectionRetries, err)
 						}
-					} else { // Binary has been started already. Somethig has failed after the startup
+					} else { // Binary has been started already. Something has failed after the startup
 						if numOfUpgradeStatusErrs > maxUpgradeStatusErrs {
 							return failedToGetStatusErr(maxUpgradeStatusErrs, err)
 						}

@@ -80,6 +80,7 @@ func (c *GRPCAdapter) SpamStatistics(ctx context.Context, party string) (nodetyp
 		ChainID:         r.ChainId,
 		EpochSeq:        r.Statistics.EpochSeq,
 		LastBlockHeight: lastBlockHeight,
+		MaxTTL:          r.Statistics.MaxTtl,
 	}, nil
 }
 
