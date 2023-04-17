@@ -2118,7 +2118,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	}
 
 	// redistribute the remaining funds in the market insurance account between other markets insurance accounts and global insurance account
-	if marketInsuranceAcc.Balance.EQ(num.UintZero()) {
+	if marketInsuranceAcc.Balance.IsZero() {
 		// if there's no market insurance account or it has no balance, nothing to do here
 		e.removeAccount(marketInsuranceID)
 		return resps, nil
