@@ -290,7 +290,7 @@ func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRe
 	header := metadata.Pairs(
 		"Content-Disposition",
 		fmt.Sprintf("attachment;filename=ledger_entries_%s_%s%s%s.csv",
-			req.PartyId, req.AssetId, startDateStr, endDateStr))
+			req.PartyId, ptr.UnBox(req.AssetId), startDateStr, endDateStr))
 	if err := stream.SendHeader(header); err != nil {
 		return formatE(ErrSendingGRPCHeader, err)
 	}
