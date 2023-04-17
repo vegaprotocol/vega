@@ -40,15 +40,17 @@ type BinariesRunner struct {
 	running     map[int]*exec.Cmd
 	binsFolder  string
 	log         *logging.Logger
+	stopDelay   time.Duration
 	stopTimeout time.Duration
 	releaseInfo *types.ReleaseInfo
 }
 
-func NewBinariesRunner(log *logging.Logger, binsFolder string, stopTimeout time.Duration, rInfo *types.ReleaseInfo) *BinariesRunner {
+func NewBinariesRunner(log *logging.Logger, binsFolder string, stopDelay, stopTimeout time.Duration, rInfo *types.ReleaseInfo) *BinariesRunner {
 	return &BinariesRunner{
 		binsFolder:  binsFolder,
 		running:     map[int]*exec.Cmd{},
 		log:         log,
+		stopDelay:   stopDelay,
 		stopTimeout: stopTimeout,
 		releaseInfo: rInfo,
 	}
@@ -229,6 +231,10 @@ func (r *BinariesRunner) signal(signal syscall.Signal) error {
 }
 
 func (r *BinariesRunner) Stop() error {
+	r.log.Info("Stopping binaries", logging.Duration("stop delay", r.stopDelay))
+
+	time.Sleep(r.stopDelay)
+
 	if err := r.signal(syscall.SIGTERM); err != nil {
 		return err
 	}
