@@ -44,7 +44,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with empty name",
 			params: api.AdminRotateKeyParams{
 				Wallet:                "",
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               vgrand.RandomStr(5),
@@ -53,22 +52,9 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminRotateKeyParams{
-				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            "",
-				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
-				ChainID:               vgrand.RandomStr(5),
-				SubmissionBlockHeight: 10,
-				EnactmentBlockHeight:  15,
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty chain ID",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               "",
@@ -80,7 +66,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with empty current public key",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               vgrand.RandomStr(5),
@@ -92,7 +77,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with empty next public key",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "",
 				ChainID:               vgrand.RandomStr(5),
@@ -104,7 +88,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with unset submission block height",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               vgrand.RandomStr(5),
@@ -116,7 +99,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with unset enactment block height",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               vgrand.RandomStr(5),
@@ -128,7 +110,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with same next and current public key",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ChainID:               vgrand.RandomStr(5),
@@ -140,7 +121,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with equal block height for enactment and submission",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               vgrand.RandomStr(5),
@@ -152,7 +132,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with enactment block height lower than submission one",
 			params: api.AdminRotateKeyParams{
 				Wallet:                vgrand.RandomStr(5),
-				Passphrase:            vgrand.RandomStr(5),
 				FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 				ChainID:               vgrand.RandomStr(5),
@@ -184,7 +163,6 @@ func testRotatingKeyWithInvalidParamsFails(t *testing.T) {
 func testRotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 	secondKey := generateKey(t, expectedWallet)
 
@@ -192,13 +170,12 @@ func testRotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                expectedWallet.Name(),
-		Passphrase:            passphrase,
 		FromPublicKey:         firstKey.PublicKey(),
 		ToPublicKey:           secondKey.PublicKey(),
 		ChainID:               "test",
@@ -214,7 +191,6 @@ func testRotatingKeyWithValidParamsSucceeds(t *testing.T) {
 func testRotatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -225,7 +201,6 @@ func testRotatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                name,
-		Passphrase:            passphrase,
 		FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 		ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 		ChainID:               vgrand.RandomStr(5),
@@ -242,7 +217,6 @@ func testRotatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testRotatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -253,7 +227,6 @@ func testRotatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testing
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                name,
-		Passphrase:            passphrase,
 		FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 		ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 		ChainID:               vgrand.RandomStr(5),
@@ -270,20 +243,18 @@ func testRotatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testing
 func testRotatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                name,
-		Passphrase:            passphrase,
 		FromPublicKey:         "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 		ToPublicKey:           "988eae323a07f12363c17025c23ee58ea32ac3912398e16bb0b56969f57adc52",
 		ChainID:               vgrand.RandomStr(5),
@@ -300,7 +271,6 @@ func testRotatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T)
 func testRotatingKeyWithIsolatedWalletFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	w, firstKey := walletWithKey(t)
 	secondKey := generateKey(t, w)
 	isolatedWallet, err := w.IsolateWithKey(firstKey.PublicKey())
@@ -312,13 +282,12 @@ func testRotatingKeyWithIsolatedWalletFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, isolatedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, isolatedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, isolatedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, isolatedWallet.Name()).Times(1).Return(isolatedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                isolatedWallet.Name(),
-		Passphrase:            passphrase,
 		FromPublicKey:         firstKey.PublicKey(),
 		ToPublicKey:           secondKey.PublicKey(),
 		ChainID:               vgrand.RandomStr(5),
@@ -335,7 +304,6 @@ func testRotatingKeyWithIsolatedWalletFails(t *testing.T) {
 func testRotatingKeyFromPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 	secondKey := generateKey(t, expectedWallet)
 
@@ -343,13 +311,12 @@ func testRotatingKeyFromPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                expectedWallet.Name(),
-		Passphrase:            passphrase,
 		FromPublicKey:         vgrand.RandomStr(5),
 		ToPublicKey:           secondKey.PublicKey(),
 		ChainID:               vgrand.RandomStr(5),
@@ -366,20 +333,18 @@ func testRotatingKeyFromPublicKeyThatDoesNotExistsFails(t *testing.T) {
 func testRotatingKeyToPublicKeyThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 
 	// setup
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                expectedWallet.Name(),
-		Passphrase:            passphrase,
 		FromPublicKey:         firstKey.PublicKey(),
 		ToPublicKey:           vgrand.RandomStr(5),
 		ChainID:               vgrand.RandomStr(5),
@@ -396,7 +361,6 @@ func testRotatingKeyToPublicKeyThatDoesNotExistsFails(t *testing.T) {
 func testRotatingKeyToTaintedPublicKeyDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 	secondKey := generateKey(t, expectedWallet)
 	if err := expectedWallet.TaintKey(secondKey.PublicKey()); err != nil {
@@ -407,13 +371,12 @@ func testRotatingKeyToTaintedPublicKeyDoesNotExistsFails(t *testing.T) {
 	handler := newRotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminRotateKeyParams{
 		Wallet:                expectedWallet.Name(),
-		Passphrase:            passphrase,
 		FromPublicKey:         firstKey.PublicKey(),
 		ToPublicKey:           secondKey.PublicKey(),
 		ChainID:               vgrand.RandomStr(5),

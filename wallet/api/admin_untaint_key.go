@@ -2,18 +2,15 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminUntaintKeyParams struct {
-	Wallet     string `json:"wallet"`
-	PublicKey  string `json:"publicKey"`
-	Passphrase string `json:"passphrase"`
+	Wallet    string `json:"wallet"`
+	PublicKey string `json:"publicKey"`
 }
 
 type AdminUntaintKey struct {
@@ -34,11 +31,12 @@ func (h *AdminUntaintKey) Handle(ctx context.Context, rawParams jsonrpc.Params) 
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -73,10 +71,6 @@ func validateUntaintKeyParams(rawParams jsonrpc.Params) (AdminUntaintKeyParams, 
 
 	if params.Wallet == "" {
 		return AdminUntaintKeyParams{}, ErrWalletIsRequired
-	}
-
-	if params.Passphrase == "" {
-		return AdminUntaintKeyParams{}, ErrPassphraseIsRequired
 	}
 
 	if params.PublicKey == "" {

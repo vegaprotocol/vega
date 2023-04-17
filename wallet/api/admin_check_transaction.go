@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -16,7 +15,6 @@ import (
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
 	"code.vegaprotocol.io/vega/wallet/api/node"
 	wcommands "code.vegaprotocol.io/vega/wallet/commands"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
@@ -24,7 +22,6 @@ import (
 
 type AdminCheckTransactionParams struct {
 	Wallet      string      `json:"wallet"`
-	Passphrase  string      `json:"passphrase"`
 	PublicKey   string      `json:"publicKey"`
 	Network     string      `json:"network"`
 	NodeAddress string      `json:"nodeAddress"`
@@ -34,7 +31,6 @@ type AdminCheckTransactionParams struct {
 
 type ParsedAdminCheckTransactionParams struct {
 	Wallet         string
-	Passphrase     string
 	PublicKey      string
 	Network        string
 	NodeAddress    string
@@ -70,11 +66,12 @@ func (h *AdminCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -234,10 +231,6 @@ func validateAdminCheckTransactionParams(rawParams jsonrpc.Params) (ParsedAdminC
 		return ParsedAdminCheckTransactionParams{}, ErrWalletIsRequired
 	}
 
-	if params.Passphrase == "" {
-		return ParsedAdminCheckTransactionParams{}, ErrPassphraseIsRequired
-	}
-
 	if params.PublicKey == "" {
 		return ParsedAdminCheckTransactionParams{}, ErrPublicKeyIsRequired
 	}
@@ -261,7 +254,6 @@ func validateAdminCheckTransactionParams(rawParams jsonrpc.Params) (ParsedAdminC
 
 	return ParsedAdminCheckTransactionParams{
 		Wallet:         params.Wallet,
-		Passphrase:     params.Passphrase,
 		PublicKey:      params.PublicKey,
 		RawTransaction: string(tx),
 		Network:        params.Network,

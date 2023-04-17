@@ -41,17 +41,9 @@ func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminPurgePermissionsParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
+				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
-		}, {
-			name: "with empty passphrase",
-			params: api.AdminPurgePermissionsParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
 		},
 	}
 
@@ -75,7 +67,6 @@ func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
 func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 	hostname1 := vgrand.RandomStr(5)
 	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
@@ -104,14 +95,13 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler := newPurgePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
+		Wallet: expectedWallet.Name(),
 	})
 
 	// then
@@ -123,7 +113,6 @@ func testPurgingPermissionsWithValidParamsSucceeds(t *testing.T) {
 func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -133,8 +122,7 @@ func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -145,7 +133,6 @@ func testPurgingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -155,8 +142,7 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails(
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -167,20 +153,18 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails(
 func testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newPurgePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -191,7 +175,6 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *
 func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
 		t.Fatal(err)
@@ -201,14 +184,13 @@ func testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails(t *tes
 	handler := newPurgePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminPurgePermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
+		Wallet: expectedWallet.Name(),
 	})
 
 	// then

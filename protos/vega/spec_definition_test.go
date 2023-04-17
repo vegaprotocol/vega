@@ -301,7 +301,6 @@ func TestSetOracleConfig(t *testing.T) {
 
 		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 		assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
-
 	})
 }
 
@@ -375,6 +374,5 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 
 		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 		assert.Equal(t, "int-test-value-3", filters[0].Conditions[0].Value)
-
 	})
 }

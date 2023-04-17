@@ -41,25 +41,15 @@ func testUpdatingPermissionsWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminUpdatePermissionsParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
-				Hostname:   vgrand.RandomStr(5),
+				Wallet:   "",
+				Hostname: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminUpdatePermissionsParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-				Hostname:   vgrand.RandomStr(5),
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty hostname",
 			params: api.AdminUpdatePermissionsParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
-				Hostname:   "",
+				Wallet:   vgrand.RandomStr(5),
+				Hostname: "",
 			},
 			expectedError: api.ErrHostnameIsRequired,
 		},
@@ -86,7 +76,6 @@ func testUpdatingPermissionsWithInvalidParamsFails(t *testing.T) {
 func testUpdatingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	hostname := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 	permissions := wallet.Permissions{
@@ -102,14 +91,13 @@ func testUpdatingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
 		Wallet:      expectedWallet.Name(),
-		Passphrase:  passphrase,
 		Hostname:    hostname,
 		Permissions: permissions,
 	})
@@ -123,7 +111,6 @@ func testUpdatingPermissionsWithValidParamsSucceeds(t *testing.T) {
 func testUpdatingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -133,9 +120,8 @@ func testUpdatingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   name,
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -147,7 +133,6 @@ func testUpdatingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -157,9 +142,8 @@ func testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   name,
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -171,21 +155,19 @@ func testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails
 func testAdminUpdatePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   name,
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -197,7 +179,6 @@ func testAdminUpdatePermissionsGettingInternalErrorDuringWalletRetrievalFails(t 
 func testAdminUpdatePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
 		t.Fatal(err)
@@ -207,14 +188,13 @@ func testAdminUpdatePermissionsGettingInternalErrorDuringWalletSavingFails(t *te
 	handler := newUpdatePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminUpdatePermissionsParams{
 		Wallet:      expectedWallet.Name(),
-		Passphrase:  passphrase,
 		Hostname:    vgrand.RandomStr(5),
 		Permissions: wallet.Permissions{},
 	})
