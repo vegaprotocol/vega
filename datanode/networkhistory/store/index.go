@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -34,21 +35,21 @@ func NewIndex(dataDir string, log *logging.Logger) (*LevelDbBackedIndex, error) 
 	}, nil
 }
 
-func (l LevelDbBackedIndex) Get(height int64) (SegmentIndexEntry, error) {
+func (l LevelDbBackedIndex) Get(height int64) (segment.Full, error) {
 	value, err := l.db.Get(heightToKey(height), &opt.ReadOptions{})
 	if errors.Is(err, leveldb.ErrNotFound) {
-		return SegmentIndexEntry{}, ErrIndexEntryNotFound
+		return segment.Full{}, ErrIndexEntryNotFound
 	}
 
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to get index entry:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to get index entry:%w", err)
 	}
 
-	var indexEntry SegmentIndexEntry
+	var indexEntry segment.Full
 	err = json.Unmarshal(value, &indexEntry)
 
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to unmarshal value:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to unmarshal value:%w", err)
 	}
 
 	return indexEntry, nil
@@ -60,7 +61,7 @@ func heightToKey(height int64) []byte {
 	return bytes
 }
 
-func (l LevelDbBackedIndex) Add(indexEntry SegmentIndexEntry) error {
+func (l LevelDbBackedIndex) Add(indexEntry segment.Full) error {
 	bytes, err := json.Marshal(indexEntry)
 	if err != nil {
 		return fmt.Errorf("failed to marshal index entry:%w", err)
@@ -74,7 +75,7 @@ func (l LevelDbBackedIndex) Add(indexEntry SegmentIndexEntry) error {
 	return nil
 }
 
-func (l LevelDbBackedIndex) Remove(indexEntry SegmentIndexEntry) error {
+func (l LevelDbBackedIndex) Remove(indexEntry segment.Full) error {
 	if err := l.db.Delete(heightToKey(indexEntry.HeightTo), &opt.WriteOptions{}); err != nil {
 		return fmt.Errorf("failed to delete key:%w", err)
 	}
@@ -82,8 +83,9 @@ func (l LevelDbBackedIndex) Remove(indexEntry SegmentIndexEntry) error {
 	return nil
 }
 
-func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error) {
+func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() (segment.Segments[segment.Full], error) {
 	l.log.Debug("Creating iterator")
+
 	iter := l.db.NewIterator(&util.Range{
 		Start: nil,
 		Limit: nil,
@@ -93,14 +95,14 @@ func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, er
 		iter.Release()
 	}()
 
-	var segments []SegmentIndexEntry
+	var segments []segment.Full
 	if !iter.Last() {
 		return segments, nil
 	}
 
 	for ok := iter.Last(); ok; ok = iter.Prev() {
 		bytes := iter.Value()
-		var indexEntry SegmentIndexEntry
+		var indexEntry segment.Full
 		err := json.Unmarshal(bytes, &indexEntry)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal index entry:%w", err)
@@ -116,14 +118,14 @@ func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, er
 	return segments, nil
 }
 
-func (l LevelDbBackedIndex) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
+func (l LevelDbBackedIndex) GetHighestBlockHeightEntry() (segment.Full, error) {
 	entries, err := l.ListAllEntriesOldestFirst()
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to list all entries:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to list all entries:%w", err)
 	}
 
 	if len(entries) == 0 {
-		return SegmentIndexEntry{}, ErrIndexEntryNotFound
+		return segment.Full{}, ErrIndexEntryNotFound
 	}
 
 	return entries[len(entries)-1], nil

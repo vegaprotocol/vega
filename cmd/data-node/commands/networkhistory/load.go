@@ -108,11 +108,10 @@ func (cmd *loadCmd) Execute(args []string) error {
 		return fmt.Errorf("failed to list history segments: %w", err)
 	}
 
-	mostRecentContiguousHistory := networkhistory.GetMostRecentContiguousHistory(segments)
-
-	if mostRecentContiguousHistory == nil {
+	mostRecentContiguousHistory, err := segments.MostRecentContiguousHistory()
+	if err != nil {
 		fmt.Println("No history is available to load.  Data can be fetched using the fetch command")
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	from := mostRecentContiguousHistory.HeightFrom
@@ -131,12 +130,12 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	contiguousHistory := networkhistory.GetContiguousHistoryForSpan(networkhistory.GetContiguousHistories(segments), from, to)
-	if contiguousHistory == nil {
+	contiguousHistory, err := segments.ContiguousHistoryInRange(from, to)
+	if err != nil {
 		fmt.Printf("No contiguous history is available for block span %d to %d. From and To Heights must match "+
 			"from and to heights of the segments in the contiguous history span.\nUse the show command with the '-s' "+
 			"option to see all available segments\n", from, to)
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	span, err := sqlstore.GetDatanodeBlockSpan(ctx, connPool)
@@ -197,7 +196,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 
 	loadLog := newLoadLog()
 	defer loadLog.AtExit()
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, *contiguousHistory,
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, contiguousHistory,
 		cmd.Config.SQLStore.ConnectionConfig, optimiseForAppend, bool(cmd.Config.SQLStore.VerboseMigration))
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
@@ -210,7 +209,6 @@ func (cmd *loadCmd) Execute(args []string) error {
 
 func createNetworkHistoryService(ctx context.Context, log *logging.Logger, vegaConfig config.Config, connPool *pgxpool.Pool, vegaPaths paths.Paths) (*networkhistory.Service, error) {
 	snapshotService, err := snapshot.NewSnapshotService(log, vegaConfig.NetworkHistory.Snapshot, connPool,
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err := sqlstore.MigrateUpToSchemaVersion(log, vegaConfig.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
@@ -235,7 +233,6 @@ func createNetworkHistoryService(ctx context.Context, log *logging.Logger, vegaC
 
 	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory,
 		connPool, snapshotService, networkHistoryStore, vegaConfig.API.Port,
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
 	if err != nil {
 		return nil, fmt.Errorf("failed new networkhistory service:%w", err)
