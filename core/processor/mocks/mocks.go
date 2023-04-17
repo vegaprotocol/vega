@@ -885,6 +885,18 @@ func (mr *MockStatsMockRecorder) SetTradesPerSecond(arg0 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTradesPerSecond", reflect.TypeOf((*MockStats)(nil).SetTradesPerSecond), arg0)
 }
 
+// SetTxMaxTTL mocks base method.
+func (m *MockStats) SetTxMaxTTL(arg0 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTxMaxTTL", arg0)
+}
+
+// SetTxMaxTTL indicates an expected call of SetTxMaxTTL.
+func (mr *MockStatsMockRecorder) SetTxMaxTTL(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTxMaxTTL", reflect.TypeOf((*MockStats)(nil).SetTxMaxTTL), arg0)
+}
+
 // TotalBatches mocks base method.
 func (m *MockStats) TotalBatches() uint64 {
 	m.ctrl.T.Helper()
@@ -1611,6 +1623,21 @@ func (m *MockNetworkParameters) DispatchChanges(arg0 context.Context) {
 func (mr *MockNetworkParametersMockRecorder) DispatchChanges(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DispatchChanges", reflect.TypeOf((*MockNetworkParameters)(nil).DispatchChanges), arg0)
+}
+
+// GetUint mocks base method.
+func (m *MockNetworkParameters) GetUint(arg0 string) (*num.Uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUint", arg0)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUint indicates an expected call of GetUint.
+func (mr *MockNetworkParametersMockRecorder) GetUint(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUint", reflect.TypeOf((*MockNetworkParameters)(nil).GetUint), arg0)
 }
 
 // IsUpdateAllowed mocks base method.

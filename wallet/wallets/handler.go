@@ -219,7 +219,7 @@ func (h *Handler) SignTx(name string, req *walletpb.SubmitTransactionRequest, he
 		return nil, fmt.Errorf("couldn't get wallet %q: %w", name, err)
 	}
 
-	marshaledInputData, err := wcommands.ToMarshaledInputData(req, height)
+	marshaledInputData, err := wcommands.ToMarshaledInputData(req, height, 0)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't marshal input data: %w", err)
 	}

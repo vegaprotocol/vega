@@ -30,6 +30,7 @@ func TestSignTransaction(t *testing.T) {
 	t.Run("No healthy node available does not sign the transaction", testNoHealthyNodeAvailableDoesNotSignTransaction)
 	t.Run("Failing to get spam statistics does not sign the transaction", testFailingToGetSpamStatsDoesNotSignTransaction)
 	t.Run("Failing spam check aborts signing the transaction", testFailingSpamChecksAbortsSigningTheTransaction)
+	t.Run("Max TTL is overridden to the max permissable value if needed", testSignOverrideTTL)
 }
 
 func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
@@ -129,6 +130,69 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// setup
 	handler := newSignTransactionHandler(t)
+	// -- expected calls
+	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), &spamStats).Times(1).Return(&commandspb.ProofOfWork{
+		Tid:   vgrand.RandomStr(5),
+		Nonce: 12345678,
+	}, nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow, uint8(2)).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
+	handler.interactor.EXPECT().RequestTransactionReviewForSigning(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
+
+	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
+	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
+	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
+	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(nil)
+	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, uint8(2), api.TransactionSuccessfullySigned).Times(1)
+	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
+
+	// when
+	result, errorDetails := handler.handle(t, ctx, api.ClientSignTransactionParams{
+		PublicKey:   kp.PublicKey(),
+		Transaction: testTransaction(t),
+	}, connectedWallet)
+
+	// then
+	assert.Nil(t, errorDetails)
+	require.NotEmpty(t, result)
+	assert.NotEmpty(t, result.Tx)
+}
+
+func testSignOverrideTTL(t *testing.T) {
+	// given
+	ctx, traceID := clientContextForTest()
+	hostname := vgrand.RandomStr(5)
+	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
+		PublicKeys: wallet.PublicKeysPermission{
+			Access:      wallet.ReadAccess,
+			AllowedKeys: nil,
+		},
+	})
+	kp, err := wallet1.GenerateKeyPair(nil)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	spamStats := types.SpamStatistics{
+		ChainID:           vgrand.RandomStr(5),
+		LastBlockHeight:   100,
+		Proposals:         &types.SpamStatistic{MaxForEpoch: 1},
+		NodeAnnouncements: &types.SpamStatistic{MaxForEpoch: 1},
+		Delegations:       &types.SpamStatistic{MaxForEpoch: 1},
+		Transfers:         &types.SpamStatistic{MaxForEpoch: 1},
+		Votes:             &types.VoteSpamStatistics{MaxForEpoch: 1},
+		PoW: &types.PoWStatistics{
+			PowBlockStates: []types.PoWBlockState{{}},
+		},
+		MaxTTL: 10,
+	}
+
+	// setup
+	handler := newSignTransactionHandler(t)
+	handler.overrideTTL = 5 * spamStats.MaxTTL
 	// -- expected calls
 	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), &spamStats).Times(1).Return(&commandspb.ProofOfWork{
 		Tid:   vgrand.RandomStr(5),
@@ -496,12 +560,13 @@ type signTransactionHandler struct {
 	node         *nodemock.MockNode
 	walletStore  *mocks.MockWalletStore
 	spam         *mocks.MockSpamHandler
+	overrideTTL  uint64
 }
 
 func (h *signTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (api.ClientSignTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, connectedWallet)
+	rawResult, err := h.Handle(ctx, params, connectedWallet, 0)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientSignTransactionResult)
 		if !ok {

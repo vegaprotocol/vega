@@ -33,6 +33,14 @@ message InputData {
   // `block_height` prevents replay attacks in conjunction with `nonce` (see above).
   uint64 block_height = 2;
 
+  // A number of blocks this transaction is valid for starting from block_height.
+  // If block_height is set to 100, and this field is set to 10, this transaction
+  // will be rejected if it was received in block 111 and up.
+  // If the transaction hasn't been added to a block when vega is processing block 110 and up,
+  // the transaction will be ignored.
+  // A maximum of 50 blocks applies, so setting this to any value > 50 is considered invalid.
+  uint64 good_for_blocks = 3;
+
   oneof command {
     // Command for submitting an order.
     OrderSubmission order_submission = 1001;

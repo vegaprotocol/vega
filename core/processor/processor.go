@@ -131,6 +131,7 @@ type Stats interface {
 	TotalTxLastBatch() uint64
 	SetHash(string)
 	SetHeight(uint64)
+	SetTxMaxTTL(uint64)
 }
 
 type Assets interface {
@@ -207,6 +208,7 @@ type NetworkParameters interface {
 	Update(ctx context.Context, key, value string) error
 	DispatchChanges(ctx context.Context)
 	IsUpdateAllowed(key string) error
+	GetUint(key string) (*num.Uint, error)
 }
 
 type Oracle struct {

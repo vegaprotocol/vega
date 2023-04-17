@@ -100,7 +100,7 @@ func (h *AdminCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, errDetails
 	}
 
-	marshaledInputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.BlockHeight)
+	marshaledInputData, err := wcommands.ToMarshaledInputData(request, lastBlockData.BlockHeight, 0)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not marshal the input data: %w", err))
 	}
