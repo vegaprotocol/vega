@@ -77,7 +77,7 @@ func (ProtocolUpgradeProposalStatus) EnumDescriptor() ([]byte, []int) {
 	return file_vega_events_v1_events_proto_rawDescGZIP(), []int{0}
 }
 
-// An (event) bus event type is used to specify a type of event
+// Bus event type is used to specify a type of event
 // It has 2 styles of event:
 // Single values (e.g. BUS_EVENT_TYPE_ORDER) where they represent one data item
 // Group values (e.g. BUS_EVENT_TYPE_AUCTION) where they represent a group of data items
@@ -182,19 +182,19 @@ const (
 	BusEventType_BUS_EVENT_TYPE_ETHEREUM_KEY_ROTATION BusEventType = 47
 	// Event indicating protocol upgrade proposal updates
 	BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_PROPOSAL BusEventType = 48
-	// The core is starting to process a new block
+	// Event indicating the core is starting to process a new block
 	BusEventType_BUS_EVENT_TYPE_BEGIN_BLOCK BusEventType = 49
-	// The core finished to process a block
+	// Event indicating the core finished to process a block
 	BusEventType_BUS_EVENT_TYPE_END_BLOCK BusEventType = 50
-	// The core is starting a protocol upgrade
+	// Event indicating the core is starting a protocol upgrade
 	BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_STARTED BusEventType = 51
-	// The market has stopped and settled
+	// Event indicating the market has stopped and settled
 	BusEventType_BUS_EVENT_TYPE_SETTLE_MARKET BusEventType = 52
-	// The result of a transaction processed by the network
+	// Event indicating the result of a transaction processed by the network
 	BusEventType_BUS_EVENT_TYPE_TRANSACTION_RESULT BusEventType = 53
-	// Snapshot is taken at this block height
+	// Event indicating a snapshot was taken at this block height
 	BusEventType_BUS_EVENT_TYPE_SNAPSHOT_TAKEN BusEventType = 54
-	// Data node notifies that it is ready to upgrade
+	// Event data node uses to notify that it is ready to upgrade
 	BusEventType_BUS_EVENT_TYPE_PROTOCOL_UPGRADE_DATA_NODE_READY BusEventType = 55
 	// Event indicating parties had orders closed because they were distressed, but were not closed out.
 	BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED BusEventType = 56
@@ -592,19 +592,19 @@ type ERC20MultiSigSignerAdded struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the signature bundle
+	// ID of the signature bundle
 	SignatureId string `protobuf:"bytes,1,opt,name=signature_id,json=signatureId,proto3" json:"signature_id,omitempty"`
-	// The vega node ID of the node to be added
+	// Vega node ID of the node to be added
 	ValidatorId string `protobuf:"bytes,2,opt,name=validator_id,json=validatorId,proto3" json:"validator_id,omitempty"`
-	// the time at which this happened
+	// Time at which this happened
 	Timestamp int64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The ethereum address of the new signer
+	// Ethereum address of the new signer
 	NewSigner string `protobuf:"bytes,4,opt,name=new_signer,json=newSigner,proto3" json:"new_signer,omitempty"`
-	// The address of the submitter of the transaction
+	// Address of the submitter of the transaction
 	Submitter string `protobuf:"bytes,5,opt,name=submitter,proto3" json:"submitter,omitempty"`
-	// The nonce used.
+	// Nonce used.
 	Nonce string `protobuf:"bytes,6,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The epoch that the node was added for
+	// Epoch that the node was added for
 	EpochSeq string `protobuf:"bytes,7,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 }
 
@@ -694,9 +694,9 @@ type ERC20MultiSigSignerRemovedSubmitter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of this signature bundle
+	// ID of this signature bundle
 	SignatureId string `protobuf:"bytes,1,opt,name=signature_id,json=signatureId,proto3" json:"signature_id,omitempty"`
-	// The address of the submitter of the transaction
+	// Address of the submitter of the transaction
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
 }
 
@@ -751,19 +751,19 @@ type ERC20MultiSigSignerRemoved struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A list containing all the IDs of bundle generated
+	// List containing all the IDs of bundle generated
 	// There should be one bundle generated for every validators
 	// in the validator set
 	SignatureSubmitters []*ERC20MultiSigSignerRemovedSubmitter `protobuf:"bytes,1,rep,name=signature_submitters,json=signatureSubmitters,proto3" json:"signature_submitters,omitempty"`
-	// The vega node ID of the node which is to be removed
+	// Vega node ID of the node which is to be removed
 	ValidatorId string `protobuf:"bytes,2,opt,name=validator_id,json=validatorId,proto3" json:"validator_id,omitempty"`
-	// the time at which this happened
+	// Time at which this happened
 	Timestamp int64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// The ethereum address of the signer to be removed
+	// Ethereum address of the signer to be removed
 	OldSigner string `protobuf:"bytes,4,opt,name=old_signer,json=oldSigner,proto3" json:"old_signer,omitempty"`
-	// The nonce used.
+	// Nonce used.
 	Nonce string `protobuf:"bytes,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// The epoch that the node was removed for
+	// Epoch that the node was removed for
 	EpochSeq string `protobuf:"bytes,6,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 }
 
@@ -1135,29 +1135,29 @@ type StakeLinking struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The internal ID for this staking event
+	// Internal ID for this staking event
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The type of event
+	// Stake linking event type.
 	Type StakeLinking_Type `protobuf:"varint,2,opt,name=type,proto3,enum=vega.events.v1.StakeLinking_Type" json:"type,omitempty"`
-	// The timestamps at which the event was emitted by ethereum
+	// Timestamps at which the event was emitted by ethereum
 	Ts int64 `protobuf:"varint,3,opt,name=ts,proto3" json:"ts,omitempty"`
-	// The party to whom the event is directed at.
+	// Party to whom the event is directed at.
 	Party string `protobuf:"bytes,4,opt,name=party,proto3" json:"party,omitempty"`
-	// The amount of stake deposited or removed
+	// Amount of stake deposited or removed
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
-	// The status of the event
+	// Status of the event
 	Status StakeLinking_Status `protobuf:"varint,6,opt,name=status,proto3,enum=vega.events.v1.StakeLinking_Status" json:"status,omitempty"`
-	// The time at which the vega network finalized the state of the event
+	// Time at which the vega network finalized the state of the event
 	FinalizedAt int64 `protobuf:"varint,7,opt,name=finalized_at,json=finalizedAt,proto3" json:"finalized_at,omitempty"`
-	// The hash of the transaction from which the events happen
+	// Hash of the transaction from which the events happen
 	TxHash string `protobuf:"bytes,8,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	// The block when the event happened
+	// Block when the event happened
 	BlockHeight uint64 `protobuf:"varint,9,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
-	// The block time
+	// Block time
 	BlockTime int64 `protobuf:"varint,10,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
-	// The log index
+	// Log index
 	LogIndex uint64 `protobuf:"varint,11,opt,name=log_index,json=logIndex,proto3" json:"log_index,omitempty"`
-	// the ethereum address from which the stake link was initiated
+	// Ethereum address from which the stake link was initiated
 	EthereumAddress string `protobuf:"bytes,12,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
 }
 
@@ -1871,7 +1871,7 @@ type MarketEvent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Payload is a unique information string
 	Payload string `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
@@ -1928,12 +1928,12 @@ type TransactionResult struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique party identifier for the related party
+	// Unique party ID for the related party
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// The status of the transaction, did it succeed or an error was raised.
+	// Status of the transaction, did it succeed or an error was raised.
 	Status bool `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"`
-	// The hash of the transaction
-	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"` // The transaction itself as received by the network
+	// Hash of the transaction
+	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"` // Transaction itself as received by the network
 	// Types that are assignable to Transaction:
 	//
 	//	*TransactionResult_OrderSubmission
@@ -2332,11 +2332,11 @@ type TxErrorEvent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique party identifier for the related party
+	// Unique party ID for the related party
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// An error message describing what went wrong
+	// Error message describing what went wrong
 	ErrMsg string `protobuf:"bytes,2,opt,name=err_msg,json=errMsg,proto3" json:"err_msg,omitempty"`
-	// The transaction that failed
+	// Transaction that failed
 	//
 	// Types that are assignable to Transaction:
 	//
@@ -2652,7 +2652,7 @@ func (*TxErrorEvent_IssueSignatures) isTxErrorEvent_Transaction() {}
 
 func (*TxErrorEvent_BatchMarketInstructions) isTxErrorEvent_Transaction() {}
 
-// A time update event contains the latest time update from Vega blockchain and indicates the start of a new block
+// Time update event contains the latest time update from Vega blockchain and indicates the start of a new block
 type TimeUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2711,11 +2711,11 @@ type EpochEvent struct {
 	Seq uint64 `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
 	// Action tells us what action is taking place
 	Action vega.EpochAction `protobuf:"varint,2,opt,name=action,proto3,enum=vega.EpochAction" json:"action,omitempty"`
-	// What time did this epoch start
+	// Vega time at which this epoch started
 	StartTime int64 `protobuf:"varint,3,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// What time should this epoch end
+	// Vega time at which this epoch should end
 	ExpireTime int64 `protobuf:"varint,4,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
-	// What time did it actually end
+	// Vega time at which this epoch actually ended
 	EndTime int64 `protobuf:"varint,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 }
 
@@ -2786,7 +2786,7 @@ func (x *EpochEvent) GetEndTime() int64 {
 	return 0
 }
 
-// A transfer responses event contains a collection of transfer information
+// Transfer responses event contains a collection of transfer information
 type LedgerMovements struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2835,13 +2835,13 @@ func (x *LedgerMovements) GetLedgerMovements() []*vega.LedgerMovement {
 	return nil
 }
 
-// A position resolution event contains information on distressed trades
+// Position resolution event contains information on distressed trades
 type PositionResolution struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Number of distressed traders
 	Distressed int64 `protobuf:"varint,2,opt,name=distressed,proto3" json:"distressed,omitempty"`
@@ -2911,15 +2911,15 @@ func (x *PositionResolution) GetMarkPrice() string {
 	return ""
 }
 
-// A loss socialization event contains details on the amount of wins unable to be distributed
+// Loss socialization event contains details on the amount of wins unable to be distributed
 type LossSocialization struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party identifier (public key) for the event
+	// Party ID (public key) for the event
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Amount distributed
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
@@ -2978,7 +2978,7 @@ func (x *LossSocialization) GetAmount() string {
 	return ""
 }
 
-// A trade settlement is part of the settle position event
+// Trade settlement is part of the settle position event
 type TradeSettlement struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3045,15 +3045,15 @@ func (x *TradeSettlement) GetMarketPrice() string {
 	return ""
 }
 
-// A settle position event contains position settlement information for a party
+// Settle position event contains position settlement information for a party
 type SettlePosition struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party identifier (public key) for the event
+	// Party ID (public key) for the event
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Price of settlement as a string
 	Price string `protobuf:"bytes,3,opt,name=price,proto3" json:"price,omitempty"`
@@ -3130,14 +3130,14 @@ func (x *SettlePosition) GetPositionFactor() string {
 	return ""
 }
 
-// A settle market event to notify data node that a market has been settled
+// Settle market event to notify data node that a market has been settled
 // so positions and PL can be updated accordingly
 type SettleMarket struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Price of settlement as a string
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
@@ -3198,15 +3198,15 @@ func (x *SettleMarket) GetPositionFactor() string {
 	return ""
 }
 
-// A position state event contains the current position state for a single party in a single market
+// Position state event contains the current position state for a single party in a single market
 type PositionStateEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party identifier for this position update
+	// Party ID for this position update
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Market identifier for this position update
+	// Market ID for this position update
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Current position
 	Size int64 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
@@ -3299,15 +3299,15 @@ func (x *PositionStateEvent) GetVwSellPrice() string {
 	return ""
 }
 
-// A settle distressed event contains information on distressed trading parties who are closed out
+// Settle distressed event contains information on distressed trading parties who are closed out
 type SettleDistressed struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party identifier (public key) for the event
+	// Party ID i.e. a party's public key for the event
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Margin value as an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places
@@ -3377,16 +3377,16 @@ func (x *SettleDistressed) GetPrice() string {
 	return ""
 }
 
-// A distressed order contains the party IDs for all parties that were distressed and had their orders closed,
+// Distressed order contains the party IDs for all parties that were distressed and had their orders closed,
 // but did not need to be closed out after cancelling their orders
 type DistressedOrders struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Slice of Party identifiers (public keys) for the event
+	// Slice of Party IDs i.e. each party's public key for the event
 	Parties []string `protobuf:"bytes,2,rep,name=parties,proto3" json:"parties,omitempty"`
 }
 
@@ -3436,7 +3436,7 @@ func (x *DistressedOrders) GetParties() []string {
 	return nil
 }
 
-// A distressed positions event contains the party IDs for all parties that were distressed, had their orders closed but because of insufficient volume on the book
+// Distressed positions event contains the party IDs for all parties that were distressed, had their orders closed but because of insufficient volume on the book
 // could not be fully closed out. These parties are distressed, but still hold an active position on the book as a result. Once enough volume is on the book to close
 // them out, a SettleDistressed event will be sent. In case they manage to reduce their position, or meet the margin requirements, this status will be updated.
 // Parties that are no longer distressed but active will be listed in the safe_parties field.
@@ -3445,11 +3445,11 @@ type DistressedPositions struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Slice of party identifiers (public keys) that are distressed but still have open volume
+	// Slice of party IDs i.e. each party's public key, that are distressed but still have open volume
 	DistressedParties []string `protobuf:"bytes,2,rep,name=distressed_parties,json=distressedParties,proto3" json:"distressed_parties,omitempty"`
-	// Slice of party identifiers (public keys) who were distressed but now can safely maintain their position
+	// Slice of party IDs i.e. each party's public key, who were distressed but now can safely maintain their position
 	SafeParties []string `protobuf:"bytes,3,rep,name=safe_parties,json=safeParties,proto3" json:"safe_parties,omitempty"`
 }
 
@@ -3506,13 +3506,13 @@ func (x *DistressedPositions) GetSafeParties() []string {
 	return nil
 }
 
-// A market ticket event contains the time value for when a particular market was last processed on Vega
+// Market tick event contains the time value for when a particular market was last processed on Vega
 type MarketTick struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Timestamp containing latest update from Vega blockchain aka Vega-time
 	Time int64 `protobuf:"varint,2,opt,name=time,proto3" json:"time,omitempty"`
@@ -3564,13 +3564,13 @@ func (x *MarketTick) GetTime() int64 {
 	return 0
 }
 
-// An auction event indicating a change in auction state, for example starting or ending an auction
+// Auction event indicating a change in auction state, for example starting or ending an auction
 type AuctionEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// True if the event indicates an auction opening and False otherwise
 	OpeningAuction bool `protobuf:"varint,2,opt,name=opening_auction,json=openingAuction,proto3" json:"opening_auction,omitempty"`
@@ -3580,7 +3580,7 @@ type AuctionEvent struct {
 	Start int64 `protobuf:"varint,4,opt,name=start,proto3" json:"start,omitempty"`
 	// Timestamp containing the end time for an auction
 	End int64 `protobuf:"varint,5,opt,name=end,proto3" json:"end,omitempty"`
-	// the reason this market is/was in auction
+	// Reason this market is/was in auction
 	Trigger vega.AuctionTrigger `protobuf:"varint,6,opt,name=trigger,proto3,enum=vega.AuctionTrigger" json:"trigger,omitempty"`
 	// If an auction was ongoing, but was extended for whatever reason, this field will
 	// be set to the trigger type indicating which component extended the auction
@@ -3668,13 +3668,13 @@ func (x *AuctionEvent) GetExtensionTrigger() vega.AuctionTrigger {
 	return vega.AuctionTrigger(0)
 }
 
-// A validator update event contains information about validator node
+// Validator update event contains information about validator node
 type ValidatorUpdate struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Node id of the node
+	// Node ID of the validator node
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Vega public key of validator node
 	VegaPubKey string `protobuf:"bytes,2,opt,name=vega_pub_key,json=vegaPubKey,proto3" json:"vega_pub_key,omitempty"`
@@ -3694,11 +3694,11 @@ type ValidatorUpdate struct {
 	VegaPubKeyIndex uint32 `protobuf:"varint,9,opt,name=vega_pub_key_index,json=vegaPubKeyIndex,proto3" json:"vega_pub_key_index,omitempty"`
 	// Flag indicating if the validator has been added to or removed from vega
 	Added bool `protobuf:"varint,10,opt,name=added,proto3" json:"added,omitempty"`
-	// The epoch in which the announced pending node will start participating in the network
+	// Epoch in which the announced pending node will start participating in the network
 	FromEpoch uint64 `protobuf:"varint,11,opt,name=from_epoch,json=fromEpoch,proto3" json:"from_epoch,omitempty"`
 	// Ethereum public key being used as the submitter to allow automatic signature generation
 	SubmitterAddress string `protobuf:"bytes,12,opt,name=submitter_address,json=submitterAddress,proto3" json:"submitter_address,omitempty"`
-	// The epoch in which the node was announced or removed from the network
+	// Epoch in which the node was announced or removed from the network
 	EpochSeq uint64 `protobuf:"varint,13,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
 }
 
@@ -3825,26 +3825,26 @@ func (x *ValidatorUpdate) GetEpochSeq() uint64 {
 	return 0
 }
 
-// An event that explains the status of the validator for the coming epoch
+// Event that explains the status of the validator for the coming epoch
 type ValidatorRankingEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// stake based score - no anti-whaling
+	// Stake based score - no anti-whaling
 	StakeScore string `protobuf:"bytes,2,opt,name=stake_score,json=stakeScore,proto3" json:"stake_score,omitempty"`
-	// performance base score
+	// Performance base score
 	PerformanceScore string `protobuf:"bytes,3,opt,name=performance_score,json=performanceScore,proto3" json:"performance_score,omitempty"`
-	// final score
+	// Final score
 	RankingScore string `protobuf:"bytes,4,opt,name=ranking_score,json=rankingScore,proto3" json:"ranking_score,omitempty"`
-	// the status of the validator in the previous epoch
+	// Status of the validator in the previous epoch
 	PreviousStatus string `protobuf:"bytes,5,opt,name=previous_status,json=previousStatus,proto3" json:"previous_status,omitempty"`
-	// the status of the validator in the next epoch
+	// Status of the validator in the next epoch
 	NextStatus string `protobuf:"bytes,6,opt,name=next_status,json=nextStatus,proto3" json:"next_status,omitempty"`
-	// the epoch seq for which the status is valid
+	// Epoch seq for which the status is valid
 	EpochSeq string `protobuf:"bytes,7,opt,name=epoch_seq,json=epochSeq,proto3" json:"epoch_seq,omitempty"`
-	// tendermint voting power of the validator
+	// Tendermint voting power of the validator
 	TmVotingPower uint32 `protobuf:"varint,8,opt,name=tm_voting_power,json=tmVotingPower,proto3" json:"tm_voting_power,omitempty"`
 }
 
@@ -3942,7 +3942,7 @@ type KeyRotation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Identifier of the node that rotated their Vega key
+	// ID of the node that rotated their Vega key
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Vega public key that was previously associated with the node
 	OldPubKey string `protobuf:"bytes,2,opt,name=old_pub_key,json=oldPubKey,proto3" json:"old_pub_key,omitempty"`
@@ -4018,7 +4018,7 @@ type EthereumKeyRotation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Identifier of the node that rotated their Ethereum key
+	// ID of the node that rotated their Ethereum key
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Ethereum address that was previously associated with the node
 	OldAddress string `protobuf:"bytes,2,opt,name=old_address,json=oldAddress,proto3" json:"old_address,omitempty"`
@@ -4093,13 +4093,13 @@ type ProtocolUpgradeEvent struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The block height at which to perform the upgrade
+	// Block height at which to perform the upgrade
 	UpgradeBlockHeight uint64 `protobuf:"varint,1,opt,name=upgrade_block_height,json=upgradeBlockHeight,proto3" json:"upgrade_block_height,omitempty"`
-	// the release tag for the vega binary
+	// Release tag for the vega binary
 	VegaReleaseTag string `protobuf:"bytes,2,opt,name=vega_release_tag,json=vegaReleaseTag,proto3" json:"vega_release_tag,omitempty"`
-	// tendermint validators that have agreed to the upgrade
+	// Tendermint validators that have agreed to the upgrade
 	Approvers []string `protobuf:"bytes,3,rep,name=approvers,proto3" json:"approvers,omitempty"`
-	// the status of the proposal
+	// Status of the proposal
 	Status ProtocolUpgradeProposalStatus `protobuf:"varint,4,opt,name=status,proto3,enum=vega.events.v1.ProtocolUpgradeProposalStatus" json:"status,omitempty"`
 }
 
@@ -4163,7 +4163,7 @@ func (x *ProtocolUpgradeEvent) GetStatus() ProtocolUpgradeProposalStatus {
 	return ProtocolUpgradeProposalStatus_PROTOCOL_UPGRADE_PROPOSAL_STATUS_UNSPECIFIED
 }
 
-// StateVarEvent - updates on state changes in state variable consensus
+// StateVar event updates on state changes in state variable consensus
 type StateVar struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4339,7 +4339,7 @@ func (x *EndBlock) GetHeight() uint64 {
 	return 0
 }
 
-// The core is starting a protocol upgrade
+// Event indicating the core is starting a protocol upgrade
 type ProtocolUpgradeStarted struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4387,7 +4387,7 @@ func (x *ProtocolUpgradeStarted) GetLastBlockHeight() uint64 {
 	return 0
 }
 
-// The data node is ready fro protocol upgrade
+// Event indicating the data node is ready for protocol upgrade
 type ProtocolUpgradeDataNodeReady struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -4441,9 +4441,9 @@ type CoreSnapshotData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The block height at which snapshot was taken
+	// Block height at which snapshot was taken
 	BlockHeight uint64 `protobuf:"varint,1,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
-	// The hash of the snapshot block
+	// Hash of the snapshot block
 	BlockHash string `protobuf:"bytes,2,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
 	// Core version
 	CoreVersion string `protobuf:"bytes,3,opt,name=core_version,json=coreVersion,proto3" json:"core_version,omitempty"`
@@ -4511,17 +4511,17 @@ func (x *CoreSnapshotData) GetProtocolUpgradeBlock() bool {
 	return false
 }
 
-// A bus event is a container for event bus events emitted by Vega
+// Bus event is a container for event bus events emitted by Vega
 type BusEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A unique event identifier for the message
+	// Unique event ID for the message
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The batch (or block) of transactions that the events relate to
+	// The batch or block of transactions that the events relate to
 	Block string `protobuf:"bytes,2,opt,name=block,proto3" json:"block,omitempty"`
-	// The type of bus event (one of the list below)
+	// The type of bus event. Must be one of the list below:
 	Type BusEventType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.events.v1.BusEventType" json:"type,omitempty"`
 	// Types that are assignable to Event:
 	//
@@ -5122,12 +5122,12 @@ type BusEvent_MarginLevels struct {
 }
 
 type BusEvent_Proposal struct {
-	// Proposal events (for governance)
+	// Proposal events for governance
 	Proposal *vega.Proposal `protobuf:"bytes,109,opt,name=proposal,proto3,oneof"`
 }
 
 type BusEvent_Vote struct {
-	// Vote events (for governance)
+	// Vote events for governance
 	Vote *vega.Vote `protobuf:"bytes,110,opt,name=vote,proto3,oneof"`
 }
 
@@ -5312,17 +5312,17 @@ type BusEvent_ProtocolUpgradeEvent struct {
 }
 
 type BusEvent_BeginBlock struct {
-	// The core is starting to process a new block
+	// Core is starting to process a new block
 	BeginBlock *BeginBlock `protobuf:"bytes,148,opt,name=begin_block,json=beginBlock,proto3,oneof"`
 }
 
 type BusEvent_EndBlock struct {
-	// The core finished to process a block
+	// Core finished processing a block
 	EndBlock *EndBlock `protobuf:"bytes,149,opt,name=end_block,json=endBlock,proto3,oneof"`
 }
 
 type BusEvent_ProtocolUpgradeStarted struct {
-	// The core is starting a protocol upgrade
+	// Core is starting a protocol upgrade
 	ProtocolUpgradeStarted *ProtocolUpgradeStarted `protobuf:"bytes,150,opt,name=protocol_upgrade_started,json=protocolUpgradeStarted,proto3,oneof"`
 }
 
@@ -5332,17 +5332,17 @@ type BusEvent_SettleMarket struct {
 }
 
 type BusEvent_TransactionResult struct {
-	// The result of a transaction processed by the network
+	// Result of a transaction processed by the network
 	TransactionResult *TransactionResult `protobuf:"bytes,152,opt,name=transaction_result,json=transactionResult,proto3,oneof"`
 }
 
 type BusEvent_CoreSnapshotEvent struct {
-	// A core snapshot has been taken at the end of the block
+	// Core snapshot has been taken at the end of the block
 	CoreSnapshotEvent *CoreSnapshotData `protobuf:"bytes,153,opt,name=core_snapshot_event,json=coreSnapshotEvent,proto3,oneof"`
 }
 
 type BusEvent_ProtocolUpgradeDataNodeReady struct {
-	// A core snapshot has been taken at the end of the block
+	// Core snapshot has been taken at the end of the block
 	ProtocolUpgradeDataNodeReady *ProtocolUpgradeDataNodeReady `protobuf:"bytes,154,opt,name=protocol_upgrade_data_node_ready,json=protocolUpgradeDataNodeReady,proto3,oneof"`
 }
 
@@ -5492,9 +5492,9 @@ type ExpiredOrders struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market identifier for the event
+	// Market ID for the event
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Slice of expired order identifiers
+	// Slice of expired order IDs
 	OrderIds []string `protobuf:"bytes,2,rep,name=order_ids,json=orderIds,proto3" json:"order_ids,omitempty"`
 }
 
@@ -5587,7 +5587,7 @@ type TransactionResult_FailureDetails struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// An error message explaining the reason for the transaction failing processing
+	// Error message explaining the reason for the transaction failing processing
 	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 }
 

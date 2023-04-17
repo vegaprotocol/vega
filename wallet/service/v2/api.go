@@ -21,9 +21,9 @@ type ClientAPI interface {
 	ConnectWallet(ctx context.Context, hostname string) (wallet.Wallet, *jsonrpc.ErrorDetails)
 	GetChainID(ctx context.Context) (jsonrpc.Result, *jsonrpc.ErrorDetails)
 	ListKeys(ctx context.Context, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
-	CheckTransaction(ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
-	SignTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
-	SendTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet api.ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails)
+	CheckTransaction(ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails)
+	SignTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet api.ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails)
+	SendTransaction(ctx context.Context, rawParams jsonrpc.Params, connectedWallet api.ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails)
 }
 
 type Command func(ctx context.Context, lw *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) (jsonrpc.Result, *jsonrpc.ErrorDetails)
@@ -41,7 +41,7 @@ type API struct {
 // (the "wild, wild web"), no administration methods are exposed. We don't want
 // malicious third-party applications to leverage administration capabilities
 // that could expose the user and/or compromise his wallets.
-func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connections.Manager) *API {
+func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connections.Manager, ttl uint64) *API {
 	commands := map[string]Command{}
 
 	commands["client.connect_wallet"] = func(ctx context.Context, lw *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -114,7 +114,7 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		return clientAPI.SignTransaction(ctx, rpcRequest.Params, connectedWallet)
+		return clientAPI.SignTransaction(ctx, rpcRequest.Params, connectedWallet, ttl)
 	}
 
 	commands["client.send_transaction"] = func(ctx context.Context, _ *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -133,7 +133,7 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		return clientAPI.SendTransaction(ctx, rpcRequest.Params, connectedWallet)
+		return clientAPI.SendTransaction(ctx, rpcRequest.Params, connectedWallet, ttl)
 	}
 
 	commands["client.check_transaction"] = func(ctx context.Context, _ *responseWriter, httpRequest *http.Request, rpcRequest jsonrpc.Request) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -152,7 +152,7 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		return clientAPI.CheckTransaction(ctx, rpcRequest.Params, connectedWallet)
+		return clientAPI.CheckTransaction(ctx, rpcRequest.Params, connectedWallet, ttl)
 	}
 
 	return &API{

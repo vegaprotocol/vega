@@ -29,18 +29,26 @@ var (
 	`)
 )
 
-type RotateKeyHandler func(api.AdminRotateKeyParams) (api.AdminRotateKeyResult, error)
+type RotateKeyHandler func(api.AdminRotateKeyParams, string) (api.AdminRotateKeyResult, error)
 
 func NewCmdRotateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminRotateKeyParams) (api.AdminRotateKeyResult, error) {
+	h := func(params api.AdminRotateKeyParams, passphrase string) (api.AdminRotateKeyResult, error) {
+		ctx := context.Background()
+
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminRotateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		rotateKey := api.NewAdminRotateKey(walletStore)
-		rawResult, errDetails := rotateKey.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminRotateKeyResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errDetails := api.NewAdminRotateKey(walletStore).Handle(context.Background(), params)
 		if errDetails != nil {
 			return api.AdminRotateKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -59,12 +67,12 @@ func BuildCmdRotateKey(w io.Writer, handler RotateKeyHandler, rf *RootFlags) *co
 		Long:    rotateKeyLong,
 		Example: rotateKeyExample,
 		RunE: func(_ *cobra.Command, args []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -131,49 +139,48 @@ type RotateKeyFlags struct {
 	EnactmentBlockHeight  uint64
 }
 
-func (f *RotateKeyFlags) Validate() (api.AdminRotateKeyParams, error) {
+func (f *RotateKeyFlags) Validate() (api.AdminRotateKeyParams, string, error) {
 	if f.ToPublicKey == "" {
-		return api.AdminRotateKeyParams{}, flags.MustBeSpecifiedError("new-pubkey")
+		return api.AdminRotateKeyParams{}, "", flags.MustBeSpecifiedError("new-pubkey")
 	}
 
 	if f.FromPublicKey == "" {
-		return api.AdminRotateKeyParams{}, flags.MustBeSpecifiedError("current-pubkey")
+		return api.AdminRotateKeyParams{}, "", flags.MustBeSpecifiedError("current-pubkey")
 	}
 
 	if f.ChainID == "" {
-		return api.AdminRotateKeyParams{}, flags.MustBeSpecifiedError("chain-id")
+		return api.AdminRotateKeyParams{}, "", flags.MustBeSpecifiedError("chain-id")
 	}
 
 	if f.EnactmentBlockHeight == 0 {
-		return api.AdminRotateKeyParams{}, flags.MustBeSpecifiedError("target-height")
+		return api.AdminRotateKeyParams{}, "", flags.MustBeSpecifiedError("target-height")
 	}
 
 	if f.SubmissionBlockHeight == 0 {
-		return api.AdminRotateKeyParams{}, flags.MustBeSpecifiedError("tx-height")
+		return api.AdminRotateKeyParams{}, "", flags.MustBeSpecifiedError("tx-height")
 	}
 
 	if f.EnactmentBlockHeight <= f.SubmissionBlockHeight {
-		return api.AdminRotateKeyParams{}, flags.RequireLessThanFlagError("tx-height", "target-height")
+		return api.AdminRotateKeyParams{}, "", flags.RequireLessThanFlagError("tx-height", "target-height")
 	}
 
 	if len(f.Wallet) == 0 {
-		return api.AdminRotateKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminRotateKeyParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminRotateKeyParams{}, err
+		return api.AdminRotateKeyParams{}, "", err
 	}
 
 	return api.AdminRotateKeyParams{
 		Wallet:                f.Wallet,
-		Passphrase:            passphrase,
 		FromPublicKey:         f.FromPublicKey,
 		ToPublicKey:           f.ToPublicKey,
 		ChainID:               f.ChainID,
 		SubmissionBlockHeight: f.SubmissionBlockHeight,
 		EnactmentBlockHeight:  f.EnactmentBlockHeight,
-	}, nil
+	}, passphrase, nil
 }
 
 func PrintRotateKeyResponse(w io.Writer, req api.AdminRotateKeyResult) {

@@ -9,9 +9,9 @@ import "vega/commands/v1/data.proto";
 import "vega/commands/v1/signature.proto";
 
 message InputData {
-  // this was the old restore checkpoint command
+  // This was the old restore checkpoint command
   reserved 4001;
-  // A number to provide uniqueness to prevent accidental replays and,
+  // Number to provide uniqueness to prevent accidental replays and,
   // in combination with `block_height`, deliberate attacks.
   // A nonce provides uniqueness for otherwise identical transactions,
   // ensuring that the transaction hash uniquely identifies a specific transaction.
@@ -23,7 +23,7 @@ message InputData {
   // slightly differently, causing a different hash.
   uint64 nonce = 1;
 
-  // The block height at which the transaction was made.
+  // Block height at which the transaction was made.
   // This should be the current block height. The transaction will be valid
   // from the block and up to the `tolerance` block height.
   // Example: If the network has a tolerance of 150 blocks and `block_height`
@@ -33,8 +33,16 @@ message InputData {
   // `block_height` prevents replay attacks in conjunction with `nonce` (see above).
   uint64 block_height = 2;
 
+  // A number of blocks this transaction is valid for starting from block_height.
+  // If block_height is set to 100, and this field is set to 10, this transaction
+  // will be rejected if it was received in block 111 and up.
+  // If the transaction hasn't been added to a block when vega is processing block 110 and up,
+  // the transaction will be ignored.
+  // A maximum of 50 blocks applies, so setting this to any value > 50 is considered invalid.
+  uint64 good_for_blocks = 3;
+
   oneof command {
-    // A command for submitting an order.
+    // Command for submitting an order.
     OrderSubmission order_submission = 1001;
 
     // User commands
@@ -60,11 +68,11 @@ message InputData {
     LiquidityProvisionAmendment liquidity_provision_amendment = 1011;
     // Command to submit a transfer.
     Transfer transfer = 1012;
-    // A command to request cancelling a recurring transfer.
+    // Command to request cancelling a recurring transfer.
     CancelTransfer cancel_transfer = 1013;
-    // A command used by a node operator to announce its node as a pending validator.
+    // Command used by a node operator to announce its node as a pending validator.
     AnnounceNode announce_node = 1014;
-    // A command to submit a batch of order instructions to a market.
+    // Command to submit a batch of order instructions to a market.
     BatchMarketInstructions batch_market_instructions = 1015;
 
     // Validator commands
@@ -97,7 +105,7 @@ message InputData {
   }
 }
 
-// The current supported version of the transaction inside the network.
+// Current supported version of the transaction inside the network.
 enum TxVersion {
   reserved 1;
   // Represents an unspecified or missing value from the input
@@ -116,19 +124,19 @@ message Transaction {
   //   chain_id_as_bytes + \0 character as delimiter + proto_marshalled_command.
   bytes input_data = 1;
 
-  // The signature of the inputData.
+  // Signature of the input data.
   Signature signature = 2;
 
-  // The sender of the transaction.
+  // Sender of the transaction.
   // Any of the following would be valid.
   oneof from {
-    // The address of the sender (hex-encoded). Not supported yet.
+    // Hex-encoded address of the sender. Not supported yet.
     string address = 1001;
-    // The public key of the sender (hex-encoded).
+    // Hex-encoded public key of the sender.
     string pub_key = 1002;
   }
 
-  // A version of the transaction, to be used in the future in case changes are implemented
+  // Version of the transaction, to be used in the future in case changes are implemented
   // to the transaction format.
   TxVersion version = 2000;
 
@@ -138,8 +146,8 @@ message Transaction {
 
 // Components needed for the network to verify proof-of-work
 message ProofOfWork {
-  // A unique transaction identifier used to seed the proof-of-work hash.
+  // Unique transaction identifier used to seed the proof-of-work hash.
   string tid = 1;
-  // A number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
+  // Number which, combined with the transaction identifier, will produce a hash with the required number of leading zeros to be accepted by the network.
   uint64 nonce = 2;
 }

@@ -79,7 +79,6 @@ func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 							}
 						}
 					}
-
 				}
 			}
 

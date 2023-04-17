@@ -18,7 +18,7 @@ func TestPurgePermissionsFlags(t *testing.T) {
 func testPurgePermissionsFlagsValidFlagsSucceeds(t *testing.T) {
 	// given
 	testDir := t.TempDir()
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	f := &cmd.PurgePermissionsFlags{
 		Wallet:         vgrand.RandomStr(10),
 		PassphraseFile: passphraseFilePath,
@@ -26,12 +26,12 @@ func testPurgePermissionsFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, f.Wallet, req.Wallet)
-	assert.Equal(t, passphrase, req.Passphrase)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testPurgePermissionsFlagsMissingFlagsFails(t *testing.T) {
@@ -56,7 +56,7 @@ func testPurgePermissionsFlagsMissingFlagsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			req, err := tc.flags.Validate()
+			req, _, err := tc.flags.Validate()
 
 			// then
 			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))

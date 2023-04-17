@@ -48,7 +48,6 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with empty wallet",
 			params: api.AdminSendTransactionParams{
 				Wallet:      "",
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Transaction: testTransaction(t),
 				Network:     vgrand.RandomStr(5),
@@ -56,21 +55,9 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrWalletIsRequired,
 		},
 		{
-			name: "with empty passphrase",
-			params: api.AdminSendTransactionParams{
-				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  "",
-				PublicKey:   vgrand.RandomStr(5),
-				Transaction: testTransaction(t),
-				Network:     vgrand.RandomStr(5),
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		},
-		{
 			name: "with empty public key",
 			params: api.AdminSendTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   "",
 				Transaction: testTransaction(t),
 				Network:     vgrand.RandomStr(5),
@@ -81,7 +68,6 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with empty transaction",
 			params: api.AdminSendTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Transaction: "",
 				Network:     vgrand.RandomStr(5),
@@ -92,7 +78,6 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with no network or node address",
 			params: api.AdminSendTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Network:     "",
 				Transaction: testTransaction(t),
@@ -103,7 +88,6 @@ func testAdminSendingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with no network and node address",
 			params: api.AdminSendTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Network:     "some_network",
 				NodeAddress: "some_node_address",
@@ -135,7 +119,6 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
-	passphrase := vgrand.RandomStr(5)
 	nodeHost := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 	hash := "hashy mchashface"
@@ -160,7 +143,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, w.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
@@ -168,7 +151,6 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
 		Wallet:      w.Name(),
-		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
 		Network:     network.Name,
 		Transaction: testTransaction(t),
@@ -185,7 +167,6 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
-	passphrase := vgrand.RandomStr(5)
 
 	// setup
 	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -209,7 +190,6 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
 		Wallet:      walletName,
-		Passphrase:  passphrase,
 		PublicKey:   vgrand.RandomStr(5),
 		Network:     network.Name,
 		Transaction: testTransaction(t),
@@ -226,7 +206,6 @@ func testAdminSendingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 
 	params := api.AdminSendTransactionParams{
 		Wallet:      vgrand.RandomStr(5),
-		Passphrase:  vgrand.RandomStr(5),
 		PublicKey:   vgrand.RandomStr(5),
 		Network:     "fairground",
 		Transaction: testTransaction(t),
@@ -251,7 +230,6 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
-	passphrase := vgrand.RandomStr(5)
 
 	// setup
 	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
@@ -271,13 +249,12 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, walletName).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, walletName, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, walletName).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, walletName).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
 		Wallet:      walletName,
-		Passphrase:  passphrase,
 		PublicKey:   vgrand.RandomStr(5),
 		Network:     network.Name,
 		Transaction: testTransaction(t),
@@ -292,7 +269,6 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := vgrand.RandomStr(5)
-	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 
 	// setup
@@ -300,13 +276,12 @@ func testAdminSendingTransactionWithMalformedTransactionFails(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, w.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
 		Wallet:      w.Name(),
-		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
 		Network:     network,
 		Transaction: map[string]int{"bob": 5},
@@ -321,7 +296,6 @@ func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
-	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 
 	// setup
@@ -329,13 +303,12 @@ func testAdminSendingTransactionWithInvalidTransactionFails(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, w.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminSendTransactionParams{
 		Wallet:      w.Name(),
-		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
 		Network:     network.Name,
 		Transaction: testMalformedTransaction(t),

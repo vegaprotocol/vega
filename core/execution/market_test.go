@@ -2778,9 +2778,6 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		},
 	}
 	openEnd := now.Add(time.Duration(extension)*time.Second + time.Second)
-	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
-	// we don't have to add both anymore, the first auction period is determined by network parameter
-	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(600)
 	auctionTriggeringPrice := initialPrice + mmu.Uint64() + 1
@@ -2955,10 +2952,10 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
+	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension) * time.Second)
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
-
-	require.Empty(t, md.PriceMonitoringBounds)
+	require.Equal(t, 1, len(md.PriceMonitoringBounds))
 
 	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
@@ -2970,7 +2967,28 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
-	require.Empty(t, md.PriceMonitoringBounds)
+	require.Equal(t, 1, len(md.PriceMonitoringBounds))
+
+	tm.now = auctionEndTime.Add(time.Nanosecond)
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
+	assert.False(t, closed)
+
+	auctionEndTime = openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
+	md = tm.market.GetMarketData()
+	require.NotNil(t, md)
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.MarketStateSuspended, tm.market.State())
+
+	tm.now = auctionEndTime
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
+	assert.False(t, closed)
+
+	md = tm.market.GetMarketData()
+	require.NotNil(t, md)
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
 	tm.now = auctionEndTime.Add(time.Nanosecond)
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)

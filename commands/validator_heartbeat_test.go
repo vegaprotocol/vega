@@ -76,7 +76,17 @@ func TestValidatorHeartbeat(t *testing.T) {
 					Algo:  "some/algo",
 				},
 			},
-			errString: "validator_heartbeat.vega_pub_key (is required)",
+			errString: "validator_heartbeat.node_id (is required)",
+		},
+		{
+			vh: commandspb.ValidatorHeartbeat{
+				NodeId: "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+				VegaSignature: &commandspb.Signature{
+					Value: "84e2b15102a8d6c1c6b4bdf40af8a0dc21b040eaaa1c94cd10d17604b75fdc35",
+					Algo:  "some/algo",
+				},
+			},
+			errString: "validator_heartbeat.ethereum_signature.value (is required)",
 		},
 	}
 

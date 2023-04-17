@@ -18,7 +18,7 @@ func TestRevokePermissionsFlags(t *testing.T) {
 func testRevokePermissionsFlagsValidFlagsSucceeds(t *testing.T) {
 	// given
 	testDir := t.TempDir()
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	f := &cmd.RevokePermissionsFlags{
 		Wallet:         vgrand.RandomStr(10),
 		Hostname:       vgrand.RandomStr(10),
@@ -27,13 +27,13 @@ func testRevokePermissionsFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, f.Hostname, req.Hostname)
 	assert.Equal(t, f.Wallet, req.Wallet)
-	assert.Equal(t, passphrase, req.Passphrase)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testRevokePermissionsFlagsMissingFlagsFails(t *testing.T) {
@@ -69,7 +69,7 @@ func testRevokePermissionsFlagsMissingFlagsFails(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			// when
-			req, err := tc.flags.Validate()
+			req, _, err := tc.flags.Validate()
 
 			// then
 			assert.ErrorIs(t, err, flags.MustBeSpecifiedError(tc.missingFlag))
