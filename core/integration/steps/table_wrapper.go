@@ -706,24 +706,6 @@ func (r RowWrapper) DurationSec(name string) time.Duration {
 	return time.Duration(n) * time.Second
 }
 
-func (r RowWrapper) MustPositionStatus(name string) proto.PositionStatus {
-	ps, err := PositionStatus(r.MustStr(name))
-	panicW(name, err)
-	return ps
-}
-
-func PositionStatus(name string) (proto.PositionStatus, error) {
-	if len(name) == 0 {
-		return proto.PositionStatus_POSITION_STATUS_UNSPECIFIED, nil
-	}
-	value, ok := proto.PositionStatus_value[name]
-
-	if !ok {
-		return proto.PositionStatus_POSITION_STATUS_UNSPECIFIED, fmt.Errorf("invalid position status type %s", name)
-	}
-	return proto.PositionStatus(value), nil
-}
-
 func panicW(field string, err error) {
 	if err != nil {
 		panic(fmt.Sprintf("couldn't parse %s: %v", field, err))
