@@ -38,6 +38,7 @@
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Add `GoodForBlocks` field to transaction input data.
 
 ### 🐛 Fixes
+- [7938](https://github.com/vegaprotocol/vega/issues/7938) - Attempt to fix protocol upgrade failure because of `LevelDB` file lock issue
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
 - [7954](https://github.com/vegaprotocol/vega/issues/7954) - Don't error if subscribing to a market/party that has no position yet
