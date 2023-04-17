@@ -30,7 +30,7 @@ func TestSignTransaction(t *testing.T) {
 	t.Run("No healthy node available does not sign the transaction", testNoHealthyNodeAvailableDoesNotSignTransaction)
 	t.Run("Failing to get spam statistics does not sign the transaction", testFailingToGetSpamStatsDoesNotSignTransaction)
 	t.Run("Failing spam check aborts signing the transaction", testFailingSpamChecksAbortsSigningTheTransaction)
-	t.Run("Max TTL is overridden to the max permissable value if needed", testSignOverrideTTL)
+	t.Run("Max TTL is overridden to the max permissible value if needed", testSignOverrideTTL)
 }
 
 func testSigningTransactionWithInvalidParamsFails(t *testing.T) {
