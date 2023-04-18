@@ -32,10 +32,10 @@ message OrderSubmission {
   string market_id = 1;
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places,
-  // required field for limit orders, however it is not required for market orders
+  // required field for limit orders, however it is not required for market orders.
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 2;
-  // Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
+  // Size for the order, for example, in a futures market the size equals the number of units, cannot be negative.
   // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 size = 3;
   // Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field.
@@ -91,8 +91,8 @@ message OrderAmendment {
   optional int64 expires_at = 5;
   // Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged.
   vega.Order.TimeInForce time_in_force = 6;
-  // Amend the pegged order offset for the order
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+  // Amend the pegged order offset for the order. This field is an unsigned integer passed as a string
+  // and needs to be scaled using the market's decimal places.
   string pegged_offset = 7;
   // Amend the pegged order reference for the order.
   vega.PeggedReference pegged_reference = 8;
@@ -102,7 +102,7 @@ message OrderAmendment {
 message LiquidityProvisionSubmission {
   // Market ID for the order, required field.
   string market_id = 1;
-  // Specified as a unitless number that represents the amount of settlement asset of the market
+  // Specified as a unitless number that represents the amount of settlement asset of the market.
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
   string commitment_amount = 2;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
@@ -136,8 +136,8 @@ message LiquidityProvisionAmendment {
 
 // Represents the submission request to withdraw funds for a party on Vega
 message WithdrawSubmission {
-  // Amount to be withdrawn
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
+  // Amount to be withdrawn. This field is an unsigned integer passed as a string
+  // and needs to be scaled using the asset's decimal places.
   string amount = 1;
   // Asset to be withdrawn.
   string asset = 2;
@@ -169,8 +169,8 @@ message VoteSubmission {
 message DelegateSubmission {
   // Delegate to the specified node ID.
   string node_id = 1;
-  // Amount of stake to delegate
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
+  // Amount of stake to delegate. This field is an unsigned integer passed as a string
+  // and needs to be scaled using the asset decimal places for the token.
   string amount = 2;
 }
 
@@ -185,8 +185,9 @@ message UndelegateSubmission {
 
   // Node ID to delegate to.
   string node_id = 1;
-  // Optional, if not specified = ALL
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
+  // Optional, if not specified = ALL.
+  // If provided, this field must be an unsigned integer passed as a string
+  // and needs to be scaled using the asset decimal places for the token.
   string amount = 2;
   // Method of delegation.
   Method method = 3;
@@ -203,8 +204,8 @@ message Transfer {
   vega.AccountType to_account_type = 3;
   // Asset ID of the asset to be transferred.
   string asset = 4;
-  // Amount to be taken from the source account
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
+  // Amount to be taken from the source account. This field is an unsigned integer passed as a string
+  // and needs to be scaled using the asset's decimal places.
   string amount = 5;
   // Reference to be attached to the transfer.
   string reference = 6;

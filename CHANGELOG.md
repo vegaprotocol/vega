@@ -9,8 +9,8 @@
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
 - [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated `TradesConnection GraphQL sub-queries` in favour of an `un-nested` Trades query with a filter parameter. This requires a change in the underlying `gRPC` request message. Trades subscription takes a `TradesSubscriptionFilter` that allows multiple `MarketID` and `PartyID` filters to be specified.
 - [8143](https://github.com/vegaprotocol/vega/issues/8143) - Merge GraphQL and REST servers
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Reduce passphrase requests for admin endpoints by introducing `admin.unlock_wallet` and removing the `passphrase` field from wallet-related endpoints.
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 
@@ -49,6 +49,8 @@
 - [8022](https://github.com/vegaprotocol/vega/issues/8022) - Improve `ListTransfers` API documentation.
 - [8154](https://github.com/vegaprotocol/vega/issues/8154) - Visor - added option for delaying stop of binaries.
 - [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
+- [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
+- [7988](https://github.com/vegaprotocol/vega/issues/7988) - Make information about numbers expressed as strings more clear.
 
 ### 🐛 Fixes
 
