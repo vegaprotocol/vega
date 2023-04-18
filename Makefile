@@ -103,6 +103,12 @@ proto_check: ## proto: Check committed files match just-generated files
 		exit 1 ; \
 	fi
 
+.PHONY: proto_format_check
+proto_format_check:
+	@make proto_clean 1>/dev/null
+	@make proto 1>/dev/null
+	buf format --exit-code --diff
+
 .PHONY: proto_clean
 proto_clean:
 	@find protos/vega protos/data-node -name '*.pb.go' -o -name '*.pb.gw.go' \
@@ -111,7 +117,3 @@ proto_clean:
 .PHONY: buflint
 buflint: ## Run buf lint
 	@buf lint
-
-.PHONY: buffmt
-buffmt: ## Run buf format
-	@buf format -w
