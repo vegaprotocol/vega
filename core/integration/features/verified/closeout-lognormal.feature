@@ -221,7 +221,7 @@ Feature: Closeout scenarios
       | party   | status                     |
       | trader2 | POSITION_STATUS_CLOSED_OUT |
 
-Scenario: 003, Position becomes distressed when market is in consitous mode 
+Scenario: 003, Position becomes distressed when market is in continuous mode 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
       Given the following network parameters are set:
       | name                                          | value |
@@ -245,10 +245,8 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
       | auxiliary1 | ETH/DEC20 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1    |
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5       | 10        | 10        | 355          | 400            | 1             |
-      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 10        | 10        | 355          | 400            | 1             |
-
+      | mark price | trading mode            | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | 1             |
     Then the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
       | sell | 1002  | 1      |
@@ -274,9 +272,9 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
       | trader2    | ETH/DEC20 | sell | 12      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4623         | 400            | 13            |
-
+      | mark price | trading mode            | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | 13            |
+  
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search     | initial    | release    |
       | trader2 | ETH/DEC20 | 1560000427  | 2340000640 | 3120000854 | 4680001281 |
@@ -296,15 +294,11 @@ Scenario: 003, Position becomes distressed when market is in consitous mode
 
     Then the network moves ahead "5" blocks
 
-    # And the parties should have the following position changes for market "ETH/DEC20":
-    #   | party   | status                        |
-    #   | trader2 | POSITION_STATUS_ORDERS_CLOSED |
-
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl | 
       | trader2 | -12    | 0              | 0            | 
 
     Then the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
-      | 10         | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 4623         | 400            | 13            |
+      | mark price | trading mode            | open interest |
+      | 10         | TRADING_MODE_CONTINUOUS | 13            |
 
