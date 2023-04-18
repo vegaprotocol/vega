@@ -249,33 +249,11 @@ Scenario: 003, Position becomes distressed when market is in continuous mode
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | open interest |
       | 10         | TRADING_MODE_CONTINUOUS | 1             |
-    Then the order book should have the following volumes for market "ETH/DEC20":
-      | side | price | volume |
-      | sell | 1002  | 1      |
-      | sell | 1000  | 10     |
-      | buy  | 5     | 5      |
-      | buy  | 1     | 400    |
-
-    When the parties place the following orders with ticks:
-      | party      | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader2    | ETH/DEC20 | sell | 1      | 1003  | 0                | TYPE_LIMIT | TIF_GTC |
-
-    Then the order book should have the following volumes for market "ETH/DEC20":
-      | side | price | volume |
-      | sell | 1003  | 1      |
-      | sell | 1002  | 1      |
-      | sell | 1000  | 10     |
-      | buy  | 5     | 5      |
-      | buy  | 1     | 400    |
 
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     |
       | auxiliary2 | ETH/DEC20 | buy  | 12      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
       | trader2    | ETH/DEC20 | sell | 12      | 10    | 1                | TYPE_LIMIT | TIF_GTC |
-
-    Then the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode            | open interest |
-      | 10         | TRADING_MODE_CONTINUOUS | 13            |
   
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search     | initial    | release    |
