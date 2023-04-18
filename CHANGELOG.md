@@ -46,6 +46,7 @@
 - [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
 - [8129](https://github.com/vegaprotocol/vega/issues/8129) - Keep liquidity fee remainder in fee account.
 - [8022](https://github.com/vegaprotocol/vega/issues/8022) - Improve `ListTransfers` API documentation.
+- [8154](https://github.com/vegaprotocol/vega/issues/8154) - Visor - added option for delaying stop of binaries.
 
 ### 🐛 Fixes
 
