@@ -5,6 +5,7 @@ Feature: Test liquidity monitoring
       | name                                          | value |
       | market.stake.target.timeWindow                | 1s    |
       | market.stake.target.scalingFactor             | 1     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
       | network.floatingPointUpdates.delay            | 10s   |
       | market.auction.minimumDuration                | 1     |
       | network.markPriceUpdateMaximumFrequency       | 0s    |
@@ -50,9 +51,6 @@ Feature: Test liquidity monitoring
       | lprov2 | USD   | 500000    |
 
   Scenario: 001: A market which enters a state requiring liquidity auction through increased open interest during a block but then leaves state again prior to block completion never enters liquidity auction. (0035-LIQM-005)
-  Given the following network parameters are set:
-      | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 1     |
     Given the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lprov1 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | 2      | submission |
@@ -224,7 +222,7 @@ Feature: Test liquidity monitoring
 
     Given the following network parameters are set:
       | name                                          | value |
-      | market.liquidity.targetstake.triggering.ratio | 0.01     |
+      | market.liquidity.targetstake.triggering.ratio | 1     |
       | market.stake.target.timeWindow                | 5s    |
       | market.liquidity.bondPenaltyParameter         | 1     |
     And the parties deposit on asset's general account the following amount:
@@ -269,38 +267,14 @@ Feature: Test liquidity monitoring
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC21 | buy  | 50     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC21 | sell | 50     | 1010  | 1                | TYPE_LIMIT | TIF_FOK |
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode                    | auction trigger                          | open interest | target stake | supplied stake |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 10            | 6060         | 6000           |
 
-    And the parties should have the following account balances:
-      | party          | asset | market id | margin | general |
-      | lp2Bdistressed | ETH   | ETH/DEC21 | 99     | 0       |
-
-    And the parties should have the following margin levels:
-      | party          | market id | maintenance | search | initial | release |
-      | lp2Bdistressed | ETH/DEC21 | 101         | 101    | 101     | 202     |
-    Then the network moves ahead "1" blocks
+    When the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | open interest | target stake | supplied stake |
-      | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10            | 1010         | 6000           |
-    # And the liquidity provisions should have the following states:
-    #   | id  | party          | market    | commitment amount | status           |
-    #   | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | STATUS_CANCELLED |
-
-    # And the parties should have the following position changes for market "ETH/DEC21":
-    #   | party          | status                        |
-    #   | lp2Bdistressed | POSITION_STATUS_ORDERS_CLOSED |
-
-    # And the parties should have the following account balances:
-    #   | party          | asset | market id | margin | general |
-    #   | lp2Bdistressed | ETH   | ETH/DEC21 | 0      | 99      |
-
-    # And the parties should have the following margin levels:
-    #   | party          | market id | maintenance | search | initial | release |
-    #   | lp2Bdistressed | ETH/DEC21 | 0           | 0      | 0       | 0       |
-
-    # When the network moves ahead "5" blocks
-    # Then the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode            | auction trigger             | open interest | target stake | supplied stake |
-    #   | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10            | 1010         | 5999           |
-    # And the liquidity provisions should have the following states:
-    #   | id  | party          | market    | commitment amount | status           |
-    #   | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | STATUS_CANCELLED |
+      | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10            | 1010         | 5999           |
+    And the liquidity provisions should have the following states:
+      | id  | party          | market    | commitment amount | status           |
+      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | STATUS_CANCELLED |
