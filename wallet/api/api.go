@@ -274,6 +274,7 @@ func AdminAPI(
 	walletAPI.RegisterMethod("admin.sign_message", NewAdminSignMessage(walletStore))
 	walletAPI.RegisterMethod("admin.sign_transaction", NewAdminSignTransaction(walletStore, netStore, nodeSelectorBuilder))
 	walletAPI.RegisterMethod("admin.taint_key", NewAdminTaintKey(walletStore))
+	walletAPI.RegisterMethod("admin.unlock_wallet", NewAdminUnlockWallet(walletStore))
 	walletAPI.RegisterMethod("admin.untaint_key", NewAdminUntaintKey(walletStore))
 	walletAPI.RegisterMethod("admin.update_network", NewAdminUpdateNetwork(netStore))
 	walletAPI.RegisterMethod("admin.update_passphrase", NewAdminUpdatePassphrase(walletStore))
