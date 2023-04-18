@@ -111,3 +111,7 @@ proto_clean:
 .PHONY: buflint
 buflint: ## Run buf lint
 	@buf lint
+
+.PHONY: buffmt
+buffmt: ## Run buf format
+	@buf format -w
