@@ -39,10 +39,13 @@
 - [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
 - [7999](https://github.com/vegaprotocol/vega/issues/7999) - Review `DateRange API` documentation.
 - [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
+- [8105](https://github.com/vegaprotocol/vega/issues/8105) - Make candles return in ascending order when queried from `graphql`.
 - [8144](https://github.com/vegaprotocol/vega/issues/8144) - Visor - remove data node asset option from the config. Use only one asset.
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Add `GoodForBlocks` field to transaction input data.
+- [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
 
 ### 🐛 Fixes
+
 - [7938](https://github.com/vegaprotocol/vega/issues/7938) - Attempt to fix protocol upgrade failure because of `LevelDB` file lock issue
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
