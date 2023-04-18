@@ -265,6 +265,25 @@ pipeline {
                                 }
                             }
                         }
+                        stage('proto format check') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_format_check
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
                         stage('proto check') {
                             options { retry(3) }
                             steps {

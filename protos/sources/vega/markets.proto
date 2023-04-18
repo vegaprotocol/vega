@@ -1,9 +1,10 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 import "vega/data_source.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // Auction duration is used to configure 3 auction periods:
 // 1. `duration > 0`, `volume == 0`:

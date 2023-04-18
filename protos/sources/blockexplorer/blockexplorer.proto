@@ -2,19 +2,21 @@ syntax = "proto3";
 
 package blockexplorer.api.v1;
 
-import "vega/commands/v1/transaction.proto";
-import "vega/commands/v1/signature.proto";
-import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/api/field_behavior.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "vega/commands/v1/signature.proto";
+import "vega/commands/v1/transaction.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1";
-
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega block explorer APIs";
     version: "v0.71.0+dev";
   }
-  schemes: [HTTP, HTTPS]
+  schemes: [
+    HTTP,
+    HTTPS
+  ]
   host: "lb.testnet.vega.xyz"
 };
 
@@ -40,10 +42,10 @@ service BlockExplorerService {
 message InfoRequest {}
 
 message InfoResponse {
-    // Semver formatted version of the data node
-    string version = 1;
-    // Commit hash from which the data node was built
-    string commit_hash = 2;
+  // Semver formatted version of the data node
+  string version = 1;
+  // Commit hash from which the data node was built
+  string commit_hash = 2;
 }
 
 message GetTransactionRequest {
@@ -51,7 +53,7 @@ message GetTransactionRequest {
   string hash = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
-message GetTransactionResponse{
+message GetTransactionResponse {
   // Transaction corresponding to the hash
   Transaction transaction = 1;
 }
@@ -64,10 +66,10 @@ message ListTransactionsRequest {
   // Optional cursor to paginate the request
   optional string after = 3;
   // Filters to apply to the request
-  map<string, string> filters =4;
+  map<string, string> filters = 4;
 }
 
-message ListTransactionsResponse{
+message ListTransactionsResponse {
   // Transaction corresponding to the specific request and filters
   repeated Transaction transactions = 3;
 }

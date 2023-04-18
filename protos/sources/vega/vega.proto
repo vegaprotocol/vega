@@ -1,9 +1,10 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 import "vega/markets.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // Side relates to the direction of an order, to Buy, or Sell
 enum Side {
@@ -109,7 +110,6 @@ message PeggedOrder {
 
 // Orders can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
 message Order {
-
   // Time In Force for an order
   enum TimeInForce {
     // Default value for TimeInForce, can be valid for an amend
@@ -1163,7 +1163,7 @@ message EthereumConfig {
   // Contract configuration of the token vesting contract for this Ethereum network.
   EthereumContractConfig token_vesting_contract = 6;
   // Contract configuration of the multisig control contract for this Ethereum network.
-  EthereumContractConfig  multisig_control_contract = 7;
+  EthereumContractConfig multisig_control_contract = 7;
 }
 
 message EthereumContractConfig {
@@ -1329,7 +1329,6 @@ message NodeSet {
   repeated string demoted = 4;
   // Total number of nodes allowed in the node set.
   optional uint32 maximum = 5;
-
 }
 
 message NodeData {
@@ -1391,11 +1390,10 @@ message EpochRewardSummary {
   string asset_id = 2;
   string market_id = 3;
   string reward_type = 4;
- // Amount distributed
+  // Amount distributed
   // This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
   string amount = 5;
 }
-
 
 message StateValueProposal {
   // State variable ID.
