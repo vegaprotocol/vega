@@ -129,6 +129,7 @@ Feature: Closeout scenarios
       | trader2 | USD   | ETH/DEC19 | 0      | 2000    |
       | trader3 | USD   | ETH/DEC19 | 0      | 0       |
 
+    # 0007-POSN-015
     And the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl | status                        |
       | trader2 | 0      | 0              | 0            | POSITION_STATUS_ORDERS_CLOSED |
@@ -216,7 +217,7 @@ Feature: Closeout scenarios
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 0           | 0      | 0       | 0       |
-      
+
 # 0007-POSN-016: The status field will be set to CLOSED_OUT if the party was closed out 
     And the parties should have the following position changes for market "ETH/DEC20":
       | party   | status                     |
