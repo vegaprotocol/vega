@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-tools="github.com/bufbuild/buf/cmd/buf@v1.1.0
+tools="github.com/bufbuild/buf/cmd/buf@v1.17.0
 google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
 google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
 github.com/chrusty/protoc-gen-jsonschema/cmd/protoc-gen-jsonschema@1.3.7
