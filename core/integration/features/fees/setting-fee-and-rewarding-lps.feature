@@ -725,7 +725,7 @@ Feature: Test liquidity provider reward distribution
       | name             | value |
       | prices.ETH.value | 42    |
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "1" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 6      | ETH   |

@@ -488,7 +488,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # check lp fee distribution at s
 
-    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |

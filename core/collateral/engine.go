@@ -2097,10 +2097,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		resps = append(resps, ledgerEntries)
 	}
 	// we need a market insurance pool regardless
-	marketInsuranceAcc, err := e.GetMarketInsurancePoolAccount(mktID, asset)
-	if err != nil {
-		e.log.Panic("unable to get or create the insurance account for the market", logging.Error(err))
-	}
+	marketInsuranceAcc := e.GetOrCreateMarketInsurancePoolAccount(ctx, mktID, asset)
 	marketInsuranceID := marketInsuranceAcc.ID
 	// any remaining balance in the fee account gets transferred over to the insurance account
 	lpFeeAccID := e.accountID(mktID, "", asset, types.AccountTypeFeesLiquidity)
@@ -2767,6 +2764,27 @@ func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Acco
 func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Account, error) {
 	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountTypeInsurance)
 	return e.GetAccountByID(insuranceAccID)
+}
+
+func (e *Engine) GetOrCreateMarketInsurancePoolAccount(ctx context.Context, market, asset string) *types.Account {
+	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountTypeInsurance)
+	acc, err := e.GetAccountByID(insuranceAccID)
+	if err != nil {
+		acc = &types.Account{
+			ID:       insuranceAccID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  num.UintZero(),
+			MarketID: market,
+			Type:     types.AccountTypeInsurance,
+		}
+		e.accs[insuranceAccID] = acc
+		e.addAccountToHashableSlice(acc)
+		// not sure if we should send this event, but in case this account was never created, we probably should make sure the datanode
+		// is aware of it. This is most likely only ever going to be called in unit tests, though.
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	}
+	return acc
 }
 
 func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
