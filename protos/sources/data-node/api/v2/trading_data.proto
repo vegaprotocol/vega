@@ -1575,7 +1575,7 @@ enum TransferDirection {
 
 // Request that is sent to list transfers
 message ListTransfersRequest {
-    // Public key for which to request transfers.
+    // Public key for which to request transfers, this can be a party ID, "0000000000000000000000000000000000000000000000000000000000000000" for the global rewards account, or "network".
     optional string pubkey = 1;
     // Transfer directions - i.e. sender, receiver - to include in the response data
     TransferDirection direction = 2;
