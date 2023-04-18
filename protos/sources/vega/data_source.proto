@@ -1,10 +1,11 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
-import "vega/data/v1/spec.proto";
 import "vega/data/v1/data.proto";
+import "vega/data/v1/spec.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // DataSourceDefinition represents the top level object that deals with data sources.
 // DataSourceDefinition can be external or internal, with whatever number of data sources are defined

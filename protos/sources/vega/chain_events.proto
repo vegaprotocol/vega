@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package vega;
+
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // Deposit for a Vega built-in asset
