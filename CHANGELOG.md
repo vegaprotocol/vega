@@ -27,6 +27,7 @@
 - [7990](https://github.com/vegaprotocol/vega/issues/7990) - Remove reference to `postgres` in the `protobuf` documentation comments
 - [7992](https://github.com/vegaprotocol/vega/issues/7992) - Improve Candles related `APIs`
 - [7986](https://github.com/vegaprotocol/vega/issues/7986) - Remove cross `protobuf` files documentation references
+- [8146](https://github.com/vegaprotocol/vega/issues/8146) - Add fetch retry behaviour to network history fetch command  
 - [7982](https://github.com/vegaprotocol/vega/issues/7982) - Fix behaviour of endpoints with `marketIds` and `partyIds` filters
 - [7846](https://github.com/vegaprotocol/vega/issues/7846) - Add event indicating distressed parties that are still holding an active position.
 - [7985](https://github.com/vegaprotocol/vega/issues/7985) - Add full stop on all fields documentation to get it properly generated

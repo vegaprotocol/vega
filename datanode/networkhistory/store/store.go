@@ -661,6 +661,11 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 		HistorySegmentID: historySegmentID,
 	}
 
+	err = p.ipfsAPI.Pin().Add(ctx, path.IpfsPath(contentID))
+	if err != nil {
+		return segment.Full{}, fmt.Errorf("failed to pin fetched segment: %w", err)
+	}
+
 	if err = p.index.Add(indexEntry); err != nil {
 		return segment.Full{}, fmt.Errorf("failed to add index entry:%w", err)
 	}
