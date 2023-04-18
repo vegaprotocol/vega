@@ -21,7 +21,7 @@ Feature: Closeout scenarios
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @EndBlock
-  Scenario: 001, 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005)
+  Scenario: 001, 2 parties get close-out at the same time. Distressed position gets taken over by LP, distressed order gets canceled (0005-COLL-002; 0012-POSR-001; 0012-POSR-002; 0012-POSR-004; 0012-POSR-005; 0007-POSN-015)
     # setup accounts, we are trying to closeout trader3 first and then trader2
 
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
@@ -218,12 +218,13 @@ Feature: Closeout scenarios
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 0           | 0      | 0       | 0       |
 
-# 0007-POSN-016: The status field will be set to CLOSED_OUT if the party was closed out 
-    And the parties should have the following position changes for market "ETH/DEC20":
-      | party   | status                     |
-      | trader2 | POSITION_STATUS_CLOSED_OUT |
+    # 0007-POSN-016: The status field will be set to CLOSED_OUT if the party was closed out 
 
-Scenario: 003, Position becomes distressed when market is in continuous mode 
+    Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl | status                    |
+      | trader2 | 0      | 0              | -1026        | POSITION_STATUS_CLOSED_OUT|
+
+Scenario: 003, Position becomes distressed when market is in continuous mode (0007-POSN-017)
     Given the insurance pool balance should be "0" for the market "ETH/DEC19"
       Given the following network parameters are set:
       | name                                          | value |
@@ -282,4 +283,5 @@ Scenario: 003, Position becomes distressed when market is in continuous mode
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | open interest |
       | 10         | TRADING_MODE_CONTINUOUS | 13            |
+
 
