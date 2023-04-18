@@ -29,8 +29,8 @@ import (
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
@@ -3108,11 +3108,11 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 		return formatE(ErrListAllNetworkHistorySegment, err)
 	}
 
-	ch, err := networkhistory.GetContiguousHistory(allSegments, req.FromBlock, req.ToBlock)
-	if err != nil || len(ch.SegmentsOldestFirst) == 0 {
+	ch, err := allSegments.ContiguousHistoryInRange(req.FromBlock, req.ToBlock)
+	if err != nil || len(ch.Segments) == 0 {
 		return formatE(ErrNetworkHistoryGetContiguousSegments, err)
 	}
-	chainID := ch.SegmentsOldestFirst[0].GetChainId()
+	chainID := ch.Segments[0].GetChainId()
 
 	header := metadata.Pairs("Content-Disposition", fmt.Sprintf("attachment;filename=%s-%s-%06d-%06d.zip", chainID, tableName, ch.HeightFrom, ch.HeightTo))
 	if err := stream.SendHeader(header); err != nil {
@@ -3124,7 +3124,7 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 	defer grpcWriter.Close()
 	defer zipWriter.Close()
 
-	partitionedSegments := partitionSegmentsByDBVersion(ch.SegmentsOldestFirst)
+	partitionedSegments := partitionSegmentsByDBVersion(ch.Segments)
 
 	for _, segments := range partitionedSegments {
 		if len(segments) == 0 {
@@ -3143,13 +3143,13 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 		}
 
 		for i, segment := range segments {
-			segmentReader, err := t.NetworkHistoryService.GetHistorySegmentReader(stream.Context(), segment.GetHistorySegmentId())
+			segmentReader, size, err := t.NetworkHistoryService.GetHistorySegmentReader(stream.Context(), segment.GetHistorySegmentId())
 			if err != nil {
 				segmentReader.Close()
 				return formatE(ErrNetworkHistoryOpeningSegment, err)
 			}
 
-			segmentData, err := fsutil.ReadNetworkHistorySegmentData(segmentReader, tableName)
+			segmentData, err := fsutil.ReadNetworkHistorySegmentData(segmentReader, size, tableName)
 			if err != nil {
 				segmentReader.Close()
 				return formatE(ErrNetworkHistoryExtractingSegment, err)
@@ -3172,8 +3172,8 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 	return nil
 }
 
-func partitionSegmentsByDBVersion(segments []networkhistory.Segment) [][]networkhistory.Segment {
-	partitioned := [][]networkhistory.Segment{}
+func partitionSegmentsByDBVersion(segments []segment.Full) [][]segment.Full {
+	partitioned := [][]segment.Full{}
 	sliceStart := 0
 
 	for i, segment := range segments {
@@ -3272,7 +3272,7 @@ func (t *TradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v
 	}, nil
 }
 
-func toHistorySegment(segment networkhistory.Segment) *v2.HistorySegment {
+func toHistorySegment(segment segment.Full) *v2.HistorySegment {
 	return &v2.HistorySegment{
 		FromHeight:               segment.GetFromHeight(),
 		ToHeight:                 segment.GetToHeight(),

@@ -449,6 +449,8 @@ message SpamStatistics {
   SpamStatistic issue_signatures = 7;
   // Epoch in which these statistics apply to
   uint64 epoch_seq = 8;
+  // the max number of blocks a transaction is considered current before it gets removed from the mempool
+  uint64 max_ttl = 9;
 }
 
 // Response containing all the spam statistics of a party for the current epoch

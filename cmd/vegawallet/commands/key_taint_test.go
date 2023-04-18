@@ -21,7 +21,7 @@ func testTaintKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
@@ -32,17 +32,17 @@ func testTaintKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminTaintKeyParams{
-		Wallet:     walletName,
-		PublicKey:  pubKey,
-		Passphrase: passphrase,
+		Wallet:    walletName,
+		PublicKey: pubKey,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testTaintKeyFlagsMissingWalletFails(t *testing.T) {
@@ -53,7 +53,7 @@ func testTaintKeyFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -68,7 +68,7 @@ func testTaintKeyFlagsMissingPubKeyFails(t *testing.T) {
 	f.PublicKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))

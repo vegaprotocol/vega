@@ -1,14 +1,17 @@
 package visor
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/visor/utils"
 )
 
 const (
-	dataNodeArg  = "datanode"
-	homeFlagName = "--home"
+	dataNodeArg              = "datanode"
+	homeFlagName             = "--home"
+	noHistorySegmentFoundMsg = "no history segments found"
 )
 
 var jsonOutputFlag = []string{"--output", "json"}
@@ -18,6 +21,8 @@ type latestSegmentCommanndOutput struct {
 		Height int64 `json:"to_height"`
 	}
 }
+
+var ErrNoHistorySegmentFound = errors.New(noHistorySegmentFoundMsg)
 
 func latestDataNodeHistorySegment(binary string, binaryArgs Args) (*latestSegmentCommanndOutput, error) {
 	args := []string{}
@@ -30,7 +35,12 @@ func latestDataNodeHistorySegment(binary string, binaryArgs Args) (*latestSegmen
 	args = append(args, binaryArgs.GetFlagWithArg(homeFlagName)...)
 
 	var output latestSegmentCommanndOutput
-	if _, err := utils.ExecuteBinary(binary, append(args, jsonOutputFlag...), &output); err != nil {
+	_, err := utils.ExecuteBinary(binary, append(args, jsonOutputFlag...), &output)
+	if err != nil {
+		if strings.Contains(err.Error(), noHistorySegmentFoundMsg) {
+			return nil, ErrNoHistorySegmentFound
+		}
+
 		return nil, err
 	}
 

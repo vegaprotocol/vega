@@ -22,10 +22,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/datanode/gateway"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/ratelimit"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -62,14 +62,15 @@ type BlockService interface {
 
 // NetworkHistoryService ...
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api NetworkHistoryService
+// it would be nice to use go:generate go run github.com/golang/mock/mockgen -destination mocks/networkhistory_service_mock.go -package mocks code.vegaprotocol.io/vega/datanode/api NetworkHistoryService
+// however it currently can't handle generic arguments and the generated code is not compilable without a bit of manual tweaking.
 type NetworkHistoryService interface {
-	GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error)
-	ListAllHistorySegments() ([]networkhistory.Segment, error)
-	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
+	GetHighestBlockHeightHistorySegment() (segment.Full, error)
+	ListAllHistorySegments() (segment.Segments[segment.Full], error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error)
 	GetActivePeerIPAddresses() []string
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
-	GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, error)
+	GetHistorySegmentReader(ctx context.Context, historySegmentID string) (io.ReadSeekCloser, int64, error)
 	GetSwarmKeySeed() string
 	GetConnectedPeerAddresses() ([]string, error)
 	GetIpfsAddress() (string, error)

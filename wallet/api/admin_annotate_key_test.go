@@ -42,28 +42,17 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminAnnotateKeyParams{
-				Wallet:     "",
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
-				Passphrase: vgrand.RandomStr(5),
+				Wallet:    "",
+				PublicKey: "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
+				Metadata:  []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminAnnotateKeyParams{
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty public key",
 			params: api.AdminAnnotateKeyParams{
-				PublicKey:  "",
-				Metadata:   []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
+				PublicKey: "",
+				Metadata:  []wallet.Metadata{{Key: vgrand.RandomStr(5), Value: vgrand.RandomStr(5)}},
+				Wallet:    vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
@@ -90,23 +79,21 @@ func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
 func testAnnotatingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 
 	// setup
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
+		Metadata:  []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
@@ -119,7 +106,6 @@ func testAnnotatingKeyWithValidParamsSucceeds(t *testing.T) {
 func testAnnotatingKeyOnUnknownWalletFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -129,10 +115,9 @@ func testAnnotatingKeyOnUnknownWalletFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
-		Wallet:     name,
-		PublicKey:  vgrand.RandomStr(5),
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
-		Passphrase: passphrase,
+		Wallet:    name,
+		PublicKey: vgrand.RandomStr(5),
+		Metadata:  []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
@@ -144,22 +129,20 @@ func testAnnotatingKeyOnUnknownWalletFails(t *testing.T) {
 func testAnnotatingKeyOnUnknownKeyFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 
 	// setup
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
-		Wallet:     expectedWallet.Name(),
-		PublicKey:  vgrand.RandomStr(5),
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
-		Passphrase: passphrase,
+		Wallet:    expectedWallet.Name(),
+		PublicKey: vgrand.RandomStr(5),
+		Metadata:  []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
@@ -171,7 +154,6 @@ func testAnnotatingKeyOnUnknownKeyFails(t *testing.T) {
 func testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 
 	// setup
@@ -181,10 +163,9 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey(t *testi
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
+		Metadata:  []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
@@ -196,22 +177,20 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey(t *testi
 func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 
 	// setup
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
+		Metadata:  []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then
@@ -223,23 +202,21 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey(t *testing.
 func testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 
 	// setup
 	handler := newAnnotateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, gomock.Any()).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminAnnotateKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
-		Metadata:   []wallet.Metadata{{Key: "mode", Value: "test"}},
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
+		Metadata:  []wallet.Metadata{{Key: "mode", Value: "test"}},
 	})
 
 	// then

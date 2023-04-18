@@ -26,18 +26,26 @@ var (
 	`)
 )
 
-type DescribeKeyHandler func(api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error)
+type DescribeKeyHandler func(api.AdminDescribeKeyParams, string) (api.AdminDescribeKeyResult, error)
 
 func NewCmdDescribeKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminDescribeKeyParams) (api.AdminDescribeKeyResult, error) {
+	h := func(params api.AdminDescribeKeyParams, passphrase string) (api.AdminDescribeKeyResult, error) {
+		ctx := context.Background()
+
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminDescribeKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		describeKey := api.NewAdminDescribeKey(walletStore)
-		rawResult, errDetails := describeKey.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminDescribeKeyResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errDetails := api.NewAdminDescribeKey(walletStore).Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminDescribeKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -56,12 +64,12 @@ func BuildCmdDescribeKey(w io.Writer, handler DescribeKeyHandler, rf *RootFlags)
 		Long:    describeKeyLong,
 		Example: describeKeyExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -104,25 +112,24 @@ type DescribeKeyFlags struct {
 	PublicKey      string
 }
 
-func (f *DescribeKeyFlags) Validate() (api.AdminDescribeKeyParams, error) {
+func (f *DescribeKeyFlags) Validate() (api.AdminDescribeKeyParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminDescribeKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminDescribeKeyParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.PublicKey) == 0 {
-		return api.AdminDescribeKeyParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminDescribeKeyParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminDescribeKeyParams{}, err
+		return api.AdminDescribeKeyParams{}, "", err
 	}
 
 	return api.AdminDescribeKeyParams{
-		Wallet:     f.Wallet,
-		Passphrase: passphrase,
-		PublicKey:  f.PublicKey,
-	}, nil
+		Wallet:    f.Wallet,
+		PublicKey: f.PublicKey,
+	}, passphrase, nil
 }
 
 func PrintDescribeKeyResponse(w io.Writer, resp api.AdminDescribeKeyResult) {

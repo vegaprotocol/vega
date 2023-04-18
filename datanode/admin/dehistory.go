@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 )
 
 type NetworkHistoryService interface {
 	CopyHistorySegmentToFile(ctx context.Context, historySegmentID string, outFile string) error
-	FetchHistorySegment(ctx context.Context, historySegmentID string) (networkhistory.Segment, error)
+	FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error)
 }
 
 type NetworkHistoryAdminService struct {
@@ -44,7 +44,7 @@ func (d *NetworkHistoryAdminService) CopyHistorySegmentToFile(req *http.Request,
 	return err
 }
 
-func (d *NetworkHistoryAdminService) FetchHistorySegment(req *http.Request, historySegmentID *string, reply *networkhistory.Segment) (err error) {
+func (d *NetworkHistoryAdminService) FetchHistorySegment(req *http.Request, historySegmentID *string, reply *segment.Full) (err error) {
 	*reply, err = d.networkHistoryService.FetchHistorySegment(req.Context(), *historySegmentID)
 	return
 }

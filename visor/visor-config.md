@@ -165,12 +165,12 @@ Default value: <code>vega</code>
 </dd>
 
 <dt>
-	<code>assets</code>  <strong><a href="#assetsconfig">AssetsConfig</a></strong>  - required
+	<code>asset</code>  <strong><a href="#assetsconfig">AssetsConfig</a></strong>  - required
 </dt>
 
 <dd>
 
-Definitions of the assets that should be downloaded from the GitHub repository.
+Definitions of the asset that should be downloaded from the GitHub repository.
 
 </dd>
 
@@ -184,10 +184,9 @@ Definitions of the assets that should be downloaded from the GitHub repository.
  enabled = true
  repositoryOwner = "vegaprotocol"
  repository = "vega"
- [autoInstall.assets]
-  [autoInstall.assets.vega]
-   asset_name = "vega-darwin-amd64.zip"
-   binary_name = "vega"
+ [autoInstall.asset]
+  name = "vega-darwin-amd64.zip"
+  binaryName = "vega"
 
 ```
 
@@ -198,46 +197,14 @@ Definitions of the assets that should be downloaded from the GitHub repository.
 
 
 ## *AssetsConfig*
+Allows you to define the name of the asset to be downloaded.
 
 
 ### Fields
 
 <dl>
 <dt>
-	<code>vega</code>  <strong><a href="#asset">Asset</a></strong>  - required
-</dt>
-
-<dd>
-
-Allows you to define the name of the asset to be downloaded.
-
-</dd>
-
-<dt>
-	<code>data_node</code>  <strong><a href="#asset">Asset</a></strong>  - optional
-</dt>
-
-<dd>
-
-Allows you to define the name of the asset to be downloaded.
-
-</dd>
-
-
-
-</dl>
-
----
-
-
-## *Asset*
-
-
-### Fields
-
-<dl>
-<dt>
-	<code>asset_name</code>  <strong>string</strong>  - required
+	<code>name</code>  <strong>string</strong>  - required
 </dt>
 
 <dd>
@@ -247,7 +214,7 @@ Name of the asset on Github.
 </dd>
 
 <dt>
-	<code>binary_name</code>  <strong>string</strong>  - optional
+	<code>binaryName</code>  <strong>string</strong>  - optional
 </dt>
 
 <dd>

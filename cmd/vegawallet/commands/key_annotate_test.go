@@ -25,7 +25,7 @@ func testAnnotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 
@@ -44,16 +44,16 @@ func testAnnotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 			{Key: "name", Value: "my-wallet"},
 			{Key: "role", Value: "validation"},
 		},
-		Passphrase: passphrase,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testAnnotateKeyFlagsMissingWalletFails(t *testing.T) {
@@ -64,7 +64,7 @@ func testAnnotateKeyFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -79,7 +79,7 @@ func testAnnotateKeyFlagsMissingPubKeyFails(t *testing.T) {
 	f.PubKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
@@ -94,7 +94,7 @@ func testAnnotateKeyFlagsMissingMetadataAndClearFails(t *testing.T) {
 	f.RawMetadata = []string{}
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.OneOfFlagsMustBeSpecifiedError("meta", "clear"))
@@ -109,7 +109,7 @@ func testAnnotateKeyFlagsClearingWithMetadataFails(t *testing.T) {
 	f.Clear = true
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MutuallyExclusiveError("meta", "clear"))
@@ -124,7 +124,7 @@ func testAnnotateKeyFlagsInvalidMetadataFails(t *testing.T) {
 	f.RawMetadata = []string{"is=invalid"}
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.InvalidFlagFormatError("meta"))

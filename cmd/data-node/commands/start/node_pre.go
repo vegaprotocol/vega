@@ -114,6 +114,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 
 		err = l.initialiseNetworkHistory(preLog, l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
+			l.Log.Error("Failed to initialise network history", logging.Error(err))
 			return fmt.Errorf("failed to initialise network history:%w", err)
 		}
 
@@ -329,7 +330,7 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
 
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
-		networkHistoryPool, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		networkHistoryPool,
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate up to schema version %d: %w", version, err)
@@ -351,7 +352,6 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 		networkHistoryPool,
 		l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), l.conf.MaxMemoryPercent)
-
 	if err != nil {
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}
