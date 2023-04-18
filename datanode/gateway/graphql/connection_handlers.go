@@ -56,6 +56,13 @@ func handleCandleConnectionRequest(ctx context.Context, client TradingDataServic
 		return nil, fmt.Errorf("could not find candle for market %s and interval %s", mkt, interval)
 	}
 
+	newestFirst := false
+	if pagination == nil {
+		pagination = &v2.Pagination{}
+	}
+
+	pagination.NewestFirst = &newestFirst
+
 	req := v2.ListCandleDataRequest{
 		CandleId:      candleID,
 		FromTimestamp: since.UnixNano(),
