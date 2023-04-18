@@ -216,7 +216,8 @@ Feature: Closeout scenarios
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 0           | 0      | 0       | 0       |
-
+      
+# 0007-POSN-016: The status field will be set to CLOSED_OUT if the party was closed out 
     And the parties should have the following position changes for market "ETH/DEC20":
       | party   | status                     |
       | trader2 | POSITION_STATUS_CLOSED_OUT |
@@ -294,9 +295,10 @@ Scenario: 003, Position becomes distressed when market is in continuous mode
 
     Then the network moves ahead "5" blocks
 
+    # 0007-POSN-017: The status field will be set to DISTRESSED if a trader was distressed based on the margin requirements for their worst possible long/short and they do not have active orders to be closed, however the book currently does not have enough volume to close them out, and will close them out when there is enough volume.
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl | 
-      | trader2 | -12    | 0              | 0            | 
+      | party   | volume | unrealised pnl | realised pnl | status                    |
+      | trader2 | -12    | 0              | 0            | POSITION_STATUS_DISTRESSED|
 
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | open interest |
