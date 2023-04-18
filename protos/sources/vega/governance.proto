@@ -1,12 +1,13 @@
 syntax = "proto3";
 
 package vega;
-option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
-import "vega/markets.proto";
-import "vega/vega.proto";
 import "vega/assets.proto";
 import "vega/data_source.proto";
+import "vega/markets.proto";
+import "vega/vega.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // Future product configuration
 message FutureProduct {
@@ -178,7 +179,7 @@ message ProposalTerms {
     NewFreeform new_freeform = 105;
     // Proposal change for updating an asset.
     UpdateAsset update_asset = 106;
-  };
+  }
 }
 
 // Rationale behind a proposal.
@@ -214,7 +215,6 @@ message GovernanceData {
 
 // Governance proposal
 message Proposal {
-
   // Proposal state transition:
   // Open ->
   //   - Passed -> Enacted.
@@ -275,7 +275,6 @@ message Proposal {
 
 // List of possible errors that can cause a proposal to be in state rejected or failed
 enum ProposalError {
-
   // Default value
   PROPOSAL_ERROR_UNSPECIFIED = 0;
   // Specified close time is too early based on network parameters
@@ -361,7 +360,6 @@ enum ProposalError {
 
 // Governance vote
 message Vote {
-
   // Vote value
   enum Value {
     // Default value, always invalid

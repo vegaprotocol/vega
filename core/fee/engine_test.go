@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -70,6 +71,8 @@ func TestFeeEngine(t *testing.T) {
 	t.Run("calculate batch auction trading fee same batch", testCalcBatchAuctionTradingSameBatch)
 	t.Run("calculate batch auction trading fee different batches", testCalcBatchAuctionTradingDifferentBatches)
 	t.Run("calculate position resolution", testCalcPositionResolution)
+
+	t.Run("Build liquidity fee transfers with remainder", testBuildLiquidityFeesRemainder)
 }
 
 func testUpdateFeeFactors(t *testing.T) {
@@ -170,6 +173,41 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	assert.Equal(t, infra, 1)
 	assert.Equal(t, recv, len(trades))
 	assert.Equal(t, pay, len(trades))
+}
+
+func testBuildLiquidityFeesRemainder(t *testing.T) {
+	eng := getTestFee(t)
+	shares := map[string]num.Decimal{
+		"lp1": num.DecimalFromFloat(0.8),
+		"lp2": num.DecimalFromFloat(0.15),
+		"lp3": num.DecimalFromFloat(0.05),
+	}
+	// amount to distribute
+	acc := &types.Account{
+		Balance: num.NewUint(1002),
+	}
+	// 1002 * .8 = 801.6 == 801
+	// 1002 * .15 = 150.3 = 150
+	// 1002 * 0.05 = 50.1 = 50
+	// 801 + 150 + 50 = 1001 -> remainder is 1
+	expRemainder := num.NewUint(1)
+	expFees := map[string]*num.Uint{
+		"lp1": num.NewUint(801),
+		"lp2": num.NewUint(150),
+		"lp3": num.NewUint(50),
+	}
+	ft := eng.BuildLiquidityFeeDistributionTransfer(shares, acc)
+	got := ft.TotalFeesAmountPerParty()
+	for p, amt := range got {
+		require.True(t, amt.EQ(expFees[p]))
+	}
+	// get the total transfer amount from the transfers
+	total := num.UintZero()
+	for _, t := range ft.Transfers() {
+		total.AddSum(t.Amount.Amount)
+	}
+	rem := num.UintZero().Sub(acc.Balance, total)
+	require.True(t, rem.EQ(expRemainder))
 }
 
 func testCalcContinuousTrading(t *testing.T) {

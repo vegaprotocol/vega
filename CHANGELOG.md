@@ -28,7 +28,7 @@
 - [7990](https://github.com/vegaprotocol/vega/issues/7990) - Remove reference to `postgres` in the `protobuf` documentation comments
 - [7992](https://github.com/vegaprotocol/vega/issues/7992) - Improve Candles related `APIs`
 - [7986](https://github.com/vegaprotocol/vega/issues/7986) - Remove cross `protobuf` files documentation references
-- [8146](https://github.com/vegaprotocol/vega/issues/8146) - Add fetch retry behaviour to network history fetch command  
+- [8146](https://github.com/vegaprotocol/vega/issues/8146) - Add fetch retry behaviour to network history fetch command
 - [7982](https://github.com/vegaprotocol/vega/issues/7982) - Fix behaviour of endpoints with `marketIds` and `partyIds` filters
 - [7846](https://github.com/vegaprotocol/vega/issues/7846) - Add event indicating distressed parties that are still holding an active position.
 - [7985](https://github.com/vegaprotocol/vega/issues/7985) - Add full stop on all fields documentation to get it properly generated
@@ -45,12 +45,17 @@
 - [8144](https://github.com/vegaprotocol/vega/issues/8144) - Visor - remove data node asset option from the config. Use only one asset.
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Add `GoodForBlocks` field to transaction input data.
 - [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
+- [8129](https://github.com/vegaprotocol/vega/issues/8129) - Keep liquidity fee remainder in fee account.
+- [8022](https://github.com/vegaprotocol/vega/issues/8022) - Improve `ListTransfers` API documentation.
+- [8154](https://github.com/vegaprotocol/vega/issues/8154) - Visor - added option for delaying stop of binaries.
+- [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
 
 ### 🐛 Fixes
 
 - [7938](https://github.com/vegaprotocol/vega/issues/7938) - Attempt to fix protocol upgrade failure because of `LevelDB` file lock issue
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
 - [7870](https://github.com/vegaprotocol/vega/issues/7870) - Fix `LP` subscription filters
+- [8159](https://github.com/vegaprotocol/vega/issues/8159) - Remove corresponding network history segments on rollback
 - [7954](https://github.com/vegaprotocol/vega/issues/7954) - Don't error if subscribing to a market/party that has no position yet
 - [7899](https://github.com/vegaprotocol/vega/issues/7899) - Fixes inconsistency in the `HTTP` status codes returned when rate limited
 - [7968](https://github.com/vegaprotocol/vega/issues/7968) - Ready for protocol upgrade flag set without going through memory barrier
@@ -84,6 +89,7 @@
 - [8125](https://github.com/vegaprotocol/vega/issues/8125) - Ensure network compatibility can be checked against TLS nodes
 - [8128](https://github.com/vegaprotocol/vega/issues/8128) - Assure price monitoring engine extends the auction one bound at a time
 - [8149](https://github.com/vegaprotocol/vega/issues/8149) - Trigger populating `orders_live` table out of date and does not filter correctly for live orders.
+- [8165](https://github.com/vegaprotocol/vega/issues/8165) - Send order events when an `lp` order is cancelled or rejected
 
 ## 0.70.0
 

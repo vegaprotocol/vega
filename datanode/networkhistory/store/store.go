@@ -57,6 +57,7 @@ type index interface {
 	Add(metaData segment.Full) error
 	Remove(indexEntry segment.Full) error
 	ListAllEntriesOldestFirst() (segment.Segments[segment.Full], error)
+	ListAllEntriesMostRecentFirst() (segment.Segments[segment.Full], error)
 	GetHighestBlockHeightEntry() (segment.Full, error)
 	Close() error
 }
@@ -340,7 +341,7 @@ func (p *Store) AddSnapshotData(ctx context.Context, s segment.Unpublished) (err
 
 	p.log.Debug("AddSnapshotData: removing old history segments")
 
-	segments, err := p.removeOldHistorySegments(ctx)
+	segments, err := p.garbageCollectOldHistorySegments(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to remove old history segments:%s", err)
 	}
@@ -370,6 +371,10 @@ func (p *Store) GetHighestBlockHeightEntry() (segment.Full, error) {
 
 func (p *Store) ListAllIndexEntriesOldestFirst() (segment.Segments[segment.Full], error) {
 	return p.index.ListAllEntriesOldestFirst()
+}
+
+func (p *Store) ListAllIndexEntriesMostRecentFirst() (segment.Segments[segment.Full], error) {
+	return p.index.ListAllEntriesMostRecentFirst()
 }
 
 func setupMetrics(ipfsNode *core.IpfsNode) error {
@@ -538,7 +543,7 @@ func (p *Store) CopyHistorySegmentToFile(ctx context.Context, historySegmentID s
 	return nil
 }
 
-func (p *Store) removeOldHistorySegments(ctx context.Context) ([]segment.Full, error) {
+func (p *Store) garbageCollectOldHistorySegments(ctx context.Context) ([]segment.Full, error) {
 	latestSegment, err := p.index.GetHighestBlockHeightEntry()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest segment:%w", err)
@@ -549,26 +554,20 @@ func (p *Store) removeOldHistorySegments(ctx context.Context) ([]segment.Full, e
 		return nil, fmt.Errorf("failed to list all entries:%w", err)
 	}
 
-	var removedSegments []segment.Full
+	var segmentsToRemove []segment.Full
 	for _, segment := range entries {
 		if segment.HeightTo < (latestSegment.HeightTo - p.cfg.HistoryRetentionBlockSpan) {
-			err = p.unpinSegment(ctx, segment)
-			if err != nil {
-				return nil, fmt.Errorf("failed to unpin segment:%w", err)
-			}
-
-			err = p.index.Remove(segment)
-			if err != nil {
-				return nil, fmt.Errorf("failed to remove segment from index: %w", err)
-			}
-
-			removedSegments = append(removedSegments, segment)
+			segmentsToRemove = append(segmentsToRemove, segment)
 		} else {
 			break
 		}
 	}
 
-	if len(removedSegments) > 0 {
+	if err = p.RemoveSegments(ctx, segmentsToRemove); err != nil {
+		return nil, fmt.Errorf("failed to remove segments: %w", err)
+	}
+
+	if len(segmentsToRemove) > 0 {
 		// The GarbageCollect method is async
 		err = corerepo.GarbageCollect(p.ipfsNode, ctx)
 
@@ -581,7 +580,22 @@ func (p *Store) removeOldHistorySegments(ctx context.Context) ([]segment.Full, e
 		}
 	}
 
-	return removedSegments, nil
+	return segmentsToRemove, nil
+}
+
+func (p *Store) RemoveSegments(ctx context.Context, segmentsToRemove []segment.Full) error {
+	for _, segment := range segmentsToRemove {
+		err := p.unpinSegment(ctx, segment)
+		if err != nil {
+			return fmt.Errorf("failed to unpin segment:%w", err)
+		}
+
+		err = p.index.Remove(segment)
+		if err != nil {
+			return fmt.Errorf("failed to remove segment from index: %w", err)
+		}
+	}
+	return nil
 }
 
 func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error) {

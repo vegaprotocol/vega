@@ -130,6 +130,24 @@ func (d *Service) RollbackToHeight(ctx context.Context, log snapshot.LoadLog, he
 		return fmt.Errorf("failed to rollback to segment: %w", err)
 	}
 
+	entries, err := d.store.ListAllIndexEntriesMostRecentFirst()
+	if err != nil {
+		return fmt.Errorf("failed to list all entries: %w", err)
+	}
+
+	var segmentsToRemove []segment.Full
+	for _, entry := range entries {
+		if entry.HeightTo > rollbackToSegment.HeightTo {
+			segmentsToRemove = append(segmentsToRemove, entry)
+		} else {
+			break
+		}
+	}
+
+	if err = d.store.RemoveSegments(ctx, segmentsToRemove); err != nil {
+		return fmt.Errorf("failed to remove segments: %w", err)
+	}
+
 	log.Infof("finished rolling back to height %d", height)
 
 	return nil

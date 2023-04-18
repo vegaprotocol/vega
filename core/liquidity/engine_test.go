@@ -184,10 +184,13 @@ func testSubmissionCRUD(t *testing.T) {
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).Return(nil)
+
 	idgen := idgeneration.New(deterministicID)
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen))
 	got := tng.engine.LiquidityProvisionByPartyID(party)
+
 	require.Equal(t, expected, got)
 
 	expected.Status = types.LiquidityProvisionStatusCancelled
@@ -195,6 +198,8 @@ func testSubmissionCRUD(t *testing.T) {
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 
+	// Create orders should fire a batch event
+	tng.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	err = tng.engine.CancelLiquidityProvision(ctx, party)
 	require.NoError(t, err)
 	require.Nil(t, tng.engine.LiquidityProvisionByPartyID(party),
@@ -536,6 +541,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
 
+	tng.orderbook.EXPECT().GetLiquidityOrders(gomock.Any()).AnyTimes()
 	err = tng.engine.CancelLiquidityProvision(ctx, party1)
 	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()

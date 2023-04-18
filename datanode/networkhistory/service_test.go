@@ -1071,9 +1071,9 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 	}
 	updateAllContinuousAggregateData(ctx)
 
-	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[2000].HistorySegmentID, 1000)
+	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[5000].HistorySegmentID, 5000)
 	require.NoError(t, err)
-	require.Equal(t, int64(1000), fetched)
+	require.Equal(t, int64(5000), fetched)
 
 	snapshotCopyToPath = t.TempDir()
 
@@ -1089,6 +1089,12 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].currentTableSummaries, dbSummary.currentTableSummaries)
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].historyTableSummaries, dbSummary.historyTableSummaries)
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].caggSummaries, dbSummary.caggSummaries)
+
+	historySegments, err := networkHistoryStore.ListAllIndexEntriesMostRecentFirst()
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(historySegments))
+	assert.Equal(t, int64(2000), historySegments[0].HeightTo)
+	assert.Equal(t, int64(1000), historySegments[1].HeightTo)
 }
 
 func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputSnapshotService *snapshot.Service, store *store.Store,

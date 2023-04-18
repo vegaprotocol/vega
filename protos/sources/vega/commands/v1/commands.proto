@@ -1,11 +1,12 @@
 syntax = "proto3";
 
 package vega.commands.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
+import "vega/commands/v1/validator_commands.proto";
 import "vega/governance.proto";
 import "vega/vega.proto";
-import "vega/commands/v1/validator_commands.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
 // Batch of order instructions.
 // This command accepts only the following batches of commands
@@ -238,7 +239,6 @@ message CancelTransfer {
   // ID of the transfer to cancel.
   string transfer_id = 1;
 }
-
 
 // Transaction for a validator to submit signatures to a smart contract
 message IssueSignatures {

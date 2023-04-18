@@ -95,4 +95,4 @@ Feature: All liquidity providers with `average fraction of liquidity provided by
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount  | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1901999 | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1       | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0       | USD   |

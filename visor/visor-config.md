@@ -61,6 +61,21 @@ Default value: <code>5</code>
 </dd>
 
 <dt>
+	<code>stopDelaySeconds</code>  <strong>int</strong>  - optional
+</dt>
+
+<dd>
+
+Number of seconds that Visor waits before it sends termination signal (SIGTERM) to running processes
+that are ready for upgrade.
+After the time has elapsed Visor stop the running binaries (SIGTERM).
+
+
+
+Default value: <code>0</code>
+</dd>
+
+<dt>
 	<code>stopSignalTimeoutSeconds</code>  <strong>int</strong>  - optional
 </dt>
 

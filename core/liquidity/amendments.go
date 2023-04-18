@@ -67,8 +67,17 @@ func (e *Engine) AmendLiquidityProvision(
 		return cancels[i].ID < cancels[j].ID
 	})
 
+	cancelsM := map[string]struct{}{}
+	for _, c := range cancels {
+		cancelsM[c.ID] = struct{}{}
+	}
+
+	now := e.timeService.GetTimeNow().UnixNano()
+	orderEvts := e.getCancelAllLiquidityOrders(
+		ctx, lp, cancelsM, types.OrderStatusStopped, now)
+
 	// update the LP
-	lp.UpdatedAt = e.timeService.GetTimeNow().UnixNano()
+	lp.UpdatedAt = now
 	lp.CommitmentAmount = lpa.CommitmentAmount.Clone()
 	lp.Fee = lpa.Fee
 	lp.Reference = lpa.Reference
@@ -80,7 +89,7 @@ func (e *Engine) AmendLiquidityProvision(
 	// update version
 	lp.Version++
 
-	orderEvts := e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lpa.Buys, lpa.Sells, idGen)
+	orderEvts = append(orderEvts, e.SetShapesReferencesOnLiquidityProvision(ctx, lp, lpa.Buys, lpa.Sells, idGen)...)
 	// seed the dummy orders with the generated IDs in order to avoid broken references
 	e.broker.SendBatch(orderEvts)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
