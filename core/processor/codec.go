@@ -13,6 +13,8 @@
 package processor
 
 import (
+	"math"
+
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 )
 
@@ -44,7 +46,7 @@ type NullBlockchainTxCodec struct {
 }
 
 func (c *NullBlockchainTxCodec) Decode(payload []byte, _ string) (abci.Tx, error) {
-	return DecodeTxNoValidation(payload, c.maxTTL)
+	return DecodeTxNoValidation(payload, math.MaxUint64)
 }
 
 func (c *BaseCodec) UpdateMaxTTL(ttl uint64) {
