@@ -13,6 +13,8 @@
 package statevar
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -68,6 +70,9 @@ func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) (*KeyValueBundle, 
 
 // ValueFromProto converts the proto into a value.
 func ValueFromProto(val *vega.StateVarValue) (value, error) {
+	if val == nil {
+		return nil, fmt.Errorf("missing state-var value")
+	}
 	switch v := val.Value.(type) {
 	case *vega.StateVarValue_ScalarVal:
 		val, err := num.DecimalFromString(v.ScalarVal.Value)
