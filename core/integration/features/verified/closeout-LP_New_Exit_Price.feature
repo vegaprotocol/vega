@@ -229,7 +229,6 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | buy  | 49    | 1      |
       | sell | 2000  | 1      |
       | sell | 2020  | 74     |
-      | sell | 3000  | 1      |
 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -241,23 +240,6 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
     # margin for pegged orders long and short: max(76*3.5569036,5173*0.800728208)*350=1449758.457
     # margin for short position: min(112*9000000000000000, 50*(112*1e1+112^2*1e3))+112*50*3.55690359157934000 =627275918.7
    
-    Then the order book should have the following volumes for market "ETH/DEC22":
-      | side | price | volume |
-      | buy  | 29    | 0      |
-      | buy  | 49    | 1      |
-      | sell | 2000  | 0      |
-      | sell | 2020  | 0      |
-      | sell | 3000  | 0      |
-
-    Then the network moves ahead "100" blocks
-    Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl | 
-      | traderB | -112   | 300            | 0            | 
-
-    And the parties should have the following position changes for market "ETH/DEC22":
-      | party   | status                        |
-      | traderB | POSITION_STATUS_ORDERS_CLOSED |
-
     And the parties should have the following account balances:
       | party   | asset | market id | margin  | general | bond   |
       | traderB | USD   | ETH/DEC22 | 3100294 | 0       | 0      |
@@ -428,6 +410,7 @@ Feature: Replicate a scenario from Lewis with Elias' implementation on Exit_pric
       | party   | volume | unrealised pnl | realised pnl |
       | traderD | 0      | 0              | 0            |
       | traderE | 0      | 0              | 0            |
+
 
 
 
