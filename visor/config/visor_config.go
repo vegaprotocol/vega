@@ -143,6 +143,14 @@ type VisorConfigFile struct {
 	RestartsDelaySeconds int `toml:"restartsDelaySeconds,optional"`
 	/*
 		description: |
+			Number of seconds that Visor waits before it sends termination signal (SIGTERM) to running processes
+			that are ready for upgrade.
+			After the time has elapsed Visor stop the running binaries (SIGTERM).
+		default: 0
+	*/
+	StopDelaySeconds int `toml:"stopDelaySeconds,optional"`
+	/*
+		description: |
 			Number of seconds that Visor waits after it sends termination signal (SIGTERM) to running processes.
 			After the time has elapsed Visor force-kills (SIGKILL) any running processes.
 		default: 15
@@ -210,6 +218,7 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 			MaxNumberOfRestarts:               3,
 			MaxNumberOfFirstConnectionRetries: 10,
 			RestartsDelaySeconds:              5,
+			StopDelaySeconds:                  0,
 			StopSignalTimeoutSeconds:          15,
 			AutoInstall: AutoInstallConfig{
 				Enabled:               true,
@@ -252,6 +261,7 @@ func (pc *VisorConfig) reload() error {
 	pc.data.MaxNumberOfRestarts = dataFile.MaxNumberOfRestarts
 	pc.data.RestartsDelaySeconds = dataFile.RestartsDelaySeconds
 	pc.data.StopSignalTimeoutSeconds = dataFile.StopSignalTimeoutSeconds
+	pc.data.StopDelaySeconds = dataFile.StopDelaySeconds
 	pc.data.UpgradeFolders = dataFile.UpgradeFolders
 	pc.data.AutoInstall = dataFile.AutoInstall
 	pc.mut.Unlock()
@@ -363,6 +373,13 @@ func (pc *VisorConfig) StopSignalTimeoutSeconds() int {
 	defer pc.mut.RUnlock()
 
 	return pc.data.StopSignalTimeoutSeconds
+}
+
+func (pc *VisorConfig) StopDelaySeconds() int {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	return pc.data.StopDelaySeconds
 }
 
 func (pc *VisorConfig) AutoInstall() AutoInstallConfig {

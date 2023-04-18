@@ -125,6 +125,7 @@ func (v *Visor) Run(ctx context.Context) error {
 		binRunner := NewBinariesRunner(
 			v.log,
 			v.conf.CurrentFolder(),
+			time.Second*time.Duration(v.conf.StopDelaySeconds()),
 			time.Second*time.Duration(v.conf.StopSignalTimeoutSeconds()),
 			currentReleaseInfo,
 		)
