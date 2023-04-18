@@ -151,8 +151,26 @@ func (d *Service) ListAllHistorySegments() (segment.Segments[segment.Full], erro
 	return d.store.ListAllIndexEntriesOldestFirst()
 }
 
-func (d *Service) FetchHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error) {
-	return d.store.FetchHistorySegment(ctx, historySegmentID)
+func (d *Service) FetchHistorySegment(parentCtx context.Context, historySegmentID string) (segment.Full, error) {
+	// An IPFS fetch will hang on a reasonably frequent basis.  Issuing a re-fetch resolves this
+	// most of the time. In the case where the fetch hangs, some of the blocks for the context
+	// will usually have been retrieved, such that subsequent fetch has fewer blocks to fetch.
+	// From experimentation, the very simple retry logic below seems to give a good trade off between average time
+	// taken to fetch a segment in the case where it hangs and ensuring that the segment is eventually fetched.
+	var err error
+	for retry := 1; retry <= d.cfg.FetchRetryMax; retry++ {
+		contextTimeout := d.cfg.RetryTimeout.Duration * time.Duration(retry)
+		d.log.Infof("fetching history segment %s (attempt %d, timeout %s)", historySegmentID, retry, contextTimeout)
+		ctx, cancelFn := context.WithTimeout(parentCtx, contextTimeout)
+		segment, err := d.store.FetchHistorySegment(ctx, historySegmentID)
+		cancelFn()
+		if err == nil {
+			return segment, nil
+		}
+		d.log.Warningf("failed to fetch segment: %s", err)
+	}
+
+	return segment.Full{}, fmt.Errorf("failed to fetch history segment %s after %d attempts: %w", historySegmentID, d.cfg.FetchRetryMax, err)
 }
 
 func (d *Service) CreateAndPublishSegment(ctx context.Context, chainID string, toHeight int64) error {

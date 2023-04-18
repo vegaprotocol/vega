@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cenkalti/backoff"
-
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
@@ -44,7 +42,6 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 		currentSpan   sqlstore.DatanodeBlockSpan
 		err           error
 	)
-	attempt := 1
 
 	sqlCtx, cancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
 	defer cancel()
@@ -89,43 +86,29 @@ func InitialiseDatanodeFromNetworkHistory(parentCtx context.Context, cfg Initial
 		toSegmentID = cfg.ToSegment
 	}
 
-	op := func() (err error) {
-		log.Infof("attempt %d to initialise datanode from network history", attempt)
+	initialiseContext, cancelFn := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
+	defer cancelFn()
 
-		retryCtx, retryCancel := context.WithTimeout(parentCtx, cfg.TimeOut.Duration)
-		defer func() {
-			retryCancel()
-			attempt++
-		}()
+	log.Infof("fetching history using as the first segment:{%s} and minimum blocks to fetch %d", toSegmentID, blocksToFetch)
 
-		log.Infof("fetching history using as the first segment:{%s} and minimum blocks to fetch %d", toSegmentID, blocksToFetch)
+	blocksFetched, err = FetchHistoryBlocks(initialiseContext, log.Infof, toSegmentID,
+		func(ctx context.Context, historySegmentID string) (FetchResult, error) {
+			segment, err := networkHistoryService.FetchHistorySegment(initialiseContext, historySegmentID)
+			if err != nil {
+				return FetchResult{}, err
+			}
+			return FromSegmentIndexEntry(segment), nil
+		}, blocksToFetch)
 
-		blocksFetched, err = FetchHistoryBlocks(retryCtx, log.Infof, toSegmentID,
-			func(ctx context.Context, historySegmentID string) (FetchResult, error) {
-				segment, err := networkHistoryService.FetchHistorySegment(retryCtx, historySegmentID)
-				if err != nil {
-					return FetchResult{}, err
-				}
-				return FromSegmentIndexEntry(segment), nil
-			}, blocksToFetch)
-
-		if err != nil {
-			log.Errorf("failed to fetch history blocks: %v", err)
-		}
-
-		if blocksFetched == 0 {
-			return fmt.Errorf("failed to get any blocks from network history")
-		}
-
-		log.Infof("fetched %d blocks from network history", blocksFetched)
-
-		return err
-	}
-
-	err = backoff.Retry(op, backoff.WithMaxRetries(backoff.NewConstantBackOff(cfg.RetryTimeout.Duration), cfg.FetchRetryMax))
 	if err != nil {
-		return fmt.Errorf("failed to fetch history blocks:%w", err)
+		log.Errorf("failed to fetch history blocks: %v", err)
 	}
+
+	if blocksFetched == 0 {
+		return fmt.Errorf("failed to get any blocks from network history")
+	}
+
+	log.Infof("fetched %d blocks from network history", blocksFetched)
 
 	log.Infof("loading history into the datanode")
 	segments, err := networkHistoryService.ListAllHistorySegments()
