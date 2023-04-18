@@ -14,7 +14,6 @@ package sqlstore
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"time"
@@ -184,20 +183,6 @@ func (ls *Ledger) Export(
 
 	ls.log.Debug("copy to CSV", logging.Int64("rows affected", tag.RowsAffected()))
 	return nil
-}
-
-func toHexString(arg any) (string, bool) {
-	byteArray, ok := arg.([]byte)
-	if !ok {
-		return "", false
-	}
-
-	str := hex.EncodeToString(byteArray)
-	if _, err := hex.DecodeString(str); err != nil {
-		return "", false
-	}
-
-	return "\\x" + str, true
 }
 
 func prepareQuery(filter *entities.LedgerEntryFilter, dateRange entities.DateRange) (string, string, []any, error) {

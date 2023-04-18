@@ -227,7 +227,7 @@ func (d dummyConnection) Query(context.Context, string, ...interface{}) (pgx.Row
 	return nil, pgx.ErrNoRows
 }
 
-func (d dummyConnection) CopyTo(context.Context, io.Writer, string) (pgconn.CommandTag, error) {
+func (d dummyConnection) CopyTo(context.Context, io.Writer, string, ...any) (pgconn.CommandTag, error) {
 	return pgconn.CommandTag{}, nil
 }
 
