@@ -2096,12 +2096,31 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		// add entries to the response
 		resps = append(resps, ledgerEntries)
 	}
+	// we need a market insurance pool regardless
+	marketInsuranceAcc, err := e.GetMarketInsurancePoolAccount(mktID, asset)
+	if err != nil {
+		e.log.Panic("unable to get or create the insurance account for the market", logging.Error(err))
+	}
+	marketInsuranceID := marketInsuranceAcc.ID
+	// any remaining balance in the fee account gets transferred over to the insurance account
+	lpFeeAccID := e.accountID(mktID, "", asset, types.AccountTypeFeesLiquidity)
+	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
+		req.FromAccount[0] = lpFeeAcc
+		req.ToAccount[0] = marketInsuranceAcc
+		req.Amount = lpFeeAcc.Balance.Clone()
+		lpFeeLE, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute remainder of LP fee account funds", logging.Error(err))
+		}
+		resps = append(resps, lpFeeLE)
+		// remove the account once it's drained
+		e.removeAccount(lpFeeAccID)
+	}
 
 	// redistribute the remaining funds in the market insurance account between other markets insurance accounts and global insurance account
-	marketInsuranceID := e.accountID(mktID, "", asset, types.AccountTypeInsurance)
-	marketInsuranceAcc, ok := e.accs[marketInsuranceID]
-	if !ok || marketInsuranceAcc.Balance.EQ(num.UintZero()) {
+	if marketInsuranceAcc.Balance.EQ(num.UintZero()) {
 		// if there's no market insurance account or it has no balance, nothing to do here
+		e.removeAccount(marketInsuranceID)
 		return resps, nil
 	}
 

@@ -24,7 +24,7 @@ Feature:
       | ETH/MAR22 | USD        | USD   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 0.5                    | 0                         |
 
 
-  @VirtStake
+  @FeeRound
   Scenario: 001 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a market with small growth (0042-LIQF-008)
 
     # Scenario has 6 market periods:
@@ -167,9 +167,9 @@ Feature:
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 41     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 40     | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -229,7 +229,7 @@ Feature:
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 45     | USD   |
 
-    And the accumulated liquidity fees should be "45" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "46" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -257,7 +257,7 @@ Feature:
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 42     | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -322,7 +322,7 @@ Feature:
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 48     | USD   |
 
-    Then the accumulated liquidity fees should be "48" for the market "ETH/MAR22"
+    Then the accumulated liquidity fees should be "49" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -347,10 +347,10 @@ Feature:
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 46     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 45     | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -415,7 +415,7 @@ Feature:
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 50     | USD   |
 
-    Then the accumulated liquidity fees should be "50" for the market "ETH/MAR22"
+    Then the accumulated liquidity fees should be "51" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -440,10 +440,10 @@ Feature:
 
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 47     | USD   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 46     | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -512,7 +512,7 @@ Feature:
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 52     | USD   |
 
     # CALCULATION:
-    Then the accumulated liquidity fees should be "52" for the market "ETH/MAR22"
+    Then the accumulated liquidity fees should be "53" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -540,7 +540,7 @@ Feature:
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 49     | USD   |
 
-    Then the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    Then the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -562,7 +562,7 @@ Feature:
   # -------------------------------------------------------------------------------------------------------------------
   # -------------------------------------------------------------------------------------------------------------------
 
-  @VirtStake
+  @FeeRound
   Scenario: 002  Checks ELS calculations for a market which grows and then shrinks.
 
     Given the average block duration is "1801"
@@ -737,7 +737,7 @@ Feature:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 16     | USD   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
+      #| market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
@@ -796,9 +796,9 @@ Feature:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -828,7 +828,7 @@ Feature:
       | lp2   | 0.3750624687656172 | 50000                   |
       | lp3   | 0.2498750624687656 | 100050                  |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -858,7 +858,7 @@ Feature:
       | lp2   | 0.3685041026719966 | 50000                   |
       | lp3   | 0.2629917946560067 | 100050                  |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -888,7 +888,7 @@ Feature:
       | lp2   | 0.3500899460323806 | 50000                   |
       | lp3   | 0.2998201079352388 | 100050                  |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
@@ -918,7 +918,7 @@ Feature:
       | lp2   | 0.3334285170378831 | 50000                   |
       | lp3   | 0.3331429659242338 | 100050                  |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
     # -------------------------------------------------------------------------------------------------------------------
 
