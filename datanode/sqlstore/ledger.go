@@ -176,7 +176,7 @@ func (ls *Ledger) Export(
 
 	query := fmt.Sprintf("copy (%s %s) to STDOUT (FORMAT csv, HEADER)", dynamicQuery, whereQuery)
 
-	tag, err := ls.Connection.CopyTo(ctx, writer, query, args)
+	tag, err := ls.Connection.CopyTo(ctx, writer, query, args...)
 	if err != nil {
 		return fmt.Errorf("copying to stdout: %w", err)
 	}

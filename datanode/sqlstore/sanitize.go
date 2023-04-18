@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// nolint:nakedret
 func SanitizeSql(sql string, args ...any) (output string, err error) {
 	replacer := func(match string) (replacement string) {
 		n, _ := strconv.ParseInt(match[1:], 10, 0)
@@ -24,7 +25,7 @@ func SanitizeSql(sql string, args ...any) (output string, err error) {
 		case int32:
 			return strconv.FormatInt(int64(arg), 10)
 		case int64:
-			return strconv.FormatInt(int64(arg), 10)
+			return strconv.FormatInt(arg, 10)
 		case time.Time:
 			return quoteString(arg.Format("2006-01-02 15:04:05.999999 -0700"))
 		case uint:
@@ -36,7 +37,7 @@ func SanitizeSql(sql string, args ...any) (output string, err error) {
 		case uint32:
 			return strconv.FormatUint(uint64(arg), 10)
 		case uint64:
-			return strconv.FormatUint(uint64(arg), 10)
+			return strconv.FormatUint(arg, 10)
 		case float32:
 			return strconv.FormatFloat(float64(arg), 'f', -1, 32)
 		case float64:
@@ -45,16 +46,6 @@ func SanitizeSql(sql string, args ...any) (output string, err error) {
 			return strconv.FormatBool(arg)
 		case []byte:
 			return `E'\\x` + hex.EncodeToString(arg) + `'`
-		case []any:
-			if len(arg) == 0 {
-				return "null"
-			}
-			byteArray, ok := arg[0].([]byte)
-			if !ok {
-				err = fmt.Errorf("unable to sanitize type: %T", arg[0])
-				return ""
-			}
-			return `E'\\x` + hex.EncodeToString(byteArray) + `'`
 		case []int16:
 			var s string
 			s, err = intSliceToArrayString(arg)
