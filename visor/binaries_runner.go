@@ -14,6 +14,7 @@ package visor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -148,12 +149,18 @@ func (r *BinariesRunner) prepareVegaArgs(runConf *config.RunConfig, isRestart bo
 			runConf.DataNode.Binary.Args,
 		)
 		r.log.Debug("Got latest history segment from data node", logging.Bool("success", err == nil))
-		if err != nil {
-			return nil, fmt.Errorf("failed to get latest history segment from data node: %w", err)
+
+		if err == nil {
+			args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(uint64(latestSegment.LatestSegment.Height), 10))
+			return args, nil
 		}
 
-		args.Set(snapshotBlockHeightFlagName, strconv.FormatUint(uint64(latestSegment.LatestSegment.Height), 10))
-		return args, nil
+		// no segment was found - do not load from snapshot
+		if errors.Is(err, ErrNoHistorySegmentFound) {
+			return args, nil
+		}
+
+		return nil, fmt.Errorf("failed to get latest history segment from data node: %w", err)
 	}
 
 	if r.releaseInfo != nil {
