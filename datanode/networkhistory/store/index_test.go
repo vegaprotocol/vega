@@ -22,7 +22,7 @@ func makeSegment(heightFrom, heightTo int64) segment.Full {
 	}
 }
 
-func TestOrderingOfEntries(t *testing.T) {
+func TestOrderingOfEntriesOldestFirst(t *testing.T) {
 	index, err := store.NewIndex(t.TempDir(), logging.NewTestLogger())
 	require.NoError(t, err)
 	defer func() { _ = index.Close() }()
@@ -51,6 +51,41 @@ func TestOrderingOfEntries(t *testing.T) {
 	// Sort oldest first
 	sort.Slice(addedEntries, func(i, j int) bool {
 		return addedEntries[i].HeightFrom < addedEntries[j].HeightFrom
+	})
+
+	assert.Equal(t, len(addedEntries), len(allEntries))
+	assert.Equal(t, addedEntries, []segment.Full(allEntries))
+}
+
+func TestOrderingOfEntriesMostRecentFirst(t *testing.T) {
+	index, err := store.NewIndex(t.TempDir(), logging.NewTestLogger())
+	require.NoError(t, err)
+	defer func() { _ = index.Close() }()
+
+	allEntries, err := index.ListAllEntriesOldestFirst()
+	assert.Equal(t, 0, len(allEntries))
+	require.NoError(t, err)
+
+	var addedEntries []segment.Full
+
+	numEntries := int64(100)
+	for i := int64(0); i < (numEntries/2)-2; i++ {
+		entry := makeSegment((i*1000)+1, (i+1)*1000)
+		index.Add(entry)
+		addedEntries = append(addedEntries, entry)
+
+		entry = makeSegment((numEntries-i-1)*1000+1, (numEntries-i)*1000)
+		index.Add(entry)
+		addedEntries = append(addedEntries, entry)
+	}
+
+	allEntries, err = index.ListAllEntriesMostRecentFirst()
+
+	require.NoError(t, err)
+
+	// Sort most recent first
+	sort.Slice(addedEntries, func(i, j int) bool {
+		return addedEntries[i].HeightFrom > addedEntries[j].HeightFrom
 	})
 
 	assert.Equal(t, len(addedEntries), len(allEntries))

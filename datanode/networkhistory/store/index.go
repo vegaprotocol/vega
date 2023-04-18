@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
@@ -84,6 +85,32 @@ func (l LevelDbBackedIndex) Remove(indexEntry segment.Full) error {
 }
 
 func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() (segment.Segments[segment.Full], error) {
+	segments, err := l.listAllEntries()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all entries: %w", err)
+	}
+
+	sort.Slice(segments, func(i, j int) bool {
+		return segments[i].HeightFrom < segments[j].HeightFrom
+	})
+	return segments, nil
+}
+
+func (l LevelDbBackedIndex) ListAllEntriesMostRecentFirst() (segment.Segments[segment.Full], error) {
+	segments, err := l.listAllEntries()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all entries: %w", err)
+	}
+
+	sort.Slice(segments, func(i, j int) bool {
+		return segments[i].HeightFrom > segments[j].HeightFrom
+	})
+
+	return segments, nil
+}
+
+func (l LevelDbBackedIndex) listAllEntries() (segment.Segments[segment.Full], error) {
+	var segments []segment.Full
 	l.log.Debug("Creating iterator")
 
 	iter := l.db.NewIterator(&util.Range{
@@ -95,7 +122,6 @@ func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() (segment.Segments[segmen
 		iter.Release()
 	}()
 
-	var segments []segment.Full
 	if !iter.Last() {
 		return segments, nil
 	}
@@ -110,10 +136,6 @@ func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() (segment.Segments[segmen
 
 		segments = append(segments, indexEntry)
 	}
-
-	sort.Slice(segments, func(i, j int) bool {
-		return segments[i].HeightFrom < segments[j].HeightFrom
-	})
 
 	return segments, nil
 }

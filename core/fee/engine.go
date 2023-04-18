@@ -412,10 +412,11 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 	}
 	sort.Strings(keys)
 
+	feeBal := acc.Balance.ToDecimal()
 	var floored num.Decimal
 	for _, key := range keys {
 		share := shares[key]
-		cs := acc.Balance.ToDecimal().Mul(share).Floor()
+		cs := feeBal.Mul(share).Floor()
 		floored = floored.Add(cs)
 
 		amount, _ := num.UintFromDecimal(cs)
@@ -424,7 +425,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 		ft.transfers = append(ft.transfers, &types.Transfer{
 			Owner: key,
 			Amount: &types.FinancialAmount{
-				Amount: amount.Clone(),
+				Amount: amount,
 				Asset:  acc.Asset,
 			},
 			MinAmount: amount.Clone(),
@@ -432,12 +433,8 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 		})
 	}
 
+	// if there is a remainder, just keep it in the fee account, will be used next time we pay out fees
 	// last is the party who will get the remaining from ceil
-	last := keys[len(keys)-1]
-	diff, _ := num.UintFromDecimal(acc.Balance.ToDecimal().Sub(floored))
-	ft.totalFeesAmountsPerParty[last].AddSum(diff)
-	ft.transfers[len(ft.transfers)-1].Amount.Amount.AddSum(diff)
-
 	return ft
 }
 
