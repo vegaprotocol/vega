@@ -453,7 +453,7 @@ message Candle {
   string high = 3;
   // Lowest price for trading during the candle interval. This field is an unsigned integer scaled to the market's decimal places.
   string low = 4;
-  // Open trade price.This field is an unsigned integer scaled to the market's decimal places.
+  // Open trade price. This field is an unsigned integer scaled to the market's decimal places.
   string open = 5;
   // Closing trade price. This field is an unsigned integer scaled to the market's decimal places.
   string close = 6;

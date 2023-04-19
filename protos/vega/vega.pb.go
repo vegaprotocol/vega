@@ -2476,7 +2476,7 @@ type Candle struct {
 	High string `protobuf:"bytes,3,opt,name=high,proto3" json:"high,omitempty"`
 	// Lowest price for trading during the candle interval. This field is an unsigned integer scaled to the market's decimal places.
 	Low string `protobuf:"bytes,4,opt,name=low,proto3" json:"low,omitempty"`
-	// Open trade price.This field is an unsigned integer scaled to the market's decimal places.
+	// Open trade price. This field is an unsigned integer scaled to the market's decimal places.
 	Open string `protobuf:"bytes,5,opt,name=open,proto3" json:"open,omitempty"`
 	// Closing trade price. This field is an unsigned integer scaled to the market's decimal places.
 	Close string `protobuf:"bytes,6,opt,name=close,proto3" json:"close,omitempty"`
