@@ -101,13 +101,13 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 		return err
 	}
 
-	cmd.wait(log, cfunc)
+	cmd.wait(ctx, log, cfunc)
 	return db.Stop()
 }
 
-func (cmd *PostgresRunCmd) wait(log *logging.Logger, cfunc func()) {
+func (cmd *PostgresRunCmd) wait(ctx context.Context, log *logging.Logger, cfunc func()) {
 	ch := make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
 	for {
 		select {
 		case sig := <-ch:
