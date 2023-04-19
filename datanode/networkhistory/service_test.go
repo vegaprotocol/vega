@@ -83,6 +83,13 @@ func TestMain(t *testing.M) {
 	outerCtx, cancelOuterCtx := context.WithCancel(context.Background())
 	defer cancelOuterCtx()
 
+	// because we have a ton of panics in here:
+	defer func() {
+		if r := recover(); r != nil {
+			cancelOuterCtx()
+			panic(r) // propagate panic
+		}
+	}()
 	testMigrationVersionNum, sqlFs = setupTestSQLMigrations()
 	highestMigrationNumber = testMigrationVersionNum - 1
 
@@ -140,7 +147,7 @@ func TestMain(t *testing.M) {
 		emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
 		// Do initial run to get the expected state of the datanode from just event playback
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(outerCtx)
 		defer cancel()
 
 		snapshotCopyToPath := filepath.Join(networkHistoryHome, "snapshotsCopyTo")
@@ -150,6 +157,7 @@ func TestMain(t *testing.M) {
 		var snapshots []segment.Unpublished
 
 		ctxWithCancel, cancelFn := context.WithCancel(ctx)
+		defer cancelFn()
 
 		evtSource := newTestEventSourceWithProtocolUpdateMessage()
 

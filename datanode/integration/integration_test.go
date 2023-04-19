@@ -57,13 +57,15 @@ const (
 var (
 	client                  *graphql.Client
 	integrationTestsEnabled = flag.Bool("integration", false, "run integration tests")
-	blockWhenDone           = flag.Bool("block", false, "leave services running after tests are complete")
+	blockWhenDone           = flag.Bool("block", false, "leave services running after tests are complete NOTE: EMBEDDED POSGRESQL WILL NOT SHUT DOWN PROPERLY")
 	writeGolden             = flag.Bool("golden", false, "write query results to 'golden' files for comparison")
 	goldenDir               string
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 
 	if !*integrationTestsEnabled {
 		log.Print("Skipping integration tests. To enable pass -integration flag to 'go test'")
@@ -110,20 +112,33 @@ func TestMain(m *testing.M) {
 
 	go func() {
 		defer wg.Done()
-		if err := runTestNode(cfg, vegaHome, stopper); err != nil {
+		if err := runTestNode(ctx, cfg, vegaHome, stopper); err != nil {
+			close(stopper)
+			cfunc()
 			log.Fatal("running test node: ", err)
 		}
 	}()
 
 	client = graphql.NewClient(fmt.Sprintf("http://localhost:%v/graphql", cfg.Gateway.Port))
 	if err = waitForEpoch(client, lastEpoch, playbackTimeout); err != nil {
+		close(stopper)
+		cfunc()
 		log.Fatal("problem piping event stream: ", err)
+	}
+	// normal run - services should be terminated properly
+	if blockWhenDone == nil || !*blockWhenDone {
+		go handleSignal(ctx, cfunc, stopper)
 	}
 
 	// Cheesy sleep to give everything chance to percolate
 	time.Sleep(5 * time.Second)
 
-	m.Run()
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		m.Run()
+	}
 
 	log.Printf("Integration tests completed")
 
@@ -137,8 +152,28 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 
-	close(stopper)
+	// this will close the stopper channel
+	cfunc()
 	wg.Wait()
+}
+
+func handleSignal(ctx context.Context, cfunc func(), sCh chan struct{}) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+	for {
+		select {
+		case sig := <-c:
+			log.Printf("Received %+v signal", sig)
+			close(sCh) // close stopper channel
+			cfunc()    // cancel context
+			return
+		case <-ctx.Done():
+			// context was cancelled for some reason, close stopper channel
+			log.Printf("Context cancelled")
+			close(sCh)
+			return
+		}
+	}
 }
 
 func setupDirs() (string, string, error) {
@@ -231,7 +266,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	return &cfg, nil
 }
 
-func runTestNode(cfg *config.Config, vegaHome string, stopper chan struct{}) error {
+func runTestNode(ctx context.Context, cfg *config.Config, vegaHome string, stopper chan struct{}) error {
 	vegaPaths := paths.New(vegaHome)
 
 	loader, err := config.InitialiseLoader(vegaPaths)
@@ -260,7 +295,7 @@ func runTestNode(cfg *config.Config, vegaHome string, stopper chan struct{}) err
 		cmd.Stop()
 	}()
 
-	if err = cmd.Run(configWatcher, vegaPaths, []string{}); err != nil {
+	if err = cmd.Run(ctx, configWatcher, vegaPaths, []string{}); err != nil {
 		return fmt.Errorf("couldn't run node: %w", err)
 	}
 	return nil

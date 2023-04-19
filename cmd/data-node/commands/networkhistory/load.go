@@ -42,6 +42,8 @@ func (cmd *loadCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
 		cfg,
 	)
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
 	defer log.AtExit()
 
 	vegaPaths := paths.New(cmd.VegaHome)
@@ -60,7 +62,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), cmd.SQLStore.ConnectionConfig); err != nil {
+	if err := networkhistory.KillAllConnectionsToDatabase(ctx, cmd.SQLStore.ConnectionConfig); err != nil {
 		return fmt.Errorf("failed to kill all connections to database: %w", err)
 	}
 
@@ -73,7 +75,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	// Wiping data from network history before loading then trying to load the data should never happen in any circumstance
 	cmd.Config.NetworkHistory.WipeOnStartup = false
 
-	hasSchema, err := sqlstore.HasVegaSchema(context.Background(), connPool)
+	hasSchema, err := sqlstore.HasVegaSchema(ctx, connPool)
 	if err != nil {
 		return fmt.Errorf("failed to check for existing schema:%w", err)
 	}
@@ -95,8 +97,6 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	ctx, cancelFn := context.WithCancel(context.Background())
-	defer cancelFn()
 	networkHistoryService, err := createNetworkHistoryService(ctx, log, cmd.Config, connPool, vegaPaths)
 	if err != nil {
 		return fmt.Errorf("failed to created network history service: %w", err)
@@ -196,7 +196,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 
 	loadLog := newLoadLog()
 	defer loadLog.AtExit()
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, contiguousHistory,
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(ctx, loadLog, contiguousHistory,
 		cmd.Config.SQLStore.ConnectionConfig, optimiseForAppend, bool(cmd.Config.SQLStore.VerboseMigration))
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)

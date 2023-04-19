@@ -36,17 +36,12 @@ import (
 )
 
 func (l *NodeCommand) persistentPre([]string) (err error) {
-	// this shouldn't happen...
-	if l.cancel != nil {
-		l.cancel()
-	}
 	// ensure we cancel the context on error
 	defer func() {
 		if err != nil {
 			l.cancel()
 		}
 	}()
-	l.ctx, l.cancel = context.WithCancel(context.Background())
 
 	conf := l.configWatcher.Get()
 
@@ -107,7 +102,7 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		preLog.Info("Initializing Network History")
 
 		if l.conf.AutoInitialiseFromNetworkHistory {
-			if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), l.conf.SQLStore.ConnectionConfig); err != nil {
+			if err := networkhistory.KillAllConnectionsToDatabase(l.ctx, l.conf.SQLStore.ConnectionConfig); err != nil {
 				return fmt.Errorf("failed to kill all connections to database: %w", err)
 			}
 		}

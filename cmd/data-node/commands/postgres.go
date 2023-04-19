@@ -54,6 +54,8 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	defer log.AtExit()
 
 	log.Info("Launching Postgres")
@@ -67,7 +69,7 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.New(cmd.VegaHome)
 
-	configWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
+	configWatcher, err := config.NewWatcher(ctx, log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}
@@ -96,12 +98,21 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 		return err
 	}
 
-	gracefulStop := make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
-
-	// It would be nice to watch the child process itself and return if it exits unexpectedly,
-	// but embedded-postgres-go doesn't give us a way to do that right now.
-	sig := <-gracefulStop
-	log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+	cmd.wait(ctx, log, cfunc)
 	return db.Stop()
+}
+
+func (cmd *PostgresRunCmd) wait(ctx context.Context, log *logging.Logger, cfunc func()) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGTERM, syscall.SIGINT)
+	for {
+		select {
+		case sig := <-ch:
+			cfunc()
+			log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			return
+		case <-ctx.Done():
+			return
+		}
+	}
 }
