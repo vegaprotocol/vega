@@ -101,7 +101,7 @@ func handleErr(log *logging.Logger, outputJSON bool, msg string, err error) {
 		}{
 			Error: err.Error(),
 		})
-	} else {
-		log.Error(msg, logging.Error(err))
+		return
 	}
+	log.Error(msg, logging.Error(err))
 }

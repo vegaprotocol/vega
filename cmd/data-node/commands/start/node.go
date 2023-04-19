@@ -103,8 +103,6 @@ func (l *NodeCommand) Stop() {
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode([]string) error {
-	defer l.cancel()
-
 	nodeLog := l.Log.Named("start.runNode")
 	var eg *errgroup.Group
 	eg, l.ctx = errgroup.WithContext(l.ctx)
