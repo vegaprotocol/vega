@@ -118,7 +118,7 @@ func (ls *Ledger) Query(
 ) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error) {
 	var pageInfo entities.PageInfo
 
-	dynamicQuery, whereQuery, args, err := prepareQuery(filter, dateRange)
+	dynamicQuery, whereQuery, args, err := ls.prepareQuery(filter, dateRange)
 	if err != nil {
 		return nil, pageInfo, err
 	}
@@ -169,7 +169,7 @@ func (ls *Ledger) Export(
 		filter.FromAccountFilter.AssetID = entities.AssetID(ptr.UnBox(assetID))
 	}
 
-	dynamicQuery, whereQuery, args, err := prepareQuery(filter, dateRange)
+	dynamicQuery, whereQuery, args, err := ls.prepareQuery(filter, dateRange)
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (ls *Ledger) Export(
 	return nil
 }
 
-func prepareQuery(filter *entities.LedgerEntryFilter, dateRange entities.DateRange) (string, string, []any, error) {
+func (*Ledger) prepareQuery(filter *entities.LedgerEntryFilter, dateRange entities.DateRange) (string, string, []any, error) {
 	filterQueries, args, err := filterLedgerEntriesQuery(filter)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("filtering ledger entries: %w", err)

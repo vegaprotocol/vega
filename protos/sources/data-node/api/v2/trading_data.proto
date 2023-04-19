@@ -1146,7 +1146,7 @@ message ExportLedgerEntriesRequest {
   // Party ID to export ledger entries for.
   string party_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Optional: Asset ID.
-  optional string asset_id = 2;
+  string asset_id = 2 [(google.api.field_behavior) = REQUIRED];
   // Date range to export ledger entries for.
   optional DateRange date_range = 4;
 }
