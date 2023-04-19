@@ -15,6 +15,8 @@ type copyCmd struct {
 }
 
 func (cmd *copyCmd) Execute(args []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.InfoLevel
 	cfg.Environment = "custom"
@@ -31,7 +33,7 @@ func (cmd *copyCmd) Execute(args []string) error {
 	outputPath := args[1]
 
 	client := getDatanodeAdminClient(log, cmd.Config)
-	reply, err := client.CopyHistorySegmentToFile(context.Background(), segmentID, outputPath)
+	reply, err := client.CopyHistorySegmentToFile(ctx, segmentID, outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to copy history segment to file: %w", err)
 	}

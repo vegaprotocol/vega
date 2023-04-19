@@ -38,9 +38,7 @@ var postgresCmd PostgresCmd
 
 func Postgres(ctx context.Context, parser *flags.Parser) error {
 	postgresCmd = PostgresCmd{
-		Run: PostgresRunCmd{
-			ctx: ctx,
-		},
+		Run: PostgresRunCmd{},
 	}
 
 	_, err := parser.AddCommand("postgres", "Embedded Postgres", "Embedded Postgres", &postgresCmd)
@@ -50,14 +48,13 @@ func Postgres(ctx context.Context, parser *flags.Parser) error {
 type PostgresRunCmd struct {
 	config.VegaHomeFlag
 	config.Config
-	ctx context.Context
 }
 
 func (cmd *PostgresRunCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
-	ctx, cfunc := context.WithCancel(cmd.ctx)
+	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	defer log.AtExit()
 

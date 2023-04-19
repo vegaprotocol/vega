@@ -32,7 +32,6 @@ type StartCmd struct {
 	config.VegaHomeFlag
 
 	config.Config
-	ctx context.Context
 }
 
 var startCmd StartCmd
@@ -40,7 +39,7 @@ var startCmd StartCmd
 const namedLogger = "datanode"
 
 func (cmd *StartCmd) Execute(args []string) error {
-	ctx, cfunc := context.WithCancel(cmd.ctx)
+	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig()).Named(namedLogger)
@@ -90,7 +89,6 @@ func (cmd *StartCmd) Execute(args []string) error {
 func Node(ctx context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
-		ctx:    ctx,
 	}
 	cmd, err := parser.AddCommand("node", "deprecated, see data-node start instead", "deprecated, see data-node start instead", &startCmd)
 	if err != nil {

@@ -20,7 +20,6 @@ type LastBlockCmd struct {
 	config.VegaHomeFlag
 	coreConfig.OutputFlag
 	*config.Config
-	ctx context.Context
 
 	Timeout time.Duration `long:"timeout" description:"Database connection timeout" default:"10s"`
 }
@@ -46,7 +45,7 @@ func (cmd *LastBlockCmd) Execute(_ []string) error {
 
 	connectionString := cmd.Config.SQLStore.ConnectionConfig.GetConnectionString()
 
-	ctx, cancel := context.WithTimeout(cmd.ctx, cmd.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), cmd.Timeout)
 	defer cancel()
 	var conn *pgx.Conn
 
@@ -88,7 +87,6 @@ func LastBlock(ctx context.Context, parser *flags.Parser) error {
 	cfg := config.NewDefaultConfig()
 	lastBlockCmd = LastBlockCmd{
 		Config: &cfg,
-		ctx:    ctx,
 	}
 	_, err := parser.AddCommand("last-block", "Get last block", "Get last block", &lastBlockCmd)
 	return err
