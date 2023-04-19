@@ -462,6 +462,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.assetsEngine.SetPermissive()
 		return nil
 	})
+
+	s.Step(`^the parties should have the following position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingPositionStatus(execsetup.broker, mkt, table)
+	})
+
+	s.Step(`^the parties should have the following aggregated position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingPositionStatusAgg(execsetup.broker, mkt, table)
+	})
 }
 
 func reconcileAccounts() error {
