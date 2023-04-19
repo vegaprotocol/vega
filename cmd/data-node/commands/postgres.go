@@ -38,7 +38,9 @@ var postgresCmd PostgresCmd
 
 func Postgres(ctx context.Context, parser *flags.Parser) error {
 	postgresCmd = PostgresCmd{
-		Run: PostgresRunCmd{},
+		Run: PostgresRunCmd{
+			ctx: ctx,
+		},
 	}
 
 	_, err := parser.AddCommand("postgres", "Embedded Postgres", "Embedded Postgres", &postgresCmd)
@@ -48,12 +50,15 @@ func Postgres(ctx context.Context, parser *flags.Parser) error {
 type PostgresRunCmd struct {
 	config.VegaHomeFlag
 	config.Config
+	ctx context.Context
 }
 
 func (cmd *PostgresRunCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
+	ctx, cfunc := context.WithCancel(cmd.ctx)
+	defer cfunc()
 	defer log.AtExit()
 
 	log.Info("Launching Postgres")
@@ -67,7 +72,7 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.New(cmd.VegaHome)
 
-	configWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
+	configWatcher, err := config.NewWatcher(ctx, log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}
@@ -96,12 +101,21 @@ func (cmd *PostgresRunCmd) Execute(_ []string) error {
 		return err
 	}
 
-	gracefulStop := make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
-
-	// It would be nice to watch the child process itself and return if it exits unexpectedly,
-	// but embedded-postgres-go doesn't give us a way to do that right now.
-	sig := <-gracefulStop
-	log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+	cmd.wait(log, cfunc)
 	return db.Stop()
+}
+
+func (cmd *PostgresRunCmd) wait(log *logging.Logger, cfunc func()) {
+	ch := make(chan os.Signal, 1)
+	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+	for {
+		select {
+		case sig := <-ch:
+			cfunc()
+			log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			return
+		case <-ctx.Done():
+			return
+		}
+	}
 }
