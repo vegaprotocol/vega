@@ -42,6 +42,7 @@
 - [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
 - [8105](https://github.com/vegaprotocol/vega/issues/8105) - Make candles return in ascending order when queried from `graphql`.
 - [8144](https://github.com/vegaprotocol/vega/issues/8144) - Visor - remove data node asset option from the config. Use only one asset.
+- [8000](https://github.com/vegaprotocol/vega/issues/8000) - Add documentation for `Pagination` `protobuf` message.
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Add `GoodForBlocks` field to transaction input data.
 - [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
 - [8129](https://github.com/vegaprotocol/vega/issues/8129) - Keep liquidity fee remainder in fee account.
