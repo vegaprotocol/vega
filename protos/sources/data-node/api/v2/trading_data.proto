@@ -540,8 +540,8 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
   }
 
-
   // Estimate position
+  //
   // Estimate the margin that would be required for maintaining the specified position.
   // If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
   rpc EstimatePosition(EstimatePositionRequest) returns (EstimatePositionResponse) {
@@ -3137,12 +3137,11 @@ message ListEntitiesResponse {
 message PingRequest {}
 
 // Ping response from the data node
-message PingResponse {
-}
+message PingResponse {}
 
 // Basic description of an order.
-message OrderInfo { 
- // Side for the order, e.g. buy or sell.
+message OrderInfo {
+  // Side for the order, e.g. buy or sell.
   vega.Side side = 1;
   // Price for the order. The price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
@@ -3155,51 +3154,49 @@ message OrderInfo {
   bool is_market_order = 4;
 }
 
-
 // Request for the estimate of the margin level and, if available collateral is provided, liqudation price for the specified position.
 message EstimatePositionRequest {
-     // Market ID.
-    string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-    // Open volume.
-    // This field is an signed integer (negative for short position) passed as a string and needs to be scaled using the market's position decimal places.
-    int64 open_volume = 2 [(google.api.field_behavior) = REQUIRED];
-    // Open and/or hypothetical orders.
-    repeated OrderInfo orders = 3;
-    // Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate.
-    optional string collateral_available = 4; 
+  // Market ID.
+  string market_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Open volume.
+  // This field is an signed integer (negative for short position) passed as a string and needs to be scaled using the market's position decimal places.
+  int64 open_volume = 2 [(google.api.field_behavior) = REQUIRED];
+  // Open and/or hypothetical orders.
+  repeated OrderInfo orders = 3;
+  // Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate.
+  optional string collateral_available = 4;
 }
 
 // Response for the estimate of the margin level and, if available collateral was provided in the request, liqudation price for the specified position.
 message EstimatePositionResponse {
-    // Margin level range estimate for the specified position.
-    MarginEstimate margin = 1;
-    // Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request.
-    LiquidationEstimate liquidation = 2;
+  // Margin level range estimate for the specified position.
+  MarginEstimate margin = 1;
+  // Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request.
+  LiquidationEstimate liquidation = 2;
 }
 
 // Margin level estimate for both worst and best case possible.
 message MarginEstimate {
-    // Margin level estimate assuming slippage cap is applied.
-    vega.MarginLevels worst_case = 1;
-    // Margin level estimate assuming no slippage.
-    vega.MarginLevels best_case = 2;
+  // Margin level estimate assuming slippage cap is applied.
+  vega.MarginLevels worst_case = 1;
+  // Margin level estimate assuming no slippage.
+  vega.MarginLevels best_case = 2;
 }
-
 
 // Liquidation estimate for both worst and best case possible.
 message LiquidationEstimate {
-    // Liquidation price estimate assuming slippage cap is applied.
-    LiquidationPrice worst_case = 1;
-    // Liquidation price estimate assuming no slippage.
-    LiquidationPrice best_case = 2;
+  // Liquidation price estimate assuming slippage cap is applied.
+  LiquidationPrice worst_case = 1;
+  // Liquidation price estimate assuming no slippage.
+  LiquidationPrice best_case = 2;
 }
 
 // Liquidation price estimate for either only the current open volume and position given some or all buy orders get filled, or position given some or all sell orders get filled.
 message LiquidationPrice {
-    // Liquidation price for current open volume ignoring any active orders.
-    string open_volume_only = 1;
-    // Liquidation price assuming buy orders start getting filled.
-    string including_buy_orders = 2;
-    // Liquidation price assuming sell orders start getting filled.
-    string including_sell_orders = 3;
+  // Liquidation price for current open volume ignoring any active orders.
+  string open_volume_only = 1;
+  // Liquidation price assuming buy orders start getting filled.
+  string including_buy_orders = 2;
+  // Liquidation price assuming sell orders start getting filled.
+  string including_sell_orders = 3;
 }
