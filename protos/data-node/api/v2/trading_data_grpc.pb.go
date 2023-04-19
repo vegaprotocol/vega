@@ -239,11 +239,16 @@ type TradingDataServiceClient interface {
 	ListRewards(ctx context.Context, in *ListRewardsRequest, opts ...grpc.CallOption) (*ListRewardsResponse, error)
 	// List reward summaries
 	//
-	// Get a list of reward summaries that match the provided criteria. If no filter is provided, all reward summaries will be returned.
+	// Get a list of reward summaries where the reward amount is the total rewards received over all epochs
+	// per party ID and asset ID.
+	// Request parameters are optional party ID and asset ID.
+	// If no data is provided, all reward summaries will be returned grouped by party and asset ID.
 	ListRewardSummaries(ctx context.Context, in *ListRewardSummariesRequest, opts ...grpc.CallOption) (*ListRewardSummariesResponse, error)
 	// List epoch reward summaries
 	//
-	// Get a list of reward summaries by epoch.
+	// Get a list of reward summaries by epoch for a given range of epochs.
+	// The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+	// If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
 	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
 	//
@@ -1849,11 +1854,16 @@ type TradingDataServiceServer interface {
 	ListRewards(context.Context, *ListRewardsRequest) (*ListRewardsResponse, error)
 	// List reward summaries
 	//
-	// Get a list of reward summaries that match the provided criteria. If no filter is provided, all reward summaries will be returned.
+	// Get a list of reward summaries where the reward amount is the total rewards received over all epochs
+	// per party ID and asset ID.
+	// Request parameters are optional party ID and asset ID.
+	// If no data is provided, all reward summaries will be returned grouped by party and asset ID.
 	ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error)
 	// List epoch reward summaries
 	//
-	// Get a list of reward summaries by epoch.
+	// Get a list of reward summaries by epoch for a given range of epochs.
+	// The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+	// If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
 	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
 	//
