@@ -2487,6 +2487,19 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 	return price.Mul(price, priceFactor), nil
 }
 
+func (t *TradingDataServiceV2) scaleDecimalFromMarketToAssetPrice(
+	ctx context.Context,
+	mkt entities.Market,
+	price num.Decimal,
+) (num.Decimal, error) {
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return num.DecimalZero(), err
+	}
+
+	return price.Mul(num.DecimalFromUint(priceFactor)), nil
+}
+
 func (t *TradingDataServiceV2) getMarketPriceFactor(
 	ctx context.Context,
 	mkt entities.Market,
@@ -2739,27 +2752,17 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(err)
 	}
 
-	marketObservable, err := num.DecimalFromString(mktData.MarkPrice.String())
-	if err != nil {
-		return nil, formatE(err)
-	}
+	marketObservable := mktData.MarkPrice
 
 	auction := mktData.AuctionEnd > 0
 	if auction && mktData.MarketTradingMode == types.MarketTradingModeOpeningAuction.String() {
 		marketObservable = mktData.IndicativePrice
 	}
 
-	uMarketObservable, overflowed := num.UintFromDecimal(marketObservable)
-	if overflowed {
-		return nil, formatE(fmt.Errorf("mark price overflowed: %s", mktData.MarkPrice))
-	}
-
-	marketObservableInAssetPrecision, err := t.scaleFromMarketToAssetPrice(ctx, mkt, uMarketObservable)
+	marketObservable, err = t.scaleDecimalFromMarketToAssetPrice(ctx, mkt, marketObservable)
 	if err != nil {
 		return nil, formatE(ErrScalingPriceFromMarketToAsset, err)
 	}
-
-	dMarketObservableInAssetPrecision := num.DecimalFromUint(marketObservableInAssetPrecision)
 
 	positionFactor := num.DecimalFromFloat(10).
 		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
@@ -2778,7 +2781,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		req.OpenVolume,
 		buyOrders,
 		sellOrders,
-		dMarketObservableInAssetPrecision,
+		marketObservable,
 		positionFactor,
 		linearSlippageFactor,
 		quadraticSlippageFactor,
@@ -2794,7 +2797,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 			req.OpenVolume,
 			buyOrders,
 			sellOrders,
-			dMarketObservableInAssetPrecision,
+			marketObservable,
 			positionFactor,
 			linearSlippageFactor,
 			quadraticSlippageFactor,
