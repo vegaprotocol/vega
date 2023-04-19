@@ -1,12 +1,13 @@
 syntax = "proto3";
 
 package vega.commands.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
 import "vega/commands/v1/commands.proto";
-import "vega/commands/v1/validator_commands.proto";
 import "vega/commands/v1/data.proto";
 import "vega/commands/v1/signature.proto";
+import "vega/commands/v1/validator_commands.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
 message InputData {
   // This was the old restore checkpoint command

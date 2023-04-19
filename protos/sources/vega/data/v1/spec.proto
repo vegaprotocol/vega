@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package vega.data.v1;
+
 option go_package = "code.vegaprotocol.io/vega/protos/vega/data/v1";
 
 // Filter describes the conditions under which a data source data is considered of

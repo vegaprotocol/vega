@@ -1,16 +1,17 @@
 syntax = "proto3";
 
 package vega.events.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
-import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/governance.proto";
-import "vega/vega.proto";
-import "vega/oracle.proto";
 import "vega/commands/v1/commands.proto";
 import "vega/commands/v1/data.proto";
 import "vega/commands/v1/validator_commands.proto";
+import "vega/governance.proto";
+import "vega/markets.proto";
+import "vega/oracle.proto";
+import "vega/vega.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
 message ERC20MultiSigSignerAdded {
   // ID of the signature bundle
@@ -19,7 +20,7 @@ message ERC20MultiSigSignerAdded {
   string validator_id = 2;
   // Time at which this happened
   int64 timestamp = 3;
- // Ethereum address of the new signer
+  // Ethereum address of the new signer
   string new_signer = 4;
   // Address of the submitter of the transaction
   string submitter = 5;
@@ -191,7 +192,7 @@ message RewardPayoutEvent {
   string asset = 3;
   string amount = 4;
   string percent_of_total_reward = 5;
-  int64  timestamp = 6;
+  int64 timestamp = 6;
   string reward_type = 7;
   string market = 8;
 }
@@ -265,7 +266,6 @@ message TransactionResult {
 
   message SuccessDetails {
     // TBD
-
   }
 
   message FailureDetails {
@@ -318,11 +318,11 @@ message EpochEvent {
   // Action tells us what action is taking place
   vega.EpochAction action = 2;
   // Vega time at which this epoch started
-  int64  start_time = 3;
+  int64 start_time = 3;
   // Vega time at which this epoch should end
-  int64  expire_time = 4;
+  int64 expire_time = 4;
   // Vega time at which this epoch actually ended
-  int64  end_time = 5;
+  int64 end_time = 5;
 }
 
 // Transfer responses event contains a collection of transfer information
@@ -518,7 +518,6 @@ message ValidatorRankingEvent {
   uint32 tm_voting_power = 8;
 }
 
-
 // Event that contains information about a Vega key rotation
 message KeyRotation {
   // ID of the node that rotated their Vega key
@@ -536,7 +535,7 @@ message EthereumKeyRotation {
   // ID of the node that rotated their Ethereum key
   string node_id = 1;
   // Ethereum address that was previously associated with the node
-  string old_address= 2;
+  string old_address = 2;
   // Ethereum address that is newly associated with the node
   string new_address = 3;
   // Block height when the key rotation took effect
@@ -592,7 +591,6 @@ message ProtocolUpgradeStarted {
 message ProtocolUpgradeDataNodeReady {
   uint64 last_block_height = 1;
 }
-
 
 // CoreSnapshotData represents the core snapshot data.
 message CoreSnapshotData {
@@ -840,7 +838,7 @@ message BusEvent {
     // Protocol upgrade proposal updates
     ProtocolUpgradeEvent protocol_upgrade_event = 147;
     // Core is starting to process a new block
-    BeginBlock begin_block= 148;
+    BeginBlock begin_block = 148;
     // Core finished processing a block
     EndBlock end_block = 149;
     // Core is starting a protocol upgrade
