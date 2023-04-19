@@ -3071,6 +3071,8 @@ enum MarketTradingMode {
 
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
+  "Unspecified is only used for trades at the end of an auction, where neither party acts as the aggressor."
+  SIDE_UNSPECIFIED
   "The placer of the order is aiming to buy"
   SIDE_BUY
 
