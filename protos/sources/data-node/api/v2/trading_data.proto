@@ -540,6 +540,14 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
   }
 
+
+  // Estimate position
+  // Estimate the margin that would be required for maintaining the specified position.
+  // If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+  rpc EstimatePosition(EstimatePositionRequest) returns (EstimatePositionResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Positions"};
+  }
+
   // List network parameters
   //
   // Get a list of the network parameters

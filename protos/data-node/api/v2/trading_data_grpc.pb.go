@@ -329,6 +329,10 @@ type TradingDataServiceClient interface {
 	//
 	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
+	// Estimate position
+	// Estimate the margin that would be required for maintaining the specified position.
+	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error)
 	// List network parameters
 	//
 	// Get a list of the network parameters
@@ -1377,6 +1381,15 @@ func (c *tradingDataServiceClient) EstimateMargin(ctx context.Context, in *Estim
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error) {
+	out := new(EstimatePositionResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimatePosition", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error) {
 	out := new(ListNetworkParametersResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListNetworkParameters", in, out, opts...)
@@ -1944,6 +1957,10 @@ type TradingDataServiceServer interface {
 	//
 	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
+	// Estimate position
+	// Estimate the margin that would be required for maintaining the specified position.
+	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error)
 	// List network parameters
 	//
 	// Get a list of the network parameters
@@ -2292,6 +2309,9 @@ func (UnimplementedTradingDataServiceServer) EstimateFee(context.Context, *Estim
 }
 func (UnimplementedTradingDataServiceServer) EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateMargin not implemented")
+}
+func (UnimplementedTradingDataServiceServer) EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstimatePosition not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListNetworkParameters not implemented")
@@ -3596,6 +3616,24 @@ func _TradingDataService_EstimateMargin_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_EstimatePosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimatePositionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).EstimatePosition(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/EstimatePosition",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).EstimatePosition(ctx, req.(*EstimatePositionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListNetworkParameters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListNetworkParametersRequest)
 	if err := dec(in); err != nil {
@@ -4206,6 +4244,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EstimateMargin",
 			Handler:    _TradingDataService_EstimateMargin_Handler,
+		},
+		{
+			MethodName: "EstimatePosition",
+			Handler:    _TradingDataService_EstimatePosition_Handler,
 		},
 		{
 			MethodName: "ListNetworkParameters",
