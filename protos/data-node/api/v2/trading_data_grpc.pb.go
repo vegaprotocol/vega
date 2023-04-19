@@ -90,7 +90,10 @@ type TradingDataServiceClient interface {
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
-	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
+	//
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (TradingDataService_ExportLedgerEntriesClient, error)
 	// List balance changes
 	//
 	// Get a list of the changes in account balances over a period of time.
@@ -464,6 +467,7 @@ type TradingDataServiceClient interface {
 	//
 	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error)
 	// Ping
 	//
@@ -648,13 +652,36 @@ func (c *tradingDataServiceClient) ListLedgerEntries(ctx context.Context, in *Li
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error) {
-	out := new(ExportLedgerEntriesResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ExportLedgerEntries", in, out, opts...)
+func (c *tradingDataServiceClient) ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (TradingDataService_ExportLedgerEntriesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[3], "/datanode.api.v2.TradingDataService/ExportLedgerEntries", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &tradingDataServiceExportLedgerEntriesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ExportLedgerEntriesClient interface {
+	Recv() (*httpbody.HttpBody, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceExportLedgerEntriesClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceExportLedgerEntriesClient) Recv() (*httpbody.HttpBody, error) {
+	m := new(httpbody.HttpBody)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *tradingDataServiceClient) ListBalanceChanges(ctx context.Context, in *ListBalanceChangesRequest, opts ...grpc.CallOption) (*ListBalanceChangesResponse, error) {
@@ -694,7 +721,7 @@ func (c *tradingDataServiceClient) GetLatestMarketDepth(ctx context.Context, in 
 }
 
 func (c *tradingDataServiceClient) ObserveMarketsDepth(ctx context.Context, in *ObserveMarketsDepthRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[3], "/datanode.api.v2.TradingDataService/ObserveMarketsDepth", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[4], "/datanode.api.v2.TradingDataService/ObserveMarketsDepth", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +753,7 @@ func (x *tradingDataServiceObserveMarketsDepthClient) Recv() (*ObserveMarketsDep
 }
 
 func (c *tradingDataServiceClient) ObserveMarketsDepthUpdates(ctx context.Context, in *ObserveMarketsDepthUpdatesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthUpdatesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[4], "/datanode.api.v2.TradingDataService/ObserveMarketsDepthUpdates", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[5], "/datanode.api.v2.TradingDataService/ObserveMarketsDepthUpdates", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -758,7 +785,7 @@ func (x *tradingDataServiceObserveMarketsDepthUpdatesClient) Recv() (*ObserveMar
 }
 
 func (c *tradingDataServiceClient) ObserveMarketsData(ctx context.Context, in *ObserveMarketsDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[5], "/datanode.api.v2.TradingDataService/ObserveMarketsData", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[6], "/datanode.api.v2.TradingDataService/ObserveMarketsData", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -826,7 +853,7 @@ func (c *tradingDataServiceClient) ListCandleData(ctx context.Context, in *ListC
 }
 
 func (c *tradingDataServiceClient) ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[6], "/datanode.api.v2.TradingDataService/ObserveCandleData", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[7], "/datanode.api.v2.TradingDataService/ObserveCandleData", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -876,7 +903,7 @@ func (c *tradingDataServiceClient) ListVotes(ctx context.Context, in *ListVotesR
 }
 
 func (c *tradingDataServiceClient) ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[7], "/datanode.api.v2.TradingDataService/ObserveVotes", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[8], "/datanode.api.v2.TradingDataService/ObserveVotes", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -971,7 +998,7 @@ func (c *tradingDataServiceClient) ListTrades(ctx context.Context, in *ListTrade
 }
 
 func (c *tradingDataServiceClient) ObserveTrades(ctx context.Context, in *ObserveTradesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTradesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[8], "/datanode.api.v2.TradingDataService/ObserveTrades", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[9], "/datanode.api.v2.TradingDataService/ObserveTrades", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1075,7 +1102,7 @@ func (c *tradingDataServiceClient) ListMarginLevels(ctx context.Context, in *Lis
 }
 
 func (c *tradingDataServiceClient) ObserveMarginLevels(ctx context.Context, in *ObserveMarginLevelsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarginLevelsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[9], "/datanode.api.v2.TradingDataService/ObserveMarginLevels", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveMarginLevels", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1197,7 +1224,7 @@ func (c *tradingDataServiceClient) ListLiquidityProvisions(ctx context.Context, 
 }
 
 func (c *tradingDataServiceClient) ObserveLiquidityProvisions(ctx context.Context, in *ObserveLiquidityProvisionsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLiquidityProvisionsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveLiquidityProvisions", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[11], "/datanode.api.v2.TradingDataService/ObserveLiquidityProvisions", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1247,7 +1274,7 @@ func (c *tradingDataServiceClient) ListGovernanceData(ctx context.Context, in *L
 }
 
 func (c *tradingDataServiceClient) ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[11], "/datanode.api.v2.TradingDataService/ObserveGovernance", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[12], "/datanode.api.v2.TradingDataService/ObserveGovernance", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1396,7 +1423,7 @@ func (c *tradingDataServiceClient) GetRiskFactors(ctx context.Context, in *GetRi
 }
 
 func (c *tradingDataServiceClient) ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingDataService_ObserveEventBusClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[12], "/datanode.api.v2.TradingDataService/ObserveEventBus", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[13], "/datanode.api.v2.TradingDataService/ObserveEventBus", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1427,7 +1454,7 @@ func (x *tradingDataServiceObserveEventBusClient) Recv() (*ObserveEventBusRespon
 }
 
 func (c *tradingDataServiceClient) ObserveLedgerMovements(ctx context.Context, in *ObserveLedgerMovementsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLedgerMovementsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[13], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1567,7 +1594,7 @@ func (c *tradingDataServiceClient) ListEntities(ctx context.Context, in *ListEnt
 }
 
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1678,7 +1705,10 @@ type TradingDataServiceServer interface {
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
-	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
+	//
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	ExportLedgerEntries(*ExportLedgerEntriesRequest, TradingDataService_ExportLedgerEntriesServer) error
 	// List balance changes
 	//
 	// Get a list of the changes in account balances over a period of time.
@@ -2052,6 +2082,7 @@ type TradingDataServiceServer interface {
 	//
 	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error
 	// Ping
 	//
@@ -2097,8 +2128,8 @@ func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsR
 func (UnimplementedTradingDataServiceServer) ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLedgerEntries not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExportLedgerEntries not implemented")
+func (UnimplementedTradingDataServiceServer) ExportLedgerEntries(*ExportLedgerEntriesRequest, TradingDataService_ExportLedgerEntriesServer) error {
+	return status.Errorf(codes.Unimplemented, "method ExportLedgerEntries not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListBalanceChanges(context.Context, *ListBalanceChangesRequest) (*ListBalanceChangesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBalanceChanges not implemented")
@@ -2545,22 +2576,25 @@ func _TradingDataService_ListLedgerEntries_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_ExportLedgerEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExportLedgerEntriesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _TradingDataService_ExportLedgerEntries_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExportLedgerEntriesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(TradingDataServiceServer).ExportLedgerEntries(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/ExportLedgerEntries",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).ExportLedgerEntries(ctx, req.(*ExportLedgerEntriesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(TradingDataServiceServer).ExportLedgerEntries(m, &tradingDataServiceExportLedgerEntriesServer{stream})
+}
+
+type TradingDataService_ExportLedgerEntriesServer interface {
+	Send(*httpbody.HttpBody) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceExportLedgerEntriesServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceExportLedgerEntriesServer) Send(m *httpbody.HttpBody) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _TradingDataService_ListBalanceChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -3994,10 +4028,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListLedgerEntries_Handler,
 		},
 		{
-			MethodName: "ExportLedgerEntries",
-			Handler:    _TradingDataService_ExportLedgerEntries_Handler,
-		},
-		{
 			MethodName: "ListBalanceChanges",
 			Handler:    _TradingDataService_ListBalanceChanges_Handler,
 		},
@@ -4264,6 +4294,11 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObservePositions",
 			Handler:       _TradingDataService_ObservePositions_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ExportLedgerEntries",
+			Handler:       _TradingDataService_ExportLedgerEntries_Handler,
 			ServerStreams: true,
 		},
 		{
