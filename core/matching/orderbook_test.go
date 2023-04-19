@@ -3326,6 +3326,10 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 
 	// Get indicative trades
 	trades, err := book.ob.GetIndicativeTrades()
+	// because the trades are generated when calling LeaveAuction, the aggressor will be unspecified.
+	for _, tr := range trades {
+		tr.Aggressor = types.SideUnspecified
+	}
 	assert.NoError(t, err)
 	assert.Equal(t, len(trades), 1)
 
