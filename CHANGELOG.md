@@ -4,6 +4,7 @@
 
 ### 🚨 Breaking changes
 
+- [7859](https://github.com/vegaprotocol/vega/issues/7859) - Fix Ledger entries exporting `CSV` file.
 - [8064](https://github.com/vegaprotocol/vega/issues/8064) - Remove `websocket` for rewards
 - [8093](https://github.com/vegaprotocol/vega/issues/8093) - Remove offset pagination
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.

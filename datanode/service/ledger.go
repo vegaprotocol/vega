@@ -14,6 +14,7 @@ package service
 
 import (
 	"context"
+	"io"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
@@ -25,7 +26,7 @@ type ledgerStore interface {
 	Flush(ctx context.Context) ([]entities.LedgerEntry, error)
 	Add(le entities.LedgerEntry) error
 	Query(ctx context.Context, filter *entities.LedgerEntryFilter, dateRange entities.DateRange, pagination entities.CursorPagination) (*[]entities.AggregatedLedgerEntry, entities.PageInfo, error)
-	Export(ctx context.Context, partyID, assetID string, dateRange entities.DateRange, pagination entities.CursorPagination) ([]byte, entities.PageInfo, error)
+	Export(ctx context.Context, partyID string, assetID *string, dateRange entities.DateRange, writer io.Writer) error
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.LedgerEntry, error)
 }
 
@@ -97,13 +98,15 @@ func (l *Ledger) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]ent
 
 func (l *Ledger) Export(
 	ctx context.Context,
-	partyID, assetID string, dateRange entities.DateRange,
-	pagination entities.CursorPagination,
-) ([]byte, entities.PageInfo, error) {
+	partyID string,
+	assetID *string,
+	dateRange entities.DateRange,
+	writer io.Writer,
+) error {
 	return l.store.Export(
 		ctx,
 		partyID,
 		assetID,
 		dateRange,
-		pagination)
+		writer)
 }

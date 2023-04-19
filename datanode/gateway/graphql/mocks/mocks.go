@@ -301,14 +301,14 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) EstimateMargin(arg0, arg1 
 }
 
 // ExportLedgerEntries mocks base method.
-func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (*v2.ExportLedgerEntriesResponse, error) {
+func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ExportLedgerEntriesClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ExportLedgerEntries", varargs...)
-	ret0, _ := ret[0].(*v2.ExportLedgerEntriesResponse)
+	ret0, _ := ret[0].(v2.TradingDataService_ExportLedgerEntriesClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
