@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased 0.71.0
+## Unreleased 0.72.0
+
+### 🚨 Breaking changes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.71.0
 
 ### 🚨 Breaking changes
 
@@ -11,11 +30,6 @@
 - [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated `TradesConnection GraphQL sub-queries` in favour of an `un-nested` Trades query with a filter parameter. This requires a change in the underlying `gRPC` request message. Trades subscription takes a `TradesSubscriptionFilter` that allows multiple `MarketID` and `PartyID` filters to be specified.
 - [8143](https://github.com/vegaprotocol/vega/issues/8143) - Merge GraphQL and REST servers
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Reduce passphrase requests for admin endpoints by introducing `admin.unlock_wallet` and removing the `passphrase` field from wallet-related endpoints.
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 
