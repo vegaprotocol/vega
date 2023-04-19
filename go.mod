@@ -68,6 +68,7 @@ require (
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.17.2
+	github.com/klauspost/compress v1.15.15
 	github.com/libp2p/go-libp2p v0.24.2
 	github.com/machinebox/graphql v0.2.2
 	github.com/mitchellh/mapstructure v1.5.0
@@ -194,7 +195,6 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.1.0 // indirect
 	github.com/jbenet/goprocess v0.1.4 // indirect
-	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.1 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
