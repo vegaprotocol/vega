@@ -2679,9 +2679,47 @@ func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.Scali
 func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition")()
 
+	var collateralAvailable num.Decimal
+	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
+		var err error
+		collateralAvailable, err = num.DecimalFromString(*req.CollateralAvailable)
+		if err != nil {
+			return nil, formatE(ErrPositionsInvalidCollateralAmount, err)
+		}
+	}
+
 	mkt, err := t.marketService.GetByID(ctx, req.MarketId)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetByID, err)
+	}
+
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	dPriceFactor := priceFactor.ToDecimal()
+
+	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
+	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
+
+	for _, o := range req.Orders {
+		if o == nil {
+			continue
+		}
+		var price num.Decimal
+		p, err := num.DecimalFromString(o.Price)
+		if err != nil {
+			return nil, errors.Wrap(ErrInvalidOrderPrice, err.Error())
+		}
+		price = p.Mul(dPriceFactor)
+
+		if o.Side == types.SideBuy {
+			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		}
+		if o.Side == types.SideSell {
+			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		}
 	}
 
 	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
@@ -2711,13 +2749,6 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		marketObservable = mktData.IndicativePrice
 	}
 
-	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
-	if err != nil {
-		return nil, err
-	}
-
-	dPriceFactor := priceFactor.ToDecimal()
-
 	uMarketObservable, overflowed := num.UintFromDecimal(marketObservable)
 	if overflowed {
 		return nil, formatE(fmt.Errorf("mark price overflowed: %s", mktData.MarkPrice))
@@ -2742,28 +2773,6 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
 	}
 
-	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
-	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
-
-	for _, o := range req.Orders {
-		if o == nil {
-			continue
-		}
-		var price num.Decimal
-		p, err := num.DecimalFromString(o.Price)
-		if err != nil {
-			return nil, errors.Wrap(ErrInvalidOrderPrice, err.Error())
-		}
-		price = p.Mul(dPriceFactor)
-
-		if o.Side == types.SideBuy {
-			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
-		}
-		if o.Side == types.SideSell {
-			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
-		}
-	}
-
 	marginEstimate := t.computeMarginRange(
 		req.MarketId,
 		req.OpenVolume,
@@ -2780,11 +2789,6 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 
 	var liquidationEstimate *v2.LiquidationEstimate
 	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
-		collateralAvailable, err := num.DecimalFromString(*req.CollateralAvailable)
-		if err != nil {
-			return nil, formatE(fmt.Errorf("could not parse collateral available ('%s')", *req.CollateralAvailable), err)
-		}
-
 		liquidationEstimate, err = t.computeLiquidationPriceRange(
 			collateralAvailable,
 			req.OpenVolume,

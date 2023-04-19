@@ -784,9 +784,6 @@ func (r *myQueryResolver) EstimateOrder(
 	ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
-
-	var err error
-
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
 		order.Price = *price
@@ -881,9 +878,6 @@ func (r *myQueryResolver) EstimateFees(
 	ty vega.Order_Type,
 ) (*FeeEstimate, error) {
 	order := &types.Order{}
-
-	var err error
-
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
 		order.Price = *price
