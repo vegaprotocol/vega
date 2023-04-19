@@ -90,6 +90,7 @@
 - [7993](https://github.com/vegaprotocol/vega/issues/7993) - Fix `ListDeposits` endpoint and documentation
 - [8072](https://github.com/vegaprotocol/vega/issues/8072) - Fix `panics` in estimate orders
 - [8125](https://github.com/vegaprotocol/vega/issues/8125) - Ensure network compatibility can be checked against TLS nodes
+- [8103](https://github.com/vegaprotocol/vega/issues/8103) - Fix incorrect rate limiting behaviour on `gRPC` `API`
 - [8128](https://github.com/vegaprotocol/vega/issues/8128) - Assure price monitoring engine extends the auction one bound at a time
 - [8149](https://github.com/vegaprotocol/vega/issues/8149) - Trigger populating `orders_live` table out of date and does not filter correctly for live orders.
 - [8165](https://github.com/vegaprotocol/vega/issues/8165) - Send order events when an `lp` order is cancelled or rejected

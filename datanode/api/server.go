@@ -247,6 +247,33 @@ func (g *GRPCServer) ReloadConf(cfg Config) {
 	g.Config = cfg
 }
 
+func ipFromContext(ctx context.Context, method string, log *logging.Logger) string {
+	// first check if the request is forwarded from our restproxy
+	// get the metadata
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
+		forwardedFor, ok := md["x-forwarded-for"]
+		if ok && len(forwardedFor) > 0 {
+			log.Debug("grpc request x-forwarded-for",
+				logging.String("method", method),
+				logging.String("remote-ip-addr", forwardedFor[0]),
+			)
+			return forwardedFor[0]
+		}
+	}
+
+	// if the request is not forwarded let's get it from the peer infos
+	p, ok := peer.FromContext(ctx)
+	if ok && p != nil {
+		log.Debug("grpc peer client request",
+			logging.String("method", method),
+			logging.String("remote-ip-addr", p.Addr.String()))
+		return p.Addr.String()
+	}
+
+	return ""
+}
+
 func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
@@ -254,31 +281,7 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-		// first check if the request is forwarded from our restproxy
-		// get the metadata
-		var ip string
-		md, ok := metadata.FromIncomingContext(ctx)
-		if ok {
-			forwardedFor, ok := md["x-forwarded-for"]
-			if ok && len(forwardedFor) > 0 {
-				log.Debug("grpc request x-forwarded-for",
-					logging.String("method", info.FullMethod),
-					logging.String("remote-ip-addr", forwardedFor[0]),
-				)
-				ip = forwardedFor[0]
-			}
-		}
-
-		// if the request is not forwarded let's get it from the peer infos
-		if len(ip) <= 0 {
-			p, ok := peer.FromContext(ctx)
-			if ok && p != nil {
-				log.Debug("grpc peer client request",
-					logging.String("method", info.FullMethod),
-					logging.String("remote-ip-addr", p.Addr.String()))
-				ip = p.Addr.String()
-			}
-		}
+		ip := ipFromContext(ctx, info.FullMethod, log)
 
 		ctx = contextutil.WithRemoteIPAddr(ctx, ip)
 
@@ -363,11 +366,12 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	intercept := grpc.ChainUnaryInterceptor(
 		remoteAddrInterceptor(g.log),
 		headersInterceptor(g.blockService.GetLastBlock, g.log),
-		subscriptionRateLimiter.WithGrpcInterceptor(),
 		rateLimit.GRPCInterceptor,
 	)
 
-	g.srv = grpc.NewServer(intercept)
+	streamIntercept := grpc.StreamInterceptor(subscriptionRateLimiter.WithGrpcInterceptor(ipFromContext))
+
+	g.srv = grpc.NewServer(intercept, streamIntercept)
 
 	coreProxySvc := &coreProxyService{
 		conf:              g.Config,
