@@ -190,7 +190,6 @@ message Order {
   Side side = 4;
   // Price for the order, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 5;
   // Size for the order, for example, in a futures market the size equals the number of contracts.
   uint64 size = 6;
@@ -401,7 +400,6 @@ message Trade {
   string market_id = 2;
   // Price for the trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 3;
   // Size filled for the trade.
   uint64 size = 4;
@@ -431,14 +429,11 @@ message Trade {
 
 // Represents any fees paid by a party, resulting from a trade
 message Fee {
-  // Fee amount paid to the non-aggressive party of the trade. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Fee amount paid to the non-aggressive party of the trade. This field is an unsigned integer scaled to the asset's decimal places.
   string maker_fee = 1;
-  // Fee amount paid for maintaining the Vega infrastructure. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Fee amount paid for maintaining the Vega infrastructure. This field is an unsigned integer scaled using the asset's decimal places.
   string infrastructure_fee = 2;
-  // Fee amount paid to market makers. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Fee amount paid to market makers. This field is an unsigned integer scaled to the asset's decimal places.
   string liquidity_fee = 3;
 }
 
@@ -454,17 +449,13 @@ message Candle {
   int64 timestamp = 1;
   // ISO-8601 datetime with nanosecond precision for when the candle was last updated.
   string datetime = 2;
-  // Highest price for trading during the candle interval. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Highest price for trading during the candle interval. This field is an unsigned integer scaled to the market's decimal places.
   string high = 3;
-  // Lowest price for trading during the candle interval. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Lowest price for trading during the candle interval. This field is an unsigned integer scaled to the market's decimal places.
   string low = 4;
-  // Open trade price.This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Open trade price.This field is an unsigned integer scaled to the market's decimal places.
   string open = 5;
-  // Closing trade price. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Closing trade price. This field is an unsigned integer scaled to the market's decimal places.
   string close = 6;
   // Total trading volume during the candle interval.
   uint64 volume = 7;
@@ -519,14 +510,13 @@ message Position {
   // Open volume for the position, value is signed +ve for long and -ve for short.
   int64 open_volume = 3;
   // Realised profit and loss for the position, value is signed +ve for long and -ve for short.
-  // This field is a signed integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is a signed integer scaled to the market's decimal places.
   string realised_pnl = 4;
   // Unrealised profit and loss for the position, value is signed +ve for long and -ve for short.
-  // This field is a signed integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is a signed integer scaled to the market's decimal places.
   string unrealised_pnl = 5;
   // Average entry price for the position, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is passed as a string and needs to be scaled using the market's decimal places.
   string average_entry_price = 6;
   // Timestamp for the latest time the position was updated.
   int64 updated_at = 7;
@@ -541,7 +531,6 @@ message PositionTrade {
   int64 volume = 1;
   // Price for the position trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is passed as a string and needs to be scaled using the market's decimal places.
   string price = 2;
 }
 
@@ -581,8 +570,7 @@ message Deposit {
   string party_id = 3;
   // Vega asset targeted by this deposit.
   string asset = 4;
-  // Amount to be deposited. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Amount to be deposited. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 5;
   // Hash of the transaction from the foreign chain.
   string tx_hash = 6;
@@ -613,8 +601,7 @@ message Withdrawal {
   string id = 1;
   // Unique party ID of the user initiating the withdrawal.
   string party_id = 2;
-  // Amount to be withdrawn. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Amount to be withdrawn. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
   // Asset to withdraw funds from.
   string asset = 4;
@@ -724,7 +711,6 @@ message Account {
   // Balance of the asset, the balance is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places
   // and importantly balances cannot be negative.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
   string balance = 3;
   // Asset ID for the account.
   string asset = 4;
@@ -736,8 +722,7 @@ message Account {
 
 // Asset value information used within a transfer
 message FinancialAmount {
-  // Unsigned integer amount of asset. This field is passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Unsigned integer amount of asset scaled to the asset's decimal places.
   string amount = 1;
   // Asset ID.
   string asset = 2;
@@ -804,8 +789,7 @@ message Transfer {
   FinancialAmount amount = 2;
   // Type of transfer, gives the reason for the transfer.
   TransferType type = 3;
-  // Minimum amount. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Minimum amount. This field is an unsigned integer scaled to the asset's decimal places.
   string min_amount = 4;
   // optional dispatch strategy.
   string market_id = 5;
@@ -838,11 +822,10 @@ message TransferRequest {
   repeated Account from_account = 1;
   // One or more accounts to transfer to.
   repeated Account to_account = 2;
-  // Amount to transfer for the asset. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Amount to transfer for the asset. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
   // Minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
+  // This field is an unsigned integer scaled to the asset's decimal places.
   string min_amount = 4;
   // Asset ID.
   string asset = 5;
@@ -867,18 +850,15 @@ message LedgerEntry {
   AccountDetails from_account = 1;
   // One or more accounts to transfer to.
   AccountDetails to_account = 2;
-  // Amount to transfer. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Amount to transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
   // Transfer type for this entry.
   TransferType type = 4;
   // Timestamps.
   int64 timestamp = 5;
-  // Sender account balance after the transfer. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Sender account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string from_account_balance = 6;
-  // Receiver account balance after the transfer. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Receiver account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string to_account_balance = 7;
 }
 
@@ -886,8 +866,7 @@ message LedgerEntry {
 message PostTransferBalance {
   // Account relating to the transfer.
   AccountDetails account = 1;
-  // Balance relating to the transfer. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Balance relating to the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string balance = 2;
 }
 
@@ -900,17 +879,13 @@ message LedgerMovement {
 
 // Represents the margin levels for a party on a market at a given time
 message MarginLevels {
-  // Maintenance margin value. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Maintenance margin value. This field is an unsigned integer scaled to the asset's decimal places.
   string maintenance_margin = 1;
-  // Margin search level value. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Margin search level value. This field is an unsigned integer scaled to the asset's decimal places.
   string search_level = 2;
-  // Initial margin value. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Initial margin value. This field is an unsigned integer scaled to the asset's decimal places.
   string initial_margin = 3;
-  // Collateral release level value. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Collateral release level value. This field is an unsigned integer scaled to the asset's decimal places.
   string collateral_release_level = 4;
   // Party ID.
   string party_id = 5;
@@ -924,39 +899,35 @@ message MarginLevels {
 
 // Represents data generated by a market when open
 message MarketData {
-  // Mark price, as an integer, for example `123456` is a correctly
+  // Mark price, as an unsigned integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string mark_price = 1;
-  // Highest price level on an order book for buy orders, as an integer, for example `123456` is a correctly
+  // Highest price level on an order book for buy orders, as an unsigned integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string best_bid_price = 2;
   // Aggregated volume being bid at the best bid price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market is configured to 5 decimal places.
   uint64 best_bid_volume = 3;
-  // Lowest price level on an order book for offer orders. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Lowest price level on an order book for offer orders. This field is an unsigned integer scaled to the market's decimal places.
   string best_offer_price = 4;
   // Aggregated volume being offered at the best offer price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market is configured to 5 decimal places.
   uint64 best_offer_volume = 5;
   // Highest price on the order book for buy orders not including pegged orders.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is an unsigned integer scaled to the market's decimal places.
   string best_static_bid_price = 6;
   // Total volume at the best static bid price excluding pegged orders.
   uint64 best_static_bid_volume = 7;
   // Lowest price on the order book for sell orders not including pegged orders.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is an unsigned integer scaled to the market's decimal places.
   string best_static_offer_price = 8;
   // Total volume at the best static offer price, excluding pegged orders.
   uint64 best_static_offer_volume = 9;
   // Arithmetic average of the best bid price and best offer price, as an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string mid_price = 10;
   // Arithmetic average of the best static bid price and best static offer price.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is an unsigned integer scaled to the market's decimal places.
   string static_mid_price = 11;
   // Market ID for the data
   string market = 12;
@@ -968,8 +939,7 @@ message MarketData {
   int64 auction_end = 15;
   // Time until next auction, or start time of the current auction if market is in auction period.
   int64 auction_start = 16;
-  // Indicative price (zero if not in auction). This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Indicative price (zero if not in auction). This field is an unsigned scaled to the market's decimal places.
   string indicative_price = 17;
   // Indicative volume (zero if not in auction).
   uint64 indicative_volume = 18;
@@ -979,11 +949,9 @@ message MarketData {
   AuctionTrigger trigger = 20;
   // When a market auction is extended, this field indicates what caused the extension.
   AuctionTrigger extension_trigger = 21;
-  // Targeted stake for the given market. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the settlement asset's decimal places.
+  // Targeted stake for the given market. This field is an unsigned integer scaled to the settlement asset's decimal places.
   string target_stake = 22;
-  // Available stake for the given market. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the settlement asset's decimal places.
+  // Available stake for the given market. This field is an unsigned integer scaled to the settlement asset's decimal places.
   string supplied_stake = 23;
   // One or more price monitoring bounds for the current timestamp.
   repeated PriceMonitoringBounds price_monitoring_bounds = 24;
@@ -995,8 +963,7 @@ message MarketData {
   Market.State market_state = 27;
   // Next MTM timestamp.
   int64 next_mark_to_market = 28;
-  // Last traded price of the market. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Last traded price of the market. This field is an unsigned integer scaled to the market's decimal places.
   string last_traded_price = 29;
 }
 
@@ -1015,15 +982,14 @@ message LiquidityProviderFeeShare {
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
 message PriceMonitoringBounds {
   // Minimum price that isn't currently breaching the specified price monitoring trigger.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is an unsigned integer scaled to the market's decimal places.
   string min_valid_price = 1;
   // Maximum price that isn't currently breaching the specified price monitoring trigger.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+  // This field is an unsigned integer scaled to the market's decimal places.
   string max_valid_price = 2;
   // Price monitoring trigger associated with the bounds.
   PriceMonitoringTrigger trigger = 3;
-  // Reference price used to calculate the valid price range. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Reference price used to calculate the valid price range. This field is an unsigned integer scaled to the market's decimal places.
   string reference_price = 4;
 }
 
@@ -1071,8 +1037,7 @@ message LiquidityOrder {
   PeggedReference reference = 1;
   // Relative proportion of the commitment to be allocated at a price level.
   uint32 proportion = 2;
-  // Offset/amount of units away for the order. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the market's decimal places.
+  // Offset/amount of units away for the order. This field is an unsigned integer scaled using the market's decimal places.
   string offset = 3;
 }
 
@@ -1117,7 +1082,7 @@ message LiquidityProvision {
   // Market ID for the order, required field.
   string market_id = 5;
   // Specified as a unitless number that represents the amount of settlement asset of the market.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
+  // This field is an unsigned integer scaled to the asset's decimal places.
   string commitment_amount = 6;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
   string fee = 7;
@@ -1275,20 +1240,15 @@ message Node {
   string info_url = 5;
   // Country code for the location of the node.
   string location = 6;
-  // Amount the node operator has put up themselves. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places for the token.
+  // Amount the node operator has put up themselves. This field is an unsigned integer scaled to the asset's decimal places.
   string staked_by_operator = 7;
-  // Amount of stake that has been delegated by token holders. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places for the token.
+  // Amount of stake that has been delegated by token holders. This field is an unsigned integer scaled to the asset's decimal places.
   string staked_by_delegates = 8;
-  // Total amount staked on node. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places for the token.
+  // Total amount staked on node. This field is an unsigned integer scaled to the asset's decimal places.
   string staked_total = 9;
-  // Max amount of (wanted) stake. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places.
+  // Max amount of (wanted) stake. This field is an unsigned integer scaled to the asset's decimal places.
   string max_intended_stake = 10;
-  // Amount of stake on the next epoch. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places of the token.
+  // Amount of stake on the next epoch. This field is an unsigned integer scaled to the asset's decimal places.
   string pending_stake = 11;
   // Information about epoch.
   EpochData epoch_data = 12;
@@ -1321,8 +1281,7 @@ message NodeSet {
 }
 
 message NodeData {
-  // Total staked amount across all nodes. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places of the token.
+  // Total staked amount across all nodes. This field is an unsigned integer scaled to the asset's decimal places.
   string staked_total = 1;
   // Total number of nodes across all node sets.
   uint32 total_nodes = 2;
@@ -1343,8 +1302,7 @@ message Delegation {
   string party = 1;
   // Node ID.
   string node_id = 2;
-  // Amount delegated. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places of the token.
+  // Amount delegated. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
   // Epoch of delegation.
   string epoch_seq = 4;
@@ -1355,8 +1313,7 @@ message Reward {
   string asset_id = 1;
   string party_id = 2;
   uint64 epoch = 3;
-  // Amount paid as a reward. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places of the reward asset.
+  // Amount paid as a reward. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 4;
   string percentage_of_total = 5;
   int64 received_at = 6;
@@ -1368,8 +1325,7 @@ message Reward {
 message RewardSummary {
   string asset_id = 1;
   string party_id = 2;
-  // Total amount of rewards paid in the asset. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset's decimal places.
+  // Total amount of rewards paid in the asset. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
 }
 
@@ -1379,8 +1335,7 @@ message EpochRewardSummary {
   string asset_id = 2;
   string market_id = 3;
   string reward_type = 4;
-  // Amount distributed. This field is an unsigned integer passed as a string
-  // and needs to be scaled using the asset decimal places.
+  // Amount distributed. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 5;
 }
 
