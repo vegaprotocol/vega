@@ -132,7 +132,7 @@ func (e *Engine) CalculateLiquidityScore(
 		prob := num.DecimalZero()
 		// if order is outside of price monitoring bounds then probability is set to 0.
 		if o.Price.GTE(minPMPrice.Representation()) && o.Price.LTE(maxPMPrice.Representation()) {
-			prob = getProbabilityOfTrading(bestBid, bestAsk, minPMPrice.Original(), maxPMPrice.Original(), e.pot, o.Price.ToDecimal(), o.Side == types.SideBuy, e.minProbabilityOfTrading)
+			prob = getProbabilityOfTrading(bestBid, bestAsk, minPMPrice.Original(), maxPMPrice.Original(), e.pot, o.Price.ToDecimal(), o.Side == types.SideBuy, e.minProbabilityOfTrading, OffsetOneDecimal)
 		}
 		s := num.DecimalFromUint(num.NewUint(o.Remaining))
 		l := prob.Mul(s)
