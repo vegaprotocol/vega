@@ -15,7 +15,9 @@ def commitHash = 'UNKNOWN'
 
 
 pipeline {
-    agent any
+    agent {
+        label 'digitalocean-test'
+    }
     options {
         skipDefaultCheckout true
         timestamps()
