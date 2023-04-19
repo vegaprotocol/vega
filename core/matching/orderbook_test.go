@@ -3326,10 +3326,6 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 
 	// Get indicative trades
 	trades, err := book.ob.GetIndicativeTrades()
-	// because the trades are generated when calling LeaveAuction, the aggressor will be unspecified.
-	for _, tr := range trades {
-		tr.Aggressor = types.SideUnspecified
-	}
 	assert.NoError(t, err)
 	assert.Equal(t, len(trades), 1)
 
@@ -3341,7 +3337,10 @@ func TestOrderBook_AuctionUncrossWashTrades(t *testing.T) {
 	assert.Equal(t, len(cancels), 0)
 
 	// Assure indicative trade has same (relevant) data as the actual trade
-	assert.Equal(t, uncrossedOrders[0].Trades[0].Aggressor, trades[0].Aggressor)
+	// because the trades are generated when calling LeaveAuction, the aggressor will be unspecified.
+	assert.Equal(t, uncrossedOrders[0].Trades[0].Aggressor, types.SideUnspecified)
+	// and thus the aggressor side will not match the value we get from the indicative trades
+	assert.NotEqual(t, uncrossedOrders[0].Trades[0].Aggressor, trades[0].Aggressor)
 	assert.Equal(t, uncrossedOrders[0].Trades[0].Buyer, trades[0].Buyer)
 	assert.Equal(t, uncrossedOrders[0].Trades[0].Seller, trades[0].Seller)
 	assert.Equal(t, uncrossedOrders[0].Trades[0].Size, trades[0].Size)
