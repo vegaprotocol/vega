@@ -10,8 +10,8 @@
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Unify payload between `admin.update_network` and `admin.describe_network` endpoint in the wallet API.
 - [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated `TradesConnection GraphQL sub-queries` in favour of an `un-nested` Trades query with a filter parameter. This requires a change in the underlying `gRPC` request message. Trades subscription takes a `TradesSubscriptionFilter` that allows multiple `MarketID` and `PartyID` filters to be specified.
 - [8143](https://github.com/vegaprotocol/vega/issues/8143) - Merge GraphQL and REST servers
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Reduce passphrase requests for admin endpoints by introducing `admin.unlock_wallet` and removing the `passphrase` field from wallet-related endpoints.
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
 
@@ -43,12 +43,15 @@
 - [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
 - [8105](https://github.com/vegaprotocol/vega/issues/8105) - Make candles return in ascending order when queried from `graphql`.
 - [8144](https://github.com/vegaprotocol/vega/issues/8144) - Visor - remove data node asset option from the config. Use only one asset.
+- [8000](https://github.com/vegaprotocol/vega/issues/8000) - Add documentation for `Pagination` `protobuf` message.
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Add `GoodForBlocks` field to transaction input data.
 - [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
 - [8129](https://github.com/vegaprotocol/vega/issues/8129) - Keep liquidity fee remainder in fee account.
 - [8022](https://github.com/vegaprotocol/vega/issues/8022) - Improve `ListTransfers` API documentation.
 - [8154](https://github.com/vegaprotocol/vega/issues/8154) - Visor - added option for delaying stop of binaries.
 - [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
+- [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
+- [7988](https://github.com/vegaprotocol/vega/issues/7988) - Make information about numbers expressed as strings more clear.
 
 ### 🐛 Fixes
 
@@ -90,6 +93,7 @@
 - [8128](https://github.com/vegaprotocol/vega/issues/8128) - Assure price monitoring engine extends the auction one bound at a time
 - [8149](https://github.com/vegaprotocol/vega/issues/8149) - Trigger populating `orders_live` table out of date and does not filter correctly for live orders.
 - [8165](https://github.com/vegaprotocol/vega/issues/8165) - Send order events when an `lp` order is cancelled or rejected
+- [8173](https://github.com/vegaprotocol/vega/issues/8173) - Trades when leaving auction should should have the aggressor field set to `SideUnspecified`.
 
 ## 0.70.0
 
