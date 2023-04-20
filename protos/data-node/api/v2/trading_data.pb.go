@@ -2572,19 +2572,18 @@ func (x *PositionUpdates) GetPositions() []*vega.Position {
 }
 
 // Ledger entry filter sets filters on returned set of ledger entries.
-// Ledger entry data can be filtered by asset ID, market ID, party ID for sending and receiving account, as well as by transfer type.
 type LedgerEntryFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// close_on_account_filters determines whether an entry must have accounts matching both the account_from_filter
+	// Determines whether an entry must have accounts matching both the account_from_filter
 	// and the account_to_filter. If set to 'true', entries must have matches in both filters.
 	// If set to `false`, entries matching only the account_from_filter or the account_to_filter will also be included.
 	CloseOnAccountFilters bool `protobuf:"varint,1,opt,name=close_on_account_filters,json=closeOnAccountFilters,proto3" json:"close_on_account_filters,omitempty"`
-	// `AccountFilter` object used to set values for filtering sender accounts.
+	// Used to set values for filtering sender accounts.
 	FromAccountFilter *AccountFilter `protobuf:"bytes,2,opt,name=from_account_filter,json=fromAccountFilter,proto3" json:"from_account_filter,omitempty"`
-	// `AccountFilter` object used to set values for filtering receiver accounts.
+	// Used to set values for filtering receiver accounts.
 	ToAccountFilter *AccountFilter `protobuf:"bytes,3,opt,name=to_account_filter,json=toAccountFilter,proto3" json:"to_account_filter,omitempty"`
 	// List of transfer types that is used for filtering sender and receiver accounts.
 	TransferTypes []vega.TransferType `protobuf:"varint,5,rep,packed,name=transfer_types,json=transferTypes,proto3,enum=vega.TransferType" json:"transfer_types,omitempty"`
