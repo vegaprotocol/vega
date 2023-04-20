@@ -40,6 +40,7 @@
 - [7987](https://github.com/vegaprotocol/vega/issues/7987) - Make terms consistent in `API` documentation.
 - [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
 - [7999](https://github.com/vegaprotocol/vega/issues/7999) - Review `DateRange API` documentation.
+- [7955](https://github.com/vegaprotocol/vega/issues/7955) - Ensure the wallet API documentation matches the Go definitions
 - [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
 - [8105](https://github.com/vegaprotocol/vega/issues/8105) - Make candles return in ascending order when queried from `graphql`.
 - [8144](https://github.com/vegaprotocol/vega/issues/8144) - Visor - remove data node asset option from the config. Use only one asset.
@@ -83,6 +84,7 @@
 - [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
 - [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate signatures exist in announce node command
 - [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate value in state variable bundles
+- [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate Ethereum addresses and add a cap on node vote reference length
 - [8046](https://github.com/vegaprotocol/vega/issues/8046) - Update GraphQL schema with new order rejection reason
 - [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
 - [8074](https://github.com/vegaprotocol/vega/issues/8074) - Add missing order rejection reason to `graphql` schema

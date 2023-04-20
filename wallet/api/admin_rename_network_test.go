@@ -15,6 +15,7 @@ import (
 )
 
 func TestAdminRenameNetwork(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRenameNetworkSchemaCorrect)
 	t.Run("Renaming a network with invalid params fails", testRenamingNetworkWithInvalidParamsFails)
 	t.Run("Renaming a network with valid params succeeds", testRenamingNetworkWithValidParamsSucceeds)
 	t.Run("Renaming a network that does not exists fails", testRenamingNetworkThatDoesNotExistsFails)
@@ -22,6 +23,10 @@ func TestAdminRenameNetwork(t *testing.T) {
 	t.Run("Renaming a network that with name that is already taken fails", testRenamingNetworkWithNameAlreadyTakenFails)
 	t.Run("Getting internal error during non-existing network verification does not rename the network", testGettingInternalErrorDuringNonExistingNetworkVerificationDoesNotRenameNetwork)
 	t.Run("Getting internal error during renaming does not rename the network", testGettingInternalErrorDuringRenamingDoesNotRenameNetwork)
+}
+
+func testAdminRenameNetworkSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.rename_network", api.AdminRenameNetworkParams{}, nil)
 }
 
 func testRenamingNetworkWithInvalidParamsFails(t *testing.T) {

@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminDescribeWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminDescribeWalletSchemaCorrect)
 	t.Run("Describing a wallet with invalid params fails", testDescribingWalletWithInvalidParamsFails)
 	t.Run("Describing a wallet with valid params succeeds", testDescribingWalletWithValidParamsSucceeds)
 	t.Run("Describing a wallet that does not exists fails", testDescribingWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification fails", testAdminDescribeWalletGettingInternalErrorDuringVerificationFails)
 	t.Run("Getting internal error during retrieval fails", testAdminDescribeWalletGettingInternalErrorDuringRetrievalFails)
+}
+
+func testAdminDescribeWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.describe_wallet", api.AdminDescribeWalletParams{}, api.AdminDescribeWalletResult{})
 }
 
 func testDescribingWalletWithInvalidParamsFails(t *testing.T) {
@@ -91,7 +96,6 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 		Name:                 expectedWallet.Name(),
 		ID:                   expectedWallet.ID(),
 		Type:                 expectedWallet.Type(),
-		Version:              expectedWallet.KeyDerivationVersion(),
 		KeyDerivationVersion: expectedWallet.KeyDerivationVersion(),
 	}, result)
 }

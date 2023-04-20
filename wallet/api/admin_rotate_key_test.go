@@ -15,6 +15,7 @@ import (
 )
 
 func TestAdminRotateKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRotateKeySchemaCorrect)
 	t.Run("Rotating a key with invalid params fails", testRotatingKeyWithInvalidParamsFails)
 	t.Run("Rotating a key with valid params succeeds", testRotatingKeyWithValidParamsSucceeds)
 	t.Run("Rotating a key from wallet that does not exists fails", testRotatingKeyFromWalletThatDoesNotExistsFails)
@@ -24,6 +25,10 @@ func TestAdminRotateKey(t *testing.T) {
 	t.Run("Rotating a key from a public key that does not exists fails", testRotatingKeyFromPublicKeyThatDoesNotExistsFails)
 	t.Run("Rotating a key to a public key that does not exists fails", testRotatingKeyToPublicKeyThatDoesNotExistsFails)
 	t.Run("Rotating a key to a tainted public key that does not exists fails", testRotatingKeyToTaintedPublicKeyDoesNotExistsFails)
+}
+
+func testAdminRotateKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.rotate_key", api.AdminRotateKeyParams{}, api.AdminRotateKeyResult{})
 }
 
 func testRotatingKeyWithInvalidParamsFails(t *testing.T) {

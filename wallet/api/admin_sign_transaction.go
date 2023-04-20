@@ -45,7 +45,7 @@ type ParsedAdminSignTransactionParams struct {
 
 type AdminSignTransactionResult struct {
 	Tx                 *commandspb.Transaction `json:"transaction"`
-	EncodedTransaction string
+	EncodedTransaction string                  `json:"encodedTransaction"`
 }
 
 type AdminSignTransaction struct {

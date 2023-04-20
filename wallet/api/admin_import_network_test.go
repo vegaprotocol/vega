@@ -17,6 +17,7 @@ import (
 )
 
 func TestAdminImportNetwork(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminImportNetworkSchemaCorrect)
 	t.Run("Importing a network with invalid params fails", testImportingNetworkWithInvalidParamsFails)
 	t.Run("Importing a network that already exists fails", testImportingNetworkThatAlreadyExistsFails)
 	t.Run("Getting internal error during verification does not import the network", testGettingInternalErrorDuringVerificationDoesNotImportNetwork)
@@ -26,6 +27,10 @@ func TestAdminImportNetwork(t *testing.T) {
 	t.Run("Importing a network from a valid file with name in config works", testImportingWithNameInConfig)
 	t.Run("Importing a network with a github url suggests better alternative", testImportNetworkWithURL)
 	t.Run("Importing a network with a content that is not TOML fails with a user friendly message", testImportNetworkWithNotTOMLContentFailsWithFriendlyMessage)
+}
+
+func testAdminImportNetworkSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.import_network", api.AdminImportNetworkParams{}, api.AdminImportNetworkResult{})
 }
 
 func testImportingNetworkWithInvalidParamsFails(t *testing.T) {
@@ -154,12 +159,10 @@ func testImportingValidFileSaves(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup
-	resultFilePath := "network-path/local.toml"
 	handler := newImportNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists(name).Times(1).Return(false, nil)
 	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(1)
-	handler.networkStore.EXPECT().GetNetworkPath(name).Times(1).Return(resultFilePath)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
@@ -170,7 +173,6 @@ func testImportingValidFileSaves(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, result.Name, name)
-	assert.Equal(t, result.FilePath, resultFilePath)
 }
 
 func testImportingWithNoNameFails(t *testing.T) {
@@ -204,12 +206,10 @@ func testImportingWithNameInConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup
-	resultFilePath := "network-path/local.toml"
 	handler := newImportNetworkHandler(t)
 	// -- expected calls
 	handler.networkStore.EXPECT().NetworkExists("local").Times(1).Return(false, nil)
 	handler.networkStore.EXPECT().SaveNetwork(gomock.Any()).Times(1)
-	handler.networkStore.EXPECT().GetNetworkPath("local").Times(1).Return(resultFilePath)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminImportNetworkParams{
@@ -219,7 +219,6 @@ func testImportingWithNameInConfig(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, result.Name, "local")
-	assert.Equal(t, result.FilePath, resultFilePath)
 }
 
 func testImportNetworkWithURL(t *testing.T) {

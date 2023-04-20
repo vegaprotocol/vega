@@ -15,10 +15,15 @@ import (
 )
 
 func TestAdminRemoveNetwork(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRemoveNetworkSchemaCorrect)
 	t.Run("Removing a network with invalid params fails", testRemovingNetworkWithInvalidParamsFails)
 	t.Run("Removing a network with valid params succeeds", testRemovingNetworkWithValidParamsSucceeds)
 	t.Run("Removing a wallet that does not exists fails", testRemovingNetworkThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification does not remove the wallet", testGettingInternalErrorDuringVerificationDoesNotRemoveNetwork)
+}
+
+func testAdminRemoveNetworkSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.remove_network", api.AdminRemoveNetworkParams{}, nil)
 }
 
 func testRemovingNetworkWithInvalidParamsFails(t *testing.T) {

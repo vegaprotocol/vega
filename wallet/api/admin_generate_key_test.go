@@ -16,12 +16,17 @@ import (
 )
 
 func TestAdminGenerateKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminGenerateKeySchemaCorrect)
 	t.Run("Generating a key with invalid params fails", testGeneratingKeyWithInvalidParamsFails)
 	t.Run("Generating a key with valid params succeeds", testGeneratingKeyWithValidParamsSucceeds)
 	t.Run("Generating a key on unknown wallet fails", testGeneratingKeyOnUnknownWalletFails)
 	t.Run("Getting internal error during wallet verification doesn't generate the key", testGettingInternalErrorDuringWalletVerificationDoesNotGenerateKey)
 	t.Run("Getting internal error during wallet retrieval doesn't generate the key", testGettingInternalErrorDuringWalletRetrievalDoesNotGenerateKey)
 	t.Run("Getting internal error during wallet saving doesn't generate the key", testGettingInternalErrorDuringWalletSavingDoesNotGenerateKey)
+}
+
+func testAdminGenerateKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.generate_key", api.AdminGenerateKeyParams{}, api.AdminGenerateKeyResult{})
 }
 
 func testGeneratingKeyWithInvalidParamsFails(t *testing.T) {

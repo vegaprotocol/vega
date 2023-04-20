@@ -14,13 +14,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetChainID(t *testing.T) {
-	t.Run("Getting chain ID succeeds", testGettingChainIDSucceeds)
-	t.Run("No healthy node available does not return the chain ID", testNoHealthyNodeAvailableDoesNotReturnChainID)
-	t.Run("Failing to get the last block does not return the chain ID", testFailingToGetLastBlockDoesNotReturnChainID)
+func TestClientGetChainID(t *testing.T) {
+	t.Run("Documentation matches the code", testClientGetChainIDSchemaCorrect)
+	t.Run("Getting chain ID succeeds", testClientGettingChainIDSucceeds)
+	t.Run("No healthy node available does not return the chain ID", testClientGetChainIDNoHealthyNodeAvailableDoesNotReturnChainID)
+	t.Run("Failing to get the last block does not return the chain ID", testClientGetChainIDFailingToGetLastBlockDoesNotReturnChainID)
 }
 
-func testGettingChainIDSucceeds(t *testing.T) {
+func testClientGetChainIDSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "client.get_chain_id", nil, api.ClientGetChainIDResult{})
+}
+
+func testClientGettingChainIDSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	expectedChainID := vgrand.RandomStr(5)
@@ -41,7 +46,7 @@ func testGettingChainIDSucceeds(t *testing.T) {
 	assert.Equal(t, expectedChainID, result.ChainID)
 }
 
-func testNoHealthyNodeAvailableDoesNotReturnChainID(t *testing.T) {
+func testClientGetChainIDNoHealthyNodeAvailableDoesNotReturnChainID(t *testing.T) {
 	// given
 	ctx := context.Background()
 
@@ -60,7 +65,7 @@ func testNoHealthyNodeAvailableDoesNotReturnChainID(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
+func testClientGetChainIDFailingToGetLastBlockDoesNotReturnChainID(t *testing.T) {
 	// given
 	ctx := context.Background()
 

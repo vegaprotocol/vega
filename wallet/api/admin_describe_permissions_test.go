@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminDescribePermissions(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminDescribePermissionsSchemaCorrect)
 	t.Run("Describing permissions with invalid params fails", testAdminDescribingPermissionsWithInvalidParamsFails)
 	t.Run("Describing permissions with valid params succeeds", testAdminDescribingPermissionsWithValidParamsSucceeds)
 	t.Run("Describing permissions from wallet that does not exists fails", testAdminDescribingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminDescribePermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminDescribePermissionsGettingInternalErrorDuringWalletRetrievalFails)
+}
+
+func testAdminDescribePermissionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.describe_permissions", api.AdminDescribePermissionsParams{}, api.AdminDescribePermissionsResult{})
 }
 
 func testAdminDescribingPermissionsWithInvalidParamsFails(t *testing.T) {

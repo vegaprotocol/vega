@@ -13,8 +13,13 @@ import (
 )
 
 func TestAdminCloseConnectionsToWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminCloseConnectionsToWalletSchemaCorrect)
 	t.Run("Closing a connection with invalid params fails", testAdminCloseConnectionsToWalletWithInvalidParamsFails)
 	t.Run("Closing a connection with valid params succeeds", testAdminCloseConnectionsToWalletWithValidParamsSucceeds)
+}
+
+func testAdminCloseConnectionsToWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.close_connections_to_wallet", api.AdminCloseConnectionsToWalletParams{}, nil)
 }
 
 func testAdminCloseConnectionsToWalletWithInvalidParamsFails(t *testing.T) {
