@@ -34,11 +34,25 @@ func TestWithdrawSubmission(t *testing.T) {
 				Ext: &types.WithdrawExt{
 					Ext: &types.WithdrawExt_Erc20{
 						Erc20: &types.Erc20WithdrawExt{
+							ReceiverAddress: "0x9135f5afd6F055e731bca2348429482eE614CFfA",
+						},
+					},
+				},
+			},
+		},
+		{
+			withdraw: commandspb.WithdrawSubmission{
+				Amount: "100",
+				Asset:  "08dce6ebf50e34fedee32860b6f459824e4b834762ea66a96504fdc57a9c4741",
+				Ext: &types.WithdrawExt{
+					Ext: &types.WithdrawExt_Erc20{
+						Erc20: &types.Erc20WithdrawExt{
 							ReceiverAddress: "0xsomething",
 						},
 					},
 				},
 			},
+			errString: "withdraw_ext.erc20.received_address (is not a valid ethereum address)",
 		},
 		{
 			withdraw: commandspb.WithdrawSubmission{

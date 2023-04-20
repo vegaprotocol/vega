@@ -82,6 +82,7 @@
 - [8053](https://github.com/vegaprotocol/vega/issues/8053) - Fix notary vote count
 - [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate signatures exist in announce node command
 - [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate value in state variable bundles
+- [8004](https://github.com/vegaprotocol/vega/issues/8004) - Validate Ethereum addresses and add a cap on node vote reference length
 - [8046](https://github.com/vegaprotocol/vega/issues/8046) - Update GraphQL schema with new order rejection reason
 - [6659](https://github.com/vegaprotocol/vega/issues/6659) - Wallet application configuration is correctly reported on default location
 - [8074](https://github.com/vegaprotocol/vega/issues/8074) - Add missing order rejection reason to `graphql` schema

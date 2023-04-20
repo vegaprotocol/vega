@@ -76,6 +76,22 @@ func TestSubmittingNonEmptyEthereumKeyRotateSubmissionCommandSuccess(t *testing.
 	assert.True(t, err.Empty())
 }
 
+func TestEthereumKeyRotateSubmissionInvalidEthereumAddresses(t *testing.T) {
+	err := checkEthereumKeyRotateSubmission(&commandspb.EthereumKeyRotateSubmission{
+		NewAddress:       "0xE7d65d1A6CD6eCc",
+		CurrentAddress:   "0xED816fd7a6e",
+		SubmitterAddress: "0xED816fd7a6e",
+		EthereumSignature: &commandspb.Signature{
+			Value: "deadbeef",
+			Algo:  "vega/ed25519",
+		},
+	})
+
+	assert.Contains(t, err.Get("ethereum_key_rotate_submission.new_address"), commands.ErrIsNotValidEthereumAddress)
+	assert.Contains(t, err.Get("ethereum_key_rotate_submission.current_address"), commands.ErrIsNotValidEthereumAddress)
+	assert.Contains(t, err.Get("ethereum_key_rotate_submission.submitter_address"), commands.ErrIsNotValidEthereumAddress)
+}
+
 func TestSubmittingNonEmptyEthereumKeyRotateSubmissionWithoutSigFails(t *testing.T) {
 	err := checkEthereumKeyRotateSubmission(&commandspb.EthereumKeyRotateSubmission{
 		TargetBlock:    100,

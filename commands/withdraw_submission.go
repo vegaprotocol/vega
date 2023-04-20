@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/big"
 
+	"code.vegaprotocol.io/vega/libs/crypto"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -51,6 +52,8 @@ func checkWithdrawExt(wext *types.WithdrawExt) Errors {
 				"withdraw_ext.erc20.received_address",
 				ErrIsRequired,
 			)
+		} else if !crypto.EthereumIsValidAddress(v.Erc20.ReceiverAddress) {
+			errs.AddForProperty("withdraw_ext.erc20.received_address", ErrIsNotValidEthereumAddress)
 		}
 	default:
 		errs.AddForProperty("withdraw_ext.ext", errors.New("unsupported withdraw extended details"))
