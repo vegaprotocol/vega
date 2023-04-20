@@ -48,5 +48,4 @@ func (i *tendermintCommand) Execute() error {
 	}
 
 	return nil
-
 }

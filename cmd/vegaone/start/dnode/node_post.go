@@ -22,25 +22,25 @@ import (
 
 type errStack []error
 
-func (l *DN) postRun(_ []string) error {
+func (d *DN) postRun(_ []string) error {
 	var werr errStack
 
-	postLog := l.Log.Named("postRun")
+	postLog := d.Log.Named("postRun")
 
-	if l.embeddedPostgres != nil {
-		if err := l.embeddedPostgres.Stop(); err != nil {
+	if d.embeddedPostgres != nil {
+		if err := d.embeddedPostgres.Stop(); err != nil {
 			werr = append(werr, errors.Wrap(err, "error closing embedded postgres in command"))
 		}
 	}
-	if l.pproffhandlr != nil {
-		if err := l.pproffhandlr.Stop(); err != nil {
+	if d.pproffhandlr != nil {
+		if err := d.pproffhandlr.Stop(); err != nil {
 			werr = append(werr, errors.Wrap(err, "error stopping pprof"))
 		}
 	}
 
 	postLog.Info("Vega datanode shutdown complete",
-		logging.String("version", l.Version),
-		logging.String("version-hash", l.VersionHash))
+		logging.String("version", d.Version),
+		logging.String("version-hash", d.VersionHash))
 
 	postLog.Sync()
 
@@ -51,8 +51,8 @@ func (l *DN) postRun(_ []string) error {
 	return werr
 }
 
-func (l *DN) persistentPost(_ []string) error {
-	l.cancel()
+func (d *DN) persistentPost(_ []string) error { //nolint:unparam
+	d.cancel()
 	return nil
 }
 

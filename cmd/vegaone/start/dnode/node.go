@@ -104,7 +104,6 @@ func New(
 }
 
 func (d *DN) Start() error {
-
 	err := d.runNode(nil)
 	if err != nil {
 		d.cancel()
@@ -135,17 +134,17 @@ func (d *DN) Stop() {
 }
 
 // runNode is the entry of node command.
-func (l *DN) runNode([]string) error {
-	nodeLog := l.Log.Named("start.runNode")
+func (d *DN) runNode([]string) error { //nolint:unparam
+	nodeLog := d.Log.Named("start.runNode")
 
 	// gRPC server
-	grpcServer := l.createGRPCServer(l.conf.API)
+	grpcServer := d.createGRPCServer(d.conf.API)
 
 	// Admin server
-	adminServer := admin.NewServer(l.Log, l.conf.Admin, l.vegaPaths, admin.NewNetworkHistoryAdminService(l.networkHistoryService))
+	adminServer := admin.NewServer(d.Log, d.conf.Admin, d.vegaPaths, admin.NewNetworkHistoryAdminService(d.networkHistoryService))
 
 	// watch configs
-	l.configWatcher.OnConfigUpdate(
+	d.configWatcher.OnConfigUpdate(
 		func(cfg config.Config) {
 			grpcServer.ReloadConf(cfg.API)
 			adminServer.ReloadConf(cfg.Admin)
@@ -153,85 +152,85 @@ func (l *DN) runNode([]string) error {
 	)
 
 	// start the grpc server
-	l.eg.Go(func() error { return grpcServer.Start(l.ctx, nil) })
+	d.eg.Go(func() error { return grpcServer.Start(d.ctx, nil) })
 
 	// start the admin server
-	l.eg.Go(func() error {
-		if err := adminServer.Start(l.ctx); err != nil && err != http.ErrServerClosed {
+	d.eg.Go(func() error {
+		if err := adminServer.Start(d.ctx); err != nil && err != http.ErrServerClosed {
 			return err
 		}
 		return nil
 	})
 
 	// start gateway
-	if l.conf.GatewayEnabled {
-		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths)
-		l.eg.Go(func() error { return gty.Start(l.ctx) })
+	if d.conf.GatewayEnabled {
+		gty := server.New(d.conf.Gateway, d.Log, d.vegaPaths)
+		d.eg.Go(func() error { return gty.Start(d.ctx) })
 	}
 
-	l.eg.Go(func() error {
-		return l.broker.Receive(l.ctx)
+	d.eg.Go(func() error {
+		return d.broker.Receive(d.ctx)
 	})
 
-	l.eg.Go(func() error {
+	d.eg.Go(func() error {
 		defer func() {
-			if l.conf.NetworkHistory.Enabled {
-				l.networkHistoryService.Stop()
+			if d.conf.NetworkHistory.Enabled {
+				d.networkHistoryService.Stop()
 			}
 		}()
 
-		return l.sqlBroker.Receive(l.ctx)
+		return d.sqlBroker.Receive(d.ctx)
 	})
 
-	metrics.Start(l.conf.Metrics)
+	metrics.Start(d.conf.Metrics)
 
 	nodeLog.Info("Vega data node startup complete")
 
 	return nil
 }
 
-func (l *DN) createGRPCServer(config api.Config) *api.GRPCServer {
+func (d *DN) createGRPCServer(config api.Config) *api.GRPCServer {
 	grpcServer := api.NewGRPCServer(
-		l.Log,
+		d.Log,
 		config,
-		l.vegaCoreServiceClient,
-		l.eventService,
-		l.orderService,
-		l.networkLimitsService,
-		l.marketDataService,
-		l.tradeService,
-		l.assetService,
-		l.accountService,
-		l.rewardService,
-		l.marketsService,
-		l.delegationService,
-		l.epochService,
-		l.depositService,
-		l.withdrawalService,
-		l.governanceService,
-		l.riskFactorService,
-		l.riskService,
-		l.networkParameterService,
-		l.blockService,
-		l.checkpointService,
-		l.partyService,
-		l.candleService,
-		l.oracleSpecService,
-		l.oracleDataService,
-		l.liquidityProvisionService,
-		l.positionService,
-		l.transferService,
-		l.stakeLinkingService,
-		l.notaryService,
-		l.multiSigService,
-		l.keyRotationsService,
-		l.ethereumKeyRotationsService,
-		l.nodeService,
-		l.marketDepthService,
-		l.ledgerService,
-		l.protocolUpgradeService,
-		l.networkHistoryService,
-		l.coreSnapshotService,
+		d.vegaCoreServiceClient,
+		d.eventService,
+		d.orderService,
+		d.networkLimitsService,
+		d.marketDataService,
+		d.tradeService,
+		d.assetService,
+		d.accountService,
+		d.rewardService,
+		d.marketsService,
+		d.delegationService,
+		d.epochService,
+		d.depositService,
+		d.withdrawalService,
+		d.governanceService,
+		d.riskFactorService,
+		d.riskService,
+		d.networkParameterService,
+		d.blockService,
+		d.checkpointService,
+		d.partyService,
+		d.candleService,
+		d.oracleSpecService,
+		d.oracleDataService,
+		d.liquidityProvisionService,
+		d.positionService,
+		d.transferService,
+		d.stakeLinkingService,
+		d.notaryService,
+		d.multiSigService,
+		d.keyRotationsService,
+		d.ethereumKeyRotationsService,
+		d.nodeService,
+		d.marketDepthService,
+		d.ledgerService,
+		d.protocolUpgradeService,
+		d.networkHistoryService,
+		d.coreSnapshotService,
 	)
 	return grpcServer
 }

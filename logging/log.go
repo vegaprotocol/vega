@@ -254,7 +254,6 @@ func NewLoggerFromZapConfig(cfg zap.Config) *Logger {
 	}
 	zaplogger = zaplogger.Named("root")
 	return New(zaplogger, &cfg, "production", "root")
-
 }
 
 // NewDevLogger creates a new logger suitable for development environments.

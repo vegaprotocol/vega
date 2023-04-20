@@ -367,60 +367,60 @@ func (c *Core) startBlockchain() error {
 	return nil
 }
 
-func (n *Core) setupCommon() (err error) {
+func (c *Core) setupCommon() (err error) {
 	// this shouldn't happen, the context is initialized in here
-	if n.cancel != nil {
-		n.cancel()
+	if c.cancel != nil {
+		c.cancel()
 	}
 
 	// ensure we cancel the context on error
 	defer func() {
 		if err != nil {
-			n.cancel()
+			c.cancel()
 		}
 	}()
 
 	// initialize the application context
-	n.ctx, n.cancel = context.WithCancel(context.Background())
+	c.ctx, c.cancel = context.WithCancel(context.Background())
 
 	// get the configuration, this have been loaded by the root
-	conf := n.confWatcher.Get()
+	conf := c.confWatcher.Get()
 
 	// reload logger with the setup from configuration
 	// n.Log = logging.NewLoggerFromConfig(conf.Logging).Named(n.Log.GetName())
 
 	// enable pprof if necessary
 	if conf.Pprof.Enabled {
-		n.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
-		n.pproffhandlr, err = pprof.New(n.Log, conf.Pprof)
+		c.Log.Info("vega is starting with pprof profile, this is not a recommended setting for production")
+		c.pproffhandlr, err = pprof.New(c.Log, conf.Pprof)
 		if err != nil {
 			return err
 		}
-		n.confWatcher.OnConfigUpdate(
-			func(cfg config.Config) { n.pproffhandlr.ReloadConf(cfg.Pprof) },
+		c.confWatcher.OnConfigUpdate(
+			func(cfg config.Config) { c.pproffhandlr.ReloadConf(cfg.Pprof) },
 		)
 	}
 
-	n.stats = stats.New(n.Log, n.conf.Stats)
+	c.stats = stats.New(c.Log, c.conf.Stats)
 
 	// start prometheus stuff
-	metrics.Start(n.conf.Metrics)
+	metrics.Start(c.conf.Metrics)
 
 	return err
 }
 
-func (n *Core) loadNodeWallets() (err error) {
+func (c *Core) loadNodeWallets() (err error) {
 	// if we are a non-validator, nothing needs to be done here
-	if !n.conf.IsValidator() {
+	if !c.conf.IsValidator() {
 		return nil
 	}
 
-	n.nodeWallets, err = nodewallets.GetNodeWallets(n.conf.NodeWallet, n.vegaPaths, n.nodeWalletPassphrase)
+	c.nodeWallets, err = nodewallets.GetNodeWallets(c.conf.NodeWallet, c.vegaPaths, c.nodeWalletPassphrase)
 	if err != nil {
 		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	return n.nodeWallets.Verify()
+	return c.nodeWallets.Verify()
 }
 
 func (c *Core) startABCI(

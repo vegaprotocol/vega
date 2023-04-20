@@ -15,6 +15,7 @@ import (
 	encoding "code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/nodewallets/registry"
 	dnconfig "code.vegaprotocol.io/vega/datanode/config"
+	dencoding "code.vegaprotocol.io/vega/datanode/config/encoding"
 
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	lencoding "code.vegaprotocol.io/vega/libs/config/encoding"
@@ -45,7 +46,7 @@ type initFlags struct {
 
 func (g *initFlags) Register(fset *flag.FlagSet) {
 	g.globalFlags.Register(fset)
-	fset.BoolVar(&g.EmbedPostgres, "embed-postgres", false, "use the embeded postgres instance")
+	fset.BoolVar(&g.EmbedPostgres, "embed-postgres", false, "use the embedded postgres instance")
 	fset.BoolVar(&g.Force, "force", false, "should the command erase existing configuration")
 	fset.StringVar(&g.Passphrase, "nodewallet-passphrase-file", "", "an optional file containing the passphrase for the node wallet")
 	fset.StringVar(&g.ChainID, "chainid", "", "the id of the chain this node with be joining (required only when setting up the datanode)")
@@ -141,7 +142,7 @@ func (i *initCommand) initDatanode(
 
 	cfg := dnconfig.NewDefaultConfig()
 
-	cfg.SQLStore.UseEmbedded = true
+	cfg.SQLStore.UseEmbedded = dencoding.Bool(embedPostgres)
 
 	cfg.Broker.SocketConfig.IP = "vega_datanode"
 	cfg.Broker.SocketConfig.TransportType = "inproc"
@@ -169,7 +170,6 @@ func (i *initCommand) initDatanode(
 	logger.Info("datanode configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))
 
 	return nil
-
 }
 
 func (i *initCommand) initVega(

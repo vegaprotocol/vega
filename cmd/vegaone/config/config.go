@@ -29,5 +29,5 @@ func Save(home string, c *Config) (string, error) {
 	}
 
 	path := filepath.Join(home, configFileName)
-	return path, ioutil.WriteFile(path, buf, 0644)
+	return path, ioutil.WriteFile(path, buf, 0o644)
 }

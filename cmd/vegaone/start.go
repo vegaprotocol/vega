@@ -25,7 +25,6 @@ func (g *startFlags) Register(fset *flag.FlagSet) {
 	fset.StringVar(&g.Passphrase, "nodewallet-passphrase-file", "", "an optional file containing the passphrase for the node wallet")
 	fset.StringVar(&g.Network, "network", "", "a vega network name to be started")
 	fset.StringVar(&g.NetworkURL, "network-url", "", "the url from which to retrieve the genesis file of a network")
-
 }
 
 type startCommand struct {

@@ -35,49 +35,49 @@ import (
 	vegaprotoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
 )
 
-func (l *DN) persistentPre([]string) (err error) {
+func (d *DN) persistentPre([]string) (err error) {
 	// this shouldn't happen...
-	if l.cancel != nil {
-		l.cancel()
+	if d.cancel != nil {
+		d.cancel()
 	}
 	// ensure we cancel the context on error
 	defer func() {
 		if err != nil {
-			l.cancel()
+			d.cancel()
 		}
 	}()
-	l.ctx, l.cancel = context.WithCancel(context.Background())
+	d.ctx, d.cancel = context.WithCancel(context.Background())
 
-	conf := l.configWatcher.Get()
+	conf := d.configWatcher.Get()
 
-	preLog := l.Log.Named("start.persistentPre")
+	preLog := d.Log.Named("start.persistentPre")
 
 	if conf.Pprof.Enabled {
 		preLog.Info("vega is starting with pprof profile, this is not a recommended setting for production")
-		l.pproffhandlr, err = pprof.New(l.Log, conf.Pprof)
+		d.pproffhandlr, err = pprof.New(d.Log, conf.Pprof)
 		if err != nil {
 			return
 		}
-		l.configWatcher.OnConfigUpdate(
-			func(cfg config.Config) { l.pproffhandlr.ReloadConf(cfg.Pprof) },
+		d.configWatcher.OnConfigUpdate(
+			func(cfg config.Config) { d.pproffhandlr.ReloadConf(cfg.Pprof) },
 		)
 	}
 
 	preLog.Info("Starting Vega Datanode",
-		logging.String("version", l.Version),
-		logging.String("version-hash", l.VersionHash))
+		logging.String("version", d.Version),
+		logging.String("version-hash", d.VersionHash))
 
-	if l.conf.SQLStore.UseEmbedded {
-		logDir := l.vegaPaths.StatePathFor(paths.DataNodeLogsHome)
+	if d.conf.SQLStore.UseEmbedded {
+		logDir := d.vegaPaths.StatePathFor(paths.DataNodeLogsHome)
 		postgresLogger := &lumberjack.Logger{
 			Filename: filepath.Join(logDir, "embedded-postgres.log"),
-			MaxSize:  l.conf.SQLStore.LogRotationConfig.MaxSize,
-			MaxAge:   l.conf.SQLStore.LogRotationConfig.MaxAge,
+			MaxSize:  d.conf.SQLStore.LogRotationConfig.MaxSize,
+			MaxAge:   d.conf.SQLStore.LogRotationConfig.MaxAge,
 			Compress: true,
 		}
 
-		runtimeDir := l.vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
-		l.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(l.Log, l.conf.SQLStore,
+		runtimeDir := d.vegaPaths.StatePathFor(paths.DataNodeEmbeddedPostgresRuntimeDir)
+		d.embeddedPostgres, err = sqlstore.StartEmbeddedPostgres(d.Log, d.conf.SQLStore,
 			runtimeDir, postgresLogger)
 
 		if err != nil {
@@ -85,43 +85,43 @@ func (l *DN) persistentPre([]string) (err error) {
 		}
 
 		go func() {
-			for range l.ctx.Done() {
-				l.embeddedPostgres.Stop()
+			for range d.ctx.Done() {
+				d.embeddedPostgres.Stop()
 			}
 		}()
 	}
 
-	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(preLog, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
-			bool(l.conf.SQLStore.VerboseMigration)); err != nil {
+	if d.conf.SQLStore.WipeOnStartup {
+		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(preLog, d.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
+			bool(d.conf.SQLStore.VerboseMigration)); err != nil {
 			return fmt.Errorf("failed to wiped database:%w", err)
 		}
 		preLog.Info("Wiped all existing data from the datanode")
 	}
 
 	initialisedFromNetworkHistory := false
-	if l.conf.NetworkHistory.Enabled {
+	if d.conf.NetworkHistory.Enabled {
 		preLog.Info("Initializing Network History")
 
-		if l.conf.AutoInitialiseFromNetworkHistory {
-			if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), l.conf.SQLStore.ConnectionConfig); err != nil {
+		if d.conf.AutoInitialiseFromNetworkHistory {
+			if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), d.conf.SQLStore.ConnectionConfig); err != nil {
 				return fmt.Errorf("failed to kill all connections to database: %w", err)
 			}
 		}
 
-		err = l.initialiseNetworkHistory(preLog, l.conf.SQLStore.ConnectionConfig)
+		err = d.initialiseNetworkHistory(preLog, d.conf.SQLStore.ConnectionConfig)
 		if err != nil {
 			return fmt.Errorf("failed to initialise network history:%w", err)
 		}
 
-		if l.conf.AutoInitialiseFromNetworkHistory {
+		if d.conf.AutoInitialiseFromNetworkHistory {
 			preLog.Info("Auto Initialising Datanode From Network History")
-			apiPorts := []int{l.conf.API.Port}
-			apiPorts = append(apiPorts, l.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
+			apiPorts := []int{d.conf.API.Port}
+			apiPorts = append(apiPorts, d.conf.NetworkHistory.Initialise.GrpcAPIPorts...)
 
-			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(l.ctx, l.conf.NetworkHistory.Initialise,
-				preLog, l.conf.SQLStore.ConnectionConfig, l.networkHistoryService, apiPorts,
-				bool(l.conf.SQLStore.VerboseMigration)); err != nil {
+			if err = networkhistory.InitialiseDatanodeFromNetworkHistory(d.ctx, d.conf.NetworkHistory.Initialise,
+				preLog, d.conf.SQLStore.ConnectionConfig, d.networkHistoryService, apiPorts,
+				bool(d.conf.SQLStore.VerboseMigration)); err != nil {
 				return fmt.Errorf("failed to initialize datanode from network history: %w", err)
 			}
 
@@ -133,7 +133,7 @@ func (l *DN) persistentPre([]string) (err error) {
 	if !initialisedFromNetworkHistory {
 		operation := func() (opErr error) {
 			preLog.Info("Attempting to initialise database...")
-			opErr = l.initialiseDatabase(preLog)
+			opErr = d.initialiseDatabase(preLog)
 			if opErr != nil {
 				preLog.Error("Failed to initialise database, retrying...", logging.Error(opErr))
 			}
@@ -141,7 +141,7 @@ func (l *DN) persistentPre([]string) (err error) {
 			return opErr
 		}
 
-		retryConfig := l.conf.SQLStore.ConnectionRetryConfig
+		retryConfig := d.conf.SQLStore.ConnectionRetryConfig
 
 		expBackoff := backoff.NewExponentialBackOff()
 		expBackoff.InitialInterval = retryConfig.InitialInterval
@@ -156,40 +156,40 @@ func (l *DN) persistentPre([]string) (err error) {
 
 	preLog.Info("Applying Data Retention Policies")
 
-	err = sqlstore.ApplyDataRetentionPolicies(l.conf.SQLStore, preLog)
+	err = sqlstore.ApplyDataRetentionPolicies(d.conf.SQLStore, preLog)
 	if err != nil {
 		return fmt.Errorf("failed to apply data retention policies:%w", err)
 	}
 
 	preLog.Info("Enabling SQL stores")
 
-	l.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(preLog, l.conf.SQLStore.ConnectionConfig)
+	d.transactionalConnectionSource, err = sqlstore.NewTransactionalConnectionSource(preLog, d.conf.SQLStore.ConnectionConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create transactional connection source: %w", err)
 	}
 
-	logSqlstore := l.Log.Named("sqlstore")
-	l.CreateAllStores(l.ctx, logSqlstore, l.transactionalConnectionSource, l.conf.CandlesV2.CandleStore)
+	logSqlstore := d.Log.Named("sqlstore")
+	d.CreateAllStores(d.ctx, logSqlstore, d.transactionalConnectionSource, d.conf.CandlesV2.CandleStore)
 
-	logService := l.Log.Named("service")
-	logService.SetLevel(l.conf.Service.Level.Get())
-	if err := l.SetupServices(l.ctx, logService, l.conf.CandlesV2); err != nil {
+	logService := d.Log.Named("service")
+	logService.SetLevel(d.conf.Service.Level.Get())
+	if err := d.SetupServices(d.ctx, logService, d.conf.CandlesV2); err != nil {
 		return err
 	}
 
-	err = networkhistory.VerifyChainID(l.conf.ChainID, l.chainService)
+	err = networkhistory.VerifyChainID(d.conf.ChainID, d.chainService)
 	if err != nil {
 		return fmt.Errorf("failed to verify chain id:%w", err)
 	}
 
-	l.SetupSQLSubscribers()
+	d.SetupSQLSubscribers()
 
 	return nil
 }
 
-func (l *DN) initialiseDatabase(preLog *logging.Logger) error {
+func (d *DN) initialiseDatabase(preLog *logging.Logger) error {
 	var err error
-	conf := l.conf.SQLStore.ConnectionConfig
+	conf := d.conf.SQLStore.ConnectionConfig
 	conf.MaxConnPoolSize = 1
 	pool, err := sqlstore.CreateConnectionPool(conf)
 	if err != nil {
@@ -197,20 +197,20 @@ func (l *DN) initialiseDatabase(preLog *logging.Logger) error {
 	}
 	defer pool.Close()
 
-	hasVegaSchema, err := sqlstore.HasVegaSchema(l.ctx, pool)
+	hasVegaSchema, err := sqlstore.HasVegaSchema(d.ctx, pool)
 	if err != nil {
 		return fmt.Errorf("failed to check if database has schema: %w", err)
 	}
 
 	// If it's an empty database, recreate it with correct locale settings
 	if !hasVegaSchema {
-		err = sqlstore.RecreateVegaDatabase(l.ctx, preLog, l.conf.SQLStore.ConnectionConfig)
+		err = sqlstore.RecreateVegaDatabase(d.ctx, preLog, d.conf.SQLStore.ConnectionConfig)
 		if err != nil {
 			return fmt.Errorf("failed to recreate vega schema: %w", err)
 		}
 	}
 
-	err = sqlstore.MigrateToLatestSchema(preLog, l.conf.SQLStore)
+	err = sqlstore.MigrateToLatestSchema(preLog, d.conf.SQLStore)
 	if err != nil {
 		return fmt.Errorf("failed to migrate to latest schema:%w", err)
 	}
@@ -219,19 +219,19 @@ func (l *DN) initialiseDatabase(preLog *logging.Logger) error {
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node.
-func (l *DN) preRun([]string) (err error) {
+func (d *DN) preRun([]string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
 		if err != nil {
-			l.cancel()
+			d.cancel()
 		}
 	}()
 
-	preLog := l.Log.Named("start.preRun")
-	brokerLog := l.Log.Named("broker")
+	preLog := d.Log.Named("start.preRun")
+	brokerLog := d.Log.Named("broker")
 	eventSourceLog := brokerLog.Named("eventsource")
 
-	eventReceiverSender, err := broker.NewEventReceiverSender(l.conf.Broker, eventSourceLog, l.conf.ChainID)
+	eventReceiverSender, err := broker.NewEventReceiverSender(d.conf.Broker, eventSourceLog, d.conf.ChainID)
 	if err != nil {
 		preLog.Error("unable to initialise event source", logging.Error(err))
 		return err
@@ -239,20 +239,20 @@ func (l *DN) preRun([]string) (err error) {
 
 	var rawEventSource broker.RawEventReceiver = eventReceiverSender
 
-	if l.conf.Broker.UseBufferedEventSource {
-		bufferFilePath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
+	if d.conf.Broker.UseBufferedEventSource {
+		bufferFilePath, err := d.vegaPaths.CreateStatePathFor(paths.DataNodeEventBufferHome)
 		if err != nil {
 			preLog.Error("failed to create path for buffered event source", logging.Error(err))
 			return err
 		}
 
-		archiveFilesPath, err := l.vegaPaths.CreateStatePathFor(paths.DataNodeArchivedEventBufferHome)
+		archiveFilesPath, err := d.vegaPaths.CreateStatePathFor(paths.DataNodeArchivedEventBufferHome)
 		if err != nil {
-			l.Log.Error("failed to create archive path for buffered event source", logging.Error(err))
+			d.Log.Error("failed to create archive path for buffered event source", logging.Error(err))
 			return err
 		}
 
-		rawEventSource, err = broker.NewBufferedEventSource(l.ctx, l.Log, l.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
+		rawEventSource, err = broker.NewBufferedEventSource(d.ctx, d.Log, d.conf.Broker.BufferedEventSourceConfig, eventReceiverSender,
 			bufferFilePath, archiveFilesPath)
 		if err != nil {
 			preLog.Error("unable to initialise file buffered event source", logging.Error(err))
@@ -262,52 +262,52 @@ func (l *DN) preRun([]string) (err error) {
 
 	var eventSource broker.EventReceiver
 	eventSource = broker.NewDeserializer(rawEventSource)
-	eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SQLStore.FanOutBufferSize, 2)
+	eventSource = broker.NewFanOutEventSource(eventSource, d.conf.SQLStore.FanOutBufferSize, 2)
 
 	var onBlockCommittedHandler func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool)
 	var protocolUpgradeHandler broker.ProtocolUpgradeHandler
 
-	if l.conf.NetworkHistory.Enabled {
-		blockCommitHandler := networkhistory.NewBlockCommitHandler(l.Log, l.conf.NetworkHistory, l.snapshotService.SnapshotData,
-			bool(l.conf.Broker.UseEventFile), l.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration,
+	if d.conf.NetworkHistory.Enabled {
+		blockCommitHandler := networkhistory.NewBlockCommitHandler(d.Log, d.conf.NetworkHistory, d.snapshotService.SnapshotData,
+			bool(d.conf.Broker.UseEventFile), d.conf.Broker.FileEventSourceConfig.TimeBetweenBlocks.Duration,
 			5*time.Second, 6)
 		onBlockCommittedHandler = blockCommitHandler.OnBlockCommitted
-		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
-			l.networkHistoryService.CreateAndPublishSegment)
+		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(d.Log, d.protocolUpgradeService, eventReceiverSender,
+			d.networkHistoryService.CreateAndPublishSegment)
 	} else {
 		onBlockCommittedHandler = func(ctx context.Context, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {}
-		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(l.Log, l.protocolUpgradeService, eventReceiverSender,
+		protocolUpgradeHandler = networkhistory.NewProtocolUpgradeHandler(d.Log, d.protocolUpgradeService, eventReceiverSender,
 			func(ctx context.Context, chainID string, toHeight int64) error { return nil })
 	}
 
-	l.sqlBroker = broker.NewSQLStoreBroker(l.Log, l.conf.Broker, l.conf.ChainID, eventSource,
-		l.transactionalConnectionSource,
-		l.blockStore,
+	d.sqlBroker = broker.NewSQLStoreBroker(d.Log, d.conf.Broker, d.conf.ChainID, eventSource,
+		d.transactionalConnectionSource,
+		d.blockStore,
 		onBlockCommittedHandler,
 		protocolUpgradeHandler,
-		l.GetSQLSubscribers(),
+		d.GetSQLSubscribers(),
 	)
 
-	l.broker, err = broker.New(l.ctx, brokerLog, l.conf.Broker, l.conf.ChainID, eventSource)
+	d.broker, err = broker.New(d.ctx, brokerLog, d.conf.Broker, d.conf.ChainID, eventSource)
 	if err != nil {
 		preLog.Error("unable to initialise broker", logging.Error(err))
 		return err
 	}
 
 	// Event service as used by old and new world
-	l.eventService = subscribers.NewService(preLog, l.broker, l.conf.Broker.EventBusClientBufferSize)
+	d.eventService = subscribers.NewService(preLog, d.broker, d.conf.Broker.EventBusClientBufferSize)
 
-	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
+	nodeAddr := fmt.Sprintf("%v:%v", d.conf.API.CoreNodeIP, d.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
 	if err != nil {
 		return err
 	}
 
-	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
+	d.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
 	return nil
 }
 
-func (l *DN) initialiseNetworkHistory(preLog *logging.Logger, connConfig sqlstore.ConnectionConfig) error {
+func (d *DN) initialiseNetworkHistory(preLog *logging.Logger, connConfig sqlstore.ConnectionConfig) error {
 	// Want to pre-allocate some connections to ensure a connection is always available,
 	// 3 is chosen to allow for the fact that pool size can temporarily drop below the min pool size.
 	connConfig.MaxConnPoolSize = 3
@@ -319,22 +319,22 @@ func (l *DN) initialiseNetworkHistory(preLog *logging.Logger, connConfig sqlstor
 	}
 
 	preNetworkHistoryLog := preLog.Named("networkHistory")
-	networkHistoryLog := l.Log.Named("networkHistory")
-	networkHistoryLog.SetLevel(l.conf.NetworkHistory.Level.Get())
+	networkHistoryLog := d.Log.Named("networkHistory")
+	networkHistoryLog.SetLevel(d.conf.NetworkHistory.Level.Get())
 
 	snapshotServiceLog := networkHistoryLog.Named("snapshot")
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
 
-	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
+	d.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, d.conf.NetworkHistory.Snapshot,
 		networkHistoryPool,
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+		d.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
+			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, d.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate up to schema version %d: %w", version, err)
 			}
 			return nil
 		},
 		func(version int64) error {
-			if err = sqlstore.MigrateDownToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+			if err = sqlstore.MigrateDownToSchemaVersion(preNetworkHistoryLog, d.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate down to schema version %d: %w", version, err)
 			}
 			return nil
@@ -342,10 +342,10 @@ func (l *DN) initialiseNetworkHistory(preLog *logging.Logger, connConfig sqlstor
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}
-	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.NetworkHistory, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+	d.networkHistoryService, err = networkhistory.New(d.ctx, networkHistoryServiceLog, d.conf.NetworkHistory, d.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
 		networkHistoryPool,
-		l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), l.conf.MaxMemoryPercent)
+		d.conf.ChainID, d.snapshotService, d.conf.API.Port, d.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		d.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), d.conf.MaxMemoryPercent)
 
 	if err != nil {
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
