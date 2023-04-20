@@ -724,7 +724,7 @@ message Account {
 message FinancialAmount {
   // Unsigned integer amount of asset scaled to the asset's decimal places.
   string amount = 1;
-  // ID of the asset the amount applies to.
+  // Asset ID the amount applies to.
   string asset = 2;
 }
 
@@ -827,14 +827,14 @@ message TransferRequest {
   // Minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error.
   // This field is an unsigned integer scaled to the asset's decimal places.
   string min_amount = 4;
-  // ID of the asset being transferred.
+  // Asset ID of the asset being transferred.
   string asset = 5;
   // Type of the request for transfer.
   TransferType type = 7;
 }
 
 message AccountDetails {
-  // Asset ID of this account.
+  // Asset ID of the asset for this account.
   string asset_id = 1;
   // Type of the account.
   AccountType type = 2;

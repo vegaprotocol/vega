@@ -3454,7 +3454,7 @@ type FinancialAmount struct {
 
 	// Unsigned integer amount of asset scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// ID of the asset the amount applies to.
+	// Asset ID the amount applies to.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 }
 
@@ -3670,7 +3670,7 @@ type TransferRequest struct {
 	// Minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error.
 	// This field is an unsigned integer scaled to the asset's decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
-	// ID of the asset being transferred.
+	// Asset ID of the asset being transferred.
 	Asset string `protobuf:"bytes,5,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Type of the request for transfer.
 	Type TransferType `protobuf:"varint,7,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
@@ -3755,7 +3755,7 @@ type AccountDetails struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Asset ID of this account.
+	// Asset ID of the asset for this account.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	// Type of the account.
 	Type AccountType `protobuf:"varint,2,opt,name=type,proto3,enum=vega.AccountType" json:"type,omitempty"`

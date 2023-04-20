@@ -1718,7 +1718,7 @@ message ERC20MultiSigSignerRemovedBundle {
 
 // Request for listing the signature bundle to an ERC-20 token in the collateral bridge
 message GetERC20ListAssetBundleRequest {
-  // ID of the asset requested.
+  // Asset ID of the asset bundle requested.
   string asset_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 

@@ -6537,7 +6537,7 @@ type GetERC20ListAssetBundleRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the asset requested.
+	// Asset ID of the asset bundle requested.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 }
 

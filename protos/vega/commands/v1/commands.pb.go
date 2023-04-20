@@ -1289,7 +1289,7 @@ type CancelTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the transfer to cancel.
+	// Transfer ID of the transfer to cancel.
 	TransferId string `protobuf:"bytes,1,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
 }
 
@@ -1342,7 +1342,7 @@ type IssueSignatures struct {
 	Submitter string `protobuf:"bytes,1,opt,name=submitter,proto3" json:"submitter,omitempty"`
 	// What kind of signatures to generate, namely for whether a signer is being added or removed.
 	Kind NodeSignatureKind `protobuf:"varint,2,opt,name=kind,proto3,enum=vega.commands.v1.NodeSignatureKind" json:"kind,omitempty"`
-	// ID of the validator node that will be signed in or out of the smart contract.
+	// Node ID of the validator node that will be signed in or out of the smart contract.
 	ValidatorNodeId string `protobuf:"bytes,3,opt,name=validator_node_id,json=validatorNodeId,proto3" json:"validator_node_id,omitempty"` // the node for which to emit the signatures.
 }
 
