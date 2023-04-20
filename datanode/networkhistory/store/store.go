@@ -486,27 +486,6 @@ func (p *Store) rewriteZipWithMetadata(oldZip string, metadata segment.MetaData)
 	return tmpfile.Name(), nil
 }
 
-func (p *Store) setupPaths(networkHistoryStorePath string, wipeOnStartup bool) error {
-	if wipeOnStartup {
-		err := os.RemoveAll(networkHistoryStorePath)
-		if err != nil {
-			return fmt.Errorf("failed to remove dir:%w", err)
-		}
-	}
-
-	err := os.MkdirAll(p.indexPath, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create index path:%w", err)
-	}
-
-	err = os.MkdirAll(p.stagingDir, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to create staging path:%w", err)
-	}
-
-	return nil
-}
-
 func (p *Store) GetSegmentForHeight(toHeight int64) (segment.Full, error) {
 	return p.index.Get(toHeight)
 }
