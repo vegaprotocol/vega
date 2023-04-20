@@ -6790,7 +6790,7 @@ type LiquidityParameters struct {
 	MaxFee                  string `protobuf:"bytes,1,opt,name=max_fee,json=maxFee,proto3" json:"max_fee,omitempty"`
 	MaxShapeSize            string `protobuf:"bytes,2,opt,name=max_shape_size,json=maxShapeSize,proto3" json:"max_shape_size,omitempty"`
 	StakeToObligationFactor string `protobuf:"bytes,3,opt,name=stake_to_obligation_factor,json=stakeToObligationFactor,proto3" json:"stake_to_obligation_factor,omitempty"`
-	// Required for key generation
+	// Market ID these liquidity parameters apply to. Required for key generation
 	MarketId string `protobuf:"bytes,4,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -6860,7 +6860,7 @@ type LiquidityPendingProvisions struct {
 	unknownFields protoimpl.UnknownFields
 
 	PendingProvisions []string `protobuf:"bytes,1,rep,name=pending_provisions,json=pendingProvisions,proto3" json:"pending_provisions,omitempty"`
-	// Required for key generation
+	// Market ID these liquidity provisions apply to. Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -6916,7 +6916,7 @@ type LiquidityPartiesLiquidityOrders struct {
 	unknownFields protoimpl.UnknownFields
 
 	PartyOrders []*PartyOrders `protobuf:"bytes,1,rep,name=party_orders,json=partyOrders,proto3" json:"party_orders,omitempty"`
-	// Required for key generation
+	// Market ID these liquidity orders apply to. Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7027,7 +7027,7 @@ type LiquidityPartiesOrders struct {
 	unknownFields protoimpl.UnknownFields
 
 	PartyOrders []*PartyOrders `protobuf:"bytes,1,rep,name=party_orders,json=partyOrders,proto3" json:"party_orders,omitempty"`
-	// Required for key generation
+	// Market ID these orders apply to. Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7083,7 +7083,7 @@ type LiquidityProvisions struct {
 	unknownFields protoimpl.UnknownFields
 
 	LiquidityProvisions []*vega.LiquidityProvision `protobuf:"bytes,1,rep,name=liquidity_provisions,json=liquidityProvisions,proto3" json:"liquidity_provisions,omitempty"`
-	// Required for key generation
+	// Market ID these provisions apply to. Required for key generation
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 

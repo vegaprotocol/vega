@@ -197,7 +197,7 @@ message ProposalRationale {
 
 // Governance data
 message GovernanceData {
-  // Governance proposal.
+  // Governance proposal that is being voted on.
   Proposal proposal = 1;
   // All YES votes in favour of the proposal above.
   repeated Vote yes = 2;
@@ -251,7 +251,7 @@ message Proposal {
   string reference = 2;
   // Party ID i.e. public key of the party submitting the proposal.
   string party_id = 3;
-  // Proposal state.
+  // Current state of the proposal, i.e. open, passed, failed etc.
   State state = 4;
   // Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
   int64 timestamp = 5;

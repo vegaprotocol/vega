@@ -16,7 +16,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 message ERC20MultiSigSignerAdded {
   // ID of the signature bundle
   string signature_id = 1;
-  // Vega node ID of the node to be added
+  // Node ID of the Vega node to be added
   string validator_id = 2;
   // Time at which this happened
   int64 timestamp = 3;
@@ -31,7 +31,7 @@ message ERC20MultiSigSignerAdded {
 }
 
 message ERC20MultiSigSignerRemovedSubmitter {
-  // ID of this signature bundle
+  // Signature ID of the signer removed.
   string signature_id = 1;
   // Address of the submitter of the transaction
   string submitter = 2;
@@ -42,7 +42,7 @@ message ERC20MultiSigSignerRemoved {
   // There should be one bundle generated for every validators
   // in the validator set
   repeated ERC20MultiSigSignerRemovedSubmitter signature_submitters = 1;
-  // Vega node ID of the node which is to be removed
+  // Node ID of the Vega node which is to be removed
   string validator_id = 2;
   // Time at which this happened
   int64 timestamp = 3;
@@ -520,7 +520,7 @@ message ValidatorRankingEvent {
 
 // Event that contains information about a Vega key rotation
 message KeyRotation {
-  // ID of the node that rotated their Vega key
+  // Node ID of the node that rotated their Vega key
   string node_id = 1;
   // Vega public key that was previously associated with the node
   string old_pub_key = 2;
@@ -532,7 +532,7 @@ message KeyRotation {
 
 // Event that contains information about an Ethereum key rotation
 message EthereumKeyRotation {
-  // ID of the node that rotated their Ethereum key
+  // Node ID of the node that rotated their Ethereum key
   string node_id = 1;
   // Ethereum address that was previously associated with the node
   string old_address = 2;
@@ -598,7 +598,7 @@ message CoreSnapshotData {
   uint64 block_height = 1;
   // Hash of the snapshot block
   string block_hash = 2;
-  // Core version
+  // Semver version number of the core.
   string core_version = 3;
   // Indicates if the snapshot is taken as part of protocol upgrade
   bool protocol_upgrade_block = 4;

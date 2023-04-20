@@ -68,7 +68,7 @@ message Proposals {
 }
 
 // Delegated amounts for party/node
-// undelegate and epoch seq are only relevant for pending entries
+// `undelegate` and `epoch_seq` are only relevant for pending entries
 message DelegateEntry {
   string party = 1;
   string node = 2;

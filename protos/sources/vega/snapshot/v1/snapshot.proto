@@ -674,19 +674,19 @@ message LiquidityParameters {
   string max_fee = 1;
   string max_shape_size = 2;
   string stake_to_obligation_factor = 3;
-  // Required for key generation
+  // Market ID these liquidity parameters apply to. Required for key generation
   string market_id = 4;
 }
 
 message LiquidityPendingProvisions {
   repeated string pending_provisions = 1;
-  // Required for key generation
+  // Market ID these liquidity provisions apply to. Required for key generation
   string market_id = 2;
 }
 
 message LiquidityPartiesLiquidityOrders {
   repeated PartyOrders party_orders = 1;
-  // Required for key generation
+  // Market ID these liquidity orders apply to. Required for key generation
   string market_id = 2;
 }
 
@@ -697,13 +697,13 @@ message PartyOrders {
 
 message LiquidityPartiesOrders {
   repeated PartyOrders party_orders = 1;
-  // Required for key generation
+  // Market ID these orders apply to. Required for key generation
   string market_id = 2;
 }
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
-  // Required for key generation
+  // Market ID these provisions apply to. Required for key generation
   string market_id = 2;
 }
 
