@@ -222,7 +222,7 @@ message Order {
   uint64 batch_id = 17;
   // Pegged order details, used only if the order represents a pegged order.
   PeggedOrder pegged_order = 18;
-  // Is this order created as part of a liquidity provision, will be empty if not.
+  // Set if order was created as part of a liquidity provision, will be empty if not.
   string liquidity_provision_id = 19;
   // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only.
   bool post_only = 20;
@@ -477,7 +477,7 @@ message PriceLevel {
 
 // Represents market depth or order book data for the specified market on Vega
 message MarketDepth {
-  // Market ID.
+  // Market ID for which the depth levels apply.
   string market_id = 1;
   // Collection of price levels for the buy side of the book.
   repeated PriceLevel buy = 2;
@@ -489,7 +489,7 @@ message MarketDepth {
 
 // Represents the changed market depth since the last update
 message MarketDepthUpdate {
-  // Market ID.
+  // Market ID for which the market depth updates are for.
   string market_id = 1;
   // Collection of updated price levels for the buy side of the book.
   repeated PriceLevel buy = 2;
@@ -503,9 +503,9 @@ message MarketDepthUpdate {
 
 // Represents position data for a party on the specified market on Vega
 message Position {
-  // Market ID.
+  // Market ID in which the position is held.
   string market_id = 1;
-  // Party ID.
+  // Party ID holding the position.
   string party_id = 2;
   // Open volume for the position, value is signed +ve for long and -ve for short.
   int64 open_volume = 3;
@@ -724,7 +724,7 @@ message Account {
 message FinancialAmount {
   // Unsigned integer amount of asset scaled to the asset's decimal places.
   string amount = 1;
-  // Asset ID.
+  // Asset ID the amount applies to.
   string asset = 2;
 }
 
@@ -791,7 +791,7 @@ message Transfer {
   TransferType type = 3;
   // Minimum amount. This field is an unsigned integer scaled to the asset's decimal places.
   string min_amount = 4;
-  // optional dispatch strategy.
+  // Market ID the transfer is for
   string market_id = 5;
 }
 
@@ -827,14 +827,14 @@ message TransferRequest {
   // Minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error.
   // This field is an unsigned integer scaled to the asset's decimal places.
   string min_amount = 4;
-  // Asset ID.
+  // Asset ID of the asset being transferred.
   string asset = 5;
   // Type of the request for transfer.
   TransferType type = 7;
 }
 
 message AccountDetails {
-  // Asset ID of this account.
+  // Asset ID of the asset for this account.
   string asset_id = 1;
   // Type of the account.
   AccountType type = 2;
@@ -854,7 +854,7 @@ message LedgerEntry {
   string amount = 3;
   // Transfer type for this entry.
   TransferType type = 4;
-  // Timestamps.
+  // Unixnano timestamp at which the ledger entry was created.
   int64 timestamp = 5;
   // Sender account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string from_account_balance = 6;
@@ -887,11 +887,11 @@ message MarginLevels {
   string initial_margin = 3;
   // Collateral release level value. This field is an unsigned integer scaled to the asset's decimal places.
   string collateral_release_level = 4;
-  // Party ID.
+  // Party ID for whom the margin levels apply.
   string party_id = 5;
-  // Market ID.
+  // Market ID for which the margin levels apply.
   string market_id = 6;
-  // Asset ID.
+  // Asset ID for which the margin levels apply.
   string asset = 7;
   // Timestamp for the time the ledger entry was created, in nanoseconds.
   int64 timestamp = 8;
@@ -1071,7 +1071,7 @@ message LiquidityProvision {
     STATUS_PENDING = 6;
   }
 
-  // Unique ID.
+  // Unique ID for the liquidity provision.
   string id = 1;
   // Unique party ID for the creator of the provision.
   string party_id = 2;
@@ -1198,39 +1198,39 @@ enum ValidatorNodeStatus {
 }
 
 message RankingScore {
-  // stake based score - no anti-whaling.
+  // Stake based score - no anti-whaling.
   string stake_score = 1;
-  // performance based score.
+  // Performance based score.
   string performance_score = 2;
-  // the status of the validator in the previous epoch.
+  // Status of the validator in the previous epoch.
   ValidatorNodeStatus previous_status = 3;
-  // the status of the validator in the current epoch.
+  // Status of the validator in the current epoch.
   ValidatorNodeStatus status = 4;
-  // tendermint voting power of the validator.
+  // Tendermint voting power of the validator.
   uint32 voting_power = 5;
-  // final score.
+  // Final score.
   string ranking_score = 6;
 }
 
 message RewardScore {
-  // stake based score - with anti-whaling.
+  // Stake based score - with anti-whaling.
   string raw_validator_score = 1;
-  // performance based score.
+  // Performance based score.
   string performance_score = 2;
-  // multisig score.
+  // Multisig score.
   string multisig_score = 3;
-  // un-normalised score.
+  // Un-normalised score.
   string validator_score = 4;
-  // normalised validator score for rewards.
+  // Normalised validator score for rewards.
   string normalised_score = 5;
-  // the status of the validator for reward.
+  // Status of the validator for reward.
   ValidatorNodeStatus validator_status = 6;
 }
 
 message Node {
   // Node ID i.e. the node's wallet ID.
   string id = 1;
-  // Pub key of the node operator.
+  // Public key of the node operator.
   string pub_key = 2;
   // Public key of Tendermint.
   string tm_pub_key = 3;
@@ -1300,7 +1300,7 @@ message NodeData {
 message Delegation {
   // Party which is delegating.
   string party = 1;
-  // Node ID.
+  // Node ID to delegate to.
   string node_id = 2;
   // Amount delegated. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
@@ -1310,20 +1310,29 @@ message Delegation {
 
 // Details for a single reward payment
 message Reward {
+  // Asset ID in which the reward is being paid.
   string asset_id = 1;
+  // Party ID to whom the reward is being paid.
   string party_id = 2;
+  // Epoch in which the reward is being paid.
   uint64 epoch = 3;
   // Amount paid as a reward. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 4;
+  // Percentage of total rewards paid in the epoch.
   string percentage_of_total = 5;
+  // Timestamp at which the reward was paid as Unix nano time.
   int64 received_at = 6;
+  // Market ID in which the reward is being paid.
   string market_id = 7;
+  // Type of reward being paid.
   string reward_type = 8;
 }
 
 // Details for rewards for a single asset
 message RewardSummary {
+  // Asset ID in which the reward is being paid.
   string asset_id = 1;
+  // Party ID to whom the reward is being paid.
   string party_id = 2;
   // Total amount of rewards paid in the asset. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 3;
@@ -1331,9 +1340,13 @@ message RewardSummary {
 
 // Details for rewards for a combination of asset, market, and reward type in a given epoch
 message EpochRewardSummary {
+  // Epoch in which the reward is being paid.
   uint64 epoch = 1;
+  // Asset ID in which the reward is being paid.
   string asset_id = 2;
+  // Market ID in which the reward is being paid.
   string market_id = 3;
+  // Type of reward being paid.
   string reward_type = 4;
   // Amount distributed. This field is an unsigned integer scaled to the asset's decimal places.
   string amount = 5;

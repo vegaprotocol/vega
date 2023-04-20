@@ -18,13 +18,13 @@ import (
 )
 
 func (e *Engine) Payload() *snapshotpb.Payload {
-	bidCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.bidOffset))
+	bidCache := make([]*snapshotpb.LiquidityOffsetProbabilityPair, 0, len(e.pot.bidOffset))
 	for i := 0; i < len(e.pot.bidOffset); i++ {
-		bidCache = append(bidCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.bidOffset[i].String(), Probability: e.pot.bidProbability[i].String()})
+		bidCache = append(bidCache, &snapshotpb.LiquidityOffsetProbabilityPair{Offset: e.pot.bidOffset[i], Probability: e.pot.bidProbability[i].String()})
 	}
-	askCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.askOffset))
+	askCache := make([]*snapshotpb.LiquidityOffsetProbabilityPair, 0, len(e.pot.askOffset))
 	for i := 0; i < len(e.pot.askOffset); i++ {
-		askCache = append(askCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.askOffset[i].String(), Probability: e.pot.askProbability[i].String()})
+		askCache = append(askCache, &snapshotpb.LiquidityOffsetProbabilityPair{Offset: e.pot.askOffset[i], Probability: e.pot.askProbability[i].String()})
 	}
 
 	return &snapshotpb.Payload{
@@ -40,16 +40,16 @@ func (e *Engine) Payload() *snapshotpb.Payload {
 }
 
 func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
-	bidOffsets := make([]num.Decimal, 0, len(ls.BidCache))
+	bidOffsets := make([]uint32, 0, len(ls.BidCache))
 	bidProbs := make([]num.Decimal, 0, len(ls.BidCache))
 	for _, bid := range ls.BidCache {
-		bidOffsets = append(bidOffsets, num.MustDecimalFromString(bid.Price))
+		bidOffsets = append(bidOffsets, bid.Offset)
 		bidProbs = append(bidProbs, num.MustDecimalFromString(bid.Probability))
 	}
-	askOffsets := make([]num.Decimal, 0, len(ls.AskCache))
+	askOffsets := make([]uint32, 0, len(ls.AskCache))
 	askProbs := make([]num.Decimal, 0, len(ls.AskCache))
 	for _, ask := range ls.AskCache {
-		askOffsets = append(askOffsets, num.MustDecimalFromString(ask.Price))
+		askOffsets = append(askOffsets, ask.Offset)
 		askProbs = append(askProbs, num.MustDecimalFromString(ask.Probability))
 	}
 

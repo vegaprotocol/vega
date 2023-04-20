@@ -594,7 +594,7 @@ type ERC20MultiSigSignerAdded struct {
 
 	// ID of the signature bundle
 	SignatureId string `protobuf:"bytes,1,opt,name=signature_id,json=signatureId,proto3" json:"signature_id,omitempty"`
-	// Vega node ID of the node to be added
+	// Node ID of the Vega node to be added
 	ValidatorId string `protobuf:"bytes,2,opt,name=validator_id,json=validatorId,proto3" json:"validator_id,omitempty"`
 	// Time at which this happened
 	Timestamp int64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -694,7 +694,7 @@ type ERC20MultiSigSignerRemovedSubmitter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of this signature bundle
+	// Signature ID of the signer removed.
 	SignatureId string `protobuf:"bytes,1,opt,name=signature_id,json=signatureId,proto3" json:"signature_id,omitempty"`
 	// Address of the submitter of the transaction
 	Submitter string `protobuf:"bytes,2,opt,name=submitter,proto3" json:"submitter,omitempty"`
@@ -755,7 +755,7 @@ type ERC20MultiSigSignerRemoved struct {
 	// There should be one bundle generated for every validators
 	// in the validator set
 	SignatureSubmitters []*ERC20MultiSigSignerRemovedSubmitter `protobuf:"bytes,1,rep,name=signature_submitters,json=signatureSubmitters,proto3" json:"signature_submitters,omitempty"`
-	// Vega node ID of the node which is to be removed
+	// Node ID of the Vega node which is to be removed
 	ValidatorId string `protobuf:"bytes,2,opt,name=validator_id,json=validatorId,proto3" json:"validator_id,omitempty"`
 	// Time at which this happened
 	Timestamp int64 `protobuf:"varint,3,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -3942,7 +3942,7 @@ type KeyRotation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the node that rotated their Vega key
+	// Node ID of the node that rotated their Vega key
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Vega public key that was previously associated with the node
 	OldPubKey string `protobuf:"bytes,2,opt,name=old_pub_key,json=oldPubKey,proto3" json:"old_pub_key,omitempty"`
@@ -4018,7 +4018,7 @@ type EthereumKeyRotation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the node that rotated their Ethereum key
+	// Node ID of the node that rotated their Ethereum key
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Ethereum address that was previously associated with the node
 	OldAddress string `protobuf:"bytes,2,opt,name=old_address,json=oldAddress,proto3" json:"old_address,omitempty"`
@@ -4445,7 +4445,7 @@ type CoreSnapshotData struct {
 	BlockHeight uint64 `protobuf:"varint,1,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 	// Hash of the snapshot block
 	BlockHash string `protobuf:"bytes,2,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
-	// Core version
+	// Semver version number of the core.
 	CoreVersion string `protobuf:"bytes,3,opt,name=core_version,json=coreVersion,proto3" json:"core_version,omitempty"`
 	// Indicates if the snapshot is taken as part of protocol upgrade
 	ProtocolUpgradeBlock bool `protobuf:"varint,4,opt,name=protocol_upgrade_block,json=protocolUpgradeBlock,proto3" json:"protocol_upgrade_block,omitempty"`

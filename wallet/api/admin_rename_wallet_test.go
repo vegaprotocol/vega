@@ -15,6 +15,7 @@ import (
 )
 
 func TestAdminRenameWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRenameWalletSchemaCorrect)
 	t.Run("Renaming a wallet with invalid params fails", testRenamingWalletWithInvalidParamsFails)
 	t.Run("Renaming a wallet with valid params succeeds", testRenamingWalletWithValidParamsSucceeds)
 	t.Run("Renaming a wallet that does not exists fails", testRenamingWalletThatDoesNotExistsFails)
@@ -22,6 +23,10 @@ func TestAdminRenameWallet(t *testing.T) {
 	t.Run("Renaming a wallet that with name that is already taken fails", testRenamingWalletWithNameAlreadyTakenFails)
 	t.Run("Getting internal error during non-existing wallet verification does not rename the wallet", testGettingInternalErrorDuringNonExistingWalletVerificationDoesNotRenameWallet)
 	t.Run("Getting internal error during renaming does not rename the wallet", testGettingInternalErrorDuringRenamingDoesNotRenameWallet)
+}
+
+func testAdminRenameWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.rename_wallet", api.AdminRenameWalletParams{}, nil)
 }
 
 func testRenamingWalletWithInvalidParamsFails(t *testing.T) {

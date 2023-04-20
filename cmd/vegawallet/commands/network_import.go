@@ -36,23 +36,32 @@ var (
 	`)
 )
 
-type ImportNetworkFromSourceHandler func(api.AdminImportNetworkParams) (api.AdminImportNetworkResult, error)
+type adminImportNetworkResult struct {
+	api.AdminImportNetworkResult
+	FilePath string `json:"filePath"`
+}
+
+type ImportNetworkFromSourceHandler func(api.AdminImportNetworkParams) (adminImportNetworkResult, error)
 
 func NewCmdImportNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminImportNetworkParams) (api.AdminImportNetworkResult, error) {
+	h := func(params api.AdminImportNetworkParams) (adminImportNetworkResult, error) {
 		vegaPaths := paths.New(rf.Home)
 
 		s, err := netstore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return api.AdminImportNetworkResult{}, fmt.Errorf("couldn't initialise networks store: %w", err)
+			return adminImportNetworkResult{}, fmt.Errorf("couldn't initialise networks store: %w", err)
 		}
 		importNetwork := api.NewAdminImportNetwork(s)
 		rawResult, errorDetails := importNetwork.Handle(context.Background(), params)
 		if errorDetails != nil {
-			return api.AdminImportNetworkResult{}, errors.New(errorDetails.Data)
+			return adminImportNetworkResult{}, errors.New(errorDetails.Data)
 		}
 
-		return rawResult.(api.AdminImportNetworkResult), nil
+		result := rawResult.(api.AdminImportNetworkResult)
+		return adminImportNetworkResult{
+			AdminImportNetworkResult: result,
+			FilePath:                 s.GetNetworkPath(result.Name),
+		}, nil
 	}
 
 	return BuildCmdImportNetwork(w, h, rf)
@@ -139,7 +148,7 @@ func (f *ImportNetworkFlags) Validate() (api.AdminImportNetworkParams, error) {
 	}, nil
 }
 
-func PrintImportNetworkResponse(w io.Writer, resp api.AdminImportNetworkResult) {
+func PrintImportNetworkResponse(w io.Writer, resp adminImportNetworkResult) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()

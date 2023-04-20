@@ -381,7 +381,6 @@ type InputData_OrderSubmission struct {
 }
 
 type InputData_OrderCancellation struct {
-	// User commands
 	// Command to cancel an order.
 	OrderCancellation *OrderCancellation `protobuf:"bytes,1002,opt,name=order_cancellation,json=orderCancellation,proto3,oneof"`
 }
@@ -452,7 +451,6 @@ type InputData_BatchMarketInstructions struct {
 }
 
 type InputData_NodeVote struct {
-	// Validator commands
 	// Command used by a validator when a node votes for validating that a given resource exists or is valid,
 	// for example, an ERC20 deposit is valid and exists on ethereum.
 	NodeVote *NodeVote `protobuf:"bytes,2002,opt,name=node_vote,json=nodeVote,proto3,oneof"`
@@ -502,7 +500,6 @@ type InputData_IssueSignatures struct {
 }
 
 type InputData_OracleDataSubmission struct {
-	// Oracles
 	// Command to submit new oracle data from third party providers.
 	OracleDataSubmission *OracleDataSubmission `protobuf:"bytes,3001,opt,name=oracle_data_submission,json=oracleDataSubmission,proto3,oneof"`
 }

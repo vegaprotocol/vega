@@ -1551,7 +1551,7 @@ type GovernanceData struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Governance proposal.
+	// Governance proposal that is being voted on.
 	Proposal *Proposal `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
 	// All YES votes in favour of the proposal above.
 	Yes []*Vote `protobuf:"bytes,2,rep,name=yes,proto3" json:"yes,omitempty"`
@@ -1646,7 +1646,7 @@ type Proposal struct {
 	Reference string `protobuf:"bytes,2,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Party ID i.e. public key of the party submitting the proposal.
 	PartyId string `protobuf:"bytes,3,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Proposal state.
+	// Current state of the proposal, i.e. open, passed, failed etc.
 	State Proposal_State `protobuf:"varint,4,opt,name=state,proto3,enum=vega.Proposal_State" json:"state,omitempty"`
 	// Proposal timestamp for date and time as Unix time in nanoseconds when proposal was submitted to the network.
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`

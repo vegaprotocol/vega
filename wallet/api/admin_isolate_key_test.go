@@ -16,6 +16,7 @@ import (
 )
 
 func TestAdminIsolateKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminIsolateKeySchemaCorrect)
 	t.Run("Isolating a key with invalid params fails", testIsolatingKeyWithInvalidParamsFails)
 	t.Run("Isolating a key with valid params succeeds", testIsolatingKeyWithValidParamsSucceeds)
 	t.Run("Isolating a key from wallet that does not exists fails", testIsolatingKeyFromWalletThatDoesNotExistsFails)
@@ -23,6 +24,10 @@ func TestAdminIsolateKey(t *testing.T) {
 	t.Run("Getting internal error during wallet retrieval fails", testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Isolating a key that does not exists fails", testIsolatingKeyThatDoesNotExistsFails)
 	t.Run("Getting internal error during isolated wallet saving fails", testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails)
+}
+
+func testAdminIsolateKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.isolate_key", api.AdminIsolateKeyParams{}, api.AdminIsolateKeyResult{})
 }
 
 func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {

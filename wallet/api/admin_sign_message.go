@@ -10,8 +10,8 @@ import (
 )
 
 type AdminSignMessageParams struct {
-	Wallet         string `jso:"wallet"`
-	PubKey         string `json:"pubKey"`
+	Wallet         string `json:"wallet"`
+	PubKey         string `json:"publicKey"`
 	EncodedMessage string `json:"encodedMessage"`
 }
 

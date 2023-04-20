@@ -18,6 +18,7 @@ import (
 )
 
 func TestAdminSendRawTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminSendRawTransactionSchemaCorrect)
 	t.Run("Sending transaction with invalid params fails", testAdminSendingRawTransactionWithInvalidParamsFails)
 	t.Run("Sending transaction with valid params succeeds", testAdminSendingRawTransactionWithValidParamsSucceeds)
 	t.Run("Sending transaction with network that doesn't exist fails", testAdminSendingRawTransactionWithNetworkThatDoesntExistFails)
@@ -26,6 +27,10 @@ func TestAdminSendRawTransaction(t *testing.T) {
 	t.Run("Getting internal error during node selector building fails", testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildingFails)
 	t.Run("Sending transaction without healthy node fails", testAdminSendingRawTransactionWithoutHealthyNodeFails)
 	t.Run("Sending transaction with failed sending fails", testAdminSendingRawTransactionWithFailedSendingFails)
+}
+
+func testAdminSendRawTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.send_raw_transaction", api.AdminSendRawTransactionParams{}, api.AdminSendRawTransactionResult{})
 }
 
 func testAdminSendingRawTransactionWithInvalidParamsFails(t *testing.T) {

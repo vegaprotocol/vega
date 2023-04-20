@@ -15,6 +15,7 @@ import (
 )
 
 func TestAdminUntaintKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminUntaintKeySchemaCorrect)
 	t.Run("Untainting a key with invalid params fails", testUntaintingKeyWithInvalidParamsFails)
 	t.Run("Untainting a key with valid params succeeds", testUntaintingKeyWithValidParamsSucceeds)
 	t.Run("Untainting a key on unknown wallet fails", testUntaintingKeyOnUnknownWalletFails)
@@ -22,6 +23,10 @@ func TestAdminUntaintKey(t *testing.T) {
 	t.Run("Getting internal error during wallet verification doesn't remove the taint", testGettingInternalErrorDuringWalletVerificationDoesNotUntaintKey)
 	t.Run("Getting internal error during wallet retrieval doesn't remove the taint", testGettingInternalErrorDuringWalletRetrievalDoesNotUntaintKey)
 	t.Run("Getting internal error during wallet saving doesn't remove the taint", testGettingInternalErrorDuringWalletSavingDoesNotUntaintKey)
+}
+
+func testAdminUntaintKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.untaint_key", api.AdminUntaintKeyParams{}, nil)
 }
 
 func testUntaintingKeyWithInvalidParamsFails(t *testing.T) {

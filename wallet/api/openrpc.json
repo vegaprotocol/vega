@@ -76,8 +76,11 @@
       "paramStructure": "by-name",
       "params": [],
       "result": {
-        "name": "No result",
-        "schema": false
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
       },
       "examples": [
         {
@@ -1180,10 +1183,12 @@
               "type": "array",
               "items": {
                 "type": "object",
+                "required": [
+                  "name"
+                ],
                 "properties": {
                   "name": {
-                    "type": "string",
-                    "required": true
+                    "type": "string"
                   },
                   "metadata": {
                     "type": "array",
@@ -1728,12 +1733,16 @@
         "schema": {
           "type": "object",
           "required": [
+            "name",
             "publicKey",
             "algorithm",
             "metadata",
             "isTainted"
           ],
           "properties": {
+            "name": {
+              "type": "string"
+            },
             "publicKey": {
               "$ref": "#/components/schemas/public_key"
             },
@@ -1997,9 +2006,7 @@
           "properties": {
             "wallet": {
               "description": "Name of the generated isolated wallet",
-              "schema": {
-                "type": "string"
-              }
+              "type": "string"
             }
           }
         }
@@ -2080,7 +2087,7 @@
           "required": true,
           "description": "The block height (approximation) at which the transaction will be submitted",
           "schema": {
-            "type": "string"
+            "type": "number"
           }
         },
         {
@@ -2088,7 +2095,7 @@
           "required": true,
           "description": "The block height at which the rotation should happen",
           "schema": {
-            "type": "string"
+            "type": "number"
           }
         }
       ],
@@ -2104,15 +2111,11 @@
           "properties": {
             "masterPublicKey": {
               "description": "The master public key of the wallet used to sign the transaction",
-              "schema": {
-                "type": "string"
-              }
+              "type": "string"
             },
             "encodedTransaction": {
               "description": "The base64-encoded key rotation transaction",
-              "schema": {
-                "type": "string"
-              }
+              "type": "string"
             }
           }
         }
@@ -2624,38 +2627,29 @@
           }
         },
         {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
-          }
-        },
-        {
-          "name": "chainId",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "blockHeight",
-          "required": true,
-          "schema": {
-            "type": "integer"
           }
         },
         {
           "name": "network",
           "schema": {
-            "type": "integer"
+            "type": "string"
           }
         },
         {
           "name": "transaction",
           "required": true,
           "schema": {
-            "type": "object",
             "$ref": "#/components/schemas/transaction"
+          }
+        },
+        {
+          "name": "lastBlockData",
+          "schema": {
+            "$ref": "#/components/schemas/last_block_data"
           }
         }
       ],
@@ -2665,9 +2659,13 @@
         "schema": {
           "type": "object",
           "required": [
+            "transaction",
             "encodedTransaction"
           ],
           "properties": {
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            },
             "encodedTransaction": {
               "type": "string"
             }
@@ -2697,7 +2695,7 @@
           }
         },
         {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2736,7 +2734,7 @@
               "value": "my-wallet"
             },
             {
-              "name": "pubKey",
+              "name": "publicKey",
               "value": "0101010101010101010101010101010101010101010101010101010101010101"
             },
             {
@@ -2768,7 +2766,7 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2801,7 +2799,7 @@
           ],
           "properties": {
             "isValid": {
-              "type": "string"
+              "type": "boolean"
             }
           }
         }
@@ -2829,7 +2827,7 @@
           }
         },
         {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2838,7 +2836,7 @@
         {
           "name": "network",
           "schema": {
-            "type": "integer"
+            "type": "string"
           }
         },
         {
@@ -2850,7 +2848,7 @@
         {
           "name": "retries",
           "schema": {
-            "type": "integer"
+            "type": "number"
           }
         },
         {
@@ -2864,7 +2862,6 @@
           "name": "transaction",
           "required": true,
           "schema": {
-            "type": "object",
             "$ref": "#/components/schemas/transaction"
           }
         }
@@ -2878,7 +2875,8 @@
             "receivedAt",
             "sentAt",
             "transactionHash",
-            "transaction"
+            "transaction",
+            "node"
           ],
           "properties": {
             "receivedAt": {
@@ -2901,6 +2899,9 @@
             },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
+            },
+            "node": {
+              "$ref": "#/components/schemas/node_info"
             }
           }
         }
@@ -2928,7 +2929,7 @@
           }
         },
         {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2937,7 +2938,7 @@
         {
           "name": "network",
           "schema": {
-            "type": "integer"
+            "type": "string"
           }
         },
         {
@@ -2949,14 +2950,13 @@
         {
           "name": "retries",
           "schema": {
-            "type": "integer"
+            "type": "number"
           }
         },
         {
           "name": "transaction",
           "required": true,
           "schema": {
-            "type": "object",
             "$ref": "#/components/schemas/transaction"
           }
         }
@@ -2969,7 +2969,9 @@
           "required": [
             "receivedAt",
             "sentAt",
-            "transaction"
+            "encodedTransaction",
+            "transaction",
+            "node"
           ],
           "properties": {
             "receivedAt": {
@@ -2986,8 +2988,14 @@
                 "2021-02-18T21:54:42.123Z"
               ]
             },
+            "encodedTransaction": {
+              "type": "string"
+            },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
+            },
+            "node": {
+              "$ref": "#/components/schemas/node_info"
             }
           }
         }
@@ -3036,7 +3044,7 @@
           "description": "the number of times sending the transaction should be attempted if it fails",
           "required": true,
           "schema": {
-            "type": "integer"
+            "type": "number"
           }
         },
         {
@@ -3056,7 +3064,8 @@
             "receivedAt",
             "sentAt",
             "transactionHash",
-            "transaction"
+            "transaction",
+            "node"
           ],
           "properties": {
             "receivedAt": {
@@ -3079,6 +3088,9 @@
             },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
+            },
+            "node": {
+              "$ref": "#/components/schemas/node_info"
             }
           }
         }
@@ -3418,6 +3430,18 @@
   ],
   "components": {
     "schemas": {
+      "node_info": {
+        "type": "object",
+        "description": "The node that handled the transaction.",
+        "required": [
+          "host"
+        ],
+        "properties": {
+          "host": {
+            "type": "string"
+          }
+        }
+      },
       "signed_transaction": {
         "type": "object",
         "description": "A transaction that has been signed by the wallet.",
@@ -3452,15 +3476,7 @@
             }
           },
           "from": {
-            "type": "object",
-            "properties": {
-              "publicKey": {
-                "type": "string"
-              },
-              "address": {
-                "type": "string"
-              }
-            }
+            "type": "object"
           },
           "version": {
             "type": "number"
@@ -3553,12 +3569,11 @@
       "permissions_summary": {
         "type": "object",
         "description": "The description of the permissions a third-party application has.",
-        "required": [
-          "public_keys"
-        ],
-        "properties": {
-          "public_keys": {
-            "$ref": "#/components/schemas/access_mode"
+        "patternProperties": {
+          ".": {
+            "schema": {
+              "type": "string"
+            }
           }
         }
       },
@@ -3668,11 +3683,12 @@
           "blockHeight",
           "blockHash",
           "chainID",
-          "proofOfWorkDifficulty"
+          "proofOfWorkDifficulty",
+          "proofOfWorkHashFunction"
         ],
         "properties": {
           "blockHeight": {
-            "type": "integer"
+            "type": "number"
           },
           "blockHash": {
             "type": "string"
@@ -3680,8 +3696,11 @@
           "chainID": {
             "type": "string"
           },
-          "proofOfWorkDifficulty": {
+          "proofOfWorkHashFunction": {
             "type": "string"
+          },
+          "proofOfWorkDifficulty": {
+            "type": "number"
           }
         }
       },

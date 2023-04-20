@@ -543,7 +543,7 @@ func (x *Proposals) GetProposals() []*vega.Proposal {
 }
 
 // Delegated amounts for party/node
-// undelegate and epoch seq are only relevant for pending entries
+// `undelegate` and `epoch_seq` are only relevant for pending entries
 type DelegateEntry struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

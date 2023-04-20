@@ -17,7 +17,6 @@ var (
 	ErrWalletAlreadyExists                = errors.New("a wallet with the same name already exists")
 	ErrWalletDoesNotExist                 = errors.New("the wallet does not exist")
 	ErrWalletDoesNotHaveKeys              = errors.New("the wallet does not have keys")
-	ErrWalletNotLoggedIn                  = errors.New("the wallet is not logged in")
 	ErrWrongPassphrase                    = errors.New("wrong passphrase")
 )
 

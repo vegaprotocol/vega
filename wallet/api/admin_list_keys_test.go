@@ -15,11 +15,16 @@ import (
 )
 
 func TestAdminAdminListKeys(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminListKeysSchemaCorrect)
 	t.Run("Listing the keys with invalid params fails", testAdminListKeysWithInvalidParamsFails)
 	t.Run("Listing the keys with valid params succeeds", testAdminListKeysWithValidParamsSucceeds)
 	t.Run("Listing the keys from wallet that does not exists fails", testAdminListKeysFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminListKeysGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminListKeysGettingInternalErrorDuringWalletRetrievalFails)
+}
+
+func testAdminListKeysSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.list_keys", api.AdminListKeysParams{}, api.AdminListKeysResult{})
 }
 
 func testAdminListKeysWithInvalidParamsFails(t *testing.T) {

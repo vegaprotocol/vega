@@ -39,8 +39,7 @@ message Future {
 // DataSourceSpecToFutureBinding describes which property of the data source data is to be
 // used as settlement data and which to use as the trading terminated trigger
 message DataSourceSpecToFutureBinding {
-  // settlement_data_property holds the name of the property in the source data
-  // that should be used as settlement data.
+  // Name of the property in the source data that should be used as settlement data.
   // If it is set to "prices.BTC.value", then the Future will use the value of
   // this property as settlement data.
   string settlement_data_property = 1;
@@ -56,7 +55,7 @@ message InstrumentMetadata {
 
 // Instrument definition
 message Instrument {
-  // Instrument ID.
+  // Unique instrument ID.
   string id = 1;
   // Code for the instrument.
   string code = 2;
@@ -114,11 +113,15 @@ message SimpleModelParams {
 
 // Scaling Factors (for use in margin calculation)
 message ScalingFactors {
-  // Search level.
+  // Collateral search level. If collateral dips below this value,
+  // the system will search for collateral to release.
   double search_level = 1;
-  // Initial margin level.
+  // Initial margin level. This is the minimum amount of collateral
+  // required to open a position in a market that requires margin.
   double initial_margin = 2;
-  // Collateral release level.
+  // Collateral release level. If a trader has collateral above this level,
+  // the system will release collateral to a trader's general collateral account
+  // for the asset.
   double collateral_release = 3;
 }
 
@@ -130,7 +133,7 @@ message MarginCalculator {
 
 // Tradable Instrument definition
 message TradableInstrument {
-  // Instrument details.
+  // Details for the underlying instrument.
   Instrument instrument = 1;
   // Margin calculator for the instrument.
   MarginCalculator margin_calculator = 2;
@@ -145,11 +148,11 @@ message TradableInstrument {
 
 // Fee factors definition
 message FeeFactors {
-  // Maker fee.
+  // Market maker fee charged network wide.
   string maker_fee = 1;
-  // Infrastructure fee.
+  // Infrastructure fee charged network wide for staking and governance.
   string infrastructure_fee = 2;
-  // Liquidity fee.
+  // Liquidity fee applied per market for market making.
   string liquidity_fee = 3;
 }
 
@@ -256,7 +259,7 @@ message Market {
   // correct price denominated in the currency of the market, for example:
   // `realPrice = price / 10^decimalPlaces`.
   uint64 decimal_places = 3;
-  // Fees configuration.
+  // Fees configuration that apply to the market.
   Fees fees = 4;
   // Auction duration specifies how long the opening auction will run (minimum
   // duration and optionally a minimum traded volume).

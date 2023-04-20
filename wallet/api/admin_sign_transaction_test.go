@@ -19,6 +19,7 @@ import (
 )
 
 func TestAdminSignTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminSignTransactionSchemaCorrect)
 	t.Run("Signing transaction with invalid params fails", testAdminSigningTransactionWithInvalidParamsFails)
 	t.Run("Signing transaction with valid params succeeds", testAdminSigningTransactionWithValidParamsSucceeds)
 	t.Run("Getting internal error during wallet verification fails", testAdminSignTransactionGettingInternalErrorDuringWalletVerificationFails)
@@ -26,6 +27,10 @@ func TestAdminSignTransaction(t *testing.T) {
 	t.Run("Getting internal error during wallet retrieval fails", testAdminSignTransactionGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Signing transaction with malformed transaction fails", testAdminSigningTransactionWithMalformedTransactionFails)
 	t.Run("Signing transaction which is invalid fails", testAdminSigningTransactionWithInvalidTransactionFails)
+}
+
+func testAdminSignTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.sign_transaction", api.AdminSignTransactionParams{}, api.AdminSignTransactionResult{})
 }
 
 func testAdminSigningTransactionWithInvalidParamsFails(t *testing.T) {

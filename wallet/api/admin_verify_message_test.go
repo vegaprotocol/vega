@@ -12,7 +12,12 @@ import (
 )
 
 func TestAdminVerifyMessage(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminVerifyMessageSchemaCorrect)
 	t.Run("verify message with invalid params fails", testVerifyMessageWithInvalidParamsFails)
+}
+
+func testAdminVerifyMessageSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.verify_message", api.AdminVerifyMessageParams{}, api.AdminVerifyMessageResult{})
 }
 
 func testVerifyMessageWithInvalidParamsFails(t *testing.T) {
@@ -34,14 +39,14 @@ func testVerifyMessageWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty publickey",
 			params: api.AdminVerifyMessageParams{
-				PubKey: "",
+				PublicKey: "",
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
 		{
 			name: "with empty message",
 			params: api.AdminVerifyMessageParams{
-				PubKey:         vgrand.RandomStr(5),
+				PublicKey:      vgrand.RandomStr(5),
 				EncodedMessage: "",
 			},
 			expectedError: api.ErrMessageIsRequired,
@@ -49,7 +54,7 @@ func testVerifyMessageWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with non-base64 message",
 			params: api.AdminVerifyMessageParams{
-				PubKey:           vgrand.RandomStr(5),
+				PublicKey:        vgrand.RandomStr(5),
 				EncodedMessage:   "blahh",
 				EncodedSignature: "sigsig",
 			},
@@ -58,7 +63,7 @@ func testVerifyMessageWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty signature",
 			params: api.AdminVerifyMessageParams{
-				PubKey:           vgrand.RandomStr(5),
+				PublicKey:        vgrand.RandomStr(5),
 				EncodedMessage:   "blah",
 				EncodedSignature: "",
 			},
@@ -67,7 +72,7 @@ func testVerifyMessageWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with non-base64 signature",
 			params: api.AdminVerifyMessageParams{
-				PubKey:           vgrand.RandomStr(5),
+				PublicKey:        vgrand.RandomStr(5),
 				EncodedMessage:   "blah",
 				EncodedSignature: "blahh",
 			},
