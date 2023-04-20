@@ -4445,7 +4445,7 @@ type CoreSnapshotData struct {
 	BlockHeight uint64 `protobuf:"varint,1,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
 	// Hash of the snapshot block
 	BlockHash string `protobuf:"bytes,2,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
-	// Core version
+	// Semver version number of the core.
 	CoreVersion string `protobuf:"bytes,3,opt,name=core_version,json=coreVersion,proto3" json:"core_version,omitempty"`
 	// Indicates if the snapshot is taken as part of protocol upgrade
 	ProtocolUpgradeBlock bool `protobuf:"varint,4,opt,name=protocol_upgrade_block,json=protocolUpgradeBlock,proto3" json:"protocol_upgrade_block,omitempty"`

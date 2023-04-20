@@ -164,9 +164,9 @@ type Filter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// key is the data source data property key targeted by the filter.
+	// Data source's data property key targeted by the filter.
 	Key *PropertyKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// conditions are the conditions that should be matched by the data to be
+	// Conditions that should be matched by the data to be
 	// considered of interest.
 	Conditions []*Condition `protobuf:"bytes,2,rep,name=conditions,proto3" json:"conditions,omitempty"`
 }

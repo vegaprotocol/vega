@@ -773,7 +773,7 @@ type ProposalSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Proposal reference.
+	// Reference identifying the proposal.
 	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
 	Terms *vega.ProposalTerms `protobuf:"bytes,2,opt,name=terms,proto3" json:"terms,omitempty"`

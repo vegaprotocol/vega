@@ -279,10 +279,10 @@ type Data struct {
 	Signers []*Signer `protobuf:"bytes,1,rep,name=signers,proto3" json:"signers,omitempty"`
 	// Data holds all the properties of the data
 	Data []*Property `protobuf:"bytes,2,rep,name=data,proto3" json:"data,omitempty"`
-	// matched_specs_ids lists all the specs that matched this data.
+	// `matched_specs_ids` lists all the specs that matched this data.
 	// When the array is empty, it means no spec matched this data.
 	MatchedSpecIds []string `protobuf:"bytes,3,rep,name=matched_spec_ids,json=matchedSpecIds,proto3" json:"matched_spec_ids,omitempty"`
-	// broadcast_at is the time at which the data was broadcast to the markets
+	// `broadcast_at` is the time at which the data was broadcast to the markets
 	// with a matching spec.
 	// It has no value when the date did not match any spec.
 	// The value is a Unix timestamp in nanoseconds.

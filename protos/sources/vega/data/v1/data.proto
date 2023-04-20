@@ -42,10 +42,10 @@ message Data {
   repeated Signer signers = 1;
   // Data holds all the properties of the data
   repeated Property data = 2;
-  // matched_specs_ids lists all the specs that matched this data.
+  // `matched_specs_ids` lists all the specs that matched this data.
   // When the array is empty, it means no spec matched this data.
   repeated string matched_spec_ids = 3;
-  // broadcast_at is the time at which the data was broadcast to the markets
+  // `broadcast_at` is the time at which the data was broadcast to the markets
   // with a matching spec.
   // It has no value when the date did not match any spec.
   // The value is a Unix timestamp in nanoseconds.

@@ -598,7 +598,7 @@ message CoreSnapshotData {
   uint64 block_height = 1;
   // Hash of the snapshot block
   string block_hash = 2;
-  // Core version
+  // Semver version number of the core.
   string core_version = 3;
   // Indicates if the snapshot is taken as part of protocol upgrade
   bool protocol_upgrade_block = 4;

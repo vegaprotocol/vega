@@ -1781,7 +1781,7 @@ type Order struct {
 	BatchId uint64 `protobuf:"varint,17,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
 	// Pegged order details, used only if the order represents a pegged order.
 	PeggedOrder *PeggedOrder `protobuf:"bytes,18,opt,name=pegged_order,json=peggedOrder,proto3" json:"pegged_order,omitempty"`
-	// Is this order created as part of a liquidity provision, will be empty if not.
+	// Set if order was created as part of a liquidity provision, will be empty if not.
 	LiquidityProvisionId string `protobuf:"bytes,19,opt,name=liquidity_provision_id,json=liquidityProvisionId,proto3" json:"liquidity_provision_id,omitempty"`
 	// Only valid for Limit orders. Cannot be True at the same time as Reduce-Only.
 	PostOnly bool `protobuf:"varint,20,opt,name=post_only,json=postOnly,proto3" json:"post_only,omitempty"`
@@ -2649,7 +2649,7 @@ type MarketDepth struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID.
+	// Market ID for which the depth levels apply.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Collection of price levels for the buy side of the book.
 	Buy []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
@@ -2725,7 +2725,7 @@ type MarketDepthUpdate struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID.
+	// Market ID for which the market depth updates are for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Collection of updated price levels for the buy side of the book.
 	Buy []*PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
@@ -2810,9 +2810,9 @@ type Position struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID.
+	// Market ID in which the position is held.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Party ID.
+	// Party ID holding the position.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Open volume for the position, value is signed +ve for long and -ve for short.
 	OpenVolume int64 `protobuf:"varint,3,opt,name=open_volume,json=openVolume,proto3" json:"open_volume,omitempty"`
@@ -3454,7 +3454,7 @@ type FinancialAmount struct {
 
 	// Unsigned integer amount of asset scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
-	// Asset ID.
+	// ID of the asset the amount applies to.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
 }
 
@@ -3518,7 +3518,7 @@ type Transfer struct {
 	Type TransferType `protobuf:"varint,3,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
 	// Minimum amount. This field is an unsigned integer scaled to the asset's decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
-	// optional dispatch strategy.
+	// Market ID the transfer is for
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -3670,7 +3670,7 @@ type TransferRequest struct {
 	// Minimum amount that needs to be transferred for the transfer request. If this minimum isn't reached, it will error.
 	// This field is an unsigned integer scaled to the asset's decimal places.
 	MinAmount string `protobuf:"bytes,4,opt,name=min_amount,json=minAmount,proto3" json:"min_amount,omitempty"`
-	// Asset ID.
+	// ID of the asset being transferred.
 	Asset string `protobuf:"bytes,5,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Type of the request for transfer.
 	Type TransferType `protobuf:"varint,7,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
@@ -3839,7 +3839,7 @@ type LedgerEntry struct {
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Transfer type for this entry.
 	Type TransferType `protobuf:"varint,4,opt,name=type,proto3,enum=vega.TransferType" json:"type,omitempty"`
-	// Timestamps.
+	// Unixnano timestamp at which the ledger entry was created.
 	Timestamp int64 `protobuf:"varint,5,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Sender account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
 	FromAccountBalance string `protobuf:"bytes,6,opt,name=from_account_balance,json=fromAccountBalance,proto3" json:"from_account_balance,omitempty"`
@@ -4057,11 +4057,11 @@ type MarginLevels struct {
 	InitialMargin string `protobuf:"bytes,3,opt,name=initial_margin,json=initialMargin,proto3" json:"initial_margin,omitempty"`
 	// Collateral release level value. This field is an unsigned integer scaled to the asset's decimal places.
 	CollateralReleaseLevel string `protobuf:"bytes,4,opt,name=collateral_release_level,json=collateralReleaseLevel,proto3" json:"collateral_release_level,omitempty"`
-	// Party ID.
+	// Party ID for whom the margin levels apply.
 	PartyId string `protobuf:"bytes,5,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Market ID.
+	// Market ID for which the margin levels apply.
 	MarketId string `protobuf:"bytes,6,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Asset ID.
+	// Asset ID for which the margin levels apply.
 	Asset string `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
 	// Timestamp for the time the ledger entry was created, in nanoseconds.
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -4977,7 +4977,7 @@ type LiquidityProvision struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique ID.
+	// Unique ID for the liquidity provision.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Unique party ID for the creator of the provision.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
@@ -5586,17 +5586,17 @@ type RankingScore struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// stake based score - no anti-whaling.
+	// Stake based score - no anti-whaling.
 	StakeScore string `protobuf:"bytes,1,opt,name=stake_score,json=stakeScore,proto3" json:"stake_score,omitempty"`
-	// performance based score.
+	// Performance based score.
 	PerformanceScore string `protobuf:"bytes,2,opt,name=performance_score,json=performanceScore,proto3" json:"performance_score,omitempty"`
-	// the status of the validator in the previous epoch.
+	// Status of the validator in the previous epoch.
 	PreviousStatus ValidatorNodeStatus `protobuf:"varint,3,opt,name=previous_status,json=previousStatus,proto3,enum=vega.ValidatorNodeStatus" json:"previous_status,omitempty"`
-	// the status of the validator in the current epoch.
+	// Status of the validator in the current epoch.
 	Status ValidatorNodeStatus `protobuf:"varint,4,opt,name=status,proto3,enum=vega.ValidatorNodeStatus" json:"status,omitempty"`
-	// tendermint voting power of the validator.
+	// Tendermint voting power of the validator.
 	VotingPower uint32 `protobuf:"varint,5,opt,name=voting_power,json=votingPower,proto3" json:"voting_power,omitempty"`
-	// final score.
+	// Final score.
 	RankingScore string `protobuf:"bytes,6,opt,name=ranking_score,json=rankingScore,proto3" json:"ranking_score,omitempty"`
 }
 
@@ -5679,17 +5679,17 @@ type RewardScore struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// stake based score - with anti-whaling.
+	// Stake based score - with anti-whaling.
 	RawValidatorScore string `protobuf:"bytes,1,opt,name=raw_validator_score,json=rawValidatorScore,proto3" json:"raw_validator_score,omitempty"`
-	// performance based score.
+	// Performance based score.
 	PerformanceScore string `protobuf:"bytes,2,opt,name=performance_score,json=performanceScore,proto3" json:"performance_score,omitempty"`
-	// multisig score.
+	// Multisig score.
 	MultisigScore string `protobuf:"bytes,3,opt,name=multisig_score,json=multisigScore,proto3" json:"multisig_score,omitempty"`
-	// un-normalised score.
+	// Un-normalised score.
 	ValidatorScore string `protobuf:"bytes,4,opt,name=validator_score,json=validatorScore,proto3" json:"validator_score,omitempty"`
-	// normalised validator score for rewards.
+	// Normalised validator score for rewards.
 	NormalisedScore string `protobuf:"bytes,5,opt,name=normalised_score,json=normalisedScore,proto3" json:"normalised_score,omitempty"`
-	// the status of the validator for reward.
+	// Status of the validator for reward.
 	ValidatorStatus ValidatorNodeStatus `protobuf:"varint,6,opt,name=validator_status,json=validatorStatus,proto3,enum=vega.ValidatorNodeStatus" json:"validator_status,omitempty"`
 }
 
@@ -5774,7 +5774,7 @@ type Node struct {
 
 	// Node ID i.e. the node's wallet ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Pub key of the node operator.
+	// Public key of the node operator.
 	PubKey string `protobuf:"bytes,2,opt,name=pub_key,json=pubKey,proto3" json:"pub_key,omitempty"`
 	// Public key of Tendermint.
 	TmPubKey string `protobuf:"bytes,3,opt,name=tm_pub_key,json=tmPubKey,proto3" json:"tm_pub_key,omitempty"`
@@ -6162,7 +6162,7 @@ type Delegation struct {
 
 	// Party which is delegating.
 	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	// Node ID.
+	// Node ID to delegate to.
 	NodeId string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	// Amount delegated. This field is an unsigned integer scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
@@ -6236,15 +6236,22 @@ type Reward struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Asset ID in which the reward is being paid.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
+	// Party ID to whom the reward is being paid.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	Epoch   uint64 `protobuf:"varint,3,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// Epoch in which the reward is being paid.
+	Epoch uint64 `protobuf:"varint,3,opt,name=epoch,proto3" json:"epoch,omitempty"`
 	// Amount paid as a reward. This field is an unsigned integer scaled to the asset's decimal places.
-	Amount            string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	Amount string `protobuf:"bytes,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	// Percentage of total rewards paid in the epoch.
 	PercentageOfTotal string `protobuf:"bytes,5,opt,name=percentage_of_total,json=percentageOfTotal,proto3" json:"percentage_of_total,omitempty"`
-	ReceivedAt        int64  `protobuf:"varint,6,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
-	MarketId          string `protobuf:"bytes,7,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	RewardType        string `protobuf:"bytes,8,opt,name=reward_type,json=rewardType,proto3" json:"reward_type,omitempty"`
+	// Timestamp at which the reward was paid as Unix nano time.
+	ReceivedAt int64 `protobuf:"varint,6,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
+	// Market ID in which the reward is being paid.
+	MarketId string `protobuf:"bytes,7,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
+	// Type of reward being paid.
+	RewardType string `protobuf:"bytes,8,opt,name=reward_type,json=rewardType,proto3" json:"reward_type,omitempty"`
 }
 
 func (x *Reward) Reset() {
@@ -6341,7 +6348,9 @@ type RewardSummary struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Asset ID in which the reward is being paid.
 	AssetId string `protobuf:"bytes,1,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
+	// Party ID to whom the reward is being paid.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Total amount of rewards paid in the asset. This field is an unsigned integer scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,3,opt,name=amount,proto3" json:"amount,omitempty"`
@@ -6406,9 +6415,13 @@ type EpochRewardSummary struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Epoch      uint64 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
-	AssetId    string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
-	MarketId   string `protobuf:"bytes,3,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
+	// Epoch in which the reward is being paid.
+	Epoch uint64 `protobuf:"varint,1,opt,name=epoch,proto3" json:"epoch,omitempty"`
+	// Asset ID in which the reward is being paid.
+	AssetId string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
+	// Market ID in which the reward is being paid.
+	MarketId string `protobuf:"bytes,3,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
+	// Type of reward being paid.
 	RewardType string `protobuf:"bytes,4,opt,name=reward_type,json=rewardType,proto3" json:"reward_type,omitempty"`
 	// Amount distributed. This field is an unsigned integer scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`

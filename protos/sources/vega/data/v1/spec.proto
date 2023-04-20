@@ -7,9 +7,9 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/data/v1";
 // Filter describes the conditions under which a data source data is considered of
 // interest or not.
 message Filter {
-  // key is the data source data property key targeted by the filter.
+  // Data source's data property key targeted by the filter.
   PropertyKey key = 1;
-  // conditions are the conditions that should be matched by the data to be
+  // Conditions that should be matched by the data to be
   // considered of interest.
   repeated Condition conditions = 2;
 }

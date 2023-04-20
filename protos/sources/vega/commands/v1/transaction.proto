@@ -47,6 +47,7 @@ message InputData {
     OrderSubmission order_submission = 1001;
 
     // User commands
+
     // Command to cancel an order.
     OrderCancellation order_cancellation = 1002;
     // Command to amend an order.
@@ -77,6 +78,7 @@ message InputData {
     BatchMarketInstructions batch_market_instructions = 1015;
 
     // Validator commands
+
     // Command used by a validator when a node votes for validating that a given resource exists or is valid,
     // for example, an ERC20 deposit is valid and exists on ethereum.
     NodeVote node_vote = 2002;
@@ -101,6 +103,7 @@ message InputData {
     IssueSignatures issue_signatures = 2010;
 
     // Oracles
+
     // Command to submit new oracle data from third party providers.
     OracleDataSubmission oracle_data_submission = 3001;
   }

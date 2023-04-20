@@ -145,7 +145,7 @@ message WithdrawSubmission {
 // Command to submit a new proposal for the
 // Vega network governance
 message ProposalSubmission {
-  // Proposal reference.
+  // Reference identifying the proposal.
   string reference = 1;
   // Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
   vega.ProposalTerms terms = 2;

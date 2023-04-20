@@ -52,6 +52,7 @@
 - [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
 - [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
 - [7988](https://github.com/vegaprotocol/vega/issues/7988) - Make information about numbers expressed as strings more clear.
+- [8021](https://github.com/vegaprotocol/vega/issues/8021) - Add better field descriptions in the `API` documentation.
 
 ### 🐛 Fixes
 
