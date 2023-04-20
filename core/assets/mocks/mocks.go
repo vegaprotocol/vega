@@ -72,6 +72,18 @@ func (m *MockNotary) EXPECT() *MockNotaryMockRecorder {
 	return m.recorder
 }
 
+// OfferSignatures mocks base method.
+func (m *MockNotary) OfferSignatures(arg0 v1.NodeSignatureKind, arg1 func(string) []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OfferSignatures", arg0, arg1)
+}
+
+// OfferSignatures indicates an expected call of OfferSignatures.
+func (mr *MockNotaryMockRecorder) OfferSignatures(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OfferSignatures", reflect.TypeOf((*MockNotary)(nil).OfferSignatures), arg0, arg1)
+}
+
 // StartAggregate mocks base method.
 func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind, arg2 []byte) {
 	m.ctrl.T.Helper()

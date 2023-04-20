@@ -596,6 +596,18 @@ func (mr *MockSignaturesMockRecorder) EmitValidatorRemovedSignatures(arg0, arg1,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EmitValidatorRemovedSignatures", reflect.TypeOf((*MockSignatures)(nil).EmitValidatorRemovedSignatures), arg0, arg1, arg2, arg3)
 }
 
+// OfferSignatures mocks base method.
+func (m *MockSignatures) OfferSignatures() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OfferSignatures")
+}
+
+// OfferSignatures indicates an expected call of OfferSignatures.
+func (mr *MockSignaturesMockRecorder) OfferSignatures() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OfferSignatures", reflect.TypeOf((*MockSignatures)(nil).OfferSignatures))
+}
+
 // PreparePromotionsSignatures mocks base method.
 func (m *MockSignatures) PreparePromotionsSignatures(arg0 context.Context, arg1 time.Time, arg2 uint64, arg3, arg4 map[string]validators.StatusAddress) {
 	m.ctrl.T.Helper()
