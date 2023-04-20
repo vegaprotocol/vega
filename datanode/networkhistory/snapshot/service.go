@@ -24,7 +24,10 @@ type Service struct {
 	migrateSchemaDownToVersion func(version int64) error
 }
 
-func NewSnapshotService(log *logging.Logger, config Config, connPool *pgxpool.Pool,
+func NewSnapshotService(
+	log *logging.Logger,
+	config Config,
+	connPool *pgxpool.Pool,
 	snapshotsCopyToPath string,
 	migrateDatabaseToVersion func(version int64) error,
 	migrateSchemaDownToVersion func(version int64) error,

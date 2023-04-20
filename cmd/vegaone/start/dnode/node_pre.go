@@ -326,17 +326,22 @@ func (l *DN) initialiseNetworkHistory(preLog *logging.Logger, connConfig sqlstor
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
 
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
-		networkHistoryPool, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		networkHistoryPool,
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
-				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
+			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+				return fmt.Errorf("failed to migrate up to schema version %d: %w", version, err)
+			}
+			return nil
+		},
+		func(version int64) error {
+			if err = sqlstore.MigrateDownToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+				return fmt.Errorf("failed to migrate down to schema version %d: %w", version, err)
 			}
 			return nil
 		})
 	if err != nil {
 		return fmt.Errorf("failed to create snapshot service:%w", err)
 	}
-
 	l.networkHistoryService, err = networkhistory.New(l.ctx, networkHistoryServiceLog, l.conf.NetworkHistory, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
 		networkHistoryPool,
 		l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
