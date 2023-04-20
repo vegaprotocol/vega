@@ -192,6 +192,7 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 		selfSigned  = map[idKind]bool{}
 		self        = n.top.SelfVegaPubKey()
 	)
+
 	for _, s := range notary.Sigs {
 		idK := idKind{id: s.ID, kind: v1.NodeSignatureKind(s.Kind)}
 
