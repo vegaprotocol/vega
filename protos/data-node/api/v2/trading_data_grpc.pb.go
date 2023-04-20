@@ -69,18 +69,17 @@ type TradingDataServiceClient interface {
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
 	// List ledger entries
 	//
-	// Get a list of ledger entries by asset, market, party, account type and transfer type within the given date range.
+	// Get a list of ledger entries within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
-	// for each of the sides - sending and receiving accounts, the query returns an error.
+	// Each account filter must contain no more than one party ID.
 	//
-	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the sending AND receiving account
-	//   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
+	// Entries can be filtered by:
+	//   - the sending account (market ID, asset ID, account type)
+	//   - receiving account (market ID, asset ID, account type)
+	//   - sending AND receiving account
+	//   - transfer type either in addition to the above filters or as a standalone option
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -1684,18 +1683,17 @@ type TradingDataServiceServer interface {
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
 	// List ledger entries
 	//
-	// Get a list of ledger entries by asset, market, party, account type and transfer type within the given date range.
+	// Get a list of ledger entries within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
-	// for each of the sides - sending and receiving accounts, the query returns an error.
+	// Each account filter must contain no more than one party ID.
 	//
-	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the sending AND receiving account
-	//   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
+	// Entries can be filtered by:
+	//   - the sending account (market ID, asset ID, account type)
+	//   - receiving account (market ID, asset ID, account type)
+	//   - sending AND receiving account
+	//   - transfer type either in addition to the above filters or as a standalone option
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
