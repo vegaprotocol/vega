@@ -82,7 +82,6 @@ func New(
 	svcs, err := newServices(
 		ctx, log, confWatcher, nodewallets, ethClient, ethConfirmation, blockchainClient, vegaPaths, stats,
 	)
-
 	if err != nil {
 		return nil, err
 	}
