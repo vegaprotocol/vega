@@ -828,7 +828,7 @@ func (a *ImportWalletAssertion) LocatedUnder(home string) *ImportWalletAssertion
 
 type GetWalletInfoResponse struct {
 	Type    string `json:"type"`
-	Version uint32 `json:"version"`
+	Version uint32 `json:"keyDerivationVersion"`
 	ID      string `json:"id"`
 }
 

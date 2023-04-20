@@ -28,8 +28,7 @@ type AdminImportNetworkParams struct {
 }
 
 type AdminImportNetworkResult struct {
-	Name     string `json:"name"`
-	FilePath string `json:"filePath"`
+	Name string `json:"name"`
 }
 
 type AdminImportNetwork struct {
@@ -83,8 +82,7 @@ func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params)
 	}
 
 	return AdminImportNetworkResult{
-		Name:     net.Name,
-		FilePath: h.networkStore.GetNetworkPath(net.Name),
+		Name: net.Name,
 	}, nil
 }
 

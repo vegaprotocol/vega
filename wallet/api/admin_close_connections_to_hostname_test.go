@@ -13,8 +13,13 @@ import (
 )
 
 func TestAdminCloseConnectionsToHostname(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminCloseConnectionsToHostnameSchemaCorrect)
 	t.Run("Closing a connection with invalid params fails", testAdminCloseConnectionsToHostnameWithInvalidParamsFails)
 	t.Run("Closing a connection with valid params succeeds", testAdminCloseConnectionsToHostnameWithValidParamsSucceeds)
+}
+
+func testAdminCloseConnectionsToHostnameSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.close_connections_to_hostname", api.AdminCloseConnectionsToHostnameParams{}, nil)
 }
 
 func testAdminCloseConnectionsToHostnameWithInvalidParamsFails(t *testing.T) {

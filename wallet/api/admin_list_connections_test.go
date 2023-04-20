@@ -14,7 +14,12 @@ import (
 )
 
 func TestAdminListConnections(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminListConnectionsSchemaCorrect)
 	t.Run("Listing the connections succeeds", testAdminListConnectionsSucceeds)
+}
+
+func testAdminListConnectionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.list_connections", nil, api.AdminListConnectionsResult{})
 }
 
 func testAdminListConnectionsSucceeds(t *testing.T) {

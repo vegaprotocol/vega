@@ -16,6 +16,7 @@ import (
 )
 
 func TestAdminAnnotateKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminAnnotateKeySchemaCorrect)
 	t.Run("Annotating a key with invalid params fails", testAnnotatingKeyWithInvalidParamsFails)
 	t.Run("Annotating a key with valid params succeeds", testAnnotatingKeyWithValidParamsSucceeds)
 	t.Run("Annotating a key on unknown wallet fails", testAnnotatingKeyOnUnknownWalletFails)
@@ -23,6 +24,10 @@ func TestAdminAnnotateKey(t *testing.T) {
 	t.Run("Getting internal error during wallet verification doesn't annotate the key", testGettingInternalErrorDuringWalletVerificationDoesNotAnnotateKey)
 	t.Run("Getting internal error during wallet retrieval doesn't annotate the key", testGettingInternalErrorDuringWalletRetrievalDoesNotAnnotateKey)
 	t.Run("Getting internal error during wallet saving doesn't annotate the key", testGettingInternalErrorDuringWalletSavingDoesNotAnnotateKey)
+}
+
+func testAdminAnnotateKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.annotate_key", api.AdminAnnotateKeyParams{}, api.AdminAnnotateKeyResult{})
 }
 
 func testAnnotatingKeyWithInvalidParamsFails(t *testing.T) {
