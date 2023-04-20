@@ -449,7 +449,7 @@ type OrderInfo struct {
 	// Number of units remaining of the total that have not yet been bought or sold (uint64)
 	Remaining string `json:"remaining"`
 	// Boolean indicating a market order
-	IsMarketOrder *bool `json:"isMarketOrder"`
+	IsMarketOrder bool `json:"isMarketOrder"`
 }
 
 // Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position

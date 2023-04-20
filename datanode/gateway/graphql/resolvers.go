@@ -957,11 +957,6 @@ func (r *myQueryResolver) EstimatePosition(
 
 	ord := make([]*v2.OrderInfo, 0, len(orders))
 	for _, o := range orders {
-		mktOrder := false
-		if o.IsMarketOrder != nil {
-			mktOrder = *o.IsMarketOrder
-		}
-
 		r, err := safeStringUint64(o.Remaining)
 		if err != nil {
 			return nil, err
@@ -971,7 +966,7 @@ func (r *myQueryResolver) EstimatePosition(
 			Side:          o.Side,
 			Price:         o.Price,
 			Remaining:     r,
-			IsMarketOrder: mktOrder,
+			IsMarketOrder: o.IsMarketOrder,
 		})
 	}
 

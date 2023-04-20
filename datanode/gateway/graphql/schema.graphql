@@ -2263,7 +2263,7 @@ input OrderInfo {
   "Number of units remaining of the total that have not yet been bought or sold (uint64)"
   remaining: String!
   "Boolean indicating a market order"
-  isMarketOrder: Boolean
+  isMarketOrder: Boolean!
 }
 
 "An order in Vega, if active it will be on the order book for the market"

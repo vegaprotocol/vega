@@ -66562,7 +66562,7 @@ func (ec *executionContext) unmarshalInputOrderInfo(ctx context.Context, obj int
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isMarketOrder"))
-			it.IsMarketOrder, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			it.IsMarketOrder, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
