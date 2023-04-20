@@ -15,11 +15,16 @@ import (
 )
 
 func TestAdminUpdatePassphrase(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminUpdatePassphraseSchemaCorrect)
 	t.Run("Updating a passphrase with invalid params fails", testUpdatingPassphraseWithInvalidParamsFails)
 	t.Run("Updating a passphrase with valid params succeeds", testUpdatingPassphraseWithValidParamsSucceeds)
 	t.Run("Getting internal error during wallet verification fails", testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Updating a passphrase from wallet that does not exists fails", testUpdatingPassphraseFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during isolated wallet saving fails", testUpdatingPassphraseGettingInternalErrorDuringPassphraseUpdateFails)
+}
+
+func testAdminUpdatePassphraseSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.update_passphrase", api.AdminUpdatePassphraseParams{}, nil)
 }
 
 func testUpdatingPassphraseWithInvalidParamsFails(t *testing.T) {

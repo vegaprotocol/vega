@@ -14,9 +14,14 @@ import (
 )
 
 func TestAdminSignMessage(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminSignMessageSchemaCorrect)
 	t.Run("Signing message with invalid params fails", testSigningMessageWithInvalidParamsFails)
 	t.Run("Signing message with wallet that doesn't exist fails", testSigningMessageWithWalletThatDoesntExistFails)
 	t.Run("Signing message failing to get wallet fails", testSigningMessageFailingToGetWalletFails)
+}
+
+func testAdminSignMessageSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.sign_message", api.AdminSignMessageParams{}, api.AdminSignMessageResult{})
 }
 
 func testSigningMessageWithInvalidParamsFails(t *testing.T) {

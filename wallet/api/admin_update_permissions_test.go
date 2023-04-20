@@ -16,12 +16,17 @@ import (
 )
 
 func TestAdminUpdatePermissions(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminUpdatePermissionsSchemaCorrect)
 	t.Run("Updating permissions with invalid params fails", testUpdatingPermissionsWithInvalidParamsFails)
 	t.Run("Updating permissions with valid params succeeds", testUpdatingPermissionsWithValidParamsSucceeds)
 	t.Run("Updating permissions from wallet that does not exists fails", testUpdatingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminUpdatePermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminUpdatePermissionsGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Getting internal error during wallet saving fails", testAdminUpdatePermissionsGettingInternalErrorDuringWalletSavingFails)
+}
+
+func testAdminUpdatePermissionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.update_permissions", api.AdminUpdatePermissionsParams{}, api.AdminUpdatePermissionsResult{})
 }
 
 func testUpdatingPermissionsWithInvalidParamsFails(t *testing.T) {

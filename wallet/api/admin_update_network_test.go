@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminUpdateNetwork(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminUpdateNetworkSchemaCorrect)
 	t.Run("Updating a network with invalid params fails", testUpdatingNetworkWithInvalidParamsFails)
 	t.Run("Updating a network with valid params succeeds", testUpdatingNetworkWithValidParamsSucceeds)
 	t.Run("Updating a network that does not exists fails", testUpdatingNetworkThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification fails", testAdminUpdateNetworkGettingInternalErrorDuringNetworkVerificationFails)
 	t.Run("Getting internal error during retrieval fails", testAdminUpdateNetworkGettingInternalErrorDuringNetworkSavingFails)
+}
+
+func testAdminUpdateNetworkSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.update_network", network.Network{}, nil)
 }
 
 func testUpdatingNetworkWithInvalidParamsFails(t *testing.T) {

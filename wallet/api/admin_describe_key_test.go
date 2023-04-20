@@ -16,12 +16,17 @@ import (
 )
 
 func TestAdminDescribeKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminDescribeKeySchemaCorrect)
 	t.Run("Describing a key with invalid params fails", testAdminDescribingKeyWithInvalidParamsFails)
 	t.Run("Describing a key with valid params succeeds", testAdminDescribingKeyWithValidParamsSucceeds)
 	t.Run("Describing a key from wallet that does not exists fails", testAdminDescribeKeyDescribingKeyFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminDescribeKeyGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminDescribeKeyGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Describing a key that does not exists fails", testAdminDescribingKeyThatDoesNotExistsFails)
+}
+
+func testAdminDescribeKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.describe_key", api.AdminDescribeKeyParams{}, api.AdminDescribeKeyResult{})
 }
 
 func testAdminDescribingKeyWithInvalidParamsFails(t *testing.T) {

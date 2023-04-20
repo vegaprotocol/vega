@@ -133,16 +133,16 @@ message LiquidityTarget {
   TimestampedOpenInterest max_open_interests = 6;
 }
 
-message LiquidityPriceProbabilityPair {
-  string price = 1;
+message LiquidityOffsetProbabilityPair {
+  uint32 offset = 1;
   string probability = 2;
 }
 
 message LiquiditySupplied {
   string market_id = 1;
   bool consensus_reached = 2;
-  repeated LiquidityPriceProbabilityPair bid_cache = 3;
-  repeated LiquidityPriceProbabilityPair ask_cache = 4;
+  repeated LiquidityOffsetProbabilityPair bid_cache = 3;
+  repeated LiquidityOffsetProbabilityPair ask_cache = 4;
 }
 
 message OracleDataBatch {

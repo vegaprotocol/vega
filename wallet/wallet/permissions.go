@@ -1,9 +1,5 @@
 package wallet
 
-import (
-	"fmt"
-)
-
 var PublicKeysPermissionLabel = "public_keys"
 
 // Permissions describes the permissions set on a given hostname.
@@ -45,12 +41,6 @@ func DefaultPermissions() Permissions {
 	}
 }
 
-func PermissionsWithoutRestrictions() Permissions {
-	return Permissions{
-		PublicKeys: PublicKeysPermissionWithoutRestrictions(),
-	}
-}
-
 type PermissionsSummary map[string]string
 
 type AccessMode string
@@ -59,17 +49,6 @@ var (
 	NoAccess   AccessMode = "none"
 	ReadAccess AccessMode = "read"
 )
-
-func ToAccessMode(mode string) (AccessMode, error) {
-	switch mode {
-	case "read":
-		return ReadAccess, nil
-	case "none":
-		return NoAccess, nil
-	default:
-		return NoAccess, fmt.Errorf("access mode %q is not supported", mode)
-	}
-}
 
 func AccessModeToString(m AccessMode) string {
 	switch m {
@@ -104,11 +83,5 @@ func (p PublicKeysPermission) HasAllowedKeys() bool {
 func NoPublicKeysPermission() PublicKeysPermission {
 	return PublicKeysPermission{
 		Access: NoAccess,
-	}
-}
-
-func PublicKeysPermissionWithoutRestrictions() PublicKeysPermission {
-	return PublicKeysPermission{
-		Access: ReadAccess,
 	}
 }

@@ -40,6 +40,7 @@
 - [7987](https://github.com/vegaprotocol/vega/issues/7987) - Make terms consistent in `API` documentation.
 - [8025](https://github.com/vegaprotocol/vega/issues/8025) - Address inconsistent verb and grammar in the `API` documentation.
 - [7999](https://github.com/vegaprotocol/vega/issues/7999) - Review `DateRange API` documentation.
+- [7955](https://github.com/vegaprotocol/vega/issues/7955) - Ensure the wallet API documentation matches the Go definitions
 - [8023](https://github.com/vegaprotocol/vega/issues/8023) - Made pagination `docstrings` consistent.
 - [8105](https://github.com/vegaprotocol/vega/issues/8105) - Make candles return in ascending order when queried from `graphql`.
 - [8144](https://github.com/vegaprotocol/vega/issues/8144) - Visor - remove data node asset option from the config. Use only one asset.
@@ -53,6 +54,7 @@
 - [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
 - [7988](https://github.com/vegaprotocol/vega/issues/7988) - Make information about numbers expressed as strings more clear.
 - [8021](https://github.com/vegaprotocol/vega/issues/8021) - Add better field descriptions in the `API` documentation.
+- [8171](https://github.com/vegaprotocol/vega/issues/8171) - Optimise the way offsets are used in probability of trading.
 
 ### 🐛 Fixes
 

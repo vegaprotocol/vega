@@ -19,6 +19,7 @@ import (
 )
 
 func TestAdminCheckTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminCheckTransactionSchemaCorrect)
 	t.Run("Checking transaction with invalid params fails", testAdminCheckingTransactionWithInvalidParamsFails)
 	t.Run("Checking transaction with valid params succeeds", testAdminCheckingTransactionWithValidParamsSucceeds)
 	t.Run("Getting internal error during wallet verification fails", testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails)
@@ -26,6 +27,10 @@ func TestAdminCheckTransaction(t *testing.T) {
 	t.Run("Getting internal error during wallet retrieval fails", testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Checking transaction with malformed transaction fails", testAdminCheckingTransactionWithMalformedTransactionFails)
 	t.Run("Checking transaction which is invalid fails", testAdminCheckingTransactionWithInvalidTransactionFails)
+}
+
+func testAdminCheckTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.check_transaction", api.AdminCheckTransactionParams{}, api.AdminCheckTransactionResult{})
 }
 
 func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {

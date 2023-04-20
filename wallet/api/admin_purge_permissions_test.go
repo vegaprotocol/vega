@@ -16,12 +16,17 @@ import (
 )
 
 func TestAdminPurgePermissions(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminPurgePermissionsSchemaCorrect)
 	t.Run("Purging permissions with invalid params fails", testPurgingPermissionsWithInvalidParamsFails)
 	t.Run("Purging permissions with valid params succeeds", testPurgingPermissionsWithValidParamsSucceeds)
 	t.Run("Purging permissions from wallet that does not exists fails", testPurgingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminPurgePermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminPurgePermissionsGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Getting internal error during wallet saving fails", testAdminPurgePermissionsGettingInternalErrorDuringWalletSavingFails)
+}
+
+func testAdminPurgePermissionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.purge_permissions", api.AdminPurgePermissionsParams{}, nil)
 }
 
 func testPurgingPermissionsWithInvalidParamsFails(t *testing.T) {
