@@ -24,6 +24,8 @@ type rollbackCmd struct {
 }
 
 func (cmd *rollbackCmd) Execute(args []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.WarnLevel
 	cfg.Environment = "custom"
@@ -57,7 +59,7 @@ func (cmd *rollbackCmd) Execute(args []string) error {
 		}
 	}
 
-	if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), cmd.SQLStore.ConnectionConfig); err != nil {
+	if err := networkhistory.KillAllConnectionsToDatabase(ctx, cmd.SQLStore.ConnectionConfig); err != nil {
 		return fmt.Errorf("failed to kill all connections to database: %w", err)
 	}
 
@@ -67,9 +69,6 @@ func (cmd *rollbackCmd) Execute(args []string) error {
 	}
 	defer connPool.Close()
 
-	ctx, cancelFn := context.WithCancel(context.Background())
-	defer cancelFn()
-
 	networkHistoryService, err := createNetworkHistoryService(ctx, log, cmd.Config, connPool, vegaPaths)
 	if err != nil {
 		return fmt.Errorf("failed to created network history service: %w", err)
@@ -78,7 +77,7 @@ func (cmd *rollbackCmd) Execute(args []string) error {
 
 	loadLog := newLoadLog()
 	defer loadLog.AtExit()
-	err = networkHistoryService.RollbackToHeight(context.Background(), loadLog, rollbackToHeight)
+	err = networkHistoryService.RollbackToHeight(ctx, loadLog, rollbackToHeight)
 	if err != nil {
 		return fmt.Errorf("failed to rollback datanode: %w", err)
 	}

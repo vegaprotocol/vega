@@ -32,6 +32,8 @@ func (o *latestHistoryOutput) printHuman() {
 }
 
 func (cmd *latestHistorySegment) Execute(_ []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.ErrorLevel
 	cfg.Environment = "custom"
@@ -47,7 +49,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		os.Exit(1)
 	}
 
-	ctx, cancelFn := context.WithCancel(context.Background())
+	ctx, cancelFn := context.WithCancel(ctx)
 	defer cancelFn()
 
 	var latestSegment *v2.HistorySegment
