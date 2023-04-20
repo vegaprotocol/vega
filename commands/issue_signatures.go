@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -20,6 +21,8 @@ func checkIssueSignatures(cmd *commandspb.IssueSignatures) Errors {
 
 	if len(cmd.Submitter) == 0 {
 		errs.AddForProperty("issue_signatures.submitter", ErrIsRequired)
+	} else if !crypto.EthereumIsValidAddress(cmd.Submitter) {
+		errs.AddForProperty("issue_signatures.submitter", ErrIsNotValidEthereumAddress)
 	}
 
 	if cmd.Kind != commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ERC20_MULTISIG_SIGNER_REMOVED &&

@@ -3,6 +3,7 @@ package commands
 import (
 	"encoding/hex"
 
+	"code.vegaprotocol.io/vega/libs/crypto"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -31,6 +32,8 @@ func checkAnnounceNode(cmd *commandspb.AnnounceNode) Errors {
 
 	if len(cmd.EthereumAddress) == 0 {
 		errs.AddForProperty("announce_node.ethereum_address", ErrIsRequired)
+	} else if !crypto.EthereumIsValidAddress(cmd.EthereumAddress) {
+		errs.AddForProperty("announce_node.ethereum_address", ErrIsNotValidEthereumAddress)
 	}
 
 	if len(cmd.ChainPubKey) == 0 {
@@ -53,6 +56,10 @@ func checkAnnounceNode(cmd *commandspb.AnnounceNode) Errors {
 		if err != nil {
 			errs.AddForProperty("announce_node.vega_signature.value", ErrShouldBeHexEncoded)
 		}
+	}
+
+	if len(cmd.SubmitterAddress) != 0 && !crypto.EthereumIsValidAddress(cmd.SubmitterAddress) {
+		errs.AddForProperty("announce_node.submitter_address", ErrIsNotValidEthereumAddress)
 	}
 
 	return errs

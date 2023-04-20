@@ -15,6 +15,8 @@ func checkNodeVote(cmd *commandspb.NodeVote) Errors {
 
 	if len(cmd.Reference) == 0 {
 		errs.AddForProperty("node_vote.reference", ErrIsRequired)
+	} else if len(cmd.Reference) > 1000 {
+		errs.AddForProperty("node_vote.reference", ErrReferenceTooLong)
 	}
 
 	return errs
