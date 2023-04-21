@@ -870,7 +870,7 @@ func testServiceV2_PostRequests_SendTransactionSucceeds(t *testing.T) {
 	expectedResult := &api.ClientSendTransactionResult{}
 
 	// setup
-	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(expectedResult, nil)
+	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(expectedResult, nil)
 	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
@@ -1012,7 +1012,7 @@ func testServiceV2_PostRequests_SendTransactionAsNotificationReturnsNothing(t *t
 	}
 
 	// setup
-	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
+	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
 	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
@@ -1056,7 +1056,7 @@ func testServiceV2_PostRequests_SendTransactionGettingErrorFails(t *testing.T) {
 	}
 
 	// setup
-	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
+	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
 	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
@@ -1100,7 +1100,7 @@ func testServiceV2_PostRequests_SendTransactionGettingInternalErrorFails(t *test
 	}
 
 	// setup
-	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
+	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
 	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
@@ -1210,7 +1210,7 @@ func testServiceV2_PostRequests_SendTransactionWithLongLivingTokenSucceeds(t *te
 
 	// setup
 	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
-	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(expectedResult, nil)
+	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(expectedResult, nil)
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodySendTransaction, map[string]string{

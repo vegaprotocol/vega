@@ -110,9 +110,6 @@ func (s *Handler) CheckSubmission(req *walletpb.SubmitTransactionRequest, newSta
 		// we can reset all the spam statistics now that we're in a new epoch and just take what the spam endpoint tells us
 		chainStats[req.PubKey] = newStats
 		stats = newStats
-	} else if stats.MaxTTL != newStats.MaxTTL {
-		chainStats[req.PubKey] = newStats
-		stats = newStats
 	}
 
 	if newStats.PoW.BannedUntil != nil {

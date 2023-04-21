@@ -704,7 +704,6 @@ func (s *coreService) GetSpamStatistics(ctx context.Context, req *protoapi.GetSp
 			MaxForEpoch: math.MaxUint64,
 		}
 	}
-	spamStats.MaxTtl = s.stats.Blockchain.TxMaxTTL()
 
 	// Noop PoW Engine is used for NullBlockChain so this should be safe
 	spamStats.Pow = s.powEngine.GetSpamStatistics(req.PartyId)

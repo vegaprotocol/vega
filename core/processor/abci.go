@@ -36,7 +36,6 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/idgeneration"
-	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/processor/ratelimit"
 	"code.vegaprotocol.io/vega/core/txn"
 	"code.vegaprotocol.io/vega/core/types"
@@ -67,7 +66,6 @@ var (
 	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
 	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
 	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
-	ErrTransactionExpired                            = errors.New("transaction expired because it could not be included within the defined range of blocks")
 	ErrOracleDataNormalization                       = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -146,7 +144,6 @@ type App struct {
 	lastBlockAppHash  []byte
 	version           string
 	blockchainClient  BlockchainClient
-	codec             Codec
 
 	vegaPaths      paths.Paths
 	cfg            Config
@@ -224,7 +221,7 @@ func NewApp(
 	erc20MultiSigTopology ERC20MultiSigTopology,
 	version string, // we need the version for snapshot reload
 	protocolUpgradeService ProtocolUpgradeService,
-	codec Codec,
+	codec abci.Codec,
 	gastimator *Gastimator,
 ) *App {
 	log = log.Named(namedLogger)
@@ -271,7 +268,6 @@ func NewApp(
 		erc20MultiSigTopology:  erc20MultiSigTopology,
 		protocolUpgradeService: protocolUpgradeService,
 		gastimator:             gastimator,
-		codec:                  codec,
 	}
 
 	// setup handlers
@@ -406,10 +402,6 @@ func NewApp(
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
 	app.ensureConfig()
-	// ensure the stats are set correctly
-	v, _ := app.netp.GetUint(netparams.MaxBlocksTTL)
-	app.stats.SetTxMaxTTL(v.Uint64())
-	app.codec.UpdateMaxTTL(v.Uint64())
 	return app
 }
 
@@ -478,17 +470,6 @@ func (app *App) SendTransactionResult(
 	f func(context.Context, abci.Tx) error,
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
-		// Add TTL check here, validator commands pass through here, too, so make sure to exclude those
-		if !tx.Command().IsValidatorCommand() {
-			// cmd := tx.Command()
-			// if ttl := tx.TTL(); cmd != txn.DelegateCommand && cmd != txn.UndelegateCommand && ttl < app.stats.Height() {
-			if ttl := tx.TTL(); ttl < app.stats.Height() {
-				app.broker.Send(events.NewTransactionResultEventFailure(
-					ctx, hex.EncodeToString(tx.Hash()), tx.Party(), ErrTransactionExpired, tx.GetCmd(),
-				))
-				return ErrTransactionExpired
-			}
-		}
 		if err := f(ctx, tx); err != nil {
 			// Send and error event
 			app.broker.Send(events.NewTransactionResultEventFailure(
@@ -1074,16 +1055,6 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 		resp.Data = []byte(err.Error())
 		return ctx, resp
 	}
-
-	// make an exception for commands related to delegation
-	// if cmd := tx.Command(); !cmd.IsValidatorCommand() && cmd != txn.DelegateCommand && cmd != txn.UndelegateCommand {
-	// if the TTL == current height, the tx will, at best, make it the next block, which is too late.
-	if ttl := tx.TTL(); ttl <= app.stats.Height() {
-		resp.Code = blockchain.AbciExpiredCommandError
-		resp.Data = []byte("command expired")
-		return ctx, resp
-	}
-	// }
 
 	// Check ratelimits
 	// FIXME(): temporary disable all rate limiting
@@ -1834,8 +1805,7 @@ func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
 	prop.State = types.ProposalStateEnacted
-	k := np.Key
-	if err := app.netp.Update(ctx, k, np.Value); err != nil {
+	if err := app.netp.Update(ctx, np.Key, np.Value); err != nil {
 		prop.FailUnexpectedly(err)
 		app.log.Error("failed to update network parameters",
 			logging.ProposalID(prop.ID),
@@ -1847,14 +1817,6 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	// just so we are sure all netparams updates are dispatches one by one
 	// in a deterministic order
 	app.netp.DispatchChanges(ctx)
-	// in case the max TTL was updated, update the codec:
-	if k == netparams.MaxBlocksTTL {
-		v, _ := app.netp.GetUint(k)
-		// set the new TTL on the codec
-		maxTTL := v.Uint64()
-		app.codec.UpdateMaxTTL(maxTTL)
-		app.stats.SetTxMaxTTL(maxTTL)
-	}
 }
 
 func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {

@@ -32,7 +32,6 @@ func TestClientCheckTransaction(t *testing.T) {
 	t.Run("Failing to get the spam statistics does not check the transaction", testFailingToGetSpamStatsDoesNotCheckTransaction)
 	t.Run("Failure when checking transaction returns an error", testFailureWhenCheckingTransactionReturnsAnError)
 	t.Run("Failing spam checks aborts the transaction", testFailingSpamChecksAbortsCheckingTheTransaction)
-	t.Run("Override TTL if the specified value is too high", testOverrideHighTTL)
 }
 
 func testClientCheckTransactionSchemaCorrect(t *testing.T) {
@@ -563,99 +562,6 @@ func testFailingSpamChecksAbortsCheckingTheTransaction(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testOverrideHighTTL(t *testing.T) {
-	// given
-	ctx, traceID := clientContextForTest()
-	hostname := vgrand.RandomStr(5)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
-		PublicKeys: wallet.PublicKeysPermission{
-			Access:      wallet.ReadAccess,
-			AllowedKeys: nil,
-		},
-	})
-	kp, err := wallet1.GenerateKeyPair(nil)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	spamStats := types.SpamStatistics{
-		ChainID:           vgrand.RandomStr(5),
-		LastBlockHeight:   100,
-		Proposals:         &types.SpamStatistic{MaxForEpoch: 1},
-		NodeAnnouncements: &types.SpamStatistic{MaxForEpoch: 1},
-		Delegations:       &types.SpamStatistic{MaxForEpoch: 1},
-		Transfers:         &types.SpamStatistic{MaxForEpoch: 1},
-		Votes:             &types.VoteSpamStatistics{MaxForEpoch: 1},
-		PoW: &types.PoWStatistics{
-			PowBlockStates: []types.PoWBlockState{{}},
-		},
-		MaxTTL: 10,
-	}
-
-	// setup
-	handler := newCheckTransactionHandler(t)
-	pow := commandspb.ProofOfWork{
-		Tid:   vgrand.RandomStr(5),
-		Nonce: 12345678,
-	}
-
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow, uint8(2)).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
-	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
-	handler.interactor.EXPECT().RequestTransactionReviewForChecking(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
-	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, uint8(2), api.TransactionSuccessfullyChecked).Times(1)
-	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), gomock.Any()).Times(1).Return(&pow, nil)
-	handler.node.EXPECT().CheckTransaction(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
-
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientCheckTransactionParams{
-		PublicKey:   kp.PublicKey(),
-		Transaction: testTransaction(t),
-	}, connectedWallet)
-
-	// then
-	assert.Nil(t, errorDetails)
-	require.NotEmpty(t, result)
-	assert.NotEmpty(t, result.Tx)
-
-	// now do the exact same thing, but this time override the TTL to twice the max
-	handler = newCheckTransactionHandler(t)
-	// attempt twice the TTL for this Tx
-	handler.overrideTTL = 2 * spamStats.MaxTTL
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow, uint8(2)).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
-	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
-	handler.interactor.EXPECT().RequestTransactionReviewForChecking(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
-	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifySuccessfulRequest(ctx, traceID, uint8(2), api.TransactionSuccessfullyChecked).Times(1)
-	handler.spam.EXPECT().GenerateProofOfWork(kp.PublicKey(), gomock.Any()).Times(1).Return(&pow, nil)
-	handler.node.EXPECT().CheckTransaction(ctx, gomock.Any()).Times(1).Return(nil)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
-	// when
-	result2, errorDetails2 := handler.handle(t, ctx, api.ClientCheckTransactionParams{
-		PublicKey:   kp.PublicKey(),
-		Transaction: testTransaction(t),
-	}, connectedWallet)
-
-	// then
-	assert.Nil(t, errorDetails2)
-	require.NotEmpty(t, result2)
-	assert.NotEmpty(t, result2.Tx)
-	// despite having TTL set to 20, because spamstats set the max at 10, this tx will have the max TTL of 10 set
-	// we need to compare these two, but because the requests are sent a few nanoseconds apart, the signatures are different
-	// assert.EqualValues(t, result.Tx, result2.Tx)
-}
-
 type checkTransactionHandler struct {
 	*api.ClientCheckTransaction
 	ctrl         *gomock.Controller
@@ -664,13 +570,12 @@ type checkTransactionHandler struct {
 	node         *nodemocks.MockNode
 	walletStore  *mocks.MockWalletStore
 	spam         *mocks.MockSpamHandler
-	overrideTTL  uint64
 }
 
 func (h *checkTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (api.ClientCheckTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, connectedWallet, h.overrideTTL)
+	rawResult, err := h.Handle(ctx, params, connectedWallet)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientCheckTransactionResult)
 		if !ok {
@@ -699,6 +604,5 @@ func newCheckTransactionHandler(t *testing.T) *checkTransactionHandler {
 		node:                   node,
 		walletStore:            walletStore,
 		spam:                   proofOfWork,
-		overrideTTL:            0,
 	}
 }

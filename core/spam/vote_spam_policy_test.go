@@ -38,7 +38,6 @@ type testTx struct {
 func (*testTx) GetPoWNonce() uint64 { return 0 }
 func (*testTx) GetPoWTID() string   { return "" }
 func (*testTx) GetVersion() uint32  { return 2 }
-func (*testTx) TTL() uint64         { return 0 }
 
 var (
 	sufficientTokensForVoting, _    = num.UintFromString("100000000000000000000", 10)

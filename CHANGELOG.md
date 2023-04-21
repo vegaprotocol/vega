@@ -58,6 +58,7 @@
 - [8021](https://github.com/vegaprotocol/vega/issues/8021) - Add better field descriptions in the `API` documentation.
 - [8171](https://github.com/vegaprotocol/vega/issues/8171) - Optimise the way offsets are used in probability of trading.
 - [7847](https://github.com/vegaprotocol/vega/issues/7847) - Add `EstimatePosition` `API` method, mark `EstimateOrder` (GraphQL) and `EstimateMargin` (gRPC) as deprecated.
+- [7969](https://github.com/vegaprotocol/vega/issues/7969) - Reverted the `TTL` changes, minor tweak to proof of work verification to ensure validator commands can't be rejected based on age.
 
 ### 🐛 Fixes
 
