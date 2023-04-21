@@ -734,6 +734,19 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 
 	// check auction, if any. If we leave auction, MTM is performed in this call
 	m.checkAuction(ctx, t)
+
+	if m.matching.InAuction() != m.as.InAuction() {
+		m.log.Fatal(fmt.Sprintf("Matching engine indicates auction=%t, while the market indicates auciton=%t", m.matching.InAuction(), m.as.InAuction()))
+	}
+
+	if !m.as.InAuction() && m.as.Mode() != types.MarketTradingModeContinuous {
+		m.log.Fatal(fmt.Sprintf("Market is not in auction, but the trading mode is: %s", m.as.Mode().String()))
+	}
+
+	if m.as.Mode() == types.MarketTradingModeContinuous && m.as.InAuction() {
+		m.log.Fatal("Market indicates that it's both in continuous trading mode and in auction at the same time")
+	}
+
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
