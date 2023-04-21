@@ -26,6 +26,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"code.vegaprotocol.io/vega/core/risk"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
@@ -2477,6 +2479,31 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 	mkt entities.Market,
 	price *num.Uint,
 ) (*num.Uint, error) {
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	return price.Mul(price, priceFactor), nil
+}
+
+func (t *TradingDataServiceV2) scaleDecimalFromMarketToAssetPrice(
+	ctx context.Context,
+	mkt entities.Market,
+	price num.Decimal,
+) (num.Decimal, error) {
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return num.DecimalZero(), err
+	}
+
+	return price.Mul(num.DecimalFromUint(priceFactor)), nil
+}
+
+func (t *TradingDataServiceV2) getMarketPriceFactor(
+	ctx context.Context,
+	mkt entities.Market,
+) (*num.Uint, error) {
 	assetID, err := mkt.ToProto().GetAsset()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting asset from market")
@@ -2489,13 +2516,11 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 
 	// scale the price if needed
 	// price is expected in market decimal
+	priceFactor := num.NewUint(1)
 	if exp := asset.Decimals - mkt.DecimalPlaces; exp != 0 {
-		priceFactor := num.NewUint(1)
 		priceFactor.Exp(num.NewUint(10), num.NewUint(uint64(exp)))
-		price.Mul(price, priceFactor)
 	}
-
-	return price, nil
+	return priceFactor, nil
 }
 
 func (t *TradingDataServiceV2) estimateFee(
@@ -2647,16 +2672,195 @@ func (t *TradingDataServiceV2) estimateMargin(
 
 	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
 		Mul(f).Mul(priceD).Div(mdpd)
-	// now we use the risk factors
+
+	return implyMarginLevels(maintenanceMargin, mkt.TradableInstrument.MarginCalculator.ScalingFactors, rParty, rMarket, asset), nil
+}
+
+func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.ScalingFactors, partyId, marketId, asset string) *vega.MarginLevels {
 	return &vega.MarginLevels{
-		PartyId:                rParty,
-		MarketId:               mktProto.GetId(),
+		PartyId:                partyId,
+		MarketId:               marketId,
 		Asset:                  asset,
 		Timestamp:              0,
 		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.CollateralRelease)).Round(0).String(),
+	}
+}
+
+func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition")()
+
+	var collateralAvailable num.Decimal
+	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
+		var err error
+		collateralAvailable, err = num.DecimalFromString(*req.CollateralAvailable)
+		if err != nil {
+			return nil, formatE(ErrPositionsInvalidCollateralAmount, err)
+		}
+	}
+
+	mkt, err := t.marketService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetByID, err)
+	}
+
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	dPriceFactor := priceFactor.ToDecimal()
+
+	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
+	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
+
+	for _, o := range req.Orders {
+		if o == nil {
+			continue
+		}
+		var price num.Decimal
+		p, err := num.DecimalFromString(o.Price)
+		if err != nil {
+			return nil, errors.Wrap(ErrInvalidOrderPrice, err.Error())
+		}
+		price = p.Mul(dPriceFactor)
+
+		if o.Side == types.SideBuy {
+			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		}
+		if o.Side == types.SideSell {
+			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		}
+	}
+
+	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrRiskFactorServiceGet, err)
+	}
+
+	mktData, err := t.marketDataService.GetMarketDataByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetMarketData, err)
+	}
+
+	mktProto := mkt.ToProto()
+
+	asset, err := mktProto.GetAsset()
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	marketObservable := mktData.MarkPrice
+
+	auction := mktData.AuctionEnd > 0
+	if auction && mktData.MarketTradingMode == types.MarketTradingModeOpeningAuction.String() {
+		marketObservable = mktData.IndicativePrice
+	}
+
+	marketObservable, err = t.scaleDecimalFromMarketToAssetPrice(ctx, mkt, marketObservable)
+	if err != nil {
+		return nil, formatE(ErrScalingPriceFromMarketToAsset, err)
+	}
+
+	positionFactor := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	linearSlippageFactor, err := num.DecimalFromString(mktProto.LinearSlippageFactor)
+	if err != nil {
+		return nil, formatE(fmt.Errorf("can't parse linear slippage factor: %s", mktProto.LinearSlippageFactor), err)
+	}
+	quadraticSlippageFactor, err := num.DecimalFromString(mktProto.QuadraticSlippageFactor)
+	if err != nil {
+		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
+	}
+
+	marginEstimate := t.computeMarginRange(
+		req.MarketId,
+		req.OpenVolume,
+		buyOrders,
+		sellOrders,
+		marketObservable,
+		positionFactor,
+		linearSlippageFactor,
+		quadraticSlippageFactor,
+		rf,
+		auction,
+		asset,
+		mkt.TradableInstrument.MarginCalculator.ScalingFactors)
+
+	var liquidationEstimate *v2.LiquidationEstimate
+	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
+		liquidationEstimate, err = t.computeLiquidationPriceRange(
+			collateralAvailable,
+			req.OpenVolume,
+			buyOrders,
+			sellOrders,
+			marketObservable,
+			positionFactor,
+			linearSlippageFactor,
+			quadraticSlippageFactor,
+			rf)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &v2.EstimatePositionResponse{
+		Margin:      marginEstimate,
+		Liquidation: liquidationEstimate,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) computeMarginRange(
+	market string,
+	openVolume int64,
+	buyOrders, sellOrders []*risk.OrderInfo,
+	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
+	riskFactors entities.RiskFactor,
+	auction bool,
+	asset string,
+	scalingFactors *vega.ScalingFactors,
+) *v2.MarginEstimate {
+	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, auction)
+	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, auction)
+
+	return &v2.MarginEstimate{
+		WorstCase: implyMarginLevels(worst, scalingFactors, "", market, asset),
+		BestCase:  implyMarginLevels(best, scalingFactors, "", market, asset),
+	}
+}
+
+func (t *TradingDataServiceV2) computeLiquidationPriceRange(
+	collateralAvailable num.Decimal,
+	openVolume int64,
+	buyOrders, sellOrders []*risk.OrderInfo,
+	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
+	riskFactors entities.RiskFactor,
+) (*v2.LiquidationEstimate, error) {
+	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short)
+	if err != nil {
+		return nil, err
+	}
+
+	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.LiquidationEstimate{
+		WorstCase: &v2.LiquidationPrice{
+			OpenVolumeOnly:      wPositionOnly.String(),
+			IncludingBuyOrders:  wWithBuy.String(),
+			IncludingSellOrders: wWithSell.String(),
+		},
+		BestCase: &v2.LiquidationPrice{
+			OpenVolumeOnly:      bPositionOnly.String(),
+			IncludingBuyOrders:  bWithBuy.String(),
+			IncludingSellOrders: bWithSell.String(),
+		},
 	}, nil
 }
 

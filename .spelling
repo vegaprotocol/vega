@@ -39,6 +39,9 @@ ed25519-voi
 enum
 enums
 ERC20
+EstimateMargin
+EstimateOrder
+EstimatePosition
 Ethereum
 evt
 faucet
