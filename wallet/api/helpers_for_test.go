@@ -188,7 +188,7 @@ var (
 
 func transactionFromJSON(t *testing.T, JSON string) map[string]any {
 	t.Helper()
-	testTransaction := map[string]any{}
+	testTransaction := make(map[string]any)
 	assert.NoError(t, json.Unmarshal([]byte(JSON), &testTransaction))
 	return testTransaction
 }

@@ -158,7 +158,7 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 		t.Fatalf("could not instantiate the connection manager for tests: %v", err)
 	}
 
-	apiV2 := v2.NewAPI(zap.NewNop(), clientAPI, connectionsManager, 0)
+	apiV2 := v2.NewAPI(zap.NewNop(), clientAPI, connectionsManager)
 
 	s := service.NewService(zap.NewNop(), serviceCfg, nil, apiV2)
 

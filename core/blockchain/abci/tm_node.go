@@ -143,7 +143,7 @@ func overwriteConfig(config *config.Config) {
 	config.Consensus.CreateEmptyBlocks = true
 	// enforce using priority mempool
 	config.Mempool.Version = "v1"
-	// ensure rechecking tx is enabled
+	// ensure transactions are continuously checked
 	config.Mempool.Recheck = true
 	// enforce compatibility
 	config.P2P.MaxPacketMsgPayloadSize = 16384

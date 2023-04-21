@@ -218,7 +218,6 @@ func defaultNetParams() map[string]value {
 		MaxGasPerBlock:             NewUint(UintGTE(num.NewUint(100)), UintLTE(num.NewUint(10000000))).Mutable(true).MustUpdate("500000"),
 		DefaultGas:                 NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(99))).Mutable(true).MustUpdate("1"),
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
-		MaxBlocksTTL:               NewUint(gteU5, UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("50"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 
 		MarkPriceUpdateMaximumFrequency:   NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
@@ -232,8 +231,6 @@ func defaultNetParams() map[string]value {
 	m[NumberEthMultisigSigners].AddRules(UintDependentLTE(NumberOfTendermintValidators, m[NumberOfTendermintValidators].(*Uint), num.MustDecimalFromString("1")))
 	m[NumberOfTendermintValidators].AddRules(UintDependentGTE(NumberEthMultisigSigners, m[NumberEthMultisigSigners].(*Uint), num.MustDecimalFromString("1")))
 
-	// MaxBlocksTTL <= SpamPoWNumberOfPastBlocks
-	m[MaxBlocksTTL].AddRules(UintDependentLTE(SpamPoWNumberOfPastBlocks, m[SpamPoWNumberOfPastBlocks].(*Uint), num.MustDecimalFromString("1")))
 	// ensure that MinBlockCapacity <= 2*
 	m[MaxGasPerBlock].AddRules(UintDependentGTE(MinBlockCapacity, m[MinBlockCapacity].(*Uint), num.MustDecimalFromString("2")))
 	m[MinBlockCapacity].AddRules(UintDependentLTE(MaxGasPerBlock, m[MaxGasPerBlock].(*Uint), num.MustDecimalFromString("0.5")))

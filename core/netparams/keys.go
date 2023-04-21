@@ -164,7 +164,6 @@ const (
 	MaxGasPerBlock   = "network.transactions.maxgasperblock"
 	DefaultGas       = "network.transaction.defaultgas"
 	MinBlockCapacity = "network.transactions.minBlockCapacity"
-	MaxBlocksTTL     = "network.transactions.maxttl"
 
 	// network wide limits.
 	MaxPeggedOrders = "limits.markets.maxPeggedOrders"
@@ -180,7 +179,6 @@ var AllKeys = map[string]struct{}{
 	MaxGasPerBlock:                                           {},
 	DefaultGas:                                               {},
 	MinBlockCapacity:                                         {},
-	MaxBlocksTTL:                                             {},
 	RewardMarketCreationQuantumMultiple:                      {},
 	MarketMarginScalingFactors:                               {},
 	MarketFeeFactorsMakerFee:                                 {},

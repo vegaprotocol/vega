@@ -49,7 +49,6 @@ func (tx *testTx) Hash() []byte                { return tx.hash }
 func (tx *testTx) Command() txn.Command        { return tx.command }
 func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
 func (tx *testTx) GetCmd() interface{}         { return nil }
-func (tx *testTx) TTL() uint64                 { return 0 }
 
 type testCodec struct {
 	txs map[string]abci.Tx

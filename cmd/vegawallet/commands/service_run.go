@@ -129,11 +129,6 @@ func BuildCmdRunService(w io.Writer, handler RunServiceHandler, rf *RootFlags) *
 		"",
 		"Path to the file containing the tokens database passphrase",
 	)
-	cmd.PersistentFlags().Uint64Var(&f.TTL,
-		"transaction-ttl",
-		0,
-		"Specify number of blocks during which transactions are considered current",
-	)
 
 	autoCompleteNetwork(cmd, rf.Home)
 
@@ -147,7 +142,6 @@ type RunServiceFlags struct {
 	TokensPassphraseFile   string
 	NoVersionCheck         bool
 	tokensPassphrase       string
-	TTL                    uint64
 }
 
 func (f *RunServiceFlags) Validate(rf *RootFlags) error {
@@ -285,7 +279,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 
 	jobRunner := vgjob.NewRunner(context.Background())
 
-	svcURL, errChan, err := serviceStarter.Start(jobRunner, f.Network, f.NoVersionCheck, f.TTL)
+	svcURL, errChan, err := serviceStarter.Start(jobRunner, f.Network, f.NoVersionCheck)
 	if err != nil {
 		cliLog.Error("Failed to start HTTP server", zap.Error(err))
 		jobRunner.StopAllJobs()

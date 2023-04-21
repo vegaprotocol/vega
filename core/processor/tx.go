@@ -30,10 +30,9 @@ type Tx struct {
 	inputData  *commandspb.InputData
 	pow        *commandspb.ProofOfWork
 	version    commandspb.TxVersion
-	ttl        uint64 // max height
 }
 
-func DecodeTxNoValidation(payload []byte, maxTTL uint64) (*Tx, error) {
+func DecodeTxNoValidation(payload []byte) (*Tx, error) {
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(payload, tx); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
@@ -43,11 +42,6 @@ func DecodeTxNoValidation(payload []byte, maxTTL uint64) (*Tx, error) {
 	if err := err.ErrorOrNil(); err != nil {
 		return nil, err
 	}
-	ttl := maxTTL
-	// if TTL is non-zero, and does not exceed the max, then accept it and use that as the TTL for the transaction.
-	if inputData.GoodForBlocks > 0 && inputData.GoodForBlocks < maxTTL {
-		ttl = inputData.GoodForBlocks
-	}
 
 	return &Tx{
 		originalTx: payload,
@@ -55,11 +49,10 @@ func DecodeTxNoValidation(payload []byte, maxTTL uint64) (*Tx, error) {
 		inputData:  inputData,
 		pow:        tx.Pow,
 		version:    tx.Version,
-		ttl:        ttl + inputData.BlockHeight,
 	}, nil
 }
 
-func DecodeTx(payload []byte, chainID string, maxTTL uint64) (*Tx, error) {
+func DecodeTx(payload []byte, chainID string) (*Tx, error) {
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(payload, tx); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
@@ -69,10 +62,6 @@ func DecodeTx(payload []byte, chainID string, maxTTL uint64) (*Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	ttl := maxTTL
-	if inputData.GoodForBlocks > 0 && inputData.GoodForBlocks < maxTTL {
-		ttl = inputData.GoodForBlocks
-	}
 
 	return &Tx{
 		originalTx: payload,
@@ -80,7 +69,6 @@ func DecodeTx(payload []byte, chainID string, maxTTL uint64) (*Tx, error) {
 		inputData:  inputData,
 		pow:        tx.Pow,
 		version:    tx.Version,
-		ttl:        ttl + inputData.BlockHeight,
 	}, nil
 }
 
@@ -406,8 +394,4 @@ func (t Tx) Signature() []byte {
 
 func (t Tx) BlockHeight() uint64 {
 	return t.inputData.BlockHeight
-}
-
-func (t Tx) TTL() uint64 {
-	return t.ttl
 }
