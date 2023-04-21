@@ -111,6 +111,8 @@ http:
       get: "/api/v2/epoch"
     - selector: datanode.api.v2.TradingDataService.EstimateFee
       get: "/api/v2/estimate/fee"
+    - selector: datanode.api.v2.TradingDataService.EstimatePosition
+      get: "/api/v2/estimate/position"
     - selector: datanode.api.v2.TradingDataService.EstimateMargin
       get: "/api/v2/estimate/margin"
     - selector: datanode.api.v2.TradingDataService.ListNetworkParameters
