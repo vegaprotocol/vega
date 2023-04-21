@@ -14,6 +14,7 @@ package pow
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"testing"
 	"time"
@@ -99,6 +100,39 @@ func TestCheckTx(t *testing.T) {
 
 	// all good
 	require.NoError(t, e.CheckTx(&testTx{party: crypto.RandomHash(), blockHeight: 100, powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: 596}))
+}
+
+func TestCheckTxValidator(t *testing.T) {
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(5))
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))
+
+	e.currentBlock = 100
+	e.blockHeight[100] = 100
+	e.blockHash[100] = "113EB390CBEB921433BDBA832CCDFD81AC4C77C3748A41B1AF08C96BC6C7BCD9"
+	e.seenTid["49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"] = struct{}{}
+	e.heightToTid[96] = []string{"49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}
+
+	// seen transction
+	require.Equal(t, errors.New("proof of work tid already used"), e.CheckTx(&testTx{blockHeight: 100, powTxID: "49B0DF0954A8C048554B1C65F4F5883C38640D101A11959EB651AE2065A80BBB"}))
+
+	// party is banned
+	e.bannedParties["C692100485479CE9E1815B9E0A66D3596295A04DB42170CB4B61CFAE7332ADD8"] = time.Time{}
+
+	// transaction too old: height 10, number of past blocks 5, current block 100
+	oldTx := &testTx{
+		party:       crypto.RandomHash(),
+		blockHeight: 10,
+		powTxID:     "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4",
+		powNonce:    596,
+	}
+	txHash := hex.EncodeToString(oldTx.Hash())
+	expErr := errors.New("unknown block height for tx:" + txHash + ", command:" + oldTx.Command().String() + ", party:" + oldTx.Party())
+	require.Equal(t, expErr, e.CheckTx(oldTx))
+	// old tx, but validator command still is good.
+	require.NoError(t, e.CheckTx(&testValidatorTx{testTx: *oldTx}))
 }
 
 func TestDeliverTx(t *testing.T) {
@@ -431,6 +465,10 @@ type testTx struct {
 	txID        string
 }
 
+type testValidatorTx struct {
+	testTx
+}
+
 func (tx *testTx) Unmarshal(interface{}) error { return nil }
 func (tx *testTx) GetPoWTID() string           { return tx.powTxID }
 func (tx *testTx) GetVersion() uint32          { return 2 }
@@ -445,6 +483,10 @@ func (tx *testTx) Command() txn.Command        { return txn.AmendOrderCommand }
 func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
 func (tx *testTx) GetCmd() interface{}         { return nil }
 func (tx *testTx) Validate() error             { return nil }
+
+func (tx *testValidatorTx) Command() txn.Command {
+	return txn.NodeSignatureCommand
+}
 
 func Test_ExpectedSpamDifficulty(t *testing.T) {
 	type args struct {

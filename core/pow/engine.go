@@ -380,6 +380,17 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	// check if the transaction was seen in scope
 	txHash := hex.EncodeToString(tx.Hash())
 
+	// check for replay attacks
+	if _, ok := e.seenTx[txHash]; ok {
+		e.log.Error("replay attack: txHash already used", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()), logging.String("command", tx.Command().String()))
+		return h, errors.New("transaction hash already used")
+	}
+
+	// validator commands skip PoW verification
+	if tx.Command().IsValidatorCommand() {
+		return h, nil
+	}
+
 	// check if the block height is in scope and is known
 
 	// we need to find the parameters that is relevant to the block for which the pow was generated
@@ -397,15 +408,6 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 			e.log.Debug("unknown block height", logging.Uint64("current-block-height", e.currentBlock), logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		}
 		return h, errors.New("unknown block height for tx:" + txHash + ", command:" + tx.Command().String() + ", party:" + tx.Party())
-	}
-
-	if _, ok := e.seenTx[txHash]; ok {
-		e.log.Error("replay attack: txHash already used", logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()), logging.String("command", tx.Command().String()))
-		return h, errors.New("transaction hash already used")
-	}
-
-	if tx.Command().IsValidatorCommand() {
-		return h, nil
 	}
 
 	// check if the tid was seen in scope
