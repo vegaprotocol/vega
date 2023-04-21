@@ -72,9 +72,6 @@ func (cmd *loadCmd) Execute(args []string) error {
 	}
 	defer connPool.Close()
 
-	// Wiping data from network history before loading then trying to load the data should never happen in any circumstance
-	cmd.Config.NetworkHistory.WipeOnStartup = false
-
 	hasSchema, err := sqlstore.HasVegaSchema(ctx, connPool)
 	if err != nil {
 		return fmt.Errorf("failed to check for existing schema:%w", err)
@@ -226,7 +223,7 @@ func createNetworkHistoryService(ctx context.Context, log *logging.Logger, vegaC
 	}
 
 	networkHistoryStore, err := store.New(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
-		false, vegaConfig.MaxMemoryPercent)
+		vegaConfig.MaxMemoryPercent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create network history store:%w", err)
 	}

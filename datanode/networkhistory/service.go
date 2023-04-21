@@ -15,7 +15,6 @@ import (
 
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
@@ -50,7 +49,7 @@ func New(ctx context.Context, log *logging.Logger, cfg Config, networkHistoryHom
 	storeLog.SetLevel(cfg.Level.Get())
 
 	networkHistoryStore, err := store.New(ctx, storeLog, chainID, cfg.Store, networkHistoryHome,
-		bool(cfg.WipeOnStartup), maxMemoryPercent)
+		maxMemoryPercent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create network history store:%w", err)
 	}
@@ -73,13 +72,6 @@ func NewWithStore(ctx context.Context, log *logging.Logger, chainID string, cfg 
 		chainID:             chainID,
 		snapshotsCopyToPath: snapshotsCopyToPath,
 		datanodeGrpcAPIPort: datanodeGrpcAPIPort,
-	}
-
-	if cfg.WipeOnStartup {
-		err := fsutil.RemoveAllFromDirectoryIfExists(s.snapshotsCopyToPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to remove all from snapshots copy to path:%w", err)
-		}
 	}
 
 	if cfg.Publish {

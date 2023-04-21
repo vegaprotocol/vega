@@ -283,7 +283,7 @@ func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig C
 	defer func() {
 		err := postgresDbConn.Close(ctx)
 		if err != nil {
-			log.Errorf("error closing database connection after loading snapshot:%v", err)
+			log.Errorf("error closing database connection:%v", err)
 		}
 	}()
 

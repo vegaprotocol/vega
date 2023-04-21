@@ -47,6 +47,7 @@ func Execute(ctx context.Context) error {
 		Version,
 		Postgres,
 		LastBlock,
+		UnsafeResetAll,
 		networkhistory.NetworkHistory,
 	); err != nil {
 		fmt.Printf("%+v\n", err)

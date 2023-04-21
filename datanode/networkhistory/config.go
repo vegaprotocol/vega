@@ -12,7 +12,7 @@ import (
 type Config struct {
 	Level         encoding.LogLevel `long:"log-level"`
 	Enabled       encoding.Bool     `long:"enabled" description:"set to false to disable network history"`
-	WipeOnStartup encoding.Bool     `long:"wipe-on-startup" description:"remove all network history state on startup"`
+	WipeOnStartup encoding.Bool     `long:"wipe-on-startup" description:"deprecated and ignored, use data-node unsafe_reset_all command instead"`
 
 	Publish encoding.Bool `long:"publish" description:"if true this node will create and publish network history segments"`
 
@@ -31,7 +31,6 @@ func NewDefaultConfig() Config {
 	return Config{
 		Level:         encoding.LogLevel{Level: logging.InfoLevel},
 		Enabled:       true,
-		WipeOnStartup: true,
 		Publish:       true,
 		Store:         store.NewDefaultConfig(),
 		Snapshot:      snapshot.NewDefaultConfig(),
