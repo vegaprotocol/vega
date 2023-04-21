@@ -57,6 +57,7 @@
 - [7998](https://github.com/vegaprotocol/vega/issues/7998) - Clean up `API` documentation for `ListLedgerEntries`.
 - [8021](https://github.com/vegaprotocol/vega/issues/8021) - Add better field descriptions in the `API` documentation.
 - [8171](https://github.com/vegaprotocol/vega/issues/8171) - Optimise the way offsets are used in probability of trading.
+- [8194](https://github.com/vegaprotocol/vega/issues/8194) - Don't include query string as part of `Prometheus` metric labels
 - [7847](https://github.com/vegaprotocol/vega/issues/7847) - Add `EstimatePosition` `API` method, mark `EstimateOrder` (GraphQL) and `EstimateMargin` (gRPC) as deprecated.
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Reverted the `TTL` changes, minor tweak to proof of work verification to ensure validator commands can't be rejected based on age.
 - [7926](https://github.com/vegaprotocol/vega/issues/7926) - Squash `SQL` migration scripts into a single script.
