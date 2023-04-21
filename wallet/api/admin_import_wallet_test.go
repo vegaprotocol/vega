@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminImportWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminImportWalletSchemaCorrect)
 	t.Run("Importing a wallet with invalid params fails", testImportingWalletWithInvalidParamsFails)
 	t.Run("Importing a wallet with valid params succeeds", testImportingWalletWithValidParamsSucceeds)
 	t.Run("Importing a wallet that already exists fails", testImportingWalletThatAlreadyExistsFails)
 	t.Run("Getting internal error during verification does not import the wallet", testGettingInternalErrorDuringVerificationDoesNotImportWallet)
 	t.Run("Getting internal error during saving does not import the wallet", testGettingInternalErrorDuringSavingDoesNotImportWallet)
+}
+
+func testAdminImportWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.import_wallet", api.AdminImportWalletParams{}, api.AdminImportWalletResult{})
 }
 
 func testImportingWalletWithInvalidParamsFails(t *testing.T) {

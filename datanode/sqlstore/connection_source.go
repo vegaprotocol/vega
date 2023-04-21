@@ -15,6 +15,7 @@ package sqlstore
 import (
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"sync"
 
@@ -44,8 +45,13 @@ type Connection interface {
 	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
 }
 
+type copyingConnection interface {
+	Connection
+	CopyTo(ctx context.Context, w io.Writer, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
 type ConnectionSource struct {
-	Connection      Connection
+	Connection      copyingConnection
 	pool            *pgxpool.Pool
 	log             *logging.Logger
 	postCommitHooks []func()
@@ -176,6 +182,10 @@ func (s *ConnectionSource) Close() {
 }
 
 func (s *ConnectionSource) wrapE(err error) error {
+	return wrapE(err)
+}
+
+func wrapE(err error) error {
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		return entities.ErrNotFound
@@ -260,6 +270,25 @@ func (t *delegatingConnection) QueryFunc(ctx context.Context, sql string, args [
 		return conn.QueryFunc(ctx, sql, args, scans, f)
 	}
 	return t.pool.QueryFunc(ctx, sql, args, scans, f)
+}
+
+func (t *delegatingConnection) CopyTo(ctx context.Context, w io.Writer, sql string, args ...any) (pgconn.CommandTag, error) {
+	var err error
+	sql, err = SanitizeSql(sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sanitize sql: %w", err)
+	}
+	if tx, ok := ctx.Value(transactionContextKey{}).(pgx.Tx); ok {
+		return tx.Conn().PgConn().CopyTo(ctx, w, sql)
+	}
+	if conn, ok := ctx.Value(connectionContextKey{}).(*pgx.Conn); ok {
+		return conn.PgConn().CopyTo(ctx, w, sql)
+	}
+	conn, err := t.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return conn.Conn().PgConn().CopyTo(ctx, w, sql)
 }
 
 func CreateConnectionPool(conf ConnectionConfig) (*pgxpool.Pool, error) {

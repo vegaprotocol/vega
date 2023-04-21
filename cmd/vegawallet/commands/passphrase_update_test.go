@@ -20,7 +20,7 @@ func testUpdatePassphraseFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	isolatedPassphrase, isolatedPassphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 
@@ -32,16 +32,16 @@ func testUpdatePassphraseFlagsValidFlagsSucceeds(t *testing.T) {
 
 	expectedReq := api.AdminUpdatePassphraseParams{
 		Wallet:        walletName,
-		Passphrase:    passphrase,
 		NewPassphrase: isolatedPassphrase,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testUpdatePassphraseFlagsMissingWalletFails(t *testing.T) {
@@ -52,7 +52,7 @@ func testUpdatePassphraseFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))

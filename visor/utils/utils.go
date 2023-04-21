@@ -155,8 +155,7 @@ func ExecuteBinary(binaryPath string, args []string, v interface{}) ([]byte, err
 	}
 
 	if err := json.Unmarshal(stdOut.Bytes(), v); err != nil {
-		// TODO Maybe failback to text parsing instead??
-		return nil, err
+		return nil, fmt.Errorf("failed to parse command output %q: %w", stdOut.String(), err)
 	}
 
 	return nil, nil

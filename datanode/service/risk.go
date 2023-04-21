@@ -23,7 +23,7 @@ import (
 type MarginLevelsStore interface {
 	Add(marginLevel entities.MarginLevels) error
 	Flush(ctx context.Context) ([]entities.MarginLevels, error)
-	GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error)
 	GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error)
 }
 
@@ -58,8 +58,8 @@ func (r *Risk) Flush(ctx context.Context) error {
 	return nil
 }
 
-func (r *Risk) GetMarginLevelsByID(ctx context.Context, partyID, marketID string, pagination entities.OffsetPagination) ([]entities.MarginLevels, error) {
-	return r.mlStore.GetMarginLevelsByID(ctx, partyID, marketID, pagination)
+func (r *Risk) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.MarginLevels, error) {
+	return r.mlStore.GetByTxHash(ctx, txHash)
 }
 
 func (r *Risk) GetMarginLevelsByIDWithCursorPagination(ctx context.Context, partyID, marketID string, pagination entities.CursorPagination) ([]entities.MarginLevels, entities.PageInfo, error) {
@@ -76,7 +76,7 @@ func (r *Risk) ObserveMarginLevels(
 				return false
 			}
 			return (len(marketID) == 0 || marketID == acc.MarketID.String()) &&
-				(len(partyID) == 0 || partyID == acc.PartyID.String())
+				len(partyID) == 0 || partyID == acc.PartyID.String()
 		})
 	return ch, ref
 }

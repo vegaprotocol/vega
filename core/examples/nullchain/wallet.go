@@ -15,6 +15,7 @@ package nullchain
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -37,7 +38,10 @@ type Wallet struct {
 }
 
 func NewWallet(root, passphrase string) *Wallet {
-	store, _ := storev1.InitialiseStore(root)
+	store, err := storev1.InitialiseStore(root, false)
+	if err != nil {
+		panic(fmt.Errorf("could not initialise the wallet store: %w", err))
+	}
 
 	return &Wallet{
 		handler:    wallets.NewHandler(store),
@@ -123,4 +127,8 @@ func (w *Wallet) SubmitTransaction(conn *Connection, party *Party, txn *walletpb
 	}
 
 	return nil
+}
+
+func (w *Wallet) Close() {
+	w.store.Close()
 }

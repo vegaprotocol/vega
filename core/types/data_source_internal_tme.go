@@ -1,38 +1,41 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
+var ErrInternalTimeDataSourceMissingConditions = errors.New("internal time based data source must have at least one condition")
+
 // DataSourceSpecConfigurationTime is used internally.
 type DataSourceSpecConfigurationTime struct {
 	Conditions []*DataSourceSpecCondition
 }
 
-func (s DataSourceSpecConfigurationTime) isDataSourceType() {}
+func (s *DataSourceSpecConfigurationTime) isDataSourceType() {}
 
-func (s DataSourceSpecConfigurationTime) oneOfProto() interface{} {
+func (s *DataSourceSpecConfigurationTime) oneOfProto() interface{} {
 	return s
 }
 
 // /
 // String returns the content of DataSourceSpecConfigurationTime as a string.
-func (s DataSourceSpecConfigurationTime) String() string {
+func (s *DataSourceSpecConfigurationTime) String() string {
 	return fmt.Sprintf(
 		"conditions(%s)", DataSourceSpecConditions(s.Conditions).String(),
 	)
 }
 
-func (s DataSourceSpecConfigurationTime) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
+func (s *DataSourceSpecConfigurationTime) IntoProto() *vegapb.DataSourceSpecConfigurationTime {
 	return &vegapb.DataSourceSpecConfigurationTime{
 		Conditions: DataSourceSpecConditions(s.Conditions).IntoProto(),
 	}
 }
 
-func (s DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
+func (s *DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
 	conditions := []*DataSourceSpecCondition{}
 	conditions = append(conditions, s.Conditions...)
 

@@ -19,12 +19,13 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets/builtin"
 	"code.vegaprotocol.io/vega/core/assets/erc20"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/nodewallets"
+	nweth "code.vegaprotocol.io/vega/core/nodewallets/eth"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -42,6 +43,7 @@ type ERC20BridgeView interface {
 
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
+	OfferSignatures(kind types.NodeSignatureKind, f func(id string) []byte)
 }
 
 type Service struct {
@@ -62,10 +64,10 @@ type Service struct {
 	pendingAssets       map[string]*Asset
 	pendingAssetUpdates map[string]*Asset
 
-	nodeWallets *nodewallets.NodeWallets
-	ethClient   erc20.ETHClient
-	notary      Notary
-	ass         *assetsSnapshotState
+	ethWallet nweth.EthereumWallet
+	ethClient erc20.ETHClient
+	notary    Notary
+	ass       *assetsSnapshotState
 
 	ethToVega   map[string]string
 	isValidator bool
@@ -76,7 +78,7 @@ type Service struct {
 func New(
 	log *logging.Logger,
 	cfg Config,
-	nw *nodewallets.NodeWallets,
+	nw nweth.EthereumWallet,
 	ethClient erc20.ETHClient,
 	broker broker.Interface,
 	bridgeView ERC20BridgeView,
@@ -93,7 +95,7 @@ func New(
 		assets:              map[string]*Asset{},
 		pendingAssets:       map[string]*Asset{},
 		pendingAssetUpdates: map[string]*Asset{},
-		nodeWallets:         nw,
+		ethWallet:           nw,
 		ethClient:           ethClient,
 		notary:              notary,
 		ass:                 &assetsSnapshotState{},
@@ -225,6 +227,30 @@ func (s *Service) IsEnabled(assetID string) bool {
 	return ok
 }
 
+func (s *Service) OnTick(ctx context.Context, _ time.Time) {
+	s.notary.OfferSignatures(types.NodeSignatureKindAssetNew, s.offerERC20NotarySignatures)
+}
+
+func (s *Service) offerERC20NotarySignatures(id string) []byte {
+	if !s.isValidator {
+		return nil
+	}
+
+	pa, err := s.Get(id)
+	if err != nil {
+		s.log.Panic("unable to find asset", logging.AssetID(id))
+	}
+
+	asset, _ := pa.ERC20()
+	_, signature, err := asset.SignListAsset()
+	if err != nil {
+		s.log.Panic("couldn't to sign transaction to list asset, is the node properly configured as a validator?",
+			logging.Error(err))
+	}
+
+	return signature
+}
+
 func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDetails) (*Asset, error) {
 	switch assetDetails.Source.(type) {
 	case *types.AssetDetailsBuiltinAsset:
@@ -239,7 +265,7 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 			err   error
 		)
 		if s.isValidator {
-			asset, err = erc20.New(assetID, assetDetails, s.nodeWallets.Ethereum, s.ethClient)
+			asset, err = erc20.New(assetID, assetDetails, s.ethWallet, s.ethClient)
 		} else {
 			asset, err = erc20.New(assetID, assetDetails, nil, nil)
 		}
@@ -266,7 +292,7 @@ func (s *Service) buildAssetFromProto(asset *types.Asset) (*Asset, error) {
 			err        error
 		)
 		if s.isValidator {
-			erc20Asset, err = erc20.New(asset.ID, asset.Details, s.nodeWallets.Ethereum, s.ethClient)
+			erc20Asset, err = erc20.New(asset.ID, asset.Details, s.ethWallet, s.ethClient)
 		} else {
 			erc20Asset, err = erc20.New(asset.ID, asset.Details, nil, nil)
 		}

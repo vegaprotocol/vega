@@ -20,11 +20,11 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// The supported oracle sources
+// Supported oracle sources
 type OracleDataSubmission_OracleSource int32
 
 const (
-	// The default value
+	// Default value
 	OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED OracleDataSubmission_OracleSource = 0
 	// Specifies that the payload will be base64 encoded JSON conforming to the Open Oracle standard
 	OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE OracleDataSubmission_OracleSource = 1
@@ -79,11 +79,11 @@ type OracleDataSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The source from which the data is coming from. Must be base64 encoded.
+	// Source from which the data is coming from. Must be base64 encoded.
 	// Oracle data is a type of external data source data.
 	Source OracleDataSubmission_OracleSource `protobuf:"varint,1,opt,name=source,proto3,enum=vega.commands.v1.OracleDataSubmission_OracleSource" json:"source,omitempty"`
-	// The data provided by the data source
-	// In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data
+	// Data provided by the data source
+	// In the case of Open Oracle - it will be the entire object - it will contain messages, signatures and price data.
 	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 

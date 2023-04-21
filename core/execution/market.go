@@ -743,7 +743,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	return m.closed
 }
 
-func (m *Market) blockEnd(ctx context.Context) {
+// BlockEnd notifies the market of the end of the block.
+func (m *Market) BlockEnd(ctx context.Context) {
 	defer m.onTxProcessed()
 
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
@@ -762,7 +763,7 @@ func (m *Market) blockEnd(ctx context.Context) {
 	}
 	t := m.timeService.GetTimeNow()
 	if mp != nil && !mp.IsZero() && !m.as.InAuction() && (m.nextMTM.IsZero() || !m.nextMTM.After(t)) {
-		m.markPrice = mp.Clone()
+		m.markPrice = mp
 		m.nextMTM = t.Add(m.mtmDelta) // add delta here
 		if hasTraded {
 			// only MTM if we have traded
@@ -839,7 +840,10 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	// unregister state-variables
 	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
-	m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
+	if len(clearMarketTransfers) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
+	}
+
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -887,7 +891,9 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// @TODO pass in correct context -> Previous or next block?
 	// Which is most appropriate here?
 	// this will be next block
-	m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	if len(transfers) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+	}
 
 	// final distribution of liquidity fees
 	m.distributeLiquidityFees(ctx)
@@ -1118,7 +1124,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 
-	// Send an event bus update
+	previousMarkPrice := m.getCurrentMarkPrice()
+	// set the mark price here so that margins checks for special orders use the correct value
+	m.markPrice = m.getLastTradedPrice()
+
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
@@ -1129,10 +1138,12 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		// now that we've left the auction and all the orders have been unparked,
 		// we can mark all positions using the margin calculation method appropriate
 		// for non-auction mode and carry out any closeouts if need be
-		m.markPrice = m.getLastTradedPrice().Clone()
 		m.confirmMTM(ctx, false)
 		// set next MTM
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+	} else {
+		// revert to old mark price if we're not leaving the auction after all
+		m.markPrice = previousMarkPrice
 	}
 }
 
@@ -1709,8 +1720,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	if len(conf.Trades) == 0 {
 		return orderUpdates
 	}
-	// Calculate and set current mark price
-	m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
+	m.setLastTradedPrice(conf.Trades[len(conf.Trades)-1])
 
 	// Insert all trades resulted from the executed order
 	tradeEvts := make([]events.Event, 0, len(conf.Trades))
@@ -1749,9 +1759,9 @@ func (m *Market) confirmMTM(
 	ctx context.Context, skipMargin bool,
 ) {
 	// now let's get the transfers for MTM settlement
-	markPrice := m.getLastTradedPrice()
-	evts := m.position.UpdateMarkPrice(markPrice)
-	settle := m.settlement.SettleMTM(ctx, markPrice, evts)
+	mp := m.getCurrentMarkPrice()
+	evts := m.position.UpdateMarkPrice(mp)
+	settle := m.settlement.SettleMTM(ctx, mp, evts)
 	orderUpdates := []*types.Order{}
 
 	// Only process collateral and risk once per order, not for every trade
@@ -1816,8 +1826,6 @@ func (m *Market) confirmMTM(
 		// release excess margin for all positions
 		m.recheckMargin(ctx, m.position.Positions())
 	}
-	// release any excess if needed
-	// m.releaseExcessMargin(ctx, pos...)
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
@@ -1964,11 +1972,13 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// we only need the MarketPosition events here, and rather than changing all the calls
 	// we can just keep the MarketPosition bit
 	closedMPs := make([]events.MarketPosition, 0, len(closed))
+	closedParties := make([]string, 0, len(closed))
 	// get the actual position, so we can work out what the total position of the market is going to be
 	var networkPos int64
 	for _, pos := range closed {
 		networkPos += pos.Size()
 		closedMPs = append(closedMPs, pos)
+		closedParties = append(closedParties, pos.Party())
 	}
 	if networkPos == 0 {
 		m.log.Warn("Network positions is 0 after closing out parties, nothing more to do",
@@ -2014,7 +2024,13 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			logging.Order(no),
 			logging.Error(err))
 	}
-
+	// Whether we were able to uncross the network order or not, we have to update the positions
+	// any closedParties element that wasn't previously marked as distressed should be marked as now
+	// being distressed. Any previously distressed positions that are no longer distressed
+	// should also be updated.
+	// If the network order uncrosses, we can ignore the distressed parties (they are closed out)
+	// but the safe parties should still be sent out.
+	dp, sp := m.position.MarkDistressed(closedParties)
 	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
 	// in the book to 0 out the positions.
 	// in this case we will just return now, cutting off the position resolution
@@ -2022,7 +2038,19 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// then when a new order is placed, the distressed parties will go again through positions resolution
 	// and if the volume of the book is acceptable, we will then process positions resolutions
 	if no.Remaining == no.Size {
+		// it is possible that we pass through here with the same distressed parties as before, no need
+		// to send the event if both distressed and safe parties slices are nil
+		if len(dp) != 0 || len(sp) != 0 {
+			devt := events.NewDistressedPositionsEvent(ctx, m.GetID(), dp, sp)
+			m.broker.Send(devt)
+		}
 		return orderUpdates, ErrNotEnoughVolumeToZeroOutNetworkOrder
+	}
+	// if we have any distressed positions that now no longer are distressed, emit the event
+	// no point in sending an event unless there's data
+	if len(sp) > 0 {
+		devt := events.NewDistressedPositionsEvent(ctx, m.GetID(), nil, sp)
+		m.broker.Send(devt)
 	}
 
 	// @NOTE: At this point, the network order was updated by the orderbook
@@ -2050,7 +2078,9 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		return orderUpdates, err
 	}
 	// send transfer to buffer
-	m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	if len(tresps) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	}
 
 	if len(confirmation.Trades) > 0 {
 		// Insert all trades resulted from the executed order
@@ -2089,7 +2119,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	m.finalizePartiesCloseOut(ctx, closed, closedMPs)
 
 	m.confirmMTM(ctx, false)
-	m.recheckMargin(ctx, m.position.Positions())
 
 	return orderUpdates, nil
 }
@@ -2283,10 +2312,7 @@ func (m *Market) checkMarginForAmendOrder(ctx context.Context, existingOrder *ty
 	return err
 }
 
-func (m *Market) setMarkPrice(trade *types.Trade) {
-	// The current mark price calculation is simply the last trade
-	// in the future this will use varying logic based on market config
-	// the responsibility for calculation could be elsewhere for testability
+func (m *Market) setLastTradedPrice(trade *types.Trade) {
 	m.lastTradedPrice = trade.Price.Clone()
 }
 
@@ -2305,13 +2331,13 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 		return nil
 	}
 	// sending response to buffer
-	if response != nil {
+	if len(response) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, response))
 	}
 
 	// let risk engine do its thing here - it returns a slice of money that needs
 	// to be moved to and from margin accounts
-	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getLastTradedPrice())
+	riskUpdates := m.risk.UpdateMarginsOnSettlement(ctx, evts, m.getCurrentMarkPrice())
 	if len(riskUpdates) == 0 {
 		return nil
 	}
@@ -3195,7 +3221,7 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 }
 
 func (m *Market) getTargetStake() *num.Uint {
-	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getLastTradedPrice())
+	return m.tsCalc.GetTargetStake(*m.risk.GetRiskFactors(), m.timeService.GetTimeNow(), m.getCurrentMarkPrice())
 }
 
 func (m *Market) getSuppliedStake() *num.Uint {
@@ -3269,7 +3295,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 			}()
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
-			m.markPrice = mp.Clone()
+			m.markPrice = mp
 			m.confirmMTM(ctx, true)
 		}
 		m.mkt.State = types.MarketStateTradingTerminated
@@ -3381,7 +3407,9 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
 
 	// then send the responses
-	m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	if len(tresps) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, tresps))
+	}
 }
 
 func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
@@ -3457,20 +3485,11 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}
 
-	m.broker.Send(events.NewLedgerMovements(ctx, resp))
-	return nil
-}
+	if len(resp) > 0 {
+		m.broker.Send(events.NewLedgerMovements(ctx, resp))
+	}
 
-// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
-func (m *Market) getReferencePrice() *num.Uint {
-	if !m.as.InAuction() {
-		return m.getLastTradedPrice()
-	}
-	ip := m.matching.GetIndicativePrice() // can be zero
-	if ip.IsZero() {
-		return m.getLastTradedPrice()
-	}
-	return ip
+	return nil
 }
 
 // GetTotalOrderBookLevelCount returns the total number of levels in the order book.
@@ -3496,4 +3515,43 @@ func (m *Market) GetTotalLPShapeCount() uint64 {
 // we use this in a banch of places so let's inform it from here in case we want to modify it in the future.
 func (m *Market) minValidPrice() *num.Uint {
 	return m.priceFactor
+}
+
+// getMarketObservable returns current mark price once market is out of opening auction, during opening auction the indicative uncrossing price is returned.
+func (m *Market) getMarketObservable(fallbackPrice *num.Uint) *num.Uint {
+	// during opening auction we don't have a last traded price, so we use the indicative price instead
+	if m.as.IsOpeningAuction() {
+		if ip := m.matching.GetIndicativePrice(); !ip.IsZero() {
+			return ip
+		}
+		// we don't have an indicative price yet so we use the supplied price
+		return fallbackPrice
+	}
+	return m.getCurrentMarkPrice()
+}
+
+// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned.
+func (m *Market) getReferencePrice() *num.Uint {
+	if !m.as.InAuction() {
+		return m.getCurrentMarkPrice()
+	}
+	ip := m.matching.GetIndicativePrice() // can be zero
+	if ip.IsZero() {
+		return m.getCurrentMarkPrice()
+	}
+	return ip
+}
+
+func (m *Market) getCurrentMarkPrice() *num.Uint {
+	if m.markPrice == nil {
+		return num.UintZero()
+	}
+	return m.markPrice.Clone()
+}
+
+func (m *Market) getLastTradedPrice() *num.Uint {
+	if m.lastTradedPrice == nil {
+		return num.UintZero()
+	}
+	return m.lastTradedPrice.Clone()
 }

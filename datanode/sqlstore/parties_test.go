@@ -29,6 +29,7 @@ func addTestParty(t *testing.T, ctx context.Context, ps *sqlstore.Parties, block
 	party := entities.Party{
 		ID:       entities.PartyID(helpers.GenerateID()),
 		VegaTime: &block.VegaTime,
+		TxHash:   generateTxHash(),
 	}
 
 	err := ps.Add(ctx, party)
@@ -70,6 +71,11 @@ func TestParty(t *testing.T) {
 	// Check we get the right error if we ask for a non-existent party
 	_, err = ps.GetByID(ctx, "beef")
 	assert.ErrorIs(t, err, entities.ErrNotFound)
+
+	partiesByHash, err := ps.GetByTxHash(ctx, party.TxHash)
+	assert.NoError(t, err)
+	assert.Len(t, partiesByHash, 1)
+	assert.Equal(t, party, partiesByHash[0])
 }
 
 func setupPartyTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.Parties) {

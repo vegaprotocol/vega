@@ -5,7 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	vgterm "code.vegaprotocol.io/vega/libs/term"
 
@@ -27,9 +30,9 @@ type loadCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	Force                       bool   `short:"f" long:"force" description:"do not prompt for confirmation"`
-	WipeExistingData            bool   `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from network history"`
-	WithIndexesAndOrderTriggers string `short:"i" long:"with-indexes-and-order-triggers" required:"false" description:"if true the load will not drop indexes and order triggers when loading data, this is usually the best option when appending new segments onto existing datanode data" choice:"default" choice:"true" choice:"false" default:"default"`
+	Force             bool   `short:"f" long:"force" description:"do not prompt for confirmation"`
+	WipeExistingData  bool   `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from network history"`
+	OptimiseForAppend string `short:"a" long:"optimise-for-append" required:"false" description:"if true the load will be optimised for appending new segments onto existing datanode data, this is the default if the node already contains data" choice:"default" choice:"true" choice:"false" default:"default"`
 }
 
 func (cmd *loadCmd) Execute(args []string) error {
@@ -39,6 +42,8 @@ func (cmd *loadCmd) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(
 		cfg,
 	)
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
 	defer log.AtExit()
 
 	vegaPaths := paths.New(cmd.VegaHome)
@@ -57,7 +62,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), cmd.SQLStore.ConnectionConfig); err != nil {
+	if err := networkhistory.KillAllConnectionsToDatabase(ctx, cmd.SQLStore.ConnectionConfig); err != nil {
 		return fmt.Errorf("failed to kill all connections to database: %w", err)
 	}
 
@@ -67,10 +72,7 @@ func (cmd *loadCmd) Execute(args []string) error {
 	}
 	defer connPool.Close()
 
-	// Wiping data from network history before loading then trying to load the data should never happen in any circumstance
-	cmd.Config.NetworkHistory.WipeOnStartup = false
-
-	hasSchema, err := sqlstore.HasVegaSchema(context.Background(), connPool)
+	hasSchema, err := sqlstore.HasVegaSchema(ctx, connPool)
 	if err != nil {
 		return fmt.Errorf("failed to check for existing schema:%w", err)
 	}
@@ -92,42 +94,21 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	snapshotService, err := snapshot.NewSnapshotService(log, cmd.Config.NetworkHistory.Snapshot, connPool,
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
-			if err = sqlstore.MigrateToSchemaVersion(log, cmd.Config.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
-				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
-			}
-			return nil
-		})
+	networkHistoryService, err := createNetworkHistoryService(ctx, log, cmd.Config, connPool, vegaPaths)
 	if err != nil {
-		return fmt.Errorf("failed to create snapshot service: %w", err)
+		return fmt.Errorf("failed to created network history service: %w", err)
 	}
-
-	ctx, cancelFn := context.WithCancel(context.Background())
-	defer cancelFn()
-
-	networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
-		false, cmd.Config.MaxMemoryPercent)
-	if err != nil {
-		return fmt.Errorf("failed to create network history store:%w", err)
-	}
-	defer networkHistoryStore.Stop()
-
-	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory,
-		connPool, snapshotService, networkHistoryStore, cmd.Config.API.Port,
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
-		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
-	if err != nil {
-		return fmt.Errorf("failed new networkhistory service:%w", err)
-	}
+	defer networkHistoryService.Stop()
 
 	segments, err := networkHistoryService.ListAllHistorySegments()
-	mostRecentContiguousHistory := networkhistory.GetMostRecentContiguousHistory(segments)
+	if err != nil {
+		return fmt.Errorf("failed to list history segments: %w", err)
+	}
 
-	if mostRecentContiguousHistory == nil {
+	mostRecentContiguousHistory, err := segments.MostRecentContiguousHistory()
+	if err != nil {
 		fmt.Println("No history is available to load.  Data can be fetched using the fetch command")
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	from := mostRecentContiguousHistory.HeightFrom
@@ -146,12 +127,12 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	contiguousHistory := networkhistory.GetContiguousHistoryForSpan(networkhistory.GetContiguousHistories(segments), from, to)
-	if contiguousHistory == nil {
+	contiguousHistory, err := segments.ContiguousHistoryInRange(from, to)
+	if err != nil {
 		fmt.Printf("No contiguous history is available for block span %d to %d. From and To Heights must match "+
 			"from and to heights of the segments in the contiguous history span.\nUse the show command with the '-s' "+
 			"option to see all available segments\n", from, to)
-		return nil
+		return nil //nolint:nilerr
 	}
 
 	span, err := sqlstore.GetDatanodeBlockSpan(ctx, connPool)
@@ -194,24 +175,26 @@ func (cmd *loadCmd) Execute(args []string) error {
 		}
 	}
 
-	withIndexesAndOrderTriggers := false
-	switch cmd.WithIndexesAndOrderTriggers {
+	optimiseForAppend := false
+	switch strings.ToLower(cmd.OptimiseForAppend) {
 	case "true":
-		withIndexesAndOrderTriggers = true
-	case "default":
-		withIndexesAndOrderTriggers = span.HasData
+		optimiseForAppend = true
+	case "false":
+		optimiseForAppend = false
+	default:
+		optimiseForAppend = span.HasData
 	}
 
-	if withIndexesAndOrderTriggers {
-		fmt.Println("Loading history with indexes and order triggers...")
+	if optimiseForAppend {
+		fmt.Println("Loading history, optimising for append")
 	} else {
-		fmt.Println("Loading history...")
+		fmt.Println("Loading history, optimising for bulk load")
 	}
 
 	loadLog := newLoadLog()
 	defer loadLog.AtExit()
-	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(context.Background(), loadLog, *contiguousHistory,
-		cmd.Config.SQLStore.ConnectionConfig, withIndexesAndOrderTriggers, bool(cmd.Config.SQLStore.VerboseMigration))
+	loaded, err := networkHistoryService.LoadNetworkHistoryIntoDatanodeWithLog(ctx, loadLog, contiguousHistory,
+		cmd.Config.SQLStore.ConnectionConfig, optimiseForAppend, bool(cmd.Config.SQLStore.VerboseMigration))
 	if err != nil {
 		return fmt.Errorf("failed to load all available history:%w", err)
 	}
@@ -219,6 +202,39 @@ func (cmd *loadCmd) Execute(args []string) error {
 	fmt.Printf("Loaded history from height %d to %d into the datanode\n", loaded.LoadedFromHeight, loaded.LoadedToHeight)
 
 	return nil
+}
+
+func createNetworkHistoryService(ctx context.Context, log *logging.Logger, vegaConfig config.Config, connPool *pgxpool.Pool, vegaPaths paths.Paths) (*networkhistory.Service, error) {
+	snapshotService, err := snapshot.NewSnapshotService(log, vegaConfig.NetworkHistory.Snapshot, connPool,
+		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
+			if err := sqlstore.MigrateUpToSchemaVersion(log, vegaConfig.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+				return fmt.Errorf("failed to migrate to schema version %d: %w", version, err)
+			}
+			return nil
+		},
+		func(version int64) error {
+			if err := sqlstore.MigrateDownToSchemaVersion(log, vegaConfig.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
+				return fmt.Errorf("failed to migrate down to schema version %d: %w", version, err)
+			}
+			return nil
+		})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create snapshot service: %w", err)
+	}
+
+	networkHistoryStore, err := store.New(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory.Store, vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome),
+		vegaConfig.MaxMemoryPercent)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create network history store:%w", err)
+	}
+
+	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, vegaConfig.ChainID, vegaConfig.NetworkHistory,
+		connPool, snapshotService, networkHistoryStore, vegaConfig.API.Port,
+		vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo))
+	if err != nil {
+		return nil, fmt.Errorf("failed new networkhistory service:%w", err)
+	}
+	return networkHistoryService, nil
 }
 
 type loadLog struct {

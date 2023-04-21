@@ -21,6 +21,7 @@ import (
 )
 
 func TestSendTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testClientSendTransactionSchemaCorrect)
 	t.Run("Sending a transaction with invalid params fails", testSendingTransactionWithInvalidParamsFails)
 	t.Run("Sending a transaction with valid params succeeds", testSendingTransactionWithValidParamsSucceeds)
 	t.Run("Sending a transaction without the needed permissions send the transaction", testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction)
@@ -32,6 +33,10 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Failing to get the spam statistics does not send the transaction", testFailingToGetSpamStatsDoesNotSendTransaction)
 	t.Run("Failure when sending transaction returns an error", testFailureWhenSendingTransactionReturnsAnError)
 	t.Run("Failing spam checks aborts the transaction", testFailingSpamChecksAbortsTheTransaction)
+}
+
+func testClientSendTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "client.send_transaction", api.ClientSendTransactionParams{}, api.ClientSendTransactionResult{})
 }
 
 func testSendingTransactionWithInvalidParamsFails(t *testing.T) {

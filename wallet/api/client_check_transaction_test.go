@@ -20,6 +20,7 @@ import (
 )
 
 func TestClientCheckTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testClientCheckTransactionSchemaCorrect)
 	t.Run("Checking a transaction with invalid params fails", testCheckingTransactionWithInvalidParamsFails)
 	t.Run("Checking a transaction with valid params succeeds", testCheckingTransactionWithValidParamsSucceeds)
 	t.Run("Checking a transaction without the needed permissions check the transaction", testCheckingTransactionWithoutNeededPermissionsDoesNotCheckTransaction)
@@ -31,6 +32,10 @@ func TestClientCheckTransaction(t *testing.T) {
 	t.Run("Failing to get the spam statistics does not check the transaction", testFailingToGetSpamStatsDoesNotCheckTransaction)
 	t.Run("Failure when checking transaction returns an error", testFailureWhenCheckingTransactionReturnsAnError)
 	t.Run("Failing spam checks aborts the transaction", testFailingSpamChecksAbortsCheckingTheTransaction)
+}
+
+func testClientCheckTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "client.check_transaction", api.ClientCheckTransactionParams{}, api.ClientCheckTransactionResult{})
 }
 
 func testCheckingTransactionWithInvalidParamsFails(t *testing.T) {

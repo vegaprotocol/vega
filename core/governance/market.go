@@ -39,6 +39,8 @@ var (
 	ErrMissingDataSourceSpecBinding = errors.New("missing data source spec binding")
 	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
 	ErrMissingDataSourceSpecForSettlementData = errors.New("missing data source spec for settlement data")
+	// ErrMissingDataSourceSpecForSettlementData is returned when the data source spec for settlement data is absent.
+	ErrSettlementWithInternalDataSourceIsNotAllowed = errors.New("settlement with internal data source is not allwed")
 	// ErrMissingDataSourceSpecForTradingTermination is returned when the data source spec for trading termination is absent.
 	ErrMissingDataSourceSpecForTradingTermination = errors.New("missing data source spec for trading termination")
 	// ErrDataSourceSpecTerminationTimeBeforeEnactment is returned when termination time is before enactment
@@ -237,31 +239,39 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidFutureProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
+	}
+
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
-	if !et.shouldNotVerify {
-		filters := future.DataSourceSpecForTradingTermination.GetFilters()
+	filters := future.DataSourceSpecForTradingTermination.GetFilters()
+	for i, f := range filters {
+		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+			for j, cond := range f.Conditions {
+				v, err := strconv.ParseInt(cond.Value, 10, 64)
+				if err != nil {
+					return types.ProposalErrorInvalidFutureProduct, err
+				}
 
-		for i, f := range filters {
-			if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-				for j, cond := range f.Conditions {
-					v, err := strconv.ParseInt(cond.Value, 10, 64)
-					if err != nil {
-						return types.ProposalErrorInvalidFutureProduct, err
-					}
-
-					filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				if !et.shouldNotVerify {
 					if v <= et.current {
 						return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
 					}
 				}
 			}
 		}
-		future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 	}
+	future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 
 	if future.DataSourceSpecBinding == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
@@ -457,32 +467,41 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForSettlementData
 	}
 
+	ext, err := settlData.IsExternal()
+	if err != nil {
+		return types.ProposalErrorInvalidFutureProduct, err
+	}
+
+	if !ext {
+		return types.ProposalErrorInvalidFutureProduct, ErrSettlementWithInternalDataSourceIsNotAllowed
+	}
+
 	tterm := &future.DataSourceSpecForTradingTermination
 	if tterm == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
-	if !et.shouldNotVerify {
-		filters := future.DataSourceSpecForTradingTermination.GetFilters()
+	filters := future.DataSourceSpecForTradingTermination.GetFilters()
 
-		for i, f := range filters {
-			if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-				for j, cond := range f.Conditions {
-					v, err := strconv.ParseInt(cond.Value, 10, 64)
-					if err != nil {
-						return types.ProposalErrorInvalidFutureProduct, err
-					}
+	for i, f := range filters {
+		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+			for j, cond := range f.Conditions {
+				v, err := strconv.ParseInt(cond.Value, 10, 64)
+				if err != nil {
+					return types.ProposalErrorInvalidFutureProduct, err
+				}
 
-					filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				if !et.shouldNotVerify {
 					if v <= et.current {
 						return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
 					}
 				}
 			}
 		}
-
-		future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 	}
+
+	future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 
 	if future.DataSourceSpecBinding == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding

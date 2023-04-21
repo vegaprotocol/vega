@@ -16,6 +16,7 @@ import (
 )
 
 func TestAdminIsolateKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminIsolateKeySchemaCorrect)
 	t.Run("Isolating a key with invalid params fails", testIsolatingKeyWithInvalidParamsFails)
 	t.Run("Isolating a key with valid params succeeds", testIsolatingKeyWithValidParamsSucceeds)
 	t.Run("Isolating a key from wallet that does not exists fails", testIsolatingKeyFromWalletThatDoesNotExistsFails)
@@ -23,6 +24,10 @@ func TestAdminIsolateKey(t *testing.T) {
 	t.Run("Getting internal error during wallet retrieval fails", testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Isolating a key that does not exists fails", testIsolatingKeyThatDoesNotExistsFails)
 	t.Run("Getting internal error during isolated wallet saving fails", testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails)
+}
+
+func testAdminIsolateKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.isolate_key", api.AdminIsolateKeyParams{}, api.AdminIsolateKeyResult{})
 }
 
 func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
@@ -43,25 +48,14 @@ func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with empty name",
 			params: api.AdminIsolateKeyParams{
 				Wallet:                   "",
-				Passphrase:               vgrand.RandomStr(5),
 				PublicKey:                "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 				IsolatedWalletPassphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminIsolateKeyParams{
-				Wallet:                   vgrand.RandomStr(5),
-				Passphrase:               "",
-				PublicKey:                "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-				IsolatedWalletPassphrase: vgrand.RandomStr(5),
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty isolated passphrase",
 			params: api.AdminIsolateKeyParams{
 				Wallet:                   vgrand.RandomStr(5),
-				Passphrase:               vgrand.RandomStr(5),
 				IsolatedWalletPassphrase: "",
 				PublicKey:                "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			},
@@ -70,7 +64,6 @@ func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
 			name: "with empty public key",
 			params: api.AdminIsolateKeyParams{
 				Wallet:                   vgrand.RandomStr(5),
-				Passphrase:               vgrand.RandomStr(5),
 				PublicKey:                "",
 				IsolatedWalletPassphrase: vgrand.RandomStr(5),
 			},
@@ -99,7 +92,6 @@ func testIsolatingKeyWithInvalidParamsFails(t *testing.T) {
 func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 
@@ -107,14 +99,13 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
 		Wallet:                   expectedWallet.Name(),
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 		PublicKey:                firstKey.PublicKey(),
 	})
@@ -127,7 +118,6 @@ func testIsolatingKeyWithValidParamsSucceeds(t *testing.T) {
 func testIsolatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
@@ -139,7 +129,6 @@ func testIsolatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
 		Wallet:                   name,
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 		PublicKey:                vgrand.RandomStr(5),
 	})
@@ -153,7 +142,6 @@ func testIsolatingKeyFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testIsolatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
@@ -165,7 +153,6 @@ func testIsolatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testin
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
 		Wallet:                   name,
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 		PublicKey:                vgrand.RandomStr(5),
 	})
@@ -179,7 +166,6 @@ func testIsolatingKeyGettingInternalErrorDuringWalletVerificationFails(t *testin
 func testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
@@ -187,13 +173,12 @@ func testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
 		Wallet:                   name,
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 		PublicKey:                vgrand.RandomStr(5),
 	})
@@ -207,7 +192,6 @@ func testIsolatingKeyGettingInternalErrorDuringWalletRetrievalFails(t *testing.T
 func testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 
@@ -215,14 +199,13 @@ func testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails(t *test
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().CreateWallet(ctx, gomock.Any(), isolatedPassphrase).Times(1).Return(assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
 		Wallet:                   expectedWallet.Name(),
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 		PublicKey:                firstKey.PublicKey(),
 	})
@@ -236,7 +219,6 @@ func testIsolatingKeyGettingInternalErrorDuringIsolatedWalletSavingFails(t *test
 func testIsolatingKeyThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	isolatedPassphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 
@@ -244,13 +226,12 @@ func testIsolatingKeyThatDoesNotExistsFails(t *testing.T) {
 	handler := newIsolateKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminIsolateKeyParams{
 		Wallet:                   expectedWallet.Name(),
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 		PublicKey:                vgrand.RandomStr(5),
 	})

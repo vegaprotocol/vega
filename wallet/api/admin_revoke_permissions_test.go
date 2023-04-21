@@ -16,12 +16,17 @@ import (
 )
 
 func TestAdminRevokePermissions(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminRevokePermissionsSchemaCorrect)
 	t.Run("Revoking permissions with invalid params fails", testRevokingPermissionsWithInvalidParamsFails)
 	t.Run("Revoking permissions with valid params succeeds", testRevokingPermissionsWithValidParamsSucceeds)
 	t.Run("Revoking permissions from wallet that does not exists fails", testRevokingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Getting internal error during wallet saving fails", testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails)
+}
+
+func testAdminRevokePermissionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.revoke_permissions", api.AdminRevokePermissionsParams{}, nil)
 }
 
 func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
@@ -41,25 +46,15 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminRevokePermissionsParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
-				Hostname:   vgrand.RandomStr(5),
+				Wallet:   "",
+				Hostname: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminRevokePermissionsParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-				Hostname:   vgrand.RandomStr(5),
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty hostname",
 			params: api.AdminRevokePermissionsParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
-				Hostname:   "",
+				Wallet:   vgrand.RandomStr(5),
+				Hostname: "",
 			},
 			expectedError: api.ErrHostnameIsRequired,
 		},
@@ -85,7 +80,6 @@ func testRevokingPermissionsWithInvalidParamsFails(t *testing.T) {
 func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	hostname1 := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 	if err := expectedWallet.UpdatePermissions(hostname1, wallet.Permissions{
@@ -115,15 +109,14 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		Hostname:   hostname1,
+		Wallet:   expectedWallet.Name(),
+		Hostname: hostname1,
 	})
 
 	// then
@@ -135,7 +128,6 @@ func testRevokingPermissionsWithValidParamsSucceeds(t *testing.T) {
 func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -145,9 +137,8 @@ func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   name,
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -158,7 +149,6 @@ func testRevokingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -168,9 +158,8 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   name,
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -181,21 +170,19 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletVerificationFails
 func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   name,
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -206,7 +193,6 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletRetrievalFails(t 
 func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _, err := wallet.NewHDWallet(vgrand.RandomStr(5))
 	if err != nil {
 		t.Fatal(err)
@@ -216,15 +202,14 @@ func testAdminRevokePermissionsGettingInternalErrorDuringWalletSavingFails(t *te
 	handler := newRevokePermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminRevokePermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		Hostname:   vgrand.RandomStr(5),
+		Wallet:   expectedWallet.Name(),
+		Hostname: vgrand.RandomStr(5),
 	})
 
 	// then

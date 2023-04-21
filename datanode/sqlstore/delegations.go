@@ -14,7 +14,6 @@ package sqlstore
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -66,6 +65,20 @@ func (ds *Delegations) GetAll(ctx context.Context) ([]entities.Delegation, error
 	return delegations, err
 }
 
+func (ds *Delegations) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Delegation, error) {
+	defer metrics.StartSQLQuery("Delegations", "GetByTxHash")()
+
+	var delegations []entities.Delegation
+	query := `SELECT * FROM delegations WHERE tx_hash = $1`
+
+	err := pgxscan.Select(ctx, ds.Connection, &delegations, query, txHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return delegations, nil
+}
+
 func (ds *Delegations) Get(ctx context.Context,
 	partyIDHex *string,
 	nodeIDHex *string,
@@ -101,11 +114,6 @@ func (ds *Delegations) Get(ctx context.Context,
 	var err error
 	if pagination != nil {
 		switch p := pagination.(type) {
-		case *entities.OffsetPagination:
-			if p != nil {
-				orderCols := []string{"epoch_id", "party_id", "node_id"}
-				query, args = orderAndPaginateQuery(query, orderCols, *p, args...)
-			}
 		case entities.CursorPagination:
 			query, args, err = PaginateQuery[entities.DelegationCursor](query, args, delegationsOrdering, p)
 			if err != nil {
@@ -121,8 +129,7 @@ func (ds *Delegations) Get(ctx context.Context,
 
 			return delegations, pageInfo, nil
 		default:
-			// invalid pagination type
-			return nil, pageInfo, errors.New("invalid cursor")
+			panic("unsupported pagination")
 		}
 	}
 

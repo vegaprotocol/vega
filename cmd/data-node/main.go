@@ -20,8 +20,10 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	if err := commands.Execute(ctx); err != nil {
+		cfunc()
 		os.Exit(-1)
 	}
 }

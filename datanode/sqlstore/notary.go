@@ -87,3 +87,16 @@ func (n *Notary) GetByResourceID(ctx context.Context, id string, pagination enti
 	ns, pageInfo = entities.PageEntities[*v2.NodeSignatureEdge](ns, pagination)
 	return ns, pageInfo, nil
 }
+
+func (n *Notary) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.NodeSignature, error) {
+	defer metrics.StartSQLQuery("Notary", "GetByTxHash")()
+
+	var ns []entities.NodeSignature
+	query := "SELECT resource_id, sig, kind, tx_hash, vega_time FROM node_signatures WHERE tx_hash=$1"
+
+	if err := pgxscan.Select(ctx, n.Connection, &ns, query, txHash); err != nil {
+		return nil, fmt.Errorf("could not get node signatures for tx hash: %w", err)
+	}
+
+	return ns, nil
+}

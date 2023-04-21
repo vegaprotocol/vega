@@ -36,19 +36,26 @@ var (
 	`)
 )
 
-type TaintKeyHandler func(api.AdminTaintKeyParams) error
+type TaintKeyHandler func(api.AdminTaintKeyParams, string) error
 
 func NewCmdTaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminTaintKeyParams) error {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminTaintKeyParams, passphrase string) error {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		taintKey := api.NewAdminTaintKey(walletStore)
-		_, errDetails := taintKey.Handle(context.Background(), params)
-		if errDetails != nil {
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+
+		if _, errDetails := api.NewAdminTaintKey(walletStore).Handle(ctx, params); errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
 		return nil
@@ -66,12 +73,12 @@ func BuildCmdTaintKey(w io.Writer, handler TaintKeyHandler, rf *RootFlags) *cobr
 		Long:    taintKeyLong,
 		Example: taintKeyExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			if err := handler(req); err != nil {
+			if err := handler(req, pass); err != nil {
 				return err
 			}
 
@@ -113,25 +120,24 @@ type TaintKeyFlags struct {
 	PassphraseFile string
 }
 
-func (f *TaintKeyFlags) Validate() (api.AdminTaintKeyParams, error) {
+func (f *TaintKeyFlags) Validate() (api.AdminTaintKeyParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminTaintKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminTaintKeyParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.PublicKey) == 0 {
-		return api.AdminTaintKeyParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminTaintKeyParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminTaintKeyParams{}, err
+		return api.AdminTaintKeyParams{}, "", err
 	}
 
 	return api.AdminTaintKeyParams{
-		Wallet:     f.Wallet,
-		PublicKey:  f.PublicKey,
-		Passphrase: passphrase,
-	}, nil
+		Wallet:    f.Wallet,
+		PublicKey: f.PublicKey,
+	}, passphrase, nil
 }
 
 func PrintTaintKeyResponse(w io.Writer) {

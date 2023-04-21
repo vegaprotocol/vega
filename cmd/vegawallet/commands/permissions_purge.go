@@ -31,18 +31,26 @@ var (
 	`)
 )
 
-type PurgePermissionsHandler func(api.AdminPurgePermissionsParams) error
+type PurgePermissionsHandler func(api.AdminPurgePermissionsParams, string) error
 
 func NewCmdPurgePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminPurgePermissionsParams) error {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminPurgePermissionsParams, passphrase string) error {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		purgePermissions := api.NewAdminPurgePermissions(walletStore)
-		_, errDetails := purgePermissions.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+
+		_, errDetails := api.NewAdminPurgePermissions(walletStore).Handle(ctx, params)
 		if errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
@@ -60,7 +68,7 @@ func BuildCmdPurgePermissions(w io.Writer, handler PurgePermissionsHandler, rf *
 		Long:    purgePermissionsLong,
 		Example: purgePermissionsExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
@@ -71,7 +79,7 @@ func BuildCmdPurgePermissions(w io.Writer, handler PurgePermissionsHandler, rf *
 				}
 			}
 
-			if err = handler(req); err != nil {
+			if err = handler(req, pass); err != nil {
 				return err
 			}
 
@@ -110,20 +118,19 @@ type PurgePermissionsFlags struct {
 	Force          bool
 }
 
-func (f *PurgePermissionsFlags) Validate() (api.AdminPurgePermissionsParams, error) {
+func (f *PurgePermissionsFlags) Validate() (api.AdminPurgePermissionsParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminPurgePermissionsParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminPurgePermissionsParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminPurgePermissionsParams{}, err
+		return api.AdminPurgePermissionsParams{}, "", err
 	}
 
 	return api.AdminPurgePermissionsParams{
-		Wallet:     f.Wallet,
-		Passphrase: passphrase,
-	}, nil
+		Wallet: f.Wallet,
+	}, passphrase, nil
 }
 
 func PrintPurgePermissionsResponse(w io.Writer, wallet string) {

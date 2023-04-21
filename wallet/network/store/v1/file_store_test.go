@@ -195,7 +195,45 @@ func testFileStoreV1GetExistingNetworkSucceeds(t *testing.T) {
 	// given
 	s := initialiseFromPath(t, vegaHome)
 	net := &network.Network{
-		Name: "test",
+		Name: "testnet2",
+		Metadata: []network.Metadata{
+			{
+				Key:   "network",
+				Value: "testnet",
+			}, {
+				Key:   "description",
+				Value: "Some network",
+			},
+		},
+		API: network.APIConfig{
+			GRPC: network.GRPCConfig{
+				Hosts: []string{
+					vgrand.RandomStr(10),
+					vgrand.RandomStr(10),
+					vgrand.RandomStr(10),
+				},
+				Retries: 5,
+			},
+			REST: network.RESTConfig{
+				Hosts: []string{
+					vgrand.RandomStr(10),
+					vgrand.RandomStr(10),
+				},
+			},
+			GraphQL: network.GraphQLConfig{
+				Hosts: []string{
+					vgrand.RandomStr(10),
+					vgrand.RandomStr(10),
+					vgrand.RandomStr(10),
+					vgrand.RandomStr(10),
+				},
+			},
+		},
+		Apps: network.AppsConfig{
+			Console:    vgrand.RandomStr(10),
+			Governance: vgrand.RandomStr(10),
+			Explorer:   vgrand.RandomStr(10),
+		},
 	}
 
 	// when
@@ -206,7 +244,7 @@ func testFileStoreV1GetExistingNetworkSucceeds(t *testing.T) {
 	vgtest.AssertFileAccess(t, networkPath(t, vegaHome, net.Name))
 
 	// when
-	returnedNet, err := s.GetNetwork("test")
+	returnedNet, err := s.GetNetwork("testnet2")
 
 	// then
 	require.NoError(t, err)

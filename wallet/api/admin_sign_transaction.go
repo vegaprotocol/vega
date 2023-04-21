@@ -4,14 +4,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/protobuf/proto"
 
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -31,7 +29,6 @@ type AdminLastBlockData struct {
 
 type AdminSignTransactionParams struct {
 	Wallet        string              `json:"wallet"`
-	Passphrase    string              `json:"passphrase"`
 	PublicKey     string              `json:"publicKey"`
 	Network       string              `json:"network"`
 	Transaction   interface{}         `json:"transaction"`
@@ -40,7 +37,6 @@ type AdminSignTransactionParams struct {
 
 type ParsedAdminSignTransactionParams struct {
 	Wallet         string
-	Passphrase     string
 	PublicKey      string
 	RawTransaction string
 	Network        string
@@ -49,7 +45,7 @@ type ParsedAdminSignTransactionParams struct {
 
 type AdminSignTransactionResult struct {
 	Tx                 *commandspb.Transaction `json:"transaction"`
-	EncodedTransaction string
+	EncodedTransaction string                  `json:"encodedTransaction"`
 }
 
 type AdminSignTransaction struct {
@@ -70,11 +66,12 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -207,10 +204,6 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 		return ParsedAdminSignTransactionParams{}, ErrWalletIsRequired
 	}
 
-	if params.Passphrase == "" {
-		return ParsedAdminSignTransactionParams{}, ErrPassphraseIsRequired
-	}
-
 	if params.PublicKey == "" {
 		return ParsedAdminSignTransactionParams{}, ErrPublicKeyIsRequired
 	}
@@ -252,7 +245,6 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 
 	return ParsedAdminSignTransactionParams{
 		Wallet:         params.Wallet,
-		Passphrase:     params.Passphrase,
 		PublicKey:      params.PublicKey,
 		RawTransaction: string(tx),
 		Network:        params.Network,

@@ -36,6 +36,7 @@ func TestTransfers(t *testing.T) {
 	t.Run("Retrieves latest transfer version after updates in different block", testTransfersUpdateInSameBlock)
 	t.Run("Test add and retrieve of one off transfer", testTransfersAddAndRetrieveOneOffTransfer)
 	t.Run("Test add and retrieve of recurring transfer", testTransfersAddAndRetrieveRecurringTransfer)
+	t.Run("Test get by tx hash", testGetByTxHash)
 }
 
 func TestTransfersPagination(t *testing.T) {
@@ -449,6 +450,47 @@ func testTransfersAddAndRetrieveRecurringTransfer(t *testing.T) {
 	transfers.Upsert(ctx, transfer)
 
 	retrieved, _, _ := transfers.GetAll(ctx, entities.CursorPagination{})
+	assert.Equal(t, 1, len(retrieved))
+	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
+	assert.Equal(t, sourceTransferProto, retrievedTransferProto)
+}
+
+func testGetByTxHash(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	now := time.Now()
+	block := getTestBlock(t, ctx, now)
+	accounts := sqlstore.NewAccounts(connectionSource)
+	accountFrom, accountTo := getTestAccounts(t, ctx, accounts, block)
+
+	transfers := sqlstore.NewTransfers(connectionSource)
+
+	sourceTransferProto := &eventspb.Transfer{
+		Id:              "deadd1d1",
+		From:            accountFrom.PartyID.String(),
+		FromAccountType: accountFrom.Type,
+		To:              accountTo.PartyID.String(),
+		ToAccountType:   accountTo.Type,
+		Asset:           accountFrom.AssetID.String(),
+		Amount:          "25",
+		Reference:       "Ref1",
+		Status:          eventspb.Transfer_STATUS_PENDING,
+		Timestamp:       block.VegaTime.UnixNano(),
+		Kind: &eventspb.Transfer_Recurring{Recurring: &eventspb.RecurringTransfer{
+			StartEpoch: 10,
+			EndEpoch:   nil,
+			Factor:     "0.1",
+		}},
+	}
+
+	txHash := txHashFromString("transfer_hash")
+
+	transfer, _ := entities.TransferFromProto(ctx, sourceTransferProto, txHash, block.VegaTime, accounts)
+	transfers.Upsert(ctx, transfer)
+
+	retrieved, err := transfers.GetByTxHash(ctx, txHash)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, len(retrieved))
 	retrievedTransferProto, _ := retrieved[0].ToProto(ctx, accounts)
 	assert.Equal(t, sourceTransferProto, retrievedTransferProto)

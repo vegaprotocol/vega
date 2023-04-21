@@ -157,6 +157,21 @@ func (mr *MockMarketStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketStore)(nil).GetByID), arg0, arg1)
 }
 
+// GetByTxHash mocks base method.
+func (m *MockMarketStore) GetByTxHash(arg0 context.Context, arg1 entities.TxHash) ([]entities.Market, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByTxHash", arg0, arg1)
+	ret0, _ := ret[0].([]entities.Market)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByTxHash indicates an expected call of GetByTxHash.
+func (mr *MockMarketStoreMockRecorder) GetByTxHash(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTxHash", reflect.TypeOf((*MockMarketStore)(nil).GetByTxHash), arg0, arg1)
+}
+
 // Upsert mocks base method.
 func (m *MockMarketStore) Upsert(arg0 context.Context, arg1 *entities.Market) error {
 	m.ctrl.T.Helper()
@@ -442,4 +457,19 @@ func (m *MockPositionStore) GetByPartyConnection(arg0 context.Context, arg1, arg
 func (mr *MockPositionStoreMockRecorder) GetByPartyConnection(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyConnection", reflect.TypeOf((*MockPositionStore)(nil).GetByPartyConnection), arg0, arg1, arg2, arg3)
+}
+
+// GetByTxHash mocks base method.
+func (m *MockPositionStore) GetByTxHash(arg0 context.Context, arg1 entities.TxHash) ([]entities.Position, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByTxHash", arg0, arg1)
+	ret0, _ := ret[0].([]entities.Position)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByTxHash indicates an expected call of GetByTxHash.
+func (mr *MockPositionStoreMockRecorder) GetByTxHash(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTxHash", reflect.TypeOf((*MockPositionStore)(nil).GetByTxHash), arg0, arg1)
 }

@@ -322,7 +322,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     And the accumulated liquidity fees should be "6" for the market "USD/DEC20"
     # liquidity fee = 5 * 100100000 * 0.001 which means actual number without decimal is 0.00005*1001*0.001 = 0.00005005, and translate back into asset decimal 5.005 (given fee is rounded up in vega, so it should be 6) given asset decimal 5, market decimal 5, position decimal 5
 
-    Then the parties place the following orders:
+    Then the parties place the following orders with ticks:
       | party  | market id | side | volume | price     | resulting trades | type       | tif     |
       | party1 | USD/DEC21 | buy  | 1      | 100100000 | 1                | TYPE_LIMIT | TIF_GTC |
     And the accumulated liquidity fees should be "101" for the market "USD/DEC21"
@@ -331,12 +331,12 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
     #check MTM settlement with correct PDP
     And the market data for the market "USD/DEC21" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 100000000  | 100100000         | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3560812945   | 5001000000     | 10001         |
+      | 100100000  | 100100000         | TRADING_MODE_CONTINUOUS | 100000  | 86365368  | 115420826 | 3560812945   | 5001000000     | 10001         |
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1001 x 10.001 x 1 x 3.5569=35608.1294569, which is 3560812945 in asset decimal (which is 5)
 
     And the parties should have the following account balances:
       | party | asset | market id | margin  | general        | bond    |
-      | lp1   | ETH   | USD/DEC21 | 5127063 | 99999980896617 | 1000000 |
+      | lp1   | ETH   | USD/DEC21 | 5122062 | 99999980907847 | 1000000 |
       | lp1   | USD   |           |         | 100000000000   |         |
 
     # amend LP commintment amount
@@ -347,7 +347,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5002000000     | 10005         |
+      | 1001000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5002000000     | 10005         |
 
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type   |
@@ -358,7 +358,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5000000000     | 10005         |
+      | 1001000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 5000000000     | 10005         |
 
     #reduce LP commitment amount
     And the parties submit the following liquidity provision:
@@ -368,7 +368,7 @@ Feature: Test decimal places in LP order, liquidity provider reward distribution
 
     And the market data for the market "USD/DEC19" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 4600000000     | 10005         |
+      | 1001000    | 1001000           | TRADING_MODE_CONTINUOUS | 100000  | 863654    | 1154208   | 3562237128   | 4600000000     | 10005         |
 
     # 0038-OLIQ-006 assure that submission bringing supplied stake < target stake gets rejected
     And the parties submit the following liquidity provision:

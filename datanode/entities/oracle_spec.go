@@ -40,7 +40,7 @@ func OracleSpecFromProto(spec *vegapb.OracleSpec, txHash TxHash, vegaTime time.T
 	}, nil
 }
 
-func (os *OracleSpec) ToProto() *vegapb.OracleSpec {
+func (os OracleSpec) ToProto() *vegapb.OracleSpec {
 	return &vegapb.OracleSpec{
 		ExternalDataSourceSpec: os.ExternalDataSourceSpec.ToProto(),
 	}

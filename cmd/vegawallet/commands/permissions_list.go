@@ -26,18 +26,26 @@ var (
 	`)
 )
 
-type ListPermissionsHandler func(api.AdminListPermissionsParams) (api.AdminListPermissionsResult, error)
+type ListPermissionsHandler func(api.AdminListPermissionsParams, string) (api.AdminListPermissionsResult, error)
 
 func NewCmdListPermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminListPermissionsParams) (api.AdminListPermissionsResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminListPermissionsParams, passphrase string) (api.AdminListPermissionsResult, error) {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminListPermissionsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		listPermissions := api.NewAdminListPermissions(walletStore)
-		rawResult, errDetails := listPermissions.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminListPermissionsResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errDetails := api.NewAdminListPermissions(walletStore).Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminListPermissionsResult{}, errors.New(errDetails.Data)
 		}
@@ -56,12 +64,12 @@ func BuildCmdListPermissions(w io.Writer, handler ListPermissionsHandler, rf *Ro
 		Long:    listPermissionsLong,
 		Example: listPermissionsExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -98,20 +106,19 @@ type ListPermissionsFlags struct {
 	PassphraseFile string
 }
 
-func (f *ListPermissionsFlags) Validate() (api.AdminListPermissionsParams, error) {
+func (f *ListPermissionsFlags) Validate() (api.AdminListPermissionsParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminListPermissionsParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminListPermissionsParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminListPermissionsParams{}, err
+		return api.AdminListPermissionsParams{}, "", err
 	}
 
 	return api.AdminListPermissionsParams{
-		Wallet:     f.Wallet,
-		Passphrase: passphrase,
-	}, nil
+		Wallet: f.Wallet,
+	}, passphrase, nil
 }
 
 func PrintListPermissionsResponse(w io.Writer, resp api.AdminListPermissionsResult) {

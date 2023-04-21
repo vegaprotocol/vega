@@ -85,8 +85,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | lp1    | USD   | ETH/MAR22 | 2400   | 999987212 | 10000 |
+      | party1 | USD   | ETH/MAR22 | 1200   | 99998805  |       |
       | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/MAR22"
@@ -222,7 +222,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 8      | USD   |
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 
-  @VirtStake
+  @FeeRound
   Scenario: 003 2 LPs joining at start, unequal commitments. Checking calculation of equity-like-shares and liquidity-fee-distribution in a shrinking market. (0042-LIQF-008 0042-LIQF-011)
 
     # Scenario has 6 market periods:
@@ -327,7 +327,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | last traded price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5205         | 9000           | 52            |
+      | 1000       | 1001              | TRADING_MODE_CONTINUOUS | 1       | 500       | 1500      | 5200         | 9000           | 52            |
 
     # Trigger next liquidity fee distribution without triggering next period
     When the network moves ahead "1" blocks:
@@ -340,9 +340,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
 
     # 2nd period: 1 LPs increase commitment, some trades occur
@@ -369,7 +369,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 5      | USD   |
 
-    And the accumulated liquidity fees should be "5" for the market "ETH/MAR22"
+    # 5 + 1 remainder
+    And the accumulated liquidity fees should be "6" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -388,7 +389,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
 
     # 3rd period: 2 LPs decrease commitment, some trades occur
@@ -421,7 +422,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 7      | USD   |
 
-    And the accumulated liquidity fees should be "7" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "8" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -440,7 +441,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 5      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
 
     # 4nd period: 2 LPs increase commitment, some trades occur
@@ -474,7 +475,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 10     | USD   |
 
-    And the accumulated liquidity fees should be "10" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "11" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -493,7 +494,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 4      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 6      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
 
     # 5th period: 1 LPs decrease commitment 1 LPs increase commitment, some trades occur
@@ -527,7 +528,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | from   | to     | from account         | to account                  | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/MAR22 | 12     | USD   |
 
-    And the accumulated liquidity fees should be "12" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "13" for the market "ETH/MAR22"
 
     And the market data for the market "ETH/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
@@ -546,9 +547,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 3      | USD   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 9      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
-  @VirtStake
+  @FeeRound
   Scenario: 004 2 LPs joining at start, 1 LP forcibly closed out (0042-LIQF-008)
 
     Given the average block duration is "601"
@@ -619,9 +620,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 6      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 63     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 62     | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
 
     # 2nd set of trades: market moves against LP1s position, margin-insufficient, margin topped up from general and bond
@@ -643,7 +644,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     # liquidity_fee = ceil(volume * price * liquidity_fee_factor) =  ceil(1300 * 30 * 0.002) = ceil(78) = 78
 
-    And the accumulated liquidity fees should be "78" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "79" for the market "ETH/MAR22"
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general | bond |
@@ -658,7 +659,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 78     | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 79     | USD   |
 
     And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
 

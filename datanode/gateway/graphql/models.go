@@ -202,24 +202,9 @@ type Erc20 struct {
 
 func (Erc20) IsAssetSource() {}
 
-type ERC20MultiSigSignerAddedBundle struct {
-	// The ethereum address of the signer to be added
-	NewSigner string `json:"newSigner"`
-	// The ethereum address of the submitter
-	Submitter string `json:"submitter"`
-	// The nonce used in the signing operation
-	Nonce string `json:"nonce"`
-	// Unix-nano timestamp for when the validator was added
-	Timestamp string `json:"timestamp"`
-	// The bundle of signatures from current validators to sign in the new signer
-	Signatures string `json:"signatures"`
-	// The epoch in which the validator was added
-	EpochSeq string `json:"epochSeq"`
-}
-
 type ERC20MultiSigSignerAddedBundleEdge struct {
-	Node   *ERC20MultiSigSignerAddedBundle `json:"node"`
-	Cursor string                          `json:"cursor"`
+	Node   *v2.ERC20MultiSigSignerAddedBundle `json:"node"`
+	Cursor string                             `json:"cursor"`
 }
 
 // Response for the signature bundle to add a particular validator to the signer list of the multisig contract
@@ -228,24 +213,9 @@ type ERC20MultiSigSignerAddedConnection struct {
 	PageInfo *v2.PageInfo                          `json:"pageInfo"`
 }
 
-type ERC20MultiSigSignerRemovedBundle struct {
-	// The ethereum address of the signer to be removed
-	OldSigner string `json:"oldSigner"`
-	// The ethereum address of the submitter
-	Submitter string `json:"submitter"`
-	// The nonce used in the signing operation
-	Nonce string `json:"nonce"`
-	// Unix-nano timestamp for when the validator was added
-	Timestamp string `json:"timestamp"`
-	// The bundle of signatures from current validators to sign in the new signer
-	Signatures string `json:"signatures"`
-	// The epoch in which the validator was removed
-	EpochSeq string `json:"epochSeq"`
-}
-
 type ERC20MultiSigSignerRemovedBundleEdge struct {
-	Node   *ERC20MultiSigSignerRemovedBundle `json:"node"`
-	Cursor string                            `json:"cursor"`
+	Node   *v2.ERC20MultiSigSignerRemovedBundle `json:"node"`
+	Cursor string                               `json:"cursor"`
 }
 
 // Response for the signature bundle to remove a particular validator from the signer list of the multisig contract
@@ -348,21 +318,12 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
-type LedgerEntry struct {
-	// Account from which the asset was taken
-	FromAccountID *vega.AccountDetails `json:"fromAccountId"`
-	// Account to which the balance was transferred
-	ToAccountID *vega.AccountDetails `json:"toAccountId"`
-	// The amount transferred
-	Amount string `json:"amount"`
-	// Type of ledger entry
-	Type vega.TransferType `json:"type"`
-	// RFC3339Nano time at which the transfer was made
-	Timestamp int64 `json:"timestamp"`
-	// Sender account balance after the transfer
-	FromAccountBalance string `json:"fromAccountBalance"`
-	// Receiver account balance after the transfer
-	ToAccountBalance string `json:"toAccountBalance"`
+// An estimate of the fee to be paid for the order
+type FeeEstimate struct {
+	// The estimated fees if the order was to trade
+	Fees *TradeFee `json:"fees"`
+	// The total estimated amount of fees if the order was to trade
+	TotalFeeAmount string `json:"totalFeeAmount"`
 }
 
 // Configuration of a market liquidity monitoring parameters
@@ -453,16 +414,6 @@ type ObservableLiquidityProviderFeeShare struct {
 	AverageScore string `json:"averageScore"`
 }
 
-type OffsetPagination struct {
-	// Skip the number of records specified, default is 0
-	Skip int `json:"skip"`
-	// Limit the number of returned records to the value specified, default is 50
-	Limit int `json:"limit"`
-	// Descending reverses the order of the records returned
-	// default is true, if false the results will be returned in ascending order
-	Descending bool `json:"descending"`
-}
-
 type OrderByMarketAndPartyIdsFilter struct {
 	Order     *v2.OrderFilter `json:"order"`
 	MarketIds []string        `json:"marketIds"`
@@ -487,6 +438,26 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
+}
+
+// Basic description of an order
+type OrderInfo struct {
+	// Whether the order is to buy or sell
+	Side vega.Side `json:"side"`
+	// Price for the order
+	Price string `json:"price"`
+	// Number of units remaining of the total that have not yet been bought or sold (uint64)
+	Remaining string `json:"remaining"`
+	// Boolean indicating a market order
+	IsMarketOrder bool `json:"isMarketOrder"`
+}
+
+// Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position
+type PositionEstimate struct {
+	// Margin level range estimate for the specified position
+	Margin *v2.MarginEstimate `json:"margin"`
+	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request
+	Liquidation *v2.LiquidationEstimate `json:"liquidation"`
 }
 
 type PositionResolution struct {
@@ -675,6 +646,19 @@ type TradeSettlement struct {
 	Price string `json:"price"`
 }
 
+// Filter to apply to the trade connection query
+type TradesFilter struct {
+	PartyIds  []string `json:"partyIds"`
+	MarketIds []string `json:"marketIds"`
+	OrderIds  []string `json:"orderIds"`
+}
+
+// Filter to apply to the trade subscription request
+type TradesSubscriptionFilter struct {
+	PartyIds  []string `json:"partyIds"`
+	MarketIds []string `json:"marketIds"`
+}
+
 type TransactionSubmitted struct {
 	Success bool `json:"success"`
 }
@@ -688,7 +672,7 @@ type TransferBalance struct {
 
 type TransferResponse struct {
 	// The ledger entries and balances resulting from a transfer request
-	Transfers []*LedgerEntry `json:"transfers"`
+	Transfers []*vega.LedgerEntry `json:"transfers"`
 	// The balances of accounts involved in the transfer
 	Balances []*TransferBalance `json:"balances"`
 }

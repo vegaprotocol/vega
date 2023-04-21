@@ -12,13 +12,13 @@ import (
 )
 
 type AdminVerifyMessageParams struct {
-	PubKey           string `json:"pubKey"`
+	PublicKey        string `json:"publicKey"`
 	EncodedMessage   string `json:"encodedMessage"`
 	EncodedSignature string `json:"encodedSignature"`
 }
 
 type AdminVerifyMessageResult struct {
-	IsValid bool `json:"valid"`
+	IsValid bool `json:"isValid"`
 }
 
 type AdminVerifyMessage struct{}
@@ -39,7 +39,7 @@ func (h *AdminVerifyMessage) Handle(_ context.Context, rawParams jsonrpc.Params)
 		return nil, invalidParams(ErrEncodedSignatureIsNotValidBase64String)
 	}
 
-	decodedPubKey, err := hex.DecodeString(params.PubKey)
+	decodedPubKey, err := hex.DecodeString(params.PublicKey)
 	if err != nil {
 		return nil, invalidParams(fmt.Errorf("could not decode the public key: %w", err))
 	}
@@ -69,7 +69,7 @@ func validateAdminVerifyMessageParams(rawParams jsonrpc.Params) (AdminVerifyMess
 		return AdminVerifyMessageParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.PubKey == "" {
+	if params.PublicKey == "" {
 		return AdminVerifyMessageParams{}, ErrPublicKeyIsRequired
 	}
 
@@ -82,7 +82,7 @@ func validateAdminVerifyMessageParams(rawParams jsonrpc.Params) (AdminVerifyMess
 	}
 
 	return AdminVerifyMessageParams{
-		PubKey:           params.PubKey,
+		PublicKey:        params.PublicKey,
 		EncodedMessage:   params.EncodedMessage,
 		EncodedSignature: params.EncodedSignature,
 	}, nil

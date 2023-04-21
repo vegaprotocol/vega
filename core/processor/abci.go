@@ -18,8 +18,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -39,7 +42,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/core/vegatime"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
@@ -399,6 +401,7 @@ func NewApp(
 
 	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
+	app.ensureConfig()
 	return app
 }
 
@@ -407,8 +410,8 @@ func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.U
 	return nil
 }
 
-// addDeterministicID will build the command id and .
-// the command id is built using the signature of the proposer of the command
+// addDeterministicID will build the command ID
+// the command ID is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
 // the hash is the hex string encoded.
 func addDeterministicID(
@@ -488,6 +491,12 @@ func (app *App) SendTransactionResult(
 	}
 }
 
+func (app *App) ensureConfig() {
+	if app.cfg.KeepCheckpointsMax < 1 {
+		app.cfg.KeepCheckpointsMax = 1
+	}
+}
+
 // ReloadConf updates the internal configuration.
 func (app *App) ReloadConf(cfg Config) {
 	app.log.Info("reloading configuration")
@@ -500,6 +509,7 @@ func (app *App) ReloadConf(cfg Config) {
 	}
 
 	app.cfg = cfg
+	app.ensureConfig()
 }
 
 func (app *App) Abci() *abci.App {
@@ -883,7 +893,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 
 	if len(snapHash) == 0 {
-		resp.Data = crypto.Hash([]byte(app.version))
+		resp.Data = vgcrypto.Hash([]byte(app.version))
 		resp.Data = append(resp.Data, app.exec.Hash()...)
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
 		resp.Data = append(resp.Data, app.gov.Hash()...)
@@ -942,6 +952,66 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	// this function is called both for interval checkpoints and withdrawal checkpoints
 	event := events.NewCheckpointEvent(app.blockCtx, cpt)
 	app.broker.Send(event)
+
+	return app.removeOldCheckpoints()
+}
+
+func (app *App) removeOldCheckpoints() error {
+	cpDirPath, err := app.vegaPaths.CreateStatePathFor(paths.StatePath(paths.CheckpointStateHome.String()))
+	if err != nil {
+		return fmt.Errorf("couldn't get checkpoints directory: %w", err)
+	}
+
+	files, err := ioutil.ReadDir(cpDirPath)
+	if err != nil {
+		return fmt.Errorf("could not open the checkpoint directory: %w", err)
+	}
+
+	// we assume that the files in this directory are only
+	// from the checkpoints
+	// and always keep the last 20, so return if we have less than that
+	if len(files) <= int(app.cfg.KeepCheckpointsMax) {
+		return nil
+	}
+
+	oldest := app.stats.Height()
+	toRemove := ""
+	for _, file := range files {
+		// checkpoint have the following format:
+		// 20230322173929-12140156-d833359cb648eb315b4d3f9ccaa5092bd175b2f72a9d44783377ca5d7a2ec965.cp
+		// which is:
+		// time-block-hash.cp
+		// we split and should have the block in splitted[1]
+		splitted := strings.Split(file.Name(), "-")
+		if len(splitted) != 3 {
+			app.log.Error("weird checkpoint file name", logging.String("checkpoint-file", file.Name()))
+			// weird file, keep going
+			continue
+		}
+		block, err := strconv.ParseInt(splitted[1], 10, 64)
+		if err != nil {
+			app.log.Error("could not parse block number", logging.Error(err), logging.String("checkpoint-file", file.Name()))
+			continue
+		}
+
+		if uint64(block) < oldest {
+			oldest = uint64(block)
+			toRemove = file.Name()
+		}
+	}
+
+	if len(toRemove) > 0 {
+		finalPath := filepath.Join(cpDirPath, toRemove)
+		if err := os.Remove(finalPath); err != nil {
+			app.log.Error("could not remove old checkpoint file",
+				logging.Error(err),
+				logging.String("checkpoint-file", finalPath),
+			)
+		}
+		// just return an error, not much we can do
+		return nil
+	}
+
 	return nil
 }
 
@@ -1167,7 +1237,7 @@ func (app *App) DeliverIssueSignatures(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(is); err != nil {
 		return err
 	}
-	return app.top.IssueSignatures(ctx, crypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
+	return app.top.IssueSignatures(ctx, vgcrypto.EthereumChecksumAddress(is.Submitter), is.ValidatorNodeId, is.Kind)
 }
 
 func (app *App) DeliverProtocolUpgradeCommand(ctx context.Context, tx abci.Tx) error {
@@ -1545,7 +1615,7 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 
 	return app.witness.AddNodeCheck(ctx, vote, pubKey)
 }
@@ -1565,7 +1635,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
@@ -1580,7 +1650,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
+	pubKey := vgcrypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return ErrOracleDataNormalization(err)

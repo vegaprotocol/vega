@@ -103,8 +103,8 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general   | bond  |
-      | lp1    | USD   | ETH/MAR22 | 2870   | 999986742 | 10000 |
-      | party1 | USD   | ETH/MAR22 | 1317   | 99998688  |       |
+      | lp1    | USD   | ETH/MAR22 | 2400   | 999987212 | 10000 |
+      | party1 | USD   | ETH/MAR22 | 1200   | 99998805  |       |
       | party2 | USD   | ETH/MAR22 | 1932   | 99998411  |       |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
@@ -336,10 +336,11 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 6      | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 2      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/MAR22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/MAR22"
 
+  @FeeRound
   Scenario: 004 2 LPs joining at start, unequal commitments, lp2's equity like share is very small, check the rounding of equity like share (round to 16 decimal places in this case)(0042-LIQF-004, 0042-LIQF-015)
 
     Given the parties deposit on asset's general account the following amount:
@@ -410,8 +411,9 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
-  @STTest
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
+
+  @FeeRound
   Scenario: 005: 2 LP distribution at settlement
 
     Given the parties deposit on asset's general account the following amount:
@@ -491,7 +493,7 @@ Feature: Test liquidity provider reward distribution; Should also cover liquidit
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 19     | USD   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 1      | USD   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/MAR22 | 0      | USD   |
 
   Scenario: 006 Cut the market value window short with a parameter change (0042-LIQF-022)
     Given the parties deposit on asset's general account the following amount:

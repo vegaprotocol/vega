@@ -18,15 +18,14 @@ func checkValidatorHeartbeat(cmd *commandspb.ValidatorHeartbeat) Errors {
 	}
 
 	if len(cmd.NodeId) == 0 {
-		errs.AddForProperty("validator_heartbeat.vega_pub_key", ErrIsRequired)
+		errs.AddForProperty("validator_heartbeat.node_id", ErrIsRequired)
 	} else {
-		_, err := hex.DecodeString(cmd.NodeId)
-		if err != nil {
-			errs.AddForProperty("validator_heartbeat.vega_pub_key", ErrShouldBeHexEncoded)
+		if !IsVegaPubkey(cmd.NodeId) {
+			errs.AddForProperty("validator_heartbeat.node_id", ErrShouldBeAValidVegaPubkey)
 		}
 	}
 
-	if cmd.VegaSignature == nil || len(cmd.EthereumSignature.Value) == 0 {
+	if cmd.EthereumSignature == nil || len(cmd.EthereumSignature.Value) == 0 {
 		errs.AddForProperty("validator_heartbeat.ethereum_signature.value", ErrIsRequired)
 	} else {
 		_, err := hex.DecodeString(cmd.EthereumSignature.Value)

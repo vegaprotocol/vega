@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -32,6 +33,25 @@ type Account struct {
 	Type     vega.AccountType
 	TxHash   TxHash
 	VegaTime time.Time
+}
+
+func (a Account) ToProto() *vega.Account {
+	return &vega.Account{
+		Id:       a.ID.String(),
+		Owner:    a.PartyID.String(),
+		Asset:    a.AssetID.String(),
+		MarketId: a.MarketID.String(),
+		Type:     a.Type,
+	}
+}
+
+func (a Account) ToAccountDetailsProto() *vega.AccountDetails {
+	return &vega.AccountDetails{
+		Owner:    ptr.From(a.PartyID.String()),
+		AssetId:  a.AssetID.String(),
+		MarketId: ptr.From(a.MarketID.String()),
+		Type:     a.Type,
+	}
 }
 
 func (a Account) String() string {

@@ -76,8 +76,11 @@
       "paramStructure": "by-name",
       "params": [],
       "result": {
-        "name": "No result",
-        "schema": false
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
       },
       "examples": [
         {
@@ -560,6 +563,62 @@
       ]
     },
     {
+      "name": "admin.unlock_wallet",
+      "summary": "Unlock the wallet to allow other methods to access it.",
+      "description": "This method unlocks the specified wallet. This is a mandatory step to access and modify the wallet and its associated keys, permissions, etc.",
+      "tags": [
+        {
+          "name": "admin"
+        },
+        {
+          "name": "wallet"
+        }
+      ],
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "wallet",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "passphrase",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "Success",
+        "required": true,
+        "schema": {
+          "type": "null"
+        }
+      },
+      "examples": [
+        {
+          "name": "Unlocking a wallet",
+          "params": [
+            {
+              "name": "wallet",
+              "value": "my-wallet"
+            },
+            {
+              "name": "passphrase",
+              "value": "this-is-not-a-good-passphrase"
+            }
+          ],
+          "result": {
+            "name": "Success",
+            "value": null
+          }
+        }
+      ]
+    },
+    {
       "name": "admin.create_wallet",
       "summary": "Creates a wallet with its first key-pair.",
       "description": "This method creates a HD wallet (with version 2 of the key derivation) and generates its first key-pair the cryptographic algorithm ed25519.\n\nThe passphrase will be used to encrypt the wallet and its keys.\n\nIf successful, the wallet is ready to use for sending transaction.",
@@ -834,22 +893,12 @@
         },
         {
           "name": "wallet"
-        },
-        {
-          "name": "passphrase"
         }
       ],
       "paramStructure": "by-name",
       "params": [
         {
           "name": "wallet",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "passphrase",
           "required": true,
           "schema": {
             "type": "string"
@@ -879,10 +928,6 @@
               "value": "my-wallet"
             },
             {
-              "name": "passphrase",
-              "value": "this-is-the-old-passphrase"
-            },
-            {
               "name": "newPassphrase",
               "value": "this-is-the-new-passphrase"
             }
@@ -910,13 +955,6 @@
       "params": [
         {
           "name": "wallet",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "passphrase",
           "required": true,
           "schema": {
             "type": "string"
@@ -957,10 +995,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -1149,10 +1183,12 @@
               "type": "array",
               "items": {
                 "type": "object",
+                "required": [
+                  "name"
+                ],
                 "properties": {
                   "name": {
-                    "type": "string",
-                    "required": true
+                    "type": "string"
                   },
                   "metadata": {
                     "type": "array",
@@ -1272,18 +1308,18 @@
                 }
               ],
               "api": {
-                "grpcConfig": {
+                "grpc": {
                   "hosts": [
                     "localhost:3028"
                   ],
                   "retries": 5
                 },
-                "graphQLConfig": {
+                "graphQL": {
                   "hosts": [
                     "localhost:3028"
                   ]
                 },
-                "restConfig": {
+                "rest": {
                   "hosts": [
                     "localhost:3029"
                   ]
@@ -1362,18 +1398,18 @@
             {
               "name": "api",
               "value": {
-                "grpcConfig": {
+                "grpc": {
                   "hosts": [
                     "localhost:3028"
                   ],
                   "retries": 5
                 },
-                "graphQLConfig": {
+                "graphQL": {
                   "hosts": [
                     "localhost:3028"
                   ]
                 },
-                "restConfig": {
+                "rest": {
                   "hosts": [
                     "localhost:3029"
                   ]
@@ -1585,13 +1621,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "metadata",
           "required": true,
           "schema": {
@@ -1635,10 +1664,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "metadata",
@@ -1695,13 +1720,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "publicKey",
           "required": true,
           "schema": {
@@ -1715,12 +1733,16 @@
         "schema": {
           "type": "object",
           "required": [
+            "name",
             "publicKey",
             "algorithm",
             "metadata",
             "isTainted"
           ],
           "properties": {
+            "name": {
+              "type": "string"
+            },
             "publicKey": {
               "$ref": "#/components/schemas/public_key"
             },
@@ -1747,10 +1769,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "publicKey",
@@ -1801,13 +1819,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -1835,10 +1846,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -1871,13 +1878,6 @@
       "params": [
         {
           "name": "wallet",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "passphrase",
           "required": true,
           "schema": {
             "type": "string"
@@ -1926,10 +1926,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "publicKey",
@@ -1985,13 +1981,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "isolatedWalletPassphrase",
           "required": true,
           "schema": {
@@ -2017,9 +2006,7 @@
           "properties": {
             "wallet": {
               "description": "Name of the generated isolated wallet",
-              "schema": {
-                "type": "string"
-              }
+              "type": "string"
             }
           }
         }
@@ -2031,10 +2018,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "isolatedWalletPassphrase",
@@ -2076,13 +2059,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "fromPublicKey",
           "required": true,
           "description": "The current public key",
@@ -2111,7 +2087,7 @@
           "required": true,
           "description": "The block height (approximation) at which the transaction will be submitted",
           "schema": {
-            "type": "string"
+            "type": "number"
           }
         },
         {
@@ -2119,7 +2095,7 @@
           "required": true,
           "description": "The block height at which the rotation should happen",
           "schema": {
-            "type": "string"
+            "type": "number"
           }
         }
       ],
@@ -2135,15 +2111,11 @@
           "properties": {
             "masterPublicKey": {
               "description": "The master public key of the wallet used to sign the transaction",
-              "schema": {
-                "type": "string"
-              }
+              "type": "string"
             },
             "encodedTransaction": {
               "description": "The base64-encoded key rotation transaction",
-              "schema": {
-                "type": "string"
-              }
+              "type": "string"
             }
           }
         }
@@ -2155,10 +2127,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "fromPublicKey",
@@ -2213,13 +2181,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "publicKey",
           "required": true,
           "schema": {
@@ -2241,10 +2202,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "publicKey",
@@ -2280,13 +2237,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "publicKey",
           "required": true,
           "schema": {
@@ -2308,10 +2258,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "publicKey",
@@ -2347,13 +2293,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "hostname",
           "required": true,
           "schema": {
@@ -2383,10 +2322,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "hostname",
@@ -2429,13 +2364,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -2467,10 +2395,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -2505,13 +2429,6 @@
       "params": [
         {
           "name": "wallet",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "passphrase",
           "required": true,
           "schema": {
             "type": "string"
@@ -2554,10 +2471,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "hostname",
@@ -2613,13 +2526,6 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
           "name": "hostname",
           "required": true,
           "schema": {
@@ -2641,10 +2547,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             },
             {
               "name": "hostname",
@@ -2678,13 +2580,6 @@
           "schema": {
             "type": "string"
           }
-        },
-        {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
       "result": {
@@ -2701,10 +2596,6 @@
             {
               "name": "wallet",
               "value": "my-wallet"
-            },
-            {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
             }
           ],
           "result": {
@@ -2736,45 +2627,29 @@
           }
         },
         {
-          "name": "passphrase",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
-          }
-        },
-        {
-          "name": "pubKey",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "chainId",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "blockHeight",
-          "required": true,
-          "schema": {
-            "type": "integer"
           }
         },
         {
           "name": "network",
           "schema": {
-            "type": "integer"
+            "type": "string"
           }
         },
         {
           "name": "transaction",
           "required": true,
           "schema": {
-            "type": "object",
             "$ref": "#/components/schemas/transaction"
+          }
+        },
+        {
+          "name": "lastBlockData",
+          "schema": {
+            "$ref": "#/components/schemas/last_block_data"
           }
         }
       ],
@@ -2784,9 +2659,13 @@
         "schema": {
           "type": "object",
           "required": [
+            "transaction",
             "encodedTransaction"
           ],
           "properties": {
+            "transaction": {
+              "$ref": "#/components/schemas/signed_transaction"
+            },
             "encodedTransaction": {
               "type": "string"
             }
@@ -2816,14 +2695,7 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2862,11 +2734,7 @@
               "value": "my-wallet"
             },
             {
-              "name": "passphrase",
-              "value": "this-is-not-a-good-passphrase"
-            },
-            {
-              "name": "pubKey",
+              "name": "publicKey",
               "value": "0101010101010101010101010101010101010101010101010101010101010101"
             },
             {
@@ -2898,7 +2766,7 @@
       "paramStructure": "by-name",
       "params": [
         {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2931,7 +2799,7 @@
           ],
           "properties": {
             "isValid": {
-              "type": "string"
+              "type": "boolean"
             }
           }
         }
@@ -2959,14 +2827,7 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -2975,7 +2836,7 @@
         {
           "name": "network",
           "schema": {
-            "type": "integer"
+            "type": "string"
           }
         },
         {
@@ -2987,7 +2848,7 @@
         {
           "name": "retries",
           "schema": {
-            "type": "integer"
+            "type": "number"
           }
         },
         {
@@ -3001,7 +2862,6 @@
           "name": "transaction",
           "required": true,
           "schema": {
-            "type": "object",
             "$ref": "#/components/schemas/transaction"
           }
         }
@@ -3015,7 +2875,8 @@
             "receivedAt",
             "sentAt",
             "transactionHash",
-            "transaction"
+            "transaction",
+            "node"
           ],
           "properties": {
             "receivedAt": {
@@ -3038,6 +2899,9 @@
             },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
+            },
+            "node": {
+              "$ref": "#/components/schemas/node_info"
             }
           }
         }
@@ -3065,14 +2929,7 @@
           }
         },
         {
-          "name": "passphrase",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "pubKey",
+          "name": "publicKey",
           "required": true,
           "schema": {
             "type": "string"
@@ -3081,7 +2938,7 @@
         {
           "name": "network",
           "schema": {
-            "type": "integer"
+            "type": "string"
           }
         },
         {
@@ -3093,14 +2950,13 @@
         {
           "name": "retries",
           "schema": {
-            "type": "integer"
+            "type": "number"
           }
         },
         {
           "name": "transaction",
           "required": true,
           "schema": {
-            "type": "object",
             "$ref": "#/components/schemas/transaction"
           }
         }
@@ -3113,7 +2969,9 @@
           "required": [
             "receivedAt",
             "sentAt",
-            "transaction"
+            "encodedTransaction",
+            "transaction",
+            "node"
           ],
           "properties": {
             "receivedAt": {
@@ -3130,8 +2988,14 @@
                 "2021-02-18T21:54:42.123Z"
               ]
             },
+            "encodedTransaction": {
+              "type": "string"
+            },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
+            },
+            "node": {
+              "$ref": "#/components/schemas/node_info"
             }
           }
         }
@@ -3180,7 +3044,7 @@
           "description": "the number of times sending the transaction should be attempted if it fails",
           "required": true,
           "schema": {
-            "type": "integer"
+            "type": "number"
           }
         },
         {
@@ -3200,7 +3064,8 @@
             "receivedAt",
             "sentAt",
             "transactionHash",
-            "transaction"
+            "transaction",
+            "node"
           ],
           "properties": {
             "receivedAt": {
@@ -3223,6 +3088,9 @@
             },
             "transaction": {
               "$ref": "#/components/schemas/signed_transaction"
+            },
+            "node": {
+              "$ref": "#/components/schemas/node_info"
             }
           }
         }
@@ -3562,6 +3430,18 @@
   ],
   "components": {
     "schemas": {
+      "node_info": {
+        "type": "object",
+        "description": "The node that handled the transaction.",
+        "required": [
+          "host"
+        ],
+        "properties": {
+          "host": {
+            "type": "string"
+          }
+        }
+      },
       "signed_transaction": {
         "type": "object",
         "description": "A transaction that has been signed by the wallet.",
@@ -3596,15 +3476,7 @@
             }
           },
           "from": {
-            "type": "object",
-            "properties": {
-              "publicKey": {
-                "type": "string"
-              },
-              "address": {
-                "type": "string"
-              }
-            }
+            "type": "object"
           },
           "version": {
             "type": "number"
@@ -3697,12 +3569,11 @@
       "permissions_summary": {
         "type": "object",
         "description": "The description of the permissions a third-party application has.",
-        "required": [
-          "public_keys"
-        ],
-        "properties": {
-          "public_keys": {
-            "$ref": "#/components/schemas/access_mode"
+        "patternProperties": {
+          ".": {
+            "schema": {
+              "type": "string"
+            }
           }
         }
       },
@@ -3739,10 +3610,10 @@
         "type": "object",
         "description": "The API configuration for the network.",
         "required": [
-          "grpcConfig"
+          "grpc"
         ],
         "properties": {
-          "grpcConfig": {
+          "grpc": {
             "type": "object",
             "required": [
               "hosts",
@@ -3760,7 +3631,7 @@
               }
             }
           },
-          "graphQLConfig": {
+          "graphQL": {
             "type": "object",
             "required": [
               "hosts"
@@ -3774,7 +3645,7 @@
               }
             }
           },
-          "restConfig": {
+          "rest": {
             "type": "object",
             "required": [
               "hosts"
@@ -3812,11 +3683,12 @@
           "blockHeight",
           "blockHash",
           "chainID",
-          "proofOfWorkDifficulty"
+          "proofOfWorkDifficulty",
+          "proofOfWorkHashFunction"
         ],
         "properties": {
           "blockHeight": {
-            "type": "integer"
+            "type": "number"
           },
           "blockHash": {
             "type": "string"
@@ -3824,8 +3696,11 @@
           "chainID": {
             "type": "string"
           },
-          "proofOfWorkDifficulty": {
+          "proofOfWorkHashFunction": {
             "type": "string"
+          },
+          "proofOfWorkDifficulty": {
+            "type": "number"
           }
         }
       },

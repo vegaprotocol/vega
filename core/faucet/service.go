@@ -30,6 +30,7 @@ import (
 	types "code.vegaprotocol.io/vega/protos/vega"
 	api "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/cenkalti/backoff"
 	"github.com/julienschmidt/httprouter"
@@ -83,20 +84,15 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 
-	walletLoader, err := InitialiseWalletLoader(vegaPaths)
+	wallet, err := loadWallet(vegaPaths, cfg.WalletName, passphrase)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise faucet wallet loader: %w", err)
-	}
-
-	wallet, err := walletLoader.load(cfg.WalletName, passphrase)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't load faucet wallet %s: %w", cfg.WalletName, err)
+		return nil, fmt.Errorf("could not load the faucet wallet %s: %w", cfg.WalletName, err)
 	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", cfg.Node.IP, cfg.Node.Port)
-	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(nodeAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not initialise the gPRC client: %w", err)
 	}
 
 	client := api.NewCoreServiceClient(conn)
@@ -106,7 +102,7 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
 	if err != nil {
 		cfunc()
-		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
+		return nil, fmt.Errorf("could not initialise the rate limiter: %v", err)
 	}
 
 	f := &Faucet{
@@ -124,6 +120,7 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 
 	f.POST("/api/v1/mint", f.Mint)
 	f.GET("/api/v1/health", f.Health)
+
 	return f, nil
 }
 

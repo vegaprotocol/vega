@@ -23,6 +23,9 @@ func checkStateVariableProposal(cmd *commandspb.StateVariableProposal) Errors {
 	if len(cmd.Proposal.EventId) == 0 {
 		errs.AddForProperty("state_variable_proposal.event_id", ErrIsRequired)
 	}
+	if len(cmd.Proposal.StateVarId) == 0 {
+		errs.AddForProperty("state_variable_proposal.state_var_id", ErrIsRequired)
+	}
 	if len(cmd.Proposal.Kvb) == 0 {
 		errs.AddForProperty("state_variable_proposal.key_value_bundle", ErrIsRequired)
 	}
@@ -30,6 +33,10 @@ func checkStateVariableProposal(cmd *commandspb.StateVariableProposal) Errors {
 	for i, kvb := range cmd.Proposal.Kvb {
 		if len(kvb.Key) == 0 {
 			errs.AddForProperty("state_variable_proposal.key_value_bundle."+strconv.Itoa(i)+".key", ErrIsRequired)
+		}
+
+		if kvb.Value == nil {
+			errs.AddForProperty("state_variable_proposal.key_value_bundle."+strconv.Itoa(i)+".value", ErrIsRequired)
 		}
 	}
 	return errs

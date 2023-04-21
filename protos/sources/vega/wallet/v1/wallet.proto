@@ -1,11 +1,12 @@
 syntax = "proto3";
 
 package vega.wallet.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/wallet/v1";
 
 import "vega/commands/v1/commands.proto";
-import "vega/commands/v1/validator_commands.proto";
 import "vega/commands/v1/data.proto";
+import "vega/commands/v1/validator_commands.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/wallet/v1";
 
 message SubmitTransactionRequest {
   reserved 2001;

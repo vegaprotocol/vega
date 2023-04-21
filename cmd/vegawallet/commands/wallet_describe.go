@@ -26,18 +26,26 @@ var (
 	`)
 )
 
-type DescribeWalletHandler func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error)
+type DescribeWalletHandler func(api.AdminDescribeWalletParams, string) (api.AdminDescribeWalletResult, error)
 
 func NewCmdDescribeWallet(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminDescribeWalletParams) (api.AdminDescribeWalletResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminDescribeWalletParams, passphrase string) (api.AdminDescribeWalletResult, error) {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminDescribeWalletResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		describeWallet := api.NewAdminDescribeWallet(walletStore)
-		rawResult, errorDetails := describeWallet.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminDescribeWalletResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errorDetails := api.NewAdminDescribeWallet(walletStore).Handle(ctx, params)
 		if errorDetails != nil {
 			return api.AdminDescribeWalletResult{}, errors.New(errorDetails.Data)
 		}
@@ -55,12 +63,12 @@ func BuildCmdDescribeWallet(w io.Writer, handler DescribeWalletHandler, rf *Root
 		Long:    describeWalletLong,
 		Example: describeWalletExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -97,21 +105,20 @@ type DescribeWalletFlags struct {
 	PassphraseFile string
 }
 
-func (f *DescribeWalletFlags) Validate() (api.AdminDescribeWalletParams, error) {
+func (f *DescribeWalletFlags) Validate() (api.AdminDescribeWalletParams, string, error) {
 	req := api.AdminDescribeWalletParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.AdminDescribeWalletParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminDescribeWalletParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminDescribeWalletParams{}, err
+		return api.AdminDescribeWalletParams{}, "", err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return req, passphrase, nil
 }
 
 func PrintDescribeWalletResponse(w io.Writer, resp api.AdminDescribeWalletResult) {

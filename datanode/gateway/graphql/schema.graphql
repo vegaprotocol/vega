@@ -59,14 +59,6 @@ type Subscription {
     interval: Interval!
   ): Candle!
 
-  "Subscribe to delegation data"
-  delegations(
-    "The party to subscribe for, empty if all"
-    partyId: ID
-    "The node to subscribe for, empty if all"
-    nodeId: ID
-  ): Delegation!
-
   "Subscribe to liquidity provisioning data"
   liquidityProvisions(
     "The party ID to subscribe for, empty if all"
@@ -121,20 +113,18 @@ type Subscription {
     partyId: ID
   ): Proposal!
 
-  "Subscribe to reward details data"
-  rewards(
-    "The asset to subscribe for, empty if all"
-    assetId: ID
-    "The party ID to subscribe for, empty if all"
-    partyId: ID
-  ): Reward!
-
   "Subscribe to the trades updates"
   trades(
     "ID of the market from which you want trades updates"
     marketId: ID
     "ID of the party from which you want trades updates"
     partyId: ID
+  ): [TradeUpdate!] @deprecated(reason: "Use tradesStream instead as it allows for filtering multiple markets and/or parties at once")
+
+  "Subscribe to the trades updates"
+  tradesStream(
+    "Filter to apply to trades"
+    filter: TradesSubscriptionFilter!
   ): [TradeUpdate!]
 
   "Subscribe to votes, either by proposal ID or party ID"
@@ -156,9 +146,9 @@ type MarginLevels {
   party: Party!
   "Minimal margin for the position to be maintained in the network (unsigned integer)"
   maintenanceLevel: String!
-  "If the margin is between maintenance and search, the network will initiate a collateral search (unsigned integer)"
+  "If the margin is between maintenance and search, the network will initiate a collateral search, expressed as unsigned integer"
   searchLevel: String!
-  "This is the minimum margin required for a party to place a new order on the network (unsigned integer)"
+  "This is the minimum margin required for a party to place a new order on the network, expressed as unsigned integer"
   initialLevel: String!
   """
   If the margin of the party is greater than this level, then collateral will be released from the margin account into
@@ -395,6 +385,9 @@ type Query {
   "The list of all assets in use in the Vega network or the specified asset if ID is provided"
   assetsConnection(id: ID, pagination: Pagination): AssetsConnection
 
+  "List core snapshots"
+  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
+
   "Find a deposit using its ID"
   deposit("ID of the Deposit" id: ID!): Deposit
 
@@ -406,8 +399,17 @@ type Query {
     pagination: Pagination,
   ): DepositsConnection
 
+  "Fetch all entities for a given transaction hash"
+  entities(txHash: String!): Entities!
+
   "Get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: ID): Epoch!
+
+  "List reward summary per epoch by asset, market, reward type"
+  epochRewardSummaries(
+    filter: RewardSummaryFilter,
+    pagination: Pagination
+  ): EpochRewardSummaryConnection
 
   "Get the signatures bundle to allowlist an ERC20 token in the collateral bridge"
   erc20ListAssetBundle(
@@ -469,35 +471,45 @@ type Query {
     expiration: Timestamp
     "Type of the order"
     type: OrderType!
-  ): OrderEstimate!
+  ): OrderEstimate! @deprecated (reason: "Use estimateFees and estimatePosition instead")
+
+  "Return an estimation of the potential cost for a new order"
+  estimateFees(
+    "ID of the market to place the order on"
+    marketId: ID!
+    "ID of the party placing the order"
+    partyId: ID!
+    "Price of the asset"
+    price: String
+    "Size of the order"
+    size: String!
+    "Side of the order (buy or sell)"
+    side: Side!
+    "Time in force of the order"
+    timeInForce: OrderTimeInForce!
+    "Expiration of the order"
+    expiration: Timestamp
+    "Type of the order"
+    type: OrderType!
+  ): FeeEstimate!
+
+  "Return a margin range for the specified position and liquidation price range if available collateral is supplied"
+  estimatePosition(
+     "ID of the market to place the order on"
+    marketId: ID!
+    "Open volume - negative for short position (int64)"
+    openVolume: String!
+    "Open and/or hypothetical orders"
+    orders: [OrderInfo!]
+    "Optional argument specifying collateral available for the position, if provided then response will contain the liquidation price estimate"
+    collateralAvailable: String
+  ): PositionEstimate
 
   "Query for historic ethereum key rotations"
   ethereumKeyRotations(nodeId: ID): EthereumKeyRotationsConnection!
 
-  "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided, all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
-  getMarketDataHistoryByID(
-    id: ID!
-    """
-    Optional start date time for the historic data query.
-    If both the start and end date is not provided, only the latest snapshot will be returned.
-    If only the start date is provided, all market data for the market from the start date forward will be returned.
-    """
-    start: Timestamp
-    """
-    Optional end date time for the historic data query.
-    If both the start and end date is not provided, only the latest snapshot will be returned.
-    If only the end date is provided, all market data for the market up to and including the end date will be returned.
-    """
-    end: Timestamp
-    "Pagination skip"
-    skip: Int
-    "Pagination first element"
-    first: Int
-    "Pagination last element"
-    last: Int): [MarketData] @deprecated(reason: "Use getMarketDataHistoryConnectionByID instead")
 
-
-  "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided. Pagination is provided using a cursor based pagination model"
+  "Get market data history for a specific market. If no dates are given, the latest snapshot will be returned. If only the start date is provided all history from the given date will be provided, and if only the end date is provided, all history from the start up to and including the end date will be provided."
   getMarketDataHistoryConnectionByID(
     id: ID!
     """
@@ -632,6 +644,12 @@ type Query {
   "An entity that is trading on the Vega network"
   party("ID of a party" id: ID!): Party
 
+  "Fetch all positions"
+  positions(
+    filter: PositionsFilter,
+    pagination: Pagination
+  ): PositionConnection
+
   "A governance proposal located by either its ID or reference. If both are set, ID is used."
   proposal(
     "Optionally, locate proposal by its ID"
@@ -656,17 +674,17 @@ type Query {
   "List protocol upgrade proposals, optionally filtering on status or approver"
   protocolUpgradeProposals(inState: ProtocolUpgradeProposalStatus, approvedBy: String, pagination: Pagination): ProtocolUpgradeProposalConnection
 
-  "List core snapshots"
-  coreSnapshots(pagination: Pagination): CoreSnapshotConnection
-
-  "List reward summary per epoch by asset, market, reward type"
-  epochRewardSummaries(
-    filter: RewardSummaryFilter,
-    pagination: Pagination
-  ): EpochRewardSummaryConnection
-
   "Get statistics about the Vega node"
   statistics: Statistics!
+
+  "Get a list of all trades and apply any given filters to the results"
+  trades(
+    filter: TradesFilter
+    "Optional Pagination information"
+    pagination: Pagination
+    "Date range to fetch trades between"
+    dateRange: DateRange
+  ): TradeConnection
 
   "Get a list of all transfers for a public key"
   transfersConnection(
@@ -688,12 +706,6 @@ type Query {
     "Pagination options"
     pagination: Pagination,
   ): WithdrawalsConnection
-
-  "Fetch all positions"
-  positions(
-    filter: PositionsFilter,
-    pagination: Pagination
-  ): PositionConnection
 }
 
 "All the states a transfer can transition between"
@@ -1008,6 +1020,27 @@ type Node {
   name: String!
 
   # The URL of an avatar
+  avatarUrl: String
+}
+
+type NodeBasic {
+  "The node URL, for example n01.vega.xyz"
+  id: ID!
+  "Public key of the node operator"
+  pubkey: String!
+  "Tendermint public key of the node"
+  tmPubkey: String!
+  "Ethereum public key of the node"
+  ethereumAddress: String!
+  "URL that provides more information about the node"
+  infoUrl: String!
+  "Country code for the location of the node"
+  location: String!
+  "Validator status of the node"
+  status: NodeStatus!
+  "The name of the node operator"
+  name: String!
+  "The URL of an avatar"
   avatarUrl: String
 }
 
@@ -1761,7 +1794,7 @@ type Market {
     dateRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection
+  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
 
   "Current depth on the order book for this market"
   depth(
@@ -1962,7 +1995,7 @@ type Party {
     dataRange: DateRange,
     "Pagination information"
     pagination: Pagination
-  ): TradeConnection
+  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
 
   "Collateral accounts relating to a party"
   accountsConnection(
@@ -2144,6 +2177,8 @@ enum PositionStatus {
   POSITION_STATUS_ORDERS_CLOSED
   "The position was distressed, and had to be closed out entirely - orders were removed from the book, and the open volume was closed out by the network"
   POSITION_STATUS_CLOSED_OUT
+  "The position was distressed, but could not be closed out - orders were removed from the book, and the open volume will be closed out once there is sufficient volume on the book"
+  POSITION_STATUS_DISTRESSED
 }
 
 """
@@ -2219,6 +2254,18 @@ type PositionUpdate {
   positionStatus: PositionStatus!
 }
 
+"Basic description of an order"
+input OrderInfo {
+  "Whether the order is to buy or sell"
+  side: Side!
+  "Price for the order"
+  price: String!
+  "Number of units remaining of the total that have not yet been bought or sold (uint64)"
+  remaining: String!
+  "Boolean indicating a market order"
+  isMarketOrder: Boolean!
+}
+
 "An order in Vega, if active it will be on the order book for the market"
 type Order {
   "Hash of the order data"
@@ -2262,7 +2309,7 @@ type Order {
     "Date range to retrieve trades from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
     dateRange: DateRange,
     pagination: Pagination
-  ): TradeConnection
+  ): TradeConnection @deprecated(reason: "Simplify and consolidate trades query and remove nesting. Use trades query instead")
 
   "The order type"
   type: OrderType
@@ -2346,6 +2393,41 @@ type OrderUpdate {
   liquidityProvisionId: ID
 }
 
+"Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"
+type PositionEstimate {
+    "Margin level range estimate for the specified position"
+    margin: MarginEstimate!
+    "Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request"
+    liquidation: LiquidationEstimate
+}
+
+"Margin level estimate for both worst and best case possible"
+type MarginEstimate {
+    "Margin level estimate assuming slippage cap is applied"
+    worstCase: MarginLevels!
+    "Margin level estimate assuming no slippage"
+    bestCase: MarginLevels!
+}
+
+
+"Liquidation estimate for both worst and best case possible"
+type LiquidationEstimate {
+    "Liquidation price estimate assuming slippage cap is applied"
+    worstCase: LiquidationPrice!
+    "Liquidation price estimate assuming no slippage"
+    bestCase: LiquidationPrice!
+}
+
+"Liquidation price estimate for either only the current open volume and position given some or all buy orders get filled, or position given some or all sell orders get filled"
+type LiquidationPrice {
+    "Liquidation price for current open volume ignoring any active orders"
+    open_volume_only: String!
+    "Liquidation price assuming buy orders start getting filled"
+    including_buy_orders: String!
+    "Liquidation price assuming sell orders start getting filled"
+    including_sell_orders: String!
+}
+
 "An estimate of the fee to be paid by the order"
 type OrderEstimate {
   "The estimated fee if the order was to trade"
@@ -2356,6 +2438,15 @@ type OrderEstimate {
 
   "The margin requirement for this order"
   marginLevels: MarginLevels!
+}
+
+"An estimate of the fee to be paid for the order"
+type FeeEstimate {
+  "The estimated fees if the order was to trade"
+  fees: TradeFee!
+
+  "The total estimated amount of fees if the order was to trade"
+  totalFeeAmount: String!
 }
 
 "A trade on Vega, the result of two orders being 'matched' in the market"
@@ -2948,7 +3039,7 @@ enum OrderRejectionReason {
   ORDER_ERROR_CANNOT_SEND_GFN_ORDER_DURING_AN_AUCTION
 
   "Good for Auction order received during continuous trading"
-  ORDER_ERROR_GFA_CANNOT_SEND_ORDER_DURING_CONTINUOUS_TRADING
+  ORDER_ERROR_CANNOT_SEND_GFA_ORDER_DURING_CONTINUOUS_TRADING
 
   "Cannot send IOC orders during an auction"
   ORDER_ERROR_CANNOT_SEND_IOC_ORDER_DURING_AUCTION
@@ -2991,6 +3082,18 @@ enum OrderRejectionReason {
 
   "Non-persistent order exceeds price bounds"
   ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS
+
+  "Order was submitted with an incorrect or invalid market type"
+  ORDER_ERROR_INCORRECT_MARKET_TYPE
+
+  "Unable to submit pegged order, temporarily too many pegged orders across all markets"
+  ORDER_ERROR_TOO_MANY_PEGGED_ORDERS
+
+  "A reduce-ony order would not reduce the party's position and thus it has been rejected"
+  ORDER_ERROR_REDUCE_ONLY_ORDER_WOULD_NOT_REDUCE
+
+  "A post-only order would produce an aggressive trade and thus it has been rejected"
+  ORDER_ERROR_POST_ONLY_ORDER_WOULD_TRADE
 }
 
 "Types of orders"
@@ -3056,6 +3159,8 @@ enum MarketTradingMode {
 
 "Whether the placer of an order is aiming to buy or sell on the market"
 enum Side {
+  "Unspecified is only used for trades at the end of an auction, where neither party acts as the aggressor."
+  SIDE_UNSPECIFIED
   "The placer of the order is aiming to buy"
   SIDE_BUY
 
@@ -3457,9 +3562,38 @@ type Proposal {
   requiredMajority: String!
   "Required participation for this proposal to succeed"
   requiredParticipation: String!
-  "Required liquidity provider equity like share majority for this proposal to succeed"
+  "Equity-like share required for a market amendment proposal to be enacted (if not met, the proposal will not be enacted), represented as a fraction that can be converted to a percentage"
   requiredLpMajority: String
-  "Required liquidity provider equity like share participation for this proposal to succeed"
+  "The market share of LPs' equity-like share that must take part in the market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the proposal receives only YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
+  requiredLpParticipation: String
+}
+
+type ProposalDetail {
+  "Proposal ID that is provided by Vega once proposal reaches the network"
+  id: ID
+  "A UUID reference to aid tracking proposals on Vega"
+  reference: String!
+  "Party that prepared the proposal"
+  party: Party!
+  "State of the proposal"
+  state: ProposalState!
+  "RFC3339Nano time and date when the proposal reached the Vega network"
+  datetime: Timestamp!
+  "Terms of the proposal"
+  terms: ProposalTerms!
+  "Rationale behind the proposal"
+  rationale: ProposalRationale!
+  "Why the proposal was rejected by the core"
+  rejectionReason: ProposalRejectionReason
+  "Error details of the rejectionReason"
+  errorDetails: String
+  "Required majority for this proposal to succeed"
+  requiredMajority: String!
+  "Required participation for this proposal to succeed"
+  requiredParticipation: String!
+  "Equity-like share required for a market amendment proposal to be enacted (if not met, the proposal will not be enacted), represented as a fraction that can be converted to a percentage"
+  requiredLpMajority: String
+  "The market share of LPs' equity-like share that must take part in the market amendment vote for the proposal to pass. This means the votes of LPs that have submitted more liquidity to that market, or have been LPs from the start carry more weight. If it requires 50% of a market's equity-like share for a majority, and the proposal receives only YES votes but only LPs with 49% of the equity-like share voted, the proposal will not pass"
   requiredLpParticipation: String
 }
 
@@ -3925,18 +4059,6 @@ type HistorySegment {
     historySegmentId: String!
 }
 
-input OffsetPagination {
-  "Skip the number of records specified, default is 0"
-  skip: Int!
-  "Limit the number of returned records to the value specified, default is 50"
-  limit: Int!
-  """
-  Descending reverses the order of the records returned
-  default is true, if false the results will be returned in ascending order
-  """
-  descending: Boolean!
-}
-
 """
 Pagination constructs to support cursor based pagination in the API
 """
@@ -3969,6 +4091,19 @@ type TradeEdge {
   node: Trade!
   "The cursor for this trade"
   cursor: String!
+}
+
+"Filter to apply to the trade subscription request"
+input TradesSubscriptionFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
+}
+
+"Filter to apply to the trade connection query"
+input TradesFilter {
+  partyIds: [ID!]
+  marketIds: [ID!]
+  orderIds: [ID!]
 }
 
 "Connection type for retrieving cursor-based paginated trade information"
@@ -4026,6 +4161,11 @@ input OrderFilter {
   "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
   dateRange: DateRange
   excludeLiquidity: Boolean
+  """
+  If true, only orders that are live will be returned. Orders are live if they have STATUS_ACTIVE or STATUS_PARKED
+  as per https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0024-OSTA-order_status.md
+  """
+  liveOnly: Boolean
 }
 
 input OrderByPartyIdsFilter {
@@ -4557,4 +4697,66 @@ for each type in the child objects below.
 """
 type DataSourceDefinition {
   sourceType: DataSourceKind!
+}
+
+"""
+List of all entities created by transaction hash
+"""
+type Entities {
+  "List of accounts created by the transaction hash"
+  accounts: [AccountEvent]
+  "List of orders created by the transaction hash"
+  orders: [Order]
+  "List of positions created by the transaction hash"
+  positions: [Position]
+  "List of ledger entries created by the transaction hash"
+  ledgerEntries: [LedgerEntry]
+  "List of balance changes created by the transaction hash"
+  balanceChanges: [AccountBalance]
+  "List of transfers created by the transaction hash"
+  transfers: [Transfer]
+  "List of votes created by the transaction hash"
+  votes: [Vote]
+  "List of ERC-20 multisig signer added bundles created by the transaction hash"
+  erc20MultiSigSignerAddedBundles: [ERC20MultiSigSignerAddedBundle]
+  "List of ERC-20 multisig signer removed bundles created by the transaction hash"
+  erc20MultiSigSignerRemovedBundles: [ERC20MultiSigSignerRemovedBundle]
+  "List of trades created by the transaction hash"
+  trades: [Trade]
+  "List of oracle specs created by the transaction hash"
+  oracleSpecs: [OracleSpec]
+  "List of oracle data created by the transaction hash"
+  oracleData: [OracleData]
+  "List of markets created by the transaction hash"
+  markets: [Market]
+  "List of parties created by the transaction hash"
+  parties: [Party]
+  "List of margin levels created by the transaction hash"
+  marginLevels: [MarginLevels]
+  "List of rewards created by the transaction hash"
+  rewards: [Reward]
+  "List of deposits created by the transaction hash"
+  deposits: [Deposit]
+  "List of withdrawals created by the transaction hash"
+  withdrawals: [Withdrawal]
+  "List of assets created by the transaction hash"
+  assets: [Asset]
+  "List of liquidity provisions created by the transaction hash"
+  liquidityProvisions: [LiquidityProvision]
+  "List of proposals created by the transaction hash"
+  proposals: [ProposalDetail]
+  "List of delegations created by the transaction hash"
+  delegations: [Delegation]
+  "List of nodes created by the transaction hash"
+  nodes: [NodeBasic]
+  "List of node signatures created by the transaction hash"
+  nodeSignatures: [NodeSignature]
+  "List of network parameters created by the transaction hash"
+  networkParameters: [NetworkParameter]
+  "List of key rotations created by the transaction hash"
+  keyRotations: [KeyRotation]
+  "List of ethereum key rotations created by the transaction hash"
+  ethereumKeyRotations: [EthereumKeyRotation]
+  "List of protocol upgrade proposals created by the transaction hash"
+  protocolUpgradeProposals: [ProtocolUpgradeProposal]
 }

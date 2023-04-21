@@ -27,7 +27,7 @@ import (
 var vegaDataNodeStartCmdArgs = []string{"datanode", "start"}
 
 func (v *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
-	v.log.Info("setting current folder",
+	v.log.Info("Setting current folder",
 		logging.String("sourceFolder", sourceFolder),
 		logging.String("currentFolder", currentFolder),
 	)
@@ -54,30 +54,37 @@ func (v *Visor) setCurrentFolder(sourceFolder, currentFolder string) error {
 }
 
 func (v *Visor) installUpgradeFolder(ctx context.Context, folder, releaseTag string, conf config.AutoInstallConfig) error {
-	if err := os.MkdirAll(folder, 0o755); err != nil {
-		return fmt.Errorf("failed to create upgrade folder %q, %w", folder, err)
-	}
+	v.log.Info("Automatically installing upgrade folder")
 
 	runConf, err := config.ParseRunConfig(v.conf.CurrentRunConfigPath())
 	if err != nil {
 		return err
 	}
 
+	if conf.Asset.Name == "" {
+		return missingAutoInstallAssetError("vega")
+	}
+
+	if err := os.MkdirAll(folder, 0o755); err != nil {
+		return fmt.Errorf("failed to create upgrade folder %q, %w", folder, err)
+	}
+
 	assetsFetcher := github.NewAssetsFetcher(
 		conf.GithubRepositoryOwner,
 		conf.GithubRepository,
-		conf.Assets.AssetsNames(),
+		[]string{conf.Asset.Name},
 	)
 
+	v.log.Info("Downloading asset from Github", logging.String("asset", conf.Asset.Name))
 	if err := assetsFetcher.Download(ctx, releaseTag, folder); err != nil {
 		return fmt.Errorf("failed to download release assets for tag %q: %w", releaseTag, err)
 	}
 
 	runConf.Name = releaseTag
-	runConf.Vega.Binary.Path = conf.Assets.Vega.GetBinaryPath()
+	runConf.Vega.Binary.Path = conf.Asset.GetBinaryPath()
 
 	if runConf.DataNode != nil {
-		runConf.DataNode.Binary.Path = conf.Assets.DataNode.GetBinaryPath()
+		runConf.DataNode.Binary.Path = conf.Asset.GetBinaryPath()
 
 		if len(runConf.DataNode.Binary.Args) != 0 && runConf.DataNode.Binary.Args[0] != vegaDataNodeStartCmdArgs[0] {
 			runConf.DataNode.Binary.Args = append(vegaDataNodeStartCmdArgs, runConf.DataNode.Binary.Args[1:]...)
@@ -119,4 +126,8 @@ func (v *Visor) prepareNextUpgradeFolder(ctx context.Context, releaseTag string)
 	}
 
 	return nil
+}
+
+func missingAutoInstallAssetError(asset string) error {
+	return fmt.Errorf("missing required auto install %s asset definition in Visor config", asset)
 }

@@ -29,19 +29,26 @@ var (
 	`)
 )
 
-type UntaintKeyHandler func(api.AdminUntaintKeyParams) error
+type UntaintKeyHandler func(api.AdminUntaintKeyParams, string) error
 
 func NewCmdUntaintKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminUntaintKeyParams) error {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminUntaintKeyParams, passphrase string) error {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		untaintKey := api.NewAdminUntaintKey(walletStore)
-		_, errDetails := untaintKey.Handle(context.Background(), params)
-		if errDetails != nil {
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
+
+		if _, errDetails := api.NewAdminUntaintKey(walletStore).Handle(ctx, params); errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
 		return nil
@@ -59,12 +66,12 @@ func BuildCmdUntaintKey(w io.Writer, handler UntaintKeyHandler, rf *RootFlags) *
 		Long:    untaintKeyLong,
 		Example: untaintKeyExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			if err := handler(req); err != nil {
+			if err := handler(req, pass); err != nil {
 				return err
 			}
 
@@ -106,25 +113,24 @@ type UntaintKeyFlags struct {
 	PassphraseFile string
 }
 
-func (f *UntaintKeyFlags) Validate() (api.AdminUntaintKeyParams, error) {
+func (f *UntaintKeyFlags) Validate() (api.AdminUntaintKeyParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminUntaintKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminUntaintKeyParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.PublicKey) == 0 {
-		return api.AdminUntaintKeyParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminUntaintKeyParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminUntaintKeyParams{}, err
+		return api.AdminUntaintKeyParams{}, "", err
 	}
 
 	return api.AdminUntaintKeyParams{
-		Wallet:     f.Wallet,
-		PublicKey:  f.PublicKey,
-		Passphrase: passphrase,
-	}, nil
+		Wallet:    f.Wallet,
+		PublicKey: f.PublicKey,
+	}, passphrase, nil
 }
 
 func PrintUntaintKeyResponse(w io.Writer) {

@@ -70,11 +70,15 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(cfgwatchr *config.Watcher, vegaPaths paths.Paths, args []string) error {
+func (l *NodeCommand) Run(ctx context.Context, cfgwatchr *config.Watcher, vegaPaths paths.Paths, args []string) error {
 	l.configWatcher = cfgwatchr
 
 	l.conf = cfgwatchr.Get()
 	l.vegaPaths = vegaPaths
+	if l.cancel != nil {
+		l.cancel()
+	}
+	l.ctx, l.cancel = context.WithCancel(ctx)
 
 	stages := []func([]string) error{
 		l.persistentPre,
@@ -99,11 +103,9 @@ func (l *NodeCommand) Stop() {
 
 // runNode is the entry of node command.
 func (l *NodeCommand) runNode([]string) error {
-	defer l.cancel()
-
 	nodeLog := l.Log.Named("start.runNode")
-	ctx, cancel := context.WithCancel(l.ctx)
-	eg, ctx := errgroup.WithContext(ctx)
+	var eg *errgroup.Group
+	eg, l.ctx = errgroup.WithContext(l.ctx)
 
 	// gRPC server
 	grpcServer := l.createGRPCServer(l.conf.API)
@@ -120,11 +122,11 @@ func (l *NodeCommand) runNode([]string) error {
 	)
 
 	// start the grpc server
-	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
+	eg.Go(func() error { return grpcServer.Start(l.ctx, nil) })
 
 	// start the admin server
 	eg.Go(func() error {
-		if err := adminServer.Start(ctx); err != nil && err != http.ErrServerClosed {
+		if err := adminServer.Start(l.ctx); err != nil && err != http.ErrServerClosed {
 			return err
 		}
 		return nil
@@ -133,11 +135,11 @@ func (l *NodeCommand) runNode([]string) error {
 	// start gateway
 	if l.conf.GatewayEnabled {
 		gty := server.New(l.conf.Gateway, l.Log, l.vegaPaths)
-		eg.Go(func() error { return gty.Start(ctx) })
+		eg.Go(func() error { return gty.Start(l.ctx) })
 	}
 
 	eg.Go(func() error {
-		return l.broker.Receive(ctx)
+		return l.broker.Receive(l.ctx)
 	})
 
 	eg.Go(func() error {
@@ -147,7 +149,7 @@ func (l *NodeCommand) runNode([]string) error {
 			}
 		}()
 
-		return l.sqlBroker.Receive(ctx)
+		return l.sqlBroker.Receive(l.ctx)
 	})
 
 	// waitSig will wait for a sigterm or sigint interrupt.
@@ -158,9 +160,9 @@ func (l *NodeCommand) runNode([]string) error {
 		select {
 		case sig := <-gracefulStop:
 			nodeLog.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-			cancel()
-		case <-ctx.Done():
-			return ctx.Err()
+			l.cancel()
+		case <-l.ctx.Done():
+			return l.ctx.Err()
 		}
 		return nil
 	})
@@ -169,12 +171,12 @@ func (l *NodeCommand) runNode([]string) error {
 
 	nodeLog.Info("Vega data node startup complete")
 
-	err := eg.Wait()
-	if errors.Is(err, context.Canceled) {
-		return nil
+	if err := eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		nodeLog.Error("Vega data node stopped with error", logging.Error(err))
+		return fmt.Errorf("vega data node stopped with error: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {

@@ -198,7 +198,7 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	closer := vgclose.NewCloser()
 	defer closer.CloseAll()
 
-	walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths)
+	walletStore, err := wallets.InitialiseStoreFromPaths(vegaPaths, true)
 	if err != nil {
 		cliLog.Error("Could not initialise wallets store", zap.Error(err))
 		return fmt.Errorf("could not initialise wallets store: %w", err)

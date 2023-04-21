@@ -136,10 +136,6 @@ func (a AssetDetails) Validate() (ProposalError, error) {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetSymbolEmpty
 	}
 
-	if a.Decimals == 0 {
-		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetDecimalPlacesZero
-	}
-
 	if a.Quantum.IsZero() {
 		return ProposalErrorInvalidAssetDetails, ErrInvalidAssetQuantumZero
 	}

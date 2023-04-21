@@ -17,7 +17,7 @@ type Network struct {
 type APIConfig struct {
 	GRPC    GRPCConfig    `json:"grpc"`
 	REST    RESTConfig    `json:"rest"`
-	GraphQL GraphQLConfig `json:"graphQl"`
+	GraphQL GraphQLConfig `json:"graphQL"`
 }
 
 type GRPCConfig struct {
@@ -54,7 +54,7 @@ func (n *Network) EnsureCanConnectGRPCNode() error {
 func GetNetwork(store Store, name string) (*Network, error) {
 	exists, err := store.NetworkExists(name)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't verify network existence: %w", err)
+		return nil, fmt.Errorf("couldn't verify network exists: %w", err)
 	}
 	if !exists {
 		return nil, NewDoesNotExistError(name)

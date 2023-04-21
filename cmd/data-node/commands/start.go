@@ -14,7 +14,10 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"runtime/debug"
+
+	"code.vegaprotocol.io/vega/libs/memory"
 
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
 	"code.vegaprotocol.io/vega/datanode/config"
@@ -23,7 +26,6 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/pbnjay/memory"
 )
 
 type StartCmd struct {
@@ -37,6 +39,8 @@ var startCmd StartCmd
 const namedLogger = "datanode"
 
 func (cmd *StartCmd) Execute(args []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig()).Named(namedLogger)
 	defer log.AtExit()
@@ -63,7 +67,10 @@ func (cmd *StartCmd) Execute(args []string) error {
 
 	// only set max memory if user didn't require 100%
 	if memFactor != 1 {
-		totalMem := memory.TotalMemory()
+		totalMem, err := memory.TotalMemory()
+		if err != nil {
+			return fmt.Errorf("failed to get total memory: %w", err)
+		}
 		debug.SetMemoryLimit(int64(float64(totalMem) * memFactor))
 	}
 
@@ -72,13 +79,14 @@ func (cmd *StartCmd) Execute(args []string) error {
 		Version:     version.Get(),
 		VersionHash: version.GetCommitHash(),
 	}).Run(
+		ctx,
 		configWatcher,
 		vegaPaths,
 		args,
 	)
 }
 
-func Node(_ context.Context, parser *flags.Parser) error {
+func Node(ctx context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}

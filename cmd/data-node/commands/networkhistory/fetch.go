@@ -24,6 +24,8 @@ type fetchCmd struct {
 }
 
 func (cmd *fetchCmd) Execute(args []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.InfoLevel
 	cfg.Environment = "custom"
@@ -59,11 +61,11 @@ func (cmd *fetchCmd) Execute(args []string) error {
 	}
 
 	client := getDatanodeAdminClient(log, cmd.Config)
-	blocksFetched, err := networkhistory.FetchHistoryBlocks(context.Background(), func(s string, args ...interface{}) {
+	blocksFetched, err := networkhistory.FetchHistoryBlocks(ctx, func(s string, args ...interface{}) {
 		fmt.Printf(s+"\n", args...)
 	}, rootSegmentID,
 		func(ctx context.Context, historySegmentId string) (networkhistory.FetchResult, error) {
-			resp, err := client.FetchNetworkHistorySegment(context.Background(), historySegmentId)
+			resp, err := client.FetchNetworkHistorySegment(ctx, historySegmentId)
 			if err != nil {
 				return networkhistory.FetchResult{},
 					errorFromGrpcError("failed to fetch network history segment", err)

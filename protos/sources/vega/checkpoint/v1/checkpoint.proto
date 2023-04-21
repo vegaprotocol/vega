@@ -1,15 +1,16 @@
 syntax = "proto3";
 
 package vega.checkpoint.v1;
+
+import "vega/assets.proto";
+import "vega/chain_events.proto";
+import "vega/events/v1/events.proto";
+import "vega/governance.proto";
+import "vega/vega.proto";
+
 option go_package = "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1";
 
-import "vega/vega.proto";
-import "vega/assets.proto";
-import "vega/governance.proto";
-import "vega/events/v1/events.proto";
-import "vega/chain_events.proto";
-
-// CheckpointState is the entire checkpoint serialised (basically serialised the Checkpoint message + hash)
+// CheckpointState is the entire checkpoint serialised. Basically it is the serialisation of the Checkpoint message + hash.
 message CheckpointState {
   bytes hash = 1;
   bytes state = 2;
@@ -44,7 +45,6 @@ message Assets {
   repeated AssetEntry pending_listing_assets = 2;
 }
 
-
 // AssetBalance represents the total balance of a given asset for a party
 message AssetBalance {
   string party = 1;
@@ -68,7 +68,7 @@ message Proposals {
 }
 
 // Delegated amounts for party/node
-// undelegate and epoch seq are only relevant for pending entries
+// `undelegate` and `epoch_seq` are only relevant for pending entries
 message DelegateEntry {
   string party = 1;
   string node = 2;
@@ -85,7 +85,7 @@ message Delegate {
 }
 
 // Block message contains data related to block at which the checkpoint
-// was created (ie block height)
+// was created i.e. the block height
 message Block {
   int64 height = 1;
 }
@@ -153,7 +153,6 @@ message Banking {
   repeated AssetAction asset_actions = 4;
   uint64 last_seen_eth_block = 5;
   repeated string seen_refs = 6;
-
 }
 
 message BridgeState {

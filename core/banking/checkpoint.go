@@ -150,6 +150,12 @@ func (e *Engine) loadAssetActions(aa []*types.AssetAction) {
 		}
 
 		e.assetActs[v.ID] = aa
+		// store the deposit in the deposits
+		if v.BuiltinD != nil {
+			e.deposits[v.ID] = e.newDeposit(v.ID, v.BuiltinD.PartyID, v.BuiltinD.VegaAssetID, v.BuiltinD.Amount, v.Hash)
+		} else if v.Erc20D != nil {
+			e.deposits[v.ID] = e.newDeposit(v.ID, v.Erc20D.TargetPartyID, v.Erc20D.VegaAssetID, v.Erc20D.Amount, v.Hash)
+		}
 	}
 }
 

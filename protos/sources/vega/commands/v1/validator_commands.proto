@@ -1,96 +1,98 @@
 syntax = "proto3";
 
 package vega.commands.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
 
-import "vega/vega.proto";
 import "vega/chain_events.proto";
 import "vega/commands/v1/signature.proto";
+import "vega/vega.proto";
 
-// A message from a validator signalling they are still online and validating blocks
+option go_package = "code.vegaprotocol.io/vega/protos/vega/commands/v1";
+
+// Message from a validator signalling they are still online and validating blocks
 // or ready to validate blocks when they are still a pending validator
 message ValidatorHeartbeat {
-  // the id of the node emitting the heartbeat
+  // Node ID of the validator emitting the heartbeat.
   string node_id = 1;
-  // Signature from the validator made using the ethereum wallet
+  // Signature from the validator made using the ethereum wallet.
   Signature ethereum_signature = 2;
-  // Signature from the validator made using the vega wallet
+  // Signature from the validator made using the vega wallet.
   Signature vega_signature = 3;
-  // Message which has been signed
+  // Message which has been signed.
   string message = 4;
 }
 
 // Used to announce a node as a new pending validator
 message AnnounceNode {
-  // Vega public key, required field
+  // Vega public key, required field.
   string vega_pub_key = 1;
-  // Ethereum public key, required field
+  // Ethereum public key, required field.
   string ethereum_address = 2;
-  // Public key for the blockchain, required field
+  // Public key for the blockchain, required field.
   string chain_pub_key = 3;
-  // URL with more info on the node
+  // URL with more info on the node.
   string info_url = 4;
-  // Country code (ISO 3166-1 alpha-2) for the location of the node
+  // Country code (ISO 3166-1 alpha-2) for the location of the node.
   string country = 5;
-  // ID of the validator, (public master key)
+  // Node ID of the validator, i.e. the node's public master key.
   string id = 6;
-  // Name of the validator
+  // Name of the validator.
   string name = 7;
-  // AvatarURL of the validator
+  // AvatarURL of the validator.
   string avatar_url = 8;
-  // Vega public key derivation index
+  // Vega public key derivation index.
   uint32 vega_pub_key_index = 9;
-  // The epoch from which the validator is expected
-  // to be ready to validate blocks
+  // Epoch from which the validator is expected
+  // to be ready to validate blocks.
   uint64 from_epoch = 10;
-  // Signature from the validator made using the ethereum wallet
+  // Signature from the validator made using the ethereum wallet.
   Signature ethereum_signature = 11;
-  // Signature from the validator made using the Vega wallet
+  // Signature from the validator made using the Vega wallet.
   Signature vega_signature = 12;
-  // Ethereum public key to use as a submitter to allow automatic signature generation
+  // Ethereum public key to use as a submitter to allow automatic signature generation.
   string submitter_address = 13;
 }
+
 // Used when a node votes for validating that a given resource exists or is valid,
-// for example, an ERC20 deposit is valid and exists on ethereum
+// for example, an ERC20 deposit is valid and exists on ethereum.
 message NodeVote {
   // Previous public key field.
   reserved 1;
-  // Reference, required field
+  // Reference identifying the resource making the vote, required field.
   string reference = 2;
-  // type of NodeVote, also required
+  // Type of NodeVote, also required.
   Type type = 3;
 
   enum Type {
     // Represents an unspecified or missing value from the input
     TYPE_UNSPECIFIED = 0;
-    // A node vote a new stake deposit
+    // Node vote for a new stake deposit
     TYPE_STAKE_DEPOSITED = 1;
-    // A node vote for a new stake removed event
+    // Node vote for a new stake removed event
     TYPE_STAKE_REMOVED = 2;
-    // A node vote for new collateral deposited
+    // Node vote for a new collateral deposit
     TYPE_FUNDS_DEPOSITED = 3;
-    // A node vote for a new signer added to the erc20 bridge
+    // Node vote for a new signer added to the erc20 bridge
     TYPE_SIGNER_ADDED = 4;
-    // A node vote for a signer removed from the erc20 bridge
+    // Node vote for a signer removed from the erc20 bridge
     TYPE_SIGNER_REMOVED = 5;
-    // A node vote for a bridge stopped event
+    // Node vote for a bridge stopped event
     TYPE_BRIDGE_STOPPED = 6;
-    // A node vote for a bridge resumed event
+    // Node vote for a bridge resumed event
     TYPE_BRIDGE_RESUMED = 7;
-    // A node vote for a newly listed asset
+    // Node vote for a newly listed asset
     TYPE_ASSET_LISTED = 8;
-    // A node vote for an asset limits update
+    // Node vote for an asset limits update
     TYPE_LIMITS_UPDATED = 9;
-    // A node vote to share the total supply of the staking token
+    // Node vote to share the total supply of the staking token
     TYPE_STAKE_TOTAL_SUPPLY = 10;
-    // A node vote to update the threshold of the signer set for the multisig contract
+    // Node vote to update the threshold of the signer set for the multisig contract
     TYPE_SIGNER_THRESHOLD_SET = 11;
-    // A node vote to validate a new assert governance proposal
+    // Node vote to validate a new assert governance proposal
     TYPE_GOVERNANCE_VALIDATE_ASSET = 12;
   }
 }
 
-// The kind of signature created by a node, for example, allow-listing a new asset, withdrawal etc
+// Kind of signature created by a node, for example, allow-listing a new asset, withdrawal etc
 enum NodeSignatureKind {
   // Represents an unspecified or missing value from the input
   NODE_SIGNATURE_KIND_UNSPECIFIED = 0;
@@ -108,68 +110,70 @@ enum NodeSignatureKind {
 
 // Represents a signature from a validator, to be used by a foreign chain in order to recognise a decision taken by the Vega network
 message NodeSignature {
-  // The identifier of the resource being signed
+  // ID of the resource being signed.
   string id = 1;
-  // The signature
+  // The signature generated by the signer.
   bytes sig = 2;
-  // The kind of resource being signed
+  // Kind of resource being signed.
   NodeSignatureKind kind = 3;
 }
 
-// An event forwarded to the Vega network to provide information on events happening on other networks
+// Event forwarded to the Vega network to provide information on events happening on other networks
 message ChainEvent {
   reserved 1003, 1004;
-  // The identifier of the transaction in which the events happened, usually a hash
+  // Transaction ID of the transaction in which the events happened, usually a hash.
   string tx_id = 1;
-  // Arbitrary one-time integer used to prevent replay attacks
+  // Arbitrary one-time integer used to prevent replay attacks.
   uint64 nonce = 2;
-  // The event
+  // Event being forwarded.
   oneof event {
-    // Built-in asset event
+    // Built-in asset event.
     vega.BuiltinAssetEvent builtin = 1001;
-    // Ethereum ERC20 event
+    // Ethereum ERC20 event.
     vega.ERC20Event erc20 = 1002;
-    // Ethereum Staking event
+    // Ethereum Staking event.
     vega.StakingEvent staking_event = 1005;
-    // Ethereum ERC20 multisig event
+    // Ethereum ERC20 multisig event.
     vega.ERC20MultiSigEvent erc20_multisig = 1006;
   }
 }
 
-// A transaction to allow a validator to rotate their Vega keys
+// Transaction to allow a validator to rotate their Vega keys
 message KeyRotateSubmission {
-  // New Vega public key derivation index
+  // New Vega public key derivation index.
   uint32 new_pub_key_index = 1;
-  // Target block at which the key rotation will take effect on
+  // Target block at which the key rotation will take effect on.
   uint64 target_block = 2;
-  // The new public key to rotate to
+  // New public key to rotate to.
   string new_pub_key = 3;
-  // Hash of currently used public key
+  // Hash of currently used public key.
   string current_pub_key_hash = 4;
 }
 
-// A transaction to allow a validator to rotate their ethereum keys
+// Transaction to allow a validator to rotate their ethereum keys
 message EthereumKeyRotateSubmission {
-  // Target block at which the key rotation will take effect on
+  // Target block at which the key rotation will take effect on.
   uint64 target_block = 1;
-  // The new address to rotate to
+  // New address to rotate to.
   string new_address = 2;
-  // Currently used public address
+  // Currently used public address.
   string current_address = 3;
-  // Ethereum public key to use as a submitter to allow automatic signature generation
+  // Ethereum public key to use as a submitter to allow automatic signature generation.
   string submitter_address = 4;
-  // Signature that can be verified using the new ethereum address
+  // Signature that can be verified using the new ethereum address.
   Signature ethereum_signature = 5;
 }
-// A transaction for a validator to submit a floating point value
+
+// Transaction for a validator to submit a floating point value
 message StateVariableProposal {
-  // The state value proposal details
+  // State value proposal details.
   vega.StateValueProposal proposal = 1;
 }
-// A transaction for a validator to suggest a protocol upgrade
+
+// Transaction for a validator to suggest a protocol upgrade
 message ProtocolUpgradeProposal {
-   // The block height at which to perform the upgrade
-   uint64 upgrade_block_height = 1;
-   // the release tag for the Vega binary
-   string vega_release_tag = 2;
+  // Block height at which to perform the upgrade.
+  uint64 upgrade_block_height = 1;
+  // Release tag for the Vega binary.
+  string vega_release_tag = 2;
 }

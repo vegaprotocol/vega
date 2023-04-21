@@ -28,7 +28,7 @@ type orderStore interface {
 	GetAll(ctx context.Context) ([]entities.Order, error)
 	GetOrder(ctx context.Context, orderID string, version *int32) (entities.Order, error)
 	GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error)
-	GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error)
+	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error)
 	GetLiveOrders(ctx context.Context) ([]entities.Order, error)
 	ListOrderVersions(ctx context.Context, orderIDStr string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error)
 	ListOrders(ctx context.Context, p entities.CursorPagination, filter entities.OrderFilter) ([]entities.Order, entities.PageInfo, error)
@@ -50,8 +50,8 @@ func (o *Order) ObserveOrders(ctx context.Context, retries int, markets []string
 	ch, ref := o.observer.Observe(ctx,
 		retries,
 		func(o entities.Order) bool {
-			marketOk := slice.Contains(markets, o.MarketID.String())
-			partyOk := slice.Contains(parties, o.PartyID.String())
+			marketOk := len(markets) == 0 || slice.Contains(markets, o.MarketID.String())
+			partyOk := len(parties) == 0 || slice.Contains(parties, o.PartyID.String())
 			liqOrder := (o.LpID != nil && includeLiquidity) || !includeLiquidity
 			return marketOk && partyOk && liqOrder
 		})
@@ -81,6 +81,10 @@ func (o *Order) GetOrder(ctx context.Context, orderID string, version *int32) (e
 
 func (o *Order) GetByMarketAndID(ctx context.Context, marketIDstr string, orderIDs []string) ([]entities.Order, error) {
 	return o.store.GetByMarketAndID(ctx, marketIDstr, orderIDs)
+}
+
+func (o *Order) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error) {
+	return o.store.GetByTxHash(ctx, txHash)
 }
 
 func (o *Order) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {

@@ -28,18 +28,26 @@ var (
 	`)
 )
 
-type SignMessageHandler func(api.AdminSignMessageParams) (api.AdminSignMessageResult, error)
+type SignMessageHandler func(api.AdminSignMessageParams, string) (api.AdminSignMessageResult, error)
 
 func NewCmdSignMessage(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminSignMessageParams) (api.AdminSignMessageResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminSignMessageParams, passphrase string) (api.AdminSignMessageResult, error) {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminSignMessageResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		signMessage := api.NewAdminSignMessage(walletStore)
-		rawResult, errorDetails := signMessage.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminSignMessageResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errorDetails := api.NewAdminSignMessage(walletStore).Handle(ctx, params)
 		if errorDetails != nil {
 			return api.AdminSignMessageResult{}, errors.New(errorDetails.Data)
 		}
@@ -57,12 +65,12 @@ func BuildCmdSignMessage(w io.Writer, handler SignMessageHandler, rf *RootFlags)
 		Long:    signMessageLong,
 		Example: signMessageExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -115,35 +123,34 @@ type SignMessageFlags struct {
 	PassphraseFile string
 }
 
-func (f *SignMessageFlags) Validate() (api.AdminSignMessageParams, error) {
+func (f *SignMessageFlags) Validate() (api.AdminSignMessageParams, string, error) {
 	req := api.AdminSignMessageParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.AdminSignMessageParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminSignMessageParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return api.AdminSignMessageParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminSignMessageParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 	req.PubKey = f.PubKey
 
 	if len(f.Message) == 0 {
-		return api.AdminSignMessageParams{}, flags.MustBeSpecifiedError("message")
+		return api.AdminSignMessageParams{}, "", flags.MustBeSpecifiedError("message")
 	}
 	_, err := base64.StdEncoding.DecodeString(f.Message)
 	if err != nil {
-		return api.AdminSignMessageParams{}, flags.MustBase64EncodedError("message")
+		return api.AdminSignMessageParams{}, "", flags.MustBase64EncodedError("message")
 	}
 	req.EncodedMessage = f.Message
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminSignMessageParams{}, err
+		return api.AdminSignMessageParams{}, "", err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return req, passphrase, nil
 }
 
 func PrintSignMessageResponse(w io.Writer, req api.AdminSignMessageResult) {

@@ -134,34 +134,37 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	return orders, os.wrapE(err)
 }
 
-// GetAllVersionsByOrderID the last update to all versions (e.g. manual changes that lead to
-// incrementing the version field) of a given order id.
-func (os *Orders) GetAllVersionsByOrderID(ctx context.Context, id string, p entities.OffsetPagination) ([]entities.Order, error) {
-	defer metrics.StartSQLQuery("Orders", "GetAllVersionsByOrderID")()
-	query := fmt.Sprintf(`SELECT %s from orders_current_versions WHERE id=$1`, sqlOrderColumns)
-	args := []interface{}{entities.OrderID(id)}
-	return os.queryOrders(ctx, query, args, &p)
+func (os *Orders) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Order, error) {
+	defer metrics.StartSQLQuery("Orders", "GetByTxHash")()
+
+	orders := []entities.Order{}
+	query := fmt.Sprintf(`SELECT %s FROM orders WHERE tx_hash=$1`, sqlOrderColumns)
+
+	err := pgxscan.Select(ctx, os.Connection, &orders, query, txHash)
+	if err != nil {
+		return nil, fmt.Errorf("querying orders: %w", err)
+	}
+	return orders, nil
+}
+
+// GetByReference returns the last update of orders with the specified user-suppled reference.
+func (os *Orders) GetByReferencePaged(ctx context.Context, reference string, p entities.CursorPagination) ([]entities.Order, entities.PageInfo, error) {
+	return os.ListOrders(ctx, p, entities.OrderFilter{
+		Reference: &reference,
+	})
 }
 
 // GetLiveOrders fetches all currently live orders so the market depth data can be rebuilt
 // from the orders data in the database.
 func (os *Orders) GetLiveOrders(ctx context.Context) ([]entities.Order, error) {
 	defer metrics.StartSQLQuery("Orders", "GetLiveOrders")()
-	query := fmt.Sprintf(`select %s from orders_live
-where type = 1
-and time_in_force not in (3, 4)
-and status in (1, 7)
-order by vega_time, seq_num`, sqlOrderColumns)
-	return os.queryOrders(ctx, query, nil, nil)
+	query := fmt.Sprintf(`select %s from orders_live order by vega_time, seq_num`, sqlOrderColumns)
+	return os.queryOrders(ctx, query, nil)
 }
 
 // -------------------------------------------- Utility Methods
 
-func (os *Orders) queryOrders(ctx context.Context, query string, args []interface{}, p *entities.OffsetPagination) ([]entities.Order, error) {
-	if p != nil {
-		query, args = paginateOrderQuery(query, args, *p)
-	}
-
+func (os *Orders) queryOrders(ctx context.Context, query string, args []interface{}) ([]entities.Order, error) {
 	orders := []entities.Order{}
 	err := pgxscan.Select(ctx, os.Connection, &orders, query, args...)
 	if err != nil {
@@ -207,23 +210,6 @@ func (os *Orders) queryOrdersWithCursorPagination(ctx context.Context, query str
 	return orders, pageInfo, nil
 }
 
-func paginateOrderQuery(query string, args []interface{}, p entities.OffsetPagination) (string, []interface{}) {
-	dir := "ASC"
-	if p.Descending {
-		dir = "DESC"
-	}
-
-	var limit interface{}
-	if p.Limit != 0 {
-		limit = p.Limit
-	}
-
-	query = fmt.Sprintf(" %s ORDER BY vega_time %s, id %s LIMIT %s OFFSET %s",
-		query, dir, dir, nextBindVar(&args, limit), nextBindVar(&args, p.Skip))
-
-	return query, args
-}
-
 func currentView(f entities.OrderFilter, p entities.CursorPagination) (string, bool, error) {
 	if !p.NewestFirst {
 		return "", false, fmt.Errorf("oldest first order query is not currently supported")
@@ -260,7 +246,7 @@ func (os *Orders) ListOrders(
 	whereStr, args := applyOrderFilter(where.String(), bind, orderFilter)
 
 	query := fmt.Sprintf(`SELECT %s from %s %s`, sqlOrderColumns, table, whereStr)
-	query, args = filterDateRange(query, ordersFilterDateColumn, ptr.UnBox(orderFilter.DateRange), args...)
+	query, args = filterDateRange(query, ordersFilterDateColumn, ptr.UnBox(orderFilter.DateRange), false, args...)
 
 	defer metrics.StartSQLQuery("Orders", "GetByMarketPaged")()
 

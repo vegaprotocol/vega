@@ -232,6 +232,7 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 8      | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 8      | ETH   |
 
+  @FeeRound
   Scenario: 003, 2 LPs joining at start, equal commitments, unequal offsets
     Given the following network parameters are set:
       | name                                                | value |
@@ -288,7 +289,7 @@ Feature: Test liquidity provider reward distribution
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 26     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 14     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 13     | ETH   |
 
     # modify lp2 orders so that they fall outside the price monitoring bounds
     When clear all events
@@ -298,27 +299,25 @@ Feature: Test liquidity provider reward distribution
       | lp2 | lp2   | ETH/DEC22 | 40000             | 0.002 | sell | ASK              | 1          | 116    |           |
     Then the orders should have the following states:
       | party | market id | side | volume | price | status        | reference |
-      | lp1   | ETH/DEC22 | buy  | 42     | 963   | STATUS_ACTIVE | lp1       |
-      | lp1   | ETH/DEC22 | sell | 39     | 1037  | STATUS_ACTIVE | lp1       |
       | lp2   | ETH/DEC22 | buy  | 46     | 879   | STATUS_ACTIVE | lp2       |
       | lp2   | ETH/DEC22 | sell | 36     | 1121  | STATUS_ACTIVE | lp2       |
     And the market data for the market "ETH/DEC22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | best static bid price | static mid price | best static offer price |
       | 1000       | TRADING_MODE_CONTINUOUS | 10000   | 893       | 1120      | 995                   | 1000             | 1005                    |
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC22"
+    And the accumulated liquidity fees should be "1" for the market "ETH/DEC22"
 
     When the network moves ahead "6" blocks
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC22 | buy  | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC22 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_FOK |
-    Then the accumulated liquidity fees should be "40" for the market "ETH/DEC22"
+    Then the accumulated liquidity fees should be "41" for the market "ETH/DEC22"
 
     When the network moves ahead "6" blocks
     # all the fees go to lp2
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
-      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 40     | ETH   |
+      | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 41     | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 0      | ETH   |
 
     # lp2 manually adds some limit orders within PM range, observe automatically deployed orders go down and fee share go up
@@ -328,10 +327,7 @@ Feature: Test liquidity provider reward distribution
       | lp2   | ETH/DEC22 | buy  | 15     | 995   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the orders should have the following states:
       | party | market id | side | volume | price | status        | reference |
-      | lp1   | ETH/DEC22 | buy  | 42     | 963   | STATUS_ACTIVE | lp1       |
-      | lp1   | ETH/DEC22 | sell | 39     | 1037  | STATUS_ACTIVE | lp1       |
       | lp2   | ETH/DEC22 | buy  | 29     | 879   | STATUS_ACTIVE | lp2       |
-      | lp2   | ETH/DEC22 | sell | 36     | 1121  | STATUS_ACTIVE | lp2       |
 
     When clear all events
     And the parties place the following orders:
@@ -339,9 +335,6 @@ Feature: Test liquidity provider reward distribution
       | lp2   | ETH/DEC22 | sell | 15     | 1005  | 0                | TYPE_LIMIT | TIF_GTC |
     Then the orders should have the following states:
       | party | market id | side | volume | price | status        | reference |
-      | lp1   | ETH/DEC22 | buy  | 42     | 963   | STATUS_ACTIVE | lp1       |
-      | lp1   | ETH/DEC22 | sell | 39     | 1037  | STATUS_ACTIVE | lp1       |
-      | lp2   | ETH/DEC22 | buy  | 29     | 879   | STATUS_ACTIVE | lp2       |
       | lp2   | ETH/DEC22 | sell | 23     | 1121  | STATUS_ACTIVE | lp2       |
 
     When the parties place the following orders:
@@ -356,7 +349,7 @@ Feature: Test liquidity provider reward distribution
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 29     | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 11     | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 10     | ETH   |
 
     # lp2 manually adds some pegged orders within PM range, liquidity obligation is now fullfiled by limit and pegged orders so no automatic order deployment takes place
     When clear all events
@@ -371,7 +364,7 @@ Feature: Test liquidity provider reward distribution
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC22 | buy  | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | party1 | ETH/DEC22 | sell | 20     | 1000  | 1                | TYPE_LIMIT | TIF_FOK |
-    Then the accumulated liquidity fees should be "40" for the market "ETH/DEC22"
+    Then the accumulated liquidity fees should be "41" for the market "ETH/DEC22"
 
     When the network moves ahead "6" blocks
     # lp2 has increased their liquidity score by placing pegged orders closer to the mid (and within price monitoring bounds),
@@ -381,6 +374,7 @@ Feature: Test liquidity provider reward distribution
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 19     | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC22 | 21     | ETH   |
 
+  @FeeRound
   Scenario: 004, 2 LPs joining at start, unequal commitments
 
     Given the parties deposit on asset's general account the following amount:
@@ -480,10 +474,11 @@ Feature: Test liquidity provider reward distribution
     Then the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 6      | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 1      | ETH   |
 
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "1" for the market "ETH/DEC21"
 
+  @FeeRound
   Scenario: 005, 2 LPs joining at start, unequal commitments, 1 LP lp3 joining later, and 4 LPs lp4/5/6/7 with large commitment and low/high fee joins later
 
     Given the parties deposit on asset's general account the following amount:
@@ -618,8 +613,8 @@ Feature: Test liquidity provider reward distribution
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 6      | ETH   |
       | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 1      | ETH   |
-      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 9      | ETH   |
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+      | market | lp3 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 8      | ETH   |
+    And the accumulated liquidity fees should be "1" for the market "ETH/DEC21"
     And the liquidity fee factor should be "0.001" for the market "ETH/DEC21"
     And the target stake should be "7608" for the market "ETH/DEC21"
     And the supplied stake should be "20000" for the market "ETH/DEC21"
@@ -648,7 +643,7 @@ Feature: Test liquidity provider reward distribution
     When time is updated to "2019-11-30T00:43:08Z"
     And the liquidity fee factor should be "0.0005" for the market "ETH/DEC21"
 
-  @Panic
+  @FeeRound
   Scenario: 006, 2 LPs joining at start, unequal commitments, market settles (0042-LIQF-014)
 
     Given the parties deposit on asset's general account the following amount:
@@ -734,7 +729,7 @@ Feature: Test liquidity provider reward distribution
     And the following transfers should happen:
       | from   | to  | from account                | to account           | market id | amount | asset |
       | market | lp1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 6      | ETH   |
-      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
+      | market | lp2 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 1      | ETH   |
 
   Scenario: 007, 2 LPs joining at start, unequal commitments, 1 leaves later (0042-LIQF-012)
 
@@ -861,12 +856,12 @@ Feature: Test liquidity provider reward distribution
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | buy  | BID              | 1          | 2      | submission |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.002 | sell | MID              | 2          | 1      | submission |
-     
+
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | buy  | BID              | 1          | 2      | submission |
       | lp2 | lp2   | ETH/DEC21 | 2000              | 0.001 | sell | MID              | 2          | 1      | submission |
-      
+
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
@@ -886,14 +881,14 @@ Feature: Test liquidity provider reward distribution
       | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type    |
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | submission |
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | sell | ASK              | 1          | 4      | submission |
-  
+
     And the liquidity fee factor should be "0.0015" for the market "ETH/DEC21"
     And the network moves ahead "10" blocks
 
     And the target stake should be "9000" for the market "ETH/DEC21"
     And the supplied stake should be "19000" for the market "ETH/DEC21"
 
-    #AC 0042-LIQF-025: lp3 leaves a market that is above target stake when their fee bid is currently being used: fee changes to fee bid by the LP who takes their place in the bidding order 
+    #AC 0042-LIQF-025: lp3 leaves a market that is above target stake when their fee bid is currently being used: fee changes to fee bid by the LP who takes their place in the bidding order
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type      |
       | lp3 | lp3   | ETH/DEC21 | 9000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
@@ -977,7 +972,7 @@ Feature: Test liquidity provider reward distribution
     And the supplied stake should be "22000" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
 
-    #AC 0042-LIQF-026: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size changes the LP that meets the target stake: fee changes to fee bid by the LP that is now at the place in the bid order to provide the target stake 
+    #AC 0042-LIQF-026: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size changes the LP that meets the target stake: fee changes to fee bid by the LP that is now at the place in the bid order to provide the target stake
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset | lp type      |
       | lp5 | lp5   | ETH/DEC21 | 6000              | 0.0015 | buy  | BID              | 1          | 4      | cancellation |
@@ -995,7 +990,7 @@ Feature: Test liquidity provider reward distribution
     And the target stake should be "12000" for the market "ETH/DEC21"
     And the supplied stake should be "17000" for the market "ETH/DEC21"
     And the network moves ahead "1" blocks
-    
+
     #AC 0042-LIQF-027: An LP leaves a market that is above target stake when their fee bid is lower than the one currently being used and their commitment size doesn't change the LP that meets the target stake: fee doesn't change
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee    | side | pegged reference | proportion | offset| lp type    |

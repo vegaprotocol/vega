@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/gorilla/rpc/json"
@@ -71,8 +71,8 @@ func (s *Client) call(ctx context.Context, method string, args interface{}, repl
 	return nil
 }
 
-func (s *Client) FetchNetworkHistorySegment(ctx context.Context, historySegmentID string) (store.SegmentIndexEntry, error) {
-	var reply store.SegmentIndexEntry
+func (s *Client) FetchNetworkHistorySegment(ctx context.Context, historySegmentID string) (segment.Full, error) {
+	var reply segment.Full
 	err := s.call(ctx, "networkhistory.FetchHistorySegment", historySegmentID, &reply)
 	return reply, err
 }

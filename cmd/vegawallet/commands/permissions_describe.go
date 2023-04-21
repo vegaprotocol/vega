@@ -26,18 +26,26 @@ var (
 	`)
 )
 
-type DescribePermissionsHandler func(api.AdminDescribePermissionsParams) (api.AdminDescribePermissionsResult, error)
+type DescribePermissionsHandler func(api.AdminDescribePermissionsParams, string) (api.AdminDescribePermissionsResult, error)
 
 func NewCmdDescribePermissions(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminDescribePermissionsParams) (api.AdminDescribePermissionsResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminDescribePermissionsParams, passphrase string) (api.AdminDescribePermissionsResult, error) {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminDescribePermissionsResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		describePermissions := api.NewAdminDescribePermissions(walletStore)
-		rawResult, errDetails := describePermissions.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminDescribePermissionsResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errDetails := api.NewAdminDescribePermissions(walletStore).Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminDescribePermissionsResult{}, errors.New(errDetails.Data)
 		}
@@ -55,11 +63,11 @@ func BuildCmdDescribePermissions(w io.Writer, handler DescribePermissionsHandler
 		Long:    describePermissionsLong,
 		Example: describePermissionsExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -102,25 +110,24 @@ type DescribePermissionsFlags struct {
 	PassphraseFile string
 }
 
-func (f *DescribePermissionsFlags) Validate() (api.AdminDescribePermissionsParams, error) {
+func (f *DescribePermissionsFlags) Validate() (api.AdminDescribePermissionsParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminDescribePermissionsParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminDescribePermissionsParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.Hostname) == 0 {
-		return api.AdminDescribePermissionsParams{}, flags.MustBeSpecifiedError("hostname")
+		return api.AdminDescribePermissionsParams{}, "", flags.MustBeSpecifiedError("hostname")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminDescribePermissionsParams{}, err
+		return api.AdminDescribePermissionsParams{}, "", err
 	}
 
 	return api.AdminDescribePermissionsParams{
-		Wallet:     f.Wallet,
-		Passphrase: passphrase,
-		Hostname:   f.Hostname,
-	}, nil
+		Wallet:   f.Wallet,
+		Hostname: f.Hostname,
+	}, passphrase, nil
 }
 
 func PrintDescribePermissionsResult(w io.Writer, resp api.AdminDescribePermissionsResult) {

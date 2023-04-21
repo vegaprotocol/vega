@@ -81,8 +81,8 @@ func NewBufferedEventSource(ctx context.Context, log *logging.Logger, config Buf
 		archiveFilesPath:   archiveFilesDir,
 	}
 
-	fb.log.Infof("Starting buffered event source with a max buffered event count of %d, and events per buffer file size %d",
-		config.EventsPerFile)
+	fb.log.Info("Starting buffered event source with a max buffered event, and events per buffer file size",
+		logging.Int("events-per-file", config.EventsPerFile))
 
 	return fb, nil
 }

@@ -8,7 +8,7 @@ type DataSourceDefinitionInternal struct {
 	SourceType dataSourceType
 }
 
-func (i DataSourceDefinitionInternal) isDataSourceType() {}
+func (i *DataSourceDefinitionInternal) isDataSourceType() {}
 
 func (i *DataSourceDefinitionInternal) oneOfProto() interface{} {
 	return i.IntoProto()
@@ -54,9 +54,11 @@ func DataSourceDefinitionInternalFromProto(protoConfig *vegapb.DataSourceDefinit
 	}
 
 	if protoConfig != nil {
-		switch tp := protoConfig.SourceType.(type) {
-		case *vegapb.DataSourceDefinitionInternal_Time:
-			ds.SourceType = DataSourceDefinitionInternalTimeFromProto(tp)
+		if protoConfig.SourceType != nil {
+			switch tp := protoConfig.SourceType.(type) {
+			case *vegapb.DataSourceDefinitionInternal_Time:
+				ds.SourceType = DataSourceDefinitionInternalTimeFromProto(tp)
+			}
 		}
 	}
 

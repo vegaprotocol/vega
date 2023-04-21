@@ -13,6 +13,8 @@
 package statevar
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
@@ -30,7 +32,7 @@ type KeyValueBundle struct {
 }
 
 // ToProto converts KevValueBundle into proto.
-func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
+func (kvb KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 	res := make([]*vega.KeyValueBundle, 0, len(kvb.KVT))
 	for _, kvt := range kvb.KVT {
 		res = append(res, &vega.KeyValueBundle{
@@ -68,6 +70,9 @@ func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) (*KeyValueBundle, 
 
 // ValueFromProto converts the proto into a value.
 func ValueFromProto(val *vega.StateVarValue) (value, error) {
+	if val == nil {
+		return nil, fmt.Errorf("missing state-var value")
+	}
 	switch v := val.Value.(type) {
 	case *vega.StateVarValue_ScalarVal:
 		val, err := num.DecimalFromString(v.ScalarVal.Value)

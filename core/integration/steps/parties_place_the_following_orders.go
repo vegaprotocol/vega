@@ -26,9 +26,24 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
+type Only string
+
+const (
+	None   Only = ""
+	Post   Only = "post"
+	Reduce Only = "reduce"
+)
+
+var onlyTypes = map[string]Only{
+	"":       None,
+	"post":   Post,
+	"reduce": Reduce,
+}
+
 func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStub, epochService EpochService, table *godog.Table) error {
 	// ensure time is set + idgen is not nil
-	time.SetTime(time.GetTimeNow())
+	now := time.GetTimeNow()
+	time.SetTime(now)
 	for _, r := range parseSubmitOrderTable(table) {
 		row := newSubmitOrderRow(r)
 
@@ -37,10 +52,17 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 			Side:        row.Side(),
 			Price:       row.Price(),
 			Size:        row.Volume(),
-			ExpiresAt:   row.ExpirationDate(),
+			ExpiresAt:   row.ExpirationDate(now),
 			Type:        row.OrderType(),
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
@@ -75,7 +97,8 @@ func PartiesPlaceTheFollowingOrdersWithTicks(exec Execution, time *stubs.TimeStu
 
 func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeStub, block *helpers.Block, epochService EpochService, table *godog.Table, blockCount string) error {
 	// ensure time is set + idgen is not nil
-	time.SetTime(time.GetTimeNow())
+	now := time.GetTimeNow()
+	time.SetTime(now)
 	nr, err := strconv.ParseInt(blockCount, 10, 0)
 	if err != nil {
 		return err
@@ -88,10 +111,17 @@ func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeS
 			Side:        row.Side(),
 			Price:       row.Price(),
 			Size:        row.Volume(),
-			ExpiresAt:   row.ExpirationDate(),
+			ExpiresAt:   row.ExpirationDate(now),
 			Type:        row.OrderType(),
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
@@ -129,8 +159,10 @@ func PartiesPlaceTheFollowingOrdersBlocksApart(exec Execution, time *stubs.TimeS
 
 func PartiesPlaceTheFollowingOrders(
 	exec Execution,
+	ts *stubs.TimeStub,
 	table *godog.Table,
 ) error {
+	now := ts.GetTimeNow()
 	for _, r := range parseSubmitOrderTable(table) {
 		row := newSubmitOrderRow(r)
 
@@ -139,10 +171,17 @@ func PartiesPlaceTheFollowingOrders(
 			Side:        row.Side(),
 			Price:       row.Price(),
 			Size:        row.Volume(),
-			ExpiresAt:   row.ExpirationDate(),
+			ExpiresAt:   row.ExpirationDate(now),
 			Type:        row.OrderType(),
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
@@ -183,6 +222,7 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"error",
 		"resulting trades",
 		"expires in",
+		"only",
 	})
 }
 
@@ -230,16 +270,16 @@ func (r submitOrderRow) TimeInForce() types.OrderTimeInForce {
 	return r.row.MustTIF("tif")
 }
 
-func (r submitOrderRow) ExpirationDate() int64 {
+func (r submitOrderRow) ExpirationDate(now time.Time) int64 {
 	if r.OrderType() == types.OrderTypeMarket {
 		return 0
 	}
 
-	now := time.Now()
 	if r.TimeInForce() == types.OrderTimeInForceGTT {
 		return now.Add(r.row.MustDurationSec("expires in")).Local().UnixNano()
 	}
-	return now.Add(24 * time.Hour).UnixNano()
+	// non GTT orders don't need an expiry time
+	return 0
 }
 
 func (r submitOrderRow) ExpectResultingTrades() bool {
@@ -260,4 +300,16 @@ func (r submitOrderRow) Error() string {
 
 func (r submitOrderRow) ExpectError() bool {
 	return r.row.HasColumn("error")
+}
+
+func (r submitOrderRow) Only() Only {
+	if !r.row.HasColumn("only") {
+		return None
+	}
+	v := r.row.MustStr("only")
+	t, ok := onlyTypes[v]
+	if !ok {
+		panic(fmt.Errorf("unsupported type %v", v))
+	}
+	return t
 }

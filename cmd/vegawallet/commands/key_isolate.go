@@ -42,7 +42,7 @@ var (
 	}
 )
 
-type IsolateKeyHandler func(api.AdminIsolateKeyParams) (isolateKeyResult, error)
+type IsolateKeyHandler func(api.AdminIsolateKeyParams, string) (isolateKeyResult, error)
 
 type isolateKeyResult struct {
 	Wallet   string `json:"wallet"`
@@ -50,15 +50,23 @@ type isolateKeyResult struct {
 }
 
 func NewCmdIsolateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminIsolateKeyParams) (isolateKeyResult, error) {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminIsolateKeyParams, passphrase string) (isolateKeyResult, error) {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return isolateKeyResult{}, fmt.Errorf("could not initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		isolateKey := api.NewAdminIsolateKey(walletStore)
-		rawResult, errDetails := isolateKey.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return isolateKeyResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errDetails := api.NewAdminIsolateKey(walletStore).Handle(ctx, params)
 		if errDetails != nil {
 			return isolateKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -81,12 +89,12 @@ func BuildCmdIsolateKey(w io.Writer, handler IsolateKeyHandler, rf *RootFlags) *
 		Long:    isolateKeyLong,
 		Example: isolateKeyExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -135,31 +143,30 @@ type IsolateKeyFlags struct {
 	IsolatedWalletPassphraseFile string
 }
 
-func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, error) {
+func (f *IsolateKeyFlags) Validate() (api.AdminIsolateKeyParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminIsolateKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminIsolateKeyParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.PubKey) == 0 {
-		return api.AdminIsolateKeyParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminIsolateKeyParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminIsolateKeyParams{}, err
+		return api.AdminIsolateKeyParams{}, "", err
 	}
 
 	newPassphrase, err := flags.GetConfirmedPassphraseWithContext(isolatedWalletPassphraseOptions, f.IsolatedWalletPassphraseFile)
 	if err != nil {
-		return api.AdminIsolateKeyParams{}, err
+		return api.AdminIsolateKeyParams{}, "", err
 	}
 
 	return api.AdminIsolateKeyParams{
 		Wallet:                   f.Wallet,
 		PublicKey:                f.PubKey,
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: newPassphrase,
-	}, nil
+	}, passphrase, nil
 }
 
 func PrintIsolateKeyResponse(w io.Writer, resp isolateKeyResult) {

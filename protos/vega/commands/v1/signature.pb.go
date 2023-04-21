@@ -20,18 +20,18 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// A signature to authenticate a transaction and to be verified by the Vega
+// Signature to authenticate a transaction and to be verified by the Vega
 // network.
 type Signature struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The bytes of the signature (hex-encoded).
+	// Hex encoded bytes of the signature.
 	Value string `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	// The algorithm used to create the signature.
+	// Algorithm used to create the signature.
 	Algo string `protobuf:"bytes,2,opt,name=algo,proto3" json:"algo,omitempty"`
-	// The version of the signature used to create the signature.
+	// Version of the signature used to create the signature.
 	Version uint32 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
 }
 

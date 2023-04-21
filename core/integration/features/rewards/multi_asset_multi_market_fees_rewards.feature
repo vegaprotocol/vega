@@ -68,6 +68,7 @@ Feature: Fees rewards with multiple markets and assets
     #complete the epoch to advance to a meaningful epoch (can't setup transfer to start at epoch 0)
     Then the network moves ahead "7" blocks
 
+  @FeeRound
   Scenario: all sort of fees with multiple assets and multiple markets pay rewards on epoch end
 
     Given the parties submit the following recurring transfers:
@@ -238,7 +239,7 @@ Feature: Fees rewards with multiple markets and assets
     Then "lp2" should have general account balance of "5999995630" for asset "ETH"
 
     Then "party1" should have general account balance of "299955604" for asset "BTC"
-    Then "party2" should have general account balance of "299949367" for asset "BTC"
+    Then "party2" should have general account balance of "299949871" for asset "BTC"
     Then "lp1" should have general account balance of "2999990841" for asset "BTC"
     Then "lp2" should have general account balance of "2999997067" for asset "BTC"
 
@@ -253,5 +254,5 @@ Feature: Fees rewards with multiple markets and assets
     Then "party1" should have general account balance of "1567" for asset "USDT"
     Then "party2" should have general account balance of "20431" for asset "USDT"
 
-    Then "lp1" should have general account balance of "3061" for asset "USDC"
-    Then "lp2" should have general account balance of "760" for asset "USDC"
+    Then "lp1" should have general account balance of "3184" for asset "USDC"
+    Then "lp2" should have general account balance of "693" for asset "USDC"

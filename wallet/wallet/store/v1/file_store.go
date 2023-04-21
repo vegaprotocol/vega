@@ -55,7 +55,7 @@ type unlockedWallet struct {
 	wallet     wallet.Wallet
 }
 
-func InitialiseStore(walletsHome string) (*FileStore, error) {
+func InitialiseStore(walletsHome string, withFileWatcher bool) (*FileStore, error) {
 	if err := vgfs.EnsureDir(walletsHome); err != nil {
 		return nil, fmt.Errorf("could not ensure directories at %s: %w", walletsHome, err)
 	}
@@ -66,9 +66,11 @@ func InitialiseStore(walletsHome string) (*FileStore, error) {
 		listeners:       []func(context.Context, wallet.Event){},
 	}
 
-	if err := store.startFilesWatcher(); err != nil {
-		store.Close()
-		return nil, err
+	if withFileWatcher {
+		if err := store.startFilesWatcher(); err != nil {
+			store.Close()
+			return nil, err
+		}
 	}
 
 	return store, nil
@@ -462,7 +464,7 @@ func (s *FileStore) lockWalletIfUnlocked(name string) {
 func (s *FileStore) startFilesWatcher() error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("could not start the token store watcher: %w", err)
+		return fmt.Errorf("could not start the wallets watcher: %w", err)
 	}
 
 	s.watcher = watcher

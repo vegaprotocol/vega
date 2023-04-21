@@ -205,7 +205,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, execsetup.netDeposits, table)
 	})
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
-		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, table)
+		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
 
 	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
@@ -461,6 +461,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^set assets to permissive$`, func() error {
 		execsetup.assetsEngine.SetPermissive()
 		return nil
+	})
+
+	s.Step(`^the parties should have the following position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingPositionStatus(execsetup.broker, mkt, table)
+	})
+
+	s.Step(`^the parties should have the following aggregated position changes for market "([^)]+)":$`, func(mkt string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingPositionStatusAgg(execsetup.broker, mkt, table)
 	})
 }
 

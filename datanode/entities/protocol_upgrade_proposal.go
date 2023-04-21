@@ -42,7 +42,7 @@ func ProtocolUpgradeProposalFromProto(p *eventspb.ProtocolUpgradeEvent, txHash T
 	return proposal
 }
 
-func (p *ProtocolUpgradeProposal) ToProto() *eventspb.ProtocolUpgradeEvent {
+func (p ProtocolUpgradeProposal) ToProto() *eventspb.ProtocolUpgradeEvent {
 	return &eventspb.ProtocolUpgradeEvent{
 		UpgradeBlockHeight: p.UpgradeBlockHeight,
 		VegaReleaseTag:     p.VegaReleaseTag,

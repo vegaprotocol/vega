@@ -26,7 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/blockexplorer/config"
 	"code.vegaprotocol.io/vega/libs/net/pipe"
 	"code.vegaprotocol.io/vega/logging"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 )
 
 type gatewayService interface {

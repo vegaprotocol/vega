@@ -30,20 +30,26 @@ var (
 	}
 )
 
-type UpdatePassphraseHandler func(api.AdminUpdatePassphraseParams) error
+type UpdatePassphraseHandler func(api.AdminUpdatePassphraseParams, string) error
 
 func NewCmdUpdatePassphrase(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminUpdatePassphraseParams) error {
-		walletStore, err := wallets.InitialiseStore(rf.Home)
+	h := func(params api.AdminUpdatePassphraseParams, passphrase string) error {
+		ctx := context.Background()
+
+		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		updatePassphrase := api.NewAdminUpdatePassphrase(walletStore)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return errors.New(errDetails.Data)
+		}
 
-		_, errDetails := updatePassphrase.Handle(context.Background(), params)
-		if errDetails != nil {
+		if _, errDetails := api.NewAdminUpdatePassphrase(walletStore).Handle(ctx, params); errDetails != nil {
 			return errors.New(errDetails.Data)
 		}
 		return nil
@@ -61,12 +67,12 @@ func BuildCmdUpdatePassphrase(w io.Writer, handler UpdatePassphraseHandler, rf *
 		Long:    updatePassphraseLong,
 		Example: updatePassphraseExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			params, err := f.Validate()
+			params, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			if err := handler(params); err != nil {
+			if err := handler(params, pass); err != nil {
 				return err
 			}
 
@@ -108,26 +114,25 @@ type UpdatePassphraseFlags struct {
 	NewPassphraseFile string
 }
 
-func (f *UpdatePassphraseFlags) Validate() (api.AdminUpdatePassphraseParams, error) {
+func (f *UpdatePassphraseFlags) Validate() (api.AdminUpdatePassphraseParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminUpdatePassphraseParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminUpdatePassphraseParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminUpdatePassphraseParams{}, err
+		return api.AdminUpdatePassphraseParams{}, "", err
 	}
 
 	newPassphrase, err := flags.GetConfirmedPassphraseWithContext(newWalletPassphraseOptions, f.NewPassphraseFile)
 	if err != nil {
-		return api.AdminUpdatePassphraseParams{}, err
+		return api.AdminUpdatePassphraseParams{}, "", err
 	}
 
 	return api.AdminUpdatePassphraseParams{
 		Wallet:        f.Wallet,
-		Passphrase:    passphrase,
 		NewPassphrase: newPassphrase,
-	}, nil
+	}, passphrase, nil
 }
 
 func PrintUpdatePassphraseResponse(w io.Writer) {

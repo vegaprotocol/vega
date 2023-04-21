@@ -266,7 +266,7 @@ func (m *Market) updateLPOrders(
 		submitIDs[v.ID] = struct{}{}
 	}
 
-	subFn := func(order *types.Order) {
+	subFn := func(order *types.Order, addEvent bool) {
 		if order.OriginalPrice == nil {
 			order.OriginalPrice = order.Price.Clone()
 			order.Price.Mul(order.Price, m.priceFactor)
@@ -276,7 +276,9 @@ func (m *Market) updateLPOrders(
 		m.matching.ReSubmitSpecialOrders(order)
 		order.Version = 1 // order version never change, just set it explicitly here every time
 		partiesPos[order.Party] = m.position.RegisterOrder(ctx, order)
-		orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
+		if addEvent {
+			orderEvts = append(orderEvts, events.NewOrderEvent(ctx, order))
+		}
 	}
 
 	// now we iterate over all the orders which
@@ -297,12 +299,14 @@ func (m *Market) updateLPOrders(
 			continue
 		}
 
-		subFn(order)
+		// use the toSubmit flag to send the event only
+		// if this a newly order to be submitted by the lp engine
+		subFn(order, toSubmit)
 	}
 
 	for _, order := range submits {
 		order.UpdatedAt = now
-		subFn(order)
+		subFn(order, true)
 	}
 
 	// send cancel events
@@ -423,7 +427,9 @@ func (m *Market) applyBondPenaltiesAndCancelLPs(
 		if err != nil {
 			m.log.Error("Failed to perform bond slashing", logging.Error(err))
 		}
-		m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+		if len(transfers) > 0 {
+			m.broker.Send(events.NewLedgerMovements(ctx, transfers))
+		}
 	}
 
 	// now we can handle the liquidated parties

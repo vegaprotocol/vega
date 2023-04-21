@@ -2,17 +2,14 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminUpdatePassphraseParams struct {
 	Wallet        string `json:"wallet"`
-	Passphrase    string `json:"passphrase"`
 	NewPassphrase string `json:"newPassphrase"`
 }
 
@@ -32,11 +29,12 @@ func (h *AdminUpdatePassphrase) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	if err := h.walletStore.UpdatePassphrase(ctx, params.Wallet, params.NewPassphrase); err != nil {
@@ -58,10 +56,6 @@ func validateUpdatePassphraseParams(rawParams jsonrpc.Params) (AdminUpdatePassph
 
 	if params.Wallet == "" {
 		return AdminUpdatePassphraseParams{}, ErrWalletIsRequired
-	}
-
-	if params.Passphrase == "" {
-		return AdminUpdatePassphraseParams{}, ErrPassphraseIsRequired
 	}
 
 	if params.NewPassphrase == "" {

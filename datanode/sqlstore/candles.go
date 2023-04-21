@@ -21,6 +21,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 
 	"github.com/shopspring/decimal"
@@ -45,6 +46,18 @@ type Candles struct {
 	ctx    context.Context
 }
 
+type ErrInvalidCandleID struct {
+	err error
+}
+
+func (e ErrInvalidCandleID) Error() string {
+	return e.err.Error()
+}
+
+func newErrInvalidCandleID(err error) ErrInvalidCandleID {
+	return ErrInvalidCandleID{err: err}
+}
+
 func NewCandles(ctx context.Context, connectionSource *ConnectionSource, config candlesv2.CandleStoreConfig) *Candles {
 	return &Candles{
 		ConnectionSource: connectionSource,
@@ -61,7 +74,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleID string
 
 	descriptor, err := candleDescriptorFromCandleID(candleID)
 	if err != nil {
-		return nil, pageInfo, fmt.Errorf("getting candle data for time span:%w", err)
+		return nil, pageInfo, newErrInvalidCandleID(fmt.Errorf("getting candle data for time span: %w", err))
 	}
 
 	exists, err := cs.CandleExists(ctx, descriptor.id)
@@ -298,6 +311,10 @@ func candleDescriptorFromCandleID(id string) (candleDescriptor, error) {
 	interval, err := getIntervalFromViewName(view)
 	if err != nil {
 		return candleDescriptor{}, fmt.Errorf("parsing candleDescriptor id, failed to get interval from view name:%w", err)
+	}
+
+	if !crypto.IsValidVegaID(market) {
+		return candleDescriptor{}, fmt.Errorf("not a valid market id: %v", market)
 	}
 
 	return candleDescriptor{

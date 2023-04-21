@@ -111,7 +111,7 @@ func (r *myMarketResolver) OrdersConnection(
 
 func (r *myMarketResolver) TradesConnection(ctx context.Context, market *types.Market, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
 	req := v2.ListTradesRequest{
-		MarketId:   &market.Id,
+		MarketIds:  []string{market.Id},
 		Pagination: pagination,
 		DateRange:  dateRange,
 	}

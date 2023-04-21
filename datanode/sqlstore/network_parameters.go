@@ -86,6 +86,20 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	return parameter, nil
 }
 
+func (np *NetworkParameters) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.NetworkParameter, error) {
+	defer metrics.StartSQLQuery("NetworkParameters", "GetByTxHash")()
+
+	var parameters []entities.NetworkParameter
+	query := `SELECT * FROM network_parameters WHERE tx_hash = $1`
+
+	err := pgxscan.Select(ctx, np.Connection, &parameters, query, txHash)
+	if err != nil {
+		return nil, np.wrapE(err)
+	}
+
+	return parameters, nil
+}
+
 func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.CursorPagination) ([]entities.NetworkParameter, entities.PageInfo, error) {
 	defer metrics.StartSQLQuery("NetworkParameters", "GetAll")()
 	var pageInfo entities.PageInfo

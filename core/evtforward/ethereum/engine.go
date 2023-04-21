@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	engineLogger = "engine"
+	engineLogger      = "engine"
+	maxEthereumBlocks = 1000 // 3+ hour worth of blocks?
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethereum Forwarder
@@ -132,15 +133,29 @@ func (e *Engine) Start() {
 	})
 }
 
+func issueFilteringRequest(from, to uint64) (ok bool, actualTo uint64) {
+	if from > to {
+		return false, 0
+	}
+	return true, min(from+maxEthereumBlocks, to)
+}
+
+func min(a, b uint64) uint64 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func (e *Engine) gatherEvents(ctx context.Context) {
 	currentHeight := e.filterer.CurrentHeight(ctx)
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.nextCollateralBlockNumber <= currentHeight {
-		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+	if ok, nextHeight := issueFilteringRequest(e.nextCollateralBlockNumber, currentHeight); ok {
+		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, nextHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
-		e.nextCollateralBlockNumber = currentHeight + 1
+		e.nextCollateralBlockNumber = nextHeight + 1
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.

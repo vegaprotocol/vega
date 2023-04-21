@@ -220,7 +220,13 @@ func newServices(
 	svcs.marketActivityTracker = execution.NewMarketActivityTracker(svcs.log, svcs.epochService)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
-	svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets, svcs.ethClient, svcs.broker, svcs.erc20BridgeView, svcs.notary, svcs.conf.HaveEthClient())
+
+	if svcs.conf.IsValidator() {
+		svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nodeWallets.Ethereum, svcs.ethClient, svcs.broker, svcs.erc20BridgeView, svcs.notary, svcs.conf.HaveEthClient())
+	} else {
+		svcs.assets = assets.New(svcs.log, svcs.conf.Assets, nil, svcs.ethClient, svcs.broker, svcs.erc20BridgeView, svcs.notary, svcs.conf.HaveEthClient())
+	}
+
 	// TODO(): this is not pretty
 	svcs.topology.SetNotary(svcs.notary)
 
@@ -359,6 +365,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.delegation.OnTick,
 		svcs.notary.OnTick,
 		svcs.banking.OnTick,
+		svcs.assets.OnTick,
 		svcs.limits.OnTick,
 	)
 }

@@ -45,10 +45,11 @@ func TestFileStoreV1(t *testing.T) {
 func testInitialisingStoreSucceeds(t *testing.T) {
 	walletsDir := t.TempDir()
 
-	s, err := storev1.InitialiseStore(walletsDir)
+	s, err := storev1.InitialiseStore(walletsDir, false)
 
 	require.NoError(t, err)
 	assert.NotNil(t, s)
+	s.Close()
 }
 
 func testFileStoreV1ListWalletsSucceeds(t *testing.T) {
@@ -587,10 +588,13 @@ func testFileStoreV1UpdatingPassphraseSucceeds(t *testing.T) {
 
 func newTestFileStore(t *testing.T, walletsDir string) *storev1.FileStore {
 	t.Helper()
-	s, err := storev1.InitialiseStore(walletsDir)
+	s, err := storev1.InitialiseStore(walletsDir, true)
 	if err != nil {
 		t.Fatalf("couldn't initialise store: %v", err)
 	}
+	t.Cleanup(func() {
+		s.Close()
+	})
 
 	return s
 }

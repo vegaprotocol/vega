@@ -52,7 +52,7 @@ type Commander interface {
 type ValidatorTopology interface {
 	IsValidator() bool
 	SelfVegaPubKey() string
-	AllNodeIDs() []string
+	AllVegaPubKeys() []string
 	IsValidatorVegaPubKey(string) bool
 	IsTendermintValidator(string) bool
 	GetVotingPower(pubkey string) int64
@@ -333,7 +333,10 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 				votesReceived := []string{}
 				votesMissing := []string{}
 				votePowers := []string{}
-				for _, k := range w.top.AllNodeIDs() {
+				for _, k := range w.top.AllVegaPubKeys() {
+					if !w.top.IsTendermintValidator(k) {
+						continue
+					}
 					if _, ok := v.votes[k]; ok {
 						votesReceived = append(votesReceived, k)
 						votePowers = append(votePowers, strconv.FormatInt(w.top.GetVotingPower(k), 10))

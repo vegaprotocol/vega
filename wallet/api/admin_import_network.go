@@ -28,8 +28,7 @@ type AdminImportNetworkParams struct {
 }
 
 type AdminImportNetworkResult struct {
-	Name     string `json:"name"`
-	FilePath string `json:"filePath"`
+	Name string `json:"name"`
 }
 
 type AdminImportNetwork struct {
@@ -83,8 +82,7 @@ func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params)
 	}
 
 	return AdminImportNetworkResult{
-		Name:     net.Name,
-		FilePath: h.networkStore.GetNetworkPath(net.Name),
+		Name: net.Name,
 	}, nil
 }
 
@@ -128,8 +126,8 @@ func readImportNetworkSource(params AdminImportNetworkParams) (*network.Network,
 	net := &network.Network{}
 	rs := NewReaders()
 
-	s, filePath, contains := strings.Cut(params.URL, FileSchemePrefix)
-	if contains && len(s) == 0 {
+	s, filePath, isFile := strings.Cut(params.URL, FileSchemePrefix)
+	if isFile && len(s) == 0 {
 		exists, err := vgfs.FileExists(filePath)
 		if err != nil {
 			return nil, fmt.Errorf("could not check file's existence at %q: %w", filePath, err)

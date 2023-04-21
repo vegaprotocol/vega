@@ -2,18 +2,15 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminRevokePermissionsParams struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-	Hostname   string `json:"hostname"`
+	Wallet   string `json:"wallet"`
+	Hostname string `json:"hostname"`
 }
 type AdminRevokePermissions struct {
 	walletStore WalletStore
@@ -32,11 +29,12 @@ func (h *AdminRevokePermissions) Handle(ctx context.Context, rawParams jsonrpc.P
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -65,10 +63,6 @@ func validateRevokePermissionsParams(rawParams jsonrpc.Params) (AdminRevokePermi
 
 	if params.Wallet == "" {
 		return AdminRevokePermissionsParams{}, ErrWalletIsRequired
-	}
-
-	if params.Passphrase == "" {
-		return AdminRevokePermissionsParams{}, ErrPassphraseIsRequired
 	}
 
 	if params.Hostname == "" {

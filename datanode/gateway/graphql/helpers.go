@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/datanode/vegatime"
+	"code.vegaprotocol.io/vega/libs/ptr"
 )
 
 func safeStringUint64(input string) (uint64, error) {
@@ -25,6 +26,15 @@ func safeStringUint64(input string) (uint64, error) {
 	if err != nil {
 		// A conversion error occurred, return the error
 		return 0, fmt.Errorf("invalid input string for uint64 conversion %s", input)
+	}
+	return i, nil
+}
+
+func safeStringInt64(input string) (int64, error) {
+	i, err := strconv.ParseInt(input, 10, 64)
+	if err != nil {
+		// A conversion error occurred, return the error
+		return 0, fmt.Errorf("invalid input string for int64 conversion %s", input)
 	}
 	return i, nil
 }
@@ -37,14 +47,12 @@ func nanoTSToDatetime(timestampInNanoSeconds int64) string {
 	return vegatime.Format(vegatime.UnixNano(timestampInNanoSeconds))
 }
 
-func convertVersion(version *int) (int32, error) {
-	const defaultValue = 0
-
+func convertVersion(version *int) (*int32, error) {
 	if version != nil {
-		if *version >= 0 && *version < math.MaxInt32 {
-			return int32(*version), nil
+		if *version >= 1 && *version < math.MaxInt32 {
+			return ptr.From(int32(*version)), nil
 		}
-		return defaultValue, fmt.Errorf("invalid version value %d", *version)
+		return nil, fmt.Errorf("invalid version value %d", *version)
 	}
-	return defaultValue, nil
+	return nil, nil
 }

@@ -115,7 +115,7 @@ const (
 	rejectedState
 )
 
-var defaultValidationDuration = 2 * time.Hour
+var defaultValidationDuration = 30 * 24 * time.Hour
 
 type Engine struct {
 	cfg            Config
@@ -303,9 +303,6 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 		delete(e.assetActs, k)
 	}
 
-	// we may want a dedicated method on the snapshot engine at some
-	// point but this will do for now
-	// this will be restarting the signatures aggregates
 	e.notary.OfferSignatures(
 		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
 

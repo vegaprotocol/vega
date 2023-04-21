@@ -28,10 +28,22 @@ type FileStore struct {
 	networksHome string
 }
 
-type networkFileContent struct {
-	API      network.APIConfig  `json:"api"`
-	Apps     network.AppsConfig `json:"apps"`
-	Metadata []network.Metadata `json:"metadata"`
+type networkFileContentV1 struct {
+	FileVersion uint32            `json:"fileVersion"`
+	API         network.APIConfig `json:"api"`
+	TokenDApp   struct {
+		URL string `json:"url"`
+	} `json:"tokenDApp"`
+	Console struct {
+		URL string `json:"url"`
+	} `json:"console"`
+}
+
+type networkFileContentV2 struct {
+	FileVersion uint32             `json:"fileVersion"`
+	API         network.APIConfig  `json:"api"`
+	Apps        network.AppsConfig `json:"apps"`
+	Metadata    []network.Metadata `json:"metadata"`
 }
 
 func InitialiseStore(vegaPaths paths.Paths) (*FileStore, error) {
@@ -86,18 +98,43 @@ func (s *FileStore) GetNetwork(name string) (*network.Network, error) {
 		return nil, err
 	}
 
-	nfc := &networkFileContent{}
-	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &nfc); err != nil {
+	versionedFile := struct {
+		FileVersion int32 `json:"fileVersion"`
+	}{}
+
+	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &versionedFile); err != nil {
 		return nil, fmt.Errorf("couldn't read network configuration file: %w", err)
 	}
+
+	if versionedFile.FileVersion == 2 {
+		nfc := &networkFileContentV2{}
+		if err := paths.ReadStructuredFile(s.nameToFilePath(name), &nfc); err != nil {
+			return nil, fmt.Errorf("couldn't read network configuration file (v2): %w", err)
+		}
+
+		return &network.Network{
+			Name:     name,
+			Metadata: nfc.Metadata,
+			API:      nfc.API,
+			Apps: network.AppsConfig{
+				Console:    nfc.Apps.Console,
+				Governance: nfc.Apps.Governance,
+				Explorer:   nfc.Apps.Explorer,
+			},
+		}, nil
+	}
+
+	nfc := &networkFileContentV1{}
+	if err := paths.ReadStructuredFile(s.nameToFilePath(name), &nfc); err != nil {
+		return nil, fmt.Errorf("couldn't read network configuration file (v1): %w", err)
+	}
+
 	return &network.Network{
-		Name:     name,
-		Metadata: nfc.Metadata,
-		API:      nfc.API,
+		Name: name,
+		API:  nfc.API,
 		Apps: network.AppsConfig{
-			Console:    nfc.Apps.Console,
-			Governance: nfc.Apps.Governance,
-			Explorer:   nfc.Apps.Explorer,
+			Console:    nfc.Console.URL,
+			Governance: nfc.TokenDApp.URL,
 		},
 	}, nil
 }
@@ -107,8 +144,11 @@ func (s *FileStore) SaveNetwork(net *network.Network) error {
 		return err
 	}
 
-	nfc := &networkFileContent{
-		API: net.API,
+	nfc := &networkFileContentV2{
+		FileVersion: 2,
+		API:         net.API,
+		Apps:        net.Apps,
+		Metadata:    net.Metadata,
 	}
 	if err := paths.WriteStructuredFile(s.nameToFilePath(net.Name), nfc); err != nil {
 		return fmt.Errorf("couldn't write network configuration file: %w", err)
