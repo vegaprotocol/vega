@@ -136,7 +136,7 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	bridgeView := amocks.NewMockERC20BridgeView(ctrl)
 	notary := amocks.NewMockNotary(ctrl)
 
-	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet(), nil, broker, bridgeView, notary, false)
+	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet().Ethereum, nil, broker, bridgeView, notary, false)
 	marketTracker := execution.NewMarketActivityTracker(log, epochEngine)
 	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset)
 	accounts := mocks.NewMockStakingAccounts(ctrl)

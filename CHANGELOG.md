@@ -53,6 +53,7 @@
 - [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
 - [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
 - [7988](https://github.com/vegaprotocol/vega/issues/7988) - Make information about numbers expressed as strings more clear.
+- [7998](https://github.com/vegaprotocol/vega/issues/7998) - Clean up `API` documentation for `ListLedgerEntries`.
 - [8021](https://github.com/vegaprotocol/vega/issues/8021) - Add better field descriptions in the `API` documentation.
 - [8171](https://github.com/vegaprotocol/vega/issues/8171) - Optimise the way offsets are used in probability of trading.
 - [7847](https://github.com/vegaprotocol/vega/issues/7847) - Add `EstimatePosition` `API` method, mark `EstimateOrder` (GraphQL) and `EstimateMargin` (gRPC) as deprecated.
@@ -101,6 +102,7 @@
 - [8165](https://github.com/vegaprotocol/vega/issues/8165) - Send order events when an `lp` order is cancelled or rejected
 - [8173](https://github.com/vegaprotocol/vega/issues/8173) - Trades when leaving auction should should have the aggressor field set to `SideUnspecified`.
 - [8157](https://github.com/vegaprotocol/vega/issues/8157) - Handle kill/interrupt signals in datanode, and clean up properly.
+- [7914](https://github.com/vegaprotocol/vega/issues/7914) - Offer node signatures after snapshot restore
 
 ## 0.70.0
 

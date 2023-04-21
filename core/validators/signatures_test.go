@@ -21,6 +21,7 @@ import (
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/core/validators/mocks"
 	"code.vegaprotocol.io/vega/logging"
@@ -210,6 +211,64 @@ func TestPromotionSignatures(t *testing.T) {
 		signatures.ClearStaleSignatures()
 		require.Error(t, validators.ErrNoPendingSignaturesForNodeID, signatures.EmitValidatorAddedSignatures(ctx, "0x7629Faf5B7a3BB167B6f2F86DB5fB7f13B20Ee90", "4554375ce61b6828c6f7b625b7735034496b7ea19951509cccf4eb2ba35011b0", currentTime))
 	})
+}
+
+func TestOfferSignatures(t *testing.T) {
+	ctx := context.Background()
+	signatures := getTestSignatures(t)
+	defer signatures.ctrl.Finish()
+
+	signatures.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	var addSigResID string
+	var addSig []byte
+	signatures.notary.EXPECT().
+		StartAggregate(gomock.Any(), types.NodeSignatureKindERC20MultiSigSignerAdded, gomock.Any()).DoAndReturn(
+		func(resID string, kind types.NodeSignatureKind, signature []byte) {
+			addSigResID = resID
+			addSig = signature
+		},
+	)
+
+	var removeSigResID string
+	var removeSig []byte
+	signatures.notary.EXPECT().
+		StartAggregate(gomock.Any(), types.NodeSignatureKindERC20MultiSigSignerRemoved, gomock.Any()).DoAndReturn(
+		func(resID string, kind types.NodeSignatureKind, signature []byte) {
+			removeSigResID = resID
+			removeSig = signature
+		},
+	)
+
+	submitter := "node_operator"
+	now := time.Now()
+	validator := validators.NodeIDAddress{NodeID: "node_1", EthAddress: "eth_address"}
+
+	signatures.PrepareValidatorSignatures(ctx, []validators.NodeIDAddress{validator}, 1, false)
+	err := signatures.EmitValidatorRemovedSignatures(ctx, submitter, validator.NodeID, now)
+	require.NoError(t, err)
+
+	validator.EthAddress = "updated_eth_address"
+
+	signatures.PrepareValidatorSignatures(ctx, []validators.NodeIDAddress{validator}, 1, true)
+	err = signatures.EmitValidatorAddedSignatures(ctx, submitter, validator.NodeID, now)
+	require.NoError(t, err)
+
+	signatures.notary.EXPECT().
+		OfferSignatures(types.NodeSignatureKindERC20MultiSigSignerAdded, gomock.Any()).DoAndReturn(
+		func(kind types.NodeSignatureKind, f func(id string) []byte) {
+			require.Equal(t, addSig, f(addSigResID))
+		},
+	)
+
+	signatures.notary.EXPECT().
+		OfferSignatures(types.NodeSignatureKindERC20MultiSigSignerRemoved, gomock.Any()).DoAndReturn(
+		func(kind types.NodeSignatureKind, f func(id string) []byte) {
+			require.Equal(t, removeSig, f(removeSigResID))
+		},
+	)
+
+	signatures.OfferSignatures()
 }
 
 const (

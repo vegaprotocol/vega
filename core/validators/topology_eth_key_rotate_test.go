@@ -386,6 +386,7 @@ func getTestTopWithMockedSignatures(t *testing.T) *testTopWithSignatures {
 	top.timeService.EXPECT().GetTimeNow().Times(3)
 	signatures.EXPECT().ClearStaleSignatures().Times(1)
 	signatures.EXPECT().SetNonce(gomock.Any()).Times(1)
+	signatures.EXPECT().OfferSignatures().AnyTimes()
 	top.BeginBlock(context.Background(), abcitypes.RequestBeginBlock{Header: types1.Header{Height: 10}})
 
 	return &testTopWithSignatures{

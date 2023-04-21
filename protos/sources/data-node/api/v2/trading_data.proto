@@ -113,18 +113,17 @@ service TradingDataService {
 
   // List ledger entries
   //
-  // Get a list of ledger entries by asset, market, party, account type and transfer type within the given date range.
+  // Get a list of ledger entries within the given date range.
   // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
   // It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
   // the summed ledger entries of the set of specified accounts changes.
-  // Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
-  // for each of the sides - sending and receiving accounts, the query returns an error.
+  // Each account filter must contain no more than one party ID.
   //
-  // Entries can be queried by:
-  //   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
-  //   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
-  //   - listing ledger entries with filtering on the sending AND receiving account
-  //   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
+  // Entries can be filtered by:
+  //   - the sending account (market ID, asset ID, account type)
+  //   - receiving account (market ID, asset ID, account type)
+  //   - sending AND receiving account
+  //   - transfer type either in addition to the above filters or as a standalone option
   rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Ledger entries"};
   }
@@ -1113,15 +1112,14 @@ message PositionUpdates {
 }
 
 // Ledger entry filter sets filters on returned set of ledger entries.
-// Ledger entry data can be filtered by asset ID, market ID, party ID for sending and receiving account, as well as by transfer type.
 message LedgerEntryFilter {
-  // close_on_account_filters determines whether an entry must have accounts matching both the account_from_filter
+  // Determines whether an entry must have accounts matching both the account_from_filter
   // and the account_to_filter. If set to 'true', entries must have matches in both filters.
   // If set to `false`, entries matching only the account_from_filter or the account_to_filter will also be included.
   bool close_on_account_filters = 1;
-  // `AccountFilter` object used to set values for filtering sender accounts.
+  // Used to set values for filtering sender accounts.
   AccountFilter from_account_filter = 2;
-  // `AccountFilter` object used to set values for filtering receiver accounts.
+  // Used to set values for filtering receiver accounts.
   AccountFilter to_account_filter = 3;
   // List of transfer types that is used for filtering sender and receiver accounts.
   repeated vega.TransferType transfer_types = 5;
