@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             (unknown)
-// source: blockexplorer/blockexplorer.proto
+// source: blockexplorer/api/v1/blockexplorer.proto
 
 package v1
 
@@ -193,5 +193,5 @@ var BlockExplorerService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "blockexplorer/blockexplorer.proto",
+	Metadata: "blockexplorer/api/v1/blockexplorer.proto",
 }

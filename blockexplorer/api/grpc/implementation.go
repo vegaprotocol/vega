@@ -19,7 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
 	"code.vegaprotocol.io/vega/blockexplorer/store"
 	"code.vegaprotocol.io/vega/logging"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"code.vegaprotocol.io/vega/version"
 
