@@ -21,7 +21,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 )
 
 var (
