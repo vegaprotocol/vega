@@ -52,7 +52,7 @@ type Config struct {
 	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
-	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscribption allowed per client"`
+	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscriptions allowed per client"`
 	CORS                     libhttp.CORSConfig       `group:"CORS" namespace:"cors"`
 	HTTPSEnabled             encoding.Bool            `long:"https-enabled" description:"If true, GraphQL gateway will require an HTTPS connection"`
 	AutoCertDomain           string                   `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`

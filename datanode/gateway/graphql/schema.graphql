@@ -4161,6 +4161,8 @@ input OrderFilter {
   "Date range to retrieve orders from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
   dateRange: DateRange
   excludeLiquidity: Boolean
+  "If true, only orders that are live will be returned."
+  liveOnly: Boolean
 }
 
 input OrderByPartyIdsFilter {
