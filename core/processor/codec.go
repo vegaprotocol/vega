@@ -13,42 +13,19 @@
 package processor
 
 import (
-	"math"
-
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
 )
 
-// Codec is the abci codec, with the extra methods not needed by the abci package, but used
-// to update values like max TTL, that are in turn used to when decoding transactions.
-type Codec interface {
-	abci.Codec
-	UpdateMaxTTL(ttl uint64)
-}
-
-// BaseCodec is the base codec, shared by the TxCodec and null blockchain codec. Just to make life easier adding
-// things like the max TTL netparam value to both.
-type BaseCodec struct {
-	maxTTL uint64
-}
-
-type TxCodec struct {
-	BaseCodec
-}
+type TxCodec struct{}
 
 // Decode takes a raw input from a Tendermint Tx and decodes into a vega Tx,
 // the decoding process involves a signature verification.
 func (c *TxCodec) Decode(payload []byte, chainID string) (abci.Tx, error) {
-	return DecodeTx(payload, chainID, c.maxTTL)
+	return DecodeTx(payload, chainID)
 }
 
-type NullBlockchainTxCodec struct {
-	BaseCodec
-}
+type NullBlockchainTxCodec struct{}
 
 func (c *NullBlockchainTxCodec) Decode(payload []byte, _ string) (abci.Tx, error) {
-	return DecodeTxNoValidation(payload, math.MaxUint64)
-}
-
-func (c *BaseCodec) UpdateMaxTTL(ttl uint64) {
-	c.maxTTL = ttl
+	return DecodeTxNoValidation(payload)
 }

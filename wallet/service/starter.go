@@ -64,7 +64,7 @@ type Starter struct {
 	isStarted atomic.Bool
 }
 
-func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool, ttl uint64) (_ string, _ <-chan error, err error) {
+func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool) (_ string, _ <-chan error, err error) {
 	if s.isStarted.Load() {
 		return "", nil, ErrCannotStartMultipleServiceAtTheSameTime
 	}
@@ -136,7 +136,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	}
 
 	// API v2
-	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer, ttl)
+	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v2", zap.Error(err))
 		return "", nil, err
@@ -220,7 +220,7 @@ func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, spam), nil
 }
 
-func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer, ttl uint64) (*servicev2.API, error) {
+func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer) (*servicev2.API, error) {
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 
@@ -241,7 +241,7 @@ func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *netwo
 		return nil, fmt.Errorf("could not instantiate the client part of the JSON-RPC API: %w", err)
 	}
 
-	return servicev2.NewAPI(apiV2logger, clientAPI, s.connectionsManager, ttl), nil
+	return servicev2.NewAPI(apiV2logger, clientAPI, s.connectionsManager), nil
 }
 
 func (s *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLevel, error) {

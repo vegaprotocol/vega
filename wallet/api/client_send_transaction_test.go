@@ -33,7 +33,6 @@ func TestSendTransaction(t *testing.T) {
 	t.Run("Failing to get the spam statistics does not send the transaction", testFailingToGetSpamStatsDoesNotSendTransaction)
 	t.Run("Failure when sending transaction returns an error", testFailureWhenSendingTransactionReturnsAnError)
 	t.Run("Failing spam checks aborts the transaction", testFailingSpamChecksAbortsTheTransaction)
-	t.Run("Override TTL if the specified value is too high when sending transaction", testOverrideSendHighTTL)
 }
 
 func testClientSendTransactionSchemaCorrect(t *testing.T) {
@@ -607,69 +606,6 @@ func testFailingSpamChecksAbortsTheTransaction(t *testing.T) {
 	assert.Empty(t, result)
 }
 
-func testOverrideSendHighTTL(t *testing.T) {
-	ctx, traceID := clientContextForTest()
-	hostname := vgrand.RandomStr(5)
-	wallet1 := walletWithPerms(t, hostname, wallet.Permissions{
-		PublicKeys: wallet.PublicKeysPermission{
-			Access:      wallet.ReadAccess,
-			AllowedKeys: nil,
-		},
-	})
-	kp, err := wallet1.GenerateKeyPair(nil)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	connectedWallet, err := api.NewConnectedWallet(hostname, wallet1)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	spamStats := types.SpamStatistics{
-		ChainID:           vgrand.RandomStr(5),
-		LastBlockHeight:   100,
-		Proposals:         &types.SpamStatistic{MaxForEpoch: 1},
-		NodeAnnouncements: &types.SpamStatistic{MaxForEpoch: 1},
-		Delegations:       &types.SpamStatistic{MaxForEpoch: 1},
-		Transfers:         &types.SpamStatistic{MaxForEpoch: 1},
-		Votes:             &types.VoteSpamStatistics{MaxForEpoch: 1},
-		PoW: &types.PoWStatistics{
-			PowBlockStates: []types.PoWBlockState{{}},
-		},
-		MaxTTL: 10,
-	}
-
-	// setup
-	handler := newSendTransactionHandler(t)
-
-	// -- expected calls
-	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.TransactionReviewWorkflow, uint8(2)).Times(1).Return(nil)
-	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
-	handler.walletStore.EXPECT().GetWallet(ctx, wallet1.Name()).Times(1).Return(wallet1, nil)
-	handler.interactor.EXPECT().RequestTransactionReviewForSending(ctx, traceID, uint8(1), hostname, wallet1.Name(), kp.PublicKey(), fakeTransaction, gomock.Any()).Times(1).Return(true, nil)
-	handler.nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(handler.node, nil)
-	handler.node.EXPECT().SpamStatistics(ctx, kp.PublicKey()).Times(1).Return(spamStats, nil)
-	handler.spam.EXPECT().CheckSubmission(gomock.Any(), &spamStats).Times(1).Return(assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, gomock.Any()).Times(1)
-	handler.interactor.EXPECT().Log(ctx, traceID, gomock.Any(), gomock.Any()).AnyTimes()
-
-	// simulate a TTL specified that is too high:
-	handler.overrideTTL = spamStats.MaxTTL * 2
-	tx := testTransaction(t)
-	// when
-	result, errorDetails := handler.handle(t, ctx, api.ClientSendTransactionParams{
-		PublicKey:   kp.PublicKey(),
-		SendingMode: "TYPE_SYNC",
-		Transaction: tx,
-	}, connectedWallet)
-
-	// then
-	require.NotNil(t, errorDetails)
-	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
-	assert.Equal(t, "Application error", errorDetails.Message)
-	assert.Equal(t, assert.AnError.Error(), errorDetails.Data)
-	assert.Empty(t, result)
-}
-
 type sendTransactionHandler struct {
 	*api.ClientSendTransaction
 	ctrl         *gomock.Controller
@@ -678,13 +614,12 @@ type sendTransactionHandler struct {
 	node         *nodemocks.MockNode
 	walletStore  *mocks.MockWalletStore
 	spam         *mocks.MockSpamHandler
-	overrideTTL  uint64
 }
 
 func (h *sendTransactionHandler) handle(t *testing.T, ctx context.Context, params jsonrpc.Params, connectedWallet api.ConnectedWallet) (api.ClientSendTransactionResult, *jsonrpc.ErrorDetails) {
 	t.Helper()
 
-	rawResult, err := h.Handle(ctx, params, connectedWallet, h.overrideTTL)
+	rawResult, err := h.Handle(ctx, params, connectedWallet)
 	if rawResult != nil {
 		result, ok := rawResult.(api.ClientSendTransactionResult)
 		if !ok {

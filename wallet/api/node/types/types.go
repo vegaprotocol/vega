@@ -34,7 +34,6 @@ type SpamStatistics struct {
 	IssuesSignatures  *SpamStatistic
 	Votes             *VoteSpamStatistics
 	PoW               *PoWStatistics
-	MaxTTL            uint64
 }
 
 type SpamStatistic struct {

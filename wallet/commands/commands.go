@@ -79,15 +79,14 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 	return errs
 }
 
-func ToInputData(req *walletpb.SubmitTransactionRequest, height, ttl uint64) *commandspb.InputData {
+func ToInputData(req *walletpb.SubmitTransactionRequest, height uint64) *commandspb.InputData {
 	inputData := commands.NewInputData(height)
-	inputData.GoodForBlocks = ttl
 	WrapRequestCommandIntoInputData(inputData, req)
 	return inputData
 }
 
-func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height, ttl uint64) ([]byte, error) {
-	return commands.MarshalInputData(ToInputData(req, height, ttl))
+func ToMarshaledInputData(req *walletpb.SubmitTransactionRequest, height uint64) ([]byte, error) {
+	return commands.MarshalInputData(ToInputData(req, height))
 }
 
 func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) {

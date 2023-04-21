@@ -445,7 +445,6 @@ func (tx *testTx) Command() txn.Command        { return txn.AmendOrderCommand }
 func (tx *testTx) BlockHeight() uint64         { return tx.blockHeight }
 func (tx *testTx) GetCmd() interface{}         { return nil }
 func (tx *testTx) Validate() error             { return nil }
-func (tx *testTx) TTL() uint64                 { return 0 }
 
 func Test_ExpectedSpamDifficulty(t *testing.T) {
 	type args struct {

@@ -41,7 +41,7 @@ type ClientSignTransaction struct {
 	spam         SpamHandler
 }
 
-func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet, ttl uint64) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
+func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	traceID := jsonrpc.TraceIDFromContext(ctx)
 
 	params, err := validateSignTransactionParams(rawParams)
@@ -128,12 +128,8 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction passes the anti-spam rules.")
 
-	// ensure TTL is no more than the max
-	if stats.MaxTTL < ttl || ttl == 0 {
-		ttl = stats.MaxTTL
-	}
 	// Sign the payload.
-	inputData, err := wcommands.ToMarshaledInputData(request, stats.LastBlockHeight, ttl)
+	inputData, err := wcommands.ToMarshaledInputData(request, stats.LastBlockHeight)
 	if err != nil {
 		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
 		return nil, internalError(ErrCouldNotSignTransaction)

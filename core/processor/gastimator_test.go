@@ -353,4 +353,3 @@ func (tx *testTx) Hash() []byte                  { return []byte{} }
 func (tx *testTx) Command() txn.Command          { return tx.command }
 func (tx *testTx) BlockHeight() uint64           { return 0 }
 func (tx *testTx) GetCmd() interface{}           { return nil }
-func (tx *testTx) TTL() uint64                   { return 0 }
