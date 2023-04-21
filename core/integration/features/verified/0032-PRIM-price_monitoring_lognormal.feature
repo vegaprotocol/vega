@@ -444,3 +444,46 @@ Feature: Price monitoring test using forward risk model (bounds for the valid pr
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000000    | TRADING_MODE_CONTINUOUS | 60      | 994606    | 1005415   | 7434000      | 90000000       | 10            |
       | 1000000    | TRADING_MODE_CONTINUOUS | 600     | 977751    | 1022678   | 7434000      | 90000000       | 10            |
+
+Scenario: Market Order triggers a price monitoring-auction
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount       |
+      | party1 | ETH   | 10000000000  |
+      | party2 | ETH   | 10000000000  |
+      | aux    | ETH   | 100000000000 |
+      | aux2   | ETH   | 100000000000 |
+      | lpprov | ETH   | 100000000000 |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+    And the parties place the following orders:
+      | party | market id | side | volume | price  | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 1      | 1      | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 200000 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 1000   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 1000   | 0                | TYPE_LIMIT | TIF_GTC |
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | 
+      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 995       | 1005      |
+      | 1000       | TRADING_MODE_CONTINUOUS | 600     | 978       | 1022      |
+
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | sell | 1      | 10000 | 0                | TYPE_LIMIT | TIF_GTC |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     |
+      | party1 | ETH/DEC20 | buy  | 1      | 10000 | 0                | TYPE_MARKET | TIF_IOC |
+    
+    # EXPECTED BEHAVIOUR:
+    # Then the market data for the market "ETH/DEC20" should be:
+    #   | mark price | trading mode                    | horizon | min bound | max bound | 
+    #   | 1000       | TRADING_MODE_MONITORING_AUCTION | 60      | 995       | 1005      |
+    #   | 1000       | TRADING_MODE_MONITORING_AUCTION | 600     | 978       | 1022      |
+
+    # ACTUAL BEHAVIOUR:
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | 
+      | 1000       | TRADING_MODE_CONTINUOUS | 60      | 995       | 1005      |
+      | 1000       | TRADING_MODE_CONTINUOUS | 600     | 978       | 1022      |
