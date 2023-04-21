@@ -11,8 +11,13 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
-// ErrMultipleSameKeyNamesInFilterList is returned when filters with same key names exists inside a single list.
-var ErrMultipleSameKeyNamesInFilterList = errors.New("multiple keys with same name found in filter list")
+var (
+	// ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList is returned when filters with same key names exists inside a single list.
+	ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList = errors.New("multiple keys with same name found in filter list")
+	// ErrDataSourceSpecHasInvalidTimeCondition is returned when timestamp value is used with 'LessThan'
+	// or 'LessThanOrEqual' condition operator value.
+	ErrDataSourceSpecHasInvalidTimeCondition = errors.New("data source spec time value is used with 'less than' or 'less than equal' condition")
+)
 
 type DataSourceDefinitionInternalx struct {
 	Internal *DataSourceDefinitionInternal
@@ -412,11 +417,11 @@ func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) er
 	fNameCheck := map[string]struct{}{}
 	for _, f := range filters {
 		if _, ok := fTypeCheck[f]; ok {
-			return ErrMultipleSameKeyNamesInFilterList
+			return ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList
 		}
 		if f.Key != nil {
 			if _, ok := fNameCheck[f.Key.Name]; ok {
-				return ErrMultipleSameKeyNamesInFilterList
+				return ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList
 			}
 			fNameCheck[f.Key.Name] = struct{}{}
 		}
