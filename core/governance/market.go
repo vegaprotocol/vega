@@ -253,26 +253,25 @@ func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets,
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
-	if !et.shouldNotVerify {
-		filters := future.DataSourceSpecForTradingTermination.GetFilters()
+	filters := future.DataSourceSpecForTradingTermination.GetFilters()
+	for i, f := range filters {
+		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+			for j, cond := range f.Conditions {
+				v, err := strconv.ParseInt(cond.Value, 10, 64)
+				if err != nil {
+					return types.ProposalErrorInvalidFutureProduct, err
+				}
 
-		for i, f := range filters {
-			if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-				for j, cond := range f.Conditions {
-					v, err := strconv.ParseInt(cond.Value, 10, 64)
-					if err != nil {
-						return types.ProposalErrorInvalidFutureProduct, err
-					}
-
-					filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				if !et.shouldNotVerify {
 					if v <= et.current {
 						return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
 					}
 				}
 			}
 		}
-		future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 	}
+	future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 
 	if future.DataSourceSpecBinding == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
@@ -482,27 +481,27 @@ func validateUpdateFuture(future *types.UpdateFutureProduct, et *enactmentTime) 
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecForTradingTermination
 	}
 
-	if !et.shouldNotVerify {
-		filters := future.DataSourceSpecForTradingTermination.GetFilters()
+	filters := future.DataSourceSpecForTradingTermination.GetFilters()
 
-		for i, f := range filters {
-			if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
-				for j, cond := range f.Conditions {
-					v, err := strconv.ParseInt(cond.Value, 10, 64)
-					if err != nil {
-						return types.ProposalErrorInvalidFutureProduct, err
-					}
+	for i, f := range filters {
+		if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+			for j, cond := range f.Conditions {
+				v, err := strconv.ParseInt(cond.Value, 10, 64)
+				if err != nil {
+					return types.ProposalErrorInvalidFutureProduct, err
+				}
 
-					filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				filters[i].Conditions[j].Value = strconv.FormatInt(v, 10)
+				if !et.shouldNotVerify {
 					if v <= et.current {
 						return types.ProposalErrorInvalidFutureProduct, ErrDataSourceSpecTerminationTimeBeforeEnactment
 					}
 				}
 			}
 		}
-
-		future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 	}
+
+	future.DataSourceSpecForTradingTermination.UpdateFilters(filters)
 
 	if future.DataSourceSpecBinding == nil {
 		return types.ProposalErrorInvalidFutureProduct, ErrMissingDataSourceSpecBinding
