@@ -120,7 +120,6 @@ var (
 	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrLastBlockDataOrNetworkIsRequired                   = errors.New("a network or the last block data is required")
 	ErrMessageIsRequired                                  = errors.New("the message is required")
-	ErrMultipleNetworkSources                             = errors.New("network sources are mutually exclusive")
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
 	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")

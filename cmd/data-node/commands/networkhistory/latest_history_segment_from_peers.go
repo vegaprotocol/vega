@@ -42,6 +42,8 @@ func (o *latestHistorFromPeersyOutput) printHuman() {
 }
 
 func (cmd *latestHistorySegmentFromPeers) Execute(_ []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.InfoLevel
 	cfg.Environment = "custom"
@@ -68,7 +70,7 @@ func (cmd *latestHistorySegmentFromPeers) Execute(_ []string) error {
 	}
 	defer func() { _ = conn.Close() }()
 
-	resp, err := client.GetActiveNetworkHistoryPeerAddresses(context.Background(), &v2.GetActiveNetworkHistoryPeerAddressesRequest{})
+	resp, err := client.GetActiveNetworkHistoryPeerAddresses(ctx, &v2.GetActiveNetworkHistoryPeerAddressesRequest{})
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get active peer addresses", errorFromGrpcError("", err))
 		os.Exit(1)
@@ -78,7 +80,7 @@ func (cmd *latestHistorySegmentFromPeers) Execute(_ []string) error {
 
 	grpcAPIPorts := []int{cmd.Config.API.Port}
 	grpcAPIPorts = append(grpcAPIPorts, cmd.Config.NetworkHistory.Initialise.GrpcAPIPorts...)
-	selectedResponse, peerToResponse, err := networkhistory.GetMostRecentHistorySegmentFromPeersAddresses(context.Background(), peerAddresses,
+	selectedResponse, peerToResponse, err := networkhistory.GetMostRecentHistorySegmentFromPeersAddresses(ctx, peerAddresses,
 		cmd.Config.NetworkHistory.Store.GetSwarmKeySeed(log, cmd.Config.ChainID), grpcAPIPorts)
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get most recent history segment from peers", err)
@@ -105,9 +107,9 @@ func (cmd *latestHistorySegmentFromPeers) Execute(_ []string) error {
 			handleErr(log, cmd.Output.IsJSON(), "failed to marshal output", err)
 			os.Exit(1)
 		}
-	} else {
-		output.printHuman()
+		return nil
 	}
+	output.printHuman()
 
 	return nil
 }

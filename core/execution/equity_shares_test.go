@@ -437,12 +437,13 @@ func testWithinMarket(t *testing.T) {
 	fmt.Printf("Target stake: %s\nSupplied: %s\n\n", md.TargetStake, md.SuppliedStake)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
 
-	assert.True(t, esm.LiquidityFeeAccount().Balance.IsZero(),
-		"LiquidityFeeAccount should be empty after a fee distribution")
+	oneU := num.NewUint(1)
+	assert.True(t, esm.LiquidityFeeAccount().Balance.EQ(oneU),
+		"LiquidityFeeAccount should have a balance of 1 (remainder)")
 
 	// exp = originalBalance*(2/3)
-	exp := num.UintZero().Mul(num.NewUint(2), originalBalance)
-	exp = exp.Div(exp, num.NewUint(3))
+	exp := num.UintZero().Mul(num.Sum(oneU, oneU), originalBalance)
+	exp = exp.Div(exp, num.Sum(oneU, oneU, oneU))
 	actual := num.UintZero().Sub(esm.PartyGeneralAccount("party1").Balance, party1Balance)
 	assert.True(t,
 		exp.EQ(actual),
@@ -450,7 +451,9 @@ func testWithinMarket(t *testing.T) {
 	)
 
 	// exp = originalBalance*(1/3)
-	exp = num.UintZero().Div(originalBalance, num.NewUint(3))
+	exp = num.UintZero().Div(originalBalance, num.Sum(oneU, oneU, oneU))
+	// minus the remainder
+	exp.Sub(exp, oneU)
 	actual = num.UintZero().Sub(esm.PartyGeneralAccount("party2").Balance, party2Balance)
 	assert.True(t,
 		exp.EQ(actual),

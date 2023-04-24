@@ -31,15 +31,14 @@ import (
 )
 
 type gatewayCmd struct {
-	ctx context.Context
 	gateway.Config
 	config.VegaHomeFlag
 }
 
 func (opts *gatewayCmd) Execute(_ []string) error {
-	eg, ctx := errgroup.WithContext(opts.ctx)
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	eg, ctx := errgroup.WithContext(ctx)
 
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
@@ -91,7 +90,6 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 
 func Gateway(ctx context.Context, parser *flags.Parser) error {
 	opts := &gatewayCmd{
-		ctx:    ctx,
 		Config: gateway.NewDefaultConfig(),
 	}
 

@@ -26,11 +26,13 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"code.vegaprotocol.io/vega/core/risk"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
 	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/vegatime"
@@ -46,8 +48,6 @@ import (
 	"code.vegaprotocol.io/vega/version"
 
 	"github.com/pkg/errors"
-	"google.golang.org/genproto/googleapis/api/httpbody"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -275,33 +275,50 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 }
 
 // ExportLedgerEntries returns a list of ledger entries matching the request.
-func (t *TradingDataServiceV2) ExportLedgerEntries(ctx context.Context, req *v2.ExportLedgerEntriesRequest) (*v2.ExportLedgerEntriesResponse, error) {
+func (t *TradingDataServiceV2) ExportLedgerEntries(req *v2.ExportLedgerEntriesRequest, stream v2.TradingDataService_ExportLedgerEntriesServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ExportLedgerEntriesV2")()
 
+	if len(req.PartyId) <= 0 {
+		return formatE(ErrMissingPartyID)
+	}
+	if !crypto.IsValidVegaID(req.PartyId) {
+		return formatE(ErrInvalidPartyID)
+	}
+
+	if len(req.AssetId) <= 0 {
+		return formatE(ErrMissingAssetID)
+	}
+	if !crypto.IsValidVegaID(req.AssetId) {
+		return formatE(ErrInvalidAssetID)
+	}
+
 	dateRange := entities.DateRangeFromProto(req.DateRange)
-	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
-	if err != nil {
-		return nil, formatE(ErrInvalidPagination, err)
+	timeFormat := strings.ReplaceAll(time.RFC3339, ":", "_")
+
+	var startDateStr, endDateStr string
+	if dateRange.Start != nil {
+		startDateStr = "_" + dateRange.Start.Format(timeFormat)
+	}
+	if dateRange.End != nil {
+		endDateStr = "-" + dateRange.End.Format(timeFormat)
 	}
 
-	raw, pageInfo, err := t.ledgerService.Export(ctx, req.PartyId, req.AssetId, dateRange, pagination)
-	if err != nil {
-		return nil, formatE(ErrLedgerServiceExport, err)
+	header := metadata.Pairs(
+		"Content-Disposition",
+		fmt.Sprintf("attachment;filename=ledger_entries_%s_%s%s%s.csv",
+			req.PartyId, req.AssetId, startDateStr, endDateStr))
+	if err := stream.SendHeader(header); err != nil {
+		return formatE(ErrSendingGRPCHeader, err)
 	}
 
-	header := metadata.New(map[string]string{
-		"Content-Type":        "text/csv",
-		"Content-Disposition": fmt.Sprintf("attachment;filename=%s", "ledger_entries_export.csv"),
-	})
+	httpWriter := &httpBodyWriter{chunkSize: httpBodyChunkSize, contentType: "text/csv", buf: &bytes.Buffer{}, stream: stream}
+	defer httpWriter.Close()
 
-	if err = grpc.SendHeader(ctx, header); err != nil {
-		return nil, formatE(ErrSendingGRPCHeader, err)
+	if err := t.ledgerService.Export(stream.Context(), req.PartyId, &req.AssetId, dateRange, httpWriter); err != nil {
+		return formatE(ErrLedgerServiceExport, err)
 	}
 
-	return &v2.ExportLedgerEntriesResponse{
-		Data:     raw,
-		PageInfo: pageInfo.ToProto(),
-	}, nil
+	return nil
 }
 
 // ListBalanceChanges returns a list of balance changes matching the request.
@@ -2462,6 +2479,31 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 	mkt entities.Market,
 	price *num.Uint,
 ) (*num.Uint, error) {
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	return price.Mul(price, priceFactor), nil
+}
+
+func (t *TradingDataServiceV2) scaleDecimalFromMarketToAssetPrice(
+	ctx context.Context,
+	mkt entities.Market,
+	price num.Decimal,
+) (num.Decimal, error) {
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return num.DecimalZero(), err
+	}
+
+	return price.Mul(num.DecimalFromUint(priceFactor)), nil
+}
+
+func (t *TradingDataServiceV2) getMarketPriceFactor(
+	ctx context.Context,
+	mkt entities.Market,
+) (*num.Uint, error) {
 	assetID, err := mkt.ToProto().GetAsset()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting asset from market")
@@ -2474,13 +2516,11 @@ func (t *TradingDataServiceV2) scaleFromMarketToAssetPrice(
 
 	// scale the price if needed
 	// price is expected in market decimal
+	priceFactor := num.NewUint(1)
 	if exp := asset.Decimals - mkt.DecimalPlaces; exp != 0 {
-		priceFactor := num.NewUint(1)
 		priceFactor.Exp(num.NewUint(10), num.NewUint(uint64(exp)))
-		price.Mul(price, priceFactor)
 	}
-
-	return price, nil
+	return priceFactor, nil
 }
 
 func (t *TradingDataServiceV2) estimateFee(
@@ -2632,16 +2672,195 @@ func (t *TradingDataServiceV2) estimateMargin(
 
 	maintenanceMargin := num.DecimalFromFloat(float64(rSize)).
 		Mul(f).Mul(priceD).Div(mdpd)
-	// now we use the risk factors
+
+	return implyMarginLevels(maintenanceMargin, mkt.TradableInstrument.MarginCalculator.ScalingFactors, rParty, rMarket, asset), nil
+}
+
+func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.ScalingFactors, partyId, marketId, asset string) *vega.MarginLevels {
 	return &vega.MarginLevels{
-		PartyId:                rParty,
-		MarketId:               mktProto.GetId(),
+		PartyId:                partyId,
+		MarketId:               marketId,
 		Asset:                  asset,
 		Timestamp:              0,
 		MaintenanceMargin:      maintenanceMargin.Round(0).String(),
-		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).Round(0).String(),
-		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).Round(0).String(),
-		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).Round(0).String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.SearchLevel)).Round(0).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.InitialMargin)).Round(0).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(scalingFactors.CollateralRelease)).Round(0).String(),
+	}
+}
+
+func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition")()
+
+	var collateralAvailable num.Decimal
+	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
+		var err error
+		collateralAvailable, err = num.DecimalFromString(*req.CollateralAvailable)
+		if err != nil {
+			return nil, formatE(ErrPositionsInvalidCollateralAmount, err)
+		}
+	}
+
+	mkt, err := t.marketService.GetByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetByID, err)
+	}
+
+	priceFactor, err := t.getMarketPriceFactor(ctx, mkt)
+	if err != nil {
+		return nil, err
+	}
+
+	dPriceFactor := priceFactor.ToDecimal()
+
+	buyOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
+	sellOrders := make([]*risk.OrderInfo, 0, len(req.Orders))
+
+	for _, o := range req.Orders {
+		if o == nil {
+			continue
+		}
+		var price num.Decimal
+		p, err := num.DecimalFromString(o.Price)
+		if err != nil {
+			return nil, errors.Wrap(ErrInvalidOrderPrice, err.Error())
+		}
+		price = p.Mul(dPriceFactor)
+
+		if o.Side == types.SideBuy {
+			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		}
+		if o.Side == types.SideSell {
+			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		}
+	}
+
+	rf, err := t.riskFactorService.GetMarketRiskFactors(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrRiskFactorServiceGet, err)
+	}
+
+	mktData, err := t.marketDataService.GetMarketDataByID(ctx, req.MarketId)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetMarketData, err)
+	}
+
+	mktProto := mkt.ToProto()
+
+	asset, err := mktProto.GetAsset()
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	marketObservable := mktData.MarkPrice
+
+	auction := mktData.AuctionEnd > 0
+	if auction && mktData.MarketTradingMode == types.MarketTradingModeOpeningAuction.String() {
+		marketObservable = mktData.IndicativePrice
+	}
+
+	marketObservable, err = t.scaleDecimalFromMarketToAssetPrice(ctx, mkt, marketObservable)
+	if err != nil {
+		return nil, formatE(ErrScalingPriceFromMarketToAsset, err)
+	}
+
+	positionFactor := num.DecimalFromFloat(10).
+		Pow(num.DecimalFromInt64(int64(mkt.PositionDecimalPlaces)))
+
+	linearSlippageFactor, err := num.DecimalFromString(mktProto.LinearSlippageFactor)
+	if err != nil {
+		return nil, formatE(fmt.Errorf("can't parse linear slippage factor: %s", mktProto.LinearSlippageFactor), err)
+	}
+	quadraticSlippageFactor, err := num.DecimalFromString(mktProto.QuadraticSlippageFactor)
+	if err != nil {
+		return nil, formatE(fmt.Errorf("can't parse quadratic slippage factor: %s", mktProto.QuadraticSlippageFactor), err)
+	}
+
+	marginEstimate := t.computeMarginRange(
+		req.MarketId,
+		req.OpenVolume,
+		buyOrders,
+		sellOrders,
+		marketObservable,
+		positionFactor,
+		linearSlippageFactor,
+		quadraticSlippageFactor,
+		rf,
+		auction,
+		asset,
+		mkt.TradableInstrument.MarginCalculator.ScalingFactors)
+
+	var liquidationEstimate *v2.LiquidationEstimate
+	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
+		liquidationEstimate, err = t.computeLiquidationPriceRange(
+			collateralAvailable,
+			req.OpenVolume,
+			buyOrders,
+			sellOrders,
+			marketObservable,
+			positionFactor,
+			linearSlippageFactor,
+			quadraticSlippageFactor,
+			rf)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &v2.EstimatePositionResponse{
+		Margin:      marginEstimate,
+		Liquidation: liquidationEstimate,
+	}, nil
+}
+
+func (t *TradingDataServiceV2) computeMarginRange(
+	market string,
+	openVolume int64,
+	buyOrders, sellOrders []*risk.OrderInfo,
+	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
+	riskFactors entities.RiskFactor,
+	auction bool,
+	asset string,
+	scalingFactors *vega.ScalingFactors,
+) *v2.MarginEstimate {
+	worst := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short, auction)
+	best := risk.CalculateMaintenanceMarginWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short, auction)
+
+	return &v2.MarginEstimate{
+		WorstCase: implyMarginLevels(worst, scalingFactors, "", market, asset),
+		BestCase:  implyMarginLevels(best, scalingFactors, "", market, asset),
+	}
+}
+
+func (t *TradingDataServiceV2) computeLiquidationPriceRange(
+	collateralAvailable num.Decimal,
+	openVolume int64,
+	buyOrders, sellOrders []*risk.OrderInfo,
+	marketObservable, positionFactor, linearSlippageFactor, quadraticSlippageFactor num.Decimal,
+	riskFactors entities.RiskFactor,
+) (*v2.LiquidationEstimate, error) {
+	bPositionOnly, bWithBuy, bWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, num.DecimalZero(), num.DecimalZero(), riskFactors.Long, riskFactors.Short)
+	if err != nil {
+		return nil, err
+	}
+
+	wPositionOnly, wWithBuy, wWithSell, err := risk.CalculateLiquidationPriceWithSlippageFactors(openVolume, buyOrders, sellOrders, marketObservable, collateralAvailable, positionFactor, linearSlippageFactor, quadraticSlippageFactor, riskFactors.Long, riskFactors.Short)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v2.LiquidationEstimate{
+		WorstCase: &v2.LiquidationPrice{
+			OpenVolumeOnly:      wPositionOnly.String(),
+			IncludingBuyOrders:  wWithBuy.String(),
+			IncludingSellOrders: wWithSell.String(),
+		},
+		BestCase: &v2.LiquidationPrice{
+			OpenVolumeOnly:      bPositionOnly.String(),
+			IncludingBuyOrders:  bWithBuy.String(),
+			IncludingSellOrders: bWithSell.String(),
+		},
 	}, nil
 }
 
@@ -3108,23 +3327,23 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 		return formatE(ErrListAllNetworkHistorySegment, err)
 	}
 
-	ch, err := networkhistory.GetContiguousHistory(allSegments, req.FromBlock, req.ToBlock)
-	if err != nil || len(ch.SegmentsOldestFirst) == 0 {
+	ch, err := allSegments.ContiguousHistoryInRange(req.FromBlock, req.ToBlock)
+	if err != nil || len(ch.Segments) == 0 {
 		return formatE(ErrNetworkHistoryGetContiguousSegments, err)
 	}
-	chainID := ch.SegmentsOldestFirst[0].GetChainId()
+	chainID := ch.Segments[0].GetChainId()
 
 	header := metadata.Pairs("Content-Disposition", fmt.Sprintf("attachment;filename=%s-%s-%06d-%06d.zip", chainID, tableName, ch.HeightFrom, ch.HeightTo))
 	if err := stream.SendHeader(header); err != nil {
 		return formatE(ErrSendingGRPCHeader, err)
 	}
 
-	grpcWriter := exportHistoryWriter{chunkSize: httpBodyChunkSize, contentType: "application/zip", buf: &bytes.Buffer{}, stream: stream}
+	grpcWriter := httpBodyWriter{chunkSize: httpBodyChunkSize, contentType: "application/zip", buf: &bytes.Buffer{}, stream: stream}
 	zipWriter := zip.NewWriter(&grpcWriter)
 	defer grpcWriter.Close()
 	defer zipWriter.Close()
 
-	partitionedSegments := partitionSegmentsByDBVersion(ch.SegmentsOldestFirst)
+	partitionedSegments := partitionSegmentsByDBVersion(ch.Segments)
 
 	for _, segments := range partitionedSegments {
 		if len(segments) == 0 {
@@ -3143,13 +3362,13 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 		}
 
 		for i, segment := range segments {
-			segmentReader, err := t.NetworkHistoryService.GetHistorySegmentReader(stream.Context(), segment.GetHistorySegmentId())
+			segmentReader, size, err := t.NetworkHistoryService.GetHistorySegmentReader(stream.Context(), segment.GetHistorySegmentId())
 			if err != nil {
 				segmentReader.Close()
 				return formatE(ErrNetworkHistoryOpeningSegment, err)
 			}
 
-			segmentData, err := fsutil.ReadNetworkHistorySegmentData(segmentReader, tableName)
+			segmentData, err := fsutil.ReadNetworkHistorySegmentData(segmentReader, size, tableName)
 			if err != nil {
 				segmentReader.Close()
 				return formatE(ErrNetworkHistoryExtractingSegment, err)
@@ -3172,8 +3391,8 @@ func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistory
 	return nil
 }
 
-func partitionSegmentsByDBVersion(segments []networkhistory.Segment) [][]networkhistory.Segment {
-	partitioned := [][]networkhistory.Segment{}
+func partitionSegmentsByDBVersion(segments []segment.Full) [][]segment.Full {
+	partitioned := [][]segment.Full{}
 	sliceStart := 0
 
 	for i, segment := range segments {
@@ -3185,47 +3404,6 @@ func partitionSegmentsByDBVersion(segments []networkhistory.Segment) [][]network
 	}
 	partitioned = append(partitioned, segments[sliceStart:])
 	return partitioned
-}
-
-type exportHistoryWriter struct {
-	chunkSize   int
-	contentType string
-	buf         *bytes.Buffer
-	stream      v2.TradingDataService_ExportNetworkHistoryServer
-}
-
-func (w *exportHistoryWriter) Write(p []byte) (n int, err error) {
-	n = len(p)
-	w.buf.Write(p)
-
-	if w.buf.Len() >= w.chunkSize {
-		if err := w.sendChunk(); err != nil {
-			return 0, err
-		}
-	}
-
-	return n, nil
-}
-
-func (w *exportHistoryWriter) sendChunk() error {
-	msg := &httpbody.HttpBody{
-		ContentType: w.contentType,
-		Data:        w.buf.Bytes(),
-	}
-
-	if err := w.stream.Send(msg); err != nil {
-		return fmt.Errorf("error sending chunk: %w", err)
-	}
-
-	w.buf.Reset()
-	return nil
-}
-
-func (w *exportHistoryWriter) Close() error {
-	if w.buf.Len() > 0 {
-		return w.sendChunk()
-	}
-	return nil
 }
 
 // GetMostRecentNetworkHistorySegment returns the most recent network history segment.
@@ -3272,7 +3450,7 @@ func (t *TradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v
 	}, nil
 }
 
-func toHistorySegment(segment networkhistory.Segment) *v2.HistorySegment {
+func toHistorySegment(segment segment.Full) *v2.HistorySegment {
 	return &v2.HistorySegment{
 		FromHeight:               segment.GetFromHeight(),
 		ToHeight:                 segment.GetToHeight(),

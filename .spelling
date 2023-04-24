@@ -22,6 +22,7 @@ cleanup
 Cleanup
 clef
 codegen
+config
 cyclomatic
 dApp
 datanode
@@ -38,6 +39,9 @@ ed25519-voi
 enum
 enums
 ERC20
+EstimateMargin
+EstimateOrder
+EstimatePosition
 Ethereum
 evt
 faucet
@@ -112,6 +116,7 @@ Unstaking
 vega
 vegawallet
 VegaCapsule
+Visor
 whitepaper
 XDG
 xor

@@ -21,7 +21,7 @@ func testIsolateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	isolatedPassphrase, isolatedPassphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
@@ -36,16 +36,16 @@ func testIsolateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	expectedReq := api.AdminIsolateKeyParams{
 		Wallet:                   walletName,
 		PublicKey:                pubKey,
-		Passphrase:               passphrase,
 		IsolatedWalletPassphrase: isolatedPassphrase,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testIsolateKeyFlagsMissingWalletFails(t *testing.T) {
@@ -56,7 +56,7 @@ func testIsolateKeyFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -71,7 +71,7 @@ func testIsolateKeyFlagsMissingPubKeyFails(t *testing.T) {
 	f.PubKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))

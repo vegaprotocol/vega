@@ -2096,12 +2096,28 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		// add entries to the response
 		resps = append(resps, ledgerEntries)
 	}
+	// we need a market insurance pool regardless
+	marketInsuranceAcc := e.GetOrCreateMarketInsurancePoolAccount(ctx, mktID, asset)
+	marketInsuranceID := marketInsuranceAcc.ID
+	// any remaining balance in the fee account gets transferred over to the insurance account
+	lpFeeAccID := e.accountID(mktID, "", asset, types.AccountTypeFeesLiquidity)
+	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
+		req.FromAccount[0] = lpFeeAcc
+		req.ToAccount[0] = marketInsuranceAcc
+		req.Amount = lpFeeAcc.Balance.Clone()
+		lpFeeLE, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute remainder of LP fee account funds", logging.Error(err))
+		}
+		resps = append(resps, lpFeeLE)
+		// remove the account once it's drained
+		e.removeAccount(lpFeeAccID)
+	}
 
 	// redistribute the remaining funds in the market insurance account between other markets insurance accounts and global insurance account
-	marketInsuranceID := e.accountID(mktID, "", asset, types.AccountTypeInsurance)
-	marketInsuranceAcc, ok := e.accs[marketInsuranceID]
-	if !ok || marketInsuranceAcc.Balance.EQ(num.UintZero()) {
+	if marketInsuranceAcc.Balance.IsZero() {
 		// if there's no market insurance account or it has no balance, nothing to do here
+		e.removeAccount(marketInsuranceID)
 		return resps, nil
 	}
 
@@ -2748,6 +2764,27 @@ func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Acco
 func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Account, error) {
 	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountTypeInsurance)
 	return e.GetAccountByID(insuranceAccID)
+}
+
+func (e *Engine) GetOrCreateMarketInsurancePoolAccount(ctx context.Context, market, asset string) *types.Account {
+	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountTypeInsurance)
+	acc, err := e.GetAccountByID(insuranceAccID)
+	if err != nil {
+		acc = &types.Account{
+			ID:       insuranceAccID,
+			Asset:    asset,
+			Owner:    systemOwner,
+			Balance:  num.UintZero(),
+			MarketID: market,
+			Type:     types.AccountTypeInsurance,
+		}
+		e.accs[insuranceAccID] = acc
+		e.addAccountToHashableSlice(acc)
+		// not sure if we should send this event, but in case this account was never created, we probably should make sure the datanode
+		// is aware of it. This is most likely only ever going to be called in unit tests, though.
+		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	}
+	return acc
 }
 
 func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {

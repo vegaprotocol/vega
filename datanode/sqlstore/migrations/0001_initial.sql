@@ -205,15 +205,18 @@ CREATE TABLE orders (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL,
-    current           BOOLEAN NOT NULL DEFAULT TRUE,
+    post_only         BOOLEAN NOT NULL DEFAULT FALSE,
+    reduce_only       BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY(vega_time, seq_num)
 );
 
 SELECT create_hypertable('orders', 'vega_time', chunk_time_interval => INTERVAL '1 day');
-CREATE INDEX ON orders (market_id, vega_time DESC) where current=true;
-CREATE INDEX ON orders (party_id, vega_time DESC) where current=true;
-CREATE INDEX ON orders (reference, vega_time DESC) where current=true;
-CREATE INDEX ON orders (id, current);
+
+create index on orders (id, vega_time desc, seq_num desc);
+create index on orders (created_at desc, id, vega_time desc, seq_num desc);
+create index on orders (market_id, created_at desc, id, vega_time desc, seq_num desc);
+create index on orders (party_id, created_at desc, id, vega_time desc, seq_num desc);
+create index on orders (reference, created_at desc, id, vega_time desc, seq_num desc);
 
 CREATE TABLE orders_live (
     id                BYTEA                     NOT NULL,
@@ -239,7 +242,8 @@ CREATE TABLE orders_live (
     tx_hash           BYTEA                    NOT NULL,
     vega_time         TIMESTAMP WITH TIME ZONE NOT NULL,
     seq_num           BIGINT NOT NULL, -- event sequence number in the block
-    current           BOOLEAN NOT NULL DEFAULT TRUE,
+    post_only         BOOLEAN NOT NULL DEFAULT FALSE,
+    reduce_only       BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY(id)
 );
 
@@ -251,58 +255,69 @@ CREATE INDEX ON orders_live USING HASH (id);
 -- +goose StatementBegin
 
 CREATE OR REPLACE FUNCTION archive_orders()
-   RETURNS TRIGGER
-   LANGUAGE PLPGSQL AS
+    RETURNS TRIGGER
+    LANGUAGE PLPGSQL AS
 $$
-    BEGIN
-    -- It is permitted by core to re-use order IDs and 'resurrect' done orders (specifically,
-    -- LP orders do this, so we need to check our history table to see if we need to updated
-    -- current flag on any most-recent-version-of an order.
-    UPDATE orders
-       SET current = false
-     WHERE current = true
-       AND id = NEW.id;
+BEGIN
 
-      DELETE from orders_live
-        WHERE id = NEW.id;
+    DELETE from orders_live
+    WHERE id = NEW.id;
 
     -- As per https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0024-OSTA-order_status.md
-    -- we consider an order 'live' if it either ACTIVE (status=1) or PARKED (status=8). Orders
-    -- with statuses other than this are discarded by core, so we consider them candidates for
-    -- eventual deletion according to the data retention policy by placing them in orders_history.
-    IF NEW.status IN (1, 8)
+-- we consider an order 'live' if it either ACTIVE (status=1) or PARKED (status=8). Orders
+-- with statuses other than this are discarded by core, so we consider them candidates for
+-- eventual deletion according to the data retention policy by placing them in orders_history.
+-- As per https://github.com/vegaprotocol/vega/issues/8149, only LIMIT type (1) orders with status active (1) and parked (8)
+-- and time_in_force != IOC (3) and time_in_force != FOK (4) are considered live.
+    IF NEW.status IN (1, 8) AND NEW.type = 1 AND NEW.time_in_force NOT IN (3, 4)
     THEN
-       INSERT INTO orders_live
-       VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
-              new.size, new.remaining, new.time_in_force, new.type, new.status,
-              new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
-              new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
-              new.tx_hash, new.vega_time, new.seq_num, true);
+        INSERT INTO orders_live
+        VALUES(new.id, new.market_id, new.party_id, new.side, new.price,
+               new.size, new.remaining, new.time_in_force, new.type, new.status,
+               new.reference, new.reason, new.version, new.batch_id, new.pegged_offset,
+               new.pegged_reference, new.lp_id, new.created_at, new.updated_at, new.expires_at,
+               new.tx_hash, new.vega_time, new.seq_num, new.post_only, new.reduce_only);
     END IF;
 
     RETURN NEW;
 
-    END;
+END;
 $$;
 
 -- +goose StatementEnd
 
 CREATE TRIGGER archive_orders BEFORE INSERT ON orders FOR EACH ROW EXECUTE function archive_orders();
 
-
--- Orders contains all the historical changes to each order (as of the end of the block),
--- this view contains the *current* state of the latest version each order
---  (e.g. it's unique on order ID)
-CREATE VIEW orders_current AS (
-  SELECT * FROM orders WHERE current = true
-);
-
 -- Manual updates to the order (e.g. user changing price level) increment the 'version'
 -- this view contains the current state of each *version* of the order (e.g. it is
 -- unique on (order ID, version)
-CREATE VIEW orders_current_versions AS (
-  SELECT DISTINCT ON (id, version) * FROM orders ORDER BY id, version DESC, vega_time DESC
+CREATE OR REPLACE VIEW orders_current_versions AS (
+    SELECT DISTINCT ON (id, version) * FROM orders ORDER BY id, version DESC, vega_time DESC
 );
+
+CREATE OR REPLACE VIEW orders_current_desc
+AS
+SELECT DISTINCT ON (orders.created_at, orders.id) *
+FROM orders
+ORDER BY orders.created_at DESC, orders.id, orders.vega_time DESC, orders.seq_num DESC;
+
+CREATE OR REPLACE VIEW orders_current_desc_by_market
+AS
+SELECT DISTINCT ON (orders.created_at, orders.market_id, orders.id) *
+FROM orders
+ORDER BY orders.created_at DESC, orders.market_id, orders.id, orders.vega_time DESC, orders.seq_num DESC;
+
+CREATE OR REPLACE VIEW orders_current_desc_by_party
+AS
+SELECT DISTINCT ON (orders.created_at, orders.party_id, orders.id) *
+FROM orders
+ORDER BY orders.created_at DESC, orders.party_id, orders.id, orders.vega_time DESC, orders.seq_num DESC;
+
+CREATE OR REPLACE VIEW orders_current_desc_by_reference
+AS
+SELECT DISTINCT ON (orders.created_at, orders.reference, orders.id) *
+FROM orders
+ORDER BY orders.created_at DESC, orders.reference, orders.id, orders.vega_time DESC, orders.seq_num DESC;
 
 create table trades
 (
@@ -436,6 +451,17 @@ GROUP BY market_id, period_start WITH NO DATA;
 
 SELECT add_continuous_aggregate_policy('trades_candle_1_day', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 day');
 
+CREATE VIEW trades_candle_block AS
+SELECT market_id,  vega_time as period_start,
+       first(price, synthetic_time) AS open,
+       last(price, synthetic_time) AS close,
+       max(price) AS high,
+       min(price) AS low,
+       sum(size) AS volume,
+       last(synthetic_time,
+            synthetic_time) AS last_update_in_period
+FROM trades
+GROUP BY market_id, vega_time;
 
 CREATE TABLE network_limits (
   vega_time                   TIMESTAMP WITH TIME ZONE NOT NULL PRIMARY KEY,
@@ -475,7 +501,7 @@ CREATE AGGREGATE public.last (anyelement) (
 , PARALLEL = safe
 );
 
-create type auction_trigger_type as enum('AUCTION_TRIGGER_UNSPECIFIED', 'AUCTION_TRIGGER_BATCH', 'AUCTION_TRIGGER_OPENING', 'AUCTION_TRIGGER_PRICE', 'AUCTION_TRIGGER_LIQUIDITY');
+create type auction_trigger_type as enum('AUCTION_TRIGGER_UNSPECIFIED', 'AUCTION_TRIGGER_BATCH', 'AUCTION_TRIGGER_OPENING', 'AUCTION_TRIGGER_PRICE', 'AUCTION_TRIGGER_LIQUIDITY', 'AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET', 'AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS');
 create type market_trading_mode_type as enum('TRADING_MODE_UNSPECIFIED', 'TRADING_MODE_CONTINUOUS', 'TRADING_MODE_BATCH_AUCTION', 'TRADING_MODE_OPENING_AUCTION', 'TRADING_MODE_MONITORING_AUCTION', 'TRADING_MODE_NO_TRADING');
 create type market_state_type as enum('STATE_UNSPECIFIED', 'STATE_PROPOSED', 'STATE_REJECTED', 'STATE_PENDING', 'STATE_CANCELLED', 'STATE_ACTIVE', 'STATE_SUSPENDED', 'STATE_CLOSED', 'STATE_TRADING_TERMINATED', 'STATE_SETTLED');
 
@@ -518,22 +544,80 @@ select create_hypertable('market_data', 'synthetic_time', chunk_time_interval =>
 
 create index on market_data (market, vega_time);
 
-create or replace view market_data_snapshot as
-with cte_market_data_latest(market, vega_time) as (
-    select market, max(vega_time)
-    from market_data
-    group by market
-)
-select md.market, md.tx_hash, md.vega_time, seq_num, mark_price, best_bid_price, best_bid_volume, best_offer_price, best_offer_volume,
-       best_static_bid_price, best_static_bid_volume, best_static_offer_price, best_static_offer_volume,
-       mid_price, static_mid_price, open_interest, auction_end, auction_start, indicative_price, indicative_volume,
-       market_trading_mode, auction_trigger, extension_trigger, target_stake, supplied_stake, price_monitoring_bounds,
-       market_value_proxy, liquidity_provider_fee_shares, market_state
-from market_data md
-join cte_market_data_latest mx
-on md.market = mx.market
-and md.vega_time = mx.vega_time
-;
+create table current_market_data
+(
+    synthetic_time       TIMESTAMP WITH TIME ZONE NOT NULL,
+    tx_hash              BYTEA                    NOT NULL,
+    vega_time timestamp with time zone not null,
+    seq_num    BIGINT NOT NULL,
+    market bytea not null,
+    mark_price HUGEINT,
+    best_bid_price HUGEINT,
+    best_bid_volume HUGEINT,
+    best_offer_price HUGEINT,
+    best_offer_volume HUGEINT,
+    best_static_bid_price HUGEINT,
+    best_static_bid_volume HUGEINT,
+    best_static_offer_price HUGEINT,
+    best_static_offer_volume HUGEINT,
+    mid_price HUGEINT,
+    static_mid_price HUGEINT,
+    open_interest HUGEINT,
+    auction_end bigint,
+    auction_start bigint,
+    indicative_price HUGEINT,
+    indicative_volume HUGEINT,
+    market_trading_mode market_trading_mode_type,
+    auction_trigger auction_trigger_type,
+    extension_trigger auction_trigger_type,
+    target_stake HUGEINT,
+    supplied_stake HUGEINT,
+    price_monitoring_bounds jsonb,
+    market_value_proxy text,
+    liquidity_provider_fee_shares jsonb,
+    market_state market_state_type,
+    next_mark_to_market timestamp with time zone,
+    PRIMARY KEY (market)
+);
+
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_current_market_data()
+    RETURNS TRIGGER
+    LANGUAGE PLPGSQL AS
+$$
+BEGIN
+    INSERT INTO current_market_data(synthetic_time,tx_hash,vega_time,seq_num,market,mark_price,best_bid_price,best_bid_volume,
+                                    best_offer_price,best_offer_volume,best_static_bid_price,best_static_bid_volume,
+                                    best_static_offer_price,best_static_offer_volume,mid_price,static_mid_price,open_interest,
+                                    auction_end,auction_start,indicative_price,indicative_volume,market_trading_mode,
+                                    auction_trigger,extension_trigger,target_stake,supplied_stake,price_monitoring_bounds,
+                                    market_value_proxy,liquidity_provider_fee_shares,market_state,next_mark_to_market)
+    VALUES(NEW.synthetic_time, NEW.tx_hash, NEW.vega_time, NEW.seq_num, NEW.market,
+           NEW.mark_price, NEW.best_bid_price, NEW.best_bid_volume, NEW.best_offer_price,
+           NEW.best_offer_volume, NEW.best_static_bid_price, NEW.best_static_bid_volume,
+           NEW.best_static_offer_price, NEW.best_static_offer_volume, NEW.mid_price,
+           NEW.static_mid_price, NEW.open_interest, NEW.auction_end, NEW.auction_start,
+           NEW.indicative_price, NEW.indicative_volume, NEW.market_trading_mode,
+           NEW.auction_trigger, NEW.extension_trigger, NEW.target_stake, NEW.supplied_stake,
+           NEW.price_monitoring_bounds, NEW.market_value_proxy,
+           NEW.liquidity_provider_fee_shares, NEW.market_state, NEW.next_mark_to_market)
+    ON CONFLICT(market) DO UPDATE SET
+                                      synthetic_time=EXCLUDED.synthetic_time,tx_hash=EXCLUDED.tx_hash,vega_time=EXCLUDED.vega_time,seq_num=EXCLUDED.seq_num,market=EXCLUDED.market,mark_price=EXCLUDED.mark_price,
+                                      best_bid_price=EXCLUDED.best_bid_price,best_bid_volume=EXCLUDED.best_bid_volume,best_offer_price=EXCLUDED.best_offer_price,best_offer_volume=EXCLUDED.best_offer_volume,
+                                      best_static_bid_price=EXCLUDED.best_static_bid_price,best_static_bid_volume=EXCLUDED.best_static_bid_volume,best_static_offer_price=EXCLUDED.best_static_offer_price,
+                                      best_static_offer_volume=EXCLUDED.best_static_offer_volume,mid_price=EXCLUDED.mid_price,static_mid_price=EXCLUDED.static_mid_price,open_interest=EXCLUDED.open_interest,
+                                      auction_end=EXCLUDED.auction_end,auction_start=EXCLUDED.auction_start,indicative_price=EXCLUDED.indicative_price,indicative_volume=EXCLUDED.indicative_volume,
+                                      market_trading_mode=EXCLUDED.market_trading_mode,auction_trigger=EXCLUDED.auction_trigger,extension_trigger=EXCLUDED.extension_trigger,target_stake=EXCLUDED.target_stake,
+                                      supplied_stake=EXCLUDED.supplied_stake,price_monitoring_bounds=EXCLUDED.price_monitoring_bounds,
+                                      market_value_proxy=EXCLUDED.market_value_proxy,liquidity_provider_fee_shares=EXCLUDED.liquidity_provider_fee_shares,market_state=EXCLUDED.market_state,
+                                      next_mark_to_market=EXCLUDED.next_mark_to_market;
+
+    RETURN NULL;
+END;
+$$;
+-- +goose StatementEnd
+
+CREATE TRIGGER update_current_market_data AFTER INSERT ON market_data FOR EACH ROW EXECUTE function update_current_market_data();
 
 CREATE TYPE node_status as enum('NODE_STATUS_UNSPECIFIED', 'NODE_STATUS_VALIDATOR', 'NODE_STATUS_NON_VALIDATOR');
 
@@ -606,7 +690,7 @@ CREATE TABLE IF NOT EXISTS reward_scores (
 );
 
 CREATE TABLE rewards(
-  party_id         BYTEA NOT NULL REFERENCES parties(id),
+  party_id         BYTEA NOT NULL,
   asset_id         BYTEA NOT NULL,
   market_id        BYTEA NOT NULL,
   reward_type      TEXT NOT NULL,
@@ -623,6 +707,8 @@ CREATE TABLE rewards(
 create index on rewards (party_id, asset_id);
 create index on rewards (asset_id);
 create index on rewards (epoch_id);
+
+SELECT create_hypertable('rewards', 'vega_time', chunk_time_interval => INTERVAL '1 day', migrate_data => true);
 
 CREATE TABLE delegations(
   party_id         BYTEA NOT NULL,
@@ -675,46 +761,50 @@ $$;
 CREATE TRIGGER update_current_delegations AFTER INSERT ON delegations FOR EACH ROW EXECUTE function update_current_delegations();
 
 
-create table if not exists markets (
-    id bytea not null,
-    tx_hash bytea not null,
-    vega_time timestamp with time zone not null,
-    instrument_id text,
-    tradable_instrument jsonb,
-    decimal_places int,
-    fees jsonb,
-    opening_auction jsonb,
-    price_monitoring_settings jsonb,
-    liquidity_monitoring_parameters jsonb,
+CREATE TABLE IF NOT EXISTS markets (
+    id BYTEA NOT NULL,
+    tx_hash BYTEA NOT NULL,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    instrument_id TEXT,
+    tradable_instrument JSONB,
+    decimal_places INT,
+    fees JSONB,
+    opening_auction JSONB,
+    price_monitoring_settings JSONB,
+    liquidity_monitoring_parameters JSONB,
     trading_mode market_trading_mode_type,
     state market_state_type,
-    market_timestamps jsonb,
-    position_decimal_places int,
-    lp_price_range text,
-    primary key (id, vega_time)
+    market_timestamps JSONB,
+    position_decimal_places INT,
+    lp_price_range TEXT,
+    quadratic_slippage_factor NUMERIC,
+    linear_slippage_factor NUMERIC,
+    PRIMARY KEY (id, vega_time)
 );
 
-select create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 day');
+SELECT create_hypertable('markets', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
-drop view if exists markets_current;
+DROP VIEW IF EXISTS markets_current;
 
-create table if not exists markets_current (
-    id bytea not null,
-    tx_hash bytea not null,
-    vega_time timestamp with time zone not null,
-    instrument_id text,
-    tradable_instrument jsonb,
-    decimal_places int,
-    fees jsonb,
-    opening_auction jsonb,
-    price_monitoring_settings jsonb,
-    liquidity_monitoring_parameters jsonb,
+CREATE TABLE IF NOT EXISTS markets_current (
+    id BYTEA NOT NULL,
+    tx_hash BYTEA NOT NULL,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    instrument_id TEXT,
+    tradable_instrument JSONB,
+    decimal_places INT,
+    fees JSONB,
+    opening_auction JSONB,
+    price_monitoring_settings JSONB,
+    liquidity_monitoring_parameters JSONB,
     trading_mode market_trading_mode_type,
     state market_state_type,
-    market_timestamps jsonb,
-    position_decimal_places int,
-    lp_price_range text,
-    primary key (id)
+    market_timestamps JSONB,
+    position_decimal_places INT,
+    lp_price_range TEXT,
+    quadratic_slippage_factor NUMERIC,
+    linear_slippage_factor NUMERIC,
+    PRIMARY KEY (id)
 );
 
 -- +goose StatementBegin
@@ -723,23 +813,25 @@ CREATE OR REPLACE FUNCTION update_current_markets()
     LANGUAGE PLPGSQL AS
 $$
 BEGIN
-    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places,lp_price_range)
-    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places,NEW.lp_price_range)
+    INSERT INTO markets_current(id,tx_hash,vega_time,instrument_id,tradable_instrument,decimal_places,fees,opening_auction,price_monitoring_settings,liquidity_monitoring_parameters,trading_mode,state,market_timestamps,position_decimal_places,lp_price_range, linear_slippage_factor, quadratic_slippage_factor)
+    VALUES(NEW.id,NEW.tx_hash,NEW.vega_time,NEW.instrument_id,NEW.tradable_instrument,NEW.decimal_places,NEW.fees,NEW.opening_auction,NEW.price_monitoring_settings,NEW.liquidity_monitoring_parameters,NEW.trading_mode,NEW.state,NEW.market_timestamps,NEW.position_decimal_places,NEW.lp_price_range, NEW.linear_slippage_factor, NEW.quadratic_slippage_factor)
     ON CONFLICT(id) DO UPDATE SET
-                                                           tx_hash=EXCLUDED.tx_hash,
-                                                           instrument_id=EXCLUDED.instrument_id,
-                                                           tradable_instrument=EXCLUDED.tradable_instrument,
-                                                           decimal_places=EXCLUDED.decimal_places,
-                                                           fees=EXCLUDED.fees,
-                                                           opening_auction=EXCLUDED.opening_auction,
-                                                           price_monitoring_settings=EXCLUDED.price_monitoring_settings,
-                                                           liquidity_monitoring_parameters=EXCLUDED.liquidity_monitoring_parameters,
-                                                           trading_mode=EXCLUDED.trading_mode,
-                                                           state=EXCLUDED.state,
-                                                           market_timestamps=EXCLUDED.market_timestamps,
-                                                           position_decimal_places=EXCLUDED.position_decimal_places,
-                                                           lp_price_range=EXCLUDED.lp_price_range,
-                                                           vega_time=EXCLUDED.vega_time;
+                                  tx_hash=EXCLUDED.tx_hash,
+                                  instrument_id=EXCLUDED.instrument_id,
+                                  tradable_instrument=EXCLUDED.tradable_instrument,
+                                  decimal_places=EXCLUDED.decimal_places,
+                                  fees=EXCLUDED.fees,
+                                  opening_auction=EXCLUDED.opening_auction,
+                                  price_monitoring_settings=EXCLUDED.price_monitoring_settings,
+                                  liquidity_monitoring_parameters=EXCLUDED.liquidity_monitoring_parameters,
+                                  trading_mode=EXCLUDED.trading_mode,
+                                  state=EXCLUDED.state,
+                                  market_timestamps=EXCLUDED.market_timestamps,
+                                  position_decimal_places=EXCLUDED.position_decimal_places,
+                                  lp_price_range=EXCLUDED.lp_price_range,
+                                  linear_slippage_factor=EXCLUDED.linear_slippage_factor,
+                                  quadratic_slippage_factor=EXCLUDED.quadratic_slippage_factor,
+                                  vega_time=EXCLUDED.vega_time;
     RETURN NULL;
 END;
 $$;
@@ -1024,23 +1116,33 @@ CREATE TABLE checkpoints(
 
 SELECT create_hypertable('checkpoints', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
+CREATE TYPE position_status_type AS enum('POSITION_STATUS_UNSPECIFIED', 'POSITION_STATUS_ORDERS_CLOSED', 'POSITION_STATUS_CLOSED_OUT', 'POSITION_STATUS_DISTRESSED');
+
 CREATE TABLE positions(
-  market_id           BYTEA NOT NULL,
-  party_id            BYTEA NOT NULL,
-  open_volume         BIGINT NOT NULL,
-  realised_pnl        NUMERIC NOT NULL,
-  unrealised_pnl      NUMERIC NOT NULL,
-  average_entry_price NUMERIC NOT NULL,
-  average_entry_market_price NUMERIC NOT NULL,
-  loss                NUMERIC NOT NULL,
-  adjustment          NUMERIC NOT NULL,
-  tx_hash             BYTEA                    NOT NULL,
-  vega_time           TIMESTAMP WITH TIME ZONE NOT NULL,
-  primary key (party_id, market_id, vega_time)
+  market_id                          BYTEA                    NOT NULL,
+  party_id                           BYTEA                    NOT NULL,
+  open_volume                        BIGINT                   NOT NULL,
+  realised_pnl                       NUMERIC                  NOT NULL,
+  unrealised_pnl                     NUMERIC                  NOT NULL,
+  average_entry_price                NUMERIC                  NOT NULL,
+  average_entry_market_price         NUMERIC                  NOT NULL,
+  loss                               NUMERIC                  NOT NULL,
+  adjustment                         NUMERIC                  NOT NULL,
+  tx_hash                            BYTEA                    NOT NULL,
+  vega_time                          TIMESTAMP WITH TIME ZONE NOT NULL,
+  pending_open_volume                BIGINT                   NOT NULL,
+  pending_realised_pnl               NUMERIC                  NOT NULL,
+  pending_unrealised_pnl             NUMERIC                  NOT NULL,
+  pending_average_entry_price        NUMERIC                  NOT NULL,
+  pending_average_entry_market_price NUMERIC                  NOT NULL,
+  loss_socialisation_amount          NUMERIC                  NOT NULL,
+  distressed_status                  position_status_type     NOT NULL,
+  primary key (vega_time, party_id, market_id)
 );
 
 select create_hypertable('positions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
+CREATE INDEX ON positions(party_id, market_id, vega_time);
 
 CREATE MATERIALIZED VIEW conflated_positions
             WITH (timescaledb.continuous, timescaledb.materialized_only = true) AS
@@ -1097,19 +1199,25 @@ drop view if exists positions_current;
 
 create table positions_current
 (
-    market_id           BYTEA NOT NULL,
-    party_id            BYTEA NOT NULL,
-    open_volume         BIGINT NOT NULL,
-    realised_pnl        NUMERIC NOT NULL,
-    unrealised_pnl      NUMERIC NOT NULL,
-    average_entry_price NUMERIC NOT NULL,
-    average_entry_market_price NUMERIC NOT NULL,
-    loss                NUMERIC NOT NULL,
-    adjustment          NUMERIC NOT NULL,
-    tx_hash             BYTEA                    NOT NULL,
-    vega_time           TIMESTAMP WITH TIME ZONE NOT NULL,
+    market_id                          BYTEA                    NOT NULL,
+    party_id                           BYTEA                    NOT NULL,
+    open_volume                        BIGINT                   NOT NULL,
+    realised_pnl                       NUMERIC                  NOT NULL,
+    unrealised_pnl                     NUMERIC                  NOT NULL,
+    average_entry_price                NUMERIC                  NOT NULL,
+    average_entry_market_price         NUMERIC                  NOT NULL,
+    loss                               NUMERIC                  NOT NULL,
+    adjustment                         NUMERIC                  NOT NULL,
+    tx_hash                            BYTEA                    NOT NULL,
+    vega_time                          TIMESTAMP WITH TIME ZONE NOT NULL,
+    pending_open_volume                BIGINT                   NOT NULL,
+    pending_realised_pnl               NUMERIC                  NOT NULL,
+    pending_unrealised_pnl             NUMERIC                  NOT NULL,
+    pending_average_entry_price        NUMERIC                  NOT NULL,
+    pending_average_entry_market_price NUMERIC                  NOT NULL,
+    loss_socialisation_amount          NUMERIC                  NOT NULL,
+    distressed_status                  position_status_type     NOT NULL,
     primary key (party_id, market_id)
-
 );
 
 CREATE INDEX ON positions_current(market_id);
@@ -1120,8 +1228,8 @@ CREATE OR REPLACE FUNCTION update_current_positions()
     LANGUAGE PLPGSQL AS
 $$
 BEGIN
-    INSERT INTO positions_current(market_id,party_id,open_volume,realised_pnl,unrealised_pnl,average_entry_price,average_entry_market_price,loss,adjustment,tx_hash,vega_time)
-    VALUES(NEW.market_id,NEW.party_id,NEW.open_volume,NEW.realised_pnl,NEW.unrealised_pnl,NEW.average_entry_price,NEW.average_entry_market_price,NEW.loss,NEW.adjustment,NEW.tx_hash,NEW.vega_time)
+    INSERT INTO positions_current(market_id,party_id,open_volume,realised_pnl,unrealised_pnl,average_entry_price,average_entry_market_price,loss,adjustment,tx_hash,vega_time,pending_open_volume,pending_realised_pnl,pending_unrealised_pnl,pending_average_entry_price,pending_average_entry_market_price, loss_socialisation_amount, distressed_status)
+    VALUES(NEW.market_id,NEW.party_id,NEW.open_volume,NEW.realised_pnl,NEW.unrealised_pnl,NEW.average_entry_price,NEW.average_entry_market_price,NEW.loss,NEW.adjustment,NEW.tx_hash,NEW.vega_time,NEW.pending_open_volume,NEW.pending_realised_pnl,NEW.pending_unrealised_pnl,NEW.pending_average_entry_price,NEW.pending_average_entry_market_price, NEW.loss_socialisation_amount, NEW.distressed_status)
     ON CONFLICT(party_id, market_id) DO UPDATE SET
                                                    open_volume=EXCLUDED.open_volume,
                                                    realised_pnl=EXCLUDED.realised_pnl,
@@ -1131,7 +1239,14 @@ BEGIN
                                                    loss=EXCLUDED.loss,
                                                    adjustment=EXCLUDED.adjustment,
                                                    tx_hash=EXCLUDED.tx_hash,
-                                                   vega_time=EXCLUDED.vega_time;
+                                                   vega_time=EXCLUDED.vega_time,
+                                                   pending_open_volume=EXCLUDED.pending_open_volume,
+                                                   pending_realised_pnl=EXCLUDED.pending_realised_pnl,
+                                                   pending_unrealised_pnl=EXCLUDED.pending_unrealised_pnl,
+                                                   pending_average_entry_price=EXCLUDED.pending_average_entry_price,
+                                                   pending_average_entry_market_price=EXCLUDED.pending_average_entry_market_price,
+                                                   loss_socialisation_amount=EXCLUDED.loss_socialisation_amount,
+                                                   distressed_status=EXCLUDED.distressed_status;
     RETURN NULL;
 END;
 $$;
@@ -1224,85 +1339,53 @@ create table if not exists liquidity_provisions (
 
 select create_hypertable('liquidity_provisions', 'vega_time', chunk_time_interval => INTERVAL '1 day');
 
-
-create table current_liquidity_provisions
+CREATE TABLE live_liquidity_provisions
 (
-    id bytea not null,
-    party_id bytea,
-    created_at timestamp with time zone not null,
-    updated_at timestamp with time zone not null,
-    market_id bytea,
+    id BYTEA NOT NULL,
+    party_id BYTEA,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    market_id BYTEA,
     commitment_amount HUGEINT,
     fee NUMERIC(1000, 16),
     sells jsonb,
     buys jsonb,
-    version bigint,
-    status liquidity_provision_status not null,
-    reference text,
-    tx_hash bytea not null,
-    vega_time timestamp with time zone not null,
-    primary key (id)
+    version BIGINT,
+    status liquidity_provision_status NOT NULL,
+    reference TEXT,
+    tx_hash BYTEA NOT NULL,
+    vega_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    PRIMARY KEY (id, vega_time)
 );
 
-create index on current_liquidity_provisions (party_id);
-create index on current_liquidity_provisions (market_id, party_id);
-create index on current_liquidity_provisions (reference);
-
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION update_current_liquidity_provisions()
-   RETURNS TRIGGER
-   LANGUAGE PLPGSQL AS
+CREATE OR REPLACE FUNCTION update_live_liquidity_provisions()
+    RETURNS TRIGGER
+    LANGUAGE PLPGSQL AS
 $$
 BEGIN
-INSERT INTO current_liquidity_provisions(id,
-                             party_id,
-                             created_at,
-                             updated_at,
-                             market_id,
-                             commitment_amount,
-                             fee,
-                             sells,
-                             buys,
-                             version,
-                             status,
-                             reference,
-                             tx_hash,
-                             vega_time
-                             ) VALUES(NEW.id,
-                                      NEW.party_id,
-                                      NEW.created_at,
-                                      NEW.updated_at,
-                                      NEW.market_id,
-                                      NEW.commitment_amount,
-                                      NEW.fee,
-                                      NEW.sells,
-                                      NEW.buys,
-                                      NEW.version,
-                                      NEW.status,
-                                      NEW.reference,
-                                      NEW.tx_hash,
-                                      NEW.vega_time)
-    ON CONFLICT(id) DO UPDATE SET
-    party_id=EXCLUDED.party_id,
-   created_at=EXCLUDED.created_at,
-   updated_at=EXCLUDED.updated_at,
-   market_id=EXCLUDED.market_id,
-   commitment_amount=EXCLUDED.commitment_amount,
-   fee=EXCLUDED.fee,
-   sells=EXCLUDED.sells,
-   buys=EXCLUDED.buys,
-   version=EXCLUDED.version,
-   status=EXCLUDED.status,
-   reference=EXCLUDED.reference,
-   tx_hash=EXCLUDED.tx_hash,
-   vega_time=EXCLUDED.vega_time;
-RETURN NULL;
+
+    DELETE FROM live_liquidity_provisions
+    WHERE id = NEW.id;
+
+    -- We take into consideration Liquidity provisions with statuses:
+-- Active (1), Undeployed (5), Pending (6)
+    IF NEW.status IN('STATUS_ACTIVE', 'STATUS_UNDEPLOYED', 'STATUS_PENDING')
+    THEN
+        INSERT INTO live_liquidity_provisions(id, party_id, created_at, updated_at,
+                                              market_id, commitment_amount, fee, sells, buys, version, status, reference, tx_hash, vega_time)
+        VALUES(NEW.id, NEW.party_id, NEW.created_at, NEW.updated_at,
+               NEW.market_id, NEW.commitment_amount, NEW.fee, NEW.sells,
+               NEW.buys, NEW.version, NEW.status, NEW.reference, NEW.tx_hash, NEW.vega_time);
+    END IF;
+
+    RETURN NEW;
 END;
 $$;
 -- +goose StatementEnd
 
-CREATE TRIGGER update_current_liquidity_provisions AFTER INSERT ON liquidity_provisions FOR EACH ROW EXECUTE function update_current_liquidity_provisions();
-
+CREATE TRIGGER update_live_liquidity_provisions AFTER INSERT ON liquidity_provisions
+    FOR EACH ROW EXECUTE FUNCTION update_live_liquidity_provisions();
 
 
 CREATE TYPE transfer_type AS enum('OneOff','Recurring','Unknown');
@@ -1508,7 +1591,64 @@ create table last_snapshot_span
     to_height          BIGINT                    NOT NULL
 );
 
+CREATE INDEX ON accounts (tx_hash);
+CREATE INDEX ON assets (tx_hash);
+CREATE INDEX ON balances (tx_hash);
+CREATE INDEX ON delegations (tx_hash);
+CREATE INDEX ON deposits (tx_hash);
+CREATE INDEX ON erc20_multisig_signer_events (tx_hash);
+CREATE INDEX ON ethereum_key_rotations (tx_hash);
+CREATE INDEX ON key_rotations (tx_hash);
+CREATE INDEX ON ledger (tx_hash);
+CREATE INDEX ON liquidity_provisions (tx_hash);
+CREATE INDEX ON margin_levels (tx_hash);
+CREATE INDEX ON markets (tx_hash);
+CREATE INDEX ON network_parameters (tx_hash);
+CREATE INDEX ON node_signatures (tx_hash);
+CREATE INDEX ON nodes (tx_hash);
+CREATE INDEX ON oracle_data (tx_hash);
+CREATE INDEX ON oracle_specs (tx_hash);
+CREATE INDEX ON orders (tx_hash);
+CREATE INDEX ON parties (tx_hash);
+CREATE INDEX ON positions (tx_hash);
+CREATE INDEX ON proposals (tx_hash);
+CREATE INDEX ON protocol_upgrade_proposals (tx_hash);
+CREATE INDEX ON rewards (tx_hash);
+CREATE INDEX ON trades (tx_hash);
+CREATE INDEX ON transfers (tx_hash);
+CREATE INDEX ON votes (tx_hash);
+CREATE INDEX ON withdrawals (tx_hash);
+
 -- +goose Down
+
+DROP INDEX IF EXISTS accounts_idx_tx_hash;
+DROP INDEX IF EXISTS assets_idx_tx_hash;
+DROP INDEX IF EXISTS current_balances_idx_tx_hash;
+DROP INDEX IF EXISTS delegations_idx_tx_hash;
+DROP INDEX IF EXISTS deposits_idx_tx_hash;
+DROP INDEX IF EXISTS erc20_multisig_signer_events_idx_tx_hash;
+DROP INDEX IF EXISTS ethereum_key_rotations_idx_tx_hash;
+DROP INDEX IF EXISTS key_rotations_idx_tx_hash;
+DROP INDEX IF EXISTS ledger_idx_tx_hash;
+DROP INDEX IF EXISTS liquidity_provisions_idx_tx_hash;
+DROP INDEX IF EXISTS margin_levels_idx_tx_hash;
+DROP INDEX IF EXISTS markets_idx_tx_hash;
+DROP INDEX IF EXISTS network_parameters_idx_tx_hash;
+DROP INDEX IF EXISTS node_signatures_idx_tx_hash;
+DROP INDEX IF EXISTS nodes_idx_tx_hash;
+DROP INDEX IF EXISTS oracle_data_idx_tx_hash;
+DROP INDEX IF EXISTS oracle_specs_idx_tx_hash;
+DROP INDEX IF EXISTS orders_idx_tx_hash;
+DROP INDEX IF EXISTS parties_idx_tx_hash;
+DROP INDEX IF EXISTS positions_idx_tx_hash;
+DROP INDEX IF EXISTS proposals_idx_tx_hash;
+DROP INDEX IF EXISTS protocol_upgrade_proposals_idx_tx_hash;
+DROP INDEX IF EXISTS rewards_idx_tx_hash;
+DROP INDEX IF EXISTS trades_idx_tx_hash;
+DROP INDEX IF EXISTS transfers_idx_tx_hash;
+DROP INDEX IF EXISTS votes_idx_tx_hash;
+DROP INDEX IF EXISTS withdrawals_idx_tx_hash;
+
 DROP TABLE IF EXISTS last_snapshot_span;
 
 DROP AGGREGATE IF EXISTS public.first(anyelement);
@@ -1547,6 +1687,9 @@ DROP TYPE IF EXISTS stake_linking_type;
 DROP TABLE IF EXISTS node_signatures;
 DROP TYPE IF EXISTS node_signature_kind;
 
+DROP TRIGGER update_live_liquidity_provisions ON liquidity_provisions;
+DROP FUNCTION update_live_liquidity_provisions;
+DROP TABLE live_liquidity_provisions;
 DROP TABLE IF EXISTS liquidity_provisions;
 DROP TRIGGER IF EXISTS update_current_liquidity_provisions ON liquidity_provisions;
 DROP FUNCTION IF EXISTS update_current_liquidity_provisions;
@@ -1562,9 +1705,11 @@ DROP TABLE IF EXISTS oracle_specs;
 DROP TYPE IF EXISTS oracle_spec_status;
 
 DROP TABLE IF EXISTS positions_current;
+DROP INDEX IF EXISTS positions_party_id_market_id_vega_time_idx;
 DROP TABLE IF EXISTS positions cascade;
 DROP TRIGGER IF EXISTS update_current_positions ON positions;
 DROP FUNCTION IF EXISTS update_current_positions;
+DROP TYPE IF EXISTS position_status_type;
 
 DROP VIEW IF EXISTS votes_current;
 DROP TABLE IF EXISTS votes;
@@ -1585,8 +1730,12 @@ DROP TABLE IF EXISTS rewards;
 
 DROP TABLE IF EXISTS network_limits;
 DROP VIEW IF EXISTS orders_current;
-DROP VIEW IF EXISTS orders_current_versions;
 
+DROP VIEW IF EXISTS orders_current_versions;
+DROP VIEW IF EXISTS orders_current_desc;
+DROP VIEW IF EXISTS orders_current_desc_by_reference;
+DROP VIEW IF EXISTS orders_current_desc_by_party;
+DROP VIEW IF EXISTS orders_current_desc_by_market;
 DROP VIEW IF EXISTS risk_factors_current;
 drop table if exists risk_factors;
 drop table if exists margin_levels cascade;
@@ -1662,6 +1811,9 @@ DROP TABLE IF EXISTS markets CASCADE;
 
 DROP TABLE IF EXISTS markets;
 DROP VIEW IF EXISTS market_data_snapshot;
+DROP TRIGGER IF EXISTS update_current_market_data ON market_data;
+DROP FUNCTION IF EXISTS update_current_market_data;
+DROP TABLE IF EXISTS current_market_data;
 DROP TABLE IF EXISTS market_data;
 DROP TYPE IF EXISTS auction_trigger_type;
 DROP TYPE IF EXISTS market_trading_mode_type;
@@ -1681,6 +1833,7 @@ DROP TABLE IF EXISTS parties;
 DROP VIEW IF EXISTS assets_current;
 DROP TABLE IF EXISTS assets;
 DROP TYPE IF EXISTS asset_status_type;
+DROP VIEW IF EXISTS trades_candle_block;
 DROP TABLE IF EXISTS trades cascade;
 DROP TABLE IF EXISTS chain;
 DROP TABLE IF EXISTS blocks cascade;

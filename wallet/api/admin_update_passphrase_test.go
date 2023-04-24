@@ -15,11 +15,16 @@ import (
 )
 
 func TestAdminUpdatePassphrase(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminUpdatePassphraseSchemaCorrect)
 	t.Run("Updating a passphrase with invalid params fails", testUpdatingPassphraseWithInvalidParamsFails)
 	t.Run("Updating a passphrase with valid params succeeds", testUpdatingPassphraseWithValidParamsSucceeds)
 	t.Run("Getting internal error during wallet verification fails", testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Updating a passphrase from wallet that does not exists fails", testUpdatingPassphraseFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during isolated wallet saving fails", testUpdatingPassphraseGettingInternalErrorDuringPassphraseUpdateFails)
+}
+
+func testAdminUpdatePassphraseSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.update_passphrase", api.AdminUpdatePassphraseParams{}, nil)
 }
 
 func testUpdatingPassphraseWithInvalidParamsFails(t *testing.T) {
@@ -40,23 +45,13 @@ func testUpdatingPassphraseWithInvalidParamsFails(t *testing.T) {
 			name: "with empty name",
 			params: api.AdminUpdatePassphraseParams{
 				Wallet:        "",
-				Passphrase:    vgrand.RandomStr(5),
 				NewPassphrase: vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminUpdatePassphraseParams{
-				Wallet:        vgrand.RandomStr(5),
-				Passphrase:    "",
-				NewPassphrase: vgrand.RandomStr(5),
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty new passphrase",
 			params: api.AdminUpdatePassphraseParams{
 				Wallet:        vgrand.RandomStr(5),
-				Passphrase:    vgrand.RandomStr(5),
 				NewPassphrase: "",
 			},
 			expectedError: api.ErrNewPassphraseIsRequired,
@@ -83,7 +78,6 @@ func testUpdatingPassphraseWithInvalidParamsFails(t *testing.T) {
 func testUpdatingPassphraseWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	newPassphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 
@@ -91,13 +85,12 @@ func testUpdatingPassphraseWithValidParamsSucceeds(t *testing.T) {
 	handler := newUpdatePassphraseHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().UpdatePassphrase(ctx, expectedWallet.Name(), newPassphrase).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
 		Wallet:        expectedWallet.Name(),
-		Passphrase:    passphrase,
 		NewPassphrase: newPassphrase,
 	})
 
@@ -108,7 +101,6 @@ func testUpdatingPassphraseWithValidParamsSucceeds(t *testing.T) {
 func testUpdatingPassphraseFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	newPassphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
@@ -120,7 +112,6 @@ func testUpdatingPassphraseFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
 		Wallet:        name,
-		Passphrase:    passphrase,
 		NewPassphrase: newPassphrase,
 	})
 
@@ -132,7 +123,6 @@ func testUpdatingPassphraseFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	newPassphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
@@ -144,7 +134,6 @@ func testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails(t *
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
 		Wallet:        name,
-		Passphrase:    passphrase,
 		NewPassphrase: newPassphrase,
 	})
 
@@ -156,7 +145,6 @@ func testUpdatingPassphraseGettingInternalErrorDuringWalletVerificationFails(t *
 func testUpdatingPassphraseGettingInternalErrorDuringPassphraseUpdateFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	newPassphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 
@@ -164,13 +152,12 @@ func testUpdatingPassphraseGettingInternalErrorDuringPassphraseUpdateFails(t *te
 	handler := newUpdatePassphraseHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().UpdatePassphrase(ctx, gomock.Any(), newPassphrase).Times(1).Return(assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUpdatePassphraseParams{
 		Wallet:        expectedWallet.Name(),
-		Passphrase:    passphrase,
 		NewPassphrase: newPassphrase,
 	})
 

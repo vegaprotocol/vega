@@ -155,11 +155,10 @@ type OrderSubmission struct {
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Price for the order, the price is an integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places,
-	// required field for limit orders, however it is not required for market orders
-	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+	// required field for limit orders, however it is not required for market orders.
+	// This field is an unsigned integer scaled to the market's decimal places.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
-	// Size for the order, for example, in a futures market the size equals the number of units, cannot be negative
-	// This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
+	// Size for the order, for example, in a futures market the size equals the number of units, cannot be negative.
 	Size uint64 `protobuf:"varint,3,opt,name=size,proto3" json:"size,omitempty"`
 	// Side for the order, e.g. SIDE_BUY or SIDE_SELL, required field.
 	Side vega.Side `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
@@ -360,7 +359,7 @@ type OrderAmendment struct {
 	// Market ID, this is required to find the order and will not be updated.
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Amend the price for the order if the price value is set, otherwise price will remain unchanged.
-	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+	// This field is an unsigned integer scaled to the market's decimal places.
 	Price *string `protobuf:"bytes,3,opt,name=price,proto3,oneof" json:"price,omitempty"`
 	// Amend the size for the order by the delta specified:
 	// - To reduce the size from the current value set a negative integer value
@@ -372,8 +371,7 @@ type OrderAmendment struct {
 	ExpiresAt *int64 `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
 	// Amend the time in force for the order, set to TIME_IN_FORCE_UNSPECIFIED to remain unchanged.
 	TimeInForce vega.Order_TimeInForce `protobuf:"varint,6,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
-	// Amend the pegged order offset for the order
-	// This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
+	// Amend the pegged order offset for the order. This field is an unsigned integer scaled to the market's decimal places.
 	PeggedOffset string `protobuf:"bytes,7,opt,name=pegged_offset,json=peggedOffset,proto3" json:"pegged_offset,omitempty"`
 	// Amend the pegged order reference for the order.
 	PeggedReference vega.PeggedReference `protobuf:"varint,8,opt,name=pegged_reference,json=peggedReference,proto3,enum=vega.PeggedReference" json:"pegged_reference,omitempty"`
@@ -475,8 +473,8 @@ type LiquidityProvisionSubmission struct {
 
 	// Market ID for the order, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Specified as a unitless number that represents the amount of settlement asset of the market
-	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places.
+	// Specified as a unitless number that represents the amount of settlement asset of the market.
+	// This field is an unsigned integer scaled using the asset's decimal places.
 	CommitmentAmount string `protobuf:"bytes,2,opt,name=commitment_amount,json=commitmentAmount,proto3" json:"commitment_amount,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
 	Fee string `protobuf:"bytes,3,opt,name=fee,proto3" json:"fee,omitempty"`
@@ -707,8 +705,7 @@ type WithdrawSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Amount to be withdrawn
-	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
+	// Amount to be withdrawn. This field is an unsigned integer scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,1,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Asset to be withdrawn.
 	Asset string `protobuf:"bytes,2,opt,name=asset,proto3" json:"asset,omitempty"`
@@ -776,7 +773,7 @@ type ProposalSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Proposal reference.
+	// Reference identifying the proposal.
 	Reference string `protobuf:"bytes,1,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Proposal configuration and the actual change that is meant to be executed when proposal is enacted.
 	Terms *vega.ProposalTerms `protobuf:"bytes,2,opt,name=terms,proto3" json:"terms,omitempty"`
@@ -837,8 +834,7 @@ func (x *ProposalSubmission) GetRationale() *vega.ProposalRationale {
 	return nil
 }
 
-// Command to submit a new vote for a governance
-// proposal.
+// Command to submit a new vote for a governance proposal.
 type VoteSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -904,8 +900,7 @@ type DelegateSubmission struct {
 
 	// Delegate to the specified node ID.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Amount of stake to delegate
-	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
+	// Amount of stake to delegate. This field is an unsigned integer scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 }
 
@@ -962,8 +957,9 @@ type UndelegateSubmission struct {
 
 	// Node ID to delegate to.
 	NodeId string `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	// Optional, if not specified = ALL
-	// This field is an unsigned integer passed as a string and needs to be scaled using the asset decimal places for the token.
+	// Optional, if not specified = ALL.
+	// If provided, this field must be an unsigned integer passed as a string
+	// and needs to be scaled using the asset decimal places for the token.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Method of delegation.
 	Method UndelegateSubmission_Method `protobuf:"varint,3,opt,name=method,proto3,enum=vega.commands.v1.UndelegateSubmission_Method" json:"method,omitempty"`
@@ -1037,8 +1033,7 @@ type Transfer struct {
 	ToAccountType vega.AccountType `protobuf:"varint,3,opt,name=to_account_type,json=toAccountType,proto3,enum=vega.AccountType" json:"to_account_type,omitempty"`
 	// Asset ID of the asset to be transferred.
 	Asset string `protobuf:"bytes,4,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Amount to be taken from the source account
-	// This field is an unsigned integer passed as a string and needs to be scaled using the asset's decimal places.
+	// Amount to be taken from the source account. This field is an unsigned integer scaled to the asset's decimal places.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
 	// Reference to be attached to the transfer.
 	Reference string `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
@@ -1294,7 +1289,7 @@ type CancelTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// ID of the transfer to cancel.
+	// Transfer ID of the transfer to cancel.
 	TransferId string `protobuf:"bytes,1,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
 }
 
@@ -1347,7 +1342,7 @@ type IssueSignatures struct {
 	Submitter string `protobuf:"bytes,1,opt,name=submitter,proto3" json:"submitter,omitempty"`
 	// What kind of signatures to generate, namely for whether a signer is being added or removed.
 	Kind NodeSignatureKind `protobuf:"varint,2,opt,name=kind,proto3,enum=vega.commands.v1.NodeSignatureKind" json:"kind,omitempty"`
-	// ID of the validator node that will be signed in or out of the smart contract.
+	// Node ID of the validator node that will be signed in or out of the smart contract.
 	ValidatorNodeId string `protobuf:"bytes,3,opt,name=validator_node_id,json=validatorNodeId,proto3" json:"validator_node_id,omitempty"` // the node for which to emit the signatures.
 }
 
@@ -1410,11 +1405,11 @@ var file_vega_commands_v1_commands_proto_rawDesc = []byte{
 	0x0a, 0x1f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2f,
 	0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x10, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73,
-	0x2e, 0x76, 0x31, 0x1a, 0x15, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e,
-	0x61, 0x6e, 0x63, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0f, 0x76, 0x65, 0x67, 0x61,
-	0x2f, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x29, 0x76, 0x65, 0x67,
-	0x61, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x76, 0x61,
-	0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73,
+	0x2e, 0x76, 0x31, 0x1a, 0x29, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e,
+	0x64, 0x73, 0x2f, 0x76, 0x31, 0x2f, 0x76, 0x61, 0x6c, 0x69, 0x64, 0x61, 0x74, 0x6f, 0x72, 0x5f,
+	0x63, 0x6f, 0x6d, 0x6d, 0x61, 0x6e, 0x64, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15,
+	0x76, 0x65, 0x67, 0x61, 0x2f, 0x67, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61, 0x6e, 0x63, 0x65, 0x2e,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x0f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x76, 0x65, 0x67, 0x61,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xeb, 0x01, 0x0a, 0x17, 0x42, 0x61, 0x74, 0x63, 0x68,
 	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x49, 0x6e, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x69, 0x6f,
 	0x6e, 0x73, 0x12, 0x49, 0x0a, 0x0d, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x6c, 0x61, 0x74, 0x69,

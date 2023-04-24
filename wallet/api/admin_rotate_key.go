@@ -3,20 +3,17 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/golang/protobuf/proto"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminRotateKeyParams struct {
 	Wallet                string `json:"wallet"`
-	Passphrase            string `json:"passphrase"`
 	FromPublicKey         string `json:"fromPublicKey"`
 	ToPublicKey           string `json:"toPublicKey"`
 	ChainID               string `json:"chainID"`
@@ -46,11 +43,12 @@ func (h *AdminRotateKey) Handle(ctx context.Context, rawParams jsonrpc.Params) (
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -172,10 +170,6 @@ func validateAdminRotateKeyParams(rawParams jsonrpc.Params) (AdminRotateKeyParam
 
 	if params.EnactmentBlockHeight <= params.SubmissionBlockHeight {
 		return AdminRotateKeyParams{}, ErrEnactmentBlockHeightMustBeGreaterThanSubmissionOne
-	}
-
-	if params.Passphrase == "" {
-		return AdminRotateKeyParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil

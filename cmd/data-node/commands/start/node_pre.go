@@ -15,6 +15,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -36,17 +37,12 @@ import (
 )
 
 func (l *NodeCommand) persistentPre([]string) (err error) {
-	// this shouldn't happen...
-	if l.cancel != nil {
-		l.cancel()
-	}
 	// ensure we cancel the context on error
 	defer func() {
 		if err != nil {
 			l.cancel()
 		}
 	}()
-	l.ctx, l.cancel = context.WithCancel(context.Background())
 
 	conf := l.configWatcher.Get()
 
@@ -95,11 +91,9 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 	}
 
 	if l.conf.SQLStore.WipeOnStartup {
-		if err = sqlstore.WipeDatabaseAndMigrateSchemaToLatestVersion(preLog, l.conf.SQLStore.ConnectionConfig, sqlstore.EmbedMigrations,
-			bool(l.conf.SQLStore.VerboseMigration)); err != nil {
-			return fmt.Errorf("failed to wiped database:%w", err)
+		if ResetDatabaseAndNetworkHistory(l.ctx, l.Log, l.vegaPaths, l.conf.SQLStore.ConnectionConfig); err != nil {
+			return fmt.Errorf("failed to reset database and network history: %w", err)
 		}
-		preLog.Info("Wiped all existing data from the datanode")
 	}
 
 	initialisedFromNetworkHistory := false
@@ -107,13 +101,14 @@ func (l *NodeCommand) persistentPre([]string) (err error) {
 		preLog.Info("Initializing Network History")
 
 		if l.conf.AutoInitialiseFromNetworkHistory {
-			if err := networkhistory.KillAllConnectionsToDatabase(context.Background(), l.conf.SQLStore.ConnectionConfig); err != nil {
+			if err := networkhistory.KillAllConnectionsToDatabase(l.ctx, l.conf.SQLStore.ConnectionConfig); err != nil {
 				return fmt.Errorf("failed to kill all connections to database: %w", err)
 			}
 		}
 
 		err = l.initialiseNetworkHistory(preLog, l.conf.SQLStore.ConnectionConfig)
 		if err != nil {
+			l.Log.Error("Failed to initialise network history", logging.Error(err))
 			return fmt.Errorf("failed to initialise network history:%w", err)
 		}
 
@@ -329,7 +324,7 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 	networkHistoryServiceLog := networkHistoryLog.Named("service")
 
 	l.snapshotService, err = snapshot.NewSnapshotService(snapshotServiceLog, l.conf.NetworkHistory.Snapshot,
-		networkHistoryPool, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
+		networkHistoryPool,
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), func(version int64) error {
 			if err = sqlstore.MigrateUpToSchemaVersion(preNetworkHistoryLog, l.conf.SQLStore, version, sqlstore.EmbedMigrations); err != nil {
 				return fmt.Errorf("failed to migrate up to schema version %d: %w", version, err)
@@ -351,10 +346,24 @@ func (l *NodeCommand) initialiseNetworkHistory(preLog *logging.Logger, connConfi
 		networkHistoryPool,
 		l.conf.ChainID, l.snapshotService, l.conf.API.Port, l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyFrom),
 		l.vegaPaths.StatePathFor(paths.DataNodeNetworkHistorySnapshotCopyTo), l.conf.MaxMemoryPercent)
-
 	if err != nil {
 		return fmt.Errorf("failed to create networkHistory service:%w", err)
 	}
 
+	return nil
+}
+
+func ResetDatabaseAndNetworkHistory(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths, connConfig sqlstore.ConnectionConfig) error {
+	err := os.RemoveAll(vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome))
+	if err != nil {
+		return fmt.Errorf("failed to remove network history dir: %w", err)
+	}
+
+	log.Info("Wiped all network history")
+
+	if err := sqlstore.RecreateVegaDatabase(ctx, log, connConfig); err != nil {
+		return fmt.Errorf("failed to wipe database:%w", err)
+	}
+	log.Info("Wiped all existing data from the database")
 	return nil
 }

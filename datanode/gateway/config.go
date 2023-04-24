@@ -31,7 +31,6 @@ type ServerConfig struct {
 
 // GraphqlServiceConfig represents the configuration of the gateway.
 type GraphqlServiceConfig struct {
-	ServerConfig
 	Enabled         encoding.Bool `long:"enabled" description:"Start the GraphQl gateway"`
 	ComplexityLimit int           `long:"complexity-limit"`
 	Endpoint        string        `long:"endpoint" description:"Endpoint to expose the graphql API at"`
@@ -39,13 +38,13 @@ type GraphqlServiceConfig struct {
 
 // RESTGatewayServiceConfig represent the configuration of the rest service.
 type RESTGatewayServiceConfig struct {
-	ServerConfig
 	Enabled    encoding.Bool `long:"enabled" choice:"true" choice:"false" description:"Start the REST gateway"`
 	APMEnabled encoding.Bool `long:"apm-enabled" choice:"true" choice:"false" description:" "`
 }
 
 // Config represents the general configuration for the gateway.
 type Config struct {
+	ServerConfig
 	Level                    encoding.LogLevel        `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
 	Timeout                  encoding.Duration        `long:"timeout"`
 	Node                     ServerConfig             `group:"Node" namespace:"node"`
@@ -53,7 +52,7 @@ type Config struct {
 	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
 	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
 	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
-	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum of graphql subscribption allowed per client"`
+	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum graphql subscriptions allowed per client"`
 	CORS                     libhttp.CORSConfig       `group:"CORS" namespace:"cors"`
 	HTTPSEnabled             encoding.Bool            `long:"https-enabled" description:"If true, GraphQL gateway will require an HTTPS connection"`
 	AutoCertDomain           string                   `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
@@ -66,22 +65,18 @@ type Config struct {
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	return Config{
+		ServerConfig: ServerConfig{
+			IP:   "0.0.0.0",
+			Port: 3008,
+		},
 		Level:        encoding.LogLevel{Level: logging.InfoLevel},
 		Timeout:      encoding.Duration{Duration: 5 * time.Second},
 		HTTPSEnabled: false,
 		GraphQL: GraphqlServiceConfig{
-			ServerConfig: ServerConfig{
-				IP:   "0.0.0.0",
-				Port: 3008,
-			},
 			Enabled:  true,
 			Endpoint: "/graphql",
 		},
 		REST: RESTGatewayServiceConfig{
-			ServerConfig: ServerConfig{
-				IP:   "0.0.0.0",
-				Port: 3009,
-			},
 			Enabled:    true,
 			APMEnabled: true,
 		},

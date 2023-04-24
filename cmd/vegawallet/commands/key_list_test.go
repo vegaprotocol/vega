@@ -20,7 +20,7 @@ func testListKeysFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 
 	f := &cmd.ListKeysFlags{
@@ -29,16 +29,16 @@ func testListKeysFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminListKeysParams{
-		Wallet:     walletName,
-		Passphrase: passphrase,
+		Wallet: walletName,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testListKeysFlagsMissingWalletFails(t *testing.T) {
@@ -49,7 +49,7 @@ func testListKeysFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))

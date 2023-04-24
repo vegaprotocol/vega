@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -11,9 +10,8 @@ import (
 )
 
 type AdminDescribeKeyParams struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-	PublicKey  string `json:"publicKey"`
+	Wallet    string `json:"wallet"`
+	PublicKey string `json:"publicKey"`
 }
 
 type AdminDescribeKeyResult struct {
@@ -41,11 +39,12 @@ func (h *AdminDescribeKey) Handle(ctx context.Context, rawParams jsonrpc.Params)
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -90,10 +89,6 @@ func validateDescribeKeyParams(rawParams jsonrpc.Params) (AdminDescribeKeyParams
 
 	if params.PublicKey == "" {
 		return AdminDescribeKeyParams{}, ErrPublicKeyIsRequired
-	}
-
-	if params.Passphrase == "" {
-		return AdminDescribeKeyParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil

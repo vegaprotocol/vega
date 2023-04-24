@@ -227,6 +227,7 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 		}
 		for _, tr := range uo.Trades {
 			tr.Timestamp = ts
+			tr.Aggressor = types.SideUnspecified
 		}
 	}
 

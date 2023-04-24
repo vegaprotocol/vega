@@ -1,16 +1,17 @@
 syntax = "proto3";
 
 package vega.snapshot.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/snapshot/v1";
 
-import "vega/vega.proto";
-import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/governance.proto";
-import "vega/events/v1/events.proto";
+import "vega/chain_events.proto";
 import "vega/checkpoint/v1/checkpoint.proto";
 import "vega/data/v1/data.proto";
-import "vega/chain_events.proto";
+import "vega/events/v1/events.proto";
+import "vega/governance.proto";
+import "vega/markets.proto";
+import "vega/vega.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/snapshot/v1";
 
 enum Format {
   // Default value, always invalid
@@ -132,16 +133,16 @@ message LiquidityTarget {
   TimestampedOpenInterest max_open_interests = 6;
 }
 
-message LiquidityPriceProbabilityPair {
-  string price = 1;
+message LiquidityOffsetProbabilityPair {
+  uint32 offset = 1;
   string probability = 2;
 }
 
 message LiquiditySupplied {
   string market_id = 1;
   bool consensus_reached = 2;
-  repeated LiquidityPriceProbabilityPair bid_cache = 3;
-  repeated LiquidityPriceProbabilityPair ask_cache = 4;
+  repeated LiquidityOffsetProbabilityPair bid_cache = 3;
+  repeated LiquidityOffsetProbabilityPair ask_cache = 4;
 }
 
 message OracleDataBatch {
@@ -391,7 +392,7 @@ message EquityShare {
 }
 
 message FeeSplitter {
-  int64  time_window_start = 1;
+  int64 time_window_start = 1;
   string trade_value = 2;
   string avg = 3;
   uint64 window = 4;
@@ -478,9 +479,9 @@ message EpochState {
   // Sequence number that increases by one each epoch
   uint64 seq = 1;
   // Time at which this epoch started
-  int64  start_time = 3;
+  int64 start_time = 3;
   // Time at which this epoch should end
-  int64  expire_time = 4;
+  int64 expire_time = 4;
   // Ready to start a new epoch
   bool ready_to_start_new_epoch = 6;
   // Ready to end epoch
@@ -521,11 +522,10 @@ message LimitState {
   // Whether or not the genesis state is loaded
   bool genesis_loaded = 4;
   // Fields derived from the genesis state
-  bool  propose_market_enabled = 5;
-  bool  propose_asset_enabled = 6;
+  bool propose_market_enabled = 5;
+  bool propose_asset_enabled = 6;
   int64 propose_market_enabled_from = 7;
   int64 propose_asset_enabled_from = 8;
-
 }
 
 message VoteSpamPolicy {
@@ -624,10 +624,9 @@ message Topology {
   repeated PendingEthereumKeyRotation unsolved_ethereum_key_rotations = 7;
 }
 
-
 message ToplogySignatures {
   repeated PendingERC20MultisigControlSignature pending_signatures = 1;
-  repeated string issued_signatures = 2;
+  repeated IssuedERC20MultisigControlSignature issued_signatures = 2;
 }
 
 message PendingERC20MultisigControlSignature {
@@ -638,6 +637,11 @@ message PendingERC20MultisigControlSignature {
   bool added = 5;
 }
 
+message IssuedERC20MultisigControlSignature {
+  string resource_id = 1;
+  string ethereum_address = 2;
+  string submitter_address = 3;
+}
 
 message ValidatorState {
   vega.events.v1.ValidatorUpdate validator_update = 1;
@@ -676,19 +680,19 @@ message LiquidityParameters {
   string max_fee = 1;
   string max_shape_size = 2;
   string stake_to_obligation_factor = 3;
-  // Required for key generation
+  // Market ID these liquidity parameters apply to. Required for key generation
   string market_id = 4;
 }
 
 message LiquidityPendingProvisions {
   repeated string pending_provisions = 1;
-  // Required for key generation
+  // Market ID these liquidity provisions apply to. Required for key generation
   string market_id = 2;
 }
 
 message LiquidityPartiesLiquidityOrders {
   repeated PartyOrders party_orders = 1;
-  // Required for key generation
+  // Market ID these liquidity orders apply to. Required for key generation
   string market_id = 2;
 }
 
@@ -699,13 +703,13 @@ message PartyOrders {
 
 message LiquidityPartiesOrders {
   repeated PartyOrders party_orders = 1;
-  // Required for key generation
+  // Market ID these orders apply to. Required for key generation
   string market_id = 2;
 }
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
-  // Required for key generation
+  // Market ID these provisions apply to. Required for key generation
   string market_id = 2;
 }
 
@@ -715,7 +719,7 @@ message LiquidityScores {
   string market_id = 3;
 }
 
-message LiquidityScore{
+message LiquidityScore {
   string score = 1;
   string party_id = 2;
 }
@@ -743,7 +747,7 @@ message NextTimeTrigger {
   string asset = 1;
   string market = 2;
   string id = 3;
-  int64  next_trigger = 4;
+  int64 next_trigger = 4;
 }
 
 message MarketTracker {
@@ -820,8 +824,8 @@ message ProtocolUpgradeProposals {
 }
 
 message AcceptedProtocolUpgradeProposal {
-    // Block height at which to perform the upgrade
-    uint64 upgrade_block_height = 1;
-    // Release tag for the vega binary
-    string vega_release_tag = 2;
+  // Block height at which to perform the upgrade
+  uint64 upgrade_block_height = 1;
+  // Release tag for the vega binary
+  string vega_release_tag = 2;
 }

@@ -15,11 +15,16 @@ import (
 )
 
 func TestAdminAdminListKeys(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminListKeysSchemaCorrect)
 	t.Run("Listing the keys with invalid params fails", testAdminListKeysWithInvalidParamsFails)
 	t.Run("Listing the keys with valid params succeeds", testAdminListKeysWithValidParamsSucceeds)
 	t.Run("Listing the keys from wallet that does not exists fails", testAdminListKeysFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminListKeysGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminListKeysGettingInternalErrorDuringWalletRetrievalFails)
+}
+
+func testAdminListKeysSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.list_keys", api.AdminListKeysParams{}, api.AdminListKeysResult{})
 }
 
 func testAdminListKeysWithInvalidParamsFails(t *testing.T) {
@@ -39,17 +44,9 @@ func testAdminListKeysWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminListKeysParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
+				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
-		}, {
-			name: "with empty passphrase",
-			params: api.AdminListKeysParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
 		},
 	}
 
@@ -74,7 +71,6 @@ func testAdminListKeysWithInvalidParamsFails(t *testing.T) {
 func testAdminListKeysWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 
@@ -82,13 +78,12 @@ func testAdminListKeysWithValidParamsSucceeds(t *testing.T) {
 	handler := newAdminListKeysHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListKeysParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -104,7 +99,6 @@ func testAdminListKeysWithValidParamsSucceeds(t *testing.T) {
 func testAdminListKeysFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -114,8 +108,7 @@ func testAdminListKeysFromWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListKeysParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -127,7 +120,6 @@ func testAdminListKeysFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testAdminListKeysGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -137,8 +129,7 @@ func testAdminListKeysGettingInternalErrorDuringWalletVerificationFails(t *testi
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListKeysParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -150,20 +141,18 @@ func testAdminListKeysGettingInternalErrorDuringWalletVerificationFails(t *testi
 func testAdminListKeysGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newAdminListKeysHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListKeysParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then

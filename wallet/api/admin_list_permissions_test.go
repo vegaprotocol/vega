@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminListPermissions(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminListPermissionsSchemaCorrect)
 	t.Run("Listing permissions with invalid params fails", testListingPermissionsWithInvalidParamsFails)
 	t.Run("Listing permissions with valid params succeeds", testListingPermissionsWithValidParamsSucceeds)
 	t.Run("Listing permissions from wallet that does not exists fails", testListingPermissionsFromWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during wallet verification fails", testAdminListPermissionsGettingInternalErrorDuringWalletVerificationFails)
 	t.Run("Getting internal error during wallet retrieval fails", testAdminListPermissionsGettingInternalErrorDuringWalletRetrievalFails)
+}
+
+func testAdminListPermissionsSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.list_permissions", api.AdminListPermissionsParams{}, api.AdminListPermissionsResult{})
 }
 
 func testListingPermissionsWithInvalidParamsFails(t *testing.T) {
@@ -40,17 +45,9 @@ func testListingPermissionsWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminListPermissionsParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
+				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
-		}, {
-			name: "with empty passphrase",
-			params: api.AdminListPermissionsParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
 		},
 	}
 
@@ -75,7 +72,6 @@ func testListingPermissionsWithInvalidParamsFails(t *testing.T) {
 func testListingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	hostname := vgrand.RandomStr(5)
 	expectedWallet, firstKey := walletWithKey(t)
 	if err := expectedWallet.UpdatePermissions(hostname, wallet.Permissions{
@@ -93,13 +89,12 @@ func testListingPermissionsWithValidParamsSucceeds(t *testing.T) {
 	handler := newListPermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListPermissionsParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
+		Wallet: expectedWallet.Name(),
 	})
 
 	// then
@@ -116,7 +111,6 @@ func testListingPermissionsWithValidParamsSucceeds(t *testing.T) {
 func testListingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -126,8 +120,7 @@ func testListingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListPermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -139,7 +132,6 @@ func testListingPermissionsFromWalletThatDoesNotExistsFails(t *testing.T) {
 func testAdminListPermissionsGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -149,8 +141,7 @@ func testAdminListPermissionsGettingInternalErrorDuringWalletVerificationFails(t
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListPermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -162,20 +153,18 @@ func testAdminListPermissionsGettingInternalErrorDuringWalletVerificationFails(t
 func testAdminListPermissionsGettingInternalErrorDuringWalletRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newListPermissionsHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminListPermissionsParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then

@@ -19,7 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSignTransaction(t *testing.T) {
+func TestClientSignTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testClientSignTransactionSchemaCorrect)
 	t.Run("Signing a transaction with invalid params fails", testSigningTransactionWithInvalidParamsFails)
 	t.Run("Signing a transaction with valid params succeeds", testSigningTransactionWithValidParamsSucceeds)
 	t.Run("Signing a transaction without the needed permissions sign the transaction", testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction)
@@ -30,6 +31,10 @@ func TestSignTransaction(t *testing.T) {
 	t.Run("No healthy node available does not sign the transaction", testNoHealthyNodeAvailableDoesNotSignTransaction)
 	t.Run("Failing to get spam statistics does not sign the transaction", testFailingToGetSpamStatsDoesNotSignTransaction)
 	t.Run("Failing spam check aborts signing the transaction", testFailingSpamChecksAbortsSigningTheTransaction)
+}
+
+func testClientSignTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "client.sign_transaction", api.ClientSignTransactionParams{}, api.ClientSignTransactionResult{})
 }
 
 func testSigningTransactionWithInvalidParamsFails(t *testing.T) {

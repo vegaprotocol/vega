@@ -318,6 +318,14 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
+// An estimate of the fee to be paid for the order
+type FeeEstimate struct {
+	// The estimated fees if the order was to trade
+	Fees *TradeFee `json:"fees"`
+	// The total estimated amount of fees if the order was to trade
+	TotalFeeAmount string `json:"totalFeeAmount"`
+}
+
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
@@ -430,6 +438,26 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
+}
+
+// Basic description of an order
+type OrderInfo struct {
+	// Whether the order is to buy or sell
+	Side vega.Side `json:"side"`
+	// Price for the order
+	Price string `json:"price"`
+	// Number of units remaining of the total that have not yet been bought or sold (uint64)
+	Remaining string `json:"remaining"`
+	// Boolean indicating a market order
+	IsMarketOrder bool `json:"isMarketOrder"`
+}
+
+// Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position
+type PositionEstimate struct {
+	// Margin level range estimate for the specified position
+	Margin *v2.MarginEstimate `json:"margin"`
+	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request
+	Liquidation *v2.LiquidationEstimate `json:"liquidation"`
 }
 
 type PositionResolution struct {

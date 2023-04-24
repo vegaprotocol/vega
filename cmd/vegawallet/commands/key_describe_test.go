@@ -20,7 +20,7 @@ func TestDescribeKeyFlags(t *testing.T) {
 func testKeyDescribeValidFlagsSucceeds(t *testing.T) {
 	// given
 	testDir := t.TempDir()
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(10)
 
@@ -31,17 +31,17 @@ func testKeyDescribeValidFlagsSucceeds(t *testing.T) {
 	}
 
 	expectedReq := api.AdminDescribeKeyParams{
-		Wallet:     walletName,
-		Passphrase: passphrase,
-		PublicKey:  pubKey,
+		Wallet:    walletName,
+		PublicKey: pubKey,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testKeyMissingWalletFails(t *testing.T) {
@@ -58,7 +58,7 @@ func testKeyMissingWalletFails(t *testing.T) {
 	}
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -79,7 +79,7 @@ func testKeyMissingPublicKeyFails(t *testing.T) {
 	}
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))

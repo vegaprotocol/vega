@@ -190,6 +190,45 @@ func (b *BrokerStub) GetLedgerMovements(mutable bool) []events.LedgerMovements {
 	return ret
 }
 
+func (b *BrokerStub) GetDistressedOrders() []events.DistressedOrders {
+	batch := b.GetImmBatch(events.DistressedOrdersClosedEvent)
+	ret := make([]events.DistressedOrders, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.DistressedOrders:
+			ret = append(ret, *et)
+		case events.DistressedOrders:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetSettleDistressed() []events.SettleDistressed {
+	batch := b.GetImmBatch(events.SettleDistressedEvent)
+	ret := make([]events.SettleDistressed, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.SettleDistressed:
+			ret = append(ret, *et)
+		case events.SettleDistressed:
+			ret = append(ret, et)
+		}
+	}
+	return ret
+}
+
+func (b *BrokerStub) GetLossSocializationEvents() []events.LossSocialization {
+	evts := b.GetImmBatch(events.LossSocializationEvent)
+	typed := make([]events.LossSocialization, 0, len(evts))
+	for _, e := range evts {
+		if le, ok := e.(events.LossSocialization); ok {
+			typed = append(typed, le)
+		}
+	}
+	return typed
+}
+
 func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Lock()
 	b.data = map[events.Type][]events.Event{}

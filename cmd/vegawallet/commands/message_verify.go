@@ -108,7 +108,7 @@ func (f *VerifyMessageFlags) Validate() (api.AdminVerifyMessageParams, error) {
 	if len(f.PubKey) == 0 {
 		return api.AdminVerifyMessageParams{}, flags.MustBeSpecifiedError("pubkey")
 	}
-	req.PubKey = f.PubKey
+	req.PublicKey = f.PubKey
 
 	if len(f.Signature) == 0 {
 		return api.AdminVerifyMessageParams{}, flags.MustBeSpecifiedError("signature")

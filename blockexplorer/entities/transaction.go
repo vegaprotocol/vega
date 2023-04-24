@@ -25,7 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 )
 
 type TxResultRow struct {

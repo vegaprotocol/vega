@@ -167,7 +167,10 @@ func (e *Engine) postRestore(stateVariablesInternalState []*snapshot.StateVarInt
 			sv.validatorResults = make(map[string]*statevar.KeyValueBundle, len(svis.ValidatorsResults))
 		}
 		for _, fpvr := range svis.ValidatorsResults {
-			kvb, _ := statevar.KeyValueBundleFromProto(fpvr.Bundle)
+			kvb, err := statevar.KeyValueBundleFromProto(fpvr.Bundle)
+			if err != nil {
+				e.log.Panic("restoring malformed statevar kvb", logging.String("id", fpvr.Id), logging.Error(err))
+			}
 			sv.validatorResults[fpvr.Id] = kvb
 		}
 	}

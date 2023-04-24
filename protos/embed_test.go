@@ -44,7 +44,7 @@ func Test_DataNodeBindings(t *testing.T) {
 	t.Run("CoreBindings should return the core http bindings", func(t *testing.T) {
 		bindings, err := protos.DataNodeBindings()
 		require.NoError(t, err)
-		wantCount := 81
+		wantCount := 82
 
 		assert.Len(t, bindings.HTTP.Rules, wantCount)
 

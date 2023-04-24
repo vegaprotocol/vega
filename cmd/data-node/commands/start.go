@@ -39,6 +39,8 @@ var startCmd StartCmd
 const namedLogger = "datanode"
 
 func (cmd *StartCmd) Execute(args []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig()).Named(namedLogger)
 	defer log.AtExit()
@@ -77,13 +79,14 @@ func (cmd *StartCmd) Execute(args []string) error {
 		Version:     version.Get(),
 		VersionHash: version.GetCommitHash(),
 	}).Run(
+		ctx,
 		configWatcher,
 		vegaPaths,
 		args,
 	)
 }
 
-func Node(_ context.Context, parser *flags.Parser) error {
+func Node(ctx context.Context, parser *flags.Parser) error {
 	startCmd = StartCmd{
 		Config: config.NewDefaultConfig(),
 	}

@@ -15,12 +15,17 @@ import (
 )
 
 func TestAdminDescribeNetwork(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminDescribeNetworkSchemaCorrect)
 	t.Run("Describing a network with invalid params fails", testDescribingNetworkWithInvalidParamsFails)
 	t.Run("Describing a network with valid params succeeds", testDescribingNetworkWithValidParamsSucceeds)
 	t.Run("Describing a network with empty hosts returns non-nil slice", testDescribeNetworkEmptyHosts)
 	t.Run("Describing a network that does not exists fails", testDescribingNetworkThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification fails", testGettingInternalErrorDuringNetworkVerificationFails)
 	t.Run("Getting internal error during retrieval fails", testGettingInternalErrorDuringNetworkRetrievalFails)
+}
+
+func testAdminDescribeNetworkSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.describe_network", api.AdminDescribeNetworkParams{}, api.AdminNetwork{})
 }
 
 func testDescribingNetworkWithInvalidParamsFails(t *testing.T) {

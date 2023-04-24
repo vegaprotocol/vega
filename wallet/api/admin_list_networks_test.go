@@ -15,8 +15,13 @@ import (
 )
 
 func TestAdminListNetworks(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminListNetworksSchemaCorrect)
 	t.Run("Listing networks succeeds", testListingNetworksSucceeds)
 	t.Run("Getting internal error during listing fails", testGettingInternalErrorDuringListingNetworksFails)
+}
+
+func testAdminListNetworksSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.list_networks", nil, api.AdminListNetworksResult{})
 }
 
 func testListingNetworksSucceeds(t *testing.T) {

@@ -17,7 +17,7 @@ type Network struct {
 type APIConfig struct {
 	GRPC    GRPCConfig    `json:"grpc"`
 	REST    RESTConfig    `json:"rest"`
-	GraphQL GraphQLConfig `json:"graphQl"`
+	GraphQL GraphQLConfig `json:"graphQL"`
 }
 
 type GRPCConfig struct {

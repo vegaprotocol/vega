@@ -15,6 +15,7 @@ import (
 )
 
 func TestAdminUntaintKey(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminUntaintKeySchemaCorrect)
 	t.Run("Untainting a key with invalid params fails", testUntaintingKeyWithInvalidParamsFails)
 	t.Run("Untainting a key with valid params succeeds", testUntaintingKeyWithValidParamsSucceeds)
 	t.Run("Untainting a key on unknown wallet fails", testUntaintingKeyOnUnknownWalletFails)
@@ -22,6 +23,10 @@ func TestAdminUntaintKey(t *testing.T) {
 	t.Run("Getting internal error during wallet verification doesn't remove the taint", testGettingInternalErrorDuringWalletVerificationDoesNotUntaintKey)
 	t.Run("Getting internal error during wallet retrieval doesn't remove the taint", testGettingInternalErrorDuringWalletRetrievalDoesNotUntaintKey)
 	t.Run("Getting internal error during wallet saving doesn't remove the taint", testGettingInternalErrorDuringWalletSavingDoesNotUntaintKey)
+}
+
+func testAdminUntaintKeySchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.untaint_key", api.AdminUntaintKeyParams{}, nil)
 }
 
 func testUntaintingKeyWithInvalidParamsFails(t *testing.T) {
@@ -41,25 +46,15 @@ func testUntaintingKeyWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminUntaintKeyParams{
-				Wallet:     "",
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-				Passphrase: vgrand.RandomStr(5),
+				Wallet:    "",
+				PublicKey: "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
 			},
 			expectedError: api.ErrWalletIsRequired,
 		}, {
-			name: "with empty passphrase",
-			params: api.AdminUntaintKeyParams{
-				PublicKey:  "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		}, {
 			name: "with empty public key",
 			params: api.AdminUntaintKeyParams{
-				PublicKey:  "",
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
+				PublicKey: "",
+				Wallet:    vgrand.RandomStr(5),
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
@@ -85,7 +80,6 @@ func testUntaintingKeyWithInvalidParamsFails(t *testing.T) {
 func testUntaintingKeyWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 	if err := expectedWallet.TaintKey(kp.PublicKey()); err != nil {
 		t.Fatalf("could not taint the key for test: %v", err)
@@ -95,15 +89,14 @@ func testUntaintingKeyWithValidParamsSucceeds(t *testing.T) {
 	handler := newUntaintKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, expectedWallet).Times(1).Return(nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUntaintKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
 	})
 
 	// then
@@ -114,7 +107,6 @@ func testUntaintingKeyWithValidParamsSucceeds(t *testing.T) {
 func testUntaintingKeyOnUnknownWalletFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -124,9 +116,8 @@ func testUntaintingKeyOnUnknownWalletFails(t *testing.T) {
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUntaintKeyParams{
-		Wallet:     name,
-		PublicKey:  vgrand.RandomStr(5),
-		Passphrase: passphrase,
+		Wallet:    name,
+		PublicKey: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -137,21 +128,19 @@ func testUntaintingKeyOnUnknownWalletFails(t *testing.T) {
 func testUntaintingKeyOnUnknownKeyFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, _ := walletWithKey(t)
 
 	// setup
 	handler := newUntaintKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUntaintKeyParams{
-		Wallet:     expectedWallet.Name(),
-		PublicKey:  vgrand.RandomStr(5),
-		Passphrase: passphrase,
+		Wallet:    expectedWallet.Name(),
+		PublicKey: vgrand.RandomStr(5),
 	})
 
 	// then
@@ -162,7 +151,6 @@ func testUntaintingKeyOnUnknownKeyFails(t *testing.T) {
 func testGettingInternalErrorDuringWalletVerificationDoesNotUntaintKey(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 
 	// setup
@@ -172,9 +160,8 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotUntaintKey(t *testin
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUntaintKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
 	})
 
 	// then
@@ -185,21 +172,19 @@ func testGettingInternalErrorDuringWalletVerificationDoesNotUntaintKey(t *testin
 func testGettingInternalErrorDuringWalletRetrievalDoesNotUntaintKey(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 
 	// setup
 	handler := newUntaintKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(nil, assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUntaintKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
 	})
 
 	// then
@@ -210,7 +195,6 @@ func testGettingInternalErrorDuringWalletRetrievalDoesNotUntaintKey(t *testing.T
 func testGettingInternalErrorDuringWalletSavingDoesNotUntaintKey(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	expectedWallet, kp := walletWithKey(t)
 	if err := expectedWallet.TaintKey(kp.PublicKey()); err != nil {
 		t.Fatalf("could not taint the key for test: %v", err)
@@ -220,15 +204,14 @@ func testGettingInternalErrorDuringWalletSavingDoesNotUntaintKey(t *testing.T) {
 	handler := newUntaintKeyHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, expectedWallet.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, expectedWallet.Name()).Times(1).Return(expectedWallet, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, gomock.Any()).Times(1).Return(assert.AnError)
 
 	// when
 	errorDetails := handler.handle(t, ctx, api.AdminUntaintKeyParams{
-		Wallet:     expectedWallet.Name(),
-		Passphrase: passphrase,
-		PublicKey:  kp.PublicKey(),
+		Wallet:    expectedWallet.Name(),
+		PublicKey: kp.PublicKey(),
 	})
 
 	// then

@@ -324,8 +324,7 @@ type DataSourceSpecToFutureBinding struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// settlement_data_property holds the name of the property in the source data
-	// that should be used as settlement data.
+	// Name of the property in the source data that should be used as settlement data.
 	// If it is set to "prices.BTC.value", then the Future will use the value of
 	// this property as settlement data.
 	SettlementDataProperty string `protobuf:"bytes,1,opt,name=settlement_data_property,json=settlementDataProperty,proto3" json:"settlement_data_property,omitempty"`
@@ -434,7 +433,7 @@ type Instrument struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument ID.
+	// Unique instrument ID.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Code for the instrument.
 	Code string `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
@@ -810,11 +809,15 @@ type ScalingFactors struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Search level.
+	// Collateral search level. If collateral dips below this value,
+	// the system will search for collateral to release.
 	SearchLevel float64 `protobuf:"fixed64,1,opt,name=search_level,json=searchLevel,proto3" json:"search_level,omitempty"`
-	// Initial margin level.
+	// Initial margin level. This is the minimum amount of collateral
+	// required to open a position in a market that requires margin.
 	InitialMargin float64 `protobuf:"fixed64,2,opt,name=initial_margin,json=initialMargin,proto3" json:"initial_margin,omitempty"`
-	// Collateral release level.
+	// Collateral release level. If a trader has collateral above this level,
+	// the system will release collateral to a trader's general collateral account
+	// for the asset.
 	CollateralRelease float64 `protobuf:"fixed64,3,opt,name=collateral_release,json=collateralRelease,proto3" json:"collateral_release,omitempty"`
 }
 
@@ -926,7 +929,7 @@ type TradableInstrument struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Instrument details.
+	// Details for the underlying instrument.
 	Instrument *Instrument `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
 	// Margin calculator for the instrument.
 	MarginCalculator *MarginCalculator `protobuf:"bytes,2,opt,name=margin_calculator,json=marginCalculator,proto3" json:"margin_calculator,omitempty"`
@@ -1030,11 +1033,11 @@ type FeeFactors struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Maker fee.
+	// Market maker fee charged network wide.
 	MakerFee string `protobuf:"bytes,1,opt,name=maker_fee,json=makerFee,proto3" json:"maker_fee,omitempty"`
-	// Infrastructure fee.
+	// Infrastructure fee charged network wide for staking and governance.
 	InfrastructureFee string `protobuf:"bytes,2,opt,name=infrastructure_fee,json=infrastructureFee,proto3" json:"infrastructure_fee,omitempty"`
-	// Liquidity fee.
+	// Liquidity fee applied per market for market making.
 	LiquidityFee string `protobuf:"bytes,3,opt,name=liquidity_fee,json=liquidityFee,proto3" json:"liquidity_fee,omitempty"`
 }
 
@@ -1445,7 +1448,7 @@ type Market struct {
 	// correct price denominated in the currency of the market, for example:
 	// `realPrice = price / 10^decimalPlaces`.
 	DecimalPlaces uint64 `protobuf:"varint,3,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Fees configuration.
+	// Fees configuration that apply to the market.
 	Fees *Fees `protobuf:"bytes,4,opt,name=fees,proto3" json:"fees,omitempty"`
 	// Auction duration specifies how long the opening auction will run (minimum
 	// duration and optionally a minimum traded volume).

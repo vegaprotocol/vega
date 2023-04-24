@@ -5,12 +5,11 @@
 package mocks
 
 import (
+	segment "code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	context "context"
+	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
-
-	networkhistory "code.vegaprotocol.io/vega/datanode/networkhistory"
-	gomock "github.com/golang/mock/gomock"
 )
 
 // MockNetworkHistoryService is a mock of NetworkHistoryService interface.
@@ -51,10 +50,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) CopyHistorySegmentToFile(arg0, 
 }
 
 // FetchHistorySegment mocks base method.
-func (m *MockNetworkHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (networkhistory.Segment, error) {
+func (m *MockNetworkHistoryService) FetchHistorySegment(arg0 context.Context, arg1 string) (segment.Full, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FetchHistorySegment", arg0, arg1)
-	ret0, _ := ret[0].(networkhistory.Segment)
+	ret0, _ := ret[0].(segment.Full)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -109,10 +108,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) GetConnectedPeerAddresses() *go
 }
 
 // GetHighestBlockHeightHistorySegment mocks base method.
-func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (networkhistory.Segment, error) {
+func (m *MockNetworkHistoryService) GetHighestBlockHeightHistorySegment() (segment.Full, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHighestBlockHeightHistorySegment")
-	ret0, _ := ret[0].(networkhistory.Segment)
+	ret0, _ := ret[0].(segment.Full)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -124,12 +123,13 @@ func (mr *MockNetworkHistoryServiceMockRecorder) GetHighestBlockHeightHistorySeg
 }
 
 // GetHistorySegmentReader mocks base method.
-func (m *MockNetworkHistoryService) GetHistorySegmentReader(arg0 context.Context, arg1 string) (io.ReadSeekCloser, error) {
+func (m *MockNetworkHistoryService) GetHistorySegmentReader(arg0 context.Context, arg1 string) (io.ReadSeekCloser, int64, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHistorySegmentReader", arg0, arg1)
 	ret0, _ := ret[0].(io.ReadSeekCloser)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(int64)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetHistorySegmentReader indicates an expected call of GetHistorySegmentReader.
@@ -182,10 +182,10 @@ func (mr *MockNetworkHistoryServiceMockRecorder) GetSwarmKeySeed() *gomock.Call 
 }
 
 // ListAllHistorySegments mocks base method.
-func (m *MockNetworkHistoryService) ListAllHistorySegments() ([]networkhistory.Segment, error) {
+func (m *MockNetworkHistoryService) ListAllHistorySegments() (segment.Segments[segment.Full], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAllHistorySegments")
-	ret0, _ := ret[0].([]networkhistory.Segment)
+	ret0, _ := ret[0].(segment.Segments[segment.Full])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

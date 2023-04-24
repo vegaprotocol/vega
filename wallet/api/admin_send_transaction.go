@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -11,8 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
-
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	walletpb "code.vegaprotocol.io/vega/protos/vega/wallet/v1"
@@ -24,7 +21,6 @@ import (
 
 type AdminSendTransactionParams struct {
 	Wallet      string      `json:"wallet"`
-	Passphrase  string      `json:"passphrase"`
 	PublicKey   string      `json:"publicKey"`
 	Network     string      `json:"network"`
 	NodeAddress string      `json:"nodeAddress"`
@@ -35,7 +31,6 @@ type AdminSendTransactionParams struct {
 
 type ParsedAdminSendTransactionParams struct {
 	Wallet         string
-	Passphrase     string
 	PublicKey      string
 	Network        string
 	NodeAddress    string
@@ -45,14 +40,14 @@ type ParsedAdminSendTransactionParams struct {
 }
 
 type AdminSendTransactionResult struct {
-	ReceivedAt time.Time                      `json:"receivedAt"`
-	SentAt     time.Time                      `json:"sentAt"`
-	TxHash     string                         `json:"transactionHash"`
-	Tx         *commandspb.Transaction        `json:"transaction"`
-	Node       AdminSendTransactionNodeResult `json:"node"`
+	ReceivedAt time.Time               `json:"receivedAt"`
+	SentAt     time.Time               `json:"sentAt"`
+	TxHash     string                  `json:"transactionHash"`
+	Tx         *commandspb.Transaction `json:"transaction"`
+	Node       AdminNodeInfoResult     `json:"node"`
 }
 
-type AdminSendTransactionNodeResult struct {
+type AdminNodeInfoResult struct {
 	Host string `json:"host"`
 }
 
@@ -76,11 +71,12 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -148,7 +144,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 		SentAt:     sentAt,
 		TxHash:     txHash,
 		Tx:         tx,
-		Node: AdminSendTransactionNodeResult{
+		Node: AdminNodeInfoResult{
 			Host: currentNode.Host(),
 		},
 	}, nil
@@ -234,10 +230,6 @@ func validateAdminSendTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSe
 		return ParsedAdminSendTransactionParams{}, ErrWalletIsRequired
 	}
 
-	if params.Passphrase == "" {
-		return ParsedAdminSendTransactionParams{}, ErrPassphraseIsRequired
-	}
-
 	if params.PublicKey == "" {
 		return ParsedAdminSendTransactionParams{}, ErrPublicKeyIsRequired
 	}
@@ -261,7 +253,6 @@ func validateAdminSendTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSe
 
 	return ParsedAdminSendTransactionParams{
 		Wallet:         params.Wallet,
-		Passphrase:     params.Passphrase,
 		PublicKey:      params.PublicKey,
 		RawTransaction: string(tx),
 		Network:        params.Network,

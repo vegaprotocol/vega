@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -11,9 +10,8 @@ import (
 )
 
 type AdminDescribePermissionsParams struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
-	Hostname   string `json:"hostname"`
+	Wallet   string `json:"wallet"`
+	Hostname string `json:"hostname"`
 }
 
 type AdminDescribePermissionsResult struct {
@@ -37,11 +35,12 @@ func (h *AdminDescribePermissions) Handle(ctx context.Context, rawParams jsonrpc
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -70,10 +69,6 @@ func validateDescribePermissionsParams(rawParams jsonrpc.Params) (AdminDescribeP
 
 	if params.Hostname == "" {
 		return AdminDescribePermissionsParams{}, ErrHostnameIsRequired
-	}
-
-	if params.Passphrase == "" {
-		return AdminDescribePermissionsParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil

@@ -300,15 +300,35 @@ func (mr *MockTradingDataServiceClientV2MockRecorder) EstimateMargin(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateMargin", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimateMargin), varargs...)
 }
 
+// EstimatePosition mocks base method.
+func (m *MockTradingDataServiceClientV2) EstimatePosition(arg0 context.Context, arg1 *v2.EstimatePositionRequest, arg2 ...grpc.CallOption) (*v2.EstimatePositionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "EstimatePosition", varargs...)
+	ret0, _ := ret[0].(*v2.EstimatePositionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EstimatePosition indicates an expected call of EstimatePosition.
+func (mr *MockTradingDataServiceClientV2MockRecorder) EstimatePosition(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimatePosition", reflect.TypeOf((*MockTradingDataServiceClientV2)(nil).EstimatePosition), varargs...)
+}
+
 // ExportLedgerEntries mocks base method.
-func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (*v2.ExportLedgerEntriesResponse, error) {
+func (m *MockTradingDataServiceClientV2) ExportLedgerEntries(arg0 context.Context, arg1 *v2.ExportLedgerEntriesRequest, arg2 ...grpc.CallOption) (v2.TradingDataService_ExportLedgerEntriesClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "ExportLedgerEntries", varargs...)
-	ret0, _ := ret[0].(*v2.ExportLedgerEntriesResponse)
+	ret0, _ := ret[0].(v2.TradingDataService_ExportLedgerEntriesClient)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

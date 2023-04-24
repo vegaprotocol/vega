@@ -55,14 +55,14 @@ type ERC20 struct {
 	asset     *types.Asset
 	address   string
 	ok        bool
-	wallet    *ethnw.Wallet
+	wallet    ethnw.EthereumWallet
 	ethClient ETHClient
 }
 
 func New(
 	id string,
 	asset *types.AssetDetails,
-	w *ethnw.Wallet,
+	w ethnw.EthereumWallet,
 	ethClient ETHClient,
 ) (*ERC20, error) {
 	source := asset.GetERC20()

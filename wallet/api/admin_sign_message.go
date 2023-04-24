@@ -3,18 +3,15 @@ package api
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminSignMessageParams struct {
-	Wallet         string `jso:"wallet"`
-	Passphrase     string `json:"passphrase"`
-	PubKey         string `json:"pubKey"`
+	Wallet         string `json:"wallet"`
+	PubKey         string `json:"publicKey"`
 	EncodedMessage string `json:"encodedMessage"`
 }
 
@@ -43,11 +40,12 @@ func (h *AdminSignMessage) Handle(ctx context.Context, rawParams jsonrpc.Params)
 		return nil, invalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, requestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
@@ -85,10 +83,6 @@ func validateAdminSignMessageParams(rawParams jsonrpc.Params) (AdminSignMessageP
 		return AdminSignMessageParams{}, ErrWalletIsRequired
 	}
 
-	if params.Passphrase == "" {
-		return AdminSignMessageParams{}, ErrPassphraseIsRequired
-	}
-
 	if params.PubKey == "" {
 		return AdminSignMessageParams{}, ErrPublicKeyIsRequired
 	}
@@ -99,7 +93,6 @@ func validateAdminSignMessageParams(rawParams jsonrpc.Params) (AdminSignMessageP
 
 	return AdminSignMessageParams{
 		Wallet:         params.Wallet,
-		Passphrase:     params.Passphrase,
 		PubKey:         params.PubKey,
 		EncodedMessage: params.EncodedMessage,
 	}, nil

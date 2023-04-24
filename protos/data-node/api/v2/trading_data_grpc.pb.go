@@ -69,18 +69,17 @@ type TradingDataServiceClient interface {
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
 	// List ledger entries
 	//
-	// Get a list of ledger entries by asset, market, party, account type and transfer type within the given date range.
+	// Get a list of ledger entries within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
-	// for each of the sides - sending and receiving accounts, the query returns an error.
+	// Each account filter must contain no more than one party ID.
 	//
-	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the sending AND receiving account
-	//   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
+	// Entries can be filtered by:
+	//   - the sending account (market ID, asset ID, account type)
+	//   - receiving account (market ID, asset ID, account type)
+	//   - sending AND receiving account
+	//   - transfer type either in addition to the above filters or as a standalone option
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -90,7 +89,10 @@ type TradingDataServiceClient interface {
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
-	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error)
+	//
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (TradingDataService_ExportLedgerEntriesClient, error)
 	// List balance changes
 	//
 	// Get a list of the changes in account balances over a period of time.
@@ -236,11 +238,16 @@ type TradingDataServiceClient interface {
 	ListRewards(ctx context.Context, in *ListRewardsRequest, opts ...grpc.CallOption) (*ListRewardsResponse, error)
 	// List reward summaries
 	//
-	// Get a list of reward summaries that match the provided criteria. If no filter is provided, all reward summaries will be returned.
+	// Get a list of reward summaries where the reward amount is the total rewards received over all epochs
+	// per party ID and asset ID.
+	// Request parameters are optional party ID and asset ID.
+	// If no data is provided, all reward summaries will be returned grouped by party and asset ID.
 	ListRewardSummaries(ctx context.Context, in *ListRewardSummariesRequest, opts ...grpc.CallOption) (*ListRewardSummariesResponse, error)
 	// List epoch reward summaries
 	//
-	// Get a list of reward summaries by epoch.
+	// Get a list of reward summaries by epoch for a given range of epochs.
+	// The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+	// If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
 	ListEpochRewardSummaries(ctx context.Context, in *ListEpochRewardSummariesRequest, opts ...grpc.CallOption) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
 	//
@@ -321,6 +328,11 @@ type TradingDataServiceClient interface {
 	//
 	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(ctx context.Context, in *EstimateMarginRequest, opts ...grpc.CallOption) (*EstimateMarginResponse, error)
+	// Estimate position
+	//
+	// Estimate the margin that would be required for maintaining the specified position.
+	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error)
 	// List network parameters
 	//
 	// Get a list of the network parameters
@@ -426,7 +438,7 @@ type TradingDataServiceClient interface {
 	// matching the NULL parameter string is quoted.
 	//
 	// For example, with the default settings, a NULL is written as an unquoted empty string,
-	// while an empty string data value is written with double quotes ("").
+	// while an empty string data value is written with double quotes.
 	//
 	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
 	// Thus the files are not strictly one line per table row like text-format files.
@@ -459,6 +471,7 @@ type TradingDataServiceClient interface {
 	//
 	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error)
 	// Ping
 	//
@@ -643,13 +656,36 @@ func (c *tradingDataServiceClient) ListLedgerEntries(ctx context.Context, in *Li
 	return out, nil
 }
 
-func (c *tradingDataServiceClient) ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (*ExportLedgerEntriesResponse, error) {
-	out := new(ExportLedgerEntriesResponse)
-	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ExportLedgerEntries", in, out, opts...)
+func (c *tradingDataServiceClient) ExportLedgerEntries(ctx context.Context, in *ExportLedgerEntriesRequest, opts ...grpc.CallOption) (TradingDataService_ExportLedgerEntriesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[3], "/datanode.api.v2.TradingDataService/ExportLedgerEntries", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &tradingDataServiceExportLedgerEntriesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TradingDataService_ExportLedgerEntriesClient interface {
+	Recv() (*httpbody.HttpBody, error)
+	grpc.ClientStream
+}
+
+type tradingDataServiceExportLedgerEntriesClient struct {
+	grpc.ClientStream
+}
+
+func (x *tradingDataServiceExportLedgerEntriesClient) Recv() (*httpbody.HttpBody, error) {
+	m := new(httpbody.HttpBody)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *tradingDataServiceClient) ListBalanceChanges(ctx context.Context, in *ListBalanceChangesRequest, opts ...grpc.CallOption) (*ListBalanceChangesResponse, error) {
@@ -689,7 +725,7 @@ func (c *tradingDataServiceClient) GetLatestMarketDepth(ctx context.Context, in 
 }
 
 func (c *tradingDataServiceClient) ObserveMarketsDepth(ctx context.Context, in *ObserveMarketsDepthRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[3], "/datanode.api.v2.TradingDataService/ObserveMarketsDepth", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[4], "/datanode.api.v2.TradingDataService/ObserveMarketsDepth", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -721,7 +757,7 @@ func (x *tradingDataServiceObserveMarketsDepthClient) Recv() (*ObserveMarketsDep
 }
 
 func (c *tradingDataServiceClient) ObserveMarketsDepthUpdates(ctx context.Context, in *ObserveMarketsDepthUpdatesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDepthUpdatesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[4], "/datanode.api.v2.TradingDataService/ObserveMarketsDepthUpdates", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[5], "/datanode.api.v2.TradingDataService/ObserveMarketsDepthUpdates", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -753,7 +789,7 @@ func (x *tradingDataServiceObserveMarketsDepthUpdatesClient) Recv() (*ObserveMar
 }
 
 func (c *tradingDataServiceClient) ObserveMarketsData(ctx context.Context, in *ObserveMarketsDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarketsDataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[5], "/datanode.api.v2.TradingDataService/ObserveMarketsData", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[6], "/datanode.api.v2.TradingDataService/ObserveMarketsData", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -821,7 +857,7 @@ func (c *tradingDataServiceClient) ListCandleData(ctx context.Context, in *ListC
 }
 
 func (c *tradingDataServiceClient) ObserveCandleData(ctx context.Context, in *ObserveCandleDataRequest, opts ...grpc.CallOption) (TradingDataService_ObserveCandleDataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[6], "/datanode.api.v2.TradingDataService/ObserveCandleData", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[7], "/datanode.api.v2.TradingDataService/ObserveCandleData", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -871,7 +907,7 @@ func (c *tradingDataServiceClient) ListVotes(ctx context.Context, in *ListVotesR
 }
 
 func (c *tradingDataServiceClient) ObserveVotes(ctx context.Context, in *ObserveVotesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveVotesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[7], "/datanode.api.v2.TradingDataService/ObserveVotes", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[8], "/datanode.api.v2.TradingDataService/ObserveVotes", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -966,7 +1002,7 @@ func (c *tradingDataServiceClient) ListTrades(ctx context.Context, in *ListTrade
 }
 
 func (c *tradingDataServiceClient) ObserveTrades(ctx context.Context, in *ObserveTradesRequest, opts ...grpc.CallOption) (TradingDataService_ObserveTradesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[8], "/datanode.api.v2.TradingDataService/ObserveTrades", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[9], "/datanode.api.v2.TradingDataService/ObserveTrades", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1070,7 +1106,7 @@ func (c *tradingDataServiceClient) ListMarginLevels(ctx context.Context, in *Lis
 }
 
 func (c *tradingDataServiceClient) ObserveMarginLevels(ctx context.Context, in *ObserveMarginLevelsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveMarginLevelsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[9], "/datanode.api.v2.TradingDataService/ObserveMarginLevels", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveMarginLevels", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1192,7 +1228,7 @@ func (c *tradingDataServiceClient) ListLiquidityProvisions(ctx context.Context, 
 }
 
 func (c *tradingDataServiceClient) ObserveLiquidityProvisions(ctx context.Context, in *ObserveLiquidityProvisionsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLiquidityProvisionsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[10], "/datanode.api.v2.TradingDataService/ObserveLiquidityProvisions", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[11], "/datanode.api.v2.TradingDataService/ObserveLiquidityProvisions", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1242,7 +1278,7 @@ func (c *tradingDataServiceClient) ListGovernanceData(ctx context.Context, in *L
 }
 
 func (c *tradingDataServiceClient) ObserveGovernance(ctx context.Context, in *ObserveGovernanceRequest, opts ...grpc.CallOption) (TradingDataService_ObserveGovernanceClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[11], "/datanode.api.v2.TradingDataService/ObserveGovernance", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[12], "/datanode.api.v2.TradingDataService/ObserveGovernance", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1345,6 +1381,15 @@ func (c *tradingDataServiceClient) EstimateMargin(ctx context.Context, in *Estim
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) EstimatePosition(ctx context.Context, in *EstimatePositionRequest, opts ...grpc.CallOption) (*EstimatePositionResponse, error) {
+	out := new(EstimatePositionResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/EstimatePosition", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) ListNetworkParameters(ctx context.Context, in *ListNetworkParametersRequest, opts ...grpc.CallOption) (*ListNetworkParametersResponse, error) {
 	out := new(ListNetworkParametersResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListNetworkParameters", in, out, opts...)
@@ -1391,7 +1436,7 @@ func (c *tradingDataServiceClient) GetRiskFactors(ctx context.Context, in *GetRi
 }
 
 func (c *tradingDataServiceClient) ObserveEventBus(ctx context.Context, opts ...grpc.CallOption) (TradingDataService_ObserveEventBusClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[12], "/datanode.api.v2.TradingDataService/ObserveEventBus", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[13], "/datanode.api.v2.TradingDataService/ObserveEventBus", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1422,7 +1467,7 @@ func (x *tradingDataServiceObserveEventBusClient) Recv() (*ObserveEventBusRespon
 }
 
 func (c *tradingDataServiceClient) ObserveLedgerMovements(ctx context.Context, in *ObserveLedgerMovementsRequest, opts ...grpc.CallOption) (TradingDataService_ObserveLedgerMovementsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[13], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v2.TradingDataService/ObserveLedgerMovements", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1562,7 +1607,7 @@ func (c *tradingDataServiceClient) ListEntities(ctx context.Context, in *ListEnt
 }
 
 func (c *tradingDataServiceClient) ExportNetworkHistory(ctx context.Context, in *ExportNetworkHistoryRequest, opts ...grpc.CallOption) (TradingDataService_ExportNetworkHistoryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[14], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
+	stream, err := c.cc.NewStream(ctx, &TradingDataService_ServiceDesc.Streams[15], "/datanode.api.v2.TradingDataService/ExportNetworkHistory", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1652,18 +1697,17 @@ type TradingDataServiceServer interface {
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
 	// List ledger entries
 	//
-	// Get a list of ledger entries by asset, market, party, account type and transfer type within the given date range.
+	// Get a list of ledger entries within the given date range.
 	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
 	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
 	// the summed ledger entries of the set of specified accounts changes.
-	// Listed entries should be limited to a single party from each side only. If zero or more than one party is provided
-	// for each of the sides - sending and receiving accounts, the query returns an error.
+	// Each account filter must contain no more than one party ID.
 	//
-	// Entries can be queried by:
-	//   - listing ledger entries with filtering on the sending account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the receiving account (market ID, asset ID, account type)
-	//   - listing ledger entries with filtering on the sending AND receiving account
-	//   - listing ledger entries with filtering on the transfer type either in addition to the above filters or as a standalone option
+	// Entries can be filtered by:
+	//   - the sending account (market ID, asset ID, account type)
+	//   - receiving account (market ID, asset ID, account type)
+	//   - sending AND receiving account
+	//   - transfer type either in addition to the above filters or as a standalone option
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -1673,7 +1717,10 @@ type TradingDataServiceServer interface {
 	// Ledger entries can be exported by:
 	//   - export ledger entries for a single party for a given asset within a given time range
 	//   - export ledger entries for a single party for a given asset for all times
-	ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error)
+	//
+	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+	ExportLedgerEntries(*ExportLedgerEntriesRequest, TradingDataService_ExportLedgerEntriesServer) error
 	// List balance changes
 	//
 	// Get a list of the changes in account balances over a period of time.
@@ -1819,11 +1866,16 @@ type TradingDataServiceServer interface {
 	ListRewards(context.Context, *ListRewardsRequest) (*ListRewardsResponse, error)
 	// List reward summaries
 	//
-	// Get a list of reward summaries that match the provided criteria. If no filter is provided, all reward summaries will be returned.
+	// Get a list of reward summaries where the reward amount is the total rewards received over all epochs
+	// per party ID and asset ID.
+	// Request parameters are optional party ID and asset ID.
+	// If no data is provided, all reward summaries will be returned grouped by party and asset ID.
 	ListRewardSummaries(context.Context, *ListRewardSummariesRequest) (*ListRewardSummariesResponse, error)
 	// List epoch reward summaries
 	//
-	// Get a list of reward summaries by epoch.
+	// Get a list of reward summaries by epoch for a given range of epochs.
+	// The result is filtered by list of asset IDs, market IDs and starting and ending epochs, for which to return rewards.
+	// If no data is provided, all reward summaries will be returned, grouped by epochs, market IDs, asset IDs and reward type.
 	ListEpochRewardSummaries(context.Context, *ListEpochRewardSummariesRequest) (*ListEpochRewardSummariesResponse, error)
 	// Get deposit
 	//
@@ -1904,6 +1956,11 @@ type TradingDataServiceServer interface {
 	//
 	// Estimate the margin that would be required for submitting this order
 	EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error)
+	// Estimate position
+	//
+	// Estimate the margin that would be required for maintaining the specified position.
+	// If the optional collateral available argument is supplied, the response also contains the estimate of the liquidation price.
+	EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error)
 	// List network parameters
 	//
 	// Get a list of the network parameters
@@ -2009,7 +2066,7 @@ type TradingDataServiceServer interface {
 	// matching the NULL parameter string is quoted.
 	//
 	// For example, with the default settings, a NULL is written as an unquoted empty string,
-	// while an empty string data value is written with double quotes ("").
+	// while an empty string data value is written with double quotes.
 	//
 	// Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
 	// Thus the files are not strictly one line per table row like text-format files.
@@ -2042,6 +2099,7 @@ type TradingDataServiceServer interface {
 	//
 	// It is worth noting that the schema will not change within a single network history segment.
 	// buf:lint:ignore RPC_RESPONSE_STANDARD_NAME
+	// buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
 	ExportNetworkHistory(*ExportNetworkHistoryRequest, TradingDataService_ExportNetworkHistoryServer) error
 	// Ping
 	//
@@ -2087,8 +2145,8 @@ func (UnimplementedTradingDataServiceServer) ObservePositions(*ObservePositionsR
 func (UnimplementedTradingDataServiceServer) ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLedgerEntries not implemented")
 }
-func (UnimplementedTradingDataServiceServer) ExportLedgerEntries(context.Context, *ExportLedgerEntriesRequest) (*ExportLedgerEntriesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExportLedgerEntries not implemented")
+func (UnimplementedTradingDataServiceServer) ExportLedgerEntries(*ExportLedgerEntriesRequest, TradingDataService_ExportLedgerEntriesServer) error {
+	return status.Errorf(codes.Unimplemented, "method ExportLedgerEntries not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListBalanceChanges(context.Context, *ListBalanceChangesRequest) (*ListBalanceChangesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListBalanceChanges not implemented")
@@ -2251,6 +2309,9 @@ func (UnimplementedTradingDataServiceServer) EstimateFee(context.Context, *Estim
 }
 func (UnimplementedTradingDataServiceServer) EstimateMargin(context.Context, *EstimateMarginRequest) (*EstimateMarginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EstimateMargin not implemented")
+}
+func (UnimplementedTradingDataServiceServer) EstimatePosition(context.Context, *EstimatePositionRequest) (*EstimatePositionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EstimatePosition not implemented")
 }
 func (UnimplementedTradingDataServiceServer) ListNetworkParameters(context.Context, *ListNetworkParametersRequest) (*ListNetworkParametersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListNetworkParameters not implemented")
@@ -2535,22 +2596,25 @@ func _TradingDataService_ListLedgerEntries_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TradingDataService_ExportLedgerEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExportLedgerEntriesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _TradingDataService_ExportLedgerEntries_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExportLedgerEntriesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(TradingDataServiceServer).ExportLedgerEntries(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/datanode.api.v2.TradingDataService/ExportLedgerEntries",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TradingDataServiceServer).ExportLedgerEntries(ctx, req.(*ExportLedgerEntriesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(TradingDataServiceServer).ExportLedgerEntries(m, &tradingDataServiceExportLedgerEntriesServer{stream})
+}
+
+type TradingDataService_ExportLedgerEntriesServer interface {
+	Send(*httpbody.HttpBody) error
+	grpc.ServerStream
+}
+
+type tradingDataServiceExportLedgerEntriesServer struct {
+	grpc.ServerStream
+}
+
+func (x *tradingDataServiceExportLedgerEntriesServer) Send(m *httpbody.HttpBody) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _TradingDataService_ListBalanceChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -3552,6 +3616,24 @@ func _TradingDataService_EstimateMargin_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingDataService_EstimatePosition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimatePositionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).EstimatePosition(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/EstimatePosition",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).EstimatePosition(ctx, req.(*EstimatePositionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TradingDataService_ListNetworkParameters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListNetworkParametersRequest)
 	if err := dec(in); err != nil {
@@ -3984,10 +4066,6 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_ListLedgerEntries_Handler,
 		},
 		{
-			MethodName: "ExportLedgerEntries",
-			Handler:    _TradingDataService_ExportLedgerEntries_Handler,
-		},
-		{
 			MethodName: "ListBalanceChanges",
 			Handler:    _TradingDataService_ListBalanceChanges_Handler,
 		},
@@ -4168,6 +4246,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TradingDataService_EstimateMargin_Handler,
 		},
 		{
+			MethodName: "EstimatePosition",
+			Handler:    _TradingDataService_EstimatePosition_Handler,
+		},
+		{
 			MethodName: "ListNetworkParameters",
 			Handler:    _TradingDataService_ListNetworkParameters_Handler,
 		},
@@ -4254,6 +4336,11 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ObservePositions",
 			Handler:       _TradingDataService_ObservePositions_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ExportLedgerEntries",
+			Handler:       _TradingDataService_ExportLedgerEntries_Handler,
 			ServerStreams: true,
 		},
 		{

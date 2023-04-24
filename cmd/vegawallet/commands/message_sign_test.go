@@ -24,7 +24,7 @@ func testSignMessageFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	pubKey := vgrand.RandomStr(20)
 	encodedMessage := vgrand.RandomStr(20)
@@ -40,16 +40,16 @@ func testSignMessageFlagsValidFlagsSucceeds(t *testing.T) {
 		Wallet:         walletName,
 		PubKey:         pubKey,
 		EncodedMessage: encodedMessage,
-		Passphrase:     passphrase,
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	require.NotNil(t, req)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testSignMessageFlagsMissingWalletFails(t *testing.T) {
@@ -60,7 +60,7 @@ func testSignMessageFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -75,7 +75,7 @@ func testSignMessageFlagsMissingPubKeyFails(t *testing.T) {
 	f.PubKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("pubkey"))
@@ -90,7 +90,7 @@ func testSignMessageFlagsMissingMessageFails(t *testing.T) {
 	f.Message = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("message"))
@@ -105,7 +105,7 @@ func testSignMessageFlagsMalformedMessageFails(t *testing.T) {
 	f.Message = vgrand.RandomStr(5)
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBase64EncodedError("message"))

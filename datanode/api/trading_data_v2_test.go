@@ -6,13 +6,12 @@ import (
 	"context"
 	"embed"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 
 	"code.vegaprotocol.io/vega/datanode/api"
 	"code.vegaprotocol.io/vega/datanode/api/mocks"
-	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -21,8 +20,21 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-//go:embed testdata/dummysegment.tar
+//go:embed testdata/dummysegment.zip
 var testData embed.FS
+
+func makeFullSegment(from, to, dbVersion int64) segment.Full {
+	return segment.Full{
+		MetaData: segment.MetaData{
+			Base: segment.Base{
+				HeightFrom:      from,
+				HeightTo:        to,
+				DatabaseVersion: dbVersion,
+				ChainID:         "test-chain-id",
+			},
+		},
+	}
+}
 
 func TestExportNetworkHistory(t *testing.T) {
 	req := &v2.ExportNetworkHistoryRequest{
@@ -34,18 +46,19 @@ func TestExportNetworkHistory(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	historyService := mocks.NewMockNetworkHistoryService(ctrl)
 
-	testSegments := []networkhistory.Segment{
-		TestSegment{HeightFrom: 1, HeightTo: 1000, DbVersion: 1},
-		TestSegment{HeightFrom: 1001, HeightTo: 2000, DbVersion: 1},
-		TestSegment{HeightFrom: 2001, HeightTo: 3000, DbVersion: 2},
+	testSegments := []segment.Full{
+		makeFullSegment(1, 1000, 1),
+		makeFullSegment(1001, 2000, 1),
+		makeFullSegment(2001, 3000, 2),
 	}
 
 	historyService.EXPECT().ListAllHistorySegments().Times(1).Return(testSegments, nil)
 	historyService.EXPECT().GetHistorySegmentReader(gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
-		func(ctx context.Context, id string) (io.ReadCloser, error) {
-			reader, err := testData.Open("testdata/dummysegment.tar")
+		func(ctx context.Context, id string) (io.ReadSeekCloser, int64, error) {
+			reader, err := testData.Open("testdata/dummysegment.zip")
 			require.NoError(t, err)
-			return reader, nil
+			info, _ := reader.Stat()
+			return reader.(io.ReadSeekCloser), info.Size(), nil
 		},
 	)
 
@@ -71,7 +84,7 @@ func TestExportNetworkHistory(t *testing.T) {
 		filenames = append(filenames, file.Name)
 		fileReader, err := file.Open()
 		require.NoError(t, err)
-		fileContents, err := ioutil.ReadAll(fileReader)
+		fileContents, err := io.ReadAll(fileReader)
 		require.NoError(t, err)
 		assert.True(t, strings.HasPrefix(string(fileContents), "header row\nmock data, more mock data,"))
 	}
@@ -93,16 +106,3 @@ func (s *mockStream) SetTrailer(metadata.MD)          {}
 func (s *mockStream) Context() context.Context        { return context.Background() }
 func (s *mockStream) SendMsg(m interface{}) error     { return nil }
 func (s *mockStream) RecvMsg(m interface{}) error     { return nil }
-
-type TestSegment struct {
-	HeightFrom int64
-	HeightTo   int64
-	DbVersion  int64
-}
-
-func (m TestSegment) GetPreviousHistorySegmentId() string { return "previous_segment" }
-func (m TestSegment) GetHistorySegmentId() string         { return "segment_id" }
-func (m TestSegment) GetFromHeight() int64                { return m.HeightFrom }
-func (m TestSegment) GetToHeight() int64                  { return m.HeightTo }
-func (m TestSegment) GetDatabaseVersion() int64           { return m.DbVersion }
-func (m TestSegment) GetChainId() string                  { return "test-chain-id" }

@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,27 +16,26 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/datanode/entities"
-	"code.vegaprotocol.io/vega/datanode/service"
-	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
-
-	"github.com/jackc/pgx/v4/stdlib"
-	"github.com/pressly/goose/v3"
-
 	"code.vegaprotocol.io/vega/cmd/data-node/commands/start"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/broker"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	config2 "code.vegaprotocol.io/vega/datanode/config"
-	"code.vegaprotocol.io/vega/datanode/config/encoding"
+	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/networkhistory"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/snapshot"
 	"code.vegaprotocol.io/vega/datanode/networkhistory/store"
+	"code.vegaprotocol.io/vega/datanode/service"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/utils/databasetest"
 	"code.vegaprotocol.io/vega/logging"
+	eventsv1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/pressly/goose/v3"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -55,10 +53,9 @@ var (
 	sqlConfig              sqlstore.Config
 	networkHistoryConnPool *pgxpool.Pool
 
-	fromEventsSnapshotHashes    []string
+	fromEventHashes             []string
 	fromEventsDatabaseSummaries []databaseSummary
 
-	fromEventsIntervalToHistoryHashes     []string
 	fromEventsIntervalToHistoryTableDelta []map[string]tableDataSummary
 
 	snapshotsBackupDir string
@@ -67,7 +64,7 @@ var (
 
 	networkHistoryService *networkhistory.Service
 
-	goldenSourceHistorySegment map[int64]store.SegmentIndexEntry
+	goldenSourceHistorySegment map[int64]segment.Full
 
 	expectedHistorySegmentsFromHeights = []int64{1, 1001, 2001, 2501, 3001, 4001}
 	expectedHistorySegmentsToHeights   = []int64{1000, 2000, 2500, 3000, 4000, 5000}
@@ -86,6 +83,13 @@ func TestMain(t *testing.M) {
 	outerCtx, cancelOuterCtx := context.WithCancel(context.Background())
 	defer cancelOuterCtx()
 
+	// because we have a ton of panics in here:
+	defer func() {
+		if r := recover(); r != nil {
+			cancelOuterCtx()
+			panic(r) // propagate panic
+		}
+	}()
 	testMigrationVersionNum, sqlFs = setupTestSQLMigrations()
 	highestMigrationNumber = testMigrationVersionNum - 1
 
@@ -130,6 +134,7 @@ func TestMain(t *testing.M) {
 		pgLog *bytes.Buffer,
 	) {
 		sqlConfig = config
+		log.Infof("DB Connection String: ", sqlConfig.ConnectionConfig.GetConnectionString())
 
 		pool, err := sqlstore.CreateConnectionPool(sqlConfig.ConnectionConfig)
 		if err != nil {
@@ -142,17 +147,17 @@ func TestMain(t *testing.M) {
 		emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
 		// Do initial run to get the expected state of the datanode from just event playback
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(outerCtx)
 		defer cancel()
 
 		snapshotCopyToPath := filepath.Join(networkHistoryHome, "snapshotsCopyTo")
-		snapshotCopyFromPath := filepath.Join(networkHistoryHome, "snapshotsCopyFrom")
 
-		snapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+		snapshotService := setupSnapshotService(snapshotCopyToPath)
 
-		var snapshots []snapshot.MetaData
+		var snapshots []segment.Unpublished
 
 		ctxWithCancel, cancelFn := context.WithCancel(ctx)
+		defer cancelFn()
 
 		evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
@@ -160,28 +165,21 @@ func TestMain(t *testing.M) {
 		puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
 			toHeight int64,
 		) error {
-			meta, err := snapshotService.CreateSnapshot(ctx, chainID, toHeight)
+			ss, err := snapshotService.CreateSnapshot(ctx, chainID, toHeight)
 			if err != nil {
 				panic(fmt.Errorf("failed to create snapshot: %w", err))
 			}
 
-			waitForSnapshotToCompleteUseMeta(meta)
+			waitForSnapshotToComplete(ss)
 
-			snapshots = append(snapshots, meta)
+			snapshots = append(snapshots, ss)
 
-			md5Hash, err := snapshot.GetSnapshotMd5Hash(meta.CurrentStateSnapshotPath, meta.HistorySnapshotPath)
+			md5Hash, err := fsutil.Md5Hash(ss.ZipFilePath())
 			if err != nil {
 				panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 			}
 
-			fromEventsSnapshotHashes = append(fromEventsSnapshotHashes, md5Hash)
-
-			historyMd5Hash, err := snapshot.GetHistoryMd5Hash(meta)
-			if err != nil {
-				panic(fmt.Errorf("failed to get history hash:%w", err))
-			}
-
-			fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
+			fromEventHashes = append(fromEventHashes, md5Hash)
 
 			updateAllContinuousAggregateData(ctx)
 			summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -199,21 +197,14 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToCompleteUseMeta(lastSnapshot)
+					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
-					md5Hash, err := snapshot.GetSnapshotMd5Hash(lastSnapshot.CurrentStateSnapshotPath, lastSnapshot.HistorySnapshotPath)
+					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 					}
 
-					fromEventsSnapshotHashes = append(fromEventsSnapshotHashes, md5Hash)
-
-					historyMd5Hash, err := snapshot.GetHistoryMd5Hash(lastSnapshot)
-					if err != nil {
-						panic(fmt.Errorf("failed to get history hash:%w", err))
-					}
-
-					fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
+					fromEventHashes = append(fromEventHashes, md5Hash)
 
 					updateAllContinuousAggregateData(ctx)
 					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -263,21 +254,14 @@ func TestMain(t *testing.M) {
 						panic(fmt.Errorf("failed to create snapshot:%w", err))
 					}
 
-					waitForSnapshotToCompleteUseMeta(lastSnapshot)
+					waitForSnapshotToComplete(lastSnapshot)
 					snapshots = append(snapshots, lastSnapshot)
-					md5Hash, err := snapshot.GetSnapshotMd5Hash(lastSnapshot.CurrentStateSnapshotPath, lastSnapshot.HistorySnapshotPath)
+					md5Hash, err := fsutil.Md5Hash(lastSnapshot.ZipFilePath())
 					if err != nil {
 						panic(fmt.Errorf("failed to get snapshot hash:%w", err))
 					}
 
-					fromEventsSnapshotHashes = append(fromEventsSnapshotHashes, md5Hash)
-
-					historyMd5Hash, err := snapshot.GetHistoryMd5Hash(lastSnapshot)
-					if err != nil {
-						panic(fmt.Errorf("failed to get history hash:%w", err))
-					}
-
-					fromEventsIntervalToHistoryHashes = append(fromEventsIntervalToHistoryHashes, historyMd5Hash)
+					fromEventHashes = append(fromEventHashes, md5Hash)
 
 					updateAllContinuousAggregateData(ctx)
 					summary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
@@ -299,19 +283,19 @@ func TestMain(t *testing.M) {
 			panic(fmt.Errorf("failed to process events:%w", err))
 		}
 
-		if len(fromEventsSnapshotHashes) != numSnapshots {
-			panic(fmt.Errorf("expected 5 snapshots, got %d", len(fromEventsSnapshotHashes)))
+		if len(fromEventHashes) != numSnapshots {
+			panic(fmt.Errorf("expected 5 snapshots, got %d", len(fromEventHashes)))
 		}
 
 		if len(fromEventsDatabaseSummaries) != numSnapshots {
-			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
+			panic(fmt.Errorf("expected %d database summaries, got %d", numSnapshots, len(fromEventHashes)))
 		}
 
 		fromEventsIntervalToHistoryTableDelta = getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig,
 			expectedHistorySegmentsFromHeights, expectedHistorySegmentsToHeights)
 
 		if len(fromEventsIntervalToHistoryTableDelta) != numSnapshots {
-			panic(fmt.Errorf("expected %d history table deltas, got %d", numSnapshots, len(fromEventsSnapshotHashes)))
+			panic(fmt.Errorf("expected %d history table deltas, got %d", numSnapshots, len(fromEventHashes)))
 		}
 
 		// Network history store setup
@@ -322,17 +306,16 @@ func TestMain(t *testing.M) {
 
 		storeLog := logging.NewTestLogger()
 		storeLog.SetLevel(logging.InfoLevel)
-		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, false, 33)
+		networkHistoryStore, err = store.New(outerCtx, storeLog, chainID, storeCfg, networkHistoryHome, 33)
 		if err != nil {
 			panic(err)
 		}
 
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := networkhistory.NewDefaultConfig()
-		cfg.WipeOnStartup = false
 
 		networkHistoryService, err = networkhistory.NewWithStore(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
-			networkHistoryStore, datanodeConfig.API.Port, snapshotCopyFromPath, snapshotCopyToPath)
+			networkHistoryStore, datanodeConfig.API.Port, snapshotCopyToPath)
 
 		if err != nil {
 			panic(err)
@@ -353,7 +336,7 @@ func TestMain(t *testing.M) {
 				panic(err)
 			}
 
-			goldenSourceHistorySegment = map[int64]store.SegmentIndexEntry{}
+			goldenSourceHistorySegment = map[int64]segment.Full{}
 			for _, storedSegment := range storedSegments {
 				goldenSourceHistorySegment[storedSegment.HeightTo] = storedSegment
 			}
@@ -382,12 +365,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmSxN7pFLSsaGXgJLzjyxBWQ4tF6uGLx6gxJ1KT8UxACaZ", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmTxDcB93HTfrnRg8e9ehyrxK9rf148UG6P32FZxNS55A6", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmbaY9KdWKSH4SSvJVir3LJoi4fLGfgRgeQLJFesoaHePj", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmU4REyMm4S6mLSvLFvhzdBeqyVo5K98n7QDBD2aDPMKEN", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmRoGYPZ9wmjzSW7VYsRVpfkguRjBM62SxxxfGXg2CXSbd", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmcbgKeEa3b7in2R1UH1tK429KE9TX1HsrMsbaGpSubGye", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmbWXDNTZ4PJtP4z6nUnhpszd4w5qcpvCgrms1Czxjw62V", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmZMM2fyj4NYY3cdWUXoobNcm85sk4VCuNXhdH1PiJuRYv", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmZNY9nrDqMZfjP9P64yJBKjFYY7nneLjVvFqRKRmooftw", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "Qmaw2nTCmAiK3PrH5vq4cWDvoLDeFVL62Z31LwRZ8eZSzJ", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmeJFctF6Hoc7hFQygVivm4A5q4TzANU5ChVwESAwEAZwG", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmY2rbyp6pbC1qaDtrRtuhnDSVWAnzmSG6EFWkgeXX5BLR", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -416,9 +399,8 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	networkHistoryStore.ResetIndex()
 	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	snapshotService := setupSnapshotService(snapshotCopyToPath)
 
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
@@ -451,17 +433,18 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(3000), fetched)
 
-	snapshotCopyFromPath = t.TempDir()
 	snapshotCopyToPath = t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1801), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
@@ -483,22 +466,18 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	})
 
 	var md5Hash string
-	var historyMd5Hash string
 	broker, err = setupSQLBroker(ctx, sqlConfig, snapshotService,
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				meta, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+				ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
 
-				waitForSnapshotToCompleteUseMeta(meta)
+				waitForSnapshotToComplete(ss)
 
-				md5Hash, err = snapshot.GetSnapshotMd5Hash(meta.CurrentStateSnapshotPath, meta.HistorySnapshotPath)
+				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
 				require.NoError(t, err)
 
-				fromEventsSnapshotHashes = append(fromEventsSnapshotHashes, md5Hash)
-
-				historyMd5Hash, err = snapshot.GetHistoryMd5Hash(meta)
-				require.NoError(t, err)
+				fromEventHashes = append(fromEventHashes, md5Hash)
 			}
 
 			if lastCommittedBlockHeight == 5000 {
@@ -513,8 +492,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, fromEventsSnapshotHashes[5], md5Hash)
-	require.Equal(t, fromEventsIntervalToHistoryHashes[5], historyMd5Hash)
+	require.Equal(t, fromEventHashes[5], md5Hash)
 
 	dbSummary = getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].currentTableSummaries, dbSummary.currentTableSummaries)
@@ -529,10 +507,9 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 
 	log := logging.NewTestLogger()
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
 	emptyDatabaseAndSetSchemaVersion(0)
 
@@ -542,12 +519,15 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(1000), blocksFetched)
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
+
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
@@ -555,9 +535,8 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 
 	// Now try to load in history from 0 to 5000
 	networkHistoryStore.ResetIndex()
-	snapshotCopyFromPath = t.TempDir()
 	snapshotCopyToPath = t.TempDir()
-	inputSnapshotService = setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService = setupSnapshotService(snapshotCopyToPath)
 
 	historySegment = goldenSourceHistorySegment[5000]
 
@@ -565,12 +544,14 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(5000), blocksFetched)
-	networkhistoryService = setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService = setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err = networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	result, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err = segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	result, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.Nil(t, err)
 
 	assert.Equal(t, int64(4001), result.LoadedFromHeight)
@@ -590,10 +571,9 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 
 	log := logging.NewTestLogger()
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
 	emptyDatabaseAndSetSchemaVersion(0)
 
@@ -603,12 +583,14 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(1000), blocksFetched)
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx,
-		*networkhistory.GetMostRecentContiguousHistory(segments), sqlConfig.ConnectionConfig, false, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
@@ -616,9 +598,8 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 
 	// Now try to load in history from 1000 to 2000
 	networkHistoryStore.ResetIndex()
-	snapshotCopyFromPath = t.TempDir()
 	snapshotCopyToPath = t.TempDir()
-	inputSnapshotService = setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService = setupSnapshotService(snapshotCopyToPath)
 
 	historySegment = goldenSourceHistorySegment[1000]
 
@@ -626,12 +607,14 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 	require.NoError(t, err)
 
 	assert.Equal(t, int64(1000), blocksFetched)
-	networkhistoryService = setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService = setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err = networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err = segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NotNil(t, err)
 }
 
@@ -644,9 +627,8 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	networkHistoryStore.ResetIndex()
 	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	snapshotService := setupSnapshotService(snapshotCopyToPath)
 
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
@@ -681,17 +663,18 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 	require.NoError(t, err)
 	require.Equal(t, int64(2000), fetched)
 
-	snapshotCopyFromPath = t.TempDir()
 	snapshotCopyToPath = t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	_, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NotNil(t, err)
 }
 
@@ -702,10 +685,9 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 
 	log := logging.NewTestLogger()
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
 	for i := int64(0); i < numSnapshots; i++ {
 		emptyDatabaseAndSetSchemaVersion(0)
@@ -719,12 +701,14 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, expectedBlocks, blocksFetched)
-		networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+		networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 		segments, err := networkhistoryService.ListAllHistorySegments()
 		require.NoError(t, err)
 
-		loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-			sqlConfig.ConnectionConfig, false, false)
+		chunk, err := segments.MostRecentContiguousHistory()
+		require.NoError(t, err)
+
+		loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 		require.NoError(t, err)
 
 		assert.Equal(t, int64(1), loaded.LoadedFromHeight)
@@ -751,17 +735,18 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(1000), fetched)
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2001), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(3000), loaded.LoadedToHeight)
@@ -783,20 +768,19 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	// Play events from 3001 to 4000
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
-	var snapshotMeta snapshot.MetaData
+	var ss segment.Unpublished
 	var newSnapshotFileHashAt4000 string
-	outNetworkHistoryHome := t.TempDir()
-	outputSnapshotService := setupSnapshotService(outNetworkHistoryHome, t.TempDir())
+
+	outputSnapshotService := setupSnapshotService(t.TempDir())
 	sqlBroker, err := setupSQLBroker(ctx, sqlConfig, outputSnapshotService,
 		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
 			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
-				snapshotMeta, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+				ss, err = service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 				require.NoError(t, err)
-				waitForSnapshotToCompleteUseMeta(snapshotMeta)
+				waitForSnapshotToComplete(ss)
 
 				if lastCommittedBlockHeight == 4000 {
-					newSnapshotFileHashAt4000, err = snapshot.GetSnapshotMd5Hash(snapshotMeta.CurrentStateSnapshotPath,
-						snapshotMeta.HistorySnapshotPath)
+					newSnapshotFileHashAt4000, err = fsutil.Md5Hash(ss.ZipFilePath())
 					require.NoError(t, err)
 				}
 
@@ -813,7 +797,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	assert.Equal(t, fromEventsSnapshotHashes[4], newSnapshotFileHashAt4000)
+	assert.Equal(t, fromEventHashes[4], newSnapshotFileHashAt4000)
 
 	historyTableDelta := getSnapshotIntervalToHistoryTableDeltaSummary(ctx, sqlConfig.ConnectionConfig,
 		expectedHistorySegmentsFromHeights, expectedHistorySegmentsToHeights)
@@ -840,17 +824,18 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(2000), fetched)
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, false, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
@@ -862,8 +847,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
 	var snapshotFileHashAfterReloadAt2000AndEventReplayTo3000 string
-	outSnapshotCopyToDir := t.TempDir()
-	outputSnapshotService := setupSnapshotService(outSnapshotCopyToDir, t.TempDir())
+	outputSnapshotService := setupSnapshotService(t.TempDir())
 
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
@@ -898,9 +882,9 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToCompleteUseMeta(ss)
+					waitForSnapshotToComplete(ss)
 
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = snapshot.GetSnapshotMd5Hash(ss.CurrentStateSnapshotPath, ss.HistorySnapshotPath)
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
 					require.NoError(t, err)
 					cancelFn()
 				}
@@ -918,7 +902,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, fromEventsSnapshotHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
+	require.Equal(t, fromEventHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
 
 	updateAllContinuousAggregateData(ctx)
 
@@ -943,17 +927,18 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	require.NoError(t, err)
 	require.Equal(t, int64(2000), fetched)
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 	segments, err := networkhistoryService.ListAllHistorySegments()
 	require.NoError(t, err)
 
-	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, *networkhistory.GetMostRecentContiguousHistory(segments),
-		sqlConfig.ConnectionConfig, true, false)
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, true, false)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
 	assert.Equal(t, int64(2000), loaded.LoadedToHeight)
@@ -965,8 +950,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
 	var snapshotFileHashAfterReloadAt2000AndEventReplayTo3000 string
-	outSnapshotCopyToDir := t.TempDir()
-	outputSnapshotService := setupSnapshotService(outSnapshotCopyToDir, t.TempDir())
+	outputSnapshotService := setupSnapshotService(t.TempDir())
 
 	evtSource := newTestEventSourceWithProtocolUpdateMessage()
 
@@ -1001,9 +985,9 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 				if lastCommittedBlockHeight == 3000 {
 					ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
 					require.NoError(t, err)
-					waitForSnapshotToCompleteUseMeta(ss)
+					waitForSnapshotToComplete(ss)
 
-					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = snapshot.GetSnapshotMd5Hash(ss.CurrentStateSnapshotPath, ss.HistorySnapshotPath)
+					snapshotFileHashAfterReloadAt2000AndEventReplayTo3000, err = fsutil.Md5Hash(ss.ZipFilePath())
 					require.NoError(t, err)
 					cancelFn()
 				}
@@ -1021,7 +1005,7 @@ func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEven
 		require.NoError(t, err)
 	}
 
-	require.Equal(t, fromEventsSnapshotHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
+	require.Equal(t, fromEventHashes[3], snapshotFileHashAfterReloadAt2000AndEventReplayTo3000)
 
 	updateAllContinuousAggregateData(ctx)
 
@@ -1064,9 +1048,8 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 	networkHistoryStore.ResetIndex()
 	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
-	snapshotCopyFromPath := t.TempDir()
 	snapshotCopyToPath := t.TempDir()
-	snapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	snapshotService := setupSnapshotService(snapshotCopyToPath)
 
 	ctxWithCancel, cancelFn := context.WithCancel(ctx)
 
@@ -1095,16 +1078,15 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 	}
 	updateAllContinuousAggregateData(ctx)
 
-	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[2000].HistorySegmentID, 1000)
+	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[5000].HistorySegmentID, 5000)
 	require.NoError(t, err)
-	require.Equal(t, int64(1000), fetched)
+	require.Equal(t, int64(5000), fetched)
 
-	snapshotCopyFromPath = t.TempDir()
 	snapshotCopyToPath = t.TempDir()
 
-	inputSnapshotService := setupSnapshotService(snapshotCopyFromPath, snapshotCopyToPath)
+	inputSnapshotService := setupSnapshotService(snapshotCopyToPath)
 
-	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyFromPath, snapshotCopyToPath)
+	networkhistoryService := setupNetworkHistoryService(ctx, log, inputSnapshotService, networkHistoryStore, snapshotCopyToPath)
 
 	// Rollback to a height pre protocol upgrade
 	err = networkhistoryService.RollbackToHeight(ctx, log, 2000)
@@ -1114,10 +1096,16 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].currentTableSummaries, dbSummary.currentTableSummaries)
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].historyTableSummaries, dbSummary.historyTableSummaries)
 	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[1].caggSummaries, dbSummary.caggSummaries)
+
+	historySegments, err := networkHistoryStore.ListAllIndexEntriesMostRecentFirst()
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(historySegments))
+	assert.Equal(t, int64(2000), historySegments[0].HeightTo)
+	assert.Equal(t, int64(1000), historySegments[1].HeightTo)
 }
 
 func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputSnapshotService *snapshot.Service, store *store.Store,
-	snapshotCopyFromPath, snapshotCopyToPath string,
+	snapshotCopyToPath string,
 ) *networkhistory.Service {
 	cfg := networkhistory.NewDefaultConfig()
 	cfg.Publish = false
@@ -1125,7 +1113,7 @@ func setupNetworkHistoryService(ctx context.Context, log *logging.Logger, inputS
 	datanodeConfig := config2.NewDefaultConfig()
 
 	networkHistoryService, err := networkhistory.NewWithStore(ctx, log, chainID, cfg, networkHistoryConnPool,
-		inputSnapshotService, store, datanodeConfig.API.Port, snapshotCopyFromPath, snapshotCopyToPath)
+		inputSnapshotService, store, datanodeConfig.API.Port, snapshotCopyToPath)
 	if err != nil {
 		panic(err)
 	}
@@ -1168,11 +1156,11 @@ func emptyDatabaseAndSetSchemaVersion(schemaVersion int64) {
 	}
 }
 
-func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []snapshot.MetaData) {
+func panicIfHistorySegmentIdsNotEqual(actual string, expected string, snapshots []segment.Unpublished) {
 	if expected != actual {
 		snapshotPaths := ""
 		for _, sn := range snapshots {
-			snapshotPaths += "," + sn.CurrentStateSnapshotPath + "," + sn.HistorySnapshotPath
+			snapshotPaths += "," + sn.ZipFileName()
 		}
 
 		panic(fmt.Errorf("history segment ids are not equal, expected: %s  actual: %s\n"+
@@ -1190,19 +1178,10 @@ func assertIntervalHistoryIsEmpty(t *testing.T, historyTableDelta []map[string]t
 	assert.Equal(t, 0, totalRowCount, "expected interval history to be empty but found %d rows", totalRowCount)
 }
 
-func setupSnapshotService(snapshotCopyFromPath string, snapshotCopyToPath string) *snapshot.Service {
-	brokerCfg := broker.NewDefaultConfig()
-	brokerCfg.UseEventFile = true
-	brokerCfg.FileEventSourceConfig.TimeBetweenBlocks = encoding.Duration{Duration: 0}
-
-	return setupSnapshotServiceWithNetworkParamFunc(snapshotCopyFromPath, snapshotCopyToPath)
-}
-
-func setupSnapshotServiceWithNetworkParamFunc(snapshotCopyFromPath string, snapshotCopyToPath string) *snapshot.Service {
+func setupSnapshotService(snapshotCopyToPath string) *snapshot.Service {
 	snapshotServiceCfg := snapshot.NewDefaultConfig()
-
 	snapshotService, err := snapshot.NewSnapshotService(logging.NewTestLogger(), snapshotServiceCfg,
-		networkHistoryConnPool, snapshotCopyFromPath, snapshotCopyToPath, migrateUpToDatabaseVersion,
+		networkHistoryConnPool, snapshotCopyToPath, migrateUpToDatabaseVersion,
 		migrateDownToDatabaseVersion)
 	if err != nil {
 		panic(err)
@@ -1455,29 +1434,11 @@ func getSnapshotIntervalToHistoryTableDeltaSummary(ctx context.Context,
 	return snapshotNumToHistoryTableSummary
 }
 
-func waitForSnapshotToCompleteUseMeta(sn snapshot.MetaData) {
-	currentSnapshotFileName := sn.CurrentStateSnapshotPath
-	historySnapshotFileName := sn.HistorySnapshotPath
-	snapshotInProgressFileName := filepath.Join(path.Dir(sn.CurrentStateSnapshotPath), snapshot.InProgressFileName(sn.CurrentStateSnapshot.ChainID, sn.CurrentStateSnapshot.Height))
-
-	waitForSnapshotToComplete(currentSnapshotFileName, historySnapshotFileName, snapshotInProgressFileName)
-}
-
-func waitForSnapshotToComplete(currentSnapshotFileName string, historySnapshotFileName string, snapshotInProgressFileName string) {
+func waitForSnapshotToComplete(sf segment.Unpublished) {
 	for {
 		time.Sleep(10 * time.Millisecond)
 		// wait for snapshot current  file
-		_, err := os.Stat(currentSnapshotFileName)
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			} else {
-				panic(err)
-			}
-		}
-
-		// wait for snapshot history file
-		_, err = os.Stat(historySnapshotFileName)
+		_, err := os.Stat(sf.ZipFilePath())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -1488,7 +1449,7 @@ func waitForSnapshotToComplete(currentSnapshotFileName string, historySnapshotFi
 
 		// wait for snapshot data dump in progress file to be removed
 
-		_, err = os.Stat(snapshotInProgressFileName)
+		_, err = os.Stat(sf.InProgressFilePath())
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				break

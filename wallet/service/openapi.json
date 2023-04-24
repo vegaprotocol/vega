@@ -7,7 +7,7 @@
   },
   "servers": [
     { "url": "http://localhost:1789/api/", "description": "Local wallet" }
-  ],  
+  ],
   "externalDocs": {
     "description": "Find out more about Vega REST APIs.",
     "url": "https://docs.vega.xyz/docs/mainnet/api/rest/overview"
@@ -15,8 +15,8 @@
   "paths": {
     "/v2/requests": {
       "post": {
-        "summary": "Submit a JSON-RPC request to the wallet API.",
-        "description": "This endpoint is the main entrypoint to submit the JSON-RPC requests. The body of the HTTP request should be formatted as a JSON-RPC v2 request. The HTTP response is formatted as the JSON-RPC v2 response.\n\nBe sure to specify the `id` if you are interested in the response. See [the JSON-RPC notification documentation](https://www.jsonrpc.org/specification#notification) for more details.\n\n# Content type\nThis endpoint returns a response with a specific `Content-Type` header: `application/json-rpc`.\n\nThis content type is used to help third-party applications differentiate the different JSON format return by the \n\nNote that `application/json-rpc` is not a standard HTTP content type.\n\n# Authentication\n\n## Workflow\nWhen connecting to a wallet, you will receive a connection token back through the `Authorization` header.\n\nWhen accessing protected JSON-RPC methods, the connection token must be set to the `Authorization` header. If the connection token is not valid, the server returns a response with the HTTP code 401, and the `WWW-Authenticate` header set to `VWT` as required by the HTTP standards.\n\n### Community implementation of the wallet service\nPeople might be willing to implement their own wallet service with their own authentication system. We recommend the community implementations to follow the same workflow.\n\nThis will save third-party applications from having to _explicitly_ support different authentication schemes, and make the community implementation fully interoperable with all third-party application, out of the box.\n\n### Token format\n\n\nThe token will be formatted as follow:\n`VWT <TOKEN>`\n\n`VWT` scheme stands for \"Vega Wallet Token\" and is not a standard authorization scheme.\n\nThe `<TOKEN>` is a randomly generated string of 64 characters with numbers and letters. Each session generates a unique one.\n\n# Request\nSee the [OpenRPC documentation of the wallet](https://docs.vega.xyz) for more details..",
+        "summary": "Submit JSON-RPC request to wallet API",
+        "description": "This endpoint is the main entry point to submit JSON-RPC requests. The body of the HTTP request should be formatted as a JSON-RPC v2 request. The HTTP response is formatted as the JSON-RPC v2 response.\n\nThe `ID` should be specified. See [the JSON-RPC notification documentation](https://www.jsonrpc.org/specification#notification) for more details.\n\n# Content type\nThis endpoint returns a response with a specific `Content-Type` header: `application/json-rpc`.\n\nThis content type is used to help third-party applications differentiate the different JSON formats returned by the service. \n\nNote that `application/json-rpc` is not a standard HTTP content type.\n\n# Authentication\n\n## Workflow\nWhen connecting to a wallet, a connection token will be received back through the `Authorisation` header.\n\nWhen accessing protected JSON-RPC methods, the connection token must be set to the `Authorisation` header. If the connection token is not valid, the server returns a response with the HTTP code 401, and the `WWW-Authenticate` header set to `VWT` as required by the HTTP standards.\n\n### Community implementation of the wallet service\nPeople might be willing to implement their own wallet service with their own authentication system. It's recommended that any community implementations follow the same workflow.\n\nThis will save third-party applications from having to _explicitly_ support different authentication schemes, and make the community implementations fully interoperable with all third-party applications, out of the box.\n\n### Token format\n\n\nThe token will be formatted as follows:\n`VWT \\<YOUR_TOKEN\\>`\n\n`VWT` scheme stands for \"Vega Wallet Token\" and is not a standard authorisation scheme.\n\n`YOUR_TOKEN` is a randomly generated string of 64 characters with numbers and letters. Each session generates a unique one.\n\n# Request\nSee the [OpenRPC documentation of the wallet](https://docs.vega.xyz) for more details.",
         "tags": ["Wallet"],
         "parameters": [
           {
@@ -31,7 +31,7 @@
           {
             "in": "header",
             "name": "Authorization",
-            "description": "The token used to access the protected methods. The format is `VWT <TOKEN>`. VWT is a non-standard scheme that stands for Vega Wallet Token. If this header is missing when accessing protected methods, the request will be rejected as an unauthorized request (401 Unauthorized).",
+            "description": "The token used to access the protected methods. The format is `VWT YOUR_TOKEN`. VWT is a non-standard scheme that stands for Vega Wallet Token. If this header is missing when accessing protected methods, the request will be rejected as an unauthorized request (401 Unauthorized).",
             "schema": {
               "type": "string"
             },
@@ -55,7 +55,7 @@
         },
         "responses": {
           "200": {
-            "description": "The request is successful. On this endpoint, only such response format should be expected.",
+            "description": "The request is successful. On this endpoint, only this type of response format should be expected.",
             "content": {
               "application/json-rpc": {
                 "schema": {
@@ -65,7 +65,7 @@
             }
           },
           "204": {
-            "description": "This response is returned when there is no `id` property valued in the JSON-RPC request. Concretely, when a JSON-RPC request doesn't have an ID, it is considered as a JSON-RPC notification and, as such, no result shall be expected, even in case of failure."
+            "description": "This response is returned when there is no `id` property valued in the JSON-RPC request. Concretely, when a JSON-RPC request doesn't have an ID, it is considered a JSON-RPC notification and, as such, no result is to be expected, even in case of failure."
           },
           "400": {
             "description": "Something went wrong",
@@ -115,7 +115,7 @@
     },
     "/v2/methods": {
       "get": {
-        "summary": "List the available methods on the JSON-RPC API.",
+        "summary": "List the available methods on the JSON-RPC API",
         "description": "The JSON-RPC API behind this HTTP API can have an arbitrary set of endpoints enabled.\n\nThis method allows an application to check for the existence of the JSON-RPC before calling the requests method.",
         "tags": ["Wallet"],
         "responses": {
@@ -186,7 +186,7 @@
     },
     "/v2/health": {
       "get": {
-        "summary": "Tells whether the service is up and running or not.",
+        "summary": "Checks if service is up and running",
         "description": "If the service is running, this endpoint returns 200, otherwise the endpoint will be unreachable.",
         "tags": ["Wallet"],
         "responses": {
@@ -241,7 +241,7 @@
             "type": "object"
           },
           "id": {
-            "description": "According to the JSON-RPC v2 standard, if the ID is not specified, an empty response should be returned, whatever the state is (success or error). In our implementation, this empty response corresponds to `204 No content`.",
+            "description": "According to the JSON-RPC v2 standard, if the ID is not specified, an empty response should be returned, whatever the state is (success or error). In the Vega implementation, this empty response corresponds to `204 No content`.",
             "type": "string"
           }
         }

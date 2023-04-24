@@ -1,25 +1,26 @@
 syntax = "proto3";
 
 package vega.events.v1;
-option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
-import "vega/markets.proto";
 import "vega/assets.proto";
-import "vega/governance.proto";
-import "vega/vega.proto";
-import "vega/oracle.proto";
 import "vega/commands/v1/commands.proto";
 import "vega/commands/v1/data.proto";
 import "vega/commands/v1/validator_commands.proto";
+import "vega/governance.proto";
+import "vega/markets.proto";
+import "vega/oracle.proto";
+import "vega/vega.proto";
+
+option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
 message ERC20MultiSigSignerAdded {
   // ID of the signature bundle
   string signature_id = 1;
-  // Vega node ID of the node to be added
+  // Node ID of the Vega node to be added
   string validator_id = 2;
   // Time at which this happened
   int64 timestamp = 3;
- // Ethereum address of the new signer
+  // Ethereum address of the new signer
   string new_signer = 4;
   // Address of the submitter of the transaction
   string submitter = 5;
@@ -30,7 +31,7 @@ message ERC20MultiSigSignerAdded {
 }
 
 message ERC20MultiSigSignerRemovedSubmitter {
-  // ID of this signature bundle
+  // Signature ID of the signer removed.
   string signature_id = 1;
   // Address of the submitter of the transaction
   string submitter = 2;
@@ -41,7 +42,7 @@ message ERC20MultiSigSignerRemoved {
   // There should be one bundle generated for every validators
   // in the validator set
   repeated ERC20MultiSigSignerRemovedSubmitter signature_submitters = 1;
-  // Vega node ID of the node which is to be removed
+  // Node ID of the Vega node which is to be removed
   string validator_id = 2;
   // Time at which this happened
   int64 timestamp = 3;
@@ -191,7 +192,7 @@ message RewardPayoutEvent {
   string asset = 3;
   string amount = 4;
   string percent_of_total_reward = 5;
-  int64  timestamp = 6;
+  int64 timestamp = 6;
   string reward_type = 7;
   string market = 8;
 }
@@ -265,7 +266,6 @@ message TransactionResult {
 
   message SuccessDetails {
     // TBD
-
   }
 
   message FailureDetails {
@@ -318,11 +318,11 @@ message EpochEvent {
   // Action tells us what action is taking place
   vega.EpochAction action = 2;
   // Vega time at which this epoch started
-  int64  start_time = 3;
+  int64 start_time = 3;
   // Vega time at which this epoch should end
-  int64  expire_time = 4;
+  int64 expire_time = 4;
   // Vega time at which this epoch actually ended
-  int64  end_time = 5;
+  int64 end_time = 5;
 }
 
 // Transfer responses event contains a collection of transfer information
@@ -518,10 +518,9 @@ message ValidatorRankingEvent {
   uint32 tm_voting_power = 8;
 }
 
-
 // Event that contains information about a Vega key rotation
 message KeyRotation {
-  // ID of the node that rotated their Vega key
+  // Node ID of the node that rotated their Vega key
   string node_id = 1;
   // Vega public key that was previously associated with the node
   string old_pub_key = 2;
@@ -533,10 +532,10 @@ message KeyRotation {
 
 // Event that contains information about an Ethereum key rotation
 message EthereumKeyRotation {
-  // ID of the node that rotated their Ethereum key
+  // Node ID of the node that rotated their Ethereum key
   string node_id = 1;
   // Ethereum address that was previously associated with the node
-  string old_address= 2;
+  string old_address = 2;
   // Ethereum address that is newly associated with the node
   string new_address = 3;
   // Block height when the key rotation took effect
@@ -593,14 +592,13 @@ message ProtocolUpgradeDataNodeReady {
   uint64 last_block_height = 1;
 }
 
-
 // CoreSnapshotData represents the core snapshot data.
 message CoreSnapshotData {
   // Block height at which snapshot was taken
   uint64 block_height = 1;
   // Hash of the snapshot block
   string block_hash = 2;
-  // Core version
+  // Semver version number of the core.
   string core_version = 3;
   // Indicates if the snapshot is taken as part of protocol upgrade
   bool protocol_upgrade_block = 4;
@@ -840,7 +838,7 @@ message BusEvent {
     // Protocol upgrade proposal updates
     ProtocolUpgradeEvent protocol_upgrade_event = 147;
     // Core is starting to process a new block
-    BeginBlock begin_block= 148;
+    BeginBlock begin_block = 148;
     // Core finished processing a block
     EndBlock end_block = 149;
     // Core is starting a protocol upgrade

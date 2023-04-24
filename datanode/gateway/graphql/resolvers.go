@@ -784,9 +784,6 @@ func (r *myQueryResolver) EstimateOrder(
 	ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
-
-	var err error
-
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
 		order.Price = *price
@@ -867,6 +864,127 @@ func (r *myQueryResolver) EstimateOrder(
 		Fee:            &fee,
 		TotalFeeAmount: decimal.Sum(mfee, ifee, lfee).String(),
 		MarginLevels:   respm.MarginLevels,
+	}, nil
+}
+
+func (r *myQueryResolver) EstimateFees(
+	ctx context.Context,
+	market, party string,
+	price *string,
+	size string,
+	side vega.Side,
+	timeInForce vega.Order_TimeInForce,
+	expiration *int64,
+	ty vega.Order_Type,
+) (*FeeEstimate, error) {
+	order := &types.Order{}
+	// We need to convert strings to uint64 (JS doesn't yet support uint64)
+	if price != nil {
+		order.Price = *price
+	}
+	s, err := safeStringUint64(size)
+	if err != nil {
+		return nil, err
+	}
+	order.Size = s
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketId = market
+	if len(party) <= 0 {
+		return nil, errors.New("party missing or empty")
+	}
+
+	order.PartyId = party
+	order.TimeInForce = timeInForce
+	order.Side = side
+	order.Type = ty
+
+	// GTT must have an expiration value
+	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
+		order.ExpiresAt = vegatime.UnixNano(*expiration).UnixNano()
+	}
+
+	req := v2.EstimateFeeRequest{
+		MarketId: order.MarketId,
+		Price:    order.Price,
+		Size:     order.Size,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	resp, err := r.tradingDataClientV2.EstimateFee(ctx, &req)
+	if err != nil {
+		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
+		return nil, err
+	}
+
+	// calclate the fee total amount
+	var mfee, ifee, lfee num.Decimal
+	// errors doesn't matter here, they just give us zero values anyway for the decimals
+	if len(resp.Fee.MakerFee) > 0 {
+		mfee, _ = num.DecimalFromString(resp.Fee.MakerFee)
+	}
+	if len(resp.Fee.InfrastructureFee) > 0 {
+		ifee, _ = num.DecimalFromString(resp.Fee.InfrastructureFee)
+	}
+	if len(resp.Fee.LiquidityFee) > 0 {
+		lfee, _ = num.DecimalFromString(resp.Fee.LiquidityFee)
+	}
+
+	fees := &TradeFee{
+		MakerFee:          resp.Fee.MakerFee,
+		InfrastructureFee: resp.Fee.InfrastructureFee,
+		LiquidityFee:      resp.Fee.LiquidityFee,
+	}
+
+	return &FeeEstimate{
+		Fees:           fees,
+		TotalFeeAmount: decimal.Sum(mfee, ifee, lfee).String(),
+	}, nil
+}
+
+func (r *myQueryResolver) EstimatePosition(
+	ctx context.Context,
+	marketId string,
+	openVolume string,
+	orders []*OrderInfo,
+	collateralAvailable *string,
+) (*PositionEstimate, error) {
+	ov, err := safeStringInt64(openVolume)
+	if err != nil {
+		return nil, err
+	}
+
+	ord := make([]*v2.OrderInfo, 0, len(orders))
+	for _, o := range orders {
+		r, err := safeStringUint64(o.Remaining)
+		if err != nil {
+			return nil, err
+		}
+
+		ord = append(ord, &v2.OrderInfo{
+			Side:          o.Side,
+			Price:         o.Price,
+			Remaining:     r,
+			IsMarketOrder: o.IsMarketOrder,
+		})
+	}
+
+	req := &v2.EstimatePositionRequest{
+		MarketId:            marketId,
+		OpenVolume:          ov,
+		Orders:              ord,
+		CollateralAvailable: collateralAvailable,
+	}
+
+	resp, err := r.tradingDataClientV2.EstimatePosition(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PositionEstimate{
+		Margin:      resp.Margin,
+		Liquidation: resp.Liquidation,
 	}, nil
 }
 

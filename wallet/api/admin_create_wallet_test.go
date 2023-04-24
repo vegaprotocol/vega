@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminCreateWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminCreateWalletSchemaCorrect)
 	t.Run("Creating a wallet with invalid params fails", testCreatingWalletWithInvalidParamsFails)
 	t.Run("Creating a wallet with valid params succeeds", testCreatingWalletWithValidParamsSucceeds)
 	t.Run("Creating a wallet that already exists fails", testCreatingWalletThatAlreadyExistsFails)
 	t.Run("Getting internal error during verification does not create the wallet", testGettingInternalErrorDuringVerificationDoesNotCreateWallet)
 	t.Run("Getting internal error during saving does not create the wallet", testGettingInternalErrorDuringSavingDoesNotCreateWallet)
+}
+
+func testAdminCreateWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.create_wallet", api.AdminCreateWalletParams{}, api.AdminCreateWalletResult{})
 }
 
 func testCreatingWalletWithInvalidParamsFails(t *testing.T) {
