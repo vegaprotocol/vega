@@ -12,7 +12,6 @@ var (
 	ErrLedgerEntryFilterForParty = errors.New("filtering ledger entries should be limited to a single party")
 
 	ErrLedgerEntryExportForParty = errors.New("exporting ledger entries should be limited to a single party")
-	ErrLedgerEntryExportForAsset = errors.New("exporting ledger entries should be limited to a single asset")
 )
 
 // Return an SQL query string and corresponding bind arguments to return
@@ -59,7 +58,11 @@ func accountFilterToDBQuery(af entities.AccountFilter, args *[]interface{}, pref
 
 	// Asset filtering
 	if af.AssetID.String() != "" {
-		singleAccountFilter = fmt.Sprintf("%sasset_id=%s", singleAccountFilter, nextBindVar(args, af.AssetID))
+		assetIDAsBytes, err := af.AssetID.Bytes()
+		if err != nil {
+			return "", nil, fmt.Errorf("invalid asset id: %w", err)
+		}
+		singleAccountFilter = fmt.Sprintf("%sasset_id=%s", singleAccountFilter, nextBindVar(args, assetIDAsBytes))
 	}
 
 	// Party filtering
