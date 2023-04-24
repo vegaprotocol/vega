@@ -1,6 +1,25 @@
 # Changelog
 
-## Unreleased 0.71.0
+## Unreleased 0.72.0
+
+### 🚨 Breaking changes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+- [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
+- [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
+
+
+## 0.71.0
 
 ### 🚨 Breaking changes
 
@@ -11,18 +30,13 @@
 - [7916](https://github.com/vegaprotocol/vega/issues/7916) - Deprecated `TradesConnection GraphQL sub-queries` in favour of an `un-nested` Trades query with a filter parameter. This requires a change in the underlying `gRPC` request message. Trades subscription takes a `TradesSubscriptionFilter` that allows multiple `MarketID` and `PartyID` filters to be specified.
 - [8143](https://github.com/vegaprotocol/vega/issues/8143) - Merge GraphQL and REST servers
 - [8111](https://github.com/vegaprotocol/vega/issues/8111) - Reduce passphrase requests for admin endpoints by introducing `admin.unlock_wallet` and removing the `passphrase` field from wallet-related endpoints.
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
-
-### 🗑️ Deprecation
-
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
 
 - [8030](https://github.com/vegaprotocol/vega/issues/8030) - Add `API` for fetching `CSV` data from network history.
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
 - [7759](https://github.com/vegaprotocol/vega/issues/7759) - Support for rolling back data node to a previous network history segment
-- [8131](https://github.com/vegaprotocol/vega/issues/8131) - Add reset all command to data node and remove wipe on start up flags 
+- [8131](https://github.com/vegaprotocol/vega/issues/8131) - Add reset all command to data node and remove wipe on start up flags
 - [7505](https://github.com/vegaprotocol/vega/issues/7505) - `Datanode` batcher statistics
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 - [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
@@ -57,6 +71,7 @@
 - [7998](https://github.com/vegaprotocol/vega/issues/7998) - Clean up `API` documentation for `ListLedgerEntries`.
 - [8021](https://github.com/vegaprotocol/vega/issues/8021) - Add better field descriptions in the `API` documentation.
 - [8171](https://github.com/vegaprotocol/vega/issues/8171) - Optimise the way offsets are used in probability of trading.
+- [8194](https://github.com/vegaprotocol/vega/issues/8194) - Don't include query string as part of `Prometheus` metric labels
 - [7847](https://github.com/vegaprotocol/vega/issues/7847) - Add `EstimatePosition` `API` method, mark `EstimateOrder` (GraphQL) and `EstimateMargin` (gRPC) as deprecated.
 - [7969](https://github.com/vegaprotocol/vega/issues/7969) - Reverted the `TTL` changes, minor tweak to proof of work verification to ensure validator commands can't be rejected based on age.
 - [7926](https://github.com/vegaprotocol/vega/issues/7926) - Squash `SQL` migration scripts into a single script.
@@ -104,6 +119,7 @@
 - [8149](https://github.com/vegaprotocol/vega/issues/8149) - Trigger populating `orders_live` table out of date and does not filter correctly for live orders.
 - [8165](https://github.com/vegaprotocol/vega/issues/8165) - Send order events when an `lp` order is cancelled or rejected
 - [8173](https://github.com/vegaprotocol/vega/issues/8173) - Trades when leaving auction should should have the aggressor field set to `SideUnspecified`.
+- [8184](https://github.com/vegaprotocol/vega/issues/8184) - Handle case for time termination value used with `LessThan` condition.
 - [8157](https://github.com/vegaprotocol/vega/issues/8157) - Handle kill/interrupt signals in datanode, and clean up properly.
 - [7914](https://github.com/vegaprotocol/vega/issues/7914) - Offer node signatures after snapshot restore
 - [8187](https://github.com/vegaprotocol/vega/issues/8187) - Expose Live Only filter to the `GraphQL` Orders filter.

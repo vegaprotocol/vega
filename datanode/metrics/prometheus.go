@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -898,8 +899,9 @@ func APIRequestAndTimeREST(method, request string, time float64) {
 	}
 
 	const (
-		invalid = "invalid route"
-		prefix  = "/api/v2/"
+		invalid    = "invalid route"
+		invalidURL = "invalid url"
+		prefix     = "/api/v2/"
 	)
 
 	if !httpBindings.HasRoute(method, request) {
@@ -908,19 +910,22 @@ func APIRequestAndTimeREST(method, request string, time float64) {
 		return
 	}
 
-	uri := request
-
-	// Remove the first slash if it has one
-	if strings.Index(uri, prefix) == 0 {
-		uri = uri[len(prefix):]
+	parsed, err := url.Parse(request)
+	if err != nil {
+		apiRequestCallCounter.WithLabelValues("REST", invalidURL).Inc()
+		apiRequestTimeCounter.WithLabelValues("REST", invalidURL).Add(time)
+		return
 	}
+
+	trimmedPath := strings.TrimPrefix(parsed.Path, prefix)
+
 	// Trim the URI down to something useful
-	if strings.Count(uri, "/") >= 1 {
-		uri = uri[:strings.Index(uri, "/")]
+	if strings.Count(trimmedPath, "/") >= 1 {
+		trimmedPath = trimmedPath[:strings.Index(trimmedPath, "/")]
 	}
 
-	apiRequestCallCounter.WithLabelValues("REST", uri).Inc()
-	apiRequestTimeCounter.WithLabelValues("REST", uri).Add(time)
+	apiRequestCallCounter.WithLabelValues("REST", trimmedPath).Inc()
+	apiRequestTimeCounter.WithLabelValues("REST", trimmedPath).Add(time)
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls.

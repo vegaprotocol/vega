@@ -17,7 +17,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/data-node/api/v2";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega data node APIs";
-    version: "v0.71.0+dev";
+    version: "v0.71.0";
   }
   schemes: [
     HTTP,
@@ -716,7 +716,7 @@ service TradingDataService {
   // matching the NULL parameter string is quoted.
   //
   // For example, with the default settings, a NULL is written as an unquoted empty string,
-  // while an empty string data value is written with double quotes ("").
+  // while an empty string data value is written with double quotes.
   //
   // Note that CSV files produced may contain quoted values containing embedded carriage returns and line feeds.
   // Thus the files are not strictly one line per table row like text-format files.
@@ -1087,7 +1087,7 @@ message ObservePositionsRequest {
   optional string market_id = 2;
 }
 
-// Response that is received from a positions subscription request
+// Response received from a positions subscription request
 message ObservePositionsResponse {
   oneof response {
     // An 'initial image' snapshot containing current positions.

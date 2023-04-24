@@ -1568,7 +1568,7 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 		},
 	)
 
-	assert.ErrorIs(t, types.ErrMultipleSameKeyNamesInFilterList, err)
+	assert.ErrorIs(t, types.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList, err)
 
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
 		[]*types.DataSourceSpecFilter{

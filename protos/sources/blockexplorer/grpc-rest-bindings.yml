@@ -2,8 +2,8 @@
 type: google.api.Service
 config_version: 3
 
-name: api.v1.blockexplorer
-title: Vega Trading API
+name: blockexplorer.api.v1
+title: Vega blockexplorer API
 
 apis:
   - name: BlockExplorer

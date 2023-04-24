@@ -1,11 +1,14 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
+
+var ErrInternalTimeDataSourceMissingConditions = errors.New("internal time based data source must have at least one condition")
 
 // DataSourceSpecConfigurationTime is used internally.
 type DataSourceSpecConfigurationTime struct {
