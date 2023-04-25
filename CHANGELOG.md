@@ -17,6 +17,7 @@
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
+- [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
 
 
 ## 0.71.0

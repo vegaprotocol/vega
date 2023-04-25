@@ -31,9 +31,6 @@ message Property {
   string name = 1;
   // Value of the property.
   string value = 2;
-  // Optional decimal place to be be applied on the provided value
-  // valid only for PropertyType of type DECIMAL and INTEGER
-  optional uint64 number_decimal_places = 3;
 }
 
 // Data describes valid source data that has been received by the node.
