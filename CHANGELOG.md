@@ -12,7 +12,7 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [7998](https://github.com/vegaprotocol/vega/issues/7998) - Improve `trading_data.proto` documentation.
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation

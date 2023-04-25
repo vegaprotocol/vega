@@ -782,15 +782,15 @@ service TradingDataService {
 //
 // Pagination message that uses both first/after and last/before is considered invalid.
 message Pagination {
-  // Number of records to be returned that sort greater than row identified by cursor supplied in 'after'.
+  // Optional number of records to be returned that sort greater than row identified by cursor supplied in 'after'.
   optional int32 first = 1;
-  // If paging forwards, the cursor string for the last row of the previous page.
+  // Optional after cursor, if paging forwards, the cursor string for the last row of the previous page.
   optional string after = 2;
-  // Number of records to be returned that sort less than row identified by cursor supplied in 'before'.
+  // Optional number of records to be returned that sort less than row identified by cursor supplied in 'before'.
   optional int32 last = 3;
-  // If paging forwards, the cursor string for the first row of the previous page.
+  // Optional before cursor, if paging forwards, the cursor string for the first row of the previous page.
   optional string before = 4;
-  // Newest records first, older records last, default is true.
+  // Optional newest records first, older records last, default is true.
   optional bool newest_first = 5;
 }
 
@@ -923,7 +923,7 @@ message GetOrderResponse {
   vega.Order order = 1;
 }
 
-// Order Filter: Contains filtering conditions/values for orders listing
+// Order filter that contains all filtering conditions and values that are applied to the orders listing
 message OrderFilter {
   // Order statuses for filtering
   repeated vega.Order.Status statuses = 1;
@@ -937,11 +937,11 @@ message OrderFilter {
   repeated string party_ids = 5;
   // Market IDs filter, if provided.
   repeated string market_ids = 6;
-  // Optional: reference for filtering
+  // Optional reference for filtering
   optional string reference = 7;
-  // Date range for filtering
+  // Optional date range for filtering
   optional DateRange date_range = 8;
-  // List only live orders when true
+  // Optional live only for listing only live orders
   optional bool live_only = 9;
 }
 
@@ -949,7 +949,7 @@ message OrderFilter {
 message ListOrdersRequest {
   // Optional pagination control.
   optional Pagination pagination = 2;
-  // Order filter contains all filtering conditions and values that are applied to the orders listing.
+  // Optional order filter contains all filtering conditions and values that are applied to the orders listing.
   optional OrderFilter filter = 5;
 }
 
@@ -973,7 +973,7 @@ message ListOrderVersionsResponse {
   OrderConnection orders = 1;
 }
 
-// Subscribe to Orders Stream Request
+// Request to subscribe to a stream of orders
 //
 // Request fields market ID and party ID are both optional filters:
 // If omitted all orders, for all parties on all markets will be returned on the stream
@@ -983,7 +983,7 @@ message ObserveOrdersRequest {
   repeated string market_ids = 1;
   // Party ID to filter for. If empty, no parties will be filtered.
   repeated string party_ids = 2;
-  // Indicates whether liquidity orders should be excluded from the stream.
+  // Optional exclude liquidity, Indicates whether liquidity orders should be excluded from the stream.
   optional bool exclude_liquidity = 3;
 }
 
@@ -1135,19 +1135,19 @@ message AggregatedLedgerEntry {
   string quantity = 3;
   // Transfer type.
   vega.TransferType transfer_type = 4;
-  // Asset ID for the asset associated with the entry.
+  // Optional asset ID for the asset associated with the entry.
   optional string asset_id = 5;
   // Type of account sent from.
   vega.AccountType from_account_type = 6;
   // Type of account received to.
   vega.AccountType to_account_type = 7;
-  // Sender's party ID.
+  // Optional sender's party ID.
   optional string from_account_party_id = 8;
-  // Receiver's party ID.
+  // Optional receiver's party ID.
   optional string to_account_party_id = 9;
-  // Sender market ID.
+  // Optional sender market ID.
   optional string from_account_market_id = 10;
-  // Receiver market ID.
+  // Optional receiver market ID.
   optional string to_account_market_id = 11;
   // Sender account balance after the transfer.
   string from_account_balance = 12;
@@ -1164,7 +1164,7 @@ message ListLedgerEntriesRequest {
   LedgerEntryFilter filter = 1;
   // Optional pagination control.
   optional Pagination pagination = 2;
-  // Date range for which to list ledger entries.
+  // Optional date range for which to list ledger entries.
   optional DateRange date_range = 3;
 }
 
@@ -1174,7 +1174,7 @@ message ExportLedgerEntriesRequest {
   string party_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Required asset ID.
   string asset_id = 2 [(google.api.field_behavior) = REQUIRED];
-  // Date range to export ledger entries for.
+  // Optional date range to export ledger entries for.
   optional DateRange date_range = 4;
 }
 
@@ -1204,9 +1204,9 @@ message AggregatedLedgerEntriesConnection {
 message ListBalanceChangesRequest {
   // Limit the accounts considered according to the filter supplied.
   AccountFilter filter = 1;
-  // Pagination controls.
+  // Optional pagination control.
   optional Pagination pagination = 5;
-  // Date range over which to query.
+  // Optional date range over which to query.
   optional DateRange date_range = 6;
 }
 
@@ -1225,7 +1225,9 @@ message GetBalanceHistoryRequest {
   // By default the net balances of all the accounts specified by the filter are returned.
   // If a list of fields is given in group_by, split out those balances by the supplied criteria.
   repeated AccountField group_by = 2;
+  // Optional pagination control.
   optional Pagination pagination = 3;
+  // Optional date range over which to query.
   optional DateRange date_range = 4;
 }
 
@@ -1279,13 +1281,13 @@ message AggregatedBalance {
   int64 timestamp = 1;
   // Balance of the set of requested accounts at the specified time
   string balance = 2;
-  // Party ID if grouped by party
+  // Optional party ID if grouped by party
   optional string party_id = 4;
-  // Asset ID if grouped by asset
+  // Optional asset ID if grouped by asset
   optional string asset_id = 5;
-  // Market ID if grouped by market
+  // Optional market ID if grouped by market
   optional string market_id = 6;
-  // Account type if grouped by account type
+  // Optional account type if grouped by account type
   optional vega.AccountType account_type = 7;
 }
 
@@ -1365,8 +1367,8 @@ message GetLatestMarketDataRequest {
 
 // Response that is received when listing the latest market data for a given market
 message GetLatestMarketDataResponse {
-    // Market data that was requested.
-    vega.MarketData market_data = 1;
+  // Market data that was requested.
+  vega.MarketData market_data = 1;
 }
 
 // Request that is sent for getting Market Data History
@@ -1417,7 +1419,7 @@ enum TransferDirection {
 
 // Request that is sent to list transfers
 message ListTransfersRequest {
-  // Public key for which to request transfers, this can be a party ID, "0000000000000000000000000000000000000000000000000000000000000000" for the global rewards account, or "network".
+  // OPtional public key for which to request transfers, this can be a party ID, "0000000000000000000000000000000000000000000000000000000000000000" for the global rewards account, or "network".
   optional string pubkey = 1;
   // Transfer directions - i.e. sender, receiver - to include in the response data
   TransferDirection direction = 2;
@@ -1519,7 +1521,7 @@ message ListCandleDataRequest {
   int64 from_timestamp = 2;
   // Timestamp (ns since epoch) to retrieve candles to
   int64 to_timestamp = 3;
-  // Pagination controls
+  // Optional pagination controls
   optional Pagination pagination = 5;
 }
 
@@ -1551,9 +1553,8 @@ message CandleDataConnection {
 message ListVotesRequest {
   // Party for which the votes are requested.
   optional string party_id = 1;
-  // Proposal ID to list votes for.
+  // Optional proposal ID to list votes for.
   optional string proposal_id = 2;
-
   // Optional pagination control.
   optional Pagination pagination = 3;
 }
@@ -1582,9 +1583,9 @@ message VoteConnection {
 
 // Request that is sent to subscribe to votes
 message ObserveVotesRequest {
-  // Party ID for which the votes are requested.
+  // Optional party ID for which the votes are requested.
   optional string party_id = 1;
-  // Option proposal ID for which the votes are requested.
+  // Optional proposal ID for which the votes are requested.
   optional string proposal_id = 2;
 }
 
@@ -1660,7 +1661,6 @@ message ListERC20MultiSigSignerRemovedBundlesRequest {
   string submitter = 2;
   // Epoch in which the bundle was generated, i.e. the epoch in which the node was demoted from a consensus validator.
   string epoch_seq = 3;
-
   // Pagination controls.
   Pagination pagination = 4;
 }
@@ -1800,9 +1800,9 @@ message ListTradesRequest {
   repeated string order_ids = 2;
   // List of Party ID for which to list trades for, if provided.
   repeated string party_ids = 3;
-  // Pagination control.
+  // Optional pagination control.
   optional Pagination pagination = 4;
-  // Date range for the listing, if provided.
+  // Optional date range for the listing, if provided.
   optional DateRange date_range = 5;
 }
 
@@ -1864,7 +1864,7 @@ message GetOracleSpecResponse {
 
 // Request to get all active oracle specs
 message ListOracleSpecsRequest {
-  // Pagination controls.
+  // Optional pagination controls.
   optional Pagination pagination = 2;
 }
 
@@ -1876,9 +1876,9 @@ message ListOracleSpecsResponse {
 
 // Request to get all seen oracle data
 message ListOracleDataRequest {
-  // Oracle spec ID to list data for.
+  // Optional oracle spec ID to list data for.
   optional string oracle_spec_id = 1;
-  // Pagination controls.
+  // Optional pagination controls.
   optional Pagination pagination = 2;
 }
 
@@ -1936,9 +1936,9 @@ message GetMarketResponse {
 
 // Request for listing markets
 message ListMarketsRequest {
-  // Pagination control.
+  // Optional pagination control.
   optional Pagination pagination = 2;
-  // Whether or not to include settled markets in the response; default to true if not specified.
+  // Optional include settled, whether or not to include settled markets in the response; default to true if not specified.
   optional bool include_settled = 3;
 }
 
@@ -2076,13 +2076,13 @@ message MarginConnection {
 message ListRewardsRequest {
   // Party ID for which to get the list of rewards.
   string party_id = 1;
-  // Asset ID for which to get the list of rewards, if provided.
+  // Optional asset ID for which to get the list of rewards, if provided.
   optional string asset_id = 2;
-  // Pagination control.
+  // Optional pagination control.
   optional Pagination pagination = 3;
-  // Epoch from which to list the rewards, if provided.
+  // Optional epoch from which to list the rewards, if provided.
   optional uint64 from_epoch = 4;
-  // Epoch up-to-which to list the rewards, if provided.
+  // Optional  epoch up-to-which to list the rewards, if provided.
   optional uint64 to_epoch = 5;
 }
 
@@ -2110,9 +2110,9 @@ message RewardsConnection {
 
 // Request to get reward details for a party
 message ListRewardSummariesRequest {
-  // Party ID for which to list rewards, if provided.
+  // Optional party ID for which to list rewards, if provided.
   optional string party_id = 1;
-  // Asset ID for which to list rewards, if provided.
+  // Optional asset ID for which to list rewards, if provided.
   optional string asset_id = 2;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 3;
@@ -2132,7 +2132,7 @@ message RewardSummaryFilter {
   repeated string market_ids = 2;
   // Optional range of epochs to filter on.
   optional uint64 from_epoch = 3;
-  // Epoch to which to filter rewards summaries.
+  // Optional epoch to which to filter rewards summaries.
   optional uint64 to_epoch = 4;
 }
 
@@ -2168,9 +2168,9 @@ message EpochRewardSummaryEdge {
 
 // Request sent for subscribing to rewards
 message ObserveRewardsRequest {
-  // Asset ID to get rewards data for, if provided.
+  // Optional asset ID to get rewards data for, if provided.
   optional string asset_id = 1;
-  // Party ID to get rewards data for, if provided.
+  // Optional party ID to get rewards data for, if provided.
   optional string party_id = 2;
 }
 
@@ -2201,7 +2201,7 @@ message ListDepositsRequest {
   string party_id = 1;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
-  // Date range of the requested data, if provided.
+  // Optional date range of the requested data, if provided.
   optional DateRange date_range = 3;
 }
 
@@ -2248,7 +2248,7 @@ message ListWithdrawalsRequest {
   string party_id = 1;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
-  // Date range of the requested data, if provided.
+  // Optional date range of the requested data, if provided.
   optional DateRange date_range = 3;
 }
 
@@ -2322,13 +2322,13 @@ message AssetsConnection {
 
 // Request for listing liquidity provisions
 message ListLiquidityProvisionsRequest {
-  // Target market for the liquidity provision orders.
+  // Optional target market for the liquidity provision orders.
   optional string market_id = 1;
-  // Party which submitted the liquidity provision orders.
+  // Optional party which submitted the liquidity provision orders.
   optional string party_id = 2;
-  // Reference of the liquidity provision.
+  // Optional reference of the liquidity provision.
   optional string reference = 3;
-  // Indicator if the listed liquidity provision orders will include live orders or not.
+  // Optional indicator if the listed liquidity provision orders will include live orders or not.
   optional bool live = 4;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 5;
@@ -2358,9 +2358,9 @@ message LiquidityProvisionsConnection {
 
 // Request sent to subscribe to liquidity provisions
 message ObserveLiquidityProvisionsRequest {
-  // Target market to observe for liquidity provision orders.
+  // Optional target market to observe for liquidity provision orders.
   optional string market_id = 1;
-  // Target party to observe for submitted liquidity provision orders.
+  // Optional target party to observe for submitted liquidity provision orders.
   optional string party_id = 2;
 }
 
@@ -2373,9 +2373,9 @@ message ObserveLiquidityProvisionsResponse {
 
 // Request to get governance data
 message GetGovernanceDataRequest {
-  // Proposal ID to get governance data for, if provided.
+  // Optional proposal ID to get governance data for, if provided.
   optional string proposal_id = 1;
-  // Reference to get proposal data for, if provided.
+  // Optional reference to get proposal data for, if provided.
   optional string reference = 2;
 }
 
@@ -2405,13 +2405,13 @@ message ListGovernanceDataRequest {
     // Update asset proposals
     TYPE_UPDATE_ASSET = 7;
   }
-  // Proposal state to list governance data for, if provided.
+  // Optional proposal state to list governance data for, if provided.
   optional vega.Proposal.State proposal_state = 1;
-  // Proposal type to list governance data for, if provided.
+  // Optional proposal type to list governance data for, if provided.
   optional Type proposal_type = 2;
-  // Proposer party ID to list governance data for, if provided.
+  // Optional proposer party ID to list governance data for, if provided.
   optional string proposer_party_id = 3;
-  // Proposal reference to list governance data for, if provided.
+  // Optional proposal reference to list governance data for, if provided.
   optional string proposal_reference = 4;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 5;
@@ -2441,7 +2441,7 @@ message GovernanceDataConnection {
 
 // Request for governance subscription
 message ObserveGovernanceRequest {
-  // Party ID to get the governance subscription for, if provided.
+  // Optional party ID to get the governance subscription for, if provided.
   optional string party_id = 1;
 }
 
@@ -2453,11 +2453,11 @@ message ObserveGovernanceResponse {
 
 // Request for listing delegations
 message ListDelegationsRequest {
-  // Party ID to list delegations for, if provided.
+  // Optional party ID to list delegations for, if provided.
   optional string party_id = 1;
-  // Node ID to list delegations for, if provided.
+  // Optional node ID to list delegations for, if provided.
   optional string node_id = 2;
-  // Epoch ID to list delegations for, if provided.
+  // Optional epoch ID to list delegations for, if provided.
   optional string epoch_id = 3;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 4;
@@ -2487,9 +2487,9 @@ message DelegationsConnection {
 
 // Request to subscribe to all event related to delegations, with the given filters
 message ObserveDelegationsRequest {
-  // Party ID to get delegations for, if provided.
+  // Optional party ID to get delegations for, if provided.
   optional string party_id = 1;
-  // Node ID to get delegations for, if provided.
+  // Optional node ID to get delegations for, if provided.
   optional string node_id = 2;
 }
 
@@ -2546,7 +2546,7 @@ message GetNodeResponse {
 
 // Request to list nodes
 message ListNodesRequest {
-  // Epoch number to list nodes for, if provided.
+  // Optional epoch number to list nodes for, if provided.
   optional uint64 epoch_seq = 1;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
@@ -2608,7 +2608,7 @@ message NodeSignaturesConnection {
 
 // Request to fetch epoch data
 message GetEpochRequest {
-  // Epoch ID to get, if provided. If omitted, data for the current epoch is returned.
+  // Optional epoch ID to get, if provided. If omitted, data for the current epoch is returned.
   optional uint64 id = 1;
 }
 
@@ -2826,7 +2826,7 @@ message ObserveLedgerMovementsResponse {
 
 // Request to list all key rotations
 message ListKeyRotationsRequest {
-  // Node ID to get key rotations for, if provided.
+  // Optional node ID to get key rotations for, if provided.
   optional string node_id = 1;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
@@ -2858,7 +2858,7 @@ message KeyRotationConnection {
 
 // Request to list ethereum key rotations for nodes, optionally filtered by node
 message ListEthereumKeyRotationsRequest {
-  // Node ID to get the rotation for, if provided.
+  // Optional node ID to get the rotation for, if provided.
   optional string node_id = 1;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 2;
@@ -2901,7 +2901,9 @@ message GetVegaTimeResponse {
 // Date range for queries that can return historical data
 // Timestamps should be provided as unix time in nanoseconds and are inclusive.
 message DateRange {
+  // Optional start timestamp of the date range.
   optional int64 start_timestamp = 1;
+  // Optional end timestamp of the date range.
   optional int64 end_timestamp = 2;
 }
 
@@ -2916,9 +2918,9 @@ message GetProtocolUpgradeStatusResponse {
 
 // Request type for ListProtocolUpgradeProposals; fetches a paginated list of protocol upgrade proposals
 message ListProtocolUpgradeProposalsRequest {
-  // Protocol upgrade proposal status to filter results from listing proposals, if provided.
+  // Optional protocol upgrade proposal status to filter results from listing proposals, if provided.
   optional vega.events.v1.ProtocolUpgradeProposalStatus status = 1;
-  // Option to filter listed proposals on being approved or not, if provided.
+  // Optional to filter listed proposals on being approved or not, if provided.
   optional string approved_by = 2;
   // Optional pagination information to limit the data that is returned.
   optional Pagination pagination = 3;
