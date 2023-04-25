@@ -350,7 +350,7 @@ func lessThanOrEqualInteger(dataValue, condValue *num.Int) bool {
 func toDecimalCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toDecimal(c.Value)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing decimal: %s", err.Error())
 	}
 
 	matcher, ok := decimalMatchers[c.Operator]
@@ -361,7 +361,7 @@ func toDecimalCondition(c *types.OracleSpecCondition) (condition, error) {
 	return func(dataValue string) (bool, error) {
 		parsedDataValue, err := toDecimal(dataValue)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("error parsing decimal: %s", err.Error())
 		}
 		return matcher(parsedDataValue, condValue), nil
 	}, nil
@@ -422,7 +422,7 @@ func toTimestampCondition(c *types.OracleSpecCondition) (condition, error) {
 func toTimestamp(value string) (int64, error) {
 	parsedValue, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		return parsedValue, err
+		return parsedValue, ErrInvalidTimestamp
 	}
 
 	if parsedValue < 0 {
@@ -462,7 +462,7 @@ func lessThanOrEqualTimestamp(dataValue, condValue int64) bool {
 func toBooleanCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toBoolean(c.Value)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing boolean: %s", err.Error())
 	}
 
 	matcher, ok := booleanMatchers[c.Operator]
@@ -473,7 +473,7 @@ func toBooleanCondition(c *types.OracleSpecCondition) (condition, error) {
 	return func(dataValue string) (bool, error) {
 		parsedDataValue, err := toBoolean(dataValue)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("error parsing boolean: %s", err.Error())
 		}
 		return matcher(parsedDataValue, condValue), nil
 	}, nil
