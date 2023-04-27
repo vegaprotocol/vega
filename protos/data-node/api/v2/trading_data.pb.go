@@ -16371,7 +16371,7 @@ type OrderInfo struct {
 
 	// Side for the order, e.g. buy or sell.
 	Side vega.Side `protobuf:"varint,1,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	// Price for the order. The price is an integer, for example `123456` is a correctly
+	// Price for the order. The price is an unsigned integer, for example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 	// Size remaining.
@@ -16446,9 +16446,10 @@ type EstimatePositionRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID in which the position is held.
+	// Market ID to estimate position for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Open volume. This field is a signed integer scaled to the market's position decimal places.
+	// A negative number denotes a short position.
 	OpenVolume int64 `protobuf:"varint,2,opt,name=open_volume,json=openVolume,proto3" json:"open_volume,omitempty"`
 	// Open and/or hypothetical orders.
 	Orders []*OrderInfo `protobuf:"bytes,3,rep,name=orders,proto3" json:"orders,omitempty"`
