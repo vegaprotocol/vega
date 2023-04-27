@@ -16371,7 +16371,7 @@ type OrderInfo struct {
 
 	// Side for the order, e.g. buy or sell.
 	Side vega.Side `protobuf:"varint,1,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
-	// Price for the order. The price is an unsigned integer, for example `123456` is a correctly
+	// Price for the order. The price is an unsigned integer. For example `123456` is a correctly
 	// formatted price of `1.23456` assuming market configured to 5 decimal places.
 	Price string `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 	// Size remaining.
