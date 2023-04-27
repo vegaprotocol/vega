@@ -3141,7 +3141,7 @@ message PingResponse {}
 message OrderInfo {
   // Side for the order, e.g. buy or sell.
   vega.Side side = 1;
-  // Price for the order. The price is an unsigned integer, for example `123456` is a correctly
+  // Price for the order. The price is an unsigned integer. For example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
   string price = 2;
   // Size remaining.
