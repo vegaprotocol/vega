@@ -2730,7 +2730,7 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 			return nil, formatE(ErrInvalidOrderPrice, err)
 		}
 
-		if p.IsNegative() {
+		if p.IsNegative() || !p.IsInteger() {
 			return nil, ErrInvalidOrderPrice
 		}
 
