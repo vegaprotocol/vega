@@ -65,6 +65,7 @@
 - [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
 - [8129](https://github.com/vegaprotocol/vega/issues/8129) - Keep liquidity fee remainder in fee account.
 - [8022](https://github.com/vegaprotocol/vega/issues/8022) - Improve `ListTransfers` API documentation.
+- [8231](https://github.com/vegaprotocol/vega/issues/8231) - Fix `GetNetworkHistoryStatus`
 - [8154](https://github.com/vegaprotocol/vega/issues/8154) - Visor - added option for delaying stop of binaries.
 - [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
 - [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
