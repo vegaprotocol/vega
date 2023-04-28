@@ -61,6 +61,7 @@ pipeline {
                     script {
                         publicIP = agent.getPublicIP()
                         print("Jenkins Agent public IP is: " + publicIP)
+                        vegautils.dockerCleanup()
                     }
                 }
             }
@@ -581,6 +582,9 @@ pipeline {
                 script: """#!/bin/bash -e
                     docker buildx rm --force ${DOCKER_VEGAWALLET_BUILDER_NAME}
                 """
+                script {
+                    vegautils.dockerCleanup()
+                }
                 sh label: 'docker logout ghcr.io',
                 returnStatus: true,  // ignore exit code
                 script: '''#!/bin/bash -e
