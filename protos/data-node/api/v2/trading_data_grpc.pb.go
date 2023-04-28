@@ -69,10 +69,15 @@ type TradingDataServiceClient interface {
 	ObservePositions(ctx context.Context, in *ObservePositionsRequest, opts ...grpc.CallOption) (TradingDataService_ObservePositionsClient, error)
 	// List ledger entries
 	//
-	// Get a list of ledger entries within the given date range.
-	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
-	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
-	// the summed ledger entries of the set of specified accounts changes.
+	// Get a list of ledger entries within the given date range to provide
+	// aggregated views of ledger entry data, i.e. sender and receiver accounts, details and balances
+	// for both sides after the transfer has been made.
+	//
+	// This query requests and sums the number of ledger entries from a given subset of accounts,
+	// specified via the 'filter' argument. It returns a time series - implemented as a list of
+	// AggregateLedgerEntry structs - with a row for every time the summed ledger entries of the
+	// set of specified accounts changes.
+	//
 	// Each account filter must contain no more than one party ID.
 	//
 	// Entries can be filtered by:
@@ -1697,10 +1702,15 @@ type TradingDataServiceServer interface {
 	ObservePositions(*ObservePositionsRequest, TradingDataService_ObservePositionsServer) error
 	// List ledger entries
 	//
-	// Get a list of ledger entries within the given date range.
-	// This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
-	// It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
-	// the summed ledger entries of the set of specified accounts changes.
+	// Get a list of ledger entries within the given date range to provide
+	// aggregated views of ledger entry data, i.e. sender and receiver accounts, details and balances
+	// for both sides after the transfer has been made.
+	//
+	// This query requests and sums the number of ledger entries from a given subset of accounts,
+	// specified via the 'filter' argument. It returns a time series - implemented as a list of
+	// AggregateLedgerEntry structs - with a row for every time the summed ledger entries of the
+	// set of specified accounts changes.
+	//
 	// Each account filter must contain no more than one party ID.
 	//
 	// Entries can be filtered by:

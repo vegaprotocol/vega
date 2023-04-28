@@ -12,6 +12,7 @@
 
 ### 🛠 Improvements
 
+- [8221](https://github.com/vegaprotocol/vega/issues/8221) - Clean up documentation for `ListLedgerEntries API`
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
