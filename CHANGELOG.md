@@ -14,7 +14,6 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🐛 Fixes
-
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
@@ -25,6 +24,7 @@
 - [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
 - [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
+- [8226](https://github.com/vegaprotocol/vega/issues/8226) - Fix auto initialise failure when initialising empty node
 
 ## 0.71.5
 
