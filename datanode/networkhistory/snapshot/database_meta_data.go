@@ -57,6 +57,10 @@ func NewDatabaseMetaData(ctx context.Context, connPool *pgxpool.Pool) (DatabaseM
 		return DatabaseMetadata{}, fmt.Errorf("failed to get database version: %w", err)
 	}
 
+	if dbVersion == 0 {
+		return DatabaseMetadata{}, nil
+	}
+
 	tableNames, err := sqlstore.GetAllTableNames(ctx, connPool)
 	if err != nil {
 		return DatabaseMetadata{}, fmt.Errorf("failed to get names of tables to copy:%w", err)
