@@ -3470,8 +3470,8 @@ func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Cont
 }
 
 // NetworkHistoryStatus returns the network history status.
-func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.GetNetworkHistoryStatusRequest) (*v2.GetNetworkHistoryStatusResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("NetworkHistoryStatus")()
+func (t *TradingDataServiceV2) GetNetworkHistoryStatus(context.Context, *v2.GetNetworkHistoryStatusRequest) (*v2.GetNetworkHistoryStatusResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkHistoryStatus")()
 
 	connectedPeerAddresses, err := t.NetworkHistoryService.GetConnectedPeerAddresses()
 	if err != nil {
@@ -3498,7 +3498,7 @@ func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.GetNetw
 }
 
 // NetworkHistoryBootstrapPeers returns the network history bootstrap peers.
-func (t *TradingDataServiceV2) NetworkHistoryBootstrapPeers(context.Context, *v2.GetNetworkHistoryBootstrapPeersRequest) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
+func (t *TradingDataServiceV2) GetNetworkHistoryBootstrapPeers(context.Context, *v2.GetNetworkHistoryBootstrapPeersRequest) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
 	return &v2.GetNetworkHistoryBootstrapPeersResponse{BootstrapPeers: t.NetworkHistoryService.GetBootstrapPeers()}, nil
 }
 
