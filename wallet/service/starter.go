@@ -136,7 +136,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	}
 
 	// API v2
-	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer)
+	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer, serviceCfg.APIV2)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v2", zap.Error(err))
 		return "", nil, err
@@ -220,11 +220,11 @@ func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, spam), nil
 }
 
-func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer) (*servicev2.API, error) {
+func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer, apiv2Cfg APIV2Config) (*servicev2.API, error) {
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 
-	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(clientAPILogger, cfg.API.GRPC.Hosts, cfg.API.GRPC.Retries)
+	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(clientAPILogger, cfg.API.GRPC.Hosts, cfg.API.GRPC.Retries, apiv2Cfg.HealthCheckTTL.Duration)
 	if err != nil {
 		logger.Error("Could not build the node selector", zap.Error(err))
 		return nil, err

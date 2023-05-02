@@ -17,7 +17,7 @@ import (
 // Generates mocks
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/wallet/api WalletStore,NetworkStore,Interactor,ConnectionsManager,SpamHandler
 
-type NodeSelectorBuilder func(hosts []string, retries uint64) (node.Selector, error)
+type NodeSelectorBuilder func(hosts []string, retries uint64, ttl time.Duration) (node.Selector, error)
 
 // WalletStore is the component used to retrieve and update wallets from the
 // computer.

@@ -12,6 +12,7 @@ import (
 var (
 	ErrInvalidLogLevelValue        = errors.New("the service log level is invalid")
 	ErrInvalidMaximumTokenDuration = errors.New("the maximum token duration is invalid")
+	ErrInvalidHealtCheckTTL        = errors.New("the health check ttl is invalid")
 	ErrServerHostUnset             = errors.New("the service host is unset")
 	ErrServerPortUnset             = errors.New("the service port is unset")
 )
@@ -20,6 +21,7 @@ type Config struct {
 	LogLevel vgencoding.LogLevel `json:"logLevel"`
 	Server   ServerConfig        `json:"server"`
 	APIV1    APIV1Config         `json:"apiV1"`
+	APIV2    APIV2Config
 }
 
 type ServerConfig struct {
@@ -35,6 +37,10 @@ type APIV1Config struct {
 	MaximumTokenDuration vgencoding.Duration `json:"maximumTokenDuration"`
 }
 
+type APIV2Config struct {
+	HealthCheckTTL vgencoding.Duration `json:"healthCheckTTL"`
+}
+
 func DefaultConfig() *Config {
 	return &Config{
 		LogLevel: vgencoding.LogLevel{
@@ -44,9 +50,15 @@ func DefaultConfig() *Config {
 			Port: 1789,
 			Host: "127.0.0.1",
 		},
+
 		APIV1: APIV1Config{
 			MaximumTokenDuration: vgencoding.Duration{
 				Duration: 168 * time.Hour,
+			},
+		},
+		APIV2: APIV2Config{
+			HealthCheckTTL: vgencoding.Duration{
+				Duration: 5 * time.Second,
 			},
 		},
 	}
@@ -64,6 +76,11 @@ func (c *Config) Validate() error {
 
 	tokenExpiry := &vgencoding.Duration{}
 	if err := tokenExpiry.UnmarshalText([]byte(c.APIV1.MaximumTokenDuration.String())); err != nil {
+		return ErrInvalidMaximumTokenDuration
+	}
+
+	healthCheckTTL := &vgencoding.Duration{}
+	if err := healthCheckTTL.UnmarshalText([]byte(c.APIV2.HealthCheckTTL.String())); err != nil {
 		return ErrInvalidMaximumTokenDuration
 	}
 
