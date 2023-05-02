@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/commands"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -28,19 +29,23 @@ type AdminLastBlockData struct {
 }
 
 type AdminSignTransactionParams struct {
-	Wallet        string              `json:"wallet"`
-	PublicKey     string              `json:"publicKey"`
-	Network       string              `json:"network"`
-	Transaction   interface{}         `json:"transaction"`
-	LastBlockData *AdminLastBlockData `json:"lastBlockData"`
+	Wallet                 string              `json:"wallet"`
+	PublicKey              string              `json:"publicKey"`
+	Network                string              `json:"network"`
+	Transaction            interface{}         `json:"transaction"`
+	Retries                uint64              `json:"retries"`
+	MaximumRequestDuration time.Duration       `json:"maximumRequestDuration"`
+	LastBlockData          *AdminLastBlockData `json:"lastBlockData"`
 }
 
 type ParsedAdminSignTransactionParams struct {
-	Wallet         string
-	PublicKey      string
-	RawTransaction string
-	Network        string
-	LastBlockData  *AdminLastBlockData
+	Wallet                 string
+	PublicKey              string
+	RawTransaction         string
+	Network                string
+	Retries                uint64
+	MaximumRequestDuration time.Duration
+	LastBlockData          *AdminLastBlockData
 }
 
 type AdminSignTransactionResult struct {
@@ -154,7 +159,7 @@ func (h *AdminSignTransaction) getLastBlockDataFromNetwork(ctx context.Context, 
 		return nil, invalidParams(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
 	}
 
-	nodeSelector, err := h.nodeSelectorBuilder(n.API.GRPC.Hosts, n.API.GRPC.Retries)
+	nodeSelector, err := h.nodeSelectorBuilder(n.API.GRPC.Hosts, params.Retries, params.MaximumRequestDuration)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
@@ -244,10 +249,12 @@ func validateAdminSignTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSi
 	}
 
 	return ParsedAdminSignTransactionParams{
-		Wallet:         params.Wallet,
-		PublicKey:      params.PublicKey,
-		RawTransaction: string(tx),
-		Network:        params.Network,
-		LastBlockData:  params.LastBlockData,
+		Wallet:                 params.Wallet,
+		PublicKey:              params.PublicKey,
+		RawTransaction:         string(tx),
+		Network:                params.Network,
+		Retries:                params.Retries,
+		MaximumRequestDuration: params.MaximumRequestDuration,
+		LastBlockData:          params.LastBlockData,
 	}, nil
 }

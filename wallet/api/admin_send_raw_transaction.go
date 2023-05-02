@@ -14,19 +14,21 @@ import (
 )
 
 type AdminSendRawTransactionParams struct {
-	Network            string `json:"network"`
-	NodeAddress        string `json:"nodeAddress"`
-	Retries            uint64 `json:"retries"`
-	SendingMode        string `json:"sendingMode"`
-	EncodedTransaction string `json:"encodedTransaction"`
+	Network                string        `json:"network"`
+	NodeAddress            string        `json:"nodeAddress"`
+	Retries                uint64        `json:"retries"`
+	MaximumRequestDuration time.Duration `json:"maximumRequestDuration"`
+	SendingMode            string        `json:"sendingMode"`
+	EncodedTransaction     string        `json:"encodedTransaction"`
 }
 
 type ParsedAdminSendRawTransactionParams struct {
-	Network        string
-	NodeAddress    string
-	Retries        uint64
-	SendingMode    apipb.SubmitTransactionRequest_Type
-	RawTransaction string
+	Network                string
+	NodeAddress            string
+	Retries                uint64
+	MaximumRequestDuration time.Duration
+	SendingMode            apipb.SubmitTransactionRequest_Type
+	RawTransaction         string
 }
 
 type AdminSendRawTransactionResult struct {
@@ -59,8 +61,7 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 		return nil, invalidParams(ErrRawTransactionIsNotValidVegaTransaction)
 	}
 
-	var hosts []string
-	var retries uint64
+	hosts := []string{params.NodeAddress}
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
@@ -78,13 +79,9 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 			return nil, internalError(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
 		}
 		hosts = n.API.GRPC.Hosts
-		retries = n.API.GRPC.Retries
-	} else {
-		hosts = []string{params.NodeAddress}
-		retries = params.Retries
 	}
 
-	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
+	nodeSelector, err := h.nodeSelectorBuilder(hosts, params.Retries, params.MaximumRequestDuration)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
@@ -166,10 +163,11 @@ func validateAdminSendRawTransactionParams(rawParams jsonrpc.Params) (ParsedAdmi
 	}
 
 	return ParsedAdminSendRawTransactionParams{
-		Network:        params.Network,
-		NodeAddress:    params.NodeAddress,
-		RawTransaction: string(tx),
-		SendingMode:    sendingMode,
-		Retries:        params.Retries,
+		Network:                params.Network,
+		NodeAddress:            params.NodeAddress,
+		RawTransaction:         string(tx),
+		SendingMode:            sendingMode,
+		Retries:                params.Retries,
+		MaximumRequestDuration: params.MaximumRequestDuration,
 	}, nil
 }

@@ -33,7 +33,7 @@ type RetryingNode struct {
 
 	retries uint64
 
-	ttl time.Duration
+	requestTTL time.Duration
 }
 
 func (n *RetryingNode) Host() string {
@@ -43,7 +43,7 @@ func (n *RetryingNode) Host() string {
 func (n *RetryingNode) Statistics(ctx context.Context) (nodetypes.Statistics, error) {
 	n.log.Debug("querying the node statistics through the graphQL API", zap.String("host", n.grpcAdapter.Host()))
 	requestTime := time.Now()
-	ctx, cancel := context.WithTimeout(ctx, n.ttl)
+	ctx, cancel := context.WithTimeout(ctx, n.requestTTL)
 	defer cancel()
 	resp, err := n.grpcAdapter.Statistics(ctx)
 	if err != nil {
@@ -67,7 +67,7 @@ func (n *RetryingNode) Statistics(ctx context.Context) (nodetypes.Statistics, er
 func (n *RetryingNode) SpamStatistics(ctx context.Context, pubKey string) (nodetypes.SpamStatistics, error) {
 	n.log.Debug("querying the node statistics through the graphQL API", zap.String("host", n.grpcAdapter.Host()))
 	requestTime := time.Now()
-	ctx, cancel := context.WithTimeout(ctx, n.ttl)
+	ctx, cancel := context.WithTimeout(ctx, n.requestTTL)
 	defer cancel()
 	resp, err := n.grpcAdapter.SpamStatistics(ctx, pubKey)
 	if err != nil {
@@ -99,7 +99,7 @@ func (n *RetryingNode) LastBlock(ctx context.Context) (nodetypes.LastBlock, erro
 	var resp nodetypes.LastBlock
 	if err := n.retry(func() error {
 		requestTime := time.Now()
-		ctx, cancel := context.WithTimeout(ctx, n.ttl)
+		ctx, cancel := context.WithTimeout(ctx, n.requestTTL)
 		defer cancel()
 		r, err := n.grpcAdapter.LastBlock(ctx)
 		if err != nil {
@@ -134,7 +134,7 @@ func (n *RetryingNode) CheckTransaction(ctx context.Context, tx *commandspb.Tran
 			Tx: tx,
 		}
 		requestTime := time.Now()
-		ctx, cancel := context.WithTimeout(ctx, n.ttl)
+		ctx, cancel := context.WithTimeout(ctx, n.requestTTL)
 		defer cancel()
 		r, err := n.grpcAdapter.CheckTransaction(ctx, &req)
 		if err != nil {
@@ -170,7 +170,7 @@ func (n *RetryingNode) SendTransaction(ctx context.Context, tx *commandspb.Trans
 			Type: ty,
 		}
 		requestTime := time.Now()
-		ctx, cancel := context.WithTimeout(ctx, n.ttl)
+		ctx, cancel := context.WithTimeout(ctx, n.requestTTL)
 		defer cancel()
 		r, err := n.grpcAdapter.SubmitTransaction(ctx, &req)
 		if err != nil {
@@ -256,11 +256,11 @@ func NewRetryingNode(log *zap.Logger, host string, retries uint64, ttl time.Dura
 	return BuildRetryingNode(log, grpcAdapter, retries, ttl), nil
 }
 
-func BuildRetryingNode(log *zap.Logger, grpcAdapter GRPCAdapter, retries uint64, ttl time.Duration) *RetryingNode {
+func BuildRetryingNode(log *zap.Logger, grpcAdapter GRPCAdapter, retries uint64, requestTTL time.Duration) *RetryingNode {
 	return &RetryingNode{
 		log:         log,
 		grpcAdapter: grpcAdapter,
 		retries:     retries,
-		ttl:         ttl,
+		requestTTL:  requestTTL,
 	}
 }

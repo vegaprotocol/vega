@@ -49,14 +49,13 @@ func validateUpdateNetworkParams(rawParams jsonrpc.Params) (network.Network, err
 		Name:     params.Name,
 		Metadata: params.Metadata,
 		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
-				Hosts:   params.API.GRPC.Hosts,
-				Retries: params.API.GRPC.Retries,
+			GRPC: network.HostConfig{
+				Hosts: params.API.GRPC.Hosts,
 			},
-			REST: network.RESTConfig{
+			REST: network.HostConfig{
 				Hosts: params.API.REST.Hosts,
 			},
-			GraphQL: network.GraphQLConfig{
+			GraphQL: network.HostConfig{
 				Hosts: params.API.GraphQL.Hosts,
 			},
 		},

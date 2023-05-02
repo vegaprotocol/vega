@@ -20,23 +20,25 @@ import (
 )
 
 type AdminSendTransactionParams struct {
-	Wallet      string      `json:"wallet"`
-	PublicKey   string      `json:"publicKey"`
-	Network     string      `json:"network"`
-	NodeAddress string      `json:"nodeAddress"`
-	Retries     uint64      `json:"retries"`
-	SendingMode string      `json:"sendingMode"`
-	Transaction interface{} `json:"transaction"`
+	Wallet                 string        `json:"wallet"`
+	PublicKey              string        `json:"publicKey"`
+	Network                string        `json:"network"`
+	NodeAddress            string        `json:"nodeAddress"`
+	Retries                uint64        `json:"retries"`
+	MaximumRequestDuration time.Duration `json:"maximumRequestDuration"`
+	SendingMode            string        `json:"sendingMode"`
+	Transaction            interface{}   `json:"transaction"`
 }
 
 type ParsedAdminSendTransactionParams struct {
-	Wallet         string
-	PublicKey      string
-	Network        string
-	NodeAddress    string
-	Retries        uint64
-	SendingMode    apipb.SubmitTransactionRequest_Type
-	RawTransaction string
+	Wallet                 string
+	PublicKey              string
+	Network                string
+	NodeAddress            string
+	Retries                uint64
+	SendingMode            apipb.SubmitTransactionRequest_Type
+	RawTransaction         string
+	MaximumRequestDuration time.Duration
 }
 
 type AdminSendTransactionResult struct {
@@ -151,8 +153,7 @@ func (h *AdminSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 }
 
 func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSendTransactionParams) (node.Node, *jsonrpc.ErrorDetails) {
-	var hosts []string
-	var retries uint64
+	hosts := []string{params.NodeAddress}
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
@@ -170,13 +171,9 @@ func (h *AdminSendTransaction) getNode(ctx context.Context, params ParsedAdminSe
 			return nil, invalidParams(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
 		}
 		hosts = n.API.GRPC.Hosts
-		retries = n.API.GRPC.Retries
-	} else {
-		hosts = []string{params.NodeAddress}
-		retries = params.Retries
 	}
 
-	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
+	nodeSelector, err := h.nodeSelectorBuilder(hosts, params.Retries, params.MaximumRequestDuration)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}

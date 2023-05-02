@@ -94,7 +94,7 @@ func testUpdatingNetworkWithValidParamsSucceeds(t *testing.T) {
 	handler.networkStore.EXPECT().SaveNetwork(&network.Network{
 		Name: name,
 		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+			GRPC: network.HostConfig{
 				Hosts: []string{
 					"localhost:1234",
 				},

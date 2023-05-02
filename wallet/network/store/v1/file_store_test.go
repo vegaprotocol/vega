@@ -206,21 +206,20 @@ func testFileStoreV1GetExistingNetworkSucceeds(t *testing.T) {
 			},
 		},
 		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+			GRPC: network.HostConfig{
 				Hosts: []string{
 					vgrand.RandomStr(10),
 					vgrand.RandomStr(10),
 					vgrand.RandomStr(10),
 				},
-				Retries: 5,
 			},
-			REST: network.RESTConfig{
+			REST: network.HostConfig{
 				Hosts: []string{
 					vgrand.RandomStr(10),
 					vgrand.RandomStr(10),
 				},
 			},
-			GraphQL: network.GraphQLConfig{
+			GraphQL: network.HostConfig{
 				Hosts: []string{
 					vgrand.RandomStr(10),
 					vgrand.RandomStr(10),

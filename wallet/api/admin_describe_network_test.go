@@ -91,7 +91,6 @@ func testDescribingNetworkWithValidParamsSucceeds(t *testing.T) {
 	require.Nil(t, errorDetails)
 	assert.Equal(t, network.Name, result.Name)
 	assert.Equal(t, network.API.GRPC.Hosts, result.API.GRPC.Hosts)
-	assert.Equal(t, network.API.GRPC.Retries, result.API.GRPC.Retries)
 	assert.Equal(t, network.API.REST.Hosts, result.API.REST.Hosts)
 	assert.Equal(t, network.API.GraphQL.Hosts, result.API.GraphQL.Hosts)
 }

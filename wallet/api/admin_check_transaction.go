@@ -21,21 +21,23 @@ import (
 )
 
 type AdminCheckTransactionParams struct {
-	Wallet      string      `json:"wallet"`
-	PublicKey   string      `json:"publicKey"`
-	Network     string      `json:"network"`
-	NodeAddress string      `json:"nodeAddress"`
-	Retries     uint64      `json:"retries"`
-	Transaction interface{} `json:"transaction"`
+	Wallet                 string        `json:"wallet"`
+	PublicKey              string        `json:"publicKey"`
+	Network                string        `json:"network"`
+	NodeAddress            string        `json:"nodeAddress"`
+	Retries                uint64        `json:"retries"`
+	MaximumRequestDuration time.Duration `json:"maximumRequestDuration"`
+	Transaction            interface{}   `json:"transaction"`
 }
 
 type ParsedAdminCheckTransactionParams struct {
-	Wallet         string
-	PublicKey      string
-	Network        string
-	NodeAddress    string
-	Retries        uint64
-	RawTransaction string
+	Wallet                 string
+	PublicKey              string
+	Network                string
+	NodeAddress            string
+	Retries                uint64
+	RawTransaction         string
+	MaximumRequestDuration time.Duration
 }
 
 type AdminCheckTransactionResult struct {
@@ -150,8 +152,7 @@ func (h *AdminCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 }
 
 func (h *AdminCheckTransaction) getNode(ctx context.Context, params ParsedAdminCheckTransactionParams) (node.Node, *jsonrpc.ErrorDetails) {
-	var hosts []string
-	var retries uint64
+	hosts := []string{params.NodeAddress}
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
@@ -169,13 +170,9 @@ func (h *AdminCheckTransaction) getNode(ctx context.Context, params ParsedAdminC
 			return nil, invalidParams(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
 		}
 		hosts = n.API.GRPC.Hosts
-		retries = n.API.GRPC.Retries
-	} else {
-		hosts = []string{params.NodeAddress}
-		retries = params.Retries
 	}
 
-	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
+	nodeSelector, err := h.nodeSelectorBuilder(hosts, params.Retries, params.MaximumRequestDuration)
 	if err != nil {
 		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}

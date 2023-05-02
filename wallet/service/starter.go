@@ -224,7 +224,12 @@ func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *netwo
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 
-	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(clientAPILogger, cfg.API.GRPC.Hosts, cfg.API.GRPC.Retries, apiv2Cfg.HealthCheckTTL.Duration)
+	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(
+		clientAPILogger,
+		cfg.API.GRPC.Hosts,
+		apiv2Cfg.Nodes.MaximumRetryPerRequest,
+		apiv2Cfg.Nodes.MaximumRequestDuration.Duration,
+	)
 	if err != nil {
 		logger.Error("Could not build the node selector", zap.Error(err))
 		return nil, err

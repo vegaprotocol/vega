@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
@@ -53,6 +54,9 @@ var (
 		# "base64"
 		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --network NETWORK TRANSACTION > result.txt
 		base64 --decode --input result.txt
+
+		# Sign a transaction online with a maximum request duration of 10 seconds
+		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --network NETWORK --max-request-duration "10s" TRANSACTION
 	`)
 )
 
@@ -82,8 +86,8 @@ func NewCmdSignTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminSignTransactionResult{}, errors.New(errDetails.Data)
 		}
 
-		signTx := api.NewAdminSignTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		signTx := api.NewAdminSignTransaction(walletStore, ns, func(hosts []string, retries uint64, requestTTL time.Duration) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries, requestTTL)
 		})
 
 		rawResult, errDetails := signTx.Handle(ctx, params)
@@ -183,6 +187,16 @@ func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *Ro
 		"",
 		"The network the transaction will be sent to",
 	)
+	cmd.Flags().Uint64Var(&f.Retries,
+		"retries",
+		defaultRequestRetryCount,
+		"Number of retries when contacting the Vega node",
+	)
+	cmd.Flags().DurationVar(&f.MaximumRequestDuration,
+		"max-request-duration",
+		defaultMaxRequestDuration,
+		"Maximum duration the wallet will wait for a node to respond. Supported format: <number>+<time unit>. Valid time units are `s` and `m`.",
+	)
 
 	autoCompleteWallet(cmd, rf.Home, "wallet")
 
@@ -190,20 +204,25 @@ func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *Ro
 }
 
 type SignTransactionFlags struct {
-	Wallet          string
-	PubKey          string
-	PassphraseFile  string
-	RawTransaction  string
-	TxBlockHeight   uint64
-	ChainID         string
-	TxBlockHash     string
-	PowDifficulty   uint32
-	PowHashFunction string
-	Network         string
+	Wallet                 string
+	PubKey                 string
+	PassphraseFile         string
+	RawTransaction         string
+	TxBlockHeight          uint64
+	ChainID                string
+	TxBlockHash            string
+	PowDifficulty          uint32
+	PowHashFunction        string
+	Network                string
+	Retries                uint64
+	MaximumRequestDuration time.Duration
 }
 
 func (f *SignTransactionFlags) Validate() (api.AdminSignTransactionParams, string, error) {
-	params := api.AdminSignTransactionParams{}
+	params := api.AdminSignTransactionParams{
+		MaximumRequestDuration: f.MaximumRequestDuration,
+		Retries:                f.Retries,
+	}
 
 	if len(f.Wallet) == 0 {
 		return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("wallet")

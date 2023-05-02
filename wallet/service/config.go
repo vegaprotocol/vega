@@ -10,18 +10,18 @@ import (
 )
 
 var (
-	ErrInvalidLogLevelValue        = errors.New("the service log level is invalid")
-	ErrInvalidMaximumTokenDuration = errors.New("the maximum token duration is invalid")
-	ErrInvalidHealtCheckTTL        = errors.New("the health check ttl is invalid")
-	ErrServerHostUnset             = errors.New("the service host is unset")
-	ErrServerPortUnset             = errors.New("the service port is unset")
+	ErrInvalidLogLevelValue              = errors.New("the service log level is invalid")
+	ErrInvalidMaximumTokenDuration       = errors.New("the maximum token duration is invalid")
+	ErrInvalidMaximumNodeRequestDuration = errors.New("the maximum request duration is invalid")
+	ErrServerHostUnset                   = errors.New("the service host is unset")
+	ErrServerPortUnset                   = errors.New("the service port is unset")
 )
 
 type Config struct {
 	LogLevel vgencoding.LogLevel `json:"logLevel"`
 	Server   ServerConfig        `json:"server"`
 	APIV1    APIV1Config         `json:"apiV1"`
-	APIV2    APIV2Config
+	APIV2    APIV2Config         `json:"apiV2"`
 }
 
 type ServerConfig struct {
@@ -38,7 +38,12 @@ type APIV1Config struct {
 }
 
 type APIV2Config struct {
-	HealthCheckTTL vgencoding.Duration `json:"healthCheckTTL"`
+	Nodes Nodes `json:"nodes"`
+}
+
+type Nodes struct {
+	MaximumRetryPerRequest uint64              `json:"maximumRetryPerRequest"`
+	MaximumRequestDuration vgencoding.Duration `json:"maximumRequestDuration"`
 }
 
 func DefaultConfig() *Config {
@@ -57,8 +62,11 @@ func DefaultConfig() *Config {
 			},
 		},
 		APIV2: APIV2Config{
-			HealthCheckTTL: vgencoding.Duration{
-				Duration: 5 * time.Second,
+			Nodes: Nodes{
+				MaximumRetryPerRequest: 5,
+				MaximumRequestDuration: vgencoding.Duration{
+					Duration: 5 * time.Second,
+				},
 			},
 		},
 	}
@@ -79,9 +87,9 @@ func (c *Config) Validate() error {
 		return ErrInvalidMaximumTokenDuration
 	}
 
-	healthCheckTTL := &vgencoding.Duration{}
-	if err := healthCheckTTL.UnmarshalText([]byte(c.APIV2.HealthCheckTTL.String())); err != nil {
-		return ErrInvalidMaximumTokenDuration
+	requestExpiry := &vgencoding.Duration{}
+	if err := requestExpiry.UnmarshalText([]byte(c.APIV2.Nodes.MaximumRequestDuration.String())); err != nil {
+		return ErrInvalidMaximumNodeRequestDuration
 	}
 
 	logLevel := &vgencoding.LogLevel{}

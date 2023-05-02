@@ -47,7 +47,7 @@ func assertEqualSchema(t *testing.T, method string, params interface{}, result i
 	mioDefinitionFromDoc, err := parseASTFromDoc(t, method)
 	require.NoError(t, err)
 
-	require.Equal(t, mioDefinitionFromGo, mioDefinitionFromDoc)
+	require.Equal(t, mioDefinitionFromGo, mioDefinitionFromDoc, "The openRPC and the go code are not in sync!")
 }
 
 func deterministNestedProperties(nodes []astNode) []astNode {

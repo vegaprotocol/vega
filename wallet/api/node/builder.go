@@ -7,10 +7,10 @@ import (
 	"go.uber.org/zap"
 )
 
-func BuildRoundRobinSelectorWithRetryingNodes(log *zap.Logger, hosts []string, retries uint64, ttl time.Duration) (Selector, error) {
+func BuildRoundRobinSelectorWithRetryingNodes(log *zap.Logger, hosts []string, retries uint64, requestTTL time.Duration) (Selector, error) {
 	nodes := make([]Node, 0, len(hosts))
 	for _, host := range hosts {
-		n, err := NewRetryingNode(log.Named("retrying-node"), host, retries, ttl)
+		n, err := NewRetryingNode(log.Named("retrying-node"), host, retries, requestTTL)
 		if err != nil {
 			return nil, fmt.Errorf("could not initialize the node %q: %w", host, err)
 		}

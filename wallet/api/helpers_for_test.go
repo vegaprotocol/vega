@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -142,18 +143,17 @@ func newNetwork(t *testing.T) network.Network {
 	return network.Network{
 		Name: vgrand.RandomStr(5),
 		API: network.APIConfig{
-			GRPC: network.GRPCConfig{
+			GRPC: network.HostConfig{
 				Hosts: []string{
 					"n01.localtest.vega.xyz:3007",
 				},
-				Retries: 5,
 			},
-			REST: network.RESTConfig{
+			REST: network.HostConfig{
 				Hosts: []string{
 					"http://n01.localtest.vega.xyz:3097",
 				},
 			},
-			GraphQL: network.GraphQLConfig{
+			GraphQL: network.HostConfig{
 				Hosts: []string{
 					"http://n01.localtest.vega.xyz:3087",
 				},
@@ -175,7 +175,7 @@ func generateKey(t *testing.T, w wallet.Wallet) wallet.KeyPair {
 func unexpectedNodeSelectorCall(t *testing.T) api.NodeSelectorBuilder {
 	t.Helper()
 
-	return func(hosts []string, retries uint64) (node.Selector, error) {
+	return func(hosts []string, _ uint64, _ time.Duration) (node.Selector, error) {
 		t.Fatalf("node selector shouldn't be called")
 		return nil, nil
 	}

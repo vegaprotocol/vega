@@ -51,6 +51,9 @@ var (
 		# Check a transaction with a maximum of 10 retries
 		{{.Software}} transaction check --network NETWORK --wallet WALLET --pubkey PUBKEY --retries 10 TRANSACTION
 
+		# Check a transaction with a maximum request duration of 10 seconds
+		{{.Software}} transaction check --network NETWORK --wallet WALLET --pubkey PUBKEY --max-request-duration "10s" TRANSACTION
+
 		# Check a transaction and send it to a registered network without verifying network version compatibility
 		{{.Software}} transaction check --network NETWORK --wallet WALLET --pubkey PUBKEY --no-version-check TRANSACTION
 	`)
@@ -82,8 +85,8 @@ func NewCmdCheckTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminCheckTransactionResult{}, errors.New(errDetails.Data)
 		}
 
-		checkTx := api.NewAdminCheckTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		checkTx := api.NewAdminCheckTransaction(walletStore, ns, func(hosts []string, retries uint64, requestTTL time.Duration) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries, requestTTL)
 		})
 
 		rawResult, errDetails := checkTx.Handle(ctx, params)
@@ -169,8 +172,13 @@ func BuildCmdCheckTransaction(w io.Writer, handler CheckTransactionHandler, rf *
 	)
 	cmd.Flags().Uint64Var(&f.Retries,
 		"retries",
-		DefaultForwarderRetryCount,
+		defaultRequestRetryCount,
 		"Number of retries when contacting the Vega node",
+	)
+	cmd.Flags().DurationVar(&f.MaximumRequestDuration,
+		"max-request-duration",
+		defaultMaxRequestDuration,
+		"Maximum duration the wallet will wait for a node to respond. Supported format: <number>+<time unit>. Valid time units are `s` and `m`.",
 	)
 	cmd.Flags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
@@ -186,15 +194,16 @@ func BuildCmdCheckTransaction(w io.Writer, handler CheckTransactionHandler, rf *
 }
 
 type CheckTransactionFlags struct {
-	Network        string
-	NodeAddress    string
-	Wallet         string
-	PubKey         string
-	PassphraseFile string
-	Retries        uint64
-	LogLevel       string
-	RawTransaction string
-	NoVersionCheck bool
+	Network                string
+	NodeAddress            string
+	Wallet                 string
+	PubKey                 string
+	PassphraseFile         string
+	Retries                uint64
+	LogLevel               string
+	RawTransaction         string
+	NoVersionCheck         bool
+	MaximumRequestDuration time.Duration
 }
 
 func (f *CheckTransactionFlags) Validate() (api.AdminCheckTransactionParams, string, error) {
@@ -239,12 +248,13 @@ func (f *CheckTransactionFlags) Validate() (api.AdminCheckTransactionParams, str
 	}
 
 	params := api.AdminCheckTransactionParams{
-		Wallet:      f.Wallet,
-		PublicKey:   f.PubKey,
-		Network:     f.Network,
-		NodeAddress: f.NodeAddress,
-		Retries:     f.Retries,
-		Transaction: transaction,
+		Wallet:                 f.Wallet,
+		PublicKey:              f.PubKey,
+		Network:                f.Network,
+		NodeAddress:            f.NodeAddress,
+		Retries:                f.Retries,
+		MaximumRequestDuration: f.MaximumRequestDuration,
+		Transaction:            transaction,
 	}
 
 	return params, passphrase, nil
