@@ -62,8 +62,8 @@ message StopOrder {
   oneof trigger {
     // A fixed price at which the order will be submitted.
     string price = 100;
-    // A trailling percentage at wich the order will be submitted.
-    string trailling_percent_offset = 101;
+    // A trailing percentage at wich the order will be submitted.
+    string trailing_percent_offset = 101;
   }
 }
 
