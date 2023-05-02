@@ -2692,6 +2692,10 @@ func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.Scali
 func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition")()
 
+	if req.MarketId == "" {
+		return nil, ErrEmptyMissingMarketID
+	}
+
 	var collateralAvailable num.Decimal
 	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
 		var err error
@@ -2723,15 +2727,22 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		var price num.Decimal
 		p, err := num.DecimalFromString(o.Price)
 		if err != nil {
-			return nil, errors.Wrap(ErrInvalidOrderPrice, err.Error())
+			return nil, formatE(ErrInvalidOrderPrice, err)
 		}
+
+		if p.IsNegative() || !p.IsInteger() {
+			return nil, ErrInvalidOrderPrice
+		}
+
 		price = p.Mul(dPriceFactor)
 
-		if o.Side == types.SideBuy {
+		switch o.Side {
+		case types.SideBuy:
 			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
-		}
-		if o.Side == types.SideSell {
+		case types.SideSell:
 			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		default:
+			return nil, ErrInvalidOrderSide
 		}
 	}
 

@@ -3141,23 +3141,21 @@ message PingResponse {}
 message OrderInfo {
   // Side for the order, e.g. buy or sell.
   vega.Side side = 1;
-  // Price for the order. The price is an integer, for example `123456` is a correctly
+  // Price for the order. The price is an unsigned integer. For example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's decimal places.
   string price = 2;
   // Size remaining.
-  // This field is an unsigned integer passed as a string and needs to be scaled using the market's position decimal places.
   uint64 remaining = 3;
   // Boolean that indicates if it is a market order.
   bool is_market_order = 4;
 }
 
-// Request for the estimate of the margin level and, if available collateral is provided, liqudation price for the specified position.
+// Request for the estimate of the margin level and, if available collateral is provided, liquidation price for the specified position.
 message EstimatePositionRequest {
-  // Market ID.
+  // Market ID to estimate position for.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
-  // Open volume.
-  // This field is an signed integer (negative for short position) passed as a string and needs to be scaled using the market's position decimal places.
+  // Open volume. This field is a signed integer scaled to the market's position decimal places.
+  // A negative number denotes a short position.
   int64 open_volume = 2 [(google.api.field_behavior) = REQUIRED];
   // Open and/or hypothetical orders.
   repeated OrderInfo orders = 3;
@@ -3165,7 +3163,7 @@ message EstimatePositionRequest {
   optional string collateral_available = 4;
 }
 
-// Response for the estimate of the margin level and, if available collateral was provided in the request, liqudation price for the specified position.
+// Response for the estimate of the margin level and, if available collateral was provided in the request, liquidation price for the specified position.
 message EstimatePositionResponse {
   // Margin level range estimate for the specified position.
   MarginEstimate margin = 1;
