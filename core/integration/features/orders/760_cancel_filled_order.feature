@@ -154,7 +154,7 @@ Feature: Close a filled order twice
       | aux    | 40     | 80             | 369          | 
       | aux2   | 0      | 0              | -369         |  
 
-  Scenario: 002 0068-MATC-048 for reduce-only MO, if not enough volume is available to **fully** fill the order, the remaining will be cancelled, AC 0033-OCAN-008; 0033-OCAN-009
+  Scenario: 002 0068-MATC-048 for reduce-only MO, if not enough volume is available to **fully** fill the order, the remaining will be cancelled; check other order on the market when party canceled some order AC 0033-OCAN-008; 0033-OCAN-009
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
       | aux              | BTC   | 100000    |
@@ -204,9 +204,6 @@ Feature: Close a filled order twice
       | side | price | volume |
       | buy  | 2     | 2      |
       | sell | 200   | 4      |
-      | sell | 201   | 0      |
-      | sell | 202   | 0      |
-      | sell | 203   | 0      |
 
     And then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -255,4 +252,6 @@ Feature: Close a filled order twice
       | buy  | 2     | 2      |
       | sell | 200   | 0      |
       | sell | 204   | 4      |
+    And then the network moves ahead "1" blocks
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
      
