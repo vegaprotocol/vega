@@ -1,7 +1,7 @@
 ---
 name: Feature ticket
 about: A full description of a new feature, or part of a feature, that we wish to develop
-title: ''
+title: '[Feature]: '
 labels: "feature"
 assignees: ''
 ---
