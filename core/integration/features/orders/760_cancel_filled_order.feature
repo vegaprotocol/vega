@@ -154,7 +154,7 @@ Feature: Close a filled order twice
       | aux    | 40     | 80             | 369          | 
       | aux2   | 0      | 0              | -369         |  
 
-  Scenario: 002 0068-MATC-048 for reduce-only MO, if not enough volume is available to **fully** fill the order, the remaining will be cancelled
+  Scenario: 002 0068-MATC-048 for reduce-only MO, if not enough volume is available to **fully** fill the order, the remaining will be cancelled; check other order on the market when party canceled some order AC 0033-OCAN-008; 0033-OCAN-009
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
       | aux              | BTC   | 100000    |
@@ -199,13 +199,11 @@ Feature: Close a filled order twice
       | party | reference| price | size delta | tif     | error                        |
       | aux   | ref-14   | 200   | 1          | TIF_GTC | OrderError: Invalid Order ID |
 
+    # Cancelling an order for a party (aux) leaves its other orders on the current market unaffected, 0033-OCAN-009
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
       | buy  | 2     | 2      |
       | sell | 200   | 4      |
-      | sell | 201   | 0      |
-      | sell | 202   | 0      |
-      | sell | 203   | 0      |
 
     And then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -224,4 +222,36 @@ Feature: Close a filled order twice
 
     And then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-  
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 2     | 2      |
+      | sell | 200   | 4      |
+      | sell | 201   | 0      |
+      | sell | 202   | 0      |
+      | sell | 203   | 0      |
+
+     When the parties place the following orders with ticks:
+      | party| market id | side | volume | price | resulting trades | type        | tif     | reference       | 
+      | aux2 | ETH/DEC19 | buy  | 1      | 200   | 1                | TYPE_LIMIT  | TIF_GTC | new-buy-order-1 |
+      | aux2 | ETH/DEC19 | sell | 4      | 204   | 0                | TYPE_LIMIT  | TIF_GTC | new-sell-order-1 |
+         
+    # An order which is partially filled, but still active, can be cancelled, 0033-OCAN-008
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 2     | 2      |
+      | sell | 200   | 3      |
+      | sell | 204   | 4      |
+
+    When the parties cancel the following orders:
+      | party | reference | error |
+      | aux   | ref-13    |       |
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 2     | 2      |
+      | sell | 200   | 0      |
+      | sell | 204   | 4      |
+    And then the network moves ahead "1" blocks
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+     
