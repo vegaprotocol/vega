@@ -17,6 +17,7 @@
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
+- [8251](https://github.com/vegaprotocol/vega/issues/8251) - Fix bug in expired orders optimisation resulting in non deterministic order sequence numbers
 - [8226](https://github.com/vegaprotocol/vega/issues/8226) - Fix auto initialise failure when initialising empty node
 - [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
