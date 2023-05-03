@@ -19,10 +19,17 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.71.4
+
+### 🐛 Fixes
+- [8251](https://github.com/vegaprotocol/vega/issues/8251) - Fix bug in expired orders optimisation resulting in non deterministic order sequence numbers
+
+
 ## 0.71.3
 
 ### 🐛 Fixes
 - [8231](https://github.com/vegaprotocol/vega/issues/8231) - Fix `GetNetworkHistoryStatus`
+
 
 ## 0.71.2
 
@@ -35,7 +42,6 @@
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
-
 
 ## 0.71.0
 
