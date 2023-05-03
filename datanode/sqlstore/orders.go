@@ -127,7 +127,7 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	// select directly from orders_live table, the current view searches in orders
 	// this is used to expire orders, which have to be, by definition, live. This table uses ID as its PK
 	// so this is a more optimal way of querying the data.
-	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
+	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s) order by id`, sqlOrderColumns, strings.Join(in, ", "))
 	orders := make([]entities.Order, 0, len(orderIDs))
 	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
 
