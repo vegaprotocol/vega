@@ -35,7 +35,7 @@ func TestDescribeNetwork(t *testing.T) {
 	require.NoError(t, err)
 	AssertDescribeNetwork(t, describeResp).
 		WithName("my-network-1").
-		WithGRPCConfig([]string{"example.com:3007"}, 5).
+		WithGRPCConfig([]string{"example.com:3007"}).
 		WithRESTConfig([]string{"https://example.com/rest"}).
 		WithGraphQLConfig([]string{"https://example.com/gql/query"})
 

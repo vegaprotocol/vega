@@ -10,16 +10,18 @@ import (
 )
 
 var (
-	ErrInvalidLogLevelValue        = errors.New("the service log level is invalid")
-	ErrInvalidMaximumTokenDuration = errors.New("the maximum token duration is invalid")
-	ErrServerHostUnset             = errors.New("the service host is unset")
-	ErrServerPortUnset             = errors.New("the service port is unset")
+	ErrInvalidLogLevelValue              = errors.New("the service log level is invalid")
+	ErrInvalidMaximumTokenDuration       = errors.New("the maximum token duration is invalid")
+	ErrInvalidMaximumNodeRequestDuration = errors.New("the maximum request duration is invalid")
+	ErrServerHostUnset                   = errors.New("the service host is unset")
+	ErrServerPortUnset                   = errors.New("the service port is unset")
 )
 
 type Config struct {
 	LogLevel vgencoding.LogLevel `json:"logLevel"`
 	Server   ServerConfig        `json:"server"`
 	APIV1    APIV1Config         `json:"apiV1"`
+	APIV2    APIV2Config         `json:"apiV2"`
 }
 
 type ServerConfig struct {
@@ -35,6 +37,15 @@ type APIV1Config struct {
 	MaximumTokenDuration vgencoding.Duration `json:"maximumTokenDuration"`
 }
 
+type APIV2Config struct {
+	Nodes Nodes `json:"nodes"`
+}
+
+type Nodes struct {
+	MaximumRetryPerRequest uint64              `json:"maximumRetryPerRequest"`
+	MaximumRequestDuration vgencoding.Duration `json:"maximumRequestDuration"`
+}
+
 func DefaultConfig() *Config {
 	return &Config{
 		LogLevel: vgencoding.LogLevel{
@@ -44,9 +55,18 @@ func DefaultConfig() *Config {
 			Port: 1789,
 			Host: "127.0.0.1",
 		},
+
 		APIV1: APIV1Config{
 			MaximumTokenDuration: vgencoding.Duration{
 				Duration: 168 * time.Hour,
+			},
+		},
+		APIV2: APIV2Config{
+			Nodes: Nodes{
+				MaximumRetryPerRequest: 5,
+				MaximumRequestDuration: vgencoding.Duration{
+					Duration: 5 * time.Second,
+				},
 			},
 		},
 	}
@@ -65,6 +85,11 @@ func (c *Config) Validate() error {
 	tokenExpiry := &vgencoding.Duration{}
 	if err := tokenExpiry.UnmarshalText([]byte(c.APIV1.MaximumTokenDuration.String())); err != nil {
 		return ErrInvalidMaximumTokenDuration
+	}
+
+	requestExpiry := &vgencoding.Duration{}
+	if err := requestExpiry.UnmarshalText([]byte(c.APIV2.Nodes.MaximumRequestDuration.String())); err != nil {
+		return ErrInvalidMaximumNodeRequestDuration
 	}
 
 	logLevel := &vgencoding.LogLevel{}

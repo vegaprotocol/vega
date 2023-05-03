@@ -38,8 +38,7 @@ func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Param
 		Metadata: n.Metadata,
 		API: AdminAPIConfig{
 			GRPC: AdminGRPCConfig{
-				Hosts:   n.API.GRPC.Hosts,
-				Retries: n.API.GRPC.Retries,
+				Hosts: n.API.GRPC.Hosts,
 			},
 			REST: AdminRESTConfig{
 				Hosts: n.API.REST.Hosts,

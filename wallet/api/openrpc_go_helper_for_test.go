@@ -37,7 +37,7 @@ func resolveNestedProperties(rootType reflect.Type) ([]astNode, error) {
 		return resolveNestedPropertiesForArray(unwrappedType)
 	}
 
-	if unwrappedType.Kind() == reflect.Struct && unwrappedType.String() != "time.Time" {
+	if unwrappedType.Kind() == reflect.Struct && !structShouldBeString(unwrappedType) {
 		return resolveNestedPropertiesForStruct(unwrappedType)
 	}
 
@@ -46,6 +46,10 @@ func resolveNestedProperties(rootType reflect.Type) ([]astNode, error) {
 	}
 
 	return nil, nil
+}
+
+func structShouldBeString(unwrappedType reflect.Type) bool {
+	return unwrappedType.String() == "time.Time"
 }
 
 func resolveNestedPropertiesForMap(unwrappedType reflect.Type) ([]astNode, error) {
@@ -72,7 +76,7 @@ func resolveNestedPropertiesForArray(unwrappedType reflect.Type) ([]astNode, err
 	elemType := unwrappedType.Elem()
 	unwrappedElemType := unwrapType(elemType)
 
-	if unwrappedElemType.Kind() == reflect.Struct && unwrappedElemType.String() != "time.Time" {
+	if unwrappedElemType.Kind() == reflect.Struct && !structShouldBeString(unwrappedType) {
 		itemsProperty, err := resolveNestedPropertiesForStruct(unwrappedElemType)
 		if err != nil {
 			return nil, fmt.Errorf("could not reflect on the item properties %q: %w", unwrappedType.String(), err)
@@ -197,7 +201,7 @@ func goTypeToJSONType(fieldType reflect.Type) (nodeType, error) {
 	case reflect.Bool:
 		return nodeTypeBoolean, nil
 	case reflect.Struct, reflect.Map, reflect.Interface:
-		if fieldType.String() == "time.Time" {
+		if structShouldBeString(fieldType) {
 			return nodeTypeString, nil
 		}
 		return nodeTypeObject, nil

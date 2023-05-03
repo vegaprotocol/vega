@@ -45,6 +45,9 @@ var (
 		# Send a transaction with a maximum of 10 retries
 		{{.Software}} raw_transaction send --network NETWORK --retries 10 BASE64_TRANSACTION
 
+		# Send a transaction with a maximum request duration of 10 seconds
+		{{.Software}} raw_transaction send --network NETWORK --max-request-duration "10s" BASE64_TRANSACTION
+
 		# Send a transaction without verifying network version compatibility
 		{{.Software}} raw_transaction send --network NETWORK --retries 10 BASE64_TRANSACTION --no-version-check
 	`)
@@ -58,11 +61,11 @@ func NewCmdRawTransactionSend(w io.Writer, rf *RootFlags) *cobra.Command {
 
 		netStore, err := networkStore.InitialiseStore(vegaPaths)
 		if err != nil {
-			return api.AdminSendRawTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
+			return api.AdminSendRawTransactionResult{}, fmt.Errorf("could not initialise network store: %w", err)
 		}
 
-		sendTransaction := api.NewAdminSendRawTransaction(netStore, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		sendTransaction := api.NewAdminSendRawTransaction(netStore, func(hosts []string, retries uint64, requestTTL time.Duration) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries, requestTTL)
 		})
 		rawResult, errorDetails := sendTransaction.Handle(context.Background(), params)
 		if errorDetails != nil {
@@ -96,7 +99,7 @@ func BuildCmdRawTransactionSend(w io.Writer, handler SendRawTransactionHandler, 
 
 			log, err := buildCmdLogger(rf.Output, f.LogLevel)
 			if err != nil {
-				return fmt.Errorf("couldn't initialise logger: %w", err)
+				return fmt.Errorf("could not initialise logger: %w", err)
 			}
 			defer vgzap.Sync(log)
 
@@ -133,8 +136,13 @@ func BuildCmdRawTransactionSend(w io.Writer, handler SendRawTransactionHandler, 
 	)
 	cmd.Flags().Uint64Var(&f.Retries,
 		"retries",
-		DefaultForwarderRetryCount,
+		defaultRequestRetryCount,
 		"Number of retries when contacting the Vega node",
+	)
+	cmd.Flags().DurationVar(&f.MaximumRequestDuration,
+		"max-request-duration",
+		defaultMaxRequestDuration,
+		"Maximum duration the wallet will wait for a node to respond. Supported format: <number>+<time unit>. Valid time units are `s` and `m`.",
 	)
 	cmd.Flags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
@@ -148,17 +156,19 @@ func BuildCmdRawTransactionSend(w io.Writer, handler SendRawTransactionHandler, 
 }
 
 type SendRawTransactionFlags struct {
-	Network        string
-	NodeAddress    string
-	Retries        uint64
-	LogLevel       string
-	RawTx          string
-	NoVersionCheck bool
+	Network                string
+	NodeAddress            string
+	Retries                uint64
+	LogLevel               string
+	RawTx                  string
+	NoVersionCheck         bool
+	MaximumRequestDuration time.Duration
 }
 
 func (f *SendRawTransactionFlags) Validate() (api.AdminSendRawTransactionParams, error) {
 	req := api.AdminSendRawTransactionParams{
-		Retries: f.Retries,
+		Retries:                f.Retries,
+		MaximumRequestDuration: f.MaximumRequestDuration,
 	}
 
 	if len(f.LogLevel) == 0 {
@@ -187,7 +197,7 @@ func (f *SendRawTransactionFlags) Validate() (api.AdminSendRawTransactionParams,
 	}
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(decodedTx, tx); err != nil {
-		return api.AdminSendRawTransactionParams{}, fmt.Errorf("couldn't unmarshal transaction: %w", err)
+		return api.AdminSendRawTransactionParams{}, fmt.Errorf("could not unmarshal transaction: %w", err)
 	}
 	req.EncodedTransaction = f.RawTx
 

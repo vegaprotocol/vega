@@ -14,9 +14,8 @@ func Test(t *testing.T) {
 func testEnsureNetworkCanConnectGRPCNodeFails(t *testing.T) {
 	// given
 	net := &network.Network{
-		API: network.APIConfig{GRPC: network.GRPCConfig{
-			Hosts:   nil,
-			Retries: 0,
+		API: network.APIConfig{GRPC: network.HostConfig{
+			Hosts: nil,
 		}},
 	}
 
