@@ -145,16 +145,6 @@ service TradingDataService {
   // List balance changes
   //
   // Get a list of the changes in account balances over a period of time.
-  //
-  // An account is defined as a set of asset_id, type, party_id, and market_id.
-  // - Every account has an associated asset and type.
-  // - Certain account types such as the global reward pool for example, do not have an associated party.
-  //   These are denoted by the special party ID 'network'
-  // - Certain account types do not have an associated market such as the general party accounts, for example.
-  //   These are denoted by the special market ID '' (the empty string)
-  //
-  // `ListBalanceChangesRequest` will return a list of `AggregatedBalance` records,
-  // with a row for each block at which a given account's balance changes.
   rpc ListBalanceChanges(ListBalanceChangesRequest) returns (ListBalanceChangesResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Accounts"};
   }
@@ -836,15 +826,15 @@ message AccountBalance {
   vega.AccountType type = 6;
 }
 
-// Request that is sent when listing accounts
+// Request that is sent when listing accounts.
 message ListAccountsRequest {
-  // AccountFilter contains all filter conditions and values that can be applied to the listing.
+  // Account filter contains all filter conditions and values that can be applied to the listing.
   AccountFilter filter = 1;
   // Optional pagination control.
   optional Pagination pagination = 2;
 }
 
-// Response that is received from listing accounts query
+// Response that is received from listing accounts query.
 message ListAccountsResponse {
   // Page of accounts data and corresponding page information.
   AccountsConnection accounts = 1;
@@ -866,7 +856,7 @@ message AccountEdge {
   string cursor = 2;
 }
 
-// Request that is sent when getting a subscription to a stream of accounts
+// Request that is sent when getting a subscription to a stream of accounts.
 message ObserveAccountsRequest {
   // Market ID to filter accounts by. If empty, no markets will be filtered.
   string market_id = 1;
@@ -878,7 +868,7 @@ message ObserveAccountsRequest {
   vega.AccountType type = 4;
 }
 
-// Response that is received when subscribing to a stream of accounts
+// Response that is received when subscribing to a stream of accounts.
 message ObserveAccountsResponse {
   oneof response {
     // 'Initial image' snapshot containing current account balances.
@@ -982,7 +972,7 @@ message ListOrderVersionsResponse {
   OrderConnection orders = 1;
 }
 
-// Request to subscribe to a stream of orders
+// Request to subscribe to a stream of orders.
 //
 // Request fields market ID and party ID are both optional filters:
 // If omitted all orders, for all parties on all markets will be returned on the stream
@@ -996,7 +986,7 @@ message ObserveOrdersRequest {
   optional bool exclude_liquidity = 3;
 }
 
-// Response that is received from an orders subscription
+// Response that is received from an orders subscription.
 message ObserveOrdersResponse {
   oneof response {
     // An 'initial image' snapshot containing current live orders.
@@ -1006,7 +996,7 @@ message ObserveOrdersResponse {
   }
 }
 
-// 'Initial image' of live orders, may be sent over multiple response messages
+// 'Initial image' of live orders, may be sent over multiple response messages.
 message OrderSnapshotPage {
   // List of order data parts.
   repeated vega.Order orders = 1;
@@ -1014,7 +1004,7 @@ message OrderSnapshotPage {
   bool last_page = 2;
 }
 
-// List of order updates in the last block
+// List of order updates in the last block.
 message OrderUpdates {
   // List of orders data.
   repeated vega.Order orders = 1;
@@ -1022,8 +1012,8 @@ message OrderUpdates {
 
 // -- Positions --
 
-// Request used to list all positions for a party
-// Optionally, if a market ID is set, the results will be filtered for that market only
+// Request used to list all positions for a party.
+// Optionally, if a market ID is set, the results will be filtered for that market only.
 message ListPositionsRequest {
   option deprecated = true;
   // Party ID to list positions for, required field.
@@ -1201,7 +1191,7 @@ message AggregatedLedgerEntriesEdge {
   string cursor = 2;
 }
 
-// Page of aggregated ledger entries data and corresponding page information
+// Page of aggregated ledger entries data and corresponding page information.
 message AggregatedLedgerEntriesConnection {
   // Page of 'AggregatedLedgerEntry' data and their corresponding cursors.
   repeated AggregatedLedgerEntriesEdge edges = 1;
@@ -1209,7 +1199,7 @@ message AggregatedLedgerEntriesConnection {
   PageInfo page_info = 2;
 }
 
-// Request that is received when querying balances changes
+// Request to use when querying balances changes.
 message ListBalanceChangesRequest {
   // Limit the accounts considered according to the filter supplied.
   AccountFilter filter = 1;
@@ -1219,7 +1209,7 @@ message ListBalanceChangesRequest {
   optional DateRange date_range = 6;
 }
 
-// Response that is received when querying balances changes
+// Response that is received from querying balances changes.
 message ListBalanceChangesResponse {
   // Page of aggregated balances data and corresponding page information.
   AggregatedBalanceConnection balances = 1;
@@ -1229,7 +1219,7 @@ message ListBalanceChangesResponse {
 
 // Request that is used when querying balance history
 message GetBalanceHistoryRequest {
-  // AccountFilter contains values that can be set in order to limit balance history data to them.
+  // Account filter contains values that can be set in order to limit balance history data to them.
   AccountFilter filter = 1;
   // By default the net balances of all the accounts specified by the filter are returned.
   // If a list of fields is given in group_by, split out those balances by the supplied criteria.
@@ -1260,7 +1250,14 @@ message AggregatedBalanceConnection {
   PageInfo page_info = 2;
 }
 
-// Filter that is used to filter account data by asset ID, party ID, market ID and account type
+// Account filter is used to filter account data.
+//
+// An account is defined as a set of asset ID, type, party ID, and market ID.
+// - Every account has an associated asset and type.
+// - Certain account types such as the global reward pool for example, do not have an associated party.
+//   These are denoted by the special party ID 'network'.
+// - Certain account types do not have an associated market such as the general party accounts, for example.
+//   These are denoted by the special market ID '' (an empty string).
 message AccountFilter {
   // Restrict accounts to those holding balances in this asset ID.
   string asset_id = 1;
@@ -1285,7 +1282,7 @@ enum AccountField {
 // AggregatedBalance data contains the balance of the set of requested accounts combined with corresponding
 // party ID, market ID and account type details
 message AggregatedBalance {
-  // Timestamp to of block the balance is referring to, in nanoseconds.
+  // Timestamp in nanseconds of the block in which the balance exists.
   int64 timestamp = 1;
   // Balance of the set of requested accounts at the time above.
   string balance = 2;

@@ -627,13 +627,13 @@ func (x *AccountBalance) GetType() vega.AccountType {
 	return vega.AccountType(0)
 }
 
-// Request that is sent when listing accounts
+// Request that is sent when listing accounts.
 type ListAccountsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// AccountFilter contains all filter conditions and values that can be applied to the listing.
+	// Account filter contains all filter conditions and values that can be applied to the listing.
 	Filter *AccountFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
 	// Optional pagination control.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -685,7 +685,7 @@ func (x *ListAccountsRequest) GetPagination() *Pagination {
 	return nil
 }
 
-// Response that is received from listing accounts query
+// Response that is received from listing accounts query.
 type ListAccountsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -850,7 +850,7 @@ func (x *AccountEdge) GetCursor() string {
 	return ""
 }
 
-// Request that is sent when getting a subscription to a stream of accounts
+// Request that is sent when getting a subscription to a stream of accounts.
 type ObserveAccountsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -926,7 +926,7 @@ func (x *ObserveAccountsRequest) GetType() vega.AccountType {
 	return vega.AccountType(0)
 }
 
-// Response that is received when subscribing to a stream of accounts
+// Response that is received when subscribing to a stream of accounts.
 type ObserveAccountsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1656,7 +1656,7 @@ func (x *ListOrderVersionsResponse) GetOrders() *OrderConnection {
 	return nil
 }
 
-// Request to subscribe to a stream of orders
+// Request to subscribe to a stream of orders.
 //
 // Request fields market ID and party ID are both optional filters:
 // If omitted all orders, for all parties on all markets will be returned on the stream
@@ -1727,7 +1727,7 @@ func (x *ObserveOrdersRequest) GetExcludeLiquidity() bool {
 	return false
 }
 
-// Response that is received from an orders subscription
+// Response that is received from an orders subscription.
 type ObserveOrdersResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1811,7 +1811,7 @@ func (*ObserveOrdersResponse_Snapshot) isObserveOrdersResponse_Response() {}
 
 func (*ObserveOrdersResponse_Updates) isObserveOrdersResponse_Response() {}
 
-// 'Initial image' of live orders, may be sent over multiple response messages
+// 'Initial image' of live orders, may be sent over multiple response messages.
 type OrderSnapshotPage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1869,7 +1869,7 @@ func (x *OrderSnapshotPage) GetLastPage() bool {
 	return false
 }
 
-// List of order updates in the last block
+// List of order updates in the last block.
 type OrderUpdates struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1918,8 +1918,8 @@ func (x *OrderUpdates) GetOrders() []*vega.Order {
 	return nil
 }
 
-// Request used to list all positions for a party
-// Optionally, if a market ID is set, the results will be filtered for that market only
+// Request used to list all positions for a party.
+// Optionally, if a market ID is set, the results will be filtered for that market only.
 //
 // Deprecated: Do not use.
 type ListPositionsRequest struct {
@@ -3038,7 +3038,7 @@ func (x *AggregatedLedgerEntriesEdge) GetCursor() string {
 	return ""
 }
 
-// Page of aggregated ledger entries data and corresponding page information
+// Page of aggregated ledger entries data and corresponding page information.
 type AggregatedLedgerEntriesConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3096,7 +3096,7 @@ func (x *AggregatedLedgerEntriesConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Request that is received when querying balances changes
+// Request to use when querying balances changes.
 type ListBalanceChangesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3163,7 +3163,7 @@ func (x *ListBalanceChangesRequest) GetDateRange() *DateRange {
 	return nil
 }
 
-// Response that is received when querying balances changes
+// Response that is received from querying balances changes.
 type ListBalanceChangesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3218,7 +3218,7 @@ type GetBalanceHistoryRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// AccountFilter contains values that can be set in order to limit balance history data to them.
+	// Account filter contains values that can be set in order to limit balance history data to them.
 	Filter *AccountFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
 	// By default the net balances of all the accounts specified by the filter are returned.
 	// If a list of fields is given in group_by, split out those balances by the supplied criteria.
@@ -3452,7 +3452,14 @@ func (x *AggregatedBalanceConnection) GetPageInfo() *PageInfo {
 	return nil
 }
 
-// Filter that is used to filter account data by asset ID, party ID, market ID and account type
+// Account filter is used to filter account data.
+//
+// An account is defined as a set of asset ID, type, party ID, and market ID.
+//   - Every account has an associated asset and type.
+//   - Certain account types such as the global reward pool for example, do not have an associated party.
+//     These are denoted by the special party ID 'network'.
+//   - Certain account types do not have an associated market such as the general party accounts, for example.
+//     These are denoted by the special market ID ” (an empty string).
 type AccountFilter struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -3535,7 +3542,7 @@ type AggregatedBalance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp to of block the balance is referring to, in nanoseconds.
+	// Timestamp in nanseconds of the block in which the balance exists.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Balance of the set of requested accounts at the time above.
 	Balance string `protobuf:"bytes,2,opt,name=balance,proto3" json:"balance,omitempty"`
