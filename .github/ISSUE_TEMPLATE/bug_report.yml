@@ -41,13 +41,12 @@ body:
     id: reproduce
     attributes:
       label: Steps to reproduce
-      description: "Detail the steps to reproduce the behaviour."
+      description: "Detail the steps to reproduce the behaviour, or any additional information related to the observed behavior."
       value: |
-        1. Submit x transaction
+        1. Submit `xyz` transaction
         2. With this payload
-        3. Query y API
+        3. Query `abc` API
         4. Observe the error
-        ...
       render: bash
     validations:
       required: true
