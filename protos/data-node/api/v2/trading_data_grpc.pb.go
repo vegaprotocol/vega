@@ -96,16 +96,6 @@ type TradingDataServiceClient interface {
 	// List balance changes
 	//
 	// Get a list of the changes in account balances over a period of time.
-	//
-	// An account is defined as a set of asset_id, type, party_id, and market_id.
-	//   - Every account has an associated asset and type.
-	//   - Certain account types such as the global reward pool for example, do not have an associated party.
-	//     These are denoted by the special party ID 'network'
-	//   - Certain account types do not have an associated market such as the general party accounts, for example.
-	//     These are denoted by the special market ID ” (the empty string)
-	//
-	// `ListBalanceChangesRequest` will return a list of `AggregatedBalance` records,
-	// with a row for each block at which a given account's balance changes.
 	ListBalanceChanges(ctx context.Context, in *ListBalanceChangesRequest, opts ...grpc.CallOption) (*ListBalanceChangesResponse, error)
 	// Get latest market data
 	//
@@ -1724,16 +1714,6 @@ type TradingDataServiceServer interface {
 	// List balance changes
 	//
 	// Get a list of the changes in account balances over a period of time.
-	//
-	// An account is defined as a set of asset_id, type, party_id, and market_id.
-	//   - Every account has an associated asset and type.
-	//   - Certain account types such as the global reward pool for example, do not have an associated party.
-	//     These are denoted by the special party ID 'network'
-	//   - Certain account types do not have an associated market such as the general party accounts, for example.
-	//     These are denoted by the special market ID ” (the empty string)
-	//
-	// `ListBalanceChangesRequest` will return a list of `AggregatedBalance` records,
-	// with a row for each block at which a given account's balance changes.
 	ListBalanceChanges(context.Context, *ListBalanceChangesRequest) (*ListBalanceChangesResponse, error)
 	// Get latest market data
 	//
