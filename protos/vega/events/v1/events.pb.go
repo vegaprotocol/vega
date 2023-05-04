@@ -1139,7 +1139,7 @@ type StakeLinking struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Stake linking event type.
 	Type StakeLinking_Type `protobuf:"varint,2,opt,name=type,proto3,enum=vega.events.v1.StakeLinking_Type" json:"type,omitempty"`
-	// Timestamp in nanoseconds of when the event was emitted by Ethereum.
+	// Timestamp in Unix nanoseconds of when the event was emitted by Ethereum.
 	Ts int64 `protobuf:"varint,3,opt,name=ts,proto3" json:"ts,omitempty"`
 	// Party to whom the event is directed at.
 	Party string `protobuf:"bytes,4,opt,name=party,proto3" json:"party,omitempty"`

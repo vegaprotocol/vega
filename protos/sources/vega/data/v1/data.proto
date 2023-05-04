@@ -42,10 +42,8 @@ message Data {
   // `matched_specs_ids` lists all the specs that matched this data.
   // When the array is empty, it means no spec matched this data.
   repeated string matched_spec_ids = 3;
-  // `broadcast_at` is the time at which the data was broadcast to the markets
-  // with a matching spec.
-  // It has no value when the date did not match any spec.
-  // The value is a Unix timestamp in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the data was broadcast to the markets
+  // with a matching spec. It has no value when the data did not match any spec.
   int64 broadcast_at = 4;
 }
 

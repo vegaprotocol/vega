@@ -204,13 +204,13 @@ message Order {
   int64 created_at = 10;
   // Current status of the order.
   Status status = 11;
-  // Timestamp for when the order will expire, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order will expire.
   int64 expires_at = 12;
   // Reference given for the order.
   string reference = 13;
   // Futher details for why an order with status `STATUS_REJECTED` was rejected.
   optional OrderError reason = 14;
-  // Timestamp for when the order was last updated, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order was last updated.
   int64 updated_at = 15;
   // Version for the order, initial value is version 1 and is incremented after each successful amend.
   uint64 version = 16;
@@ -410,7 +410,7 @@ message Trade {
   string buy_order = 8;
   // Identifier of the order from the sell side.
   string sell_order = 9;
-  // Timestamp for when the trade occurred, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the trade occurred.
   int64 timestamp = 10;
   // Type for the trade.
   Type type = 11;
@@ -442,7 +442,7 @@ message TradeSet {
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle
 message Candle {
-  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
+  // Timestamp in Unix nanoseconds for the point in time when the candle was initially created/opened.
   int64 timestamp = 1;
   // ISO-8601 datetime with nanosecond precision for when the candle was last updated.
   string datetime = 2;
@@ -890,7 +890,7 @@ message MarginLevels {
   string market_id = 6;
   // Asset ID for which the margin levels apply.
   string asset = 7;
-  // Timestamp for the time the ledger entry was created, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the ledger entry was created.
   int64 timestamp = 8;
 }
 
@@ -928,7 +928,7 @@ message MarketData {
   string static_mid_price = 11;
   // Market ID for the data
   string market = 12;
-  // Timestamp at which this mark price was relevant, in nanoseconds.
+  // Timestamp in Unix nanoseconds at which this mark price was relevant.
   int64 timestamp = 13;
   // Sum of the size of all positions greater than zero on the market.
   uint64 open_interest = 14;
@@ -958,7 +958,7 @@ message MarketData {
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // Current state of the market.
   Market.State market_state = 27;
-  // Time in nanoseconds when the next mark-to-market calculation will occur.
+  // Time in Unix nanoseconds when the next mark-to-market calculation will occur.
   int64 next_mark_to_market = 28;
   // Last traded price of the market. This field is an unsigned integer scaled to the market's decimal places.
   string last_traded_price = 29;
@@ -1022,9 +1022,9 @@ message NetworkLimits {
   bool propose_asset_enabled = 5;
   // True once the genesis file is loaded.
   bool genesis_loaded = 7;
-  // Date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set).
+  // Timestamp in Unix nanoseconds at which market proposals will be enabled (0 indicates not set).
   int64 propose_market_enabled_from = 8;
-  // Date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
+  // Timestamp in Unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
   int64 propose_asset_enabled_from = 9;
 }
 
@@ -1072,9 +1072,9 @@ message LiquidityProvision {
   string id = 1;
   // Unique party ID for the creator of the provision.
   string party_id = 2;
-  // Timestamp for when the order was created at, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order was created.
   int64 created_at = 3;
-  // Timestamp for when the order was updated at, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order was updated.
   int64 updated_at = 4;
   // Market ID for the order.
   string market_id = 5;
@@ -1135,11 +1135,11 @@ enum NodeStatus {
 
 // Describes in both human readable and block time when an epoch spans
 message EpochTimestamps {
-  // Timestamp of epoch start in nanoseconds.
+  // Timestamp in Unix nanoseconds for when epoch started.
   int64 start_time = 1;
-  // Timestamp of epoch expiry in nanoseconds.
+  // Timestamp in Unix nanoseconds for the epoch's expiry.
   int64 expiry_time = 2;
-  // Timestamp of epoch end in nanoseconds, empty if not started.
+  // Timestamp in Unix nanoseconds for when the epoch ended, empty if not ended.
   int64 end_time = 3;
   // Height of first block in the epoch.
   uint64 first_block = 4;

@@ -910,7 +910,7 @@ type GetVegaTimeResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Timestamp representation of current VegaTime as represented in
-	// Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+	// Unix nanoseconds, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 

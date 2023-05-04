@@ -41,7 +41,7 @@ message OrderSubmission {
   vega.Side side = 4;
   // Time in force indicates how long an order will remain active before it is executed or expires, required field.
   vega.Order.TimeInForce time_in_force = 5;
-  // Timestamp for when the order will expire, in nanoseconds,
+  // Timestamp in Unix nanoseconds for when the order will expire,
   // required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`.
   int64 expires_at = 6;
   // Type for the order, required field - See `Order.Type`.
@@ -212,8 +212,7 @@ message Transfer {
 
 // Specific details for a one off transfer
 message OneOffTransfer {
-  // Unix timestamp in nanoseconds. Time at which the
-  // transfer should be delivered into the To account.
+  // Timestamp in Unix nanoseconds for when the transfer should be delivered into the receiver's account.
   int64 deliver_on = 1;
 }
 

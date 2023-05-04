@@ -127,7 +127,7 @@ message StakeLinking {
   string id = 1;
   // Stake linking event type.
   Type type = 2;
-  // Timestamp in nanoseconds of when the event was emitted by Ethereum.
+  // Timestamp in Unix nanoseconds of when the event was emitted by Ethereum.
   int64 ts = 3;
   // Party to whom the event is directed at.
   string party = 4;

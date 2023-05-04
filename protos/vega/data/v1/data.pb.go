@@ -272,10 +272,8 @@ type Data struct {
 	// `matched_specs_ids` lists all the specs that matched this data.
 	// When the array is empty, it means no spec matched this data.
 	MatchedSpecIds []string `protobuf:"bytes,3,rep,name=matched_spec_ids,json=matchedSpecIds,proto3" json:"matched_spec_ids,omitempty"`
-	// `broadcast_at` is the time at which the data was broadcast to the markets
-	// with a matching spec.
-	// It has no value when the date did not match any spec.
-	// The value is a Unix timestamp in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the data was broadcast to the markets
+	// with a matching spec. It has no value when the data did not match any spec.
 	BroadcastAt int64 `protobuf:"varint,4,opt,name=broadcast_at,json=broadcastAt,proto3" json:"broadcast_at,omitempty"`
 }
 

@@ -2652,7 +2652,7 @@ type AggregatedLedgerEntry struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp to of block the result is referring to, in nanoseconds.
+	// Timestamp in Unix nanoseconds of the block in which the result is referring to.
 	Timestamp int64 `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Amount of ledger entries for the set of requested accounts at the time above.
 	Quantity string `protobuf:"bytes,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
@@ -4974,9 +4974,9 @@ type Candle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
+	// Timestamp in Unix nanoseconds for the point in time when the candle was initially created/opened.
 	Start int64 `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
-	// Timestamp for the point in time when the candle was last updated, in nanoseconds.
+	// Timestamp in Unix nanoseconds for the point in time when the candle was last updated.
 	LastUpdate int64 `protobuf:"varint,2,opt,name=last_update,json=lastUpdate,proto3" json:"last_update,omitempty"`
 	// Highest price for trading during the candle interval.
 	High string `protobuf:"bytes,3,opt,name=high,proto3" json:"high,omitempty"`
@@ -5177,9 +5177,9 @@ type ListCandleDataRequest struct {
 
 	// Candle ID to retrieve candle data for.
 	CandleId string `protobuf:"bytes,1,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
-	// Timestamp in nanoseconds to retrieve candles from.
+	// Timestamp in Unix nanoseconds to retrieve candles from.
 	FromTimestamp int64 `protobuf:"varint,2,opt,name=from_timestamp,json=fromTimestamp,proto3" json:"from_timestamp,omitempty"`
-	// Timestamp in nanoseconds to retrieve candles to.
+	// Timestamp in Unix nanoseconds to retrieve candles to.
 	ToTimestamp int64 `protobuf:"varint,3,opt,name=to_timestamp,json=toTimestamp,proto3" json:"to_timestamp,omitempty"`
 	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -14744,15 +14744,15 @@ func (x *GetVegaTimeResponse) GetTimestamp() int64 {
 }
 
 // Date range for queries that can return historical data
-// Timestamps should be provided as unix time in nanoseconds and are inclusive.
+// Timestamps should be provided as unix time in Unix nanoseconds and are inclusive.
 type DateRange struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp in nanoseconds indicating the start of the date range.
+	// Timestamp in Unix nanoseconds indicating the start of the date range.
 	StartTimestamp *int64 `protobuf:"varint,1,opt,name=start_timestamp,json=startTimestamp,proto3,oneof" json:"start_timestamp,omitempty"`
-	// Timestamp in nanoseconds indicating the end of the date range.
+	// Timestamp in Unix nanoseconds indicating the end of the date range.
 	EndTimestamp *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
 }
 

@@ -1763,13 +1763,13 @@ type Order struct {
 	CreatedAt int64 `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// Current status of the order.
 	Status Order_Status `protobuf:"varint,11,opt,name=status,proto3,enum=vega.Order_Status" json:"status,omitempty"`
-	// Timestamp for when the order will expire, in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the order will expire.
 	ExpiresAt int64 `protobuf:"varint,12,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Reference given for the order.
 	Reference string `protobuf:"bytes,13,opt,name=reference,proto3" json:"reference,omitempty"`
 	// Futher details for why an order with status `STATUS_REJECTED` was rejected.
 	Reason *OrderError `protobuf:"varint,14,opt,name=reason,proto3,enum=vega.OrderError,oneof" json:"reason,omitempty"`
-	// Timestamp for when the order was last updated, in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the order was last updated.
 	UpdatedAt int64 `protobuf:"varint,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Version for the order, initial value is version 1 and is incremented after each successful amend.
 	Version uint64 `protobuf:"varint,16,opt,name=version,proto3" json:"version,omitempty"`
@@ -2192,7 +2192,7 @@ type Trade struct {
 	BuyOrder string `protobuf:"bytes,8,opt,name=buy_order,json=buyOrder,proto3" json:"buy_order,omitempty"`
 	// Identifier of the order from the sell side.
 	SellOrder string `protobuf:"bytes,9,opt,name=sell_order,json=sellOrder,proto3" json:"sell_order,omitempty"`
-	// Timestamp for when the trade occurred, in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the trade occurred.
 	Timestamp int64 `protobuf:"varint,10,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Type for the trade.
 	Type Trade_Type `protobuf:"varint,11,opt,name=type,proto3,enum=vega.Trade_Type" json:"type,omitempty"`
@@ -2465,7 +2465,7 @@ type Candle struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
+	// Timestamp in Unix nanoseconds for the point in time when the candle was initially created/opened.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// ISO-8601 datetime with nanosecond precision for when the candle was last updated.
 	Datetime string `protobuf:"bytes,2,opt,name=datetime,proto3" json:"datetime,omitempty"`
@@ -4060,7 +4060,7 @@ type MarginLevels struct {
 	MarketId string `protobuf:"bytes,6,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Asset ID for which the margin levels apply.
 	Asset string `protobuf:"bytes,7,opt,name=asset,proto3" json:"asset,omitempty"`
-	// Timestamp for the time the ledger entry was created, in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the ledger entry was created.
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
@@ -4190,7 +4190,7 @@ type MarketData struct {
 	StaticMidPrice string `protobuf:"bytes,11,opt,name=static_mid_price,json=staticMidPrice,proto3" json:"static_mid_price,omitempty"`
 	// Market ID for the data
 	Market string `protobuf:"bytes,12,opt,name=market,proto3" json:"market,omitempty"`
-	// Timestamp at which this mark price was relevant, in nanoseconds.
+	// Timestamp in Unix nanoseconds at which this mark price was relevant.
 	Timestamp int64 `protobuf:"varint,13,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Sum of the size of all positions greater than zero on the market.
 	OpenInterest uint64 `protobuf:"varint,14,opt,name=open_interest,json=openInterest,proto3" json:"open_interest,omitempty"`
@@ -4220,7 +4220,7 @@ type MarketData struct {
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare `protobuf:"bytes,26,rep,name=liquidity_provider_fee_share,json=liquidityProviderFeeShare,proto3" json:"liquidity_provider_fee_share,omitempty"`
 	// Current state of the market.
 	MarketState Market_State `protobuf:"varint,27,opt,name=market_state,json=marketState,proto3,enum=vega.Market_State" json:"market_state,omitempty"`
-	// Time in nanoseconds when the next mark-to-market calculation will occur.
+	// Time in Unix nanoseconds when the next mark-to-market calculation will occur.
 	NextMarkToMarket int64 `protobuf:"varint,28,opt,name=next_mark_to_market,json=nextMarkToMarket,proto3" json:"next_mark_to_market,omitempty"`
 	// Last traded price of the market. This field is an unsigned integer scaled to the market's decimal places.
 	LastTradedPrice string `protobuf:"bytes,29,opt,name=last_traded_price,json=lastTradedPrice,proto3" json:"last_traded_price,omitempty"`
@@ -4756,9 +4756,9 @@ type NetworkLimits struct {
 	ProposeAssetEnabled bool `protobuf:"varint,5,opt,name=propose_asset_enabled,json=proposeAssetEnabled,proto3" json:"propose_asset_enabled,omitempty"`
 	// True once the genesis file is loaded.
 	GenesisLoaded bool `protobuf:"varint,7,opt,name=genesis_loaded,json=genesisLoaded,proto3" json:"genesis_loaded,omitempty"`
-	// Date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set).
+	// Timestamp in Unix nanoseconds at which market proposals will be enabled (0 indicates not set).
 	ProposeMarketEnabledFrom int64 `protobuf:"varint,8,opt,name=propose_market_enabled_from,json=proposeMarketEnabledFrom,proto3" json:"propose_market_enabled_from,omitempty"`
-	// Date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
+	// Timestamp in Unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
 	ProposeAssetEnabledFrom int64 `protobuf:"varint,9,opt,name=propose_asset_enabled_from,json=proposeAssetEnabledFrom,proto3" json:"propose_asset_enabled_from,omitempty"`
 }
 
@@ -4978,9 +4978,9 @@ type LiquidityProvision struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Unique party ID for the creator of the provision.
 	PartyId string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Timestamp for when the order was created at, in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the order was created.
 	CreatedAt int64 `protobuf:"varint,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// Timestamp for when the order was updated at, in nanoseconds.
+	// Timestamp in Unix nanoseconds for when the order was updated.
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Market ID for the order.
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
@@ -5287,11 +5287,11 @@ type EpochTimestamps struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp of epoch start in nanoseconds.
+	// Timestamp in Unix nanoseconds for when epoch started.
 	StartTime int64 `protobuf:"varint,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
-	// Timestamp of epoch expiry in nanoseconds.
+	// Timestamp in Unix nanoseconds for the epoch's expiry.
 	ExpiryTime int64 `protobuf:"varint,2,opt,name=expiry_time,json=expiryTime,proto3" json:"expiry_time,omitempty"`
-	// Timestamp of epoch end in nanoseconds, empty if not started.
+	// Timestamp in Unix nanoseconds for when the epoch ended, empty if not ended.
 	EndTime int64 `protobuf:"varint,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Height of first block in the epoch.
 	FirstBlock uint64 `protobuf:"varint,4,opt,name=first_block,json=firstBlock,proto3" json:"first_block,omitempty"`
