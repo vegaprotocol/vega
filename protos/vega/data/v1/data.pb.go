@@ -193,7 +193,7 @@ type Signer_PubKey struct {
 }
 
 type Signer_EthAddress struct {
-	// In case of an open oracle - Ethereum address will be submitted
+	// In case of an open oracle - Ethereum address will be submitted.
 	EthAddress *ETHAddress `protobuf:"bytes,2,opt,name=eth_address,json=ethAddress,proto3,oneof"`
 }
 

@@ -20,7 +20,7 @@ message Signer {
     // source. All the public keys in the data should be contained in these
     // public keys.
     PubKey pub_key = 1;
-    // In case of an open oracle - Ethereum address will be submitted
+    // In case of an open oracle - Ethereum address will be submitted.
     ETHAddress eth_address = 2;
   }
 }

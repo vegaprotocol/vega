@@ -389,7 +389,7 @@ type Pagination struct {
 	Last *int32 `protobuf:"varint,3,opt,name=last,proto3,oneof" json:"last,omitempty"`
 	// If paging forwards, the cursor string for the first row of the previous page.
 	Before *string `protobuf:"bytes,4,opt,name=before,proto3,oneof" json:"before,omitempty"`
-	// Newest records first, older records last, default is true.
+	// Whether to order the results with the newest records first. If not set, the default value is true.
 	NewestFirst *bool `protobuf:"varint,5,opt,name=newest_first,json=newestFirst,proto3,oneof" json:"newest_first,omitempty"`
 }
 
@@ -542,8 +542,6 @@ type AccountBalance struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unique account ID used internally by Vega
-	// string id = 1;
 	// Party that owns the account.
 	// Special values include `network` - represents the Vega network and is
 	// most commonly seen during liquidation of a distressed trading position.
@@ -1222,7 +1220,7 @@ type GetOrderRequest struct {
 
 	// Order ID to retrieve order information for.
 	OrderId string `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	// Optional version of the order.
+	// Historic version number of the order to return. If not set, the most current version will be returned.
 	Version *int32 `protobuf:"varint,2,opt,name=version,proto3,oneof" json:"version,omitempty"`
 }
 
@@ -1327,23 +1325,23 @@ type OrderFilter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of order statuses the orders can be filtered by.
+	// Restrict orders to those with the given statuses.
 	Statuses []vega.Order_Status `protobuf:"varint,1,rep,packed,name=statuses,proto3,enum=vega.Order_Status" json:"statuses,omitempty"`
-	// List of order types the orders can be filtered by.
+	// Restrict orders to those with the given types.
 	Types []vega.Order_Type `protobuf:"varint,2,rep,packed,name=types,proto3,enum=vega.Order_Type" json:"types,omitempty"`
-	// List of timings the orders can be filtered by.
+	// Restrict orders to those with the given Time In Force.
 	TimeInForces []vega.Order_TimeInForce `protobuf:"varint,3,rep,packed,name=time_in_forces,json=timeInForces,proto3,enum=vega.Order_TimeInForce" json:"time_in_forces,omitempty"`
 	// Indicator if liquidity provision orders should be included or not in the list.
 	ExcludeLiquidity bool `protobuf:"varint,4,opt,name=exclude_liquidity,json=excludeLiquidity,proto3" json:"exclude_liquidity,omitempty"`
-	// List of party IDs to filter on.
+	// Restrict orders to those placed by the given party IDs.
 	PartyIds []string `protobuf:"bytes,5,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
-	// List of market IDs to filter on.
+	// Restrict orders to those placed on the given market IDs.
 	MarketIds []string `protobuf:"bytes,6,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// Reference.
+	// Restrict orders to those with the given reference.
 	Reference *string `protobuf:"bytes,7,opt,name=reference,proto3,oneof" json:"reference,omitempty"`
-	// Date range of the orders being listed.
+	// Restrict orders to those placed during the given date range. If not set, all orders will be returned.
 	DateRange *DateRange `protobuf:"bytes,8,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
-	// Indicator for listing only live orders, if set to true.
+	// Restrict orders to those that are live. If not set, it is treated as being false.
 	LiveOnly *bool `protobuf:"varint,9,opt,name=live_only,json=liveOnly,proto3,oneof" json:"live_only,omitempty"`
 }
 
@@ -1666,11 +1664,11 @@ type ObserveOrdersRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID to filter for. If empty, no markets will be filtered.
+	// Restrict orders to those placed on the given markets.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// Party ID to filter for. If empty, no parties will be filtered.
+	// Restrict orders to those placed on the by the given parties.
 	PartyIds []string `protobuf:"bytes,2,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
-	// Indicates whether liquidity orders should be excluded from the stream.
+	// Whether liquidity orders should be excluded from the stream. If not set, liquidity orders will be included.
 	ExcludeLiquidity *bool `protobuf:"varint,3,opt,name=exclude_liquidity,json=excludeLiquidity,proto3,oneof" json:"exclude_liquidity,omitempty"`
 }
 
@@ -1931,7 +1929,7 @@ type ListPositionsRequest struct {
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Market ID to filter for. If empty, no markets will be filtered.
 	MarketId string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Optional pagination control.
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -2045,9 +2043,9 @@ type PositionsFilter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of party IDs to filter on.
+	// Restrict positions to those related to the given parties.
 	PartyIds []string `protobuf:"bytes,1,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
-	// List of market IDs to filter on.
+	// Restrict positions to those on the given markets.
 	MarketIds []string `protobuf:"bytes,2,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 }
 
@@ -2105,7 +2103,7 @@ type ListAllPositionsRequest struct {
 
 	// Filter to apply to the positions.
 	Filter *PositionsFilter `protobuf:"bytes,1,opt,name=filter,proto3" json:"filter,omitempty"`
-	// Optional pagination control.
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -2210,7 +2208,7 @@ type PositionEdge struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Represents position data for a party on the specified market on Vega.
+	// Position data for a party on a market.
 	Node *vega.Position `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -2326,9 +2324,9 @@ type ObservePositionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Optional party ID to filter for. If empty, no parties will be filtered from the stream.
+	// Restrict position updates to those related to the given parties.
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// Optional market ID to filter for. If empty, no markets will be filtered from the stream.
+	// Restrict position updates to those related to the given markets.
 	MarketId *string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
 }
 
@@ -2870,9 +2868,9 @@ type ExportLedgerEntriesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID to export ledger entries for.
+	// Restrict exported ledger entries to those relating to the given party ID.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Optional: Asset ID.
+	// Restrict exported ledger entries to those relating to the given asset ID.
 	AssetId string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3" json:"asset_id,omitempty"`
 	// Date range to export ledger entries for.
 	DateRange *DateRange `protobuf:"bytes,4,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
@@ -3636,7 +3634,7 @@ type ObserveMarketsDepthRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of market IDs to be obtained in the subscription.
+	// Restrict market depth data by the given market IDs.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 }
 
@@ -3734,7 +3732,7 @@ type ObserveMarketsDepthUpdatesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of market IDs to be obtained in the subscription.
+	// Restrict updates to market depth by the given market IDs.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 }
 
@@ -3832,7 +3830,7 @@ type ObserveMarketsDataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of market IDs to be obtained in the subscription.
+	// Restrict updates to market data by the given market IDs.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
 }
 
@@ -3932,7 +3930,7 @@ type GetLatestMarketDepthRequest struct {
 
 	// Market ID to request market depth for, required field.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Optional field to indicate the maximum market depth.
+	// Maximum market depth.
 	MaxDepth *uint64 `protobuf:"varint,2,opt,name=max_depth,json=maxDepth,proto3,oneof" json:"max_depth,omitempty"`
 }
 
@@ -3994,7 +3992,7 @@ type GetLatestMarketDepthResponse struct {
 	Buy []*vega.PriceLevel `protobuf:"bytes,2,rep,name=buy,proto3" json:"buy,omitempty"`
 	// Zero or more price levels for the sell side of the market depth data.
 	Sell []*vega.PriceLevel `protobuf:"bytes,3,rep,name=sell,proto3" json:"sell,omitempty"`
-	// Last trade recorded on Vega at the time of retrieving the `MarketDepthResponse`.
+	// Last trade recorded on Vega.
 	LastTrade *vega.Trade `protobuf:"bytes,4,opt,name=last_trade,json=lastTrade,proto3" json:"last_trade,omitempty"`
 	// Sequence number incremented after each update.
 	SequenceNumber uint64 `protobuf:"varint,5,opt,name=sequence_number,json=sequenceNumber,proto3" json:"sequence_number,omitempty"`
@@ -4160,7 +4158,7 @@ type GetLatestMarketDataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID to retrieve market data for, required field.
+	// Market ID to retrieve market data for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -4258,13 +4256,13 @@ type GetMarketDataHistoryByIDRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID to request data history for, required field.
+	// Market ID to request data history for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Optional Unix time in nanoseconds.
+	// Timestamp in Unix nanoseconds indicating the start of the date range.
 	StartTimestamp *int64 `protobuf:"varint,2,opt,name=start_timestamp,json=startTimestamp,proto3,oneof" json:"start_timestamp,omitempty"`
-	// Optional Unix time in nanoseconds.
+	// Timestamp in Unix nanoseconds indicating the end of the date range.
 	EndTimestamp *int64 `protobuf:"varint,3,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
-	// Optional pagination control.
+	// Pagination control.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -4499,9 +4497,9 @@ type ListTransfersRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Public key for which to request transfers, this can be a party ID, "0000000000000000000000000000000000000000000000000000000000000000" for the global rewards account, or "network".
+	// Restrict transfer to those where the given public key is a sender or receiver.
 	Pubkey *string `protobuf:"bytes,1,opt,name=pubkey,proto3,oneof" json:"pubkey,omitempty"`
-	// Transfer directions - i.e. sender, receiver - to include in the response data
+	// Restrict transfers to those in the given direction from the supplied public key.
 	Direction TransferDirection `protobuf:"varint,2,opt,name=direction,proto3,enum=datanode.api.v2.TransferDirection" json:"direction,omitempty"`
 	// Optional pagination control
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -5177,13 +5175,13 @@ type ListCandleDataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Candle ID to retrieve candle data for, required field.
+	// Candle ID to retrieve candle data for.
 	CandleId string `protobuf:"bytes,1,opt,name=candle_id,json=candleId,proto3" json:"candle_id,omitempty"`
-	// Timestamp to retrieve candles since, in nanoseconds since the epoch.
+	// Timestamp in nanoseconds to retrieve candles from.
 	FromTimestamp int64 `protobuf:"varint,2,opt,name=from_timestamp,json=fromTimestamp,proto3" json:"from_timestamp,omitempty"`
-	// Timestamp to retrieve candles to, in nanoseconds since the epoch.
+	// Timestamp in nanoseconds to retrieve candles to.
 	ToTimestamp int64 `protobuf:"varint,3,opt,name=to_timestamp,json=toTimestamp,proto3" json:"to_timestamp,omitempty"`
-	// pagination controls
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -5650,9 +5648,9 @@ type ObserveVotesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID for which the votes are requested.
+	// Restrict vote updates to those made by the given party.
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// Option proposal ID for which the votes are requested.
+	// Restrict vote updates to those made on the given proposal.
 	ProposalId *string `protobuf:"bytes,2,opt,name=proposal_id,json=proposalId,proto3,oneof" json:"proposal_id,omitempty"`
 }
 
@@ -6592,14 +6590,14 @@ type GetERC20ListAssetBundleResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Address of the asset on ethereum.
+	// Address of the asset on Ethereum.
 	AssetSource string `protobuf:"bytes,1,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
 	// Asset ID for the underlying Vega asset.
 	VegaAssetId string `protobuf:"bytes,2,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// Nonce, which is actually the internal reference for the proposal.
+	// Nonce that uniquely identifies this signature bundle and prevents resubmission.
 	Nonce string `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// Signatures bundle as hex encoded data, forward by 0x
-	// e.g: 0x + sig1 + sig2 + ... + sixN.
+	// Signatures bundle as hex encoded data, prefixed with `0x`
+	// e.g: `0x + sig1 + sig2 + ... + sixN`.
 	Signatures string `protobuf:"bytes,4,opt,name=signatures,proto3" json:"signatures,omitempty"`
 }
 
@@ -6718,18 +6716,18 @@ type GetERC20SetAssetLimitsBundleResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Address of the asset on ethereum.
+	// Address of the asset on Ethereum.
 	AssetSource string `protobuf:"bytes,1,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
 	// Asset ID for the underlying Vega asset.
 	VegaAssetId string `protobuf:"bytes,2,opt,name=vega_asset_id,json=vegaAssetId,proto3" json:"vega_asset_id,omitempty"`
-	// Nonce, which is actually the internal reference for the proposal.
+	// Nonce that uniquely identifies this signature bundle and prevents resubmission.
 	Nonce string `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
 	// Lifetime limit deposit for this asset.
 	LifetimeLimit string `protobuf:"bytes,4,opt,name=lifetime_limit,json=lifetimeLimit,proto3" json:"lifetime_limit,omitempty"`
 	// Threshold withdraw for this asset.
 	Threshold string `protobuf:"bytes,5,opt,name=threshold,proto3" json:"threshold,omitempty"`
-	// Signatures bundle as hex encoded data, forward by 0x
-	// e.g: 0x + sig1 + sig2 + ... + sixN.
+	// Signatures bundle as hex encoded data, prefixed with `0x`
+	// e.g: `0x + sig1 + sig2 + ... + sixN`.
 	Signatures string `protobuf:"bytes,6,opt,name=signatures,proto3" json:"signatures,omitempty"`
 }
 
@@ -6863,16 +6861,16 @@ type GetERC20WithdrawalApprovalResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Address of asset on ethereum.
+	// Address of asset on Ethereum.
 	AssetSource string `protobuf:"bytes,1,opt,name=asset_source,json=assetSource,proto3" json:"asset_source,omitempty"`
 	// Amount to be withdrawn.
 	Amount string `protobuf:"bytes,2,opt,name=amount,proto3" json:"amount,omitempty"`
-	// Nonce, which is actually the internal reference for the withdrawal.
+	// Nonce that uniquely identifies this signature bundle and prevents resubmission.
 	Nonce string `protobuf:"bytes,4,opt,name=nonce,proto3" json:"nonce,omitempty"`
-	// Signatures bundle as hex encoded data, forward by 0x
+	// Signatures bundle as hex encoded data, prefixed with `0x`
 	// e.g: 0x + sig1 + sig2 + ... + sixN.
 	Signatures string `protobuf:"bytes,5,opt,name=signatures,proto3" json:"signatures,omitempty"`
-	// Ethereum address to withdraw the funds to, 0x prefixed.
+	// Ethereum address, prefixed with `0x`, that will receive the withdrawn assets.
 	TargetAddress string `protobuf:"bytes,6,opt,name=target_address,json=targetAddress,proto3" json:"target_address,omitempty"`
 	// Creation timestamps.
 	Creation int64 `protobuf:"varint,7,opt,name=creation,proto3" json:"creation,omitempty"`
@@ -6958,7 +6956,7 @@ type GetLastTradeRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID to retrieve the last trade for, required field.
+	// Market ID to retrieve the last trade for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 }
 
@@ -7056,15 +7054,15 @@ type ListTradesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Market IDs for which to list trades for, if provided.
+	// Restrict trades to those that occurred on the given markets.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// List of Order IDs for which to list trades for, if provided.
+	// Restrict trades to those that were caused by the given orders.
 	OrderIds []string `protobuf:"bytes,2,rep,name=order_ids,json=orderIds,proto3" json:"order_ids,omitempty"`
-	// List of Party ID for which to list trades for, if provided.
+	// Restrict trades to those that were caused by orders placed by the given parties.
 	PartyIds []string `protobuf:"bytes,3,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
 	// Pagination control.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Date range for the listing, if provided.
+	// Restrict trades to those made during the given date range. If not set, all trades will be returned.
 	DateRange *DateRange `protobuf:"bytes,5,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
 }
 
@@ -7306,9 +7304,9 @@ type ObserveTradesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of Market ID to filter by.
+	// Restrict the trades streamed to those made on the given markets.
 	MarketIds []string `protobuf:"bytes,1,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// List of Party IDs to filter by.
+	// Restrict the trades streamed to those made by the given parties.
 	PartyIds []string `protobuf:"bytes,2,rep,name=party_ids,json=partyIds,proto3" json:"party_ids,omitempty"`
 }
 
@@ -8048,7 +8046,7 @@ type ListMarketsRequest struct {
 
 	// Pagination control.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Whether or not to include settled markets in the response; default to true if not specified.
+	// Whether to include settled markets. If not set, settled markets will be included.
 	IncludeSettled *bool `protobuf:"varint,3,opt,name=include_settled,json=includeSettled,proto3,oneof" json:"include_settled,omitempty"`
 }
 
@@ -8367,7 +8365,7 @@ type ListPartiesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID to filter for. If omitted, no filter will be applied.
+	// Restrict the returned party to only the given party ID. If not set, all parties will be returned.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
 	// Pagination control.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
@@ -8766,9 +8764,9 @@ type ObserveMarginLevelsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID to filter for. If empty, no parties will be filtered.
+	// Restrict margin level updates to those relating to the given party.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Optional Market ID to filter for. If omitted, no markets will be filtered.
+	// Restrict margin level updates to those relating to the given market.
 	MarketId *string `protobuf:"bytes,2,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
 }
 
@@ -9047,15 +9045,15 @@ type ListRewardsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID for which to get the list of rewards.
+	// Restrict rewards data to those that were received by the given party.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Asset ID for which to get the list of rewards, if provided.
+	// Restrict rewards data to those that were paid with the given asset ID.
 	AssetId *string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
 	// Pagination control.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
-	// Epoch from which to list the rewards, if provided.
+	// Restrict rewards data to those that were paid after and including the given epoch ID.
 	FromEpoch *uint64 `protobuf:"varint,4,opt,name=from_epoch,json=fromEpoch,proto3,oneof" json:"from_epoch,omitempty"`
-	// Epoch up-to-which to list the rewards, if provided.
+	// Restrict rewards data to those that were paid up to and including the given epoch ID.
 	ToEpoch *uint64 `protobuf:"varint,5,opt,name=to_epoch,json=toEpoch,proto3,oneof" json:"to_epoch,omitempty"`
 }
 
@@ -9297,11 +9295,11 @@ type ListRewardSummariesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID for which to list rewards, if provided.
+	// Restrict the reward summary to rewards paid to the given parties.
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// Asset ID for which to list rewards, if provided.
+	// Restrict the reward summary to rewards paid in the given assets.
 	AssetId *string `protobuf:"bytes,2,opt,name=asset_id,json=assetId,proto3,oneof" json:"asset_id,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -9413,13 +9411,13 @@ type RewardSummaryFilter struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Restrict the results to those connected to the assets in this list. Pass an empty list for no filter.
+	// Restrict reward summaries to those connected to the assets in the given list.
 	AssetIds []string `protobuf:"bytes,1,rep,name=asset_ids,json=assetIds,proto3" json:"asset_ids,omitempty"`
-	// Restrict the results to those connected to the markets in this list. Pass an empty list for no filter.
+	// Restrict reward summaries to those connected to the markets in the given list.
 	MarketIds []string `protobuf:"bytes,2,rep,name=market_ids,json=marketIds,proto3" json:"market_ids,omitempty"`
-	// Optional range of epochs to filter on.
+	// Restrict rewards summaries to those that were paid after and including the given epoch ID.
 	FromEpoch *uint64 `protobuf:"varint,3,opt,name=from_epoch,json=fromEpoch,proto3,oneof" json:"from_epoch,omitempty"`
-	// Epoch to which to filter rewards summaries.
+	// Restrict rewards summaries to those that were paid up to and including the given epoch ID.
 	ToEpoch *uint64 `protobuf:"varint,4,opt,name=to_epoch,json=toEpoch,proto3,oneof" json:"to_epoch,omitempty"`
 }
 
@@ -9819,7 +9817,7 @@ type GetDepositRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Deposit ID, which can be obtained using the List Deposits query.
+	// Deposit ID to return data for.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 }
 
@@ -9917,10 +9915,9 @@ type ListDepositsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID whose deposits are to be retrieved.
-	// If not provided, deposits for all parties will be provided.
+	// Restrict deposits to those made by the given party ID.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 	// Date range of the requested data, if provided.
 	DateRange *DateRange `protobuf:"bytes,3,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
@@ -10248,10 +10245,9 @@ type ListWithdrawalsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID whose withdrawals are to retrieved.
-	// If not provided, withdrawals for all parties will be returned.
+	// Restrict withdrawals to those made by this party ID.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 	// Date range of the requested data, if provided.
 	DateRange *DateRange `protobuf:"bytes,3,opt,name=date_range,json=dateRange,proto3,oneof" json:"date_range,omitempty"`
@@ -10802,15 +10798,15 @@ type ListLiquidityProvisionsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Target market for the liquidity provision orders.
+	// Restrict liquidity provision orders to those placed on the given market.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// Party which submitted the liquidity provision orders.
+	// Restrict liquidity provision orders to those placed by the given party.
 	PartyId *string `protobuf:"bytes,2,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// Reference of the liquidity provision.
+	// Restrict liquidity provision orders to those with the given order reference.
 	Reference *string `protobuf:"bytes,3,opt,name=reference,proto3,oneof" json:"reference,omitempty"`
-	// Indicator if the listed liquidity provision orders will include live orders or not.
+	// Whether to include live liquidity provision orders. If not set, live orders will not be included.
 	Live *bool `protobuf:"varint,4,opt,name=live,proto3,oneof" json:"live,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -11265,15 +11261,15 @@ type ListGovernanceDataRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Proposal state to list governance data for, if provided.
+	// Restrict proposals to those with the given state.
 	ProposalState *vega.Proposal_State `protobuf:"varint,1,opt,name=proposal_state,json=proposalState,proto3,enum=vega.Proposal_State,oneof" json:"proposal_state,omitempty"`
-	// Proposal type to list governance data for, if provided.
+	// Restrict proposals to those with the given type.
 	ProposalType *ListGovernanceDataRequest_Type `protobuf:"varint,2,opt,name=proposal_type,json=proposalType,proto3,enum=datanode.api.v2.ListGovernanceDataRequest_Type,oneof" json:"proposal_type,omitempty"`
-	// Proposer party ID to list governance data for, if provided.
+	// Restrict proposals to those proposed by the given party ID.
 	ProposerPartyId *string `protobuf:"bytes,3,opt,name=proposer_party_id,json=proposerPartyId,proto3,oneof" json:"proposer_party_id,omitempty"`
-	// Proposal reference to list governance data for, if provided.
+	// Restrict proposals to those with the given reference.
 	ProposalReference *string `protobuf:"bytes,4,opt,name=proposal_reference,json=proposalReference,proto3,oneof" json:"proposal_reference,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination controls.
 	Pagination *Pagination `protobuf:"bytes,5,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -11515,7 +11511,7 @@ type ObserveGovernanceRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID to get the governance subscription for, if provided.
+	// Restrict proposal updates to those proposed by the given party ID.
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
 }
 
@@ -11613,13 +11609,13 @@ type ListDelegationsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Party ID to list delegations for, if provided.
+	// Restrict delegations to those made by the given party ID.
 	PartyId *string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3,oneof" json:"party_id,omitempty"`
-	// Node ID to list delegations for, if provided.
+	// Restrict delegations to those made to the given node ID.
 	NodeId *string `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3,oneof" json:"node_id,omitempty"`
-	// Epoch ID to list delegations for, if provided.
+	// Return delegations made in the given epoch. If not set, delegations for the current epoch will be returned.
 	EpochId *string `protobuf:"bytes,3,opt,name=epoch_id,json=epochId,proto3,oneof" json:"epoch_id,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,4,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -12268,9 +12264,9 @@ type ListNodesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Epoch number to list nodes for, if provided.
+	// Return the node list for the given epoch. If not set, the node list for the current epoch will be returned.
 	EpochSeq *uint64 `protobuf:"varint,1,opt,name=epoch_seq,json=epochSeq,proto3,oneof" json:"epoch_seq,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
@@ -12491,7 +12487,7 @@ type ListNodeSignaturesRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Resource ID to list signatures for, required field.
+	// Resource ID to list signatures for.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Optional pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,2,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
@@ -14703,8 +14699,8 @@ type GetVegaTimeResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Timestamp representation of current VegaTime as represented in
-	// Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`.
+	// Timestamp representation of current VegaTime as represented in nanoseconds, for example
+	// `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`.
 	Timestamp int64 `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
@@ -14754,8 +14750,10 @@ type DateRange struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Timestamp in nanoseconds indicating the start of the date range.
 	StartTimestamp *int64 `protobuf:"varint,1,opt,name=start_timestamp,json=startTimestamp,proto3,oneof" json:"start_timestamp,omitempty"`
-	EndTimestamp   *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
+	// Timestamp in nanoseconds indicating the end of the date range.
+	EndTimestamp *int64 `protobuf:"varint,2,opt,name=end_timestamp,json=endTimestamp,proto3,oneof" json:"end_timestamp,omitempty"`
 }
 
 func (x *DateRange) Reset() {
@@ -14898,11 +14896,11 @@ type ListProtocolUpgradeProposalsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Protocol upgrade proposal status to filter results from listing proposals, if provided.
+	// Restrict protocol upgrade proposals to those with the given status.
 	Status *v1.ProtocolUpgradeProposalStatus `protobuf:"varint,1,opt,name=status,proto3,enum=vega.events.v1.ProtocolUpgradeProposalStatus,oneof" json:"status,omitempty"`
-	// Option to filter listed proposals on being approved or not, if provided.
+	// Restrict protocol upgrade proposals to those approved by the given node ID.
 	ApprovedBy *string `protobuf:"bytes,2,opt,name=approved_by,json=approvedBy,proto3,oneof" json:"approved_by,omitempty"`
-	// Optional pagination information to limit the data that is returned.
+	// Pagination information to limit the data that is returned.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 }
 
