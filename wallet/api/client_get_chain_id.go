@@ -18,12 +18,12 @@ type ClientGetChainID struct {
 func (h *ClientGetChainID) Handle(ctx context.Context) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	currentNode, err := h.nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
-		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
+		return nil, NodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
 
 	lastBlockData, err := currentNode.LastBlock(ctx)
 	if err != nil {
-		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
+		return nil, NodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
 
 	return ClientGetChainIDResult{

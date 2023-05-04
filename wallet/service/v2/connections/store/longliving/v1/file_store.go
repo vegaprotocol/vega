@@ -381,9 +381,9 @@ func (s *FileStore) readFileAsTokenDescriptions() ([]connections.TokenDescriptio
 }
 
 func InitialiseStore(p paths.Paths, passphrase string) (*FileStore, error) {
-	tokensFilePath, err := p.CreateDataPathFor(paths.WalletServiceTokensDataFile)
+	tokensFilePath, err := p.CreateDataPathFor(paths.WalletServiceAPITokensDataFile)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get data path for %s: %w", paths.WalletServicePublicRSAKeyDataFile, err)
+		return nil, fmt.Errorf("couldn't get data path for %s: %w", paths.WalletServiceAPITokensDataFile, err)
 	}
 
 	store := &FileStore{
@@ -449,9 +449,9 @@ func IsStoreBootstrapped(p paths.Paths) (bool, error) {
 }
 
 func tokensFilePath(p paths.Paths) (string, error) {
-	tokensFilePath, err := p.CreateDataPathFor(paths.WalletServiceTokensDataFile)
+	tokensFilePath, err := p.CreateDataPathFor(paths.WalletServiceAPITokensDataFile)
 	if err != nil {
-		return "", fmt.Errorf("couldn't get data path for %s: %w", paths.WalletServicePublicRSAKeyDataFile, err)
+		return "", fmt.Errorf("couldn't get data path for %s: %w", paths.WalletServiceAPITokensDataFile, err)
 	}
 	return tokensFilePath, nil
 }

@@ -28,7 +28,7 @@ func assertRequestNotPermittedError(t *testing.T, errorDetails *jsonrpc.ErrorDet
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestNotPermitted, errorDetails.Code)
-	assert.Equal(t, string(api.ApplicationError), errorDetails.Message)
+	assert.Equal(t, string(api.ApplicationErrorType), errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
@@ -36,7 +36,7 @@ func assertRequestInterruptionError(t *testing.T, errorDetails *jsonrpc.ErrorDet
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenInterrupted, errorDetails.Code)
-	assert.Equal(t, string(api.ServerError), errorDetails.Message)
+	assert.Equal(t, string(api.ServerErrorType), errorDetails.Message)
 	assert.Equal(t, api.ErrRequestInterrupted.Error(), errorDetails.Data)
 }
 
@@ -44,7 +44,7 @@ func assertConnectionClosedError(t *testing.T, errorDetails *jsonrpc.ErrorDetail
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeConnectionHasBeenClosed, errorDetails.Code)
-	assert.Equal(t, string(api.UserError), errorDetails.Message)
+	assert.Equal(t, string(api.UserErrorType), errorDetails.Message)
 	assert.Equal(t, api.ErrUserCloseTheConnection.Error(), errorDetails.Data)
 }
 
@@ -52,7 +52,7 @@ func assertInternalError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expec
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, jsonrpc.ErrorCodeInternalError, errorDetails.Code)
-	assert.Equal(t, string(api.InternalError), errorDetails.Message)
+	assert.Equal(t, string(api.InternalErrorType), errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
@@ -60,7 +60,7 @@ func assertNetworkError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, expect
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeNodeCommunicationFailed, errorDetails.Code)
-	assert.Equal(t, string(api.NetworkError), errorDetails.Message)
+	assert.Equal(t, string(api.NetworkErrorType), errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
@@ -68,7 +68,7 @@ func assertUserRejectionError(t *testing.T, errorDetails *jsonrpc.ErrorDetails, 
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenRejected, errorDetails.Code)
-	assert.Equal(t, string(api.UserError), errorDetails.Message)
+	assert.Equal(t, string(api.UserErrorType), errorDetails.Message)
 	assert.Equal(t, expectedErr.Error(), errorDetails.Data)
 }
 
@@ -76,7 +76,7 @@ func assertApplicationCancellationError(t *testing.T, errorDetails *jsonrpc.Erro
 	t.Helper()
 	require.NotNil(t, errorDetails)
 	assert.Equal(t, api.ErrorCodeRequestHasBeenCancelledByApplication, errorDetails.Code)
-	assert.Equal(t, string(api.ApplicationError), errorDetails.Message)
+	assert.Equal(t, string(api.ApplicationErrorType), errorDetails.Message)
 	assert.Equal(t, api.ErrApplicationCancelledTheRequest.Error(), errorDetails.Data)
 }
 
@@ -129,7 +129,7 @@ func walletWithKeys(t *testing.T, num int) (wallet.Wallet, []wallet.KeyPair) {
 	for i := 0; i < num; i++ {
 		kp, err := w.GenerateKeyPair(nil)
 		if err != nil {
-			t.Fatalf("could not update permissions on wallet for test: %v", err)
+			t.Fatalf("could not generate keys on wallet for test: %v", err)
 		}
 		kps = append(kps, kp)
 	}

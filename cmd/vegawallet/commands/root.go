@@ -81,6 +81,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdPermissions(w, f))
 	cmd.AddCommand(NewCmdRawTransaction(w, f))
 	cmd.AddCommand(NewCmdService(w, f))
+	cmd.AddCommand(NewCmdSession(w, f))
 	cmd.AddCommand(NewCmdShell(w, f))
 	cmd.AddCommand(NewCmdSoftware(w, f))
 	cmd.AddCommand(NewCmdTransaction(w, f))

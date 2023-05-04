@@ -19,7 +19,7 @@ type AdminListWallets struct {
 func (h *AdminListWallets) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	wallets, err := h.walletStore.ListWallets(ctx)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not list the wallets: %w", err))
+		return nil, InternalError(fmt.Errorf("could not list the wallets: %w", err))
 	}
 
 	return AdminListWalletsResult{

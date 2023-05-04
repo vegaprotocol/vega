@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +48,7 @@ func NewCmdDescribeAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdDescribeAPIToken(w, ensureAPITokenStoreIsInit, h, rf)
 }
 
-func BuildCmdDescribeAPIToken(w io.Writer, preCheck APITokePreCheck, handler DescribeAPITokenHandler, rf *RootFlags) *cobra.Command {
+func BuildCmdDescribeAPIToken(w io.Writer, preCheck APITokenPreCheck, handler DescribeAPITokenHandler, rf *RootFlags) *cobra.Command {
 	f := &DescribeAPITokenFlags{}
 
 	cmd := &cobra.Command{

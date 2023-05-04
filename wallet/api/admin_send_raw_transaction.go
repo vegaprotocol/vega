@@ -51,50 +51,50 @@ type AdminSendRawTransaction struct {
 func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminSendRawTransactionParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	receivedAt := time.Now()
 
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal([]byte(params.RawTransaction), tx); err != nil {
-		return nil, invalidParams(ErrRawTransactionIsNotValidVegaTransaction)
+		return nil, InvalidParams(ErrRawTransactionIsNotValidVegaTransaction)
 	}
 
 	hosts := []string{params.NodeAddress}
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
+			return nil, InternalError(fmt.Errorf("could not determine if the network exists: %w", err))
 		} else if !exists {
-			return nil, invalidParams(ErrNetworkDoesNotExist)
+			return nil, InvalidParams(ErrNetworkDoesNotExist)
 		}
 
 		n, err := h.networkStore.GetNetwork(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
+			return nil, InternalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
 		}
 
 		if err := n.EnsureCanConnectGRPCNode(); err != nil {
-			return nil, internalError(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
+			return nil, InternalError(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
 		}
 		hosts = n.API.GRPC.Hosts
 	}
 
 	nodeSelector, err := h.nodeSelectorBuilder(hosts, params.Retries, params.MaximumRequestDuration)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
+		return nil, InternalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
 	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
-		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
+		return nil, NodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
 
 	sentAt := time.Now()
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
-		return nil, networkErrorFromTransactionError(err)
+		return nil, NetworkErrorFromTransactionError(err)
 	}
 
 	return AdminSendRawTransactionResult{

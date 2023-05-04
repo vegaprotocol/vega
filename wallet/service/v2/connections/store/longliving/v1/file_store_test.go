@@ -8,7 +8,7 @@ import (
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	v1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	"code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

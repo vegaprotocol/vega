@@ -10,8 +10,8 @@ const (
 	// unlocked, has been updated.
 	UnlockedWalletUpdatedEventType = "UNLOCKED_WALLET_UPDATED"
 
-	// LockedWalletUpdatedEventType is raised when a wallet that has not been
-	// unlocked, has been updated.
+	// LockedWalletUpdatedEventType is raised when a locked wallet has been
+	// updated.
 	LockedWalletUpdatedEventType = "LOCKED_WALLET_UPDATED"
 
 	// WalletRemovedEventType is raised when a wallet has been removed.

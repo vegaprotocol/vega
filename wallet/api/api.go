@@ -148,6 +148,7 @@ var (
 	WalletConnectionWorkflow  WorkflowType = "WALLET_CONNECTION"
 	TransactionReviewWorkflow WorkflowType = "TRANSACTION_REVIEW"
 	PermissionRequestWorkflow WorkflowType = "PERMISSION_REQUEST"
+	WalletUnlockingWorkflow   WorkflowType = "WALLET_UNLOCKING"
 )
 
 // ErrorType defines the type of error that is sent to the user, for fine
@@ -155,26 +156,26 @@ var (
 type ErrorType string
 
 var (
-	// InternalError defines an unexpected technical error upon which the user
+	// InternalErrorType defines an unexpected technical error upon which the user
 	// can't act.
 	// The wallet front-end should report it to the user and automatically
 	// abort the processing of the ongoing request.
 	// It can be raised if a file is not accessible or corrupt, for example.
-	InternalError ErrorType = "Internal error"
-	// ServerError defines a programmatic error threw by the server, such as
+	InternalErrorType ErrorType = "Internal error"
+	// ServerErrorType defines a programmatic error threw by the server, such as
 	// a request cancellation. The server error targets error that happens in
 	// the communication layer. It's different form application error.
 	// It's a type of error that should be expected and handled.
-	ServerError ErrorType = "Server error"
-	// NetworkError defines an error that comes from the network and its nodes.
-	NetworkError ErrorType = "Network error"
-	// ApplicationError defines a programmatic error threw by the application
+	ServerErrorType ErrorType = "Server error"
+	// NetworkErrorType defines an error that comes from the network and its nodes.
+	NetworkErrorType ErrorType = "Network error"
+	// ApplicationErrorType defines a programmatic error threw by the application
 	// core, also called "business logic".
-	ApplicationError ErrorType = "Application error"
-	// UserError defines an error that originated from the user and that
+	ApplicationErrorType ErrorType = "Application error"
+	// UserErrorType defines an error that originated from the user and that
 	// requires its intervention to correct it.
 	// It can be raised if a passphrase is invalid, for example.
-	UserError ErrorType = "User error"
+	UserErrorType ErrorType = "User error"
 )
 
 // LogType defines the type of log that is sent to the user.

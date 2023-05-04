@@ -15,19 +15,16 @@ type connectionPolicy interface {
 // is live or until they are explicitly stopped.
 // In short, a session connection doesn't survive the reboot of the service.
 type sessionPolicy struct {
-	// lastActivityDate records the last time the connection was used by the third-party
-	// application. This will help us to manage connection expiration.
-	lastActivityDate time.Time
-	closed           bool
+	expiryDate time.Time
+	closed     bool
 }
 
 func (p *sessionPolicy) UpdateActivityDate(t time.Time) {
-	p.lastActivityDate = t
+	p.expiryDate = t.Add(1 * time.Hour)
 }
 
-func (p *sessionPolicy) HasConnectionExpired(_ time.Time) bool {
-	// Not implemented yet.
-	return false
+func (p *sessionPolicy) HasConnectionExpired(t time.Time) bool {
+	return p.expiryDate.Before(t)
 }
 
 func (p *sessionPolicy) IsLongLivingConnection() bool {

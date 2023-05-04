@@ -21,7 +21,7 @@ type AdminCloseConnectionsToWallet struct {
 func (h *AdminCloseConnectionsToWallet) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminCloseConnectionsToWalletParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	connections := h.connectionsManager.ListSessionConnections()

@@ -158,6 +158,7 @@ var (
 // 	│	└── vega-wallet-2
 // 	└── wallet-service/
 //      ├── tokens.json
+//      ├── sessions.toml
 // 		└── rsa-keys/
 // 			├── private.pem
 // 			└── public.pem
@@ -212,9 +213,14 @@ var (
 	// wallet service.
 	WalletServiceDataHome = DataPath("wallet-service")
 
-	// WalletServiceTokensDataFile is the file containing all the API tokens
+	// WalletServiceAPITokensDataFile is the file containing all the API tokens
 	// used by the third-party applications to connect to the wallet API.
-	WalletServiceTokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "tokens.json"))
+	WalletServiceAPITokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "tokens.json"))
+
+	// WalletServiceSessionTokensDataFile is the file containing all the session tokens
+	// generated to initiates the connection with the third-party applications to
+	// connect to the wallet API.
+	WalletServiceSessionTokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "sessions.toml"))
 
 	// WalletServiceRSAKeysDataHome is the folder containing the RSA keys used by
 	// the wallet service.

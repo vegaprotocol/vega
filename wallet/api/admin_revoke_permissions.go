@@ -20,32 +20,32 @@ type AdminRevokePermissions struct {
 func (h *AdminRevokePermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRevokePermissionsParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrWalletDoesNotExist)
+		return nil, InvalidParams(ErrWalletDoesNotExist)
 	}
 
 	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
 	}
 	if !alreadyUnlocked {
-		return nil, requestNotPermittedError(ErrWalletIsLocked)
+		return nil, RequestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
 	w.RevokePermissions(params.Hostname)
 
 	if err := h.walletStore.UpdateWallet(ctx, w); err != nil {
-		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return nil, nil

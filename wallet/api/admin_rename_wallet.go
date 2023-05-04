@@ -21,23 +21,23 @@ type AdminRenameWallet struct {
 func (h *AdminRenameWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateRenameWalletParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrWalletDoesNotExist)
+		return nil, InvalidParams(ErrWalletDoesNotExist)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.NewName); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if exist {
-		return nil, invalidParams(ErrWalletAlreadyExists)
+		return nil, InvalidParams(ErrWalletAlreadyExists)
 	}
 
 	if err := h.walletStore.RenameWallet(ctx, params.Wallet, params.NewName); err != nil {
-		return nil, internalError(fmt.Errorf("could not rename the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not rename the wallet: %w", err))
 	}
 
 	return nil, nil
