@@ -127,25 +127,25 @@ message StakeLinking {
   string id = 1;
   // Stake linking event type.
   Type type = 2;
-  // Timestamps at which the event was emitted by ethereum
+  // Timestamp in Unix nanoseconds of when the event was emitted by Ethereum.
   int64 ts = 3;
   // Party to whom the event is directed at.
   string party = 4;
-  // Amount of stake deposited or removed
+  // Amount of stake deposited or removed.
   string amount = 5;
-  // Status of the event
+  // Status of the event.
   Status status = 6;
-  // Time at which the vega network finalized the state of the event
+  // Time at which the Vega network finalised the state of the event.
   int64 finalized_at = 7;
-  // Hash of the transaction from which the events happen
+  // Hash of the transaction in which the event happened.
   string tx_hash = 8;
-  // Block when the event happened
+  // Block when the event happened.
   uint64 block_height = 9;
-  // Block time
+  // Block time.
   int64 block_time = 10;
-  // Log index
+  // Log index.
   uint64 log_index = 11;
-  // Ethereum address from which the stake link was initiated
+  // Ethereum address from which the stake link was initiated.
   string ethereum_address = 12;
 }
 

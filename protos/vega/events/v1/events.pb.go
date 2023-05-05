@@ -1139,25 +1139,25 @@ type StakeLinking struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Stake linking event type.
 	Type StakeLinking_Type `protobuf:"varint,2,opt,name=type,proto3,enum=vega.events.v1.StakeLinking_Type" json:"type,omitempty"`
-	// Timestamps at which the event was emitted by ethereum
+	// Timestamp in Unix nanoseconds of when the event was emitted by Ethereum.
 	Ts int64 `protobuf:"varint,3,opt,name=ts,proto3" json:"ts,omitempty"`
 	// Party to whom the event is directed at.
 	Party string `protobuf:"bytes,4,opt,name=party,proto3" json:"party,omitempty"`
-	// Amount of stake deposited or removed
+	// Amount of stake deposited or removed.
 	Amount string `protobuf:"bytes,5,opt,name=amount,proto3" json:"amount,omitempty"`
-	// Status of the event
+	// Status of the event.
 	Status StakeLinking_Status `protobuf:"varint,6,opt,name=status,proto3,enum=vega.events.v1.StakeLinking_Status" json:"status,omitempty"`
-	// Time at which the vega network finalized the state of the event
+	// Time at which the Vega network finalised the state of the event.
 	FinalizedAt int64 `protobuf:"varint,7,opt,name=finalized_at,json=finalizedAt,proto3" json:"finalized_at,omitempty"`
-	// Hash of the transaction from which the events happen
+	// Hash of the transaction in which the event happened.
 	TxHash string `protobuf:"bytes,8,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	// Block when the event happened
+	// Block when the event happened.
 	BlockHeight uint64 `protobuf:"varint,9,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
-	// Block time
+	// Block time.
 	BlockTime int64 `protobuf:"varint,10,opt,name=block_time,json=blockTime,proto3" json:"block_time,omitempty"`
-	// Log index
+	// Log index.
 	LogIndex uint64 `protobuf:"varint,11,opt,name=log_index,json=logIndex,proto3" json:"log_index,omitempty"`
-	// Ethereum address from which the stake link was initiated
+	// Ethereum address from which the stake link was initiated.
 	EthereumAddress string `protobuf:"bytes,12,opt,name=ethereum_address,json=ethereumAddress,proto3" json:"ethereum_address,omitempty"`
 }
 
