@@ -285,7 +285,9 @@ var (
 	// MarginLevels...
 	ErrMarginLevelsGetByTxHash = errors.New("failed to get margin levels for tx hash")
 
-	ErrMissingEmptyTxHash = errors.New("missing or empty tx hash")
+	// TxHashes...
+	ErrMissingEmptyTxHash = newInvalidArgumentError("missing or empty transaction hash")
+	ErrInvalidTxHash      = newInvalidArgumentError("not a valid transaction hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
