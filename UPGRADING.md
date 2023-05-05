@@ -1,3 +1,51 @@
+Upgrading from v0.67.1 to v0.71.4
+=================================
+
+Read through for a list of the major changes between versions 0.67.1 and 0.71.4, covering:
+* [Repository changes](#repository-changes)
+* [Configuration changes](#configuration-changes)
+* [Command line changes](#command-line-changes)
+
+# Repository changes
+
+In the previous versions the datanode used to have two separate http servers: REST and GraphQL, which were exposed by default on 3008 and 3009 ports respectively.
+Currently the datanode functions as a single http server and it is exposed on port 3008 by default.
+
+# Configuration changes
+
+## Vega
+
+The Vega configuration file can be found in `$VEGA_HOME/config/node/config.toml`.
+
+## Data node
+
+The data node configuration file can be found in `$DATANODE_HOME/config/data-node/config.toml`.
+
+### Settings added in 0.71.4
+
+**_Rate Limiting_** - In the past the datanode API did rate limiting only by the number of subscriptions open per IPs. With the new version a rate limit per IP was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 api calls in a short period of time. 
+For details how to use this setting and configure this functionality, please refer to [rateLimiting](https://github.com/vegaprotocol/vega/blob/develop/datanode/ratelimit/README.md)
+
+### Settings removed in 0.71.4
+
+**_X-Vega-Connection_** - This HTTP header is now deprecated from API calls to the datanode.
+
+# Command line changes
+
+## Vega
+
+#### Deprecations
+
+`IssueSignatures` is no longer a validator command and is now protected by the spam engine.
+
+### VegaWallet
+
+The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.
+
+#### Deprecations
+
+`tokenDApp` - In the `admin.describe.network` command, this field is renamed to `governance`
+
 Upgrading from v0.53.0 to v0.67.1
 =================================
 
@@ -201,7 +249,7 @@ For example, if your previous settings were
   ...
   [Gateway.GraphQL]
     HTTPSEnabled = true
-    AutoCertDomain = "my.domain.com"
+    AutoCertDomain = "api.vega.example.com"
     CertificateFile = ""
     KeyFile = ""
     ...
@@ -211,13 +259,13 @@ They must now become
 [Gateway]
   ...
   HTTPSEnabled = true
-  AutoCertDomain = "my.domain.com"
+  AutoCertDomain = "api.vega.example.com"
   CertificateFile = ""
   KeyFile = ""
   [Gateway.GraphQL]
     ...
 ```
-Please note, that for `autocert` to work then either the GraphQL or REST endpoints *must* be reachable on the internet at `my.domain.com:443` (this is a hard requirement from LetsEncrypt). You could forward the port with a firewall rule or proxy, or simply specify 443 as the port for one of them in the `[Gateway.GraphQL]` or `[Gateway.Rest]` config sections.
+Please note, that for `autocert` to work then either the GraphQL or REST endpoints *must* be reachable on the internet at `api.vega.example.com:443` (this is a hard requirement from LetsEncrypt). You could forward the port with a firewall rule or proxy, or simply specify 443 as the port for one of them in the `[Gateway.GraphQL]` or `[Gateway.Rest]` config sections.
 
 If that is not possible, you will need to use [other means](https://letsencrypt.org/getting-started/) to generate and provide a signed certificate to datanode. Specify the path to your certificate & private key in the `CertificateFile` and `KeyFile` options.
 
