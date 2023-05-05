@@ -600,6 +600,10 @@ func (s *FileStore) broadcastEvent(ctx context.Context, eventToBroadcast wallet.
 	}()
 }
 
+func (s *FileStore) GetWalletsPath() string {
+	return s.walletsHome
+}
+
 func checkContextStatus(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err

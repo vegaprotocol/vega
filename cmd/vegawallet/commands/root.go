@@ -93,6 +93,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdDescribeWallet(w, f))
 	cmd.AddCommand(NewCmdImportWallet(w, f))
 	cmd.AddCommand(NewCmdListWallets(w, f))
+	cmd.AddCommand(NewCmdLocateWallets(w, f))
 	cmd.AddCommand(NewCmdRenameWallet(w, f))
 
 	return cmd

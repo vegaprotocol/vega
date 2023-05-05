@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
+- [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 
 
 ### 🐛 Fixes
