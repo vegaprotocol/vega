@@ -1799,11 +1799,11 @@ type Vote struct {
 
 	// Voter's party ID.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// Actual vote.
+	// Which way the party voted.
 	Value Vote_Value `protobuf:"varint,2,opt,name=value,proto3,enum=vega.Vote_Value" json:"value,omitempty"`
 	// Proposal ID being voted on.
 	ProposalId string `protobuf:"bytes,3,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
-	// Vote timestamp for date and time as Unix time in nanoseconds when vote was submitted to the network.
+	// Timestamp in Unix nanoseconds when the vote was acknowledged by the network.
 	Timestamp int64 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Total number of governance token for the party that cast the vote.
 	TotalGovernanceTokenBalance string `protobuf:"bytes,5,opt,name=total_governance_token_balance,json=totalGovernanceTokenBalance,proto3" json:"total_governance_token_balance,omitempty"`

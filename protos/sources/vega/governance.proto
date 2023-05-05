@@ -376,11 +376,11 @@ message Vote {
 
   // Voter's party ID.
   string party_id = 1;
-  // Actual vote.
+  // Which way the party voted.
   Value value = 2;
   // Proposal ID being voted on.
   string proposal_id = 3;
-  // Vote timestamp for date and time as Unix time in nanoseconds when vote was submitted to the network.
+  // Timestamp in Unix nanoseconds when the vote was acknowledged by the network.
   int64 timestamp = 4;
   // Total number of governance token for the party that cast the vote.
   string total_governance_token_balance = 5;

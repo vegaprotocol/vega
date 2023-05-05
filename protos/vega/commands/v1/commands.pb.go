@@ -164,7 +164,7 @@ type OrderSubmission struct {
 	Side vega.Side `protobuf:"varint,4,opt,name=side,proto3,enum=vega.Side" json:"side,omitempty"`
 	// Time in force indicates how long an order will remain active before it is executed or expires, required field.
 	TimeInForce vega.Order_TimeInForce `protobuf:"varint,5,opt,name=time_in_force,json=timeInForce,proto3,enum=vega.Order_TimeInForce" json:"time_in_force,omitempty"`
-	// Timestamp for when the order will expire, in nanoseconds,
+	// Timestamp in Unix nanoseconds for when the order will expire,
 	// required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`.
 	ExpiresAt int64 `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	// Type for the order, required field - See `Order.Type`.
@@ -1163,8 +1163,7 @@ type OneOffTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Unix timestamp in nanoseconds. Time at which the
-	// transfer should be delivered into the To account.
+	// Timestamp in Unix nanoseconds for when the transfer should be delivered into the receiver's account.
 	DeliverOn int64 `protobuf:"varint,1,opt,name=deliver_on,json=deliverOn,proto3" json:"deliver_on,omitempty"`
 }
 
