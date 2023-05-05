@@ -3523,11 +3523,14 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 	defer metrics.StartAPIRequestAndTimeGRPC("ListEntities")()
 
 	if len(req.GetTransactionHash()) == 0 {
-		return nil, ErrMissingEmptyTxHash
+		return nil, formatE(ErrMissingEmptyTxHash)
+	}
+
+	if !crypto.IsValidVegaID(req.GetTransactionHash()) {
+		return nil, formatE(ErrInvalidTxHash)
 	}
 
 	txHash := entities.TxHash(req.GetTransactionHash())
-
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// query
