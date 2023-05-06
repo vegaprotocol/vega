@@ -5,11 +5,11 @@ Read through for a list of the major changes between versions 0.67.1 and 0.71.4,
 * [Configuration changes](#configuration-changes)
 * [Command line changes](#command-line-changes)
 
-# Configuration changes
-
 This document covers most of the breaking changes in using the command line or configuring the different softwares.
 
-We also recommend that node operators generate a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
+# Configuration changes
+
+We recommend that node operators generate a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare these new configurations to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
 
 ## Vega
 
@@ -79,7 +79,7 @@ stopSignalTimeoutSeconds = 15
 
 `IssueSignatures` is no longer a validator command and is now protected by the spam protection engine.
 
-### VegaWallet
+### Vega Wallet
 
 The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.
 
