@@ -7,7 +7,9 @@ Read through for a list of the major changes between versions 0.67.1 and 0.71.4,
 
 # Configuration changes
 
-This document should cover most of the breaking change in using the command line or configuring the different software. We also recommend that node operator tries to generate a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder and compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
+This document covers most of the breaking changes in using the command line or configuring the different softwares. 
+
+We also recommend that node operator generates a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
 
 ## Vega
 
