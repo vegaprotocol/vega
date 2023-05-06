@@ -9,7 +9,7 @@ Read through for a list of the major changes between versions 0.67.1 and 0.71.4,
 
 This document covers most of the breaking changes in using the command line or configuring the different softwares.
 
-We also recommend that node operator generates a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
+We also recommend that node operators generate a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
 
 ## Vega
 
@@ -21,10 +21,12 @@ The data node configuration file can be found in `$DATANODE_HOME/config/data-nod
 
 ### Settings added in 0.71.4
 
-**_Rate Limiting_** - In the past the datanode API did rate limiting only by the number of subscriptions open per IPs. With the new version a rate limit per IP on the unary calls for the REST, GraphQL and grpc APIs was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 api calls in a short period of time.
-For details how to use this setting and configure this functionality, please refer to [rateLimiting](https://github.com/vegaprotocol/vega/blob/develop/datanode/ratelimit/README.md)
+**_Rate Limiting_** - In the past, the data node API did rate limiting only by the number of subscriptions open per IP. In the new version, a rate limit per IP on the unary calls for the REST, GraphQL and gRPC APIs was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 API calls in a short period of time.
+For details how to use this setting and configure this functionality, please refer to the [rate limiting](https://github.com/vegaprotocol/vega/blob/develop/datanode/ratelimit/README.md) documentation.
 
-**_REST and GraphQL configuration_** - Previously the configuration of the Graphql and REST APIs used separate HTTP servers and configuration. This was merge onto a single server now. Also the default endpoint for Graphql changed from /query to /graphql
+**_REST and GraphQL configuration_** - Previously the configuration of the GraphQL and REST APIs used separate HTTP servers and configuration. This has now been merged into a single server.
+
+Also, the default endpoint for GraphQL has changed from `/query` to `/graphql`.
 Usage example:
 ```Toml
 [Gateway]
@@ -37,19 +39,19 @@ Usage example:
     Enabled = true
 ```
 
-**_IPFS update_** - The ipfs library used by the datanode to share network history have been updated. This may require manual steps to reset the state and apply the ipfs migrations.
+**_IPFS update_** - The IPFS library used by the data node to share network history has been updated. This may require manual steps to reset the state and apply the IPFS migrations.
 
 ### Settings removed in 0.71.4
 
-**_X-Vega-Connection_** - This HTTP header is now deprecated from API calls to the datanode.
+**_X-Vega-Connection_** - This HTTP header is now deprecated from API calls to the data node.
 
 ## Visor
 
 ### Breaking changes with 0.71.4
 
-Visor used to require both the vega and datanode binaries. With recent changes, the vega binary now embed the datanode cli as a subcommands. This has been reflected to the visor configuration as now a single binary is required in the configuration.
+Visor used to require both the Vega and data node binaries. With recent changes, the Vega binary is now embedded in the data node CLI as a subcommand. This has been reflected in the Visor configuration as now only a single binary is required in the configuration.
 
-Here's an example of visor configuration reflecting these changes:
+Here's an example of Visor configuration reflecting these changes:
 ```Toml
 maxNumberOfFirstConnectionRetries = 43200
 maxNumberOfRestarts = 3
@@ -75,7 +77,7 @@ stopSignalTimeoutSeconds = 15
 
 #### Deprecations
 
-`IssueSignatures` is no longer a validator command and is now protected by the spam engine.
+`IssueSignatures` is no longer a validator command and is now protected by the spam protection engine.
 
 ### VegaWallet
 
