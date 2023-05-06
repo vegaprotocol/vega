@@ -7,7 +7,7 @@ Read through for a list of the major changes between versions 0.67.1 and 0.71.4,
 
 # Configuration changes
 
-This document covers most of the breaking changes in using the command line or configuring the different softwares. 
+This document covers most of the breaking changes in using the command line or configuring the different softwares.
 
 We also recommend that node operator generates a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
 
@@ -21,7 +21,7 @@ The data node configuration file can be found in `$DATANODE_HOME/config/data-nod
 
 ### Settings added in 0.71.4
 
-**_Rate Limiting_** - In the past the datanode API did rate limiting only by the number of subscriptions open per IPs. With the new version a rate limit per IP on the unary calls for the RESY, GraphQL and grpc APIs was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 api calls in a short period of time.
+**_Rate Limiting_** - In the past the datanode API did rate limiting only by the number of subscriptions open per IPs. With the new version a rate limit per IP on the unary calls for the REST, GraphQL and grpc APIs was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 api calls in a short period of time.
 For details how to use this setting and configure this functionality, please refer to [rateLimiting](https://github.com/vegaprotocol/vega/blob/develop/datanode/ratelimit/README.md)
 
 **_REST and GraphQL configuration_** - Previously the configuration of the Graphql and REST APIs used separate HTTP servers and configuration. This was merge onto a single server now. Also the default endpoint for Graphql changed from /query to /graphql
