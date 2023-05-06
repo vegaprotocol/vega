@@ -2,16 +2,12 @@ Upgrading from v0.67.1 to v0.71.4
 =================================
 
 Read through for a list of the major changes between versions 0.67.1 and 0.71.4, covering:
-* [Repository changes](#repository-changes)
 * [Configuration changes](#configuration-changes)
 * [Command line changes](#command-line-changes)
 
-# Repository changes
-
-In the previous versions the datanode used to have two separate http servers: REST and GraphQL, which were exposed by default on 3008 and 3009 ports respectively.
-Currently the datanode functions as a single http server and it is exposed on port 3008 by default.
-
 # Configuration changes
+
+This document should cover most of the breaking change in using the command line or configuring the different software. We also recommend that node operator tries to generate a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder and compare this new configuration to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
 
 ## Vega
 
@@ -23,12 +19,53 @@ The data node configuration file can be found in `$DATANODE_HOME/config/data-nod
 
 ### Settings added in 0.71.4
 
-**_Rate Limiting_** - In the past the datanode API did rate limiting only by the number of subscriptions open per IPs. With the new version a rate limit per IP was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 api calls in a short period of time. 
+**_Rate Limiting_** - In the past the datanode API did rate limiting only by the number of subscriptions open per IPs. With the new version a rate limit per IP was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 api calls in a short period of time.
 For details how to use this setting and configure this functionality, please refer to [rateLimiting](https://github.com/vegaprotocol/vega/blob/develop/datanode/ratelimit/README.md)
+
+**_REST and GraphQL configuration_** - Previously the configuration of the Graphql and REST APIs used separate HTTP servers and configuration. This was merge onto a single server now. Also the default endpoint for Graphql changed from /query to /graphql
+Usage example:
+```Toml
+[Gateway]
+  Port = 3008
+  IP = "0.0.0.0"
+  [Gateway.GraphQL]
+    Enabled = true
+    Endpoint = "/graphql"
+  [Gateway.REST]
+    Enabled = true
+```
+
+**_IPFS update_** - The ipfs library used by the datanode to share network history have been updated. This may require manual steps to reset the state and apply the ipfs migrations.
 
 ### Settings removed in 0.71.4
 
 **_X-Vega-Connection_** - This HTTP header is now deprecated from API calls to the datanode.
+
+## Visor
+
+### Breaking changes with 0.71.4
+
+Visor used to require both the vega and datanode binaries. With recent changes, the vega binary now embed the datanode cli as a subcommands. This has been reflected to the visor configuration as now a single binary is required in the configuration.
+
+Here's an example of visor configuration reflecting these changes:
+```Toml
+maxNumberOfFirstConnectionRetries = 43200
+maxNumberOfRestarts = 3
+restartsDelaySeconds = 5
+stopDelaySeconds = 3
+stopSignalTimeoutSeconds = 15
+
+[upgradeFolders]
+  "vX.X.X" = "vX.X.X"
+
+[autoInstall]
+  enabled = true
+  repositoryOwner = "vegaprotocol"
+  repository = "vega"
+  [autoInstall.assets]
+    assset_name = "vega-linux-amd64.zip"
+    binary_name = "vega"
+```
 
 # Command line changes
 
@@ -42,9 +79,6 @@ For details how to use this setting and configure this functionality, please ref
 
 The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.
 
-#### Deprecations
-
-`tokenDApp` - In the `admin.describe.network` command, this field is renamed to `governance`
 
 Upgrading from v0.53.0 to v0.67.1
 =================================
@@ -305,7 +339,7 @@ vega --help
 
 ### Vega Wallet
 
-The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.  
+The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.
 
 ## Data node
 
