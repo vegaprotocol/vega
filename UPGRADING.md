@@ -1,3 +1,89 @@
+Upgrading from v0.67.1 to v0.71.4
+=================================
+
+Read through for a list of the major changes between versions 0.67.1 and 0.71.4, covering:
+* [Configuration changes](#configuration-changes)
+* [Command line changes](#command-line-changes)
+
+This document covers most of the breaking changes in using the command line or configuring the different softwares.
+
+# Configuration changes
+
+We recommend that node operators generate a bare configuration (`vega init...`, `vega datanode init...`) in a temporary folder to compare these new configurations to their existing ones to address any changes. Any missing entries in the configuration will be using defaults.
+
+## Vega
+
+The Vega configuration file can be found in `$VEGA_HOME/config/node/config.toml`.
+
+## Data node
+
+The data node configuration file can be found in `$DATANODE_HOME/config/data-node/config.toml`.
+
+### Settings added in 0.71.4
+
+**_Rate Limiting_** - In the past, the data node API did rate limiting only by the number of subscriptions open per IP. In the new version, a rate limit per IP on the unary calls for the REST, GraphQL and gRPC APIs was introduced. The server now allows 20 API calls per second on average with a burst of up to 100 API calls in a short period of time.
+For details how to use this setting and configure this functionality, please refer to the [rate limiting](https://github.com/vegaprotocol/vega/blob/develop/datanode/ratelimit/README.md) documentation.
+
+**_REST and GraphQL configuration_** - Previously the configuration of the GraphQL and REST APIs used separate HTTP servers and configuration. This has now been merged into a single server.
+
+Also, the default endpoint for GraphQL has changed from `/query` to `/graphql`.
+Usage example:
+```Toml
+[Gateway]
+  Port = 3008
+  IP = "0.0.0.0"
+  [Gateway.GraphQL]
+    Enabled = true
+    Endpoint = "/graphql"
+  [Gateway.REST]
+    Enabled = true
+```
+
+**_IPFS update_** - The IPFS library used by the data node to share network history has been updated. This may require manual steps to reset the state and apply the IPFS migrations.
+
+### Settings removed in 0.71.4
+
+**_X-Vega-Connection_** - This HTTP header is now deprecated from API calls to the data node.
+
+## Visor
+
+### Breaking changes with 0.71.4
+
+Visor used to require both the Vega and data node binaries. With recent changes, the Vega binary is now embedded in the data node CLI as a subcommand. This has been reflected in the Visor configuration as now only a single binary is required in the configuration.
+
+Here's an example of Visor configuration reflecting these changes:
+```Toml
+maxNumberOfFirstConnectionRetries = 43200
+maxNumberOfRestarts = 3
+restartsDelaySeconds = 5
+stopDelaySeconds = 3
+stopSignalTimeoutSeconds = 15
+
+[upgradeFolders]
+  "vX.X.X" = "vX.X.X"
+
+[autoInstall]
+  enabled = true
+  repositoryOwner = "vegaprotocol"
+  repository = "vega"
+  [autoInstall.assets]
+    assset_name = "vega-linux-amd64.zip"
+    binary_name = "vega"
+```
+
+# Command line changes
+
+## Vega
+
+#### Deprecations
+
+`IssueSignatures` is no longer a validator command and is now protected by the spam protection engine.
+
+### Vega Wallet
+
+The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.
+
+
 Upgrading from v0.53.0 to v0.67.1
 =================================
 
@@ -201,7 +287,7 @@ For example, if your previous settings were
   ...
   [Gateway.GraphQL]
     HTTPSEnabled = true
-    AutoCertDomain = "my.domain.com"
+    AutoCertDomain = "api.vega.example.com"
     CertificateFile = ""
     KeyFile = ""
     ...
@@ -211,13 +297,13 @@ They must now become
 [Gateway]
   ...
   HTTPSEnabled = true
-  AutoCertDomain = "my.domain.com"
+  AutoCertDomain = "api.vega.example.com"
   CertificateFile = ""
   KeyFile = ""
   [Gateway.GraphQL]
     ...
 ```
-Please note, that for `autocert` to work then either the GraphQL or REST endpoints *must* be reachable on the internet at `my.domain.com:443` (this is a hard requirement from LetsEncrypt). You could forward the port with a firewall rule or proxy, or simply specify 443 as the port for one of them in the `[Gateway.GraphQL]` or `[Gateway.Rest]` config sections.
+Please note, that for `autocert` to work then either the GraphQL or REST endpoints *must* be reachable on the internet at `api.vega.example.com:443` (this is a hard requirement from LetsEncrypt). You could forward the port with a firewall rule or proxy, or simply specify 443 as the port for one of them in the `[Gateway.GraphQL]` or `[Gateway.Rest]` config sections.
 
 If that is not possible, you will need to use [other means](https://letsencrypt.org/getting-started/) to generate and provide a signed certificate to datanode. Specify the path to your certificate & private key in the `CertificateFile` and `KeyFile` options.
 
@@ -257,7 +343,7 @@ vega --help
 
 ### Vega Wallet
 
-The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.  
+The Vega Wallet has had several commands changed. Refer to the Vega Wallet `--help` to see the latest commands and guidance on how to use them.
 
 ## Data node
 
