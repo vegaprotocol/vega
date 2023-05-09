@@ -23,6 +23,7 @@
 - [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
 - [8225](https://github.com/vegaprotocol/vega/issues/8225) - Better error handling in `ListEntities`
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
+- [6951](https://github.com/vegaprotocol/vega/issues/6951) - Fix error reason when no general account exists for collateral.
 
 
 ## 0.71.0

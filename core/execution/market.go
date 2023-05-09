@@ -1267,7 +1267,7 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 	if !m.collateral.HasGeneralAccount(order.Party, asset) {
 		// adding order to the buffer first
 		order.Status = types.OrderStatusRejected
-		order.Reason = types.OrderErrorInsufficientAssetBalance
+		order.Reason = types.OrderErrorMissingGeneralAccount
 		m.broker.Send(events.NewOrderEvent(ctx, order))
 
 		// party should be created before even trying to post order
