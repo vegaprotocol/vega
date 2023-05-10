@@ -23,6 +23,7 @@
 - [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
 - [8225](https://github.com/vegaprotocol/vega/issues/8225) - Better error handling in `ListEntities`
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
+- [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
 
 
 ## 0.71.0

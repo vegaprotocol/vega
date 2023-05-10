@@ -101,7 +101,7 @@ func (srv *Server) Start(ctx context.Context) error {
 
 	addr := net.JoinHostPort(ip, strconv.Itoa(port))
 
-	tlsConfig, err := gateway.GenerateTlsConfig(srv.cfg, srv.vegaPaths)
+	tlsConfig, fallback, err := gateway.GenerateTlsConfig(srv.cfg, srv.vegaPaths)
 	if err != nil {
 		return fmt.Errorf("problem with HTTPS configuration: %w", err)
 	}
@@ -111,9 +111,21 @@ func (srv *Server) Start(ctx context.Context) error {
 		TLSConfig: tlsConfig,
 	}
 
+	var fallbacksrv *http.Server
 	if srv.cfg.REST.Enabled || srv.cfg.GraphQL.Enabled {
 		eg.Go(func() error {
 			if srv.srv.TLSConfig != nil {
+				if fallback != nil {
+					eg.Go(func() error {
+						fallbacksrv = &http.Server{Addr: ":http", Handler: fallback}
+						// serve HTTP, which will redirect automatically to HTTPS
+						err := fallbacksrv.ListenAndServe()
+						if err != nil && err != http.ErrServerClosed {
+							return fmt.Errorf("failed start fallback http server: %w", err)
+						}
+						return nil
+					})
+				}
 				err = srv.srv.ListenAndServeTLS("", "")
 			} else {
 				srv.log.Warn("GraphQL server is not configured to use HTTPS, which is required for subscriptions to work. Please see README.md for help configuring")
@@ -129,6 +141,9 @@ func (srv *Server) Start(ctx context.Context) error {
 		eg.Go(func() error {
 			<-ctx.Done()
 			srv.stop()
+			if fallbacksrv != nil {
+				fallbacksrv.Shutdown(context.Background())
+			}
 			return nil
 		})
 	}
