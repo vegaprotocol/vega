@@ -348,7 +348,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh 'go test  -timeout 30m -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                            sh 'go test  -timeout 30m -v $(go list ./... | grep -v /integration) 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
                             junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                         }
                     }
@@ -360,7 +360,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh 'go test -timeout 30m  -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                            sh 'go test -timeout 30m  -v -race $(go list ./... | grep -v /integration) 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
                             junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                         }
                     }
