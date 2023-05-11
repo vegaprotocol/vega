@@ -14,7 +14,9 @@ package core_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"testing"
@@ -26,7 +28,6 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"github.com/spf13/pflag"
 )
 
 var (
@@ -42,12 +43,17 @@ var (
 
 func init() {
 	godog.BindCommandLineFlags("godog.", &gdOpts)
-	pflag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
+	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
 
 func TestMain(m *testing.M) {
-	pflag.Parse()
-	gdOpts.Paths = pflag.Args()
+	flag.Parse()
+	gdOpts.Paths = flag.Args()
+
+	if testing.Short() {
+		log.Print("Skipping core integration tests, go test run with -short")
+		return
+	}
 
 	status := godog.TestSuite{
 		Name:                 "godogs",

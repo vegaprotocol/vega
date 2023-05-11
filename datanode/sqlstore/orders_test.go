@@ -217,10 +217,11 @@ func TestOrders(t *testing.T) {
 
 func generateTestBlocks(t *testing.T, ctx context.Context, numBlocks int, bs *sqlstore.Blocks) []entities.Block {
 	t.Helper()
+
+	source := &testBlockSource{bs, time.Now()}
 	blocks := make([]entities.Block, numBlocks)
 	for i := 0; i < numBlocks; i++ {
-		blocks[i] = addTestBlock(t, ctx, bs)
-		time.Sleep(time.Millisecond)
+		blocks[i] = source.getNextBlock(t, ctx)
 	}
 	return blocks
 }
@@ -239,7 +240,6 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	orderIDs := make([]entities.OrderID, numIDs)
 	for i := 0; i < numIDs; i++ {
 		orderIDs[i] = entities.OrderID(helpers.GenerateID())
-		time.Sleep(time.Millisecond)
 	}
 
 	return orderIDs

@@ -54,10 +54,8 @@ func hexEncode(str string) string {
 }
 
 func TestTopologyCheckpoint(t *testing.T) {
-	for i := 0; i < 100; i++ {
-		t.Run("test checkpoint success", testTopologyCheckpointSuccess)
-		t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
-	}
+	t.Run("test checkpoint success", testTopologyCheckpointSuccess)
+	t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
 }
 
 func TestCheckPointLoading(t *testing.T) {

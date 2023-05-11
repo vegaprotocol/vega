@@ -58,17 +58,6 @@ func TestMarginLevels(t *testing.T) {
 	t.Run("GetMarginLevelsByIDWithCursorPagination should return the requested page of margin levels for a given market if last is set with before cursor - Newest First", testGetMarginLevelsByIDPaginationWithMarketLastAndBeforeCursorNewestFirst)
 }
 
-type testBlockSource struct {
-	blockStore *sqlstore.Blocks
-	blockTime  time.Time
-}
-
-func (bs *testBlockSource) getNextBlock(t *testing.T, ctx context.Context) entities.Block {
-	t.Helper()
-	bs.blockTime = bs.blockTime.Add(1 * time.Second)
-	return addTestBlockForTime(t, ctx, bs.blockStore, bs.blockTime)
-}
-
 func setupMarginLevelTests(t *testing.T, ctx context.Context) (*testBlockSource, *sqlstore.MarginLevels, *sqlstore.Accounts, sqlstore.Connection) {
 	t.Helper()
 
@@ -310,8 +299,6 @@ func testGetMarginLevelsByMarketID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, rowCount)
 
-	time.Sleep(time.Second)
-
 	block = blockSource.getNextBlock(t, ctx)
 	marginLevel3, err := entities.MarginLevelsFromProto(ctx, ml3, accountStore, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting margin levels proto to database entity")
@@ -394,8 +381,6 @@ func testGetMarginLevelsByID(t *testing.T) {
 	err = conn.QueryRow(ctx, `select count(*) from margin_levels`).Scan(&rowCount)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, rowCount)
-
-	time.Sleep(time.Second)
 
 	block = blockSource.getNextBlock(t, ctx)
 	marginLevel3, err := entities.MarginLevelsFromProto(ctx, ml3, accountStore, generateTxHash(), block.VegaTime)

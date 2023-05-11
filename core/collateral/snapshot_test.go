@@ -395,138 +395,136 @@ func testSnapshotRestore(t *testing.T) {
 }
 
 func TestSnapshotRoundtripViaEngine(t *testing.T) {
-	for i := 0; i < 100; i++ {
-		mkt := "market1"
-		ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-		ctx = vgcontext.WithChainID(ctx, "chainid")
+	mkt := "market1"
+	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
+	ctx = vgcontext.WithChainID(ctx, "chainid")
 
-		erc20 := types.AssetDetailsErc20{
-			ERC20: &types.ERC20{
-				ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
-			},
-		}
-		asset := types.Asset{
-			ID: "foo",
-			Details: &types.AssetDetails{
-				Name:     "foo",
-				Symbol:   "FOO",
-				Decimals: 5,
-				Quantum:  num.DecimalFromFloat(1),
-				Source:   erc20,
-			},
-		}
-		eng := getTestEngine(t)
-		defer eng.ctrl.Finish()
-		// create assets, accounts, and update balances
-		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-		require.NoError(t, eng.EnableAsset(ctx, asset))
-		parties := []string{
-			"party1",
-			"party2",
-			"party3",
-		}
-		balances := map[string]map[types.AccountType]*num.Uint{
-			parties[0]: {
-				types.AccountTypeGeneral: num.NewUint(500),
-				types.AccountTypeMargin:  num.NewUint(500),
-			},
-			parties[1]: {
-				types.AccountTypeGeneral: num.NewUint(1000),
-			},
-			parties[2]: {
-				types.AccountTypeGeneral: num.NewUint(100000),
-				types.AccountTypeBond:    num.NewUint(100),
-				types.AccountTypeMargin:  num.NewUint(500),
-			},
-		}
-		for _, p := range parties {
-			// always create general account first
-			if gb, ok := balances[p][types.AccountTypeGeneral]; ok {
-				id, err := eng.CreatePartyGeneralAccount(ctx, p, asset.ID)
-				require.NoError(t, err)
-				require.NoError(t, eng.IncrementBalance(ctx, id, gb))
-			}
-			for tp, b := range balances[p] {
-				switch tp {
-				case types.AccountTypeGeneral:
-					continue
-				case types.AccountTypeMargin:
-					id, err := eng.CreatePartyMarginAccount(ctx, p, mkt, asset.ID)
-					require.NoError(t, err)
-					require.NoError(t, eng.IncrementBalance(ctx, id, b))
-				case types.AccountTypeBond:
-					id, err := eng.CreatePartyBondAccount(ctx, p, mkt, asset.ID)
-					require.NoError(t, err)
-					require.NoError(t, eng.IncrementBalance(ctx, id, b))
-				}
-			}
-		}
-
-		// setup snapshot engine
-		now := time.Now()
-		log := logging.NewTestLogger()
-		timeService := stubs.NewTimeStub()
-		timeService.SetTime(now)
-		statsData := stats.New(log, stats.NewDefaultConfig())
-		config := snp.NewDefaultConfig()
-		config.Storage = "memory"
-		snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-		snapshotEngine.AddProviders(eng.Engine)
-		snapshotEngine.ClearAndInitialise()
-		defer snapshotEngine.Close()
-
-		_, err := snapshotEngine.Snapshot(ctx)
-		require.NoError(t, err)
-		snaps, err := snapshotEngine.List()
-		require.NoError(t, err)
-		snap1 := snaps[0]
-
-		engLoad := getTestEngine(t)
-		engLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-		engLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-		snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-		snapshotEngineLoad.AddProviders(engLoad.Engine)
-		snapshotEngineLoad.ClearAndInitialise()
-		snapshotEngineLoad.ReceiveSnapshot(snap1)
-		snapshotEngineLoad.ApplySnapshot(ctx)
-		snapshotEngineLoad.CheckLoaded()
-		defer snapshotEngineLoad.Close()
-
-		// verify snapshot is equal right after loading
-		b, err := snapshotEngine.Snapshot(ctx)
-		require.NoError(t, err)
-		bLoad, err := snapshotEngineLoad.Snapshot(ctx)
-		require.NoError(t, err)
-		require.True(t, bytes.Equal(b, bLoad))
-
-		// now make some changes and recheck
-		newAsset := types.Asset{
-			ID: "foo2",
-			Details: &types.AssetDetails{
-				Name:     "foo2",
-				Symbol:   "FOO2",
-				Decimals: 5,
-				Quantum:  num.DecimalFromFloat(2),
-				Source:   erc20,
-			},
-		}
-
-		require.NoError(t, eng.EnableAsset(ctx, newAsset))
-		require.NoError(t, engLoad.EnableAsset(ctx, newAsset))
-
-		id, err := eng.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
-		require.NoError(t, err)
-		require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(100)))
-
-		id2, err := engLoad.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
-		require.NoError(t, err)
-		require.NoError(t, engLoad.IncrementBalance(ctx, id2, num.NewUint(100)))
-
-		// verify snapshot is equal right after changes made
-		b, err = snapshotEngine.Snapshot(ctx)
-		require.NoError(t, err)
-		bLoad, err = snapshotEngineLoad.Snapshot(ctx)
-		require.NoError(t, err)
-		require.True(t, bytes.Equal(b, bLoad))
+	erc20 := types.AssetDetailsErc20{
+		ERC20: &types.ERC20{
+			ContractAddress: "0x6d53C489bbda35B8096C8b4Cb362e2889F82E19B",
+		},
 	}
+	asset := types.Asset{
+		ID: "foo",
+		Details: &types.AssetDetails{
+			Name:     "foo",
+			Symbol:   "FOO",
+			Decimals: 5,
+			Quantum:  num.DecimalFromFloat(1),
+			Source:   erc20,
+		},
+	}
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+	// create assets, accounts, and update balances
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	require.NoError(t, eng.EnableAsset(ctx, asset))
+	parties := []string{
+		"party1",
+		"party2",
+		"party3",
+	}
+	balances := map[string]map[types.AccountType]*num.Uint{
+		parties[0]: {
+			types.AccountTypeGeneral: num.NewUint(500),
+			types.AccountTypeMargin:  num.NewUint(500),
+		},
+		parties[1]: {
+			types.AccountTypeGeneral: num.NewUint(1000),
+		},
+		parties[2]: {
+			types.AccountTypeGeneral: num.NewUint(100000),
+			types.AccountTypeBond:    num.NewUint(100),
+			types.AccountTypeMargin:  num.NewUint(500),
+		},
+	}
+	for _, p := range parties {
+		// always create general account first
+		if gb, ok := balances[p][types.AccountTypeGeneral]; ok {
+			id, err := eng.CreatePartyGeneralAccount(ctx, p, asset.ID)
+			require.NoError(t, err)
+			require.NoError(t, eng.IncrementBalance(ctx, id, gb))
+		}
+		for tp, b := range balances[p] {
+			switch tp {
+			case types.AccountTypeGeneral:
+				continue
+			case types.AccountTypeMargin:
+				id, err := eng.CreatePartyMarginAccount(ctx, p, mkt, asset.ID)
+				require.NoError(t, err)
+				require.NoError(t, eng.IncrementBalance(ctx, id, b))
+			case types.AccountTypeBond:
+				id, err := eng.CreatePartyBondAccount(ctx, p, mkt, asset.ID)
+				require.NoError(t, err)
+				require.NoError(t, eng.IncrementBalance(ctx, id, b))
+			}
+		}
+	}
+
+	// setup snapshot engine
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	config := snp.NewDefaultConfig()
+	config.Storage = "memory"
+	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngine.AddProviders(eng.Engine)
+	snapshotEngine.ClearAndInitialise()
+	defer snapshotEngine.Close()
+
+	_, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	snaps, err := snapshotEngine.List()
+	require.NoError(t, err)
+	snap1 := snaps[0]
+
+	engLoad := getTestEngine(t)
+	engLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	engLoad.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
+	snapshotEngineLoad.AddProviders(engLoad.Engine)
+	snapshotEngineLoad.ClearAndInitialise()
+	snapshotEngineLoad.ReceiveSnapshot(snap1)
+	snapshotEngineLoad.ApplySnapshot(ctx)
+	snapshotEngineLoad.CheckLoaded()
+	defer snapshotEngineLoad.Close()
+
+	// verify snapshot is equal right after loading
+	b, err := snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
+
+	// now make some changes and recheck
+	newAsset := types.Asset{
+		ID: "foo2",
+		Details: &types.AssetDetails{
+			Name:     "foo2",
+			Symbol:   "FOO2",
+			Decimals: 5,
+			Quantum:  num.DecimalFromFloat(2),
+			Source:   erc20,
+		},
+	}
+
+	require.NoError(t, eng.EnableAsset(ctx, newAsset))
+	require.NoError(t, engLoad.EnableAsset(ctx, newAsset))
+
+	id, err := eng.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
+	require.NoError(t, err)
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(100)))
+
+	id2, err := engLoad.CreatePartyGeneralAccount(ctx, "party4", newAsset.ID)
+	require.NoError(t, err)
+	require.NoError(t, engLoad.IncrementBalance(ctx, id2, num.NewUint(100)))
+
+	// verify snapshot is equal right after changes made
+	b, err = snapshotEngine.Snapshot(ctx)
+	require.NoError(t, err)
+	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(b, bLoad))
 }

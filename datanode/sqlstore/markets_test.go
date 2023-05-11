@@ -238,8 +238,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	t.Run("should add the updated market record to the database if the block number has changed", func(t *testing.T) {
 		newMarketProto := marketProto.DeepClone()
 		newMarketProto.TradableInstrument.Instrument.Metadata.Tags = append(newMarketProto.TradableInstrument.Instrument.Metadata.Tags, "DDD")
-		time.Sleep(time.Second)
-		newBlock := addTestBlock(t, ctx, bs)
+		newBlock := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Second))
 
 		market, err := entities.NewMarketFromProto(newMarketProto, generateTxHash(), newBlock.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
@@ -428,13 +427,13 @@ func populateTestMarkets(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 		},
 	}
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, market := range markets {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 		market.VegaTime = block.VegaTime
 		blockTimes[market.ID.String()] = block.VegaTime
 		err := md.Upsert(ctx, &market)
 		require.NoError(t, err)
-		time.Sleep(time.Microsecond * 100)
 	}
 }
 
