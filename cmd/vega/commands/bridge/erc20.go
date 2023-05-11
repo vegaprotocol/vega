@@ -32,21 +32,22 @@ type ERC20Cmd struct {
 	Config     nodewallets.Config
 	PrivateKey string `long:"private-key" required:"false" description:"A ethereum private key to be use to sign the messages"`
 
-	AddSigner            ERC20AddSignerCmd            `command:"add_signer" description:"Create signature to add a new signer to the erc20 bridge"`
-	RemoveSigner         ERC20RemoveSignerCmd         `command:"remove_signer" description:"Create signature to remove a signer from the erc20 bridge"`
-	SetThreshold         ERC20SetThresholdCmd         `command:"set_threshold" description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
-	BurnNonce            ERC20BurnNonceCmd            `command:"burn_nonce" description:"Create signature to burn and existing nonce in order to prevent it to be used on the bridge"`
-	ListAsset            ERC20ListAssetCmd            `command:"list_asset" description:"Add a new erc20 asset to the erc20 bridge"`
-	VerifyListAsset      ERC20VerifyListAssetCmd      `command:"verify_list_asset" description:"Verify signatures to add a new erc20 asset to the erc20 bridge"`
-	RemoveAsset          ERC20RemoveAssetCmd          `command:"remove_asset" description:"Remove an erc20 asset from the erc20 bridge"`
-	WithdrawAsset        ERC20WithdrawAssetCmd        `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
-	SetBridgeAddress     ERC20SetBridgeAddressCmd     `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
-	SetMultisigControl   ERC20SetMultisigControlCmd   `command:"set_multisig_control" description:"Update the bridge address use by the asset pool"`
-	GlobalResume         ERC20GlobalResumeCmd         `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
-	GlobalStop           ERC20GlobalStopCmd           `command:"global_stop" description:"Build the signature to stop the bridge"`
-	SetWithdrawDelay     ERC20SetWithdrawDelayCmd     `command:"set_withdraw_delay" description:"Update the withdraw delay for all asset"`
-	SetAssetLimits       ERC20SetAssetLimitsCmd       `command:"set_asset_limits" description:"Update the limits for an asset"`
-	VerifySetAssetLimits ERC20VerifySetAssetLimitsCmd `command:"verify_set_asset_limits" description:"Verify signatures to update the limits for an asset"`
+	AddSigner              ERC20AddSignerCmd              `command:"add_signer" description:"Create signature to add a new signer to the erc20 bridge"`
+	RemoveSigner           ERC20RemoveSignerCmd           `command:"remove_signer" description:"Create signature to remove a signer from the erc20 bridge"`
+	SetThreshold           ERC20SetThresholdCmd           `command:"set_threshold" description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
+	BurnNonce              ERC20BurnNonceCmd              `command:"burn_nonce" description:"Create signature to burn and existing nonce in order to prevent it to be used on the bridge"`
+	ListAsset              ERC20ListAssetCmd              `command:"list_asset" description:"Add a new erc20 asset to the erc20 bridge"`
+	VerifyListAsset        ERC20VerifyListAssetCmd        `command:"verify_list_asset" description:"Verify signatures to add a new erc20 asset to the erc20 bridge"`
+	RemoveAsset            ERC20RemoveAssetCmd            `command:"remove_asset" description:"Remove an erc20 asset from the erc20 bridge"`
+	WithdrawAsset          ERC20WithdrawAssetCmd          `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
+	SetBridgeAddress       ERC20SetBridgeAddressCmd       `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
+	SetMultisigControl     ERC20SetMultisigControlCmd     `command:"set_multisig_control" description:"Update the bridge address use by the asset pool"`
+	GlobalResume           ERC20GlobalResumeCmd           `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
+	GlobalStop             ERC20GlobalStopCmd             `command:"global_stop" description:"Build the signature to stop the bridge"`
+	SetWithdrawDelay       ERC20SetWithdrawDelayCmd       `command:"set_withdraw_delay" description:"Update the withdraw delay for all asset"`
+	VerifySetWithdrawDelay ERC20VerifySetWithdrawDelayCmd `command:"verify_set_withdraw_delay" description:"Verify signatures to update the withdraw delay for all asset"`
+	SetAssetLimits         ERC20SetAssetLimitsCmd         `command:"set_asset_limits" description:"Update the limits for an asset"`
+	VerifySetAssetLimits   ERC20VerifySetAssetLimitsCmd   `command:"verify_set_asset_limits" description:"Verify signatures to update the limits for an asset"`
 }
 
 var erc20Cmd *ERC20Cmd
@@ -83,22 +84,23 @@ func (e *ERC20Cmd) GetSigner() (bridges.Signer, error) {
 
 func ERC20() *ERC20Cmd {
 	erc20Cmd = &ERC20Cmd{
-		Config:               nodewallets.NewDefaultConfig(),
-		AddSigner:            ERC20AddSignerCmd{},
-		RemoveSigner:         ERC20RemoveSignerCmd{},
-		SetThreshold:         ERC20SetThresholdCmd{},
-		ListAsset:            ERC20ListAssetCmd{},
-		VerifyListAsset:      ERC20VerifyListAssetCmd{},
-		RemoveAsset:          ERC20RemoveAssetCmd{},
-		WithdrawAsset:        ERC20WithdrawAssetCmd{},
-		SetAssetLimits:       ERC20SetAssetLimitsCmd{},
-		VerifySetAssetLimits: ERC20VerifySetAssetLimitsCmd{},
-		SetBridgeAddress:     ERC20SetBridgeAddressCmd{},
-		SetMultisigControl:   ERC20SetMultisigControlCmd{},
-		GlobalResume:         ERC20GlobalResumeCmd{},
-		GlobalStop:           ERC20GlobalStopCmd{},
-		SetWithdrawDelay:     ERC20SetWithdrawDelayCmd{},
-		BurnNonce:            ERC20BurnNonceCmd{},
+		Config:                 nodewallets.NewDefaultConfig(),
+		AddSigner:              ERC20AddSignerCmd{},
+		RemoveSigner:           ERC20RemoveSignerCmd{},
+		SetThreshold:           ERC20SetThresholdCmd{},
+		ListAsset:              ERC20ListAssetCmd{},
+		VerifyListAsset:        ERC20VerifyListAssetCmd{},
+		RemoveAsset:            ERC20RemoveAssetCmd{},
+		WithdrawAsset:          ERC20WithdrawAssetCmd{},
+		SetAssetLimits:         ERC20SetAssetLimitsCmd{},
+		VerifySetAssetLimits:   ERC20VerifySetAssetLimitsCmd{},
+		SetBridgeAddress:       ERC20SetBridgeAddressCmd{},
+		SetMultisigControl:     ERC20SetMultisigControlCmd{},
+		GlobalResume:           ERC20GlobalResumeCmd{},
+		GlobalStop:             ERC20GlobalStopCmd{},
+		SetWithdrawDelay:       ERC20SetWithdrawDelayCmd{},
+		VerifySetWithdrawDelay: ERC20VerifySetWithdrawDelayCmd{},
+		BurnNonce:              ERC20BurnNonceCmd{},
 	}
 	return erc20Cmd
 }
@@ -664,5 +666,45 @@ func (opts *ERC20SetWithdrawDelayCmd) Execute(_ []string) error {
 	}
 
 	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20VerifySetWithdrawDelayCmd struct {
+	Delay         time.Duration `long:"delay" required:"true" description:"The delay to be applied to all withdrawals"`
+	Nonce         string        `long:"nonce" required:"true" description:"A nonce for this signature"`
+	BridgeAddress string        `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
+	Signatures    string        `long:"signatures" required:"true" description:"The signature bundle to verify"`
+}
+
+func (opts *ERC20VerifySetWithdrawDelayCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	addresses, err := erc20Logic.VerifyWithdrawDelay(
+		opts.Delay, nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(addresses)
+	for _, v := range addresses {
+		fmt.Printf("%v\n", v)
+	}
 	return nil
 }
