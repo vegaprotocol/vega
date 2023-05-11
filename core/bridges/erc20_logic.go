@@ -492,8 +492,6 @@ func (e ERC20Logic) VerifySetAssetLimits(
 			return nil, fmt.Errorf("invalid signature format: %w", err)
 		}
 
-		fmt.Printf("hexCurrent: %v\n", hexCurrent)
-
 		address, err := crypto.RecoverEthereumAddress(msg, current)
 		if err != nil {
 			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
