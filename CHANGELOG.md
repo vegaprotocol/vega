@@ -3,7 +3,7 @@
 ## Unreleased 0.72.0
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8280](https://github.com/vegaprotocol/vega/issues/8280) - Removed unused reward related network parameter
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -

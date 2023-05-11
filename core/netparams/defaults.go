@@ -150,14 +150,10 @@ func defaultNetParams() map[string]value {
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
 
 		// staking and delegation
-		StakingAndDelegationRewardPayoutFraction: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("1.0"),
-		StakingAndDelegationRewardPayoutDelay:    NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
-
 		StakingAndDelegationRewardMaxPayoutPerParticipant: NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardDelegatorShare:          NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.883"),
 		StakingAndDelegationRewardMinimumValidatorStake:   NewDecimal(gteD0).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardCompetitionLevel:        NewDecimal(gteD1).Mutable(true).MustUpdate("1.1"),
-		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(gteD0).Mutable(true).MustUpdate("7000000000000000000000"),
 		StakingAndDelegationRewardsMinValidators:          NewInt(gteI1, lteI500).Mutable(true).MustUpdate("5"),
 		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(gteD1).Mutable(true).MustUpdate("3.0"),
 

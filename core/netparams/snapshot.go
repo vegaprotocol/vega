@@ -18,6 +18,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
 
 	"code.vegaprotocol.io/vega/libs/proto"
 )
@@ -131,7 +132,14 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	}
 
 	for _, kv := range np.NetParams.Params {
-		s.Update(ctx, kv.Key, kv.Value)
+		if err := s.Update(ctx, kv.Key, kv.Value); err != nil {
+			if err == ErrUnknownKey {
+				// this is ok and will likely happen during a PUP when an old netparam is removed, but it is still nice to know about it
+				s.log.Warn("cannot restore netparam as it is no longer known", logging.String("key", kv.Key), logging.String("value", kv.Value))
+				continue
+			}
+			return nil, fmt.Errorf("unable to restore netparam (%s, %s): %w", kv.Key, kv.Value, err)
+		}
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up

@@ -64,9 +64,9 @@ func TestNetParams(t *testing.T) {
 }
 
 func TestCheckpoint(t *testing.T) {
-	t.Run("test get snapshot not empty", testNonEmptyCheckpoint)
-	t.Run("test get snapshot not empty with overwrite", testNonEmptyCheckpointWithOverWrite)
-	t.Run("test get snapshot invalid", testInvalidCheckpoint)
+	t.Run("test get checkpoint not empty", testNonEmptyCheckpoint)
+	t.Run("test get checkpoint not empty with overwrite", testNonEmptyCheckpointWithOverWrite)
+	t.Run("test get checkpoint invalid", testInvalidCheckpoint)
 	t.Run("test notification is sent after checkpoint load", testCheckpointNotificationsDelivered)
 }
 

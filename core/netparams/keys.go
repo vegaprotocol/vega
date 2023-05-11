@@ -97,13 +97,10 @@ const (
 	GovernanceProposalFreeformMinVoterBalance       = "governance.proposal.freeform.minVoterBalance"
 
 	// staking and delegation reward network params.
-	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
-	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
 	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
 	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
-	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
@@ -242,15 +239,12 @@ var AllKeys = map[string]struct{}{
 	MarketMinProbabilityOfTradingForLPOrders:                 {},
 	ValidatorsEpochLength:                                    {},
 	DelegationMinAmount:                                      {},
-	StakingAndDelegationRewardPayoutFraction:                 {},
 	StakingAndDelegationRewardMaxPayoutPerParticipant:        {},
-	StakingAndDelegationRewardPayoutDelay:                    {},
 	StakingAndDelegationRewardDelegatorShare:                 {},
 	StakingAndDelegationRewardMinimumValidatorStake:          {},
 	ValidatorsVoteRequired:                                   {},
 	NetworkCheckpointTimeElapsedBetweenCheckpoints:           {},
 	MarketValueWindowLength:                                  {},
-	StakingAndDelegationRewardMaxPayoutPerEpoch:              {},
 	SpamProtectionMinTokensForProposal:                       {},
 	SpamProtectionMaxVotes:                                   {},
 	SpamProtectionMaxProposals:                               {},
