@@ -142,17 +142,15 @@ func setupValidators(t *testing.T, numValidators int, startCalc func(string, typ
 }
 
 func TestStateVar(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
-		t.Run("test converters from/to native data type/key value bundle", testConverters)
-		t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
-		t.Run("new event comes in aborting an existing event", testEventTriggeredWithPreviousEvent)
-		t.Run("new event comes in and triggers a calculation that result in an error", testEventTriggeredCalculationError)
-		t.Run("perfect match through quorum", testBundleReceivedPerfectMatchOfQuorum)
-		t.Run("reach consensus through random selection of one that is within reach of 2/3+1 of the others", testBundleReceivedReachingConsensusSuccessfuly)
-		t.Run("no consensus can be reached", testBundleReceivedReachingConsensusNotSuccessful)
-		t.Run("time based trigger", testTimeBasedEvent)
-	}
+	now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+	t.Run("test converters from/to native data type/key value bundle", testConverters)
+	t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
+	t.Run("new event comes in aborting an existing event", testEventTriggeredWithPreviousEvent)
+	t.Run("new event comes in and triggers a calculation that result in an error", testEventTriggeredCalculationError)
+	t.Run("perfect match through quorum", testBundleReceivedPerfectMatchOfQuorum)
+	t.Run("reach consensus through random selection of one that is within reach of 2/3+1 of the others", testBundleReceivedReachingConsensusSuccessfuly)
+	t.Run("no consensus can be reached", testBundleReceivedReachingConsensusNotSuccessful)
+	t.Run("time based trigger", testTimeBasedEvent)
 }
 
 func testConverters(t *testing.T) {

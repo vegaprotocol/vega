@@ -44,7 +44,9 @@ func testUpdateMarketRiskFactors(t *testing.T) {
 	bs, rfStore := setupRiskFactorTests(t)
 
 	// Add a risk factor for market 'aa' in one block
-	block := addTestBlock(t, ctx, bs)
+
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	marketID := entities.MarketID("aa")
 	rf := entities.RiskFactor{
 		MarketID: marketID,
@@ -61,8 +63,7 @@ func testUpdateMarketRiskFactors(t *testing.T) {
 	assert.Equal(t, fetched, rf)
 
 	// Upsert a new risk factor for the same in a different block
-	time.Sleep(5 * time.Microsecond) // Ensure we get a different vega time
-	block2 := addTestBlock(t, ctx, bs)
+	block2 := source.getNextBlock(t, ctx)
 	rf2 := entities.RiskFactor{
 		MarketID: marketID,
 		Short:    decimal.NewFromInt(101),

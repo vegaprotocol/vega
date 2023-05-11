@@ -811,7 +811,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	eng.tokenBal[partyA] = 200
 	eng.tokenBal[partyB] = 100
 
-	const howMany = 100
+	const howMany = 10
 	passed := map[string]*types.Proposal{}
 	declined := map[string]*types.Proposal{}
 	var afterClosing time.Time

@@ -353,16 +353,15 @@ func populateTestTrades(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, 
 			Type:      entities.TradeTypeDefault,
 		},
 	}
-
+	source := &testBlockSource{bs, time.Now()}
 	for _, td := range trades {
 		trade := td
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 		trade.SyntheticTime = block.VegaTime
 		trade.VegaTime = block.VegaTime
 		blockTimes[trade.ID.String()] = block.VegaTime
 		err := ts.Add(&trade)
 		require.NoError(t, err)
-		time.Sleep(time.Microsecond * 100)
 	}
 
 	_, err := ts.Flush(ctx)
