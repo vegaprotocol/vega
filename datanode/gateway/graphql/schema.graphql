@@ -618,7 +618,7 @@ type Query {
     "ID for an order"
     id: ID!
 
-    "Version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    "Order version number, starting at 1 for the original order and incrementing by 1 for each successful amendment; omitted for the most recent version."
     version: Int
   ): Order!
 
