@@ -522,12 +522,6 @@
 				},
 				{
 					"node": {
-						"key": "reward.staking.delegation.maxPayoutPerEpoch",
-						"value": "7000000000000000000000"
-					}
-				},
-				{
-					"node": {
 						"key": "reward.staking.delegation.maxPayoutPerParticipant",
 						"value": "0"
 					}
@@ -548,18 +542,6 @@
 					"node": {
 						"key": "reward.staking.delegation.optimalStakeMultiplier",
 						"value": "3.0"
-					}
-				},
-				{
-					"node": {
-						"key": "reward.staking.delegation.payoutDelay",
-						"value": "0s"
-					}
-				},
-				{
-					"node": {
-						"key": "reward.staking.delegation.payoutFraction",
-						"value": ".1"
 					}
 				},
 				{
