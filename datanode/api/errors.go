@@ -215,6 +215,7 @@ var (
 	ErrNetworkHistoryOpeningSegment        = errors.New("failed to open network history segment file")
 	ErrNetworkHistoryExtractingSegment     = errors.New("failed to extract data from network history segment file")
 	ErrNetworkHistoryCreatingZipFile       = errors.New("failed to create zip file writer for network history segment")
+	ErrNetworkHistoryServiceNotInitialised = errors.New("network history service not initialised")
 
 	// ErrGetEpoch is returned when the epoch cannot be retrieved.
 	ErrGetEpoch     = errors.New("failed to get epoch")
