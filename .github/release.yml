@@ -11,6 +11,9 @@ changelog:
     - title: Breaking Changes 🛠
       labels:
         - breaking-change
+    - title: Deprecations ⚠️
+      labels:
+        - deprecation
     - title: Bug Fixes 🐛
       labels:
         - bug
