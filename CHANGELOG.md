@@ -13,7 +13,7 @@
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
 - [8283](https://github.com/vegaprotocol/vega/issues/8283) - Add disclaimer to the wallet `CLI`
-
+- [8296](https://github.com/vegaprotocol/vega/issues/8296) - Improve error handling for invalid proposal validation timestamp
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
