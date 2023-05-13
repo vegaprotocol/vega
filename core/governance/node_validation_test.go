@@ -33,14 +33,14 @@ type testNodeValidation struct {
 	witness *mocks.MockWitness
 }
 
-func getTestNodeValidation(t *testing.T) *testNodeValidation {
+func getTestNodeValidation(t *testing.T, tm time.Time) *testNodeValidation {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	assets := mocks.NewMockAssets(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 
 	nv := governance.NewNodeValidation(
-		logging.NewTestLogger(), assets, time.Now(), witness)
+		logging.NewTestLogger(), assets, tm, witness)
 	assert.NotNil(t, nv)
 
 	return &testNodeValidation{
@@ -60,7 +60,7 @@ func TestNodeValidation(t *testing.T) {
 }
 
 func testNodeValidationRequiredTrue(t *testing.T) {
-	nv := getTestNodeValidation(t)
+	nv := getTestNodeValidation(t, time.Now())
 	defer nv.ctrl.Finish()
 
 	p := &types.Proposal{
@@ -73,7 +73,7 @@ func testNodeValidationRequiredTrue(t *testing.T) {
 }
 
 func testNodeValidationRequiredFalse(t *testing.T) {
-	nv := getTestNodeValidation(t)
+	nv := getTestNodeValidation(t, time.Now())
 	defer nv.ctrl.Finish()
 
 	p := &types.Proposal{
@@ -86,7 +86,7 @@ func testNodeValidationRequiredFalse(t *testing.T) {
 }
 
 func testStartErrorNoNodeValidationRequired(t *testing.T) {
-	nv := getTestNodeValidation(t)
+	nv := getTestNodeValidation(t, time.Now())
 	defer nv.ctrl.Finish()
 
 	p := &types.Proposal{
@@ -100,23 +100,37 @@ func testStartErrorNoNodeValidationRequired(t *testing.T) {
 }
 
 func testStartErrorCheckProposalFailed(t *testing.T) {
-	nv := getTestNodeValidation(t)
+	tm := time.Now()
+	nv := getTestNodeValidation(t, tm)
 	defer nv.ctrl.Finish()
 
 	// first closing time < validation time
 	p := &types.Proposal{
 		Terms: &types.ProposalTerms{
-			ClosingTimestamp:    1,
-			ValidationTimestamp: 2,
+			ClosingTimestamp:    tm.Add(1 * time.Hour).Unix(),
+			ValidationTimestamp: tm.Add(2 * time.Hour).Unix(),
 			Change:              &types.ProposalTermsNewAsset{},
 		},
 	}
 
 	err := nv.Start(context.Background(), p)
-	assert.EqualError(t, err, governance.ErrProposalValidationTimestampInvalid.Error())
+	assert.EqualError(t, err, governance.ErrProposalValidationTimestampTooLate.Error())
 
-	// now both are under required duration
-	p.Terms.ClosingTimestamp = 3
+	// validation timestamp after 2 days
+	p.Terms.ClosingTimestamp = tm.Add(3 * 24 * time.Hour).Unix()
+	p.Terms.ValidationTimestamp = tm.Add(2*24*time.Hour + 1*time.Second).Unix()
 	err = nv.Start(context.Background(), p)
-	assert.EqualError(t, err, governance.ErrProposalValidationTimestampInvalid.Error())
+	assert.EqualError(t, err, governance.ErrProposalValidationTimestampOutsideRange.Error())
+
+	// validation timestamp = submission time
+	p.Terms.ValidationTimestamp = tm.Unix()
+	err = nv.Start(context.Background(), p)
+	assert.EqualError(t, err, governance.ErrProposalValidationTimestampOutsideRange.Error())
+
+	// all good
+	nv.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any(), gomock.Any())
+	nv.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any())
+	p.Terms.ValidationTimestamp = tm.Add(1 * 24 * time.Hour).Unix()
+	err = nv.Start(context.Background(), p)
+	assert.NoError(t, err)
 }

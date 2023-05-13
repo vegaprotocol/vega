@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
+- [8296](https://github.com/vegaprotocol/vega/issues/8296) - Improve error handling for invalid proposal validation timestamp
 
 ### 🐛 Fixes
 - [7944](https://github.com/vegaprotocol/vega/issues/7944) - Better error message if we fail to parse the network configuration in wallet
