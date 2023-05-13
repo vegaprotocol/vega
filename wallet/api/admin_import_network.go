@@ -28,8 +28,7 @@ type AdminImportNetworkParams struct {
 }
 
 type AdminImportNetworkResult struct {
-	Name     string `json:"name"`
-	FilePath string `json:"filePath"`
+	Name string `json:"name"`
 }
 
 type AdminImportNetwork struct {
@@ -53,15 +52,15 @@ func NewReaders() Readers {
 func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportNetworkParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	net, err := readImportNetworkSource(params)
 	if errors.Is(err, ErrInvalidNetworkSource) {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 	if err != nil {
-		return nil, internalError(err)
+		return nil, InternalError(err)
 	}
 
 	if len(params.Name) != 0 {
@@ -69,22 +68,21 @@ func (h *AdminImportNetwork) Handle(_ context.Context, rawParams jsonrpc.Params)
 	}
 
 	if len(net.Name) == 0 {
-		return nil, invalidParams(ErrNetworkNameIsRequired)
+		return nil, InvalidParams(ErrNetworkNameIsRequired)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(net.Name); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if exist && !params.Overwrite {
-		return nil, invalidParams(ErrNetworkAlreadyExists)
+		return nil, InvalidParams(ErrNetworkAlreadyExists)
 	}
 
 	if err := h.networkStore.SaveNetwork(net); err != nil {
-		return nil, internalError(err)
+		return nil, InternalError(err)
 	}
 
 	return AdminImportNetworkResult{
-		Name:     net.Name,
-		FilePath: h.networkStore.GetNetworkPath(net.Name),
+		Name: net.Name,
 	}, nil
 }
 

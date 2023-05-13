@@ -147,15 +147,13 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/MAR22"
 
-    Then debug orders
-
     And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 951   | 8    | lp1    |
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 4048   | 999985960 |
+      | lp1   | USD   | ETH/MAR22 | 3752   | 999986256 |
 
     # lp fee got cumulated since the distribution period is large
     And the accumulated liquidity fees should be "28" for the market "ETH/MAR22"
@@ -171,4 +169,4 @@ Feature: Test liquidity provider reward distribution; Check what happens when di
 
     Then the parties should have the following account balances:
       | party | asset | market id | margin | general   |
-      | lp1   | USD   | ETH/MAR22 | 4048   | 999985988 |
+      | lp1   | USD   | ETH/MAR22 | 3752   | 999986284 |

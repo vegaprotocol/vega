@@ -103,6 +103,13 @@ func (r AllowedKey) Name() string {
 	return r.name
 }
 
+func NewDisconnectedWallet(hostname, wallet string) ConnectedWallet {
+	return ConnectedWallet{
+		name:     wallet,
+		hostname: hostname,
+	}
+}
+
 func NewConnectedWallet(hostname string, w wallet.Wallet) (ConnectedWallet, error) {
 	rks, err := allowedKeys(w, hostname)
 	if err != nil {

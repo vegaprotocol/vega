@@ -47,6 +47,7 @@ var DataNodeCacheHome = CachePath("data-node")
 // 	├── wallet-cli/
 // 	│	└── config.toml
 // 	├── wallet-app/
+// 	│	├── config.fairground.toml
 // 	│	└── config.toml
 // 	└── wallet-service/
 //		├── config.toml
@@ -119,6 +120,10 @@ var (
 	// used by the wallet app application.
 	WalletAppConfigHome = ConfigPath("wallet-app")
 
+	// WalletAppFairgroundConfigFile is the Fairground configuration file for the
+	// wallet app application.
+	WalletAppFairgroundConfigFile = JoinConfigPath(WalletAppConfigHome, "config.fairground.toml")
+
 	// WalletAppDefaultConfigFile is the default configuration file for the
 	// wallet app application.
 	WalletAppDefaultConfigFile = JoinConfigPath(WalletAppConfigHome, "config.toml")
@@ -153,6 +158,7 @@ var (
 // 	│	└── vega-wallet-2
 // 	└── wallet-service/
 //      ├── tokens.json
+//      ├── sessions.toml
 // 		└── rsa-keys/
 // 			├── private.pem
 // 			└── public.pem
@@ -207,9 +213,14 @@ var (
 	// wallet service.
 	WalletServiceDataHome = DataPath("wallet-service")
 
-	// WalletServiceTokensDataFile is the file containing all the API tokens
+	// WalletServiceAPITokensDataFile is the file containing all the API tokens
 	// used by the third-party applications to connect to the wallet API.
-	WalletServiceTokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "tokens.json"))
+	WalletServiceAPITokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "tokens.json"))
+
+	// WalletServiceSessionTokensDataFile is the file containing all the session tokens
+	// generated to initiates the connection with the third-party applications to
+	// connect to the wallet API.
+	WalletServiceSessionTokensDataFile = DataPath(filepath.Join(WalletServiceDataHome.String(), "sessions.toml"))
 
 	// WalletServiceRSAKeysDataHome is the folder containing the RSA keys used by
 	// the wallet service.
@@ -228,8 +239,17 @@ var (
 //
 // STATE_HOME
 // 	├── data-node/
+// 	│	├── archivedeventbuffers/
+// 	│	├── autocert/
+// 	│	├── eventsbuffer/
 // 	│	├── logs/
+// 	│	├── networkhistory/
+// 	│	│	├── snapshotscopyfrom/
+// 	│	│	└── snapshotscopyto/
 // 	│	└── storage/
+// 	│		├── postgres/
+// 	│		└── sqlstore/
+// 	│			└── node-data/
 // 	├── node/
 // 	│	├── logs/
 // 	│	├── checkpoints/
@@ -267,12 +287,23 @@ var (
 	// data-node.
 	DataNodeStateHome = StatePath("data-node")
 
+	// DataNodeAutoCertHome is the folder containing the automatically generated SSL certificates.
+	DataNodeAutoCertHome = StatePath(filepath.Join(DataNodeStateHome.String(), "autocert"))
+
 	// DataNodeLogsHome is the folder containing the logs of the data-node.
 	DataNodeLogsHome = StatePath(filepath.Join(DataNodeStateHome.String(), "logs"))
 
 	// DataNodeStorageHome is the folder containing the data storage of the
 	// data-node.
 	DataNodeStorageHome = StatePath(filepath.Join(DataNodeStateHome.String(), "storage"))
+
+	// DataNodeStorageSQLStoreHome is the folder containing the data of the
+	// SQL store.
+	DataNodeStorageSQLStoreHome = StatePath(filepath.Join(DataNodeStateHome.String(), "sqlstore"))
+
+	// DataNodeStorageSQLStoreNodeDataHome is the folder containing the data of the
+	// SQL store.
+	DataNodeStorageSQLStoreNodeDataHome = StatePath(filepath.Join(DataNodeStorageSQLStoreHome.String(), "node-data"))
 
 	// DataNodeEmbeddedPostgresRuntimeDir is the runtime directory for embedded postgres.
 	DataNodeEmbeddedPostgresRuntimeDir = StatePath(filepath.Join(DataNodeStorageHome.String(), "postgres"))

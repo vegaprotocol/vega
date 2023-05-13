@@ -1,60 +1,52 @@
 package snapshot
 
 import (
+	"archive/zip"
 	"context"
-	"crypto/md5"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"os"
-	"path/filepath"
+	"path"
+	"sort"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
-
-	"code.vegaprotocol.io/vega/datanode/networkhistory/fsutil"
+	"code.vegaprotocol.io/vega/libs/fs"
+	vio "code.vegaprotocol.io/vega/libs/io"
+	"github.com/georgysavva/scany/pgxscan"
+	"golang.org/x/exp/maps"
 
 	"code.vegaprotocol.io/vega/datanode/metrics"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/jackc/pgx/v4"
 )
 
-type MetaData struct {
-	CurrentStateSnapshot     CurrentState
-	HistorySnapshot          History
-	CurrentStateSnapshotPath string
-	HistorySnapshotPath      string
-	DatabaseVersion          int64
-}
-
 var (
-	ErrSnapshotExists = errors.New("Snapshot exists")
-	ErrNoLastSnapshot = errors.New("No last snapshot")
+	ErrSnapshotExists = errors.New("snapshot exists")
+	ErrNoLastSnapshot = errors.New("no last snapshot")
 )
 
-func (b *Service) CreateSnapshot(ctx context.Context, chainID string, toHeight int64) (MetaData, error) {
+func (b *Service) CreateSnapshot(ctx context.Context, chainID string, toHeight int64) (segment.Unpublished, error) {
 	return b.createNewSnapshot(ctx, chainID, toHeight, false)
 }
 
-func (b *Service) CreateSnapshotAsynchronously(ctx context.Context, chainID string, toHeight int64) (MetaData, error) {
+func (b *Service) CreateSnapshotAsynchronously(ctx context.Context, chainID string, toHeight int64) (segment.Unpublished, error) {
 	return b.createNewSnapshot(ctx, chainID, toHeight, true)
 }
 
 func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeight int64,
 	async bool,
-) (MetaData, error) {
+) (segment.Unpublished, error) {
 	var err error
 	if len(chainID) == 0 {
-		return MetaData{}, fmt.Errorf("chain id is required")
+		return segment.Unpublished{}, fmt.Errorf("chain id is required")
 	}
 
 	dbMetaData, err := NewDatabaseMetaData(ctx, b.connPool)
 	if err != nil {
-		return MetaData{}, fmt.Errorf("failed to get data dump metadata: %w", err)
+		return segment.Unpublished{}, fmt.Errorf("failed to get data dump metadata: %w", err)
 	}
 
 	var cleanUp []func()
@@ -74,47 +66,53 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 	copyDataTx, err := b.connPool.Begin(ctx)
 	if err != nil {
 		runAllInReverseOrder(cleanUp)
-		return MetaData{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
+		return segment.Unpublished{}, fmt.Errorf("failed to begin copy table data transaction: %w", err)
 	}
 	// Rolling back a committed transaction does nothing
 	cleanUp = append(cleanUp, func() { _ = copyDataTx.Rollback(ctx) })
 
 	if _, err = copyDataTx.Exec(ctx, "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"); err != nil {
 		runAllInReverseOrder(cleanUp)
-		return MetaData{}, fmt.Errorf("failed to set transaction isolation level to serilizable: %w", err)
+		return segment.Unpublished{}, fmt.Errorf("failed to set transaction isolation level to serilizable: %w", err)
 	}
-
-	snapshotInProgressFile := filepath.Join(b.absSnapshotsCopyToPath, InProgressFileName(chainID, toHeight))
-	if _, err = os.Create(snapshotInProgressFile); err != nil {
-		runAllInReverseOrder(cleanUp)
-		return MetaData{}, fmt.Errorf("failed to create write lock file:%w", err)
-	}
-	cleanUp = append(cleanUp, func() { _ = os.Remove(snapshotInProgressFile) })
 
 	nextSpan, err := getNextSnapshotSpan(ctx, toHeight, copyDataTx)
 	if err != nil {
 		runAllInReverseOrder(cleanUp)
 		if errors.Is(err, ErrSnapshotExists) {
-			return MetaData{}, ErrSnapshotExists
+			return segment.Unpublished{}, ErrSnapshotExists
 		}
-		return MetaData{}, fmt.Errorf("failed to get next snapshot span:%w", err)
+		return segment.Unpublished{}, fmt.Errorf("failed to get next snapshot span:%w", err)
 	}
 
-	historySnapshot := NewHistorySnapshot(chainID, nextSpan.FromHeight, nextSpan.ToHeight)
-	currentSnapshot := NewCurrentSnapshot(chainID, nextSpan.ToHeight)
+	s := segment.Unpublished{
+		Base: segment.Base{
+			HeightFrom:      nextSpan.FromHeight,
+			HeightTo:        nextSpan.ToHeight,
+			DatabaseVersion: dbMetaData.DatabaseVersion,
+			ChainID:         chainID,
+		},
+		Directory: b.copyToPath,
+	}
 
-	b.log.Infof("creating snapshot for %+v", historySnapshot)
+	b.log.Infof("creating snapshot for %+v", s)
+
+	if _, err = os.Create(s.InProgressFilePath()); err != nil {
+		runAllInReverseOrder(cleanUp)
+		return segment.Unpublished{}, fmt.Errorf("failed to create write lock file:%w", err)
+	}
+	cleanUp = append(cleanUp, func() { _ = os.Remove(s.InProgressFilePath()) })
 
 	// To ensure reads are isolated from this point forward execute a read on last block
 	_, err = sqlstore.GetLastBlockUsingConnection(ctx, copyDataTx)
 	if err != nil {
 		runAllInReverseOrder(cleanUp)
-		return MetaData{}, fmt.Errorf("failed to get last block using connection: %w", err)
+		return segment.Unpublished{}, fmt.Errorf("failed to get last block using connection: %w", err)
 	}
 
 	snapshotData := func() {
 		defer func() { runAllInReverseOrder(cleanUp) }()
-		err = b.snapshotData(ctx, copyDataTx, dbMetaData, currentSnapshot, historySnapshot)
+		err = b.snapshotData(ctx, copyDataTx, dbMetaData, s)
 		if err != nil {
 			b.log.Panic("failed to snapshot data", logging.Error(err))
 		}
@@ -126,13 +124,7 @@ func (b *Service) createNewSnapshot(ctx context.Context, chainID string, toHeigh
 		snapshotData()
 	}
 
-	return MetaData{
-		CurrentStateSnapshot:     currentSnapshot,
-		HistorySnapshot:          historySnapshot,
-		CurrentStateSnapshotPath: filepath.Join(b.absSnapshotsCopyToPath, currentSnapshot.CompressedFileName()),
-		HistorySnapshotPath:      filepath.Join(b.absSnapshotsCopyToPath, historySnapshot.CompressedFileName()),
-		DatabaseVersion:          dbMetaData.DatabaseVersion,
-	}, nil
+	return s, nil
 }
 
 func getNextSnapshotSpan(ctx context.Context, toHeight int64, copyDataTx pgx.Tx) (Span, error) {
@@ -206,134 +198,116 @@ func runAllInReverseOrder(functions []func()) {
 	}
 }
 
-func (b *Service) snapshotData(ctx context.Context, copyDataTx pgx.Tx, dbMetaData DatabaseMetadata,
-	currentSnapshot CurrentState,
-	historySnapshot History,
-) (err error) {
-	uncompressedCurrentDataDir := filepath.Join(b.absSnapshotsCopyToPath, currentSnapshot.UncompressedDataDir())
-	uncompressedHistoryDataDir := filepath.Join(b.absSnapshotsCopyToPath, historySnapshot.UncompressedDataDir())
-
+func (b *Service) snapshotData(ctx context.Context, tx pgx.Tx, dbMetaData DatabaseMetadata, seg segment.Unpublished) error {
 	defer func() {
 		// Calling rollback on a committed transaction has no effect, hence we can rollback in defer to ensure
 		// always rolled back if the transaction was not successfully committed
-		_ = copyDataTx.Rollback(ctx)
-		_ = os.RemoveAll(uncompressedCurrentDataDir)
-		_ = os.RemoveAll(uncompressedHistoryDataDir)
+		_ = tx.Rollback(ctx)
 	}()
 
-	if _, err = copyDataTx.Exec(ctx, "SET TIME ZONE 0"); err != nil {
+	if _, err := tx.Exec(ctx, "SET TIME ZONE 0"); err != nil {
 		return fmt.Errorf("failed to set timezone to UTC:%w", err)
-	}
-
-	if err = fsutil.MkdirAllIgnoringUMask(uncompressedCurrentDataDir); err != nil {
-		return fmt.Errorf("failed to create uncompressed data directory for current snapshot:%w", err)
-	}
-
-	if err = fsutil.MkdirAllIgnoringUMask(uncompressedHistoryDataDir); err != nil {
-		return fmt.Errorf("failed to create uncompressed data directory for history snapshot:%w", err)
 	}
 
 	start := time.Now()
 	b.log.Infof("copying all table data....")
-	allCopySQL := append(currentSnapshot.GetCopySQL(dbMetaData, b.absSnapshotsCopyToPath),
-		historySnapshot.GetCopySQL(dbMetaData, b.absSnapshotsCopyToPath)...)
-	rowsCopied, err := copyTableData(ctx, copyDataTx, allCopySQL)
+
+	f, err := os.Create(seg.ZipFilePath())
 	if err != nil {
-		return fmt.Errorf("failed to copy table data:%w", err)
+		return fmt.Errorf("failed to create file:%w", err)
 	}
 
-	err = copyDataTx.Commit(ctx)
+	countWriter := vio.NewCountWriter(f)
+	zipWriter := zip.NewWriter(countWriter)
+	defer zipWriter.Close()
+
+	// Write Current State
+	currentSQL := currentStateCopySQL(dbMetaData)
+	currentRowsCopied, err := copyTableData(ctx, tx, currentSQL, zipWriter)
+	if err != nil {
+		return fmt.Errorf("failed to copy current state table data:%w", err)
+	}
+	compressedCurrentStateByteCount := countWriter.Count()
+
+	// Write History
+	historySQL := historyCopySQL(dbMetaData, seg)
+	historyRowsCopied, err := copyTableData(ctx, tx, historySQL, zipWriter)
+	if err != nil {
+		return fmt.Errorf("failed to copy history table data:%w", err)
+	}
+	compressedHistoryByteCount := countWriter.Count() - compressedCurrentStateByteCount
+
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to commit snapshot transaction:%w", err)
 	}
 
-	b.log.Infof("compressing current state snapshot data")
-
-	compressedCurrentStateFile := filepath.Join(b.absSnapshotsCopyToPath, currentSnapshot.CompressedFileName())
-	compressedCurrentStateByteCount, err := fsutil.TarAndCompressDirWithDeterministicHeader(uncompressedCurrentDataDir, compressedCurrentStateFile, dbMetaData.DatabaseVersion)
-	if err != nil {
-		return fmt.Errorf("failed to compress snapshot:%w", err)
-	}
-	b.log.Infof("compressed current state snapshot data size: %dB", compressedCurrentStateByteCount)
-
-	b.log.Infof("compressing history data")
-	compressedHistoryStateFile := filepath.Join(b.absSnapshotsCopyToPath, historySnapshot.CompressedFileName())
-	compressedHistoryByteCount, err := fsutil.TarAndCompressDirWithDeterministicHeader(uncompressedHistoryDataDir, compressedHistoryStateFile, dbMetaData.DatabaseVersion)
-	if err != nil {
-		return fmt.Errorf("failed to compress history snapshot:%w", err)
-	}
-	b.log.Infof("compressed history snapshot data size: %dB", compressedHistoryByteCount)
-
-	snapshotHash, err := GetSnapshotMd5Hash(compressedCurrentStateFile, compressedHistoryStateFile)
-	if err != nil {
-		b.log.Errorf("failed to get md5 hash of snapshot:%w", err)
-	}
-
-	metrics.SetLastSnapshotRowcount(float64(rowsCopied))
+	metrics.SetLastSnapshotRowcount(float64(currentRowsCopied + historyRowsCopied))
 	metrics.SetLastSnapshotCurrentStateBytes(float64(compressedCurrentStateByteCount))
 	metrics.SetLastSnapshotHistoryBytes(float64(compressedHistoryByteCount))
 	metrics.SetLastSnapshotSeconds(time.Since(start).Seconds())
 
-	b.log.Info("finished creating snapshot for chain", logging.String("chain", currentSnapshot.ChainID),
-		logging.Int64("from height", historySnapshot.HeightFrom),
-		logging.Int64("to height", currentSnapshot.Height), logging.Duration("time taken", time.Since(start)),
-		logging.Int64("rows copied", rowsCopied),
+	b.log.Info("finished creating snapshot for chain", logging.String("chain", seg.ChainID),
+		logging.Int64("from height", seg.HeightFrom),
+		logging.Int64("to height", seg.HeightTo), logging.Duration("time taken", time.Since(start)),
+		logging.Int64("rows copied", currentRowsCopied+historyRowsCopied),
 		logging.Int64("compressed current state data size", compressedCurrentStateByteCount),
 		logging.Int64("compressed history data size", compressedHistoryByteCount),
-		logging.String("md5 hash", snapshotHash))
+	)
 
 	return nil
 }
 
-func GetHistoryMd5Hash(snapshot MetaData) (string, error) {
-	snapshotHash := md5.New()
+func currentStateCopySQL(dbMetaData DatabaseMetadata) []TableCopySql {
+	var copySQL []TableCopySql
+	tablesNames := maps.Keys(dbMetaData.TableNameToMetaData)
+	sort.Strings(tablesNames)
 
-	err := hashFile(snapshotHash, snapshot.HistorySnapshotPath)
-	if err != nil {
-		return "", err
+	for _, tableName := range tablesNames {
+		meta := dbMetaData.TableNameToMetaData[tableName]
+		if !dbMetaData.TableNameToMetaData[tableName].Hypertable {
+			tableCopySQL := fmt.Sprintf(`copy (select * from %s order by %s) TO STDOUT WITH (FORMAT csv, HEADER) `, tableName,
+				meta.SortOrder)
+			copySQL = append(copySQL, TableCopySql{meta, tableCopySQL})
+		}
 	}
-
-	return hex.EncodeToString(snapshotHash.Sum(nil)), nil
+	return copySQL
 }
 
-func GetSnapshotMd5Hash(currentStateSnapshotFile string, historySnapshotFile string) (string, error) {
-	snapshotHash := md5.New()
-	err := hashFile(snapshotHash, currentStateSnapshotFile)
-	if err != nil {
-		return "", err
-	}
+func historyCopySQL(dbMetaData DatabaseMetadata, segment interface{ GetFromHeight() int64 }) []TableCopySql {
+	var copySQL []TableCopySql
+	tablesNames := maps.Keys(dbMetaData.TableNameToMetaData)
+	sort.Strings(tablesNames)
 
-	err = hashFile(snapshotHash, historySnapshotFile)
-	if err != nil {
-		return "", err
+	for _, tableName := range tablesNames {
+		meta := dbMetaData.TableNameToMetaData[tableName]
+		if dbMetaData.TableNameToMetaData[tableName].Hypertable {
+			partitionColumn := dbMetaData.TableNameToMetaData[tableName].PartitionColumn
+			hyperTableCopySQL := fmt.Sprintf(`copy (select * from %s where %s >= (SELECT vega_time from blocks where height = %d) order by %s) to STDOUT (FORMAT csv, HEADER)`,
+				tableName,
+				partitionColumn,
+				segment.GetFromHeight(),
+				meta.SortOrder)
+			copySQL = append(copySQL, TableCopySql{meta, hyperTableCopySQL})
+		}
 	}
-
-	return hex.EncodeToString(snapshotHash.Sum(nil)), nil
+	return copySQL
 }
 
-func hashFile(hash hash.Hash, filepath string) (err error) {
-	filePath := filepath
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-	_, err = io.Copy(hash, file)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func InProgressFileName(chainID string, height int64) string {
-	return fmt.Sprintf("%s-%d.snapshotinprogress", chainID, height)
-}
-
-func copyTableData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql) (int64, error) {
+func copyTableData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql, zipWriter *zip.Writer) (int64, error) {
 	var totalRowsCopied int64
 	for _, tableSql := range copySQL {
-		numRowsCopied, err := executeCopy(ctx, tx, tableSql)
+		dirName := "currentstate"
+		if tableSql.metaData.Hypertable {
+			dirName = "history"
+		}
+
+		fileWriter, err := zipWriter.Create(path.Join(dirName, tableSql.metaData.Name))
+		if err != nil {
+			return 0, fmt.Errorf("failed to create file in zip:%w", err)
+		}
+
+		numRowsCopied, err := executeCopy(ctx, tx, tableSql, fileWriter)
 		if err != nil {
 			return 0, fmt.Errorf("failed to execute copy: %w", err)
 		}
@@ -343,10 +317,10 @@ func copyTableData(ctx context.Context, tx pgx.Tx, copySQL []TableCopySql) (int6
 	return totalRowsCopied, nil
 }
 
-func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql) (int64, error) {
+func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql, w io.Writer) (int64, error) {
 	defer metrics.StartNetworkHistoryCopy(tableSql.metaData.Name)()
 
-	tag, err := tx.Exec(ctx, tableSql.copySql)
+	tag, err := tx.Conn().PgConn().CopyTo(ctx, w, tableSql.copySql)
 	if err != nil {
 		return 0, fmt.Errorf("failed to execute copy sql %s: %w", tableSql.copySql, err)
 	}
@@ -355,4 +329,51 @@ func executeCopy(ctx context.Context, tx pgx.Tx, tableSql TableCopySql) (int64, 
 	metrics.NetworkHistoryRowsCopied(tableSql.metaData.Name, rowsCopied)
 
 	return rowsCopied, nil
+}
+
+func (b *Service) GetUnpublishedSnapshots() ([]segment.Unpublished, error) {
+	files, err := os.ReadDir(b.copyToPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get files in snapshot directory:%w", err)
+	}
+
+	segments := []segment.Unpublished{}
+	chainID := ""
+	for _, file := range files {
+		if !file.IsDir() {
+			baseSegment, err := segment.NewFromZipFileName(file.Name())
+			if err != nil {
+				continue
+			}
+			segment := segment.Unpublished{
+				Base:      baseSegment,
+				Directory: b.copyToPath,
+			}
+
+			if len(chainID) == 0 {
+				chainID = segment.ChainID
+			}
+
+			if segment.ChainID != chainID {
+				return nil, fmt.Errorf("current state snapshots for multiple chain ids exist in snapshots directory %s", b.copyToPath)
+			}
+
+			lockFileExists, err := fs.FileExists(segment.InProgressFilePath())
+			if err != nil {
+				return nil, fmt.Errorf("failed to check for lock file:%w", err)
+			}
+
+			if lockFileExists {
+				continue
+			}
+			segments = append(segments, segment)
+		}
+	}
+
+	return segments, nil
+}
+
+type TableCopySql struct {
+	metaData TableMetadata
+	copySql  string
 }

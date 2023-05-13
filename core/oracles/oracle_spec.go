@@ -106,11 +106,19 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 
 			_, exist := typedFilters[f.Key.Name]
 			if exist {
-				return nil, types.ErrMultipleSameKeyNamesInFilterList
+				return nil, types.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList
 			}
 
 			if strings.HasPrefix(f.Key.Name, "vegaprotocol.builtin") && f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
 				builtInKey = true
+			}
+
+			for _, condition := range f.Conditions {
+				if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+					if condition.Operator == datapb.Condition_OPERATOR_LESS_THAN || condition.Operator == datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL {
+						return nil, types.ErrDataSourceSpecHasInvalidTimeCondition
+					}
+				}
 			}
 
 			conditions, err := toConditions(f.Key.Type, f.Conditions)
@@ -139,6 +147,14 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 
 			typedFilter.conditions = append(typedFilter.conditions, conditions...)
 		} else {
+			if len(f.Conditions) < 1 {
+				return nil, types.ErrInternalTimeDataSourceMissingConditions
+			}
+
+			if (f.Conditions[0].Operator == datapb.Condition_OPERATOR_LESS_THAN) || (f.Conditions[0].Operator == datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL) {
+				return nil, types.ErrDataSourceSpecHasInvalidTimeCondition
+			}
+
 			// Currently VEGA network uses only one type of internal data source - time triggered
 			// that uses the property name "vegaprotocol.builtin.timestamp"
 			// https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed
@@ -146,10 +162,10 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 			if err != nil {
 				return nil, err
 			}
-			typedFilters[f.String()] = &filter{
+			typedFilters[f.Key.Name] = &filter{
 				propertyName: "vegaprotocol.builtin.timestamp",
 				propertyType: datapb.PropertyKey_TYPE_TIMESTAMP,
-				conditions:   conditions,
+				conditions:   []condition{conditions[0]},
 			}
 		}
 	}
@@ -334,7 +350,7 @@ func lessThanOrEqualInteger(dataValue, condValue *num.Int) bool {
 func toDecimalCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toDecimal(c.Value)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing decimal: %s", err.Error())
 	}
 
 	matcher, ok := decimalMatchers[c.Operator]
@@ -345,7 +361,7 @@ func toDecimalCondition(c *types.OracleSpecCondition) (condition, error) {
 	return func(dataValue string) (bool, error) {
 		parsedDataValue, err := toDecimal(dataValue)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("error parsing decimal: %s", err.Error())
 		}
 		return matcher(parsedDataValue, condValue), nil
 	}, nil
@@ -406,7 +422,7 @@ func toTimestampCondition(c *types.OracleSpecCondition) (condition, error) {
 func toTimestamp(value string) (int64, error) {
 	parsedValue, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		return parsedValue, err
+		return parsedValue, ErrInvalidTimestamp
 	}
 
 	if parsedValue < 0 {
@@ -446,7 +462,7 @@ func lessThanOrEqualTimestamp(dataValue, condValue int64) bool {
 func toBooleanCondition(c *types.OracleSpecCondition) (condition, error) {
 	condValue, err := toBoolean(c.Value)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing boolean: %s", err.Error())
 	}
 
 	matcher, ok := booleanMatchers[c.Operator]
@@ -457,7 +473,7 @@ func toBooleanCondition(c *types.OracleSpecCondition) (condition, error) {
 	return func(dataValue string) (bool, error) {
 		parsedDataValue, err := toBoolean(dataValue)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("error parsing boolean: %s", err.Error())
 		}
 		return matcher(parsedDataValue, condValue), nil
 	}, nil

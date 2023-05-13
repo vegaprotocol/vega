@@ -149,6 +149,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
   MarginLevelsUpdate:
     model: code.vegaprotocol.io/vega/protos/vega.MarginLevels
+  MarginEstimate:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarginEstimate
+  LiquidationPrice:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationPrice
+  LiquidationEstimate:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LiquidationEstimate
   NodeSignature:
     model: code.vegaprotocol.io/vega/protos/vega/commands/v1.NodeSignature
   ProposalEvent:

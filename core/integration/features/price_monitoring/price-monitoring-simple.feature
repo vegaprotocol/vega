@@ -275,7 +275,7 @@ Feature: Price monitoring test using simple risk model
 
     And the mark price should be "120" for the market "ETH/DEC20"
 
-  Scenario: Persistent order results in an auction (one trigger breached), no orders placed during auction and auction terminates
+  Scenario: Persistent order results in an auction (both triggers breached), no orders placed during auction and auction terminates
 
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount       |
@@ -352,19 +352,29 @@ Feature: Price monitoring test using simple risk model
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
 
     Then the market data for the market "ETH/DEC20" should be:
-      | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end |
-      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 600         |
+      | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end | horizon | min bound | max bound |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 240         | 600     | 99        | 119       |
 
     And the mark price should be "105" for the market "ETH/DEC20"
 
-    #T1 + 10min00s (last second of the auction)
-    Then time is updated to "2020-10-16T00:22:10Z"
+    #T1 + 04min00s (last second of initial auction duration)
+    When time is updated to "2020-10-16T00:16:10Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end | horizon | min bound | max bound |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            | 240         | 600     | 99        | 119       |
 
-    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    #T1 + 04min01s
+    When time is updated to "2020-10-16T00:16:11Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | extension trigger           | target stake | supplied stake | auction end |
+      | 105        | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | AUCTION_TRIGGER_PRICE       | 660          | 660            | 600         |
 
+    #T1 + 10min00s (last second of the extended auction)
+    When time is updated to "2020-10-16T00:22:10Z"
+    Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
+    
     #T1 + 10min01s
     Then time is updated to "2020-10-16T00:22:11Z"
-
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | extension trigger           | target stake | supplied stake |
       | 120        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | AUCTION_TRIGGER_UNSPECIFIED | 660          | 660            |

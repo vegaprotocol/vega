@@ -15,7 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestListKeys(t *testing.T) {
+func TestClientListKeys(t *testing.T) {
+	t.Run("Documentation matches the code", testClientListKeysSchemaCorrect)
 	t.Run("Listing keys with enough permissions succeeds", testListingKeysWithEnoughPermissionsSucceeds)
 	t.Run("Listing keys without enough permissions succeeds", testListingKeysWithoutEnoughPermissionsSucceeds)
 	t.Run("Getting internal error during wallet retrieval does not update the permissions", testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermissions)
@@ -25,6 +26,10 @@ func TestListKeys(t *testing.T) {
 	t.Run("Interrupting the request does not update the permissions", testListingKeysInterruptingTheRequestDoesNotUpdatePermissions)
 	t.Run("Getting internal error during the review does not update the permissions", testListingKeysGettingInternalErrorDuringReviewDoesNotUpdatePermissions)
 	t.Run("Getting internal error during the wallet update does not update the permissions", testListingKeysGettingInternalErrorDuringWalletUpdateDoesNotUpdatePermissions)
+}
+
+func testClientListKeysSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "client.list_keys", nil, api.ClientListKeysResult{})
 }
 
 func testListingKeysWithEnoughPermissionsSucceeds(t *testing.T) {
@@ -117,7 +122,7 @@ func testListingKeysGettingInternalErrorDuringWalletRetrievalDoesNotUpdatePermis
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.PermissionRequestWorkflow, uint8(2)).Times(1).Return(nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, connectedWallet.Name()).Times(1).Return(nil, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not retrieve the wallet for the permissions update: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("could not retrieve the wallet for the permissions update: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 
 	// when
@@ -143,7 +148,7 @@ func testListingKeysRetrievingLockedWalletDoesNotUpdatePermissions(t *testing.T)
 	// -- expected calls
 	handler.interactor.EXPECT().NotifyInteractionSessionBegan(ctx, traceID, api.PermissionRequestWorkflow, uint8(2)).Times(1).Return(nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, connectedWallet.Name()).Times(1).Return(nil, api.ErrWalletIsLocked)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrWalletIsLocked).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationErrorType, api.ErrWalletIsLocked).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 
 	// when
@@ -201,7 +206,7 @@ func testListingKeysCancellingTheReviewDoesNotUpdatePermissions(t *testing.T) {
 		"public_keys": "read",
 	}).Times(1).Return(false, api.ErrUserCloseTheConnection)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationError, api.ErrConnectionClosed)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ApplicationErrorType, api.ErrConnectionClosed)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, connectedWallet)
@@ -229,7 +234,7 @@ func testListingKeysInterruptingTheRequestDoesNotUpdatePermissions(t *testing.T)
 	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, uint8(1), hostname, w.Name(), map[string]string{
 		"public_keys": "read",
 	}).Times(1).Return(false, api.ErrRequestInterrupted)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerError, api.ErrRequestInterrupted).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.ServerErrorType, api.ErrRequestInterrupted).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 
 	// when
@@ -258,7 +263,7 @@ func testListingKeysGettingInternalErrorDuringReviewDoesNotUpdatePermissions(t *
 	handler.interactor.EXPECT().RequestPermissionsReview(ctx, traceID, uint8(1), hostname, w.Name(), map[string]string{
 		"public_keys": "read",
 	}).Times(1).Return(false, assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("requesting the permissions review failed: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("requesting the permissions review failed: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 
 	// when
@@ -288,7 +293,7 @@ func testListingKeysGettingInternalErrorDuringWalletUpdateDoesNotUpdatePermissio
 		"public_keys": "read",
 	}).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().UpdateWallet(ctx, w).Times(1).Return(assert.AnError)
-	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalError, fmt.Errorf("could not save the permissions update on the wallet: %w", assert.AnError)).Times(1)
+	handler.interactor.EXPECT().NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("could not save the permissions update on the wallet: %w", assert.AnError)).Times(1)
 	handler.interactor.EXPECT().NotifyInteractionSessionEnded(ctx, traceID).Times(1)
 
 	// when

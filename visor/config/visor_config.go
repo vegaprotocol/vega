@@ -35,41 +35,25 @@ const (
 	DataNodeBinaryName = "data-node"
 )
 
-type Asset struct {
+/*
+description: Allows you to define the name of the asset to be downloaded.
+*/
+type AssetsConfig struct {
 	// description: Name of the asset on Github.
-	AssetName string `toml:"asset_name"`
+	Name string `toml:"name"`
 	/*
 		description: |
 			Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
 	*/
-	BinaryName *string `toml:"binary_name"`
+	BinaryName *string `toml:"binaryName"`
 }
 
-func (a Asset) GetBinaryPath() string {
+func (a AssetsConfig) GetBinaryPath() string {
 	if a.BinaryName != nil {
 		return *a.BinaryName
 	}
 
-	return a.AssetName
-}
-
-type AssetsConfig struct {
-	/*
-		description: Allows you to define the name of the asset to be downloaded.
-	*/
-	Vega Asset `toml:"vega"`
-	/*
-		description: Allows you to define the name of the asset to be downloaded.
-	*/
-	DataNode *Asset `toml:"data_node"`
-}
-
-func (ac AssetsConfig) AssetsNames() []string {
-	s := []string{ac.Vega.AssetName}
-	if ac.DataNode != nil {
-		s = append(s, ac.DataNode.AssetName)
-	}
-	return s
+	return a.Name
 }
 
 /*
@@ -83,10 +67,9 @@ example:
 			enabled = true
 			repositoryOwner = "vegaprotocol"
 			repository = "vega"
-			[autoInstall.assets]
-				[autoInstall.assets.vega]
-					asset_name = "vega-darwin-amd64.zip"
-					binary_name = "vega"
+			[autoInstall.asset]
+				name = "vega-darwin-amd64.zip"
+				binaryName = "vega"
 */
 type AutoInstallConfig struct {
 	/*
@@ -105,16 +88,15 @@ type AutoInstallConfig struct {
 	*/
 	GithubRepository string `toml:"repository"`
 	/*
-		description: Definitions of the assets that should be downloaded from the GitHub repository.
+		description: Definitions of the asset that should be downloaded from the GitHub repository.
 		example:
 			type: toml
 			value: |
-				[autoInstall.assets]
-					[autoInstall.assets.vega]
-						asset_name = "vega-darwin-amd64.zip"
-						binary_name = "vega"
+				[autoInstall.asset]
+					name = "vega-darwin-amd64.zip"
+					binaryName = "vega"
 	*/
-	Assets AssetsConfig `toml:"assets"`
+	Asset AssetsConfig `toml:"asset"`
 }
 
 /*
@@ -159,6 +141,14 @@ type VisorConfigFile struct {
 		default: 5
 	*/
 	RestartsDelaySeconds int `toml:"restartsDelaySeconds,optional"`
+	/*
+		description: |
+			Number of seconds that Visor waits before it sends termination signal (SIGTERM) to running processes
+			that are ready for upgrade.
+			After the time has elapsed Visor stop the running binaries (SIGTERM).
+		default: 0
+	*/
+	StopDelaySeconds int `toml:"stopDelaySeconds,optional"`
 	/*
 		description: |
 			Number of seconds that Visor waits after it sends termination signal (SIGTERM) to running processes.
@@ -211,12 +201,11 @@ func parseAndValidateVisorConfigFile(path string) (*VisorConfigFile, error) {
 }
 
 type VisorConfig struct {
-	mut         sync.RWMutex
-	configPath  string
-	homePath    string
-	hasDataNode bool
-	data        *VisorConfigFile
-	log         *logging.Logger
+	mut        sync.RWMutex
+	configPath string
+	homePath   string
+	data       *VisorConfigFile
+	log        *logging.Logger
 }
 
 func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
@@ -229,16 +218,15 @@ func DefaultVisorConfig(log *logging.Logger, homePath string) *VisorConfig {
 			MaxNumberOfRestarts:               3,
 			MaxNumberOfFirstConnectionRetries: 10,
 			RestartsDelaySeconds:              5,
+			StopDelaySeconds:                  0,
 			StopSignalTimeoutSeconds:          15,
 			AutoInstall: AutoInstallConfig{
 				Enabled:               true,
 				GithubRepositoryOwner: "vegaprotocol",
 				GithubRepository:      "vega",
-				Assets: AssetsConfig{
-					Vega: Asset{
-						AssetName:  fmt.Sprintf("vega-%s-%s.zip", runtime.GOOS, "amd64"),
-						BinaryName: toPointer("vega"),
-					},
+				Asset: AssetsConfig{
+					Name:       fmt.Sprintf("vega-%s-%s.zip", runtime.GOOS, "amd64"),
+					BinaryName: toPointer("vega"),
 				},
 			},
 		},
@@ -261,17 +249,6 @@ func NewVisorConfig(log *logging.Logger, homePath string) (*VisorConfig, error) 
 	}, nil
 }
 
-func (pc *VisorConfig) missingAutoInstallDataNodeConfig(conf AutoInstallConfig) bool {
-	pc.mut.RLock()
-	defer pc.mut.RUnlock()
-
-	if !pc.hasDataNode || !conf.Enabled {
-		return false
-	}
-
-	return conf.Assets.DataNode == nil || conf.Assets.DataNode.AssetName == ""
-}
-
 func (pc *VisorConfig) reload() error {
 	pc.log.Info("Reloading config")
 	dataFile, err := parseAndValidateVisorConfigFile(pc.configPath)
@@ -279,15 +256,12 @@ func (pc *VisorConfig) reload() error {
 		return fmt.Errorf("failed to parse config: %w", err)
 	}
 
-	if pc.missingAutoInstallDataNodeConfig(dataFile.AutoInstall) {
-		pc.log.Warn("Data node asset is not configured in the updated auto install config for Visor running data node. Please configure the data node asset to ensure a successful upgrade in the future. Failure to do so may result in upgrade failure.")
-	}
-
 	pc.mut.Lock()
 	pc.data.MaxNumberOfFirstConnectionRetries = dataFile.MaxNumberOfFirstConnectionRetries
 	pc.data.MaxNumberOfRestarts = dataFile.MaxNumberOfRestarts
 	pc.data.RestartsDelaySeconds = dataFile.RestartsDelaySeconds
 	pc.data.StopSignalTimeoutSeconds = dataFile.StopSignalTimeoutSeconds
+	pc.data.StopDelaySeconds = dataFile.StopDelaySeconds
 	pc.data.UpgradeFolders = dataFile.UpgradeFolders
 	pc.data.AutoInstall = dataFile.AutoInstall
 	pc.mut.Unlock()
@@ -295,12 +269,6 @@ func (pc *VisorConfig) reload() error {
 	pc.log.Info("Reloading config success")
 
 	return nil
-}
-
-func (pc *VisorConfig) SetHasDataNode(hasDataNode bool) {
-	pc.mut.Lock()
-	pc.hasDataNode = hasDataNode
-	pc.mut.Unlock()
 }
 
 func (pc *VisorConfig) WatchForUpdate(ctx context.Context) error {
@@ -405,6 +373,13 @@ func (pc *VisorConfig) StopSignalTimeoutSeconds() int {
 	defer pc.mut.RUnlock()
 
 	return pc.data.StopSignalTimeoutSeconds
+}
+
+func (pc *VisorConfig) StopDelaySeconds() int {
+	pc.mut.RLock()
+	defer pc.mut.RUnlock()
+
+	return pc.data.StopDelaySeconds
 }
 
 func (pc *VisorConfig) AutoInstall() AutoInstallConfig {

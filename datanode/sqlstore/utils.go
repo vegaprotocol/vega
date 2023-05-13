@@ -34,43 +34,6 @@ func nextBindVar(args *[]interface{}, value interface{}) string {
 	return "$" + strconv.Itoa(len(*args))
 }
 
-// orderAndPaginateQuery is a helper function to simplify adding ordering and pagination statements to the end of a query
-// with the appropriate binding variables amd returns the query string and list of arguments to pass to the query execution handler.
-func orderAndPaginateQuery(query string, orderColumns []string, pagination entities.OffsetPagination, args ...interface{}) (string, []interface{}) {
-	ordering := "ASC"
-
-	if pagination.Descending {
-		ordering = "DESC"
-	}
-
-	sbOrderBy := strings.Builder{}
-
-	if len(orderColumns) > 0 {
-		sbOrderBy.WriteString("ORDER BY")
-
-		sep := ""
-
-		for _, column := range orderColumns {
-			sbOrderBy.WriteString(fmt.Sprintf("%s %s %s", sep, column, ordering))
-			sep = ","
-		}
-	}
-
-	var paging string
-
-	if pagination.Skip != 0 {
-		paging = fmt.Sprintf("%sOFFSET %s ", paging, nextBindVar(&args, pagination.Skip))
-	}
-
-	if pagination.Limit != 0 {
-		paging = fmt.Sprintf("%sLIMIT %s ", paging, nextBindVar(&args, pagination.Limit))
-	}
-
-	query = fmt.Sprintf("%s %s %s", query, sbOrderBy.String(), paging)
-
-	return query, args
-}
-
 func orderAndPaginateWithCursor(query string, pagination entities.CursorPagination, cursors CursorQueryParameters,
 	args ...interface{}) (string, []interface{},
 ) {
@@ -210,13 +173,26 @@ func StructValueForColumn(obj any, colName string) (interface{}, error) {
 	return nil, fmt.Errorf("no field matching column name %s", colName)
 }
 
-func filterDateRange(query, dateColumn string, dateRange entities.DateRange, args ...interface{}) (string, []interface{}) {
+func filterDateRange(query, dateColumn string, dateRange entities.DateRange, isFirstCondition bool, args ...interface{}) (string, []interface{}) {
+	conditions := []string{}
+
 	if dateRange.Start != nil {
-		query = fmt.Sprintf("%s AND %s >= %s", query, dateColumn, nextBindVar(&args, *dateRange.Start))
+		conditions = append(conditions, fmt.Sprintf("%s >= %s", dateColumn, nextBindVar(&args, *dateRange.Start)))
 	}
 
 	if dateRange.End != nil {
-		query = fmt.Sprintf("%s AND %s < %s", query, dateColumn, nextBindVar(&args, *dateRange.End))
+		conditions = append(conditions, fmt.Sprintf("%s < %s", dateColumn, nextBindVar(&args, *dateRange.End)))
+	}
+
+	if len(conditions) <= 0 {
+		return query, args
+	}
+
+	finalConditions := strings.Join(conditions, " AND ")
+	if isFirstCondition {
+		query = fmt.Sprintf("%s where %s", query, finalConditions)
+	} else {
+		query = fmt.Sprintf("%s AND %s", query, finalConditions)
 	}
 
 	return query, args

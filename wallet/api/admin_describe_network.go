@@ -5,34 +5,11 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/network"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminDescribeNetworkParams struct {
 	Name string `json:"name"`
-}
-
-type AdminDescribeNetworkResult struct {
-	Name     string             `json:"name"`
-	Metadata []network.Metadata `json:"metadata"`
-	API      struct {
-		GRPCConfig struct {
-			Hosts   []string `json:"hosts"`
-			Retries uint64   `json:"retries"`
-		} `json:"grpcConfig"`
-		RESTConfig struct {
-			Hosts []string `json:"hosts"`
-		} `json:"restConfig"`
-		GraphQLConfig struct {
-			Hosts []string `json:"hosts"`
-		} `json:"graphQLConfig"`
-	} `json:"api"`
-	Apps struct {
-		Explorer   string `json:"explorer"`
-		Console    string `json:"console"`
-		Governance string `json:"governance"`
-	} `json:"apps"`
 }
 
 type AdminDescribeNetwork struct {
@@ -42,42 +19,50 @@ type AdminDescribeNetwork struct {
 func (h *AdminDescribeNetwork) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateDescribeNetworkParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.networkStore.NetworkExists(params.Name); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the network existence: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the network existence: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrNetworkDoesNotExist)
+		return nil, InvalidParams(ErrNetworkDoesNotExist)
 	}
 
 	n, err := h.networkStore.GetNetwork(params.Name)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
+		return nil, InternalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
 	}
 
-	resp := AdminDescribeNetworkResult{
-		Name: n.Name,
+	resp := AdminNetwork{
+		Name:     n.Name,
+		Metadata: n.Metadata,
+		API: AdminAPIConfig{
+			GRPC: AdminGRPCConfig{
+				Hosts: n.API.GRPC.Hosts,
+			},
+			REST: AdminRESTConfig{
+				Hosts: n.API.REST.Hosts,
+			},
+			GraphQL: AdminGraphQLConfig{
+				Hosts: n.API.GraphQL.Hosts,
+			},
+		},
+		Apps: AdminAppConfig{
+			Explorer:   n.Apps.Explorer,
+			Console:    n.Apps.Console,
+			Governance: n.Apps.Governance,
+		},
 	}
-
-	resp.API.GRPCConfig.Hosts = n.API.GRPC.Hosts
-	resp.API.GRPCConfig.Retries = n.API.GRPC.Retries
-	resp.API.RESTConfig.Hosts = n.API.REST.Hosts
-	resp.API.GraphQLConfig.Hosts = n.API.GraphQL.Hosts
-	resp.Apps.Governance = n.Apps.Governance
-	resp.Apps.Explorer = n.Apps.Explorer
-	resp.Apps.Console = n.Apps.Console
-	resp.Metadata = n.Metadata
 
 	// make sure nil maps come through as empty slices
-	if resp.API.GRPCConfig.Hosts == nil {
-		resp.API.GRPCConfig.Hosts = []string{}
+	if resp.API.GRPC.Hosts == nil {
+		resp.API.GRPC.Hosts = []string{}
 	}
-	if resp.API.GraphQLConfig.Hosts == nil {
-		resp.API.GraphQLConfig.Hosts = []string{}
+	if resp.API.GraphQL.Hosts == nil {
+		resp.API.GraphQL.Hosts = []string{}
 	}
-	if resp.API.RESTConfig.Hosts == nil {
-		resp.API.RESTConfig.Hosts = []string{}
+	if resp.API.REST.Hosts == nil {
+		resp.API.REST.Hosts = []string{}
 	}
 
 	return resp, nil

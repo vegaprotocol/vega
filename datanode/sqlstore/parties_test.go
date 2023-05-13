@@ -121,13 +121,13 @@ func populateTestParties(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 		},
 	}
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, party := range parties {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 		party.VegaTime = &block.VegaTime
 		blockTimes[party.ID.String()] = block.VegaTime
 		err := ps.Add(ctx, party)
 		require.NoError(t, err)
-		time.Sleep(time.Microsecond * 100)
 	}
 }
 

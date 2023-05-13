@@ -488,13 +488,13 @@ type DescribeNetworkResponse struct {
 		GRPCConfig struct {
 			Hosts   []string `json:"hosts"`
 			Retries uint64   `json:"retries"`
-		} `json:"grpcConfig"`
+		} `json:"grpc"`
 		RESTConfig struct {
 			Hosts []string `json:"hosts"`
-		} `json:"restConfig"`
+		} `json:"rest"`
 		GraphQLConfig struct {
 			Hosts []string `json:"hosts"`
-		} `json:"graphQLConfig"`
+		} `json:"graphQL"`
 	} `json:"api"`
 }
 
@@ -535,9 +535,8 @@ func (d *DescribeNetworkAssertion) WithName(expected string) *DescribeNetworkAss
 	return d
 }
 
-func (d *DescribeNetworkAssertion) WithGRPCConfig(hosts []string, retires uint64) *DescribeNetworkAssertion {
+func (d *DescribeNetworkAssertion) WithGRPCConfig(hosts []string) *DescribeNetworkAssertion {
 	assert.Equal(d.t, hosts, d.resp.API.GRPCConfig.Hosts)
-	assert.Equal(d.t, retires, d.resp.API.GRPCConfig.Retries)
 	return d
 }
 
@@ -828,7 +827,7 @@ func (a *ImportWalletAssertion) LocatedUnder(home string) *ImportWalletAssertion
 
 type GetWalletInfoResponse struct {
 	Type    string `json:"type"`
-	Version uint32 `json:"version"`
+	Version uint32 `json:"keyDerivationVersion"`
 	ID      string `json:"id"`
 }
 

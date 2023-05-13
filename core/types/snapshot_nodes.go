@@ -570,6 +570,7 @@ type MarketPosition struct {
 	Size, Buy, Sell               int64
 	Price                         *num.Uint
 	BuySumProduct, SellSumProduct *num.Uint
+	Distressed                    bool
 }
 
 type StakingAccounts struct {
@@ -584,10 +585,11 @@ type StakingAccount struct {
 }
 
 type NotarySigs struct {
-	ID   string
-	Kind int32
-	Node string
-	Sig  string
+	ID      string
+	Kind    int32
+	Node    string
+	Sig     string
+	Pending bool
 }
 
 type Notary struct {
@@ -2460,6 +2462,7 @@ func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 		Price:          price,
 		BuySumProduct:  buySumProduct,
 		SellSumProduct: sellSumProduct,
+		Distressed:     p.Distressed,
 	}
 }
 
@@ -2472,6 +2475,7 @@ func (p MarketPosition) IntoProto() *snapshot.Position {
 		Price:          p.Price.String(),
 		BuySumProduct:  p.BuySumProduct.String(),
 		SellSumProduct: p.SellSumProduct.String(),
+		Distressed:     p.Distressed,
 	}
 }
 
@@ -3490,10 +3494,11 @@ func NotaryFromProto(n *snapshot.Notary) *Notary {
 
 func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
 	return &NotarySigs{
-		ID:   sk.Id,
-		Kind: sk.Kind,
-		Node: sk.Node,
-		Sig:  sk.Sig,
+		ID:      sk.Id,
+		Kind:    sk.Kind,
+		Node:    sk.Node,
+		Sig:     sk.Sig,
+		Pending: sk.Pending,
 	}
 }
 
@@ -3515,10 +3520,11 @@ func (n Notary) IntoProto() *snapshot.Notary {
 
 func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
 	return &snapshot.NotarySigs{
-		Id:   sk.ID,
-		Kind: sk.Kind,
-		Node: sk.Node,
-		Sig:  sk.Sig,
+		Id:      sk.ID,
+		Kind:    sk.Kind,
+		Node:    sk.Node,
+		Sig:     sk.Sig,
+		Pending: sk.Pending,
 	}
 }
 

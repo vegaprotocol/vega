@@ -318,6 +318,14 @@ type ExternalDataSourceSpec struct {
 	Spec *DataSourceSpec `json:"spec"`
 }
 
+// An estimate of the fee to be paid for the order
+type FeeEstimate struct {
+	// The estimated fees if the order was to trade
+	Fees *TradeFee `json:"fees"`
+	// The total estimated amount of fees if the order was to trade
+	TotalFeeAmount string `json:"totalFeeAmount"`
+}
+
 // Configuration of a market liquidity monitoring parameters
 type LiquidityMonitoringParameters struct {
 	// Specifies parameters related to target stake calculation
@@ -406,16 +414,6 @@ type ObservableLiquidityProviderFeeShare struct {
 	AverageScore string `json:"averageScore"`
 }
 
-type OffsetPagination struct {
-	// Skip the number of records specified, default is 0
-	Skip int `json:"skip"`
-	// Limit the number of returned records to the value specified, default is 50
-	Limit int `json:"limit"`
-	// Descending reverses the order of the records returned
-	// default is true, if false the results will be returned in ascending order
-	Descending bool `json:"descending"`
-}
-
 type OrderByMarketAndPartyIdsFilter struct {
 	Order     *v2.OrderFilter `json:"order"`
 	MarketIds []string        `json:"marketIds"`
@@ -440,6 +438,26 @@ type OrderEstimate struct {
 	TotalFeeAmount string `json:"totalFeeAmount"`
 	// The margin requirement for this order
 	MarginLevels *vega.MarginLevels `json:"marginLevels"`
+}
+
+// Basic description of an order
+type OrderInfo struct {
+	// Whether the order is to buy or sell
+	Side vega.Side `json:"side"`
+	// Price for the order
+	Price string `json:"price"`
+	// Number of units remaining of the total that have not yet been bought or sold (uint64)
+	Remaining string `json:"remaining"`
+	// Boolean indicating a market order
+	IsMarketOrder bool `json:"isMarketOrder"`
+}
+
+// Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position
+type PositionEstimate struct {
+	// Margin level range estimate for the specified position
+	Margin *v2.MarginEstimate `json:"margin"`
+	// Liquidation price range estimate for the specified position. Only populated if available collateral was specified in the request
+	Liquidation *v2.LiquidationEstimate `json:"liquidation"`
 }
 
 type PositionResolution struct {
@@ -626,6 +644,19 @@ type TradeSettlement struct {
 	Size int `json:"size"`
 	// The price of the trade
 	Price string `json:"price"`
+}
+
+// Filter to apply to the trade connection query
+type TradesFilter struct {
+	PartyIds  []string `json:"partyIds"`
+	MarketIds []string `json:"marketIds"`
+	OrderIds  []string `json:"orderIds"`
+}
+
+// Filter to apply to the trade subscription request
+type TradesSubscriptionFilter struct {
+	PartyIds  []string `json:"partyIds"`
+	MarketIds []string `json:"marketIds"`
 }
 
 type TransactionSubmitted struct {

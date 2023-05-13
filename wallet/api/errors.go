@@ -120,7 +120,6 @@ var (
 	ErrIsolatedWalletPassphraseIsRequired                 = errors.New("the isolated wallet passphrase is required")
 	ErrLastBlockDataOrNetworkIsRequired                   = errors.New("a network or the last block data is required")
 	ErrMessageIsRequired                                  = errors.New("the message is required")
-	ErrMultipleNetworkSources                             = errors.New("network sources are mutually exclusive")
 	ErrNetworkAlreadyExists                               = errors.New("a network with the same name already exists")
 	ErrNetworkConfigurationDoesNotHaveGRPCNodes           = errors.New("the network does not have gRPC hosts configured")
 	ErrNetworkDoesNotExist                                = errors.New("the network does not exist")
@@ -172,110 +171,110 @@ var (
 	ErrWrongPassphrase                                    = errors.New("wrong passphrase")
 )
 
-func applicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
+func ApplicationError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	if code <= -32000 {
 		panic("application error code should be greater than -32000")
 	}
 	return jsonrpc.NewCustomError(code, "Application error", err)
 }
 
-func userError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
+func UserError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	if code <= -32000 {
 		panic("user error code should be greater than -32000")
 	}
 	return jsonrpc.NewCustomError(code, "User error", err)
 }
 
-func networkError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
+func NetworkError(code jsonrpc.ErrorCode, err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewCustomError(code, "Network error", err)
 }
 
-// networkErrorFromTransactionError returns an error with a generic message but
+// NetworkErrorFromTransactionError returns an error with a generic message but
 // a specialized code. This is intended to give a coarse-grained indication
 // to the third-party application without taking any risk of leaking information
 // from the error message.
-func networkErrorFromTransactionError(err error) *jsonrpc.ErrorDetails {
+func NetworkErrorFromTransactionError(err error) *jsonrpc.ErrorDetails {
 	txErr := types.TransactionError{}
 	isTxErr := errors.As(err, &txErr)
 	if !isTxErr {
-		return networkError(ErrorCodeNodeCommunicationFailed, fmt.Errorf("the transaction failed: %w", err))
+		return NetworkError(ErrorCodeNodeCommunicationFailed, fmt.Errorf("the transaction failed: %w", err))
 	}
 
 	switch txErr.ABCICode {
 	case 51:
-		return networkError(ErrorCodeNetworkRejectedInvalidTransaction, fmt.Errorf("the network rejected the transaction because it's invalid: %w", err))
+		return NetworkError(ErrorCodeNetworkRejectedInvalidTransaction, fmt.Errorf("the network rejected the transaction because it's invalid: %w", err))
 	case 60:
-		return networkError(ErrorCodeNetworkRejectedMalformedTransaction, fmt.Errorf("the network rejected the transaction because it's malformed: %w", err))
+		return NetworkError(ErrorCodeNetworkRejectedMalformedTransaction, fmt.Errorf("the network rejected the transaction because it's malformed: %w", err))
 	case 70:
-		return networkError(ErrorCodeNetworkCouldNotProcessTransaction, fmt.Errorf("the network could not process the transaction: %w", err))
+		return NetworkError(ErrorCodeNetworkCouldNotProcessTransaction, fmt.Errorf("the network could not process the transaction: %w", err))
 	case 80:
-		return networkError(ErrorCodeNetworkRejectedUnsupportedTransaction, fmt.Errorf("the network does not support this transaction: %w", err))
+		return NetworkError(ErrorCodeNetworkRejectedUnsupportedTransaction, fmt.Errorf("the network does not support this transaction: %w", err))
 	case 89:
-		return networkError(ErrorCodeNetworkSpamProtectionActivated, fmt.Errorf("the network blocked the transaction through the spam protection: %w", err))
+		return NetworkError(ErrorCodeNetworkSpamProtectionActivated, fmt.Errorf("the network blocked the transaction through the spam protection: %w", err))
 	default:
-		return networkError(ErrorCodeNetworkRejectedTransaction, fmt.Errorf("the transaction failed: %w", err))
+		return NetworkError(ErrorCodeNetworkRejectedTransaction, fmt.Errorf("the transaction failed: %w", err))
 	}
 }
 
-func nodeCommunicationError(err error) *jsonrpc.ErrorDetails {
-	return networkError(ErrorCodeNodeCommunicationFailed, err)
+func NodeCommunicationError(err error) *jsonrpc.ErrorDetails {
+	return NetworkError(ErrorCodeNodeCommunicationFailed, err)
 }
 
-func invalidParams(err error) *jsonrpc.ErrorDetails {
+func InvalidParams(err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewInvalidParams(err)
 }
 
-func requestInterruptedError(err error) *jsonrpc.ErrorDetails {
+func RequestInterruptedError(err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewServerError(ErrorCodeRequestHasBeenInterrupted, err)
 }
 
-func connectionClosedError(err error) *jsonrpc.ErrorDetails {
-	return userError(ErrorCodeConnectionHasBeenClosed, err)
+func ConnectionClosedError(err error) *jsonrpc.ErrorDetails {
+	return UserError(ErrorCodeConnectionHasBeenClosed, err)
 }
 
-func userCancellationError(err error) *jsonrpc.ErrorDetails {
-	return userError(ErrorCodeRequestHasBeenCancelledByUser, err)
+func UserCancellationError(err error) *jsonrpc.ErrorDetails {
+	return UserError(ErrorCodeRequestHasBeenCancelledByUser, err)
 }
 
-func userRejectionError(err error) *jsonrpc.ErrorDetails {
-	return userError(ErrorCodeRequestHasBeenRejected, err)
+func UserRejectionError(err error) *jsonrpc.ErrorDetails {
+	return UserError(ErrorCodeRequestHasBeenRejected, err)
 }
 
-func requestNotPermittedError(err error) *jsonrpc.ErrorDetails {
-	return applicationError(ErrorCodeRequestNotPermitted, err)
+func RequestNotPermittedError(err error) *jsonrpc.ErrorDetails {
+	return ApplicationError(ErrorCodeRequestNotPermitted, err)
 }
 
-func applicationCancellationError(err error) *jsonrpc.ErrorDetails {
-	return applicationError(ErrorCodeRequestHasBeenCancelledByApplication, err)
+func ApplicationCancellationError(err error) *jsonrpc.ErrorDetails {
+	return ApplicationError(ErrorCodeRequestHasBeenCancelledByApplication, err)
 }
 
-func internalError(err error) *jsonrpc.ErrorDetails {
+func InternalError(err error) *jsonrpc.ErrorDetails {
 	return jsonrpc.NewInternalError(err)
 }
 
-// handleRequestFlowError is a generic function that build the appropriate
+// HandleRequestFlowError is a generic function that build the appropriate
 // API error response based on the underlying error.
 // If none of them matches, the error handling is delegating to the caller.
-func handleRequestFlowError(ctx context.Context, traceID string, interactor Interactor, err error) *jsonrpc.ErrorDetails {
+func HandleRequestFlowError(ctx context.Context, traceID string, interactor Interactor, err error) *jsonrpc.ErrorDetails {
 	if errors.Is(err, ErrUserCancelledTheRequest) {
 		// 1. Using a different error message to better fit the front-end needs.
 		// 2. Contrary to the response returned to the third-party application,
-		//    we notify an ApplicationError to the wallet front-end, so it knows
+		//    we notify an ApplicationErrorType to the wallet front-end, so it knows
 		//    it has to consider this error as a terminal one.
-		interactor.NotifyError(ctx, traceID, ApplicationError, ErrRequestCancelled)
-		return userCancellationError(err)
+		interactor.NotifyError(ctx, traceID, ApplicationErrorType, ErrRequestCancelled)
+		return UserCancellationError(err)
 	}
 	if errors.Is(err, ErrUserCloseTheConnection) {
 		// 1. Using a different error message to better fit the front-end needs.
 		// 2. Contrary to the response returned to the third-party application,
-		//    we notify an ApplicationError to the wallet front-end, so it knows
+		//    we notify an ApplicationErrorType to the wallet front-end, so it knows
 		//    it has to consider this error as a terminal one.
-		interactor.NotifyError(ctx, traceID, ApplicationError, ErrConnectionClosed)
-		return connectionClosedError(err)
+		interactor.NotifyError(ctx, traceID, ApplicationErrorType, ErrConnectionClosed)
+		return ConnectionClosedError(err)
 	}
 	if errors.Is(err, ErrRequestInterrupted) {
-		interactor.NotifyError(ctx, traceID, ServerError, err)
-		return requestInterruptedError(err)
+		interactor.NotifyError(ctx, traceID, ServerErrorType, err)
+		return RequestInterruptedError(err)
 	}
 	return nil
 }

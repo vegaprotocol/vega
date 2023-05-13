@@ -15,7 +15,9 @@ def commitHash = 'UNKNOWN'
 
 
 pipeline {
-    agent any
+    agent {
+        label params.NODE_LABEL
+    }
     options {
         skipDefaultCheckout true
         timestamps()
@@ -36,6 +38,8 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/vega-market-sim repository')
         string( name: 'JENKINS_SHARED_LIB_BRANCH', defaultValue: 'main',
                 description: 'Git branch, tag or hash of the vegaprotocol/jenkins-shared-library repository')
+        string( name: 'NODE_LABEL', defaultValue: 's-4vcpu-8gb',
+                description: 'Label on which vega build should be run, if empty any any node is used')
     }
     environment {
         CGO_ENABLED = 0
@@ -57,6 +61,7 @@ pipeline {
                     script {
                         publicIP = agent.getPublicIP()
                         print("Jenkins Agent public IP is: " + publicIP)
+                        vegautils.dockerCleanup()
                     }
                 }
             }
@@ -265,6 +270,25 @@ pipeline {
                                 }
                             }
                         }
+                        stage('proto format check') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_format_check
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
                         stage('proto check') {
                             options { retry(3) }
                             steps {
@@ -324,7 +348,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh 'go test  -timeout 30m -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                            sh 'go test -short -timeout 30m -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
                             junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                         }
                     }
@@ -336,7 +360,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            sh 'go test -timeout 30m  -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                            sh 'go test -short -timeout 30m  -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
                             junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                         }
                     }
@@ -354,7 +378,7 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega/datanode/integration') {
-                            sh 'go test -integration -v ./... 2>&1 | tee integration-test-results.txt && cat integration-test-results.txt | go-junit-report > datanode-integration-test-report.xml'
+                            sh 'go test -v ./... 2>&1 | tee integration-test-results.txt && cat integration-test-results.txt | go-junit-report > datanode-integration-test-report.xml'
                             junit checksName: 'Datanode Integration Tests', testResults: 'datanode-integration-test-report.xml'
                         }
                     }
@@ -558,6 +582,9 @@ pipeline {
                 script: """#!/bin/bash -e
                     docker buildx rm --force ${DOCKER_VEGAWALLET_BUILDER_NAME}
                 """
+                script {
+                    vegautils.dockerCleanup()
+                }
                 sh label: 'docker logout ghcr.io',
                 returnStatus: true,  // ignore exit code
                 script: '''#!/bin/bash -e

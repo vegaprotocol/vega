@@ -7,8 +7,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/wallet/api/mocks"
+	apimocks "code.vegaprotocol.io/vega/wallet/api/mocks"
 	"code.vegaprotocol.io/vega/wallet/network"
 	"code.vegaprotocol.io/vega/wallet/service"
 	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
@@ -33,10 +35,12 @@ type testService struct {
 
 	clientAPI *v2mocks.MockClientAPI
 
-	spam        *mocks.MockSpamHandler
-	timeService *v2connectionsmocks.MockTimeService
-	walletStore *v2connectionsmocks.MockWalletStore
-	tokenStore  *v2connectionsmocks.MockTokenStore
+	spam         *mocks.MockSpamHandler
+	timeService  *v2connectionsmocks.MockTimeService
+	walletStore  *v2connectionsmocks.MockWalletStore
+	tokenStore   *v2connectionsmocks.MockTokenStore
+	sessionStore *v2connectionsmocks.MockSessionStore
+	interactor   *apimocks.MockInteractor
 }
 
 func (s *testService) serveHTTP(t *testing.T, req *http.Request) (int, http.Header, []byte) {
@@ -131,6 +135,8 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 	timeService := v2connectionsmocks.NewMockTimeService(ctrl)
 	walletStore := v2connectionsmocks.NewMockWalletStore(ctrl)
 	tokenStore := v2connectionsmocks.NewMockTokenStore(ctrl)
+	sessionStore := v2connectionsmocks.NewMockSessionStore(ctrl)
+	interactor := apimocks.NewMockInteractor(ctrl)
 
 	if len(tokenSetups) > 0 {
 		tokenSummaries := make([]connections.TokenSummary, 0, len(tokenSetups))
@@ -150,10 +156,12 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 		tokenStore.EXPECT().ListTokens().Times(1).Return(nil, nil)
 	}
 
+	sessionStore.EXPECT().ListSessions(gomock.Any()).Times(1).Return(nil, nil)
+	timeService.EXPECT().Now().AnyTimes().Return(time.Now())
 	walletStore.EXPECT().OnUpdate(gomock.Any()).Times(1)
 	tokenStore.EXPECT().OnUpdate(gomock.Any()).Times(1)
 
-	connectionsManager, err := connections.NewManager(timeService, walletStore, tokenStore)
+	connectionsManager, err := connections.NewManager(timeService, walletStore, tokenStore, sessionStore, interactor)
 	if err != nil {
 		t.Fatalf("could not instantiate the connection manager for tests: %v", err)
 	}
@@ -173,12 +181,13 @@ func getTestServiceV2(t *testing.T, tokenSetups ...longLivingTokenSetupForTest) 
 		Service: s,
 		ctrl:    ctrl,
 
-		clientAPI:   clientAPI,
-		timeService: timeService,
-		walletStore: walletStore,
-		tokenStore:  tokenStore,
-
-		spam: spam,
+		clientAPI:    clientAPI,
+		timeService:  timeService,
+		walletStore:  walletStore,
+		tokenStore:   tokenStore,
+		sessionStore: sessionStore,
+		interactor:   interactor,
+		spam:         spam,
 	}
 }
 

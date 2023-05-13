@@ -34,7 +34,6 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Upsert should update an OracleSpec when the id already exists in the current block", testUpdateExistingInBlock)
 	t.Run("GetSpecByID should retrieve the latest version of the specified OracleSpec", testGetSpecByID)
 	t.Run("GetByTxHash", testGetSpecByTxHash)
-	t.Run("ListOracleSpecs should retrieve the latest versions of all OracleSpecs", testGetSpecs)
 }
 
 func setupOracleSpecTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleSpec, sqlstore.Connection) {
@@ -161,43 +160,6 @@ func testGetSpecByTxHash(t *testing.T) {
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
 	s := got.ExternalDataSourceSpec.Spec
 	assert.Equal(t, want, s)
-}
-
-func testGetSpecs(t *testing.T) {
-	ctx, rollback := tempTransaction(t)
-	defer rollback()
-	bs, os, conn := setupOracleSpecTest(t)
-
-	var rowCount int
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 0, rowCount)
-
-	block := addTestBlock(t, ctx, bs)
-	specProtos := getTestSpecs()
-
-	want := make([]entities.OracleSpec, 0)
-
-	for _, proto := range specProtos {
-		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
-		require.NoError(t, err)
-		assert.NoError(t, os.Upsert(ctx, data))
-
-		// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
-		data.ExternalDataSourceSpec.Spec.CreatedAt = data.ExternalDataSourceSpec.Spec.CreatedAt.Truncate(time.Microsecond)
-		data.ExternalDataSourceSpec.Spec.UpdatedAt = data.ExternalDataSourceSpec.Spec.UpdatedAt.Truncate(time.Microsecond)
-		want = append(want, *data)
-	}
-
-	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
-	assert.Equal(t, 3, rowCount)
-
-	got, err := os.GetSpecs(ctx, entities.OffsetPagination{})
-	wantSpec := []entities.DataSourceSpec{}
-	for _, spec := range want {
-		wantSpec = append(wantSpec, *spec.ExternalDataSourceSpec.Spec)
-	}
-	require.NoError(t, err)
-	assert.ElementsMatch(t, wantSpec, got)
 }
 
 func getTestSpecs() []*vegapb.OracleSpec {

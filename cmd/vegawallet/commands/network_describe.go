@@ -27,23 +27,23 @@ var (
 	`)
 )
 
-type DescribeNetworkHandler func(api.AdminDescribeNetworkParams) (api.AdminDescribeNetworkResult, error)
+type DescribeNetworkHandler func(api.AdminDescribeNetworkParams) (api.AdminNetwork, error)
 
 func NewCmdDescribeNetwork(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminDescribeNetworkParams) (api.AdminDescribeNetworkResult, error) {
+	h := func(params api.AdminDescribeNetworkParams) (api.AdminNetwork, error) {
 		vegaPaths := paths.New(rf.Home)
 
 		networkStore, err := networkStoreV1.InitialiseStore(vegaPaths)
 		if err != nil {
-			return api.AdminDescribeNetworkResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
+			return api.AdminNetwork{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
 		describeNetwork := api.NewAdminDescribeNetwork(networkStore)
 		rawResult, errorDetails := describeNetwork.Handle(context.Background(), params)
 		if errorDetails != nil {
-			return api.AdminDescribeNetworkResult{}, errors.New(errorDetails.Data)
+			return api.AdminNetwork{}, errors.New(errorDetails.Data)
 		}
-		return rawResult.(api.AdminDescribeNetworkResult), nil
+		return rawResult.(api.AdminNetwork), nil
 	}
 
 	return BuildCmdDescribeNetwork(w, h, rf)
@@ -103,7 +103,7 @@ func BuildCmdDescribeNetwork(w io.Writer, handler DescribeNetworkHandler, rf *Ro
 	return cmd
 }
 
-func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminDescribeNetworkResult) {
+func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminNetwork) {
 	p := printer.NewInteractivePrinter(w)
 
 	str := p.String()
@@ -140,19 +140,18 @@ func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminDescribeNetworkResu
 	str.NextSection()
 
 	str.Text("API.GRPC").NextLine()
-	str.Text("  Retries: ").WarningText(fmt.Sprint(resp.API.GRPCConfig.Retries)).NextLine()
 	str.Text("  Hosts:")
-	PrintDescribeNetworkWithValuesNotSet(str, resp.API.GRPCConfig.Hosts)
+	PrintDescribeNetworkWithValuesNotSet(str, resp.API.GRPC.Hosts)
 	str.NextLine()
 
 	str.Text("API.REST").NextLine()
 	str.Text("  Hosts:")
-	PrintDescribeNetworkWithValuesNotSet(str, resp.API.RESTConfig.Hosts)
+	PrintDescribeNetworkWithValuesNotSet(str, resp.API.REST.Hosts)
 	str.NextLine()
 
 	str.Text("API.GraphQL").NextLine()
 	str.Text("  Hosts:")
-	PrintDescribeNetworkWithValuesNotSet(str, resp.API.GraphQLConfig.Hosts)
+	PrintDescribeNetworkWithValuesNotSet(str, resp.API.GraphQL.Hosts)
 	str.NextLine()
 }
 

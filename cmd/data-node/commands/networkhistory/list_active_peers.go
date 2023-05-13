@@ -26,16 +26,18 @@ type listActivePeersOutput struct {
 func (o *listActivePeersOutput) printHuman() {
 	if len(o.ActivePeers) == 0 {
 		fmt.Printf("No active peers found\n")
-	} else {
-		fmt.Printf("Active Peers:\n\n")
+		return
+	}
+	fmt.Printf("Active Peers:\n\n")
 
-		for _, peer := range o.ActivePeers {
-			fmt.Printf("Active Peer:  %s\n", peer)
-		}
+	for _, peer := range o.ActivePeers {
+		fmt.Printf("Active Peer:  %s\n", peer)
 	}
 }
 
 func (cmd *listActivePeers) Execute(_ []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.InfoLevel
 	cfg.Environment = "custom"
@@ -71,7 +73,7 @@ func (cmd *listActivePeers) Execute(_ []string) error {
 	}
 	defer func() { _ = conn.Close() }()
 
-	resp, err := client.GetActiveNetworkHistoryPeerAddresses(context.Background(), &v2.GetActiveNetworkHistoryPeerAddressesRequest{})
+	resp, err := client.GetActiveNetworkHistoryPeerAddresses(ctx, &v2.GetActiveNetworkHistoryPeerAddressesRequest{})
 	if err != nil {
 		handleErr(log, cmd.Output.IsJSON(), "failed to get active peer addresses", errorFromGrpcError("", err))
 		os.Exit(1)

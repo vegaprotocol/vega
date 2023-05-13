@@ -152,7 +152,8 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, ctx, bs)
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
@@ -164,9 +165,7 @@ func testInsertDepositUpdatesIfNewBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
-	time.Sleep(time.Second)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	depositProto.Status = vega.Deposit_STATUS_FINALIZED
 	deposit, err = entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -187,14 +186,14 @@ func testDepositsGetByID(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
 	bs, ds, conn := setupDepositStoreTests(t)
-
 	var rowCount int
 
 	err := conn.QueryRow(ctx, `select count(*) from deposits`).Scan(&rowCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, ctx, bs)
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	depositProto := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 
 	deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
@@ -206,9 +205,7 @@ func testDepositsGetByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
-	time.Sleep(time.Second)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	depositProto.Status = vega.Deposit_STATUS_FINALIZED
 	deposit, err = entities.DepositFromProto(depositProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -237,7 +234,8 @@ func testDepositsGetByParty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, ctx, bs)
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	depositProto1 := getTestDeposit(testID, testID, testID, testAmount, testID, time.Now().UnixNano())
 	depositProto1.Id = "deadbeef01"
 
@@ -252,9 +250,7 @@ func testDepositsGetByParty(t *testing.T) {
 	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 500)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	depositProto1.Status = vega.Deposit_STATUS_FINALIZED
 	deposit, err = entities.DepositFromProto(depositProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -267,18 +263,14 @@ func testDepositsGetByParty(t *testing.T) {
 
 	want = append(want, *deposit)
 
-	time.Sleep(time.Millisecond * 500)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	deposit, err = entities.DepositFromProto(depositProto2, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting market proto to database entity")
 
 	err = ds.Upsert(ctx, deposit)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 500)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	deposit, err = entities.DepositFromProto(depositProto2, generateTxHash(), block.VegaTime)
 	depositProto2.Status = vega.Deposit_STATUS_FINALIZED
 	require.NoError(t, err, "Converting market proto to database entity")
@@ -291,7 +283,7 @@ func testDepositsGetByParty(t *testing.T) {
 
 	want = append(want, *deposit)
 
-	got, _, err := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.OffsetPagination{}, entities.DateRange{})
+	got, _, err := ds.GetByParty(ctx, depositProto1.PartyId, false, entities.CursorPagination{}, entities.DateRange{})
 	assert.NoError(t, err)
 	assert.Equal(t, want, got)
 }
@@ -340,9 +332,9 @@ func addDeposits(ctx context.Context, t *testing.T, bs *sqlstore.Blocks, ds *sql
 	vegaTime := time.Now().Truncate(time.Microsecond)
 	amount := int64(1000)
 	deposits := make([]entities.Deposit, 0, 10)
+	source := &testBlockSource{bs, time.Now()}
 	for i := 0; i < 10; i++ {
-		addTestBlockForTime(t, ctx, bs, vegaTime)
-
+		source.getNextBlock(t, ctx)
 		depositProto := getTestDeposit(fmt.Sprintf("deadbeef%02d", i+1), testID, testID,
 			strconv.FormatInt(amount, 10), helpers.GenerateID(), vegaTime.UnixNano())
 		deposit, err := entities.DepositFromProto(depositProto, generateTxHash(), vegaTime)

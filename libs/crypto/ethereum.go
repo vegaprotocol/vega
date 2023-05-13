@@ -11,3 +11,8 @@ func EthereumChecksumAddress(s string) string {
 	// as per docs the Hex method return EIP-55 compliant hex strings
 	return common.HexToAddress(s).Hex()
 }
+
+// EthereumIsValidAddress returns whether the given string is a valid ethereum address.
+func EthereumIsValidAddress(s string) bool {
+	return common.IsHexAddress(s)
+}

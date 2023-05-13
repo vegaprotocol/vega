@@ -743,7 +743,8 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	return m.closed
 }
 
-func (m *Market) blockEnd(ctx context.Context) {
+// BlockEnd notifies the market of the end of the block.
+func (m *Market) BlockEnd(ctx context.Context) {
 	defer m.onTxProcessed()
 
 	// MTM if enough time has elapsed, we are not in auction, and we have a non-zero mark price.
@@ -845,6 +846,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
+	m.mkt.MarketTimestamps.Close = m.timeService.GetTimeNow().UnixNano()
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
@@ -1123,7 +1125,10 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
 	}
 
-	// Send an event bus update
+	previousMarkPrice := m.getCurrentMarkPrice()
+	// set the mark price here so that margins checks for special orders use the correct value
+	m.markPrice = m.getLastTradedPrice()
+
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
@@ -1134,10 +1139,12 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		// now that we've left the auction and all the orders have been unparked,
 		// we can mark all positions using the margin calculation method appropriate
 		// for non-auction mode and carry out any closeouts if need be
-		m.markPrice = m.getLastTradedPrice()
 		m.confirmMTM(ctx, false)
 		// set next MTM
 		m.nextMTM = m.timeService.GetTimeNow().Add(m.mtmDelta)
+	} else {
+		// revert to old mark price if we're not leaving the auction after all
+		m.markPrice = previousMarkPrice
 	}
 }
 
@@ -1966,11 +1973,13 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// we only need the MarketPosition events here, and rather than changing all the calls
 	// we can just keep the MarketPosition bit
 	closedMPs := make([]events.MarketPosition, 0, len(closed))
+	closedParties := make([]string, 0, len(closed))
 	// get the actual position, so we can work out what the total position of the market is going to be
 	var networkPos int64
 	for _, pos := range closed {
 		networkPos += pos.Size()
 		closedMPs = append(closedMPs, pos)
+		closedParties = append(closedParties, pos.Party())
 	}
 	if networkPos == 0 {
 		m.log.Warn("Network positions is 0 after closing out parties, nothing more to do",
@@ -2016,7 +2025,13 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 			logging.Order(no),
 			logging.Error(err))
 	}
-
+	// Whether we were able to uncross the network order or not, we have to update the positions
+	// any closedParties element that wasn't previously marked as distressed should be marked as now
+	// being distressed. Any previously distressed positions that are no longer distressed
+	// should also be updated.
+	// If the network order uncrosses, we can ignore the distressed parties (they are closed out)
+	// but the safe parties should still be sent out.
+	dp, sp := m.position.MarkDistressed(closedParties)
 	// FIXME(j): this is a temporary measure for the case where we do not have enough orders
 	// in the book to 0 out the positions.
 	// in this case we will just return now, cutting off the position resolution
@@ -2024,7 +2039,19 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// then when a new order is placed, the distressed parties will go again through positions resolution
 	// and if the volume of the book is acceptable, we will then process positions resolutions
 	if no.Remaining == no.Size {
+		// it is possible that we pass through here with the same distressed parties as before, no need
+		// to send the event if both distressed and safe parties slices are nil
+		if len(dp) != 0 || len(sp) != 0 {
+			devt := events.NewDistressedPositionsEvent(ctx, m.GetID(), dp, sp)
+			m.broker.Send(devt)
+		}
 		return orderUpdates, ErrNotEnoughVolumeToZeroOutNetworkOrder
+	}
+	// if we have any distressed positions that now no longer are distressed, emit the event
+	// no point in sending an event unless there's data
+	if len(sp) > 0 {
+		devt := events.NewDistressedPositionsEvent(ctx, m.GetID(), nil, sp)
+		m.broker.Send(devt)
 	}
 
 	// @NOTE: At this point, the network order was updated by the orderbook

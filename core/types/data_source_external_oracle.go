@@ -13,15 +13,15 @@ type DataSourceSpecConfiguration struct {
 	Filters []*DataSourceSpecFilter
 }
 
-func (s DataSourceSpecConfiguration) isDataSourceType() {}
+func (s *DataSourceSpecConfiguration) isDataSourceType() {}
 
-func (s DataSourceSpecConfiguration) oneOfProto() interface{} {
+func (s *DataSourceSpecConfiguration) oneOfProto() interface{} {
 	return s
 }
 
 // /
 // String returns the content of DataSourceSpecConfiguration as a string.
-func (s DataSourceSpecConfiguration) String() string {
+func (s *DataSourceSpecConfiguration) String() string {
 	return fmt.Sprintf(
 		"signers(%v) filters(%v)",
 		s.Signers,
@@ -35,19 +35,24 @@ func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigur
 	signers := []*datapb.Signer{}
 	filters := []*datapb.Filter{}
 
-	if s.Signers != nil {
-		signers = SignersIntoProto(s.Signers)
+	dsc := &vegapb.DataSourceSpecConfiguration{}
+	if s != nil {
+		if s.Signers != nil {
+			signers = SignersIntoProto(s.Signers)
+		}
+
+		if s.Filters != nil {
+			filters = DataSourceSpecFilters(s.Filters).IntoProto()
+		}
+
+		dsc = &vegapb.DataSourceSpecConfiguration{
+			// SignersIntoProto returns a list of signers after checking the list length.
+			Signers: signers,
+			Filters: filters,
+		}
 	}
 
-	if s.Filters != nil {
-		filters = DataSourceSpecFilters(s.Filters).IntoProto()
-	}
-
-	return &vegapb.DataSourceSpecConfiguration{
-		// SignersIntoProto returns a list of signers after checking the list length.
-		Signers: signers,
-		Filters: filters,
-	}
+	return dsc
 }
 
 func (s *DataSourceSpecConfiguration) DeepClone() dataSourceType {

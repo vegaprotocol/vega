@@ -12,13 +12,13 @@ import (
 )
 
 type AdminVerifyMessageParams struct {
-	PubKey           string `json:"pubKey"`
+	PublicKey        string `json:"publicKey"`
 	EncodedMessage   string `json:"encodedMessage"`
 	EncodedSignature string `json:"encodedSignature"`
 }
 
 type AdminVerifyMessageResult struct {
-	IsValid bool `json:"valid"`
+	IsValid bool `json:"isValid"`
 }
 
 type AdminVerifyMessage struct{}
@@ -26,28 +26,28 @@ type AdminVerifyMessage struct{}
 func (h *AdminVerifyMessage) Handle(_ context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminVerifyMessageParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	m, err := base64.StdEncoding.DecodeString(params.EncodedMessage)
 	if err != nil {
-		return nil, invalidParams(ErrEncodedMessageIsNotValidBase64String)
+		return nil, InvalidParams(ErrEncodedMessageIsNotValidBase64String)
 	}
 
 	s, err := base64.StdEncoding.DecodeString(params.EncodedSignature)
 	if err != nil {
-		return nil, invalidParams(ErrEncodedSignatureIsNotValidBase64String)
+		return nil, InvalidParams(ErrEncodedSignatureIsNotValidBase64String)
 	}
 
-	decodedPubKey, err := hex.DecodeString(params.PubKey)
+	decodedPubKey, err := hex.DecodeString(params.PublicKey)
 	if err != nil {
-		return nil, invalidParams(fmt.Errorf("could not decode the public key: %w", err))
+		return nil, InvalidParams(fmt.Errorf("could not decode the public key: %w", err))
 	}
 
 	signatureAlgorithm := crypto.NewEd25519()
 	valid, err := signatureAlgorithm.Verify(decodedPubKey, m, s)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the signature: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the signature: %w", err))
 	}
 
 	return AdminVerifyMessageResult{
@@ -69,7 +69,7 @@ func validateAdminVerifyMessageParams(rawParams jsonrpc.Params) (AdminVerifyMess
 		return AdminVerifyMessageParams{}, ErrParamsDoNotMatch
 	}
 
-	if params.PubKey == "" {
+	if params.PublicKey == "" {
 		return AdminVerifyMessageParams{}, ErrPublicKeyIsRequired
 	}
 
@@ -82,7 +82,7 @@ func validateAdminVerifyMessageParams(rawParams jsonrpc.Params) (AdminVerifyMess
 	}
 
 	return AdminVerifyMessageParams{
-		PubKey:           params.PubKey,
+		PublicKey:        params.PublicKey,
 		EncodedMessage:   params.EncodedMessage,
 		EncodedSignature: params.EncodedSignature,
 	}, nil

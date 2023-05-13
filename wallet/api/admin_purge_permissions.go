@@ -2,17 +2,14 @@ package api
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
-	"code.vegaprotocol.io/vega/wallet/wallet"
 	"github.com/mitchellh/mapstructure"
 )
 
 type AdminPurgePermissionsParams struct {
-	Wallet     string `json:"wallet"`
-	Passphrase string `json:"passphrase"`
+	Wallet string `json:"wallet"`
 }
 type AdminPurgePermissions struct {
 	walletStore WalletStore
@@ -22,31 +19,32 @@ type AdminPurgePermissions struct {
 func (h *AdminPurgePermissions) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validatePurgePermissionsParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if !exist {
-		return nil, invalidParams(ErrWalletDoesNotExist)
+		return nil, InvalidParams(ErrWalletDoesNotExist)
 	}
 
-	if err := h.walletStore.UnlockWallet(ctx, params.Wallet, params.Passphrase); err != nil {
-		if errors.Is(err, wallet.ErrWrongPassphrase) {
-			return nil, invalidParams(err)
-		}
-		return nil, internalError(fmt.Errorf("could not unlock the wallet: %w", err))
+	alreadyUnlocked, err := h.walletStore.IsWalletAlreadyUnlocked(ctx, params.Wallet)
+	if err != nil {
+		return nil, InternalError(fmt.Errorf("could not verify whether the wallet is already unlock or not: %w", err))
+	}
+	if !alreadyUnlocked {
+		return nil, RequestNotPermittedError(ErrWalletIsLocked)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, params.Wallet)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not retrieve the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
 	w.PurgePermissions()
 
 	if err := h.walletStore.UpdateWallet(ctx, w); err != nil {
-		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return nil, nil
@@ -64,10 +62,6 @@ func validatePurgePermissionsParams(rawParams jsonrpc.Params) (AdminPurgePermiss
 
 	if params.Wallet == "" {
 		return AdminPurgePermissionsParams{}, ErrWalletIsRequired
-	}
-
-	if params.Passphrase == "" {
-		return AdminPurgePermissionsParams{}, ErrPassphraseIsRequired
 	}
 
 	return params, nil

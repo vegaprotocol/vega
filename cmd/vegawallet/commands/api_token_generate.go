@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/wallet/api"
 	v2 "code.vegaprotocol.io/vega/wallet/service/v2"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"code.vegaprotocol.io/vega/wallet/wallets"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +58,7 @@ func NewCmdGenerateAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdGenerateAPIToken(w, ensureAPITokenStoreIsInit, h, rf)
 }
 
-func BuildCmdGenerateAPIToken(w io.Writer, preCheck APITokePreCheck, handler GenerateAPITokenHandler, rf *RootFlags) *cobra.Command {
+func BuildCmdGenerateAPIToken(w io.Writer, preCheck APITokenPreCheck, handler GenerateAPITokenHandler, rf *RootFlags) *cobra.Command {
 	f := &GenerateAPITokenFlags{}
 
 	cmd := &cobra.Command{

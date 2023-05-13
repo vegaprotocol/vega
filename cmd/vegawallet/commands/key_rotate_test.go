@@ -26,7 +26,7 @@ func testRotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	testDir := t.TempDir()
 
 	// given
-	passphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
+	expectedPassphrase, passphraseFilePath := NewPassphraseFile(t, testDir)
 	walletName := vgrand.RandomStr(10)
 	currentPubKey := vgrand.RandomStr(20)
 	pubKey := vgrand.RandomStr(20)
@@ -46,7 +46,6 @@ func testRotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 
 	expectedReq := api.AdminRotateKeyParams{
 		Wallet:                walletName,
-		Passphrase:            passphrase,
 		FromPublicKey:         currentPubKey,
 		ChainID:               chainID,
 		ToPublicKey:           pubKey,
@@ -55,11 +54,12 @@ func testRotateKeyFlagsValidFlagsSucceeds(t *testing.T) {
 	}
 
 	// when
-	req, err := f.Validate()
+	req, passphrase, err := f.Validate()
 
 	// then
 	require.NoError(t, err)
 	assert.Equal(t, expectedReq, req)
+	assert.Equal(t, expectedPassphrase, passphrase)
 }
 
 func testRotateKeyFlagsMissingWalletFails(t *testing.T) {
@@ -70,7 +70,7 @@ func testRotateKeyFlagsMissingWalletFails(t *testing.T) {
 	f.Wallet = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("wallet"))
@@ -85,7 +85,7 @@ func testRotateKeyFlagsMissingChainIDFails(t *testing.T) {
 	f.ChainID = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("chain-id"))
@@ -100,7 +100,7 @@ func testRotateKeyFlagsMissingTxBlockHeightFails(t *testing.T) {
 	f.SubmissionBlockHeight = 0
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("tx-height"))
@@ -115,7 +115,7 @@ func testRotateKeyFlagsMissingTargetBlockHeightFails(t *testing.T) {
 	f.EnactmentBlockHeight = 0
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("target-height"))
@@ -130,7 +130,7 @@ func testRotateKeyFlagsMissingNewPublicKeyFails(t *testing.T) {
 	f.ToPublicKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("new-pubkey"))
@@ -145,7 +145,7 @@ func testRotateKeyFlagsMissingCurrentPublicKeyFails(t *testing.T) {
 	f.FromPublicKey = ""
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.ErrorIs(t, err, flags.MustBeSpecifiedError("current-pubkey"))
@@ -161,7 +161,7 @@ func testRotateKeyFlagsTargetFailsWhenBlockHeightIsLessThanTXHeight(t *testing.T
 	f.EnactmentBlockHeight = 20
 
 	// when
-	req, err := f.Validate()
+	req, _, err := f.Validate()
 
 	// then
 	assert.EqualError(t, err, "--target-height flag must be greater than --tx-height")

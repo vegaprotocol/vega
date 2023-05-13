@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	apipb "code.vegaprotocol.io/vega/protos/vega/api/v1"
@@ -25,14 +26,15 @@ func testRetryingNodeStatisticsNotRetried(t *testing.T) {
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	adapter.EXPECT().Statistics(ctx).Times(1).Return(types.Statistics{}, assert.AnError)
+	adapter.EXPECT().Statistics(gomock.Any()).Times(1).Return(types.Statistics{}, assert.AnError)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	response, err := retryingNode.Statistics(ctx)
 
 	// then
@@ -44,6 +46,7 @@ func testRetryingNodeStatisticsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
@@ -54,10 +57,10 @@ func testRetryingNodeStatisticsSucceeds(t *testing.T) {
 		ChainID:     vgrand.RandomStr(5),
 		VegaTime:    vgrand.RandomStr(5),
 	}
-	adapter.EXPECT().Statistics(ctx).Times(1).Return(statistics, nil)
+	adapter.EXPECT().Statistics(gomock.Any()).Times(1).Return(statistics, nil)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	response, err := retryingNode.Statistics(ctx)
 
 	// then
@@ -74,6 +77,7 @@ func testRetryingNodeLastBlockRetryingWithOneSuccessfulCallSucceeds(t *testing.T
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
+	ttl := 5 * time.Second
 
 	// setup
 	expectedResponse := types.LastBlock{
@@ -84,12 +88,12 @@ func testRetryingNodeLastBlockRetryingWithOneSuccessfulCallSucceeds(t *testing.T
 	}
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	unsuccessfulCalls := adapter.EXPECT().LastBlock(ctx).Times(2).Return(types.LastBlock{}, assert.AnError)
-	successfulCall := adapter.EXPECT().LastBlock(ctx).Times(1).Return(expectedResponse, nil)
+	unsuccessfulCalls := adapter.EXPECT().LastBlock(gomock.Any()).Times(2).Return(types.LastBlock{}, assert.AnError)
+	successfulCall := adapter.EXPECT().LastBlock(gomock.Any()).Times(1).Return(expectedResponse, nil)
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	response, err := retryingNode.LastBlock(ctx)
 
 	// then
@@ -101,14 +105,15 @@ func testRetryingNodeLastBlockRetryingWithoutSuccessfulCallsFails(t *testing.T) 
 	// given
 	ctx := context.Background()
 	log := newTestLogger(t)
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	adapter.EXPECT().LastBlock(ctx).Times(4).Return(types.LastBlock{}, assert.AnError)
+	adapter.EXPECT().LastBlock(gomock.Any()).Times(4).Return(types.LastBlock{}, assert.AnError)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	nodeID, err := retryingNode.LastBlock(ctx)
 
 	// then
@@ -145,6 +150,7 @@ func testRetryingNodeCheckTransactionRetryingWithOneSuccessfulCallSucceeds(t *te
 	expectedResponse := &apipb.CheckTransactionResponse{
 		Success: true,
 	}
+	ttl := 5 * time.Second
 
 	// setup
 	request := &apipb.CheckTransactionRequest{
@@ -153,12 +159,12 @@ func testRetryingNodeCheckTransactionRetryingWithOneSuccessfulCallSucceeds(t *te
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
 	gomock.InOrder(
-		adapter.EXPECT().CheckTransaction(ctx, request).Times(2).Return(nil, assert.AnError),
-		adapter.EXPECT().CheckTransaction(ctx, request).Times(1).Return(expectedResponse, nil),
+		adapter.EXPECT().CheckTransaction(gomock.Any(), request).Times(2).Return(nil, assert.AnError),
+		adapter.EXPECT().CheckTransaction(gomock.Any(), request).Times(1).Return(expectedResponse, nil),
 	)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	err := retryingNode.CheckTransaction(ctx, tx)
 
 	// then
@@ -185,6 +191,7 @@ func testRetryingNodeCheckTransactionWithSuccessfulCallBuUnsuccessfulTxFails(t *
 			Nonce: 23214,
 		},
 	}
+	ttl := 5 * time.Second
 
 	// setup
 	request := &apipb.CheckTransactionRequest{
@@ -197,12 +204,12 @@ func testRetryingNodeCheckTransactionWithSuccessfulCallBuUnsuccessfulTxFails(t *
 	}
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	unsuccessfulCalls := adapter.EXPECT().CheckTransaction(ctx, request).Times(2).Return(nil, assert.AnError)
-	successfulCall := adapter.EXPECT().CheckTransaction(ctx, request).Times(1).Return(expectedResponse, nil)
+	unsuccessfulCalls := adapter.EXPECT().CheckTransaction(gomock.Any(), request).Times(2).Return(nil, assert.AnError)
+	successfulCall := adapter.EXPECT().CheckTransaction(gomock.Any(), request).Times(1).Return(expectedResponse, nil)
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	err := retryingNode.CheckTransaction(ctx, tx)
 
 	// then
@@ -229,16 +236,17 @@ func testRetryingNodeCheckTransactionRetryingWithoutSuccessfulCallsFails(t *test
 			Nonce: 23214,
 		},
 	}
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	adapter.EXPECT().CheckTransaction(ctx, &apipb.CheckTransactionRequest{
+	adapter.EXPECT().CheckTransaction(gomock.Any(), &apipb.CheckTransactionRequest{
 		Tx: tx,
 	}).Times(4).Return(nil, assert.AnError)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	err := retryingNode.CheckTransaction(ctx, tx)
 
 	// then
@@ -272,6 +280,7 @@ func testRetryingNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds(t *tes
 			Nonce: 23214,
 		},
 	}
+	ttl := 5 * time.Second
 
 	// setup
 	request := &apipb.SubmitTransactionRequest{
@@ -284,12 +293,12 @@ func testRetryingNodeSendTransactionRetryingWithOneSuccessfulCallSucceeds(t *tes
 	}
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	unsuccessfulCalls := adapter.EXPECT().SubmitTransaction(ctx, request).Times(2).Return(nil, assert.AnError)
-	successfulCall := adapter.EXPECT().SubmitTransaction(ctx, request).Times(1).Return(expectedResponse, nil)
+	unsuccessfulCalls := adapter.EXPECT().SubmitTransaction(gomock.Any(), request).Times(2).Return(nil, assert.AnError)
+	successfulCall := adapter.EXPECT().SubmitTransaction(gomock.Any(), request).Times(1).Return(expectedResponse, nil)
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	response, err := retryingNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
 
 	// then
@@ -318,6 +327,7 @@ func testRetryingNodeSendTransactionWithSuccessfulCallBuUnsuccessfulTxFails(t *t
 			Nonce: 23214,
 		},
 	}
+	ttl := 5 * time.Second
 
 	// setup
 	request := &apipb.SubmitTransactionRequest{
@@ -332,12 +342,12 @@ func testRetryingNodeSendTransactionWithSuccessfulCallBuUnsuccessfulTxFails(t *t
 	}
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	unsuccessfulCalls := adapter.EXPECT().SubmitTransaction(ctx, request).Times(2).Return(nil, assert.AnError)
-	successfulCall := adapter.EXPECT().SubmitTransaction(ctx, request).Times(1).Return(expectedResponse, nil)
+	unsuccessfulCalls := adapter.EXPECT().SubmitTransaction(gomock.Any(), request).Times(2).Return(nil, assert.AnError)
+	successfulCall := adapter.EXPECT().SubmitTransaction(gomock.Any(), request).Times(1).Return(expectedResponse, nil)
 	gomock.InOrder(unsuccessfulCalls, successfulCall)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	response, err := retryingNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
 
 	// then
@@ -365,17 +375,18 @@ func testRetryingNodeSendTransactionRetryingWithoutSuccessfulCallsFails(t *testi
 			Nonce: 23214,
 		},
 	}
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
 	adapter.EXPECT().Host().AnyTimes().Return("test-client")
-	adapter.EXPECT().SubmitTransaction(ctx, &apipb.SubmitTransactionRequest{
+	adapter.EXPECT().SubmitTransaction(gomock.Any(), &apipb.SubmitTransactionRequest{
 		Tx:   tx,
 		Type: apipb.SubmitTransactionRequest_TYPE_SYNC,
 	}).Times(4).Return(nil, assert.AnError)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	resp, err := retryingNode.SendTransaction(ctx, tx, apipb.SubmitTransactionRequest_TYPE_SYNC)
 
 	// then
@@ -391,6 +402,7 @@ func TestRetryingNode_Stop(t *testing.T) {
 func testRetryingNodeStoppingNodeClosesUnderlyingAdapter(t *testing.T) {
 	// given
 	log := newTestLogger(t)
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
@@ -398,7 +410,7 @@ func testRetryingNodeStoppingNodeClosesUnderlyingAdapter(t *testing.T) {
 	adapter.EXPECT().Stop().Times(1).Return(nil)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	err := retryingNode.Stop()
 
 	// then
@@ -408,6 +420,7 @@ func testRetryingNodeStoppingNodeClosesUnderlyingAdapter(t *testing.T) {
 func testRetryingNodeStoppingNodeReturnUnderlyingErrorIfAny(t *testing.T) {
 	// given
 	log := newTestLogger(t)
+	ttl := 5 * time.Second
 
 	// setup
 	adapter := newGRPCAdapterMock(t)
@@ -415,7 +428,7 @@ func testRetryingNodeStoppingNodeReturnUnderlyingErrorIfAny(t *testing.T) {
 	adapter.EXPECT().Stop().Times(1).Return(assert.AnError)
 
 	// when
-	retryingNode := node.BuildRetryingNode(log, adapter, 3)
+	retryingNode := node.BuildRetryingNode(log, adapter, 3, ttl)
 	err := retryingNode.Stop()
 
 	// then

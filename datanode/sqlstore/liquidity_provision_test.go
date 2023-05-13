@@ -120,8 +120,9 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 	// Test with all LP orders
 	lpProto := getTestLiquidityProvision(false)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -131,8 +132,6 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -140,7 +139,7 @@ func testGetLPByReferenceAndParty(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, got[0].Reference, "TEST1")
@@ -159,8 +158,9 @@ func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
 	// Test with live LP orders
 	lpProto := getTestLiquidityProvision(true)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -170,8 +170,6 @@ func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from live_liquidity_provisions").Scan(&rowCount))
@@ -179,7 +177,7 @@ func testGetLPByReferenceAndPartyLiveOrders(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "TEST1", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(got))
 	assert.Equal(t, got[0].Reference, "TEST1")
@@ -196,8 +194,9 @@ func testLiquidityProvisionGetByTxHash(t *testing.T) {
 	assert.Equal(t, 0, rowCount)
 
 	lps := []entities.LiquidityProvision{}
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range getTestLiquidityProvision(true) {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -207,8 +206,6 @@ func testLiquidityProvisionGetByTxHash(t *testing.T) {
 
 		data.CreatedAt = data.CreatedAt.Truncate(time.Microsecond)
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
-
-		time.Sleep(100 * time.Millisecond)
 
 		lps = append(lps, data)
 	}
@@ -244,8 +241,9 @@ func testGetLPByPartyOnly(t *testing.T) {
 
 	want := make([]entities.LiquidityProvision, 0)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -257,8 +255,6 @@ func testGetLPByPartyOnly(t *testing.T) {
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		want = append(want, data)
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -266,7 +262,7 @@ func testGetLPByPartyOnly(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -287,8 +283,9 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 
 	want := make([]entities.LiquidityProvision, 0)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -300,8 +297,6 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 		data.UpdatedAt = data.UpdatedAt.Truncate(time.Microsecond)
 
 		want = append(want, data)
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from live_liquidity_provisions").Scan(&rowCount))
@@ -309,7 +304,7 @@ func testGetLPByPartyOnlyLiveOrders(t *testing.T) {
 
 	partyID := entities.PartyID("deadbaad")
 	marketID := entities.MarketID("")
-	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -332,8 +327,9 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 
 	want := make([]entities.LiquidityProvision, 0)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -347,8 +343,6 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 		if data.MarketID.String() == wantMarketID {
 			want = append(want, data)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
@@ -356,7 +350,7 @@ func testGetLPByPartyAndMarket(t *testing.T) {
 
 	partyID := entities.PartyID("DEADBAAD")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -379,8 +373,9 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 
 	want := make([]entities.LiquidityProvision, 0)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -394,8 +389,6 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 		if data.MarketID.String() == wantMarketID {
 			want = append(want, data)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from live_liquidity_provisions").Scan(&rowCount))
@@ -403,7 +396,7 @@ func testGetLPByPartyAndMarketLiveOrders(t *testing.T) {
 
 	partyID := entities.PartyID("DEADBAAD")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -416,10 +409,10 @@ func testGetLPNoPartyAndMarketErrors(t *testing.T) {
 	_, lp, _ := setupLPTests(t)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID("")
-	_, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	_, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	assert.Error(t, err)
 
-	_, _, err = lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	_, _, err = lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	assert.Error(t, err)
 }
 
@@ -438,8 +431,9 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 	wantMarketID := "dabbad00"
 	want := make([]entities.LiquidityProvision, 0)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -453,15 +447,13 @@ func testGetLPNoPartyWithMarket(t *testing.T) {
 		if data.MarketID.String() == wantMarketID {
 			want = append(want, data)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 6, rowCount)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", false, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)
@@ -482,8 +474,9 @@ func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
 	wantMarketID := "dabbad00"
 	want := make([]entities.LiquidityProvision, 0)
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, lpp := range lpProto {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 
 		data, err := entities.LiquidityProvisionFromProto(lpp, generateTxHash(), block.VegaTime)
 		require.NoError(t, err)
@@ -497,15 +490,13 @@ func testGetLPNoPartyWithMarketLiveOrders(t *testing.T) {
 		if data.MarketID.String() == wantMarketID {
 			want = append(want, data)
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from live_liquidity_provisions").Scan(&rowCount))
 	assert.Equal(t, 4, rowCount)
 	partyID := entities.PartyID("")
 	marketID := entities.MarketID(wantMarketID)
-	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.OffsetPagination{})
+	got, _, err := lp.Get(ctx, partyID, marketID, "", true, entities.CursorPagination{})
 	require.NoError(t, err)
 	assert.Equal(t, len(want), len(got))
 	assert.ElementsMatch(t, want, got)

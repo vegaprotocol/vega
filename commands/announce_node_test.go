@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"testing"
 
 	"code.vegaprotocol.io/vega/commands"
@@ -18,6 +19,8 @@ func TestCheckAnnounceNode(t *testing.T) {
 	t.Run("Submitting a node registration with ethereum address succeeds", testAnnounceNodeWithEthereumAddressSucceeds)
 	t.Run("Submitting a node registration without chain address fails", testAnnounceNodeWithoutChainPubKeyFails)
 	t.Run("Submitting a node registration with chain pub key succeeds", testAnnounceNodeWithChainPubKeySucceeds)
+	t.Run("Submitting a node registration with empty signatures fails", testAnnounceNodeWithEmptySignaturesFails)
+	t.Run("Submitting a node registration with nonhex signatures fails", testAnnounceNodeWithNonhexSignaturesFails)
 }
 
 func testNilAnnounceNodeFails(t *testing.T) {
@@ -68,6 +71,26 @@ func testAnnounceNodeWithChainPubKeySucceeds(t *testing.T) {
 		ChainPubKey: "0xDEADBEEF",
 	})
 	assert.NotContains(t, err.Get("announce_node.chain_pub_key"), commands.ErrIsRequired)
+}
+
+func testAnnounceNodeWithEmptySignaturesFails(t *testing.T) {
+	err := checkAnnounceNode(&commandspb.AnnounceNode{})
+	assert.Contains(t, err.Get("announce_node.ethereum_signature"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("announce_node.vega_signature"), commands.ErrIsRequired)
+}
+
+func testAnnounceNodeWithNonhexSignaturesFails(t *testing.T) {
+	err := checkAnnounceNode(&commandspb.AnnounceNode{
+		VegaSignature: &commandspb.Signature{
+			Value: "hello",
+		},
+		EthereumSignature: &commandspb.Signature{
+			Value: "helloagain",
+		},
+	})
+	fmt.Println(err)
+	assert.Contains(t, err.Get("announce_node.ethereum_signature.value"), commands.ErrShouldBeHexEncoded)
+	assert.Contains(t, err.Get("announce_node.vega_signature.value"), commands.ErrShouldBeHexEncoded)
 }
 
 func checkAnnounceNode(cmd *commandspb.AnnounceNode) commands.Errors {

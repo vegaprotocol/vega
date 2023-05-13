@@ -91,10 +91,11 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		connectedWallet, err := connectionsManager.ConnectedWallet(hostname, vwt.Token())
-		if err != nil {
-			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
+		connectedWallet, errDetails := connectionsManager.ConnectedWallet(ctx, hostname, vwt.Token())
+		if errDetails != nil {
+			return nil, errDetails
 		}
+
 		return clientAPI.ListKeys(ctx, connectedWallet)
 	}
 
@@ -109,9 +110,9 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		connectedWallet, err := connectionsManager.ConnectedWallet(hostname, vwt.Token())
-		if err != nil {
-			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
+		connectedWallet, errDetails := connectionsManager.ConnectedWallet(ctx, hostname, vwt.Token())
+		if errDetails != nil {
+			return nil, errDetails
 		}
 
 		return clientAPI.SignTransaction(ctx, rpcRequest.Params, connectedWallet)
@@ -128,9 +129,9 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		connectedWallet, err := connectionsManager.ConnectedWallet(hostname, vwt.Token())
-		if err != nil {
-			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
+		connectedWallet, errDetails := connectionsManager.ConnectedWallet(ctx, hostname, vwt.Token())
+		if errDetails != nil {
+			return nil, errDetails
 		}
 
 		return clientAPI.SendTransaction(ctx, rpcRequest.Params, connectedWallet)
@@ -147,9 +148,9 @@ func NewAPI(log *zap.Logger, clientAPI ClientAPI, connectionsManager *connection
 			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 		}
 
-		connectedWallet, err := connectionsManager.ConnectedWallet(hostname, vwt.Token())
-		if err != nil {
-			return nil, jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
+		connectedWallet, errDetails := connectionsManager.ConnectedWallet(ctx, hostname, vwt.Token())
+		if errDetails != nil {
+			return nil, errDetails
 		}
 
 		return clientAPI.CheckTransaction(ctx, rpcRequest.Params, connectedWallet)

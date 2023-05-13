@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
@@ -53,13 +54,18 @@ var (
 		# "base64"
 		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --network NETWORK TRANSACTION > result.txt
 		base64 --decode --input result.txt
+
+		# Sign a transaction online with a maximum request duration of 10 seconds
+		{{.Software}} transaction sign --wallet WALLET --pubkey PUBKEY --network NETWORK --max-request-duration "10s" TRANSACTION
 	`)
 )
 
-type SignTransactionHandler func(api.AdminSignTransactionParams, *zap.Logger) (api.AdminSignTransactionResult, error)
+type SignTransactionHandler func(api.AdminSignTransactionParams, string, *zap.Logger) (api.AdminSignTransactionResult, error)
 
 func NewCmdSignTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
-	handler := func(params api.AdminSignTransactionParams, log *zap.Logger) (api.AdminSignTransactionResult, error) {
+	handler := func(params api.AdminSignTransactionParams, passphrase string, log *zap.Logger) (api.AdminSignTransactionResult, error) {
+		ctx := context.Background()
+
 		vegaPaths := paths.New(rf.Home)
 
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
@@ -73,11 +79,18 @@ func NewCmdSignTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminSignTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		signTx := api.NewAdminSignTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminSignTransactionResult{}, errors.New(errDetails.Data)
+		}
+
+		signTx := api.NewAdminSignTransaction(walletStore, ns, func(hosts []string, retries uint64, requestTTL time.Duration) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries, requestTTL)
 		})
 
-		rawResult, errDetails := signTx.Handle(context.Background(), params)
+		rawResult, errDetails := signTx.Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminSignTransactionResult{}, errors.New(errDetails.Data)
 		}
@@ -103,7 +116,7 @@ func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *Ro
 			}
 			f.RawTransaction = args[0]
 
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
@@ -113,7 +126,7 @@ func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *Ro
 				return fmt.Errorf("failed to build a logger: %w", err)
 			}
 
-			resp, err := handler(req, log)
+			resp, err := handler(req, pass, log)
 			if err != nil {
 				return err
 			}
@@ -174,6 +187,16 @@ func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *Ro
 		"",
 		"The network the transaction will be sent to",
 	)
+	cmd.Flags().Uint64Var(&f.Retries,
+		"retries",
+		defaultRequestRetryCount,
+		"Number of retries when contacting the Vega node",
+	)
+	cmd.Flags().DurationVar(&f.MaximumRequestDuration,
+		"max-request-duration",
+		defaultMaxRequestDuration,
+		"Maximum duration the wallet will wait for a node to respond. Supported format: <number>+<time unit>. Valid time units are `s` and `m`.",
+	)
 
 	autoCompleteWallet(cmd, rf.Home, "wallet")
 
@@ -181,50 +204,55 @@ func BuildCmdSignTransaction(w io.Writer, handler SignTransactionHandler, rf *Ro
 }
 
 type SignTransactionFlags struct {
-	Wallet          string
-	PubKey          string
-	PassphraseFile  string
-	RawTransaction  string
-	TxBlockHeight   uint64
-	ChainID         string
-	TxBlockHash     string
-	PowDifficulty   uint32
-	PowHashFunction string
-	Network         string
+	Wallet                 string
+	PubKey                 string
+	PassphraseFile         string
+	RawTransaction         string
+	TxBlockHeight          uint64
+	ChainID                string
+	TxBlockHash            string
+	PowDifficulty          uint32
+	PowHashFunction        string
+	Network                string
+	Retries                uint64
+	MaximumRequestDuration time.Duration
 }
 
-func (f *SignTransactionFlags) Validate() (api.AdminSignTransactionParams, error) {
-	params := api.AdminSignTransactionParams{}
+func (f *SignTransactionFlags) Validate() (api.AdminSignTransactionParams, string, error) {
+	params := api.AdminSignTransactionParams{
+		MaximumRequestDuration: f.MaximumRequestDuration,
+		Retries:                f.Retries,
+	}
 
 	if len(f.Wallet) == 0 {
-		return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 	params.Wallet = f.Wallet
 
 	if len(f.PubKey) == 0 {
-		return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 	if len(f.RawTransaction) == 0 {
-		return api.AdminSignTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
+		return api.AdminSignTransactionParams{}, "", flags.ArgMustBeSpecifiedError("transaction")
 	}
 
 	if f.Network == "" {
 		if f.TxBlockHeight == 0 {
-			return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("tx-height")
+			return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("tx-height")
 		}
 
 		if f.TxBlockHash == "" {
-			return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("tx-block-hash")
+			return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("tx-block-hash")
 		}
 
 		if f.ChainID == "" {
-			return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("chain-id")
+			return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("chain-id")
 		}
 		if f.PowDifficulty == 0 {
-			return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("pow-difficulty")
+			return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("pow-difficulty")
 		}
 		if f.PowHashFunction == "" {
-			return api.AdminSignTransactionParams{}, flags.MustBeSpecifiedError("pow-hash-function")
+			return api.AdminSignTransactionParams{}, "", flags.MustBeSpecifiedError("pow-hash-function")
 		}
 		// populate proof-of-work bits
 		params.LastBlockData = &api.AdminLastBlockData{
@@ -238,27 +266,26 @@ func (f *SignTransactionFlags) Validate() (api.AdminSignTransactionParams, error
 
 	if f.Network != "" {
 		if f.TxBlockHeight != 0 {
-			return api.AdminSignTransactionParams{}, flags.MutuallyExclusiveError("network", "tx-height")
+			return api.AdminSignTransactionParams{}, "", flags.MutuallyExclusiveError("network", "tx-height")
 		}
 		if f.TxBlockHash != "" {
-			return api.AdminSignTransactionParams{}, flags.MutuallyExclusiveError("network", "tx-block-hash")
+			return api.AdminSignTransactionParams{}, "", flags.MutuallyExclusiveError("network", "tx-block-hash")
 		}
 		if f.ChainID != "" {
-			return api.AdminSignTransactionParams{}, flags.MutuallyExclusiveError("network", "chain-id")
+			return api.AdminSignTransactionParams{}, "", flags.MutuallyExclusiveError("network", "chain-id")
 		}
 		if f.PowDifficulty != 0 {
-			return api.AdminSignTransactionParams{}, flags.MutuallyExclusiveError("network", "pow-difficulty")
+			return api.AdminSignTransactionParams{}, "", flags.MutuallyExclusiveError("network", "pow-difficulty")
 		}
 		if f.PowHashFunction != "" {
-			return api.AdminSignTransactionParams{}, flags.MutuallyExclusiveError("network", "pow-hash-function")
+			return api.AdminSignTransactionParams{}, "", flags.MutuallyExclusiveError("network", "pow-hash-function")
 		}
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminSignTransactionParams{}, err
+		return api.AdminSignTransactionParams{}, "", err
 	}
-	params.Passphrase = passphrase
 
 	params.Network = f.Network
 	params.PublicKey = f.PubKey
@@ -268,11 +295,11 @@ func (f *SignTransactionFlags) Validate() (api.AdminSignTransactionParams, error
 	// json.RawMessage instead.
 	transaction := make(map[string]any)
 	if err := json.Unmarshal([]byte(f.RawTransaction), &transaction); err != nil {
-		return api.AdminSignTransactionParams{}, err
+		return api.AdminSignTransactionParams{}, "", err
 	}
 
 	params.Transaction = transaction
-	return params, nil
+	return params, passphrase, nil
 }
 
 func PrintSignTransactionResponse(w io.Writer, req api.AdminSignTransactionResult, rf *RootFlags) {

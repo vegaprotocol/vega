@@ -14,9 +14,14 @@ import (
 )
 
 func TestAdminSignMessage(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminSignMessageSchemaCorrect)
 	t.Run("Signing message with invalid params fails", testSigningMessageWithInvalidParamsFails)
 	t.Run("Signing message with wallet that doesn't exist fails", testSigningMessageWithWalletThatDoesntExistFails)
 	t.Run("Signing message failing to get wallet fails", testSigningMessageFailingToGetWalletFails)
+}
+
+func testAdminSignMessageSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.sign_message", api.AdminSignMessageParams{}, api.AdminSignMessageResult{})
 }
 
 func testSigningMessageWithInvalidParamsFails(t *testing.T) {
@@ -38,25 +43,15 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty wallet",
 			params: api.AdminSignMessageParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
+				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
 		},
 		{
-			name: "with empty passphrase",
+			name: "with empty public key",
 			params: api.AdminSignMessageParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		},
-		{
-			name: "with empty publickey",
-			params: api.AdminSignMessageParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: vgrand.RandomStr(5),
-				PubKey:     "",
+				Wallet: vgrand.RandomStr(5),
+				PubKey: "",
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
@@ -64,7 +59,6 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 			name: "with empty message",
 			params: api.AdminSignMessageParams{
 				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
 				PubKey:         vgrand.RandomStr(5),
 				EncodedMessage: "",
 			},
@@ -74,7 +68,6 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 			name: "with non-base64 message",
 			params: api.AdminSignMessageParams{
 				Wallet:         vgrand.RandomStr(5),
-				Passphrase:     vgrand.RandomStr(5),
 				PubKey:         vgrand.RandomStr(5),
 				EncodedMessage: "blahh",
 			},
@@ -127,7 +120,7 @@ func testSigningMessageFailingToGetWalletFails(t *testing.T) {
 	handler := newSignMessageHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, params.Wallet).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, params.Wallet, params.Passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, params.Wallet).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, params.Wallet).Times(1).Return(nil, assert.AnError)
 
 	// when
@@ -141,7 +134,6 @@ func testSigningMessageFailingToGetWalletFails(t *testing.T) {
 func paramsWithMessage(m string) api.AdminSignMessageParams {
 	return api.AdminSignMessageParams{
 		Wallet:         vgrand.RandomStr(5),
-		Passphrase:     vgrand.RandomStr(5),
 		PubKey:         vgrand.RandomStr(5),
 		EncodedMessage: m,
 	}

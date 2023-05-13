@@ -51,7 +51,7 @@ func testCheckpointSuccess(t *testing.T) {
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
 	ctx := context.Background()
 
 	// setup
@@ -152,7 +152,7 @@ func enactNewProposal(t *testing.T, eng *tstEngine) types.Proposal {
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
+	proposal := eng.newProposalForNewMarket(proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
 
 	// setup
 	eng.ensureStakingAssetTotalSupply(t, 9)
@@ -289,7 +289,7 @@ func enactUpdateProposal(t *testing.T, eng *tstEngine, marketID string) string {
 	now := eng.tsvc.GetTimeNow()
 	termTimeAfterEnact := now.Add(4 * 48 * time.Hour).Add(1 * time.Second)
 	filter, binding := produceTimeTriggeredDataSourceSpec(termTimeAfterEnact)
-	proposal := eng.newProposalForMarketUpdate(marketID, proposer.Id, eng.tsvc.GetTimeNow(), filter, binding)
+	proposal := eng.newProposalForMarketUpdate(marketID, proposer.Id, eng.tsvc.GetTimeNow(), filter, binding, true)
 	ctx := context.Background()
 
 	// setup

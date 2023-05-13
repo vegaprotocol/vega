@@ -206,14 +206,6 @@ func TestOrders(t *testing.T) {
 		assert.Equal(t, fetchedOrders[0], updatedOrders[1])
 	})
 
-	t.Run("GetAllVersionsByOrderID", func(t *testing.T) {
-		fetchedOrders, err := os.GetAllVersionsByOrderID(ctx, orders[3].ID.String(), entities.OffsetPagination{})
-		require.NoError(t, err)
-		require.Len(t, fetchedOrders, 2)
-		assert.Equal(t, int32(1), fetchedOrders[0].Version)
-		assert.Equal(t, int32(2), fetchedOrders[1].Version)
-	})
-
 	t.Run("GetOrderNotFound", func(t *testing.T) {
 		notAnOrderID := entities.OrderID(helpers.GenerateID())
 		fetchedOrder, err := os.GetOrder(ctx, notAnOrderID.String(), nil)
@@ -225,10 +217,11 @@ func TestOrders(t *testing.T) {
 
 func generateTestBlocks(t *testing.T, ctx context.Context, numBlocks int, bs *sqlstore.Blocks) []entities.Block {
 	t.Helper()
+
+	source := &testBlockSource{bs, time.Now()}
 	blocks := make([]entities.Block, numBlocks)
 	for i := 0; i < numBlocks; i++ {
-		blocks[i] = addTestBlock(t, ctx, bs)
-		time.Sleep(time.Millisecond)
+		blocks[i] = source.getNextBlock(t, ctx)
 	}
 	return blocks
 }
@@ -247,7 +240,6 @@ func generateOrderIDs(t *testing.T, numIDs int) []entities.OrderID {
 	orderIDs := make([]entities.OrderID, numIDs)
 	for i := 0; i < numIDs; i++ {
 		orderIDs[i] = entities.OrderID(helpers.GenerateID())
-		time.Sleep(time.Millisecond)
 	}
 
 	return orderIDs

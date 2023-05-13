@@ -18,13 +18,13 @@ import (
 
 type Forwarder struct {
 	log      *zap.Logger
-	nodeCfgs network.GRPCConfig
+	nodeCfgs network.HostConfig
 	clts     []api.CoreServiceClient
 	conns    []*grpc.ClientConn
 	next     uint64
 }
 
-func NewForwarder(log *zap.Logger, nodeConfigs network.GRPCConfig) (*Forwarder, error) {
+func NewForwarder(log *zap.Logger, nodeConfigs network.HostConfig) (*Forwarder, error) {
 	if len(nodeConfigs.Hosts) == 0 {
 		return nil, ErrNoHostSpecified
 	}
@@ -77,7 +77,7 @@ func (n *Forwarder) HealthCheck(ctx context.Context) error {
 			n.log.Debug("Response from GetVegaTime", zap.Int64("timestamp", resp.Timestamp))
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 }
 
@@ -98,7 +98,7 @@ func (n *Forwarder) LastBlockHeightAndHash(ctx context.Context) (*api.LastBlockH
 			n.log.Info("", zap.Uint64("block-height", r.Height), zap.String("block-hash", r.Hash), zap.Uint32("difficulty", r.SpamPowDifficulty), zap.String("function", r.SpamPowHashFunction))
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 
 	if err != nil {
@@ -136,7 +136,7 @@ func (n *Forwarder) CheckTx(ctx context.Context, tx *commandspb.Transaction, clt
 			resp = r
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 
 	return resp, err
@@ -159,7 +159,7 @@ func (n *Forwarder) SpamStatistics(ctx context.Context, pubkey string) (*api.Get
 			resp = r
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 
 	if err != nil {
@@ -197,7 +197,7 @@ func (n *Forwarder) SendTx(ctx context.Context, tx *commandspb.Transaction, ty a
 			resp = r
 			return nil
 		},
-		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), n.nodeCfgs.Retries),
+		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	); err != nil {
 		return nil, err
 	}

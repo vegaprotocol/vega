@@ -149,14 +149,6 @@ func TestDelegations(t *testing.T) {
 		require.NoError(t, err)
 		assertDelegationsMatch(t, expected, actual)
 	})
-
-	t.Run("GetPagination", func(t *testing.T) {
-		expected := []entities.Delegation{delegation4, delegation3, delegation2}
-		p := entities.OffsetPagination{Skip: 1, Limit: 3, Descending: true}
-		actual, _, err := ds.Get(ctx, nil, nil, nil, &p)
-		require.NoError(t, err)
-		assert.Equal(t, expected, actual) // Explicitly check the order on this one
-	})
 }
 
 func TestDelegationPagination(t *testing.T) {

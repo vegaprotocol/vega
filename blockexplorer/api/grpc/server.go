@@ -16,7 +16,7 @@ import (
 	"net"
 
 	"code.vegaprotocol.io/vega/logging"
-	pb "code.vegaprotocol.io/vega/protos/blockexplorer"
+	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )

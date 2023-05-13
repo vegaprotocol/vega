@@ -269,12 +269,12 @@ Feature: Test liquidity monitoring
       | party1 | ETH/DEC21 | sell | 50     | 1010  | 1                | TYPE_LIMIT | TIF_FOK |
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode                    | auction trigger                          | open interest | target stake | supplied stake |
-      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 10            | 6060         | 5999           |
-    And the liquidity provisions should have the following states:
-      | id  | party          | market    | commitment amount | status           |
-      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | STATUS_CANCELLED |
+      | 1010       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET | 10            | 6060         | 6000           |
 
     When the network moves ahead "5" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | auction trigger             | open interest | target stake | supplied stake |
       | 1010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10            | 1010         | 5999           |
+    And the liquidity provisions should have the following states:
+      | id  | party          | market    | commitment amount | status           |
+      | lp2 | lp2Bdistressed | ETH/DEC21 | 1                 | STATUS_CANCELLED |

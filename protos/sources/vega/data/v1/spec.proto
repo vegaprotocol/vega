@@ -1,29 +1,30 @@
 syntax = "proto3";
 
 package vega.data.v1;
+
 option go_package = "code.vegaprotocol.io/vega/protos/vega/data/v1";
 
 // Filter describes the conditions under which a data source data is considered of
 // interest or not.
 message Filter {
-  // key is the data source data property key targeted by the filter.
+  // Data source's data property key targeted by the filter.
   PropertyKey key = 1;
-  // conditions are the conditions that should be matched by the data to be
+  // Conditions that should be matched by the data to be
   // considered of interest.
   repeated Condition conditions = 2;
 }
 
 // PropertyKey describes the property key contained in data source data.
 message PropertyKey {
-  // name is the name of the property.
+  // Name of the property.
   string name = 1;
-  // type is the type of the property.
+  // Data type of the property.
   Type type = 2;
-  // An optional decimal place to be be applied on the provided value
+  // Optional decimal place to be be applied on the provided value
   // valid only for PropertyType of type DECIMAL and INTEGER
   optional uint64 number_decimal_places = 3;
 
-  // Type describes the type of properties that are supported by the data source
+  // Type describes the data type of properties that are supported by the data source
   // engine.
   enum Type {
     // The default value.
@@ -45,11 +46,11 @@ message PropertyKey {
 
 // Condition describes the condition that must be validated by the network
 message Condition {
-  // comparator is the type of comparison to make on the value.
+  // Type of comparison to make on the value.
   Operator operator = 1;
-  // value is used by the comparator.
+  // Value to be compared with by the operator.
   string value = 2;
-  // Comparator describes the type of comparison.
+  // Operator describes the type of comparison.
   enum Operator {
     // The default value
     OPERATOR_UNSPECIFIED = 0;

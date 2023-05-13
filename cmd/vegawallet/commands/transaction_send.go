@@ -52,15 +52,20 @@ var (
 		# Send a transaction with a maximum of 10 retries
 		{{.Software}} transaction send --network NETWORK --wallet WALLET --pubkey PUBKEY --retries 10 TRANSACTION
 
+		# Send a transaction with a maximum request duration of 10 seconds
+		{{.Software}} transaction send --network NETWORK --wallet WALLET --pubkey PUBKEY --max-request-duration "10s" TRANSACTION
+
 		# Send a transaction to a registered network without verifying network version compatibility
 		{{.Software}} transaction send --network NETWORK --wallet WALLET --pubkey PUBKEY --no-version-check TRANSACTION
 	`)
 )
 
-type SendTransactionHandler func(api.AdminSendTransactionParams, *zap.Logger) (api.AdminSendTransactionResult, error)
+type SendTransactionHandler func(api.AdminSendTransactionParams, string, *zap.Logger) (api.AdminSendTransactionResult, error)
 
 func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
-	handler := func(params api.AdminSendTransactionParams, log *zap.Logger) (api.AdminSendTransactionResult, error) {
+	handler := func(params api.AdminSendTransactionParams, passphrase string, log *zap.Logger) (api.AdminSendTransactionResult, error) {
+		ctx := context.Background()
+
 		vegaPaths := paths.New(rf.Home)
 
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
@@ -74,11 +79,18 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminSendTransactionResult{}, fmt.Errorf("couldn't initialise network store: %w", err)
 		}
 
-		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
+		}
+
+		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64, requestTTL time.Duration) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries, requestTTL)
 		})
 
-		rawResult, errDetails := sendTx.Handle(context.Background(), params)
+		rawResult, errDetails := sendTx.Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
 		}
@@ -104,7 +116,7 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 			}
 			f.RawTransaction = args[0]
 
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
@@ -114,7 +126,7 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 				return fmt.Errorf("failed to build a logger: %w", err)
 			}
 
-			resp, err := handler(req, log)
+			resp, err := handler(req, pass, log)
 			if err != nil {
 				return err
 			}
@@ -161,8 +173,13 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 	)
 	cmd.Flags().Uint64Var(&f.Retries,
 		"retries",
-		DefaultForwarderRetryCount,
+		defaultRequestRetryCount,
 		"Number of retries when contacting the Vega node",
+	)
+	cmd.Flags().DurationVar(&f.MaximumRequestDuration,
+		"max-request-duration",
+		defaultMaxRequestDuration,
+		"Maximum duration the wallet will wait for a node to respond. Supported format: <number>+<time unit>. Valid time units are `s` and `m`.",
 	)
 	cmd.Flags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
@@ -178,48 +195,49 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 }
 
 type SendTransactionFlags struct {
-	Network        string
-	NodeAddress    string
-	Wallet         string
-	PubKey         string
-	PassphraseFile string
-	Retries        uint64
-	LogLevel       string
-	RawTransaction string
-	NoVersionCheck bool
+	Network                string
+	NodeAddress            string
+	Wallet                 string
+	PubKey                 string
+	PassphraseFile         string
+	Retries                uint64
+	LogLevel               string
+	RawTransaction         string
+	NoVersionCheck         bool
+	MaximumRequestDuration time.Duration
 }
 
-func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error) {
+func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, string, error) {
 	if len(f.Wallet) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminSendTransactionParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 
 	if len(f.LogLevel) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("level")
+		return api.AdminSendTransactionParams{}, "", flags.MustBeSpecifiedError("level")
 	}
 	if err := vgzap.EnsureIsSupportedLogLevel(f.LogLevel); err != nil {
-		return api.AdminSendTransactionParams{}, err
+		return api.AdminSendTransactionParams{}, "", err
 	}
 
 	if len(f.NodeAddress) == 0 && len(f.Network) == 0 {
-		return api.AdminSendTransactionParams{}, flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
+		return api.AdminSendTransactionParams{}, "", flags.OneOfFlagsMustBeSpecifiedError("network", "node-address")
 	}
 
 	if len(f.NodeAddress) != 0 && len(f.Network) != 0 {
-		return api.AdminSendTransactionParams{}, flags.MutuallyExclusiveError("network", "node-address")
+		return api.AdminSendTransactionParams{}, "", flags.MutuallyExclusiveError("network", "node-address")
 	}
 
 	if len(f.PubKey) == 0 {
-		return api.AdminSendTransactionParams{}, flags.MustBeSpecifiedError("pubkey")
+		return api.AdminSendTransactionParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
 
 	if len(f.RawTransaction) == 0 {
-		return api.AdminSendTransactionParams{}, flags.ArgMustBeSpecifiedError("transaction")
+		return api.AdminSendTransactionParams{}, "", flags.ArgMustBeSpecifiedError("transaction")
 	}
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminSendTransactionParams{}, err
+		return api.AdminSendTransactionParams{}, "", err
 	}
 
 	// Encode transaction into a nested structure; this is a bit nasty but mirroring what happens
@@ -227,21 +245,21 @@ func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, error
 	// json.RawMessage instead.
 	transaction := make(map[string]any)
 	if err := json.Unmarshal([]byte(f.RawTransaction), &transaction); err != nil {
-		return api.AdminSendTransactionParams{}, fmt.Errorf("couldn't unmarshal transaction: %w", err)
+		return api.AdminSendTransactionParams{}, "", fmt.Errorf("couldn't unmarshal transaction: %w", err)
 	}
 
 	params := api.AdminSendTransactionParams{
-		Wallet:      f.Wallet,
-		Passphrase:  passphrase,
-		PublicKey:   f.PubKey,
-		Network:     f.Network,
-		NodeAddress: f.NodeAddress,
-		Retries:     f.Retries,
-		Transaction: transaction,
-		SendingMode: "TYPE_ASYNC",
+		Wallet:                 f.Wallet,
+		PublicKey:              f.PubKey,
+		Network:                f.Network,
+		NodeAddress:            f.NodeAddress,
+		Retries:                f.Retries,
+		Transaction:            transaction,
+		SendingMode:            "TYPE_ASYNC",
+		MaximumRequestDuration: f.MaximumRequestDuration,
 	}
 
-	return params, nil
+	return params, passphrase, nil
 }
 
 func PrintSendTransactionResponse(w io.Writer, res api.AdminSendTransactionResult, rf *RootFlags) {

@@ -72,6 +72,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	// Root commands
 	cmd.AddCommand(NewCmdInit(w, f))
 
+	cmd.AddCommand(NewCmdDisclaimer(w, f))
 	// Sub-commands
 	cmd.AddCommand(NewCmdAPIToken(w, f))
 	cmd.AddCommand(NewCmdKey(w, f))
@@ -81,6 +82,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdPermissions(w, f))
 	cmd.AddCommand(NewCmdRawTransaction(w, f))
 	cmd.AddCommand(NewCmdService(w, f))
+	cmd.AddCommand(NewCmdSession(w, f))
 	cmd.AddCommand(NewCmdShell(w, f))
 	cmd.AddCommand(NewCmdSoftware(w, f))
 	cmd.AddCommand(NewCmdTransaction(w, f))
@@ -92,6 +94,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	cmd.AddCommand(NewCmdDescribeWallet(w, f))
 	cmd.AddCommand(NewCmdImportWallet(w, f))
 	cmd.AddCommand(NewCmdListWallets(w, f))
+	cmd.AddCommand(NewCmdLocateWallets(w, f))
 	cmd.AddCommand(NewCmdRenameWallet(w, f))
 
 	return cmd

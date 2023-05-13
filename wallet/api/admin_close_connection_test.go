@@ -13,8 +13,13 @@ import (
 )
 
 func TestAdminCloseConnection(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminCloseConnectionSchemaCorrect)
 	t.Run("Closing a connection with invalid params fails", testAdminCloseConnectionWithInvalidParamsFails)
 	t.Run("Closing a connection with valid params succeeds", testAdminCloseConnectionWithValidParamsSucceeds)
+}
+
+func testAdminCloseConnectionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.close_connection", api.AdminCloseConnectionParams{}, nil)
 }
 
 func testAdminCloseConnectionWithInvalidParamsFails(t *testing.T) {

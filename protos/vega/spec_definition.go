@@ -10,29 +10,6 @@ const (
 	DataSourceDefinitionTypeExt   = 2
 )
 
-func (s DataSourceSpecConfiguration) DeepClone() *DataSourceSpecConfiguration {
-	if len(s.Signers) > 0 {
-		sgns := s.Signers
-		s.Signers = make([]*datapb.Signer, len(sgns))
-		for i, sig := range sgns {
-			s.Signers[i] = sig.DeepClone()
-		}
-	}
-
-	if len(s.Filters) > 0 {
-		filters := s.Filters
-		s.Filters = make([]*datapb.Filter, len(filters))
-		for i, f := range filters {
-			s.Filters[i] = f.DeepClone()
-		}
-	}
-
-	return &DataSourceSpecConfiguration{
-		Signers: s.Signers,
-		Filters: s.Filters,
-	}
-}
-
 func (d DataSourceDefinition) DeepClone() *DataSourceDefinition {
 	cpy := &DataSourceDefinition{}
 
@@ -70,8 +47,40 @@ func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 	if d.SourceType != nil {
 		switch tp := d.SourceType.(type) {
 		case *DataSourceDefinition_External:
-			filters = tp.External.GetOracle().Filters
+			if tp.External != nil {
+				if tp.External.SourceType != nil {
+					switch etp := tp.External.SourceType.(type) {
+					case *DataSourceDefinitionExternal_Oracle:
+						if etp.Oracle != nil {
+							filters = etp.Oracle.Filters
+						}
+					}
+				}
+			}
+
 		case *DataSourceDefinition_Internal:
+			if tp.Internal != nil {
+				if tp.Internal.SourceType != nil {
+					switch itp := tp.Internal.SourceType.(type) {
+					case *DataSourceDefinitionInternal_Time:
+						if itp.Time != nil {
+							if len(itp.Time.Conditions) > 0 {
+								filters = append(filters,
+									&datapb.Filter{
+										Key: &datapb.PropertyKey{
+											Name: "vegaprotocol.builtin.timestamp",
+											Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+										},
+										Conditions: []*datapb.Condition{
+											itp.Time.Conditions[0],
+										},
+									},
+								)
+							}
+						}
+					}
+				}
+			}
 
 		}
 	}
@@ -112,37 +121,78 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 }
 
 // SetOracleConfig sets a given oracle config in the receiver.
-// This method does not care about object previous contents - use with caution (currenty needed on ly for testing purposes).
+// If the receiver is not external oracle type of data source - it is not changed.
+// This method does not care about object previous contents - use with caution (currenty needed only for testing purposes).
 func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) *DataSourceDefinition {
-	ds := &DataSourceDefinition{}
-
 	if s.SourceType != nil {
-		switch s.SourceType.(type) {
+		switch def := s.SourceType.(type) {
+		// For the case the definition source type is vegapb.DataSourceDefinition_External
 		case *DataSourceDefinition_External:
-			ds = &DataSourceDefinition{
-				SourceType: &DataSourceDefinition_External{
-					External: &DataSourceDefinitionExternal{
-						SourceType: &DataSourceDefinitionExternal_Oracle{
-							Oracle: oc,
-						},
-					},
-				},
-			}
-		case *DataSourceDefinition_Internal:
-			ds = &DataSourceDefinition{
-				SourceType: &DataSourceDefinition_Internal{
-					Internal: &DataSourceDefinitionInternal{
-						SourceType: &DataSourceDefinitionInternal_Time{
-							Time: &DataSourceSpecConfigurationTime{
-								Conditions: oc.Filters[0].Conditions,
+			if def.External != nil {
+				if def.External.SourceType != nil {
+					switch def.External.SourceType.(type) {
+					// For the case the vegapb.DataSourceDefinitionExternal is not nill
+					// and its embedded object is of type vegapb.DataSourceDefinitionExternal_Oracle
+					case *DataSourceDefinitionExternal_Oracle:
+						// Set the new config only in this case
+						ds := &DataSourceDefinition{
+							SourceType: &DataSourceDefinition_External{
+								External: &DataSourceDefinitionExternal{
+									SourceType: &DataSourceDefinitionExternal_Oracle{
+										Oracle: oc,
+									},
+								},
 							},
-						},
-					},
-				},
+						}
+
+						*s = *ds
+					}
+				}
 			}
 		}
 	}
 
-	*s = *ds
+	return s
+}
+
+// SetTimeTriggerConditionConfig sets a condition to the time triggered receiver.
+// If the receiver is not a time triggered data source - it does not set anything to it.
+// This method does not care about object previous contents - use with caution (currenty needed only for testing purposes).
+func (s *DataSourceDefinition) SetTimeTriggerConditionConfig(c []*datapb.Condition) *DataSourceDefinition {
+	if s.SourceType != nil {
+		switch def := s.SourceType.(type) {
+		// For the case the definition source type is vegapb.DataSourceDefinition_Internal
+		case *DataSourceDefinition_Internal:
+			if def.Internal != nil {
+				if def.Internal.SourceType != nil {
+					switch def.Internal.SourceType.(type) {
+					// For the case the vegapb.DataSourceDefinitionInternal is not nill
+					// and its embedded object is of type vegapb.DataSourceDefinitionInternal_Time
+					case *DataSourceDefinitionInternal_Time:
+						// Set the new condition only in this case
+						cond := []*datapb.Condition{}
+						if len(c) > 0 {
+							cond = append(cond, c[0])
+						}
+
+						ds := &DataSourceDefinition{
+							SourceType: &DataSourceDefinition_Internal{
+								Internal: &DataSourceDefinitionInternal{
+									SourceType: &DataSourceDefinitionInternal_Time{
+										Time: &DataSourceSpecConfigurationTime{
+											Conditions: cond,
+										},
+									},
+								},
+							},
+						}
+
+						*s = *ds
+					}
+				}
+			}
+		}
+	}
+
 	return s
 }

@@ -7,7 +7,7 @@ import (
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/cli"
 	"code.vegaprotocol.io/vega/paths"
-	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +23,7 @@ var (
 	`)
 )
 
-type APITokePreCheck func(rf *RootFlags) error
+type APITokenPreCheck func(rf *RootFlags) error
 
 func NewCmdAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	cmd := &cobra.Command{

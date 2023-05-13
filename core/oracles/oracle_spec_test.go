@@ -35,8 +35,8 @@ func TestOracleSpec(t *testing.T) {
 	t.Run("Matching with equal properties works", testOracleSpecMatchingEqualPropertiesWorks)
 	t.Run("Matching with greater than properties works", testOracleSpecMatchingGreaterThanPropertiesWorks)
 	t.Run("Matching with greater than or equal properties works", testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks)
-	t.Run("Matching with less than properties works", testOracleSpecMatchingLessThanPropertiesWorks)
-	t.Run("Matching with less than or equal properties works", testOracleSpecMatchingLessThanOrEqualPropertiesWorks)
+	t.Run("Matching with less than properties succeeds only for non-time based spec", testOracleSpecMatchingLessThanPropertiesSucceedsOnlyForNonTimestamp)
+	t.Run("Matching with less than or equal properties succeeds only for non-time based spec", testOracleSpecMatchingLessThanOrEqualPropertiesSucceedsOnlyForNonTimestamp)
 	t.Run("Matching presence of present properties succeeds", testOracleSpecMatchingPropertiesPresenceSucceeds)
 	t.Run("Matching presence of missing properties fails", testOracleSpecMatchingPropertiesPresenceFails)
 	t.Run("Matching with inconvertible type fails", testOracleSpecMatchingWithInconvertibleTypeFails)
@@ -147,7 +147,7 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeFails(t *testing.T) {
 		},
 	})
 
-	assert.ErrorIs(t, types.ErrMultipleSameKeyNamesInFilterList, err)
+	assert.ErrorIs(t, types.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList, err)
 	assert.Nil(t, spec)
 }
 
@@ -685,7 +685,7 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 	}
 }
 
-func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
+func testOracleSpecMatchingLessThanPropertiesSucceedsOnlyForNonTimestamp(t *testing.T) {
 	cases := []struct {
 		msg       string
 		keyType   datapb.PropertyKey_Type
@@ -735,7 +735,7 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+			spec, err := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
 						vegapb.DataSourceDefinitionTypeExt,
@@ -774,27 +774,33 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 				},
 			})
 
-			data := oracles.OracleData{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Data: map[string]string{
-					"prices.BTC.value": c.dataValue,
-					"prices.ETH.value": "21",
-				},
+			if c.keyType == datapb.PropertyKey_TYPE_TIMESTAMP {
+				assert.Error(t, err)
+				assert.EqualError(t, err, types.ErrDataSourceSpecHasInvalidTimeCondition.Error())
+				assert.Nil(t, spec)
+			} else {
+				data := oracles.OracleData{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Data: map[string]string{
+						"prices.BTC.value": c.dataValue,
+						"prices.ETH.value": "21",
+					},
+				}
+
+				// when
+				matched, err := spec.MatchData(data)
+
+				// then
+				require.NoError(t, err)
+				assert.Equal(t, c.matched, matched)
 			}
-
-			// when
-			matched, err := spec.MatchData(data)
-
-			// then
-			require.NoError(t, err)
-			assert.Equal(t, c.matched, matched)
 		})
 	}
 }
 
-func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
+func testOracleSpecMatchingLessThanOrEqualPropertiesSucceedsOnlyForNonTimestamp(t *testing.T) {
 	cases := []struct {
 		msg       string
 		keyType   datapb.PropertyKey_Type
@@ -862,7 +868,7 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
 			// given
-			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
+			spec, err := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
 						vegapb.DataSourceDefinitionTypeExt,
@@ -901,22 +907,28 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 				},
 			})
 
-			data := oracles.OracleData{
-				Signers: []*types.Signer{
-					types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
-				},
-				Data: map[string]string{
-					"prices.BTC.value": c.dataValue,
-					"prices.ETH.value": "42",
-				},
+			if c.keyType == datapb.PropertyKey_TYPE_TIMESTAMP {
+				assert.Error(t, err)
+				assert.EqualError(t, err, types.ErrDataSourceSpecHasInvalidTimeCondition.Error())
+				assert.Nil(t, spec)
+			} else {
+				data := oracles.OracleData{
+					Signers: []*types.Signer{
+						types.CreateSignerFromString("0xCAFED00D", types.DataSignerTypePubKey),
+					},
+					Data: map[string]string{
+						"prices.BTC.value": c.dataValue,
+						"prices.ETH.value": "42",
+					},
+				}
+
+				// when
+				matched, err := spec.MatchData(data)
+
+				// then
+				require.NoError(t, err)
+				assert.Equal(t, c.matched, matched)
 			}
-
-			// when
-			matched, err := spec.MatchData(data)
-
-			// then
-			require.NoError(t, err)
-			assert.Equal(t, c.matched, matched)
 		})
 	}
 }

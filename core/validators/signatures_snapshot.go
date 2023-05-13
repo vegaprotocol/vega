@@ -37,11 +37,17 @@ func (s *ERC20Signatures) SerialisePendingSignatures() *snapshot.ToplogySignatur
 		return pending[i].EthereumAddress < pending[j].EthereumAddress
 	})
 
-	issued := make([]string, 0, len(s.issuedSignatures))
-	for i := range s.issuedSignatures {
-		issued = append(issued, i)
+	issued := make([]*snapshot.IssuedERC20MultisigControlSignature, 0, len(s.issuedSignatures))
+	for resID, data := range s.issuedSignatures {
+		issued = append(issued, &snapshot.IssuedERC20MultisigControlSignature{
+			ResourceId:       resID,
+			EthereumAddress:  data.EthAddress,
+			SubmitterAddress: data.SubmitterAddress,
+		})
 	}
-	sort.Strings(issued)
+	sort.SliceStable(issued, func(i, j int) bool {
+		return issued[i].ResourceId < issued[j].ResourceId
+	})
 
 	return &snapshot.ToplogySignatures{
 		PendingSignatures: pending,
@@ -65,7 +71,10 @@ func (s *ERC20Signatures) RestorePendingSignatures(sigs *snapshot.ToplogySignatu
 		s.pendingSignatures[data.EthereumAddress] = sd
 	}
 
-	for _, i := range sigs.IssuedSignatures {
-		s.issuedSignatures[i] = struct{}{}
+	for _, data := range sigs.IssuedSignatures {
+		s.issuedSignatures[data.ResourceId] = issuedSignature{
+			EthAddress:       data.EthereumAddress,
+			SubmitterAddress: data.SubmitterAddress,
+		}
 	}
 }

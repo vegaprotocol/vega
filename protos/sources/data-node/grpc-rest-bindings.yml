@@ -111,6 +111,8 @@ http:
       get: "/api/v2/epoch"
     - selector: datanode.api.v2.TradingDataService.EstimateFee
       get: "/api/v2/estimate/fee"
+    - selector: datanode.api.v2.TradingDataService.EstimatePosition
+      get: "/api/v2/estimate/position"
     - selector: datanode.api.v2.TradingDataService.EstimateMargin
       get: "/api/v2/estimate/margin"
     - selector: datanode.api.v2.TradingDataService.ListNetworkParameters
@@ -137,13 +139,14 @@ http:
       get: '/api/v2/oracle/specs'
     - selector: datanode.api.v2.TradingDataService.ListOracleData
       get: '/api/v2/oracle/data'
-    - selector: datanode.api.v2.TradingDataService.NetworkHistoryStatus
+    - selector: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus
       get: "/api/v2/networkhistory"
     - selector: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments
       get: "/api/v2/networkhistory/segments"
-    - selector: datanode.api.v2.TradingDataService.NetworkHistoryBootstrapPeers
+    - selector: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers
       get: "/api/v2/networkhistory/bootstrap"
-
+    - selector: datanode.api.v2.TradingDataService.ExportNetworkHistory
+      get: "/api/v2/networkhistory/export"
 
     # websockets
 
@@ -167,12 +170,8 @@ http:
       get: '/api/v2/stream/trades'
     - selector: datanode.api.v2.TradingDataService.ObserveMarginLevels
       get: '/api/v2/stream/margin/levels'
-    - selector: datanode.api.v2.TradingDataService.ObserveRewards
-      get: '/api/v2/stream/rewards'
     - selector: datanode.api.v2.TradingDataService.ObserveGovernance
       get: '/api/v2/stream/governance'
-    - selector: datanode.api.v2.TradingDataService.ObserveDelegations
-      get: '/api/v2/stream/delegations'
     - selector: datanode.api.v2.TradingDataService.ObserveEventBus
       get: '/api/v2/stream/event/bus'
     - selector: datanode.api.v2.TradingDataService.ObserveLedgerMovements

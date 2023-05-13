@@ -32,7 +32,7 @@ const (
 
 type Config struct {
 	ConnectionConfig                                   ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
-	WipeOnStartup                                      encoding.Bool         `long:"wipe-on-startup"`
+	WipeOnStartup                                      encoding.Bool         `long:"wipe-on-startup" description:"deprecated, use data-node unsafe_reset_all command instead"`
 	Level                                              encoding.LogLevel     `long:"log-level"`
 	UseEmbedded                                        encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
 	FanOutBufferSize                                   int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
@@ -144,7 +144,6 @@ func NewDefaultConfig() Config {
 			MaxConnLifetime:       encoding.Duration{Duration: time.Minute * 30},
 			MaxConnLifetimeJitter: encoding.Duration{Duration: time.Minute * 5},
 		},
-		WipeOnStartup:    true,
 		Level:            encoding.LogLevel{Level: logging.InfoLevel},
 		UseEmbedded:      false,
 		FanOutBufferSize: 1000,

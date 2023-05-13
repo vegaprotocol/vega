@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -19,6 +20,7 @@ import (
 )
 
 func TestAdminCheckTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminCheckTransactionSchemaCorrect)
 	t.Run("Checking transaction with invalid params fails", testAdminCheckingTransactionWithInvalidParamsFails)
 	t.Run("Checking transaction with valid params succeeds", testAdminCheckingTransactionWithValidParamsSucceeds)
 	t.Run("Getting internal error during wallet verification fails", testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails)
@@ -26,6 +28,10 @@ func TestAdminCheckTransaction(t *testing.T) {
 	t.Run("Getting internal error during wallet retrieval fails", testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails)
 	t.Run("Checking transaction with malformed transaction fails", testAdminCheckingTransactionWithMalformedTransactionFails)
 	t.Run("Checking transaction which is invalid fails", testAdminCheckingTransactionWithInvalidTransactionFails)
+}
+
+func testAdminCheckTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.check_transaction", api.AdminCheckTransactionParams{}, api.AdminCheckTransactionResult{})
 }
 
 func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
@@ -48,7 +54,6 @@ func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with empty wallet",
 			params: api.AdminCheckTransactionParams{
 				Wallet:      "",
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Transaction: testTransaction(t),
 				Network:     vgrand.RandomStr(5),
@@ -56,21 +61,9 @@ func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
 			expectedError: api.ErrWalletIsRequired,
 		},
 		{
-			name: "with empty passphrase",
-			params: api.AdminCheckTransactionParams{
-				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  "",
-				PublicKey:   vgrand.RandomStr(5),
-				Transaction: testTransaction(t),
-				Network:     vgrand.RandomStr(5),
-			},
-			expectedError: api.ErrPassphraseIsRequired,
-		},
-		{
 			name: "with empty public key",
 			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   "",
 				Transaction: testTransaction(t),
 				Network:     vgrand.RandomStr(5),
@@ -81,7 +74,6 @@ func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with empty transaction",
 			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Transaction: "",
 				Network:     vgrand.RandomStr(5),
@@ -92,7 +84,6 @@ func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with no network or node address",
 			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Network:     "",
 				Transaction: testTransaction(t),
@@ -103,7 +94,6 @@ func testAdminCheckingTransactionWithInvalidParamsFails(t *testing.T) {
 			name: "with no network and node address",
 			params: api.AdminCheckTransactionParams{
 				Wallet:      vgrand.RandomStr(5),
-				Passphrase:  vgrand.RandomStr(5),
 				PublicKey:   vgrand.RandomStr(5),
 				Network:     "some_network",
 				NodeAddress: "some_node_address",
@@ -135,12 +125,11 @@ func testAdminCheckingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
-	passphrase := vgrand.RandomStr(5)
 	nodeHost := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 
 	// setup
-	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -159,7 +148,7 @@ func testAdminCheckingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, w.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 	handler.networkStore.EXPECT().NetworkExists(network.Name).Times(1).Return(true, nil)
 	handler.networkStore.EXPECT().GetNetwork(network.Name).Times(1).Return(&network, nil)
@@ -167,7 +156,6 @@ func testAdminCheckingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      w.Name(),
-		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
 		Network:     network.Name,
 		Transaction: testTransaction(t),
@@ -183,10 +171,9 @@ func testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails(
 	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
-	passphrase := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -207,7 +194,6 @@ func testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails(
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      walletName,
-		Passphrase:  passphrase,
 		PublicKey:   vgrand.RandomStr(5),
 		Network:     network.Name,
 		Transaction: testTransaction(t),
@@ -224,7 +210,6 @@ func testAdminCheckingTransactionWithWalletThatDoesntExistFails(t *testing.T) {
 
 	params := api.AdminCheckTransactionParams{
 		Wallet:      vgrand.RandomStr(5),
-		Passphrase:  vgrand.RandomStr(5),
 		PublicKey:   vgrand.RandomStr(5),
 		Network:     "fairground",
 		Transaction: testTransaction(t),
@@ -249,10 +234,9 @@ func testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails(t *
 	ctx := context.Background()
 	network := newNetwork(t)
 	walletName := vgrand.RandomStr(5)
-	passphrase := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -269,13 +253,12 @@ func testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails(t *
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, walletName).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, walletName, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, walletName).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, walletName).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      walletName,
-		Passphrase:  passphrase,
 		PublicKey:   vgrand.RandomStr(5),
 		Network:     network.Name,
 		Transaction: testTransaction(t),
@@ -290,7 +273,6 @@ func testAdminCheckingTransactionWithMalformedTransactionFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := vgrand.RandomStr(5)
-	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 
 	// setup
@@ -298,13 +280,12 @@ func testAdminCheckingTransactionWithMalformedTransactionFails(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, w.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      w.Name(),
-		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
 		Network:     network,
 		Transaction: map[string]int{"bob": 5},
@@ -319,7 +300,6 @@ func testAdminCheckingTransactionWithInvalidTransactionFails(t *testing.T) {
 	// given
 	ctx := context.Background()
 	network := newNetwork(t)
-	passphrase := vgrand.RandomStr(5)
 	w, kp := walletWithKey(t)
 
 	// setup
@@ -327,13 +307,12 @@ func testAdminCheckingTransactionWithInvalidTransactionFails(t *testing.T) {
 
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, w.Name()).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, w.Name(), passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, w.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, w.Name()).Times(1).Return(w, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminCheckTransactionParams{
 		Wallet:      w.Name(),
-		Passphrase:  passphrase,
 		PublicKey:   kp.PublicKey(),
 		Network:     network.Name,
 		Transaction: testMalformedTransaction(t),

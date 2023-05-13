@@ -15,21 +15,12 @@ type Network struct {
 }
 
 type APIConfig struct {
-	GRPC    GRPCConfig    `json:"grpc"`
-	REST    RESTConfig    `json:"rest"`
-	GraphQL GraphQLConfig `json:"graphQl"`
+	GRPC    HostConfig `json:"grpc"`
+	REST    HostConfig `json:"rest"`
+	GraphQL HostConfig `json:"graphQL"`
 }
 
-type GRPCConfig struct {
-	Hosts   []string `json:"hosts"`
-	Retries uint64   `json:"retries"`
-}
-
-type RESTConfig struct {
-	Hosts []string `json:"hosts"`
-}
-
-type GraphQLConfig struct {
+type HostConfig struct {
 	Hosts []string `json:"hosts"`
 }
 

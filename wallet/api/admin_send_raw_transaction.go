@@ -14,19 +14,21 @@ import (
 )
 
 type AdminSendRawTransactionParams struct {
-	Network            string `json:"network"`
-	NodeAddress        string `json:"nodeAddress"`
-	Retries            uint64 `json:"retries"`
-	SendingMode        string `json:"sendingMode"`
-	EncodedTransaction string `json:"encodedTransaction"`
+	Network                string        `json:"network"`
+	NodeAddress            string        `json:"nodeAddress"`
+	Retries                uint64        `json:"retries"`
+	MaximumRequestDuration time.Duration `json:"maximumRequestDuration"`
+	SendingMode            string        `json:"sendingMode"`
+	EncodedTransaction     string        `json:"encodedTransaction"`
 }
 
 type ParsedAdminSendRawTransactionParams struct {
-	Network        string
-	NodeAddress    string
-	Retries        uint64
-	SendingMode    apipb.SubmitTransactionRequest_Type
-	RawTransaction string
+	Network                string
+	NodeAddress            string
+	Retries                uint64
+	MaximumRequestDuration time.Duration
+	SendingMode            apipb.SubmitTransactionRequest_Type
+	RawTransaction         string
 }
 
 type AdminSendRawTransactionResult struct {
@@ -49,55 +51,50 @@ type AdminSendRawTransaction struct {
 func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateAdminSendRawTransactionParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	receivedAt := time.Now()
 
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal([]byte(params.RawTransaction), tx); err != nil {
-		return nil, invalidParams(ErrRawTransactionIsNotValidVegaTransaction)
+		return nil, InvalidParams(ErrRawTransactionIsNotValidVegaTransaction)
 	}
 
-	var hosts []string
-	var retries uint64
+	hosts := []string{params.NodeAddress}
 	if len(params.Network) != 0 {
 		exists, err := h.networkStore.NetworkExists(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not determine if the network exists: %w", err))
+			return nil, InternalError(fmt.Errorf("could not determine if the network exists: %w", err))
 		} else if !exists {
-			return nil, invalidParams(ErrNetworkDoesNotExist)
+			return nil, InvalidParams(ErrNetworkDoesNotExist)
 		}
 
 		n, err := h.networkStore.GetNetwork(params.Network)
 		if err != nil {
-			return nil, internalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
+			return nil, InternalError(fmt.Errorf("could not retrieve the network configuration: %w", err))
 		}
 
 		if err := n.EnsureCanConnectGRPCNode(); err != nil {
-			return nil, internalError(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
+			return nil, InternalError(ErrNetworkConfigurationDoesNotHaveGRPCNodes)
 		}
 		hosts = n.API.GRPC.Hosts
-		retries = n.API.GRPC.Retries
-	} else {
-		hosts = []string{params.NodeAddress}
-		retries = params.Retries
 	}
 
-	nodeSelector, err := h.nodeSelectorBuilder(hosts, retries)
+	nodeSelector, err := h.nodeSelectorBuilder(hosts, params.Retries, params.MaximumRequestDuration)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not initialize the node selector: %w", err))
+		return nil, InternalError(fmt.Errorf("could not initialize the node selector: %w", err))
 	}
 
 	currentNode, err := nodeSelector.Node(ctx, noNodeSelectionReporting)
 	if err != nil {
-		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
+		return nil, NodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
 
 	sentAt := time.Now()
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
-		return nil, networkErrorFromTransactionError(err)
+		return nil, NetworkErrorFromTransactionError(err)
 	}
 
 	return AdminSendRawTransactionResult{
@@ -166,10 +163,11 @@ func validateAdminSendRawTransactionParams(rawParams jsonrpc.Params) (ParsedAdmi
 	}
 
 	return ParsedAdminSendRawTransactionParams{
-		Network:        params.Network,
-		NodeAddress:    params.NodeAddress,
-		RawTransaction: string(tx),
-		SendingMode:    sendingMode,
-		Retries:        params.Retries,
+		Network:                params.Network,
+		NodeAddress:            params.NodeAddress,
+		RawTransaction:         string(tx),
+		SendingMode:            sendingMode,
+		Retries:                params.Retries,
+		MaximumRequestDuration: params.MaximumRequestDuration,
 	}, nil
 }

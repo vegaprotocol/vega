@@ -33,18 +33,26 @@ var (
 	`)
 )
 
-type GenerateKeyHandler func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error)
+type GenerateKeyHandler func(api.AdminGenerateKeyParams, string) (api.AdminGenerateKeyResult, error)
 
 func NewCmdGenerateKey(w io.Writer, rf *RootFlags) *cobra.Command {
-	h := func(params api.AdminGenerateKeyParams) (api.AdminGenerateKeyResult, error) {
+	h := func(params api.AdminGenerateKeyParams, passphrase string) (api.AdminGenerateKeyResult, error) {
+		ctx := context.Background()
+
 		walletStore, err := wallets.InitialiseStore(rf.Home, false)
 		if err != nil {
 			return api.AdminGenerateKeyResult{}, fmt.Errorf("couldn't initialise wallets store: %w", err)
 		}
 		defer walletStore.Close()
 
-		generateKey := api.NewAdminGenerateKey(walletStore)
-		rawResult, errDetails := generateKey.Handle(context.Background(), params)
+		if _, errDetails := api.NewAdminUnlockWallet(walletStore).Handle(ctx, api.AdminUnlockWalletParams{
+			Wallet:     params.Wallet,
+			Passphrase: passphrase,
+		}); errDetails != nil {
+			return api.AdminGenerateKeyResult{}, errors.New(errDetails.Data)
+		}
+
+		rawResult, errDetails := api.NewAdminGenerateKey(walletStore).Handle(ctx, params)
 		if errDetails != nil {
 			return api.AdminGenerateKeyResult{}, errors.New(errDetails.Data)
 		}
@@ -63,12 +71,12 @@ func BuildCmdGenerateKey(w io.Writer, handler GenerateKeyHandler, rf *RootFlags)
 		Long:    generateKeyLong,
 		Example: generateKeyExample,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			req, err := f.Validate()
+			req, pass, err := f.Validate()
 			if err != nil {
 				return err
 			}
 
-			resp, err := handler(req)
+			resp, err := handler(req, pass)
 			if err != nil {
 				return err
 			}
@@ -111,27 +119,26 @@ type GenerateKeyFlags struct {
 	RawMetadata    []string
 }
 
-func (f *GenerateKeyFlags) Validate() (api.AdminGenerateKeyParams, error) {
+func (f *GenerateKeyFlags) Validate() (api.AdminGenerateKeyParams, string, error) {
 	req := api.AdminGenerateKeyParams{}
 
 	if len(f.Wallet) == 0 {
-		return api.AdminGenerateKeyParams{}, flags.MustBeSpecifiedError("wallet")
+		return api.AdminGenerateKeyParams{}, "", flags.MustBeSpecifiedError("wallet")
 	}
 	req.Wallet = f.Wallet
 
 	metadata, err := cli.ParseMetadata(f.RawMetadata)
 	if err != nil {
-		return api.AdminGenerateKeyParams{}, err
+		return api.AdminGenerateKeyParams{}, "", err
 	}
 	req.Metadata = metadata
 
 	passphrase, err := flags.GetPassphrase(f.PassphraseFile)
 	if err != nil {
-		return api.AdminGenerateKeyParams{}, err
+		return api.AdminGenerateKeyParams{}, "", err
 	}
-	req.Passphrase = passphrase
 
-	return req, nil
+	return req, passphrase, nil
 }
 
 func PrintGenerateKeyResponse(w io.Writer, req api.AdminGenerateKeyParams, resp api.AdminGenerateKeyResult) {

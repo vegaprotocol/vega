@@ -1568,7 +1568,7 @@ func TestOraclesWithMultipleFilterNameFails(t *testing.T) {
 		},
 	)
 
-	assert.ErrorIs(t, types.ErrMultipleSameKeyNamesInFilterList, err)
+	assert.ErrorIs(t, types.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList, err)
 
 	updatedMkt.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.UpdateFilters(
 		[]*types.DataSourceSpecFilter{
@@ -2778,9 +2778,6 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 		},
 	}
 	openEnd := now.Add(time.Duration(extension)*time.Second + time.Second)
-	// auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
-	// we don't have to add both anymore, the first auction period is determined by network parameter
-	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(600)
 	auctionTriggeringPrice := initialPrice + mmu.Uint64() + 1
@@ -2955,10 +2952,10 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	md = tm.market.GetMarketData()
 	require.NotNil(t, md)
 	auctionEnd = md.AuctionEnd
+	auctionEndTime := openEnd.Add(time.Duration(t1.AuctionExtension) * time.Second)
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
-
-	require.Empty(t, md.PriceMonitoringBounds)
+	require.Equal(t, 1, len(md.PriceMonitoringBounds))
 
 	tm.now = auctionEndTime
 	closed := tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
@@ -2970,7 +2967,28 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
 	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
-	require.Empty(t, md.PriceMonitoringBounds)
+	require.Equal(t, 1, len(md.PriceMonitoringBounds))
+
+	tm.now = auctionEndTime.Add(time.Nanosecond)
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
+	assert.False(t, closed)
+
+	auctionEndTime = openEnd.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
+	md = tm.market.GetMarketData()
+	require.NotNil(t, md)
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.MarketStateSuspended, tm.market.State())
+
+	tm.now = auctionEndTime
+	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), auctionEndTime)
+	assert.False(t, closed)
+
+	md = tm.market.GetMarketData()
+	require.NotNil(t, md)
+	auctionEnd = md.AuctionEnd
+	require.Equal(t, auctionEndTime.UnixNano(), auctionEnd) // In auction
+	require.Equal(t, types.MarketStateSuspended, tm.market.State())
 
 	tm.now = auctionEndTime.Add(time.Nanosecond)
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), tm.now)
@@ -5364,7 +5382,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
-	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 
 	// Move into a price monitoring auction so that the pegged orders are parked and the other orders are cancelled
 	tm.market.StartPriceAuction(now)
@@ -5639,12 +5657,17 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
 	require.Equal(t, 1, tm.market.GetLPSCount())
 
-	// Now move the mark price
 	o10 := getMarketOrder(tm, now, types.OrderTypeMarket, types.OrderTimeInForceIOC, "Order05", types.SideBuy, "party-B", 1, 0)
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NotNil(t, o10conf)
 	require.Equal(t, 1, len(o10conf.Trades))
 	require.NoError(t, err)
+
+	// Move the mark price and initiate a closeout at the end of the block
+	now = now.Add(time.Second)
+	tm.now = now
+	tm.market.OnTick(ctx, now)
+	tm.market.BlockEnd(ctx)
 
 	require.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 	require.Equal(t, 0, tm.market.GetLPSCount())
@@ -5793,11 +5816,11 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKBuy(t *testing.T) {
 		CommitmentAmount: num.NewUint(25000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 10, 10),
 			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
@@ -6215,6 +6238,35 @@ func TestLPOrdersRollback(t *testing.T) {
 				price:  s1Price,
 				size:   s1Size,
 			},
+			// The initially submitted limit orders get cancelled now
+			{
+				side:   types.SideBuy,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  b1Price,
+				size:   b1Size,
+			},
+			{
+				side:   types.SideBuy,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  b2Price,
+				size:   b2Size,
+			},
+			{
+				side:   types.SideSell,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  s1Price,
+				size:   s1Size,
+			},
+			{
+				side:   types.SideSell,
+				status: types.OrderStatusRejected,
+				ref:    lp.Reference,
+				price:  s2Price,
+				size:   s2Size,
+			},
 		}
 		//	TestLiquidityScoresMechanics
 
@@ -6222,9 +6274,9 @@ func TestLPOrdersRollback(t *testing.T) {
 
 		for i, exp := range expected {
 			got := found[i]
-			assert.Equal(t, exp.side, got.Side, "Side:", got.Side.String())
-			assert.Equal(t, exp.status, got.Status, "Status:", got.Status.String())
-			assert.Equal(t, exp.ref, got.Reference, "Status:", got.Reference)
+			assert.Equal(t, exp.side, got.Side, fmt.Sprintf("index: %v - %v", i, got.Side.String()))
+			assert.Equal(t, exp.status, got.Status, got.Status.String())
+			assert.Equal(t, exp.ref, got.Reference, got.Reference)
 		}
 	})
 }

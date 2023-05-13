@@ -69,8 +69,7 @@ func (n *SnapshotNotary) RegisterSignature(
 	pubKey string,
 	ns v1.NodeSignature,
 ) error {
-	err := n.Notary.RegisterSignature(ctx, pubKey, ns)
-	return err
+	return n.Notary.RegisterSignature(ctx, pubKey, ns)
 }
 
 // get the serialised form of the given key.
@@ -128,6 +127,10 @@ func (n *SnapshotNotary) OfferSignatures(
 		if k.kind != kind {
 			continue
 		}
+		if v.signature != nil {
+			continue
+		}
+
 		if signature := f(k.id); signature != nil {
 			v.signature = signature
 		}
@@ -138,13 +141,15 @@ func (n *SnapshotNotary) OfferSignatures(
 func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	sigs := make([]*types.NotarySigs, 0, len(n.sigs)) // it will likely be longer than this but we don't know yet
 	for ik, ns := range n.sigs {
-		for n := range ns {
+		for _n := range ns {
+			_, pending := n.pendingSignatures[ik]
 			sigs = append(sigs,
 				&types.NotarySigs{
-					ID:   ik.id,
-					Kind: int32(ik.kind),
-					Node: n.node,
-					Sig:  hex.EncodeToString([]byte(n.sig)),
+					ID:      ik.id,
+					Kind:    int32(ik.kind),
+					Node:    _n.node,
+					Sig:     hex.EncodeToString([]byte(_n.sig)),
+					Pending: pending,
 				},
 			)
 		}
@@ -183,10 +188,11 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 		retries = &txTracker{
 			txs: map[idKind]*signatureTime{},
 		}
-		isValidator = n.Notary.top.IsValidator()
+		isValidator = n.top.IsValidator()
 		selfSigned  = map[idKind]bool{}
-		self        = n.Notary.top.SelfVegaPubKey()
+		self        = n.top.SelfVegaPubKey()
 	)
+
 	for _, s := range notary.Sigs {
 		idK := idKind{id: s.ID, kind: v1.NodeSignatureKind(s.Kind)}
 
@@ -209,6 +215,10 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary, p *types.Payload) e
 
 		if len(ns.node) != 0 && len(ns.sig) != 0 {
 			sigs[idK][ns] = struct{}{}
+		}
+
+		if s.Pending {
+			n.pendingSignatures[idK] = struct{}{}
 		}
 	}
 

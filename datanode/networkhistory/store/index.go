@@ -8,43 +8,49 @@ import (
 	"path/filepath"
 	"sort"
 
+	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
+
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
+
+	"code.vegaprotocol.io/vega/logging"
 )
 
 var ErrIndexEntryNotFound = errors.New("index entry not found")
 
 type LevelDbBackedIndex struct {
-	db *leveldb.DB
+	db  *leveldb.DB
+	log *logging.Logger
 }
 
-func NewIndex(dataDir string) (*LevelDbBackedIndex, error) {
+func NewIndex(dataDir string, log *logging.Logger) (*LevelDbBackedIndex, error) {
 	db, err := leveldb.OpenFile(filepath.Join(dataDir, "index.db"), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open level db file:%w", err)
 	}
 
 	return &LevelDbBackedIndex{
-		db: db,
+		db:  db,
+		log: log,
 	}, nil
 }
 
-func (l LevelDbBackedIndex) Get(height int64) (SegmentIndexEntry, error) {
+func (l LevelDbBackedIndex) Get(height int64) (segment.Full, error) {
 	value, err := l.db.Get(heightToKey(height), &opt.ReadOptions{})
 	if errors.Is(err, leveldb.ErrNotFound) {
-		return SegmentIndexEntry{}, ErrIndexEntryNotFound
+		return segment.Full{}, ErrIndexEntryNotFound
 	}
 
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to get index entry:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to get index entry:%w", err)
 	}
 
-	var indexEntry SegmentIndexEntry
+	var indexEntry segment.Full
 	err = json.Unmarshal(value, &indexEntry)
 
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to unmarshal value:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to unmarshal value:%w", err)
 	}
 
 	return indexEntry, nil
@@ -56,7 +62,7 @@ func heightToKey(height int64) []byte {
 	return bytes
 }
 
-func (l LevelDbBackedIndex) Add(indexEntry SegmentIndexEntry) error {
+func (l LevelDbBackedIndex) Add(indexEntry segment.Full) error {
 	bytes, err := json.Marshal(indexEntry)
 	if err != nil {
 		return fmt.Errorf("failed to marshal index entry:%w", err)
@@ -70,7 +76,7 @@ func (l LevelDbBackedIndex) Add(indexEntry SegmentIndexEntry) error {
 	return nil
 }
 
-func (l LevelDbBackedIndex) Remove(indexEntry SegmentIndexEntry) error {
+func (l LevelDbBackedIndex) Remove(indexEntry segment.Full) error {
 	if err := l.db.Delete(heightToKey(indexEntry.HeightTo), &opt.WriteOptions{}); err != nil {
 		return fmt.Errorf("failed to delete key:%w", err)
 	}
@@ -78,21 +84,51 @@ func (l LevelDbBackedIndex) Remove(indexEntry SegmentIndexEntry) error {
 	return nil
 }
 
-func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, error) {
+func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() (segment.Segments[segment.Full], error) {
+	segments, err := l.listAllEntries()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all entries: %w", err)
+	}
+
+	sort.Slice(segments, func(i, j int) bool {
+		return segments[i].HeightFrom < segments[j].HeightFrom
+	})
+	return segments, nil
+}
+
+func (l LevelDbBackedIndex) ListAllEntriesMostRecentFirst() (segment.Segments[segment.Full], error) {
+	segments, err := l.listAllEntries()
+	if err != nil {
+		return nil, fmt.Errorf("failed to list all entries: %w", err)
+	}
+
+	sort.Slice(segments, func(i, j int) bool {
+		return segments[i].HeightFrom > segments[j].HeightFrom
+	})
+
+	return segments, nil
+}
+
+func (l LevelDbBackedIndex) listAllEntries() (segment.Segments[segment.Full], error) {
+	var segments []segment.Full
+	l.log.Debug("Creating iterator")
+
 	iter := l.db.NewIterator(&util.Range{
 		Start: nil,
 		Limit: nil,
 	}, &opt.ReadOptions{})
-	defer iter.Release()
+	defer func() {
+		l.log.Debug("Closing iterator")
+		iter.Release()
+	}()
 
-	var segments []SegmentIndexEntry
 	if !iter.Last() {
 		return segments, nil
 	}
 
 	for ok := iter.Last(); ok; ok = iter.Prev() {
 		bytes := iter.Value()
-		var indexEntry SegmentIndexEntry
+		var indexEntry segment.Full
 		err := json.Unmarshal(bytes, &indexEntry)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal index entry:%w", err)
@@ -101,21 +137,17 @@ func (l LevelDbBackedIndex) ListAllEntriesOldestFirst() ([]SegmentIndexEntry, er
 		segments = append(segments, indexEntry)
 	}
 
-	sort.Slice(segments, func(i, j int) bool {
-		return segments[i].HeightFrom < segments[j].HeightFrom
-	})
-
 	return segments, nil
 }
 
-func (l LevelDbBackedIndex) GetHighestBlockHeightEntry() (SegmentIndexEntry, error) {
+func (l LevelDbBackedIndex) GetHighestBlockHeightEntry() (segment.Full, error) {
 	entries, err := l.ListAllEntriesOldestFirst()
 	if err != nil {
-		return SegmentIndexEntry{}, fmt.Errorf("failed to list all entries:%w", err)
+		return segment.Full{}, fmt.Errorf("failed to list all entries:%w", err)
 	}
 
 	if len(entries) == 0 {
-		return SegmentIndexEntry{}, ErrIndexEntryNotFound
+		return segment.Full{}, ErrIndexEntryNotFound
 	}
 
 	return entries[len(entries)-1], nil

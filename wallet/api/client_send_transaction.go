@@ -51,36 +51,36 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 
 	params, err := validateSendTransactionParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	txReader := strings.NewReader(params.RawTransaction)
 	request := &walletpb.SubmitTransactionRequest{}
 	if err := jsonpb.Unmarshal(txReader, request); err != nil {
-		return nil, invalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
+		return nil, InvalidParams(fmt.Errorf("the transaction does not use a valid Vega command: %w", err))
 	}
 
 	if !connectedWallet.CanUseKey(params.PublicKey) {
-		return nil, requestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
+		return nil, RequestNotPermittedError(ErrPublicKeyIsNotAllowedToBeUsed)
 	}
 
 	w, err := h.walletStore.GetWallet(ctx, connectedWallet.Name())
 	if err != nil {
 		if errors.Is(err, ErrWalletIsLocked) {
-			h.interactor.NotifyError(ctx, traceID, ApplicationError, err)
+			h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, err)
 		} else {
-			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not retrieve the wallet associated to the connection: %w", err))
+			h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not retrieve the wallet associated to the connection: %w", err))
 		}
-		return nil, internalError(ErrCouldNotSignTransaction)
+		return nil, InternalError(ErrCouldNotSignTransaction)
 	}
 
 	request.PubKey = params.PublicKey
 	if errs := wcommands.CheckSubmitTransactionRequest(request); !errs.Empty() {
-		return nil, invalidParams(errs)
+		return nil, InvalidParams(errs)
 	}
 
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow, 2); err != nil {
-		return nil, requestNotPermittedError(err)
+		return nil, RequestNotPermittedError(err)
 	}
 	defer h.interactor.NotifyInteractionSessionEnded(ctx, traceID)
 
@@ -88,14 +88,14 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	if connectedWallet.RequireInteraction() {
 		approved, err := h.interactor.RequestTransactionReviewForSending(ctx, traceID, 1, connectedWallet.Hostname(), connectedWallet.Name(), params.PublicKey, params.RawTransaction, receivedAt)
 		if err != nil {
-			if errDetails := handleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
+			if errDetails := HandleRequestFlowError(ctx, traceID, h.interactor, err); errDetails != nil {
 				return nil, errDetails
 			}
-			h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("requesting the transaction review failed: %w", err))
-			return nil, internalError(ErrCouldNotSendTransaction)
+			h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("requesting the transaction review failed: %w", err))
+			return nil, InternalError(ErrCouldNotSendTransaction)
 		}
 		if !approved {
-			return nil, userRejectionError(ErrUserRejectedSendingOfTransaction)
+			return nil, UserRejectionError(ErrUserRejectedSendingOfTransaction)
 		}
 	}
 
@@ -104,33 +104,33 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 		h.interactor.Log(ctx, traceID, LogType(reportType), msg)
 	})
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not find a healthy node: %w", err))
-		return nil, nodeCommunicationError(ErrNoHealthyNodeAvailable)
+		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, fmt.Errorf("could not find a healthy node: %w", err))
+		return nil, NodeCommunicationError(ErrNoHealthyNodeAvailable)
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Retrieving latest block information...")
 	stats, err := currentNode.SpamStatistics(ctx, request.PubKey)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, fmt.Errorf("could not get the latest block from node: %w", err))
-		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
+		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, fmt.Errorf("could not get the latest block from node: %w", err))
+		return nil, NodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "Latest block information has been retrieved.")
 
 	if stats.LastBlockHeight == 0 {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetLastBlockInformation)
-		return nil, nodeCommunicationError(ErrCouldNotGetLastBlockInformation)
+		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, ErrCouldNotGetLastBlockInformation)
+		return nil, NodeCommunicationError(ErrCouldNotGetLastBlockInformation)
 	}
 
 	if stats.ChainID == "" {
-		h.interactor.NotifyError(ctx, traceID, NetworkError, ErrCouldNotGetChainIDFromNode)
-		return nil, nodeCommunicationError(ErrCouldNotGetChainIDFromNode)
+		h.interactor.NotifyError(ctx, traceID, NetworkErrorType, ErrCouldNotGetChainIDFromNode)
+		return nil, NodeCommunicationError(ErrCouldNotGetChainIDFromNode)
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Verifying if the transaction passes the anti-spam rules...")
 	err = h.spam.CheckSubmission(request, &stats)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not send transaction: %w", err))
-		return nil, applicationCancellationError(err)
+		h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, fmt.Errorf("could not send transaction: %w", err))
+		return nil, ApplicationCancellationError(err)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction passes the anti-spam rules.")
 
@@ -138,15 +138,15 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	rawInputData := wcommands.ToInputData(request, stats.LastBlockHeight)
 	inputData, err := commands.MarshalInputData(rawInputData)
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not marshal input data: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not marshal input data: %w", err))
+		return nil, InternalError(ErrCouldNotSendTransaction)
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Signing the transaction...")
 	signature, err := w.SignTx(params.PublicKey, commands.BundleInputDataForSigning(inputData, stats.ChainID))
 	if err != nil {
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not sign the transaction: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not sign the transaction: %w", err))
+		return nil, InternalError(ErrCouldNotSendTransaction)
 	}
 	h.interactor.Log(ctx, traceID, SuccessLog, "The transaction has been signed.")
 
@@ -162,11 +162,11 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	tx.Pow, err = h.spam.GenerateProofOfWork(params.PublicKey, &stats)
 	if err != nil {
 		if errors.Is(err, ErrTransactionsPerBlockLimitReached) || errors.Is(err, ErrBlockHeightTooHistoric) {
-			h.interactor.NotifyError(ctx, traceID, ApplicationError, fmt.Errorf("could not compute the proof-of-work: %w", err))
-			return nil, applicationCancellationError(err)
+			h.interactor.NotifyError(ctx, traceID, ApplicationErrorType, fmt.Errorf("could not compute the proof-of-work: %w", err))
+			return nil, ApplicationCancellationError(err)
 		}
-		h.interactor.NotifyError(ctx, traceID, InternalError, fmt.Errorf("could not compute the proof-of-work: %w", err))
-		return nil, internalError(ErrCouldNotSendTransaction)
+		h.interactor.NotifyError(ctx, traceID, InternalErrorType, fmt.Errorf("could not compute the proof-of-work: %w", err))
+		return nil, InternalError(ErrCouldNotSendTransaction)
 	}
 
 	h.interactor.Log(ctx, traceID, SuccessLog, "The proof-of-work has been computed.")
@@ -176,7 +176,7 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	txHash, err := currentNode.SendTransaction(ctx, tx, params.SendingMode)
 	if err != nil {
 		h.interactor.NotifyFailedTransaction(ctx, traceID, 2, protoToJSON(rawInputData), protoToJSON(tx), err, sentAt, currentNode.Host())
-		return nil, networkErrorFromTransactionError(err)
+		return nil, NetworkErrorFromTransactionError(err)
 	}
 
 	h.interactor.NotifySuccessfulTransaction(ctx, traceID, 2, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())

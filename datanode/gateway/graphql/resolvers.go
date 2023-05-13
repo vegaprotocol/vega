@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"time"
 
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
@@ -504,6 +503,21 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Depo
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error) {
+	resp, err := r.tradingDataClientV2.ListTrades(ctx, &v2.ListTradesRequest{
+		MarketIds:  filter.MarketIds,
+		OrderIds:   filter.OrderIds,
+		PartyIds:   filter.PartyIds,
+		Pagination: pagination,
+		DateRange:  dateRange,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Trades, nil
+}
+
 func (r *myQueryResolver) Positions(ctx context.Context, filter *v2.PositionsFilter, pagination *v2.Pagination) (*v2.PositionConnection, error) {
 	resp, err := r.tradingDataClientV2.ListAllPositions(ctx, &v2.ListAllPositionsRequest{
 		Filter:     filter,
@@ -770,9 +784,6 @@ func (r *myQueryResolver) EstimateOrder(
 	ty vega.Order_Type,
 ) (*OrderEstimate, error) {
 	order := &types.Order{}
-
-	var err error
-
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
 		order.Price = *price
@@ -853,6 +864,127 @@ func (r *myQueryResolver) EstimateOrder(
 		Fee:            &fee,
 		TotalFeeAmount: decimal.Sum(mfee, ifee, lfee).String(),
 		MarginLevels:   respm.MarginLevels,
+	}, nil
+}
+
+func (r *myQueryResolver) EstimateFees(
+	ctx context.Context,
+	market, party string,
+	price *string,
+	size string,
+	side vega.Side,
+	timeInForce vega.Order_TimeInForce,
+	expiration *int64,
+	ty vega.Order_Type,
+) (*FeeEstimate, error) {
+	order := &types.Order{}
+	// We need to convert strings to uint64 (JS doesn't yet support uint64)
+	if price != nil {
+		order.Price = *price
+	}
+	s, err := safeStringUint64(size)
+	if err != nil {
+		return nil, err
+	}
+	order.Size = s
+	if len(market) <= 0 {
+		return nil, errors.New("market missing or empty")
+	}
+	order.MarketId = market
+	if len(party) <= 0 {
+		return nil, errors.New("party missing or empty")
+	}
+
+	order.PartyId = party
+	order.TimeInForce = timeInForce
+	order.Side = side
+	order.Type = ty
+
+	// GTT must have an expiration value
+	if order.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
+		order.ExpiresAt = vegatime.UnixNano(*expiration).UnixNano()
+	}
+
+	req := v2.EstimateFeeRequest{
+		MarketId: order.MarketId,
+		Price:    order.Price,
+		Size:     order.Size,
+	}
+
+	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
+	resp, err := r.tradingDataClientV2.EstimateFee(ctx, &req)
+	if err != nil {
+		r.log.Error("Failed to get fee estimates using rpc client in graphQL resolver", logging.Error(err))
+		return nil, err
+	}
+
+	// calclate the fee total amount
+	var mfee, ifee, lfee num.Decimal
+	// errors doesn't matter here, they just give us zero values anyway for the decimals
+	if len(resp.Fee.MakerFee) > 0 {
+		mfee, _ = num.DecimalFromString(resp.Fee.MakerFee)
+	}
+	if len(resp.Fee.InfrastructureFee) > 0 {
+		ifee, _ = num.DecimalFromString(resp.Fee.InfrastructureFee)
+	}
+	if len(resp.Fee.LiquidityFee) > 0 {
+		lfee, _ = num.DecimalFromString(resp.Fee.LiquidityFee)
+	}
+
+	fees := &TradeFee{
+		MakerFee:          resp.Fee.MakerFee,
+		InfrastructureFee: resp.Fee.InfrastructureFee,
+		LiquidityFee:      resp.Fee.LiquidityFee,
+	}
+
+	return &FeeEstimate{
+		Fees:           fees,
+		TotalFeeAmount: decimal.Sum(mfee, ifee, lfee).String(),
+	}, nil
+}
+
+func (r *myQueryResolver) EstimatePosition(
+	ctx context.Context,
+	marketId string,
+	openVolume string,
+	orders []*OrderInfo,
+	collateralAvailable *string,
+) (*PositionEstimate, error) {
+	ov, err := safeStringInt64(openVolume)
+	if err != nil {
+		return nil, err
+	}
+
+	ord := make([]*v2.OrderInfo, 0, len(orders))
+	for _, o := range orders {
+		r, err := safeStringUint64(o.Remaining)
+		if err != nil {
+			return nil, err
+		}
+
+		ord = append(ord, &v2.OrderInfo{
+			Side:          o.Side,
+			Price:         o.Price,
+			Remaining:     r,
+			IsMarketOrder: o.IsMarketOrder,
+		})
+	}
+
+	req := &v2.EstimatePositionRequest{
+		MarketId:            marketId,
+		OpenVolume:          ov,
+		Orders:              ord,
+		CollateralAvailable: collateralAvailable,
+	}
+
+	resp, err := r.tradingDataClientV2.EstimatePosition(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PositionEstimate{
+		Margin:      resp.Margin,
+		Liquidation: resp.Liquidation,
 	}, nil
 }
 
@@ -1352,9 +1484,13 @@ func (r *myPartyResolver) OrdersConnection(ctx context.Context, party *types.Par
 }
 
 func (r *myPartyResolver) TradesConnection(ctx context.Context, party *types.Party, market *string, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.TradeConnection, error) {
+	mkts := []string{}
+	if market != nil {
+		mkts = []string{*market}
+	}
 	req := v2.ListTradesRequest{
-		PartyId:    &party.Id,
-		MarketId:   market,
+		PartyIds:   []string{party.Id},
+		MarketIds:  mkts,
 		Pagination: pagination,
 		DateRange:  dateRange,
 	}
@@ -1656,7 +1792,11 @@ func (r *myOrderResolver) TradesConnection(ctx context.Context, ord *types.Order
 	if ord == nil {
 		return nil, errors.New("nil order")
 	}
-	req := v2.ListTradesRequest{OrderId: &ord.Id, Pagination: pagination, DateRange: dateRange}
+	req := v2.ListTradesRequest{
+		OrderIds:   []string{ord.Id},
+		Pagination: pagination,
+		DateRange:  dateRange,
+	}
 	res, err := r.tradingDataClientV2.ListTrades(ctx, &req)
 	if err != nil {
 		r.log.Error("tradingData client", logging.Error(err))
@@ -1922,96 +2062,6 @@ func (r *myPositionResolver) MarginsConnection(ctx context.Context, pos *types.P
 
 type mySubscriptionResolver VegaResolverRoot
 
-func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID *string) (<-chan *types.Delegation, error) {
-	req := &v2.ObserveDelegationsRequest{
-		PartyId: party,
-		NodeId:  nodeID,
-	}
-	stream, err := r.tradingDataClientV2.ObserveDelegations(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	sCtx := stream.Context()
-	ch := make(chan *types.Delegation)
-	go func() {
-		defer func() {
-			if err := stream.CloseSend(); err != nil {
-				r.log.Error("delegations: stream closed", logging.Error(err))
-			}
-			close(ch)
-		}()
-		for {
-			dl, err := stream.Recv()
-			if err == io.EOF {
-				r.log.Error("delegations: stream closed by server", logging.Error(err))
-				break
-			}
-			if err != nil {
-				r.log.Error("delegations levls: stream closed", logging.Error(err))
-				break
-			}
-			select {
-			case ch <- dl.Delegation:
-				r.log.Debug("delegations: data sent")
-			case <-ctx.Done():
-				r.log.Error("delegations: stream closed")
-				break
-			case <-sCtx.Done():
-				r.log.Error("delegations: stream closed by server")
-				break
-			}
-		}
-	}()
-
-	return ch, nil
-}
-
-func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *string) (<-chan *types.Reward, error) {
-	req := &v2.ObserveRewardsRequest{
-		AssetId: assetID,
-		PartyId: party,
-	}
-	stream, err := r.tradingDataClientV2.ObserveRewards(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	sCtx := stream.Context()
-	ch := make(chan *types.Reward)
-	go func() {
-		defer func() {
-			if err := stream.CloseSend(); err != nil {
-				r.log.Error("rewards: stream closed", logging.Error(err))
-			}
-			close(ch)
-		}()
-		for {
-			rd, err := stream.Recv()
-			if err == io.EOF {
-				r.log.Error("reward details: stream closed by server", logging.Error(err))
-				break
-			}
-			if err != nil {
-				r.log.Error("reward details: stream closed", logging.Error(err))
-				break
-			}
-			select {
-			case ch <- rd.Reward:
-				r.log.Debug("rewards: data sent")
-			case <-ctx.Done():
-				r.log.Error("rewards: stream closed")
-				break
-			case <-sCtx.Done():
-				r.log.Error("rewards: stream closed by server")
-				break
-			}
-		}
-	}()
-
-	return ch, nil
-}
-
 func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, marketID *string) (<-chan *types.MarginLevels, error) {
 	req := &v2.ObserveMarginLevelsRequest{
 		MarketId: marketID,
@@ -2193,9 +2243,65 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 }
 
 func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
+	markets := []string{}
+	parties := []string{}
+	if market != nil {
+		markets = append(markets, *market)
+	}
+
+	if party != nil {
+		parties = append(parties, *party)
+	}
+
 	req := &v2.ObserveTradesRequest{
-		MarketId: market,
-		PartyId:  party,
+		MarketIds: markets,
+		PartyIds:  parties,
+	}
+
+	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make(chan []*types.Trade)
+	sCtx := stream.Context()
+	go func() {
+		defer func() {
+			if err := stream.CloseSend(); err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+			}
+			close(c)
+		}()
+		for {
+			t, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("trades: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("trades: stream closed", logging.Error(err))
+				break
+			}
+			select {
+			case c <- t.Trades:
+				r.log.Debug("trades: data sent")
+			case <-ctx.Done():
+				r.log.Error("trades: stream closed")
+				break
+			case <-sCtx.Done():
+				r.log.Error("trades: stream closed by server")
+				break
+			}
+		}
+	}()
+
+	return c, nil
+}
+
+func (r *mySubscriptionResolver) TradesStream(ctx context.Context, filter TradesSubscriptionFilter) (<-chan []*types.Trade, error) {
+	req := &v2.ObserveTradesRequest{
+		MarketIds: filter.MarketIds,
+		PartyIds:  filter.PartyIds,
 	}
 	stream, err := r.tradingDataClientV2.ObserveTrades(ctx, req)
 	if err != nil {
@@ -2772,76 +2878,6 @@ func (r *myPropertyKeyResolver) NumberDecimalPlaces(ctx context.Context, obj *da
 	indp := new(int)
 	*indp = int(*ndp)
 	return indp, nil
-}
-
-// GetMarketDataHistoryByID returns all the market data information for a given market between the dates specified.
-func (r *myQueryResolver) GetMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, skip, first, last *int) ([]*types.MarketData, error) {
-	pagination := makeAPIV2Pagination(skip, first, last)
-
-	return r.getMarketDataHistoryByID(ctx, id, start, end, pagination)
-}
-
-func makeAPIV2Pagination(skip, first, last *int) *v2.OffsetPagination {
-	var (
-		offset, limit uint64
-		descending    bool
-	)
-	if skip != nil {
-		offset = uint64(*skip)
-	}
-	if last != nil {
-		limit = uint64(*last)
-		descending = true
-	} else if first != nil {
-		limit = uint64(*first)
-	}
-	return &v2.OffsetPagination{
-		Skip:       offset,
-		Limit:      limit,
-		Descending: descending,
-	}
-}
-
-func (r *myQueryResolver) getMarketData(ctx context.Context, req *v2.GetMarketDataHistoryByIDRequest) ([]*types.MarketData, error) {
-	resp, err := r.tradingDataClientV2.GetMarketDataHistoryByID(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.MarketData == nil {
-		return nil, errors.New("no market data not found")
-	}
-
-	results := make([]*types.MarketData, 0, len(resp.MarketData.Edges))
-
-	for _, edge := range resp.MarketData.Edges {
-		results = append(results, edge.Node)
-	}
-
-	return results, nil
-}
-
-func (r *myQueryResolver) getMarketDataHistoryByID(ctx context.Context, id string, start, end *int64, pagination *v2.OffsetPagination) ([]*types.MarketData, error) {
-	var startTime, endTime *int64
-
-	if start != nil {
-		s := time.Unix(*start, 0).UnixNano()
-		startTime = &s
-	}
-
-	if end != nil {
-		e := time.Unix(*end, 0).UnixNano()
-		endTime = &e
-	}
-
-	req := v2.GetMarketDataHistoryByIDRequest{
-		MarketId:         id,
-		StartTimestamp:   startTime,
-		EndTimestamp:     endTime,
-		OffsetPagination: pagination,
-	}
-
-	return r.getMarketData(ctx, &req)
 }
 
 func (r *myQueryResolver) GetMarketDataHistoryConnectionByID(ctx context.Context, marketID string, start, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error) {

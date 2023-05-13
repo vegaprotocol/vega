@@ -51,10 +51,16 @@ func FiltersFromProto(filters []*v1.Filter) []Filter {
 			})
 		}
 
+		var ndp *uint64
+		if filter.Key.NumberDecimalPlaces != nil {
+			v := *filter.Key.NumberDecimalPlaces
+			ndp = &v
+		}
 		results = append(results, Filter{
 			Key: PropertyKey{
-				Name: filter.Key.Name,
-				Type: filter.Key.Type,
+				Name:          filter.Key.Name,
+				Type:          filter.Key.Type,
+				DecimalPlaces: ndp,
 			},
 			Conditions: conditions,
 		})
@@ -78,10 +84,16 @@ func filtersToProto(filters []Filter) []*v1.Filter {
 			})
 		}
 
+		var ndp *uint64
+		if filter.Key.DecimalPlaces != nil {
+			v := *filter.Key.DecimalPlaces
+			ndp = &v
+		}
 		results = append(results, &v1.Filter{
 			Key: &v1.PropertyKey{
-				Name: filter.Key.Name,
-				Type: filter.Key.Type,
+				Name:                filter.Key.Name,
+				Type:                filter.Key.Type,
+				NumberDecimalPlaces: ndp,
 			},
 			Conditions: conditions,
 		})
@@ -96,8 +108,9 @@ type Filter struct {
 }
 
 type PropertyKey struct {
-	Name string `json:"name"`
-	Type v1.PropertyKey_Type
+	Name          string `json:"name"`
+	Type          v1.PropertyKey_Type
+	DecimalPlaces *uint64 `json:"number_decimal_places,omitempty"`
 }
 
 type Condition struct {

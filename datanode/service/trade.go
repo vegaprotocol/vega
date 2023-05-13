@@ -15,6 +15,8 @@ package service
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/libs/slice"
+
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/utils"
 	"code.vegaprotocol.io/vega/logging"
@@ -23,10 +25,8 @@ import (
 type tradeStore interface {
 	Flush(ctx context.Context) ([]*entities.Trade, error)
 	Add(t *entities.Trade) error
-	List(context.Context, entities.MarketID, entities.PartyID, entities.OrderID, entities.CursorPagination, entities.DateRange) ([]entities.Trade, entities.PageInfo, error)
-	GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error)
-	GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
-	GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error)
+	List(context.Context, []entities.MarketID, []entities.PartyID, []entities.OrderID, entities.CursorPagination, entities.DateRange) ([]entities.Trade, entities.PageInfo, error)
+	GetLastTradeByMarket(ctx context.Context, market string) ([]entities.Trade, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error)
 }
 
@@ -56,37 +56,33 @@ func (t *Trade) Add(trade *entities.Trade) error {
 }
 
 func (t *Trade) List(ctx context.Context,
-	marketID entities.MarketID,
-	partyID entities.PartyID,
-	orderID entities.OrderID,
+	marketIDs []entities.MarketID,
+	partyIDs []entities.PartyID,
+	orderIDs []entities.OrderID,
 	pagination entities.CursorPagination,
 	dateRange entities.DateRange,
 ) ([]entities.Trade, entities.PageInfo, error) {
-	return t.store.List(ctx, marketID, partyID, orderID, pagination, dateRange)
+	return t.store.List(ctx, marketIDs, partyIDs, orderIDs, pagination, dateRange)
 }
 
-func (t *Trade) GetByMarket(ctx context.Context, market string, p entities.OffsetPagination) ([]entities.Trade, error) {
-	return t.store.GetByMarket(ctx, market, p)
-}
-
-func (t *Trade) GetByParty(ctx context.Context, party string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
-	return t.store.GetByParty(ctx, party, market, pagination)
-}
-
-func (t *Trade) GetByOrderID(ctx context.Context, order string, market *string, pagination entities.OffsetPagination) ([]entities.Trade, error) {
-	return t.store.GetByOrderID(ctx, order, market, pagination)
+func (t *Trade) GetLastTradeByMarket(ctx context.Context, market string) ([]entities.Trade, error) {
+	return t.store.GetLastTradeByMarket(ctx, market)
 }
 
 func (t *Trade) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Trade, error) {
 	return t.store.GetByTxHash(ctx, txHash)
 }
 
-func (t *Trade) Observe(ctx context.Context, retries int, marketID *string, partyID *string) (<-chan []*entities.Trade, uint64) {
+func (t *Trade) Observe(ctx context.Context, retries int, marketIDs []string, partyIDs []string) (<-chan []*entities.Trade, uint64) {
 	ch, ref := t.observer.Observe(ctx,
 		retries,
 		func(trade *entities.Trade) bool {
-			return (marketID == nil || *marketID == trade.MarketID.String()) &&
-				(partyID == nil || *partyID == trade.Buyer.String() || *partyID == trade.Seller.String())
+			// match market filter if any, or if no filter is provided
+			marketsOk := len(marketIDs) == 0 || slice.Contains(marketIDs, trade.MarketID.String())
+			// match party filter if any, or if no filter is provided
+			partiesOk := len(partyIDs) == 0 || slice.Contains(partyIDs, trade.Buyer.String()) || slice.Contains(partyIDs, trade.Seller.String())
+
+			return marketsOk && partiesOk
 		})
 	return ch, ref
 }

@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/paths"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/service/v2/connections"
-	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +51,7 @@ func NewCmdDeleteAPIToken(w io.Writer, rf *RootFlags) *cobra.Command {
 	return BuildCmdDeleteAPIToken(w, ensureAPITokenStoreIsInit, h, rf)
 }
 
-func BuildCmdDeleteAPIToken(w io.Writer, preCheck APITokePreCheck, handler DeleteAPITokenHandler, rf *RootFlags) *cobra.Command {
+func BuildCmdDeleteAPIToken(w io.Writer, preCheck APITokenPreCheck, handler DeleteAPITokenHandler, rf *RootFlags) *cobra.Command {
 	f := &DeleteAPITokenFlags{}
 
 	cmd := &cobra.Command{

@@ -304,7 +304,7 @@ func testServiceV2_PostRequests_ConnectWalletSucceeds(t *testing.T) {
 	// setup
 	s := getTestServiceV2(t)
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, responseHeaders, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBody, map[string]string{
@@ -350,7 +350,7 @@ func testServiceV2_PostRequests_ConnectWalletAsNotificationReturnsNothing(t *tes
 	// setup
 	s := getTestServiceV2(t)
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBody, map[string]string{
@@ -423,7 +423,7 @@ func testServiceV2_PostRequests_DisconnectWalletSucceeds(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	connectionStatusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -472,7 +472,7 @@ func testServiceV2_PostRequests_ListKeysSucceeds(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -498,7 +498,6 @@ func testServiceV2_PostRequests_ListKeysSucceeds(t *testing.T) {
 	s.clientAPI.EXPECT().ListKeys(gomock.Any(), gomock.Any()).Times(1).Return(&api.ClientListKeysResult{
 		Keys: expectedKeys,
 	}, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyListKeys, map[string]string{
@@ -583,7 +582,7 @@ func testServiceV2_PostRequests_ListKeysWithMismatchingHostnameFails(t *testing.
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -620,7 +619,7 @@ func testServiceV2_PostRequests_ListKeysAsNotificationReturnsNothing(t *testing.
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -640,7 +639,6 @@ func testServiceV2_PostRequests_ListKeysAsNotificationReturnsNothing(t *testing.
 
 	// setup
 	s.clientAPI.EXPECT().ListKeys(gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyListKeys, map[string]string{
@@ -664,7 +662,7 @@ func testServiceV2_PostRequests_ListKeysGettingErrorFails(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -684,7 +682,6 @@ func testServiceV2_PostRequests_ListKeysGettingErrorFails(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().ListKeys(gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyListKeys, map[string]string{
@@ -708,7 +705,7 @@ func testServiceV2_PostRequests_ListKeysGettingInternalErrorFails(t *testing.T) 
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -728,7 +725,6 @@ func testServiceV2_PostRequests_ListKeysGettingInternalErrorFails(t *testing.T) 
 
 	// setup
 	s.clientAPI.EXPECT().ListKeys(gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyListKeys, map[string]string{
@@ -765,7 +761,6 @@ func testServiceV2_PostRequests_ListKeysWithExpiredLongLivingTokenFails(t *testi
 	reqBodyListKeys := `{"jsonrpc": "2.0", "method": "client.list_keys", "id": "123456789"}`
 
 	// setup
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyListKeys, map[string]string{
@@ -810,7 +805,6 @@ func testServiceV2_PostRequests_ListKeysWithLongLivingTokenSucceeds(t *testing.T
 	}
 
 	// setup
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 	s.clientAPI.EXPECT().ListKeys(gomock.Any(), gomock.Any()).Times(1).Return(&api.ClientListKeysResult{
 		Keys: expectedKeys,
 	}, nil)
@@ -841,7 +835,7 @@ func testServiceV2_PostRequests_SendTransactionSucceeds(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -871,7 +865,6 @@ func testServiceV2_PostRequests_SendTransactionSucceeds(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(expectedResult, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodySendTransaction, map[string]string{
@@ -956,7 +949,7 @@ func testServiceV2_PostRequests_SendTransactionWithMismatchingHostnameFails(t *t
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -993,7 +986,7 @@ func testServiceV2_PostRequests_SendTransactionAsNotificationReturnsNothing(t *t
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -1013,7 +1006,6 @@ func testServiceV2_PostRequests_SendTransactionAsNotificationReturnsNothing(t *t
 
 	// setup
 	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodySendTransaction, map[string]string{
@@ -1037,7 +1029,7 @@ func testServiceV2_PostRequests_SendTransactionGettingErrorFails(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -1057,7 +1049,6 @@ func testServiceV2_PostRequests_SendTransactionGettingErrorFails(t *testing.T) {
 
 	// setup
 	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodySendTransaction, map[string]string{
@@ -1081,7 +1072,7 @@ func testServiceV2_PostRequests_SendTransactionGettingInternalErrorFails(t *test
 
 	// setup
 	s.clientAPI.EXPECT().ConnectWallet(gomock.Any(), expectedHostname).Times(1).Return(w, nil)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
+	s.sessionStore.EXPECT().TrackSession(gomock.Any()).Times(1).Return(nil)
 
 	// when
 	statusCode, connectionResponseHeaders, _ := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodyConnectWallet, map[string]string{
@@ -1101,7 +1092,6 @@ func testServiceV2_PostRequests_SendTransactionGettingInternalErrorFails(t *test
 
 	// setup
 	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil, expectedErrorDetails)
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodySendTransaction, map[string]string{
@@ -1154,7 +1144,6 @@ func testServiceV2_PostRequests_SendTransactionWithExpiredLongLivingTokenFails(t
 	}`, kp.PublicKey())
 
 	// setup
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 
 	// when
 	statusCode, _, rawResponse := s.serveHTTP(t, buildRequest(t, http.MethodPost, "/api/v2/requests", reqBodySendTransaction, map[string]string{
@@ -1209,7 +1198,6 @@ func testServiceV2_PostRequests_SendTransactionWithLongLivingTokenSucceeds(t *te
 	expectedResult := &api.ClientSendTransactionResult{}
 
 	// setup
-	s.timeService.EXPECT().Now().Times(1).Return(time.Now())
 	s.clientAPI.EXPECT().SendTransaction(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(expectedResult, nil)
 
 	// when

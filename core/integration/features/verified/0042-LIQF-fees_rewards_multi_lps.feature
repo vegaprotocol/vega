@@ -126,7 +126,7 @@ Feature: Test liquidity provider reward distribution when there are multiple liq
       | market | party1 | ACCOUNT_TYPE_FEES_MAKER     | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 80000  | USD   |
       | market | lp1    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 5      | USD   |
       | market | lp2    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599    | USD   |
-      | market | lp3    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599396 | USD   |
+      | market | lp3    | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL             | ETH/MAR22 | 599394 | USD   |
 
 # liquidity fee lp1 = 600000 * 0.0000099899101907 = 5
 # liquidity fee lp2 = 600000 * 0.0009989910190707 = 599

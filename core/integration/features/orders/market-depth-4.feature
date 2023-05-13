@@ -10,7 +10,7 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | limits.markets.maxPeggedOrders          | 1500  |
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
-  Scenario: Check order events with larger pegged orders, and lower balance
+  Scenario: Check order events with larger pegged orders, and lower balance; check cancelling all orders for a party per market 0033-OCAN-010
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party            | asset | amount    |
@@ -61,9 +61,15 @@ Feature: Test market depth events for pegged orders (cancelling pegged orders)
       | pegged1 | ETH/DEC19 |
       | pegged3 | ETH/DEC19 |
       | pegged2 | ETH/DEC19 |
+    # Cancelling all orders on a market for a party by the "cancel all party orders per market message" leaves orders on other markets unaffected, 0033-OCAN-010
 
     Then the pegged orders should have the following states:
       | party   | market id | side | volume | reference | offset | price | status           |
       | pegged3 | ETH/DEC19 | buy  | 500    | BID       | 10     | 70    | STATUS_CANCELLED |
       | pegged1 | ETH/DEC19 | sell | 500    | ASK       | 10     | 130   | STATUS_CANCELLED |
       | pegged2 | ETH/DEC19 | sell | 500    | MID       | 15     | 115   | STATUS_CANCELLED |
+
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 80    | 1000   |
+      | sell | 120   | 1000   |

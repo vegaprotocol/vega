@@ -24,6 +24,17 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 )
 
+type testBlockSource struct {
+	blockStore *sqlstore.Blocks
+	blockTime  time.Time
+}
+
+func (bs *testBlockSource) getNextBlock(t *testing.T, ctx context.Context) entities.Block {
+	t.Helper()
+	bs.blockTime = bs.blockTime.Add(1 * time.Second)
+	return addTestBlockForTime(t, ctx, bs.blockStore, bs.blockTime)
+}
+
 func addTestBlock(t *testing.T, ctx context.Context, bs *sqlstore.Blocks) entities.Block {
 	t.Helper()
 	return addTestBlockForTime(t, ctx, bs, time.Now())

@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMultisigTopologySheckpoint(t *testing.T) {
+func TestMultisigTopologyCheckpoint(t *testing.T) {
 	top := getTestTopology(t)
 	defer top.ctrl.Finish()
 

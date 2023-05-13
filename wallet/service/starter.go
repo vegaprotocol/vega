@@ -42,7 +42,7 @@ type InteractorBuilderFunc func(ctx context.Context) api.Interactor
 // zap.AtomicLevel to allow the caller to dynamically change the log level.
 type LoggerBuilderFunc func(level string) (*zap.Logger, zap.AtomicLevel, error)
 
-type ConnectionsManagerBuilderFunc func() *connections.Manager
+type ConnectionsManagerBuilderFunc func(api.Interactor) (*connections.Manager, error)
 
 type ProcessStoppedNotifier func()
 
@@ -56,17 +56,24 @@ type Starter struct {
 	netStore    NetworkStore
 	svcStore    Store
 
-	connectionsManager    *connections.Manager
-	policyBuilderFunc     PolicyBuilderFunc
-	interactorBuilderFunc InteractorBuilderFunc
-	loggerBuilderFunc     LoggerBuilderFunc
+	connectionsManagerBuilderFunc ConnectionsManagerBuilderFunc
+	policyBuilderFunc             PolicyBuilderFunc
+	interactorBuilderFunc         InteractorBuilderFunc
+	loggerBuilderFunc             LoggerBuilderFunc
 
 	isStarted atomic.Bool
 }
 
-func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool) (_ string, _ <-chan error, err error) {
+type ResourceContext struct {
+	ServiceURL        string
+	ErrCh             chan error
+	ConnectionManager *connections.Manager
+}
+
+func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool) (_ *ResourceContext, err error) {
+	rc := &ResourceContext{}
 	if s.isStarted.Load() {
-		return "", nil, ErrCannotStartMultipleServiceAtTheSameTime
+		return nil, ErrCannotStartMultipleServiceAtTheSameTime
 	}
 	s.isStarted.Store(true)
 	defer func() {
@@ -78,46 +85,48 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 
 	logger, logLevel, errDetails := s.buildServiceLogger(network)
 	if errDetails != nil {
-		return "", nil, errDetails
+		return nil, errDetails
 	}
 	defer vgzap.Sync(logger)
 
 	serviceCfg, err := s.svcStore.GetConfig()
 	if err != nil {
-		return "", nil, fmt.Errorf("could not retrieve the service configuration: %w", err)
+		return nil, fmt.Errorf("could not retrieve the service configuration: %w", err)
 	}
 
 	if err := serviceCfg.Validate(); err != nil {
-		return "", nil, err
+		return nil, err
 	}
+
+	rc.ServiceURL = serviceCfg.Server.String()
 
 	// Since we successfully retrieve the service configuration, we can update
 	// the log level to the specified one.
 	if err := updateLogLevel(logLevel, serviceCfg); err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	networkCfg, err := s.networkConfig(logger, network)
 	if err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	if !noVersionCheck {
 		if err := s.ensureSoftwareIsCompatibleWithNetwork(logger, networkCfg); err != nil {
-			return "", nil, err
+			return nil, err
 		}
 	} else {
 		logger.Warn("The compatibility check between the software and the network has been skipped")
 	}
 
 	if err := s.ensureServiceIsInitialised(logger); err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	// Check if the port we want to bind is free. It's not fool-proof, but it
 	// should catch most of the port-binding problems.
 	if err := ensurePortCanBeBound(jobRunner.Ctx(), logger, serviceCfg.Server.String()); err != nil {
-		return "", nil, err
+		return nil, err
 	}
 
 	apiLogger := logger.Named("api")
@@ -132,14 +141,14 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	apiV1, err := s.buildAPIV1(jobRunner.Ctx(), apiLogger, networkCfg, serviceCfg, proofOfWork, closer)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v1", zap.Error(err))
-		return "", nil, err
+		return nil, err
 	}
 
 	// API v2
-	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer)
+	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer, rc, serviceCfg.APIV2)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v2", zap.Error(err))
-		return "", nil, err
+		return nil, err
 	}
 
 	svc := NewService(logger.Named("http-server"), serviceCfg, apiV1, apiV2)
@@ -168,6 +177,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	})
 
 	internalErrorReporter := make(chan error, 1)
+	rc.ErrCh = internalErrorReporter
 
 	jobRunner.Go(func(_ context.Context) {
 		defer close(internalErrorReporter)
@@ -187,7 +197,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 		logger.Info("The service exited")
 	})
 
-	return serviceCfg.Server.String(), internalErrorReporter, nil
+	return rc, nil
 }
 
 // buildAPIV1
@@ -220,11 +230,16 @@ func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, spam), nil
 }
 
-func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer) (*servicev2.API, error) {
+func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer, rc *ResourceContext, apiv2Cfg APIV2Config) (*servicev2.API, error) {
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 
-	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(clientAPILogger, cfg.API.GRPC.Hosts, cfg.API.GRPC.Retries)
+	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(
+		clientAPILogger,
+		cfg.API.GRPC.Hosts,
+		apiv2Cfg.Nodes.MaximumRetryPerRequest,
+		apiv2Cfg.Nodes.MaximumRequestDuration.Duration,
+	)
 	if err != nil {
 		logger.Error("Could not build the node selector", zap.Error(err))
 		return nil, err
@@ -241,7 +256,14 @@ func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *netwo
 		return nil, fmt.Errorf("could not instantiate the client part of the JSON-RPC API: %w", err)
 	}
 
-	return servicev2.NewAPI(apiV2logger, clientAPI, s.connectionsManager), nil
+	connectionsManager, err := s.connectionsManagerBuilderFunc(interactor)
+	if err != nil {
+		return nil, fmt.Errorf("could not build the connections manager: %w", err)
+	}
+	closer.Add(connectionsManager.EndAllSessionConnections)
+	rc.ConnectionManager = connectionsManager
+
+	return servicev2.NewAPI(apiV2logger, clientAPI, connectionsManager), nil
 }
 
 func (s *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLevel, error) {
@@ -334,23 +356,15 @@ func updateLogLevel(logLevel zap.AtomicLevel, serviceCfg *Config) error {
 	return nil
 }
 
-func NewStarter(
-	walletStore api.WalletStore,
-	netStore api.NetworkStore,
-	svcStore Store,
-	connectionsManager *connections.Manager,
-	policyBuilderFunc PolicyBuilderFunc,
-	interactorBuilderFunc InteractorBuilderFunc,
-	loggerBuilderFunc LoggerBuilderFunc,
-) *Starter {
+func NewStarter(walletStore api.WalletStore, netStore api.NetworkStore, svcStore Store, connectionsManager ConnectionsManagerBuilderFunc, policyBuilderFunc PolicyBuilderFunc, interactorBuilderFunc InteractorBuilderFunc, loggerBuilderFunc LoggerBuilderFunc) *Starter {
 	return &Starter{
-		walletStore:           walletStore,
-		netStore:              netStore,
-		svcStore:              svcStore,
-		connectionsManager:    connectionsManager,
-		policyBuilderFunc:     policyBuilderFunc,
-		interactorBuilderFunc: interactorBuilderFunc,
-		loggerBuilderFunc:     loggerBuilderFunc,
+		walletStore:                   walletStore,
+		netStore:                      netStore,
+		svcStore:                      svcStore,
+		connectionsManagerBuilderFunc: connectionsManager,
+		policyBuilderFunc:             policyBuilderFunc,
+		interactorBuilderFunc:         interactorBuilderFunc,
+		loggerBuilderFunc:             loggerBuilderFunc,
 	}
 }
 

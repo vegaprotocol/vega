@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/wallet/service/v1"
+	v1 "code.vegaprotocol.io/vega/wallet/service/v1"
 	"code.vegaprotocol.io/vega/wallet/service/v1/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -47,6 +47,7 @@ func TestAuth(t *testing.T) {
 }
 
 func testVerifyValidToken(t *testing.T) {
+	t.Parallel()
 	auth := getTestAuth(t)
 	w := "jeremy"
 
@@ -61,6 +62,7 @@ func testVerifyValidToken(t *testing.T) {
 }
 
 func testVerifyInvalidToken(t *testing.T) {
+	t.Parallel()
 	auth := getTestAuth(t)
 	tok := "that's not a token"
 
@@ -70,6 +72,7 @@ func testVerifyInvalidToken(t *testing.T) {
 }
 
 func testRevokeValidToken(t *testing.T) {
+	t.Parallel()
 	auth := getTestAuth(t)
 	walletName := "jeremy"
 
@@ -93,6 +96,7 @@ func testRevokeValidToken(t *testing.T) {
 }
 
 func testRevokeInvalidToken(t *testing.T) {
+	t.Parallel()
 	auth := getTestAuth(t)
 	tok := "hehehe that's not a toekn"
 

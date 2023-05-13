@@ -32,6 +32,8 @@ func (o *latestHistoryOutput) printHuman() {
 }
 
 func (cmd *latestHistorySegment) Execute(_ []string) error {
+	ctx, cfunc := context.WithCancel(context.Background())
+	defer cfunc()
 	cfg := logging.NewDefaultConfig()
 	cfg.Custom.Zap.Level = logging.ErrorLevel
 	cfg.Environment = "custom"
@@ -47,7 +49,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		os.Exit(1)
 	}
 
-	ctx, cancelFn := context.WithCancel(context.Background())
+	ctx, cancelFn := context.WithCancel(ctx)
 	defer cancelFn()
 
 	var latestSegment *v2.HistorySegment
@@ -73,7 +75,7 @@ func (cmd *latestHistorySegment) Execute(_ []string) error {
 		latestSegment = response.Segments[0]
 	} else {
 		networkHistoryStore, err := store.New(ctx, log, cmd.Config.ChainID, cmd.Config.NetworkHistory.Store,
-			vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), false, cmd.Config.MaxMemoryPercent)
+			vegaPaths.StatePathFor(paths.DataNodeNetworkHistoryHome), cmd.Config.MaxMemoryPercent)
 		if err != nil {
 			handleErr(log, cmd.Output.IsJSON(), "failed to create network history store", err)
 			os.Exit(1)

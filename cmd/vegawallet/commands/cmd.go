@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
@@ -20,7 +21,8 @@ import (
 )
 
 const (
-	DefaultForwarderRetryCount = 5
+	defaultRequestRetryCount  = 5
+	defaultMaxRequestDuration = 5 * time.Second
 )
 
 type Error struct {

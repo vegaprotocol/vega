@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -84,6 +85,9 @@ var (
 	// Per table segment creation time.
 	networkHistoryCopiedRowsCounter *prometheus.CounterVec
 	networkHistoryCopyTimeCounter   *prometheus.CounterVec
+
+	batcherAddedEntities   *prometheus.CounterVec
+	batcherFlushedEntities *prometheus.CounterVec
 )
 
 // abstract prometheus types.
@@ -487,6 +491,36 @@ func setupMetrics() error {
 	}
 	networkHistoryCopyTimeCounter = ct
 
+	h, err = addInstrument(
+		Counter,
+		"batcher_added_entities",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	baet, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	batcherAddedEntities = baet
+
+	h, err = addInstrument(
+		Counter,
+		"batcher_flushed_entities",
+		Namespace("datanode"),
+		Vectors("table"),
+	)
+	if err != nil {
+		return err
+	}
+	bfe, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	batcherFlushedEntities = bfe
+
 	// sqlQueryTime
 	h, err = addInstrument(
 		Counter,
@@ -865,8 +899,9 @@ func APIRequestAndTimeREST(method, request string, time float64) {
 	}
 
 	const (
-		invalid = "invalid route"
-		prefix  = "/api/v2/"
+		invalid    = "invalid route"
+		invalidURL = "invalid url"
+		prefix     = "/api/v2/"
 	)
 
 	if !httpBindings.HasRoute(method, request) {
@@ -875,19 +910,22 @@ func APIRequestAndTimeREST(method, request string, time float64) {
 		return
 	}
 
-	uri := request
-
-	// Remove the first slash if it has one
-	if strings.Index(uri, prefix) == 0 {
-		uri = uri[len(prefix):]
+	parsed, err := url.Parse(request)
+	if err != nil {
+		apiRequestCallCounter.WithLabelValues("REST", invalidURL).Inc()
+		apiRequestTimeCounter.WithLabelValues("REST", invalidURL).Add(time)
+		return
 	}
+
+	trimmedPath := strings.TrimPrefix(parsed.Path, prefix)
+
 	// Trim the URI down to something useful
-	if strings.Count(uri, "/") >= 1 {
-		uri = uri[:strings.Index(uri, "/")]
+	if strings.Count(trimmedPath, "/") >= 1 {
+		trimmedPath = trimmedPath[:strings.Index(trimmedPath, "/")]
 	}
 
-	apiRequestCallCounter.WithLabelValues("REST", uri).Inc()
-	apiRequestTimeCounter.WithLabelValues("REST", uri).Add(time)
+	apiRequestCallCounter.WithLabelValues("REST", trimmedPath).Inc()
+	apiRequestTimeCounter.WithLabelValues("REST", trimmedPath).Add(time)
 }
 
 // APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls.
@@ -910,6 +948,20 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 	}
+}
+
+func IncrementBatcherAddedEntities(table string) {
+	if batcherAddedEntities == nil {
+		return
+	}
+	batcherAddedEntities.WithLabelValues(table).Add(1)
+}
+
+func BatcherFlushedEntitiesAdd(table string, flushed int) {
+	if batcherFlushedEntities == nil {
+		return
+	}
+	batcherFlushedEntities.WithLabelValues(table).Add(float64(flushed))
 }
 
 func NetworkHistoryRowsCopied(table string, rowsCopied int64) {

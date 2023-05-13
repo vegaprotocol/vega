@@ -3,4 +3,4 @@
 core/integration/features/verified/ @vegaprotocol/research
 core/netparams/defaults.go @vegaprotocol/research
 datanode/gateway/graphql/schema.graphql @vegaprotocol/frontend @candida-d
-protos/**/*.proto @candida-d
+protos/**/*.proto @candida-d @gordsport

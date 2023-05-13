@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -18,6 +19,7 @@ import (
 )
 
 func TestAdminSendRawTransaction(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminSendRawTransactionSchemaCorrect)
 	t.Run("Sending transaction with invalid params fails", testAdminSendingRawTransactionWithInvalidParamsFails)
 	t.Run("Sending transaction with valid params succeeds", testAdminSendingRawTransactionWithValidParamsSucceeds)
 	t.Run("Sending transaction with network that doesn't exist fails", testAdminSendingRawTransactionWithNetworkThatDoesntExistFails)
@@ -26,6 +28,10 @@ func TestAdminSendRawTransaction(t *testing.T) {
 	t.Run("Getting internal error during node selector building fails", testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildingFails)
 	t.Run("Sending transaction without healthy node fails", testAdminSendingRawTransactionWithoutHealthyNodeFails)
 	t.Run("Sending transaction with failed sending fails", testAdminSendingRawTransactionWithFailedSendingFails)
+}
+
+func testAdminSendRawTransactionSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.send_raw_transaction", api.AdminSendRawTransactionParams{}, api.AdminSendRawTransactionResult{})
 }
 
 func testAdminSendingRawTransactionWithInvalidParamsFails(t *testing.T) {
@@ -117,7 +123,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 	nodeHost := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -220,7 +226,7 @@ func testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildin
 	network := newNetwork(t)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		return nil, assert.AnError
 	})
 
@@ -246,7 +252,7 @@ func testAdminSendingRawTransactionWithoutHealthyNodeFails(t *testing.T) {
 	network := newNetwork(t)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
@@ -276,7 +282,7 @@ func testAdminSendingRawTransactionWithFailedSendingFails(t *testing.T) {
 	network := newNetwork(t)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -321,14 +327,14 @@ func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Contex
 	return api.AdminSendRawTransactionResult{}, err
 }
 
-func newAdminSendRawTransactionHandler(t *testing.T, builder api.NodeSelectorBuilder) *adminSendRawTransactionHandler {
+func newAdminSendRawTransactionHandler(t *testing.T, selectorBuilder api.NodeSelectorBuilder) *adminSendRawTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	networkStore := mocks.NewMockNetworkStore(ctrl)
 
 	return &adminSendRawTransactionHandler{
-		AdminSendRawTransaction: api.NewAdminSendRawTransaction(networkStore, builder),
+		AdminSendRawTransaction: api.NewAdminSendRawTransaction(networkStore, selectorBuilder),
 		ctrl:                    ctrl,
 		networkStore:            networkStore,
 	}

@@ -2,41 +2,42 @@ package gateway
 
 import (
 	"crypto/tls"
-	"fmt"
+	"errors"
+	"net/http"
 
 	"code.vegaprotocol.io/vega/paths"
 	"golang.org/x/crypto/acme/autocert"
 )
 
-func GenerateTlsConfig(g *Config, vegaPaths paths.Paths) (*tls.Config, error) {
+func GenerateTlsConfig(g *Config, vegaPaths paths.Paths) (*tls.Config, http.Handler, error) {
 	if g.HTTPSEnabled {
 		if g.AutoCertDomain != "" {
 			if g.CertificateFile != "" || g.KeyFile != "" {
-				return nil, fmt.Errorf("Autocert is enabled, and a pre-generated certificate/key specified; use one or the other")
+				return nil, nil, errors.New("autocert is enabled, and a pre-generated certificate/key specified; use one or the other")
 			}
-			dataNodeHome := paths.StatePath(vegaPaths.StatePathFor(paths.DataNodeStateHome))
-			certDir := paths.JoinStatePath(dataNodeHome, "autocert")
+			certDir := vegaPaths.StatePathFor(paths.DataNodeAutoCertHome)
 
 			certManager := autocert.Manager{
 				Prompt:     autocert.AcceptTOS,
 				HostPolicy: autocert.HostWhitelist(g.AutoCertDomain),
 				Cache:      autocert.DirCache(certDir),
 			}
+
 			return &tls.Config{
 				GetCertificate: certManager.GetCertificate,
-				NextProtos:     []string{"http/1.1", "acme-tls/1"},
-			}, nil
+				// NextProtos:     []string{"http/1.1", "acme-tls/1"},
+			}, certManager.HTTPHandler(nil), nil
 		}
 
 		certificate, err := tls.LoadX509KeyPair(g.CertificateFile, g.KeyFile)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		certificates := []tls.Certificate{certificate}
 		return &tls.Config{
 			Certificates: certificates,
-		}, nil
+		}, nil, nil
 	}
 
-	return nil, nil
+	return nil, nil, nil
 }

@@ -16,11 +16,16 @@ import (
 )
 
 func TestAdminDescribeWallet(t *testing.T) {
+	t.Run("Documentation matches the code", testAdminDescribeWalletSchemaCorrect)
 	t.Run("Describing a wallet with invalid params fails", testDescribingWalletWithInvalidParamsFails)
 	t.Run("Describing a wallet with valid params succeeds", testDescribingWalletWithValidParamsSucceeds)
 	t.Run("Describing a wallet that does not exists fails", testDescribingWalletThatDoesNotExistsFails)
 	t.Run("Getting internal error during verification fails", testAdminDescribeWalletGettingInternalErrorDuringVerificationFails)
 	t.Run("Getting internal error during retrieval fails", testAdminDescribeWalletGettingInternalErrorDuringRetrievalFails)
+}
+
+func testAdminDescribeWalletSchemaCorrect(t *testing.T) {
+	assertEqualSchema(t, "admin.describe_wallet", api.AdminDescribeWalletParams{}, api.AdminDescribeWalletResult{})
 }
 
 func testDescribingWalletWithInvalidParamsFails(t *testing.T) {
@@ -40,17 +45,9 @@ func testDescribingWalletWithInvalidParamsFails(t *testing.T) {
 		}, {
 			name: "with empty name",
 			params: api.AdminDescribeWalletParams{
-				Wallet:     "",
-				Passphrase: vgrand.RandomStr(5),
+				Wallet: "",
 			},
 			expectedError: api.ErrWalletIsRequired,
-		}, {
-			name: "with empty passphrase",
-			params: api.AdminDescribeWalletParams{
-				Wallet:     vgrand.RandomStr(5),
-				Passphrase: "",
-			},
-			expectedError: api.ErrPassphraseIsRequired,
 		},
 	}
 
@@ -75,7 +72,6 @@ func testDescribingWalletWithInvalidParamsFails(t *testing.T) {
 func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 	expectedWallet, _, err := wallet.NewHDWallet(name)
 	if err != nil {
@@ -86,13 +82,12 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 	handler := newDescribeWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, expectedWallet.Name()).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(expectedWallet, nil)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeWalletParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -101,7 +96,6 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 		Name:                 expectedWallet.Name(),
 		ID:                   expectedWallet.ID(),
 		Type:                 expectedWallet.Type(),
-		Version:              expectedWallet.KeyDerivationVersion(),
 		KeyDerivationVersion: expectedWallet.KeyDerivationVersion(),
 	}, result)
 }
@@ -109,7 +103,6 @@ func testDescribingWalletWithValidParamsSucceeds(t *testing.T) {
 func testDescribingWalletThatDoesNotExistsFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -119,8 +112,7 @@ func testDescribingWalletThatDoesNotExistsFails(t *testing.T) {
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeWalletParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -132,7 +124,6 @@ func testDescribingWalletThatDoesNotExistsFails(t *testing.T) {
 func testAdminDescribeWalletGettingInternalErrorDuringVerificationFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
@@ -142,8 +133,7 @@ func testAdminDescribeWalletGettingInternalErrorDuringVerificationFails(t *testi
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeWalletParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then
@@ -155,20 +145,18 @@ func testAdminDescribeWalletGettingInternalErrorDuringVerificationFails(t *testi
 func testAdminDescribeWalletGettingInternalErrorDuringRetrievalFails(t *testing.T) {
 	// given
 	ctx := context.Background()
-	passphrase := vgrand.RandomStr(5)
 	name := vgrand.RandomStr(5)
 
 	// setup
 	handler := newDescribeWalletHandler(t)
 	// -- expected calls
 	handler.walletStore.EXPECT().WalletExists(ctx, name).Times(1).Return(true, nil)
-	handler.walletStore.EXPECT().UnlockWallet(ctx, name, passphrase).Times(1).Return(nil)
+	handler.walletStore.EXPECT().IsWalletAlreadyUnlocked(ctx, name).Times(1).Return(true, nil)
 	handler.walletStore.EXPECT().GetWallet(ctx, name).Times(1).Return(nil, assert.AnError)
 
 	// when
 	result, errorDetails := handler.handle(t, ctx, api.AdminDescribeWalletParams{
-		Wallet:     name,
-		Passphrase: passphrase,
+		Wallet: name,
 	})
 
 	// then

@@ -108,7 +108,7 @@ func MigrateToLatestSchema(log *logging.Logger, config Config) error {
 	return nil
 }
 
-func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
+func MigrateUpToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
 	goose.SetBaseFS(fs)
 	goose.SetLogger(log.Named("db migration").GooseLogger())
 	goose.SetVerbose(bool(config.VerboseMigration))
@@ -124,6 +124,29 @@ func MigrateToSchemaVersion(log *logging.Logger, config Config, version int64, f
 
 	log.Infof("Checking database version and migrating sql schema to version %d, please wait...", version)
 	if err = goose.UpTo(db, SQLMigrationsDir, version); err != nil {
+		return fmt.Errorf("error migrating sql schema: %w", err)
+	}
+	log.Info("Sql schema migration completed successfully")
+
+	return nil
+}
+
+func MigrateDownToSchemaVersion(log *logging.Logger, config Config, version int64, fs fs.FS) error {
+	goose.SetBaseFS(fs)
+	goose.SetLogger(log.Named("db migration").GooseLogger())
+	goose.SetVerbose(bool(config.VerboseMigration))
+	goose.SetVerbose(true)
+
+	poolConfig, err := config.ConnectionConfig.GetPoolConfig()
+	if err != nil {
+		return fmt.Errorf("failed to get pool config:%w", err)
+	}
+
+	db := stdlib.OpenDB(*poolConfig.ConnConfig)
+	defer db.Close()
+
+	log.Infof("Checking database version and migrating sql schema to version %d, please wait...", version)
+	if err = goose.DownTo(db, SQLMigrationsDir, version); err != nil {
 		return fmt.Errorf("error migrating sql schema: %w", err)
 	}
 	log.Info("Sql schema migration completed successfully")
@@ -260,7 +283,7 @@ func RecreateVegaDatabase(ctx context.Context, log *logging.Logger, connConfig C
 	defer func() {
 		err := postgresDbConn.Close(ctx)
 		if err != nil {
-			log.Errorf("error closing database connection after loading snapshot:%v", err)
+			log.Errorf("error closing database connection:%v", err)
 		}
 	}()
 
