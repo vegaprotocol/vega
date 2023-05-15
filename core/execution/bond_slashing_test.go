@@ -717,7 +717,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 
 	initialMarkPrice := uint64(99)
 
-	asset, err := tm.mktCfg.GetAsset()
+	asset, err := tm.mktCfg.GetAssets()
 	require.NoError(t, err)
 
 	var mainPartyInitialDeposit uint64 = 784 // 794 is the minimum required amount to cover margin without dipping into the bond account
@@ -764,13 +764,13 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	require.False(t, genAcc.Balance.IsZero())
 	require.Equal(t, genAcc.Balance, num.UintZero().Sub(genAccBalanceBeforeLPSubmission, lp.CommitmentAmount))
 
-	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
+	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset[0])
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	bondAccBalanceDuringAuction := bondAcc.Balance.Clone()
 	require.True(t, lp.CommitmentAmount.EQ(bondAcc.Balance))
 
-	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset)
+	insurancePoolAccID := fmt.Sprintf("%s*%s1", tm.market.GetID(), asset[0])
 	insurancePool, err := tm.collateralEngine.GetAccountByID(insurancePoolAccID)
 	require.NoError(t, err)
 	insurancePoolDuringAuction := insurancePool.Balance.Clone()
@@ -788,7 +788,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	require.NotNil(t, genAcc)
 	require.True(t, genAcc.Balance.IsZero())
 
-	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
+	bondAcc, err = tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset[0])
 	require.NoError(t, err)
 	require.NotNil(t, bondAcc)
 	require.True(t, bondAcc.Balance.LT(bondAccBalanceDuringAuction))

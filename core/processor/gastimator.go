@@ -116,18 +116,41 @@ func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
 		}
 		return g.lpGastimate(s.MarketId), nil
 
+	case txn.SpotLiquidityProvisionCommand:
+		s := &commandspb.SpotLiquidityProvisionSubmission{}
+		if err := tx.Unmarshal(s); err != nil {
+			return g.maxGas + 1, err
+		}
+		return g.lpGastimate(s.MarketId), nil
+
 	case txn.AmendLiquidityProvisionCommand:
 		s := &commandspb.LiquidityProvisionAmendment{}
 		if err := tx.Unmarshal(s); err != nil {
 			return g.maxGas + 1, err
 		}
 		return g.lpGastimate(s.MarketId), nil
+
+	case txn.AmendSpotLiquidityProvisionCommand:
+		s := &commandspb.SpotLiquidityProvisionAmendment{}
+		if err := tx.Unmarshal(s); err != nil {
+			return g.maxGas + 1, err
+		}
+		return g.lpGastimate(s.MarketId), nil
+
 	case txn.CancelLiquidityProvisionCommand:
 		s := &commandspb.LiquidityProvisionCancellation{}
 		if err := tx.Unmarshal(s); err != nil {
 			return g.maxGas + 1, err
 		}
 		return g.lpGastimate(s.MarketId), nil
+
+	case txn.CancelSpotLiquidityProvisionCommand:
+		s := &commandspb.SpotLiquidityProvisionCancellation{}
+		if err := tx.Unmarshal(s); err != nil {
+			return g.maxGas + 1, err
+		}
+		return g.lpGastimate(s.MarketId), nil
+
 	case txn.BatchMarketInstructions:
 		s := &commandspb.BatchMarketInstructions{}
 		if err := tx.Unmarshal(s); err != nil {

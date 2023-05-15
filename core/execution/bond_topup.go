@@ -24,11 +24,11 @@ import (
 func (m *Market) checkBondBalance(ctx context.Context) {
 	lps := m.liquidity.ProvisionsPerParty().Slice()
 	mID := m.GetID()
-	asset, _ := m.mkt.GetAsset()
+	asset, _ := m.mkt.GetAssets()
 	transfers := make([]*types.LedgerMovement, 0, len(lps))
 	for _, lp := range lps {
 		party := lp.Party
-		bondAcc, err := m.collateral.GetPartyBondAccount(mID, party, asset)
+		bondAcc, err := m.collateral.GetPartyBondAccount(mID, party, asset[0])
 		if err != nil || bondAcc == nil {
 			continue
 		}
@@ -36,7 +36,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 		if bondAcc.Balance.GTE(lp.CommitmentAmount) {
 			continue
 		}
-		gen, err := m.collateral.GetPartyGeneralAccount(party, asset)
+		gen, err := m.collateral.GetPartyGeneralAccount(party, asset[0])
 		// no balance in general account
 		if err != nil || gen.Balance.IsZero() {
 			continue
@@ -48,7 +48,7 @@ func (m *Market) checkBondBalance(ctx context.Context) {
 			Owner: party,
 			Type:  types.TransferTypeBondLow,
 			Amount: &types.FinancialAmount{
-				Asset:  asset,
+				Asset:  asset[0],
 				Amount: amt,
 			},
 			MinAmount: amt.Clone(),

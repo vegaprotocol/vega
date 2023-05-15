@@ -43,6 +43,27 @@ const (
 	LiquidityProvisionStatusPending LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_PENDING
 )
 
+type SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_Status
+
+const (
+	// LiquidityProvisionUnspecified The default value.
+	SpotLiquidityProvisionUnspecified SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_UNSPECIFIED
+	// LiquidityProvisionStatusActive The liquidity provision is active.
+	SpotLiquidityProvisionStatusActive SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_ACTIVE
+	// LiquidityProvisionStatusStopped The liquidity provision was stopped by the network.
+	SpotLiquidityProvisionStatusStopped SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_STOPPED
+	// LiquidityProvisionStatusCancelled The liquidity provision was cancelled by the liquidity provider.
+	SpotLiquidityProvisionStatusCancelled SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_CANCELLED
+	// LiquidityProvisionStatusRejected The liquidity provision was invalid and got rejected.
+	SpotLiquidityProvisionStatusRejected SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_REJECTED
+	// LiquidityProvisionStatusUndeployed The liquidity provision is valid and accepted by network, but orders aren't deployed.
+	SpotLiquidityProvisionStatusUndeployed SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_UNDEPLOYED
+	// LiquidityProvisionStatusPending The liquidity provision is valid and accepted by network
+	// but have never been deployed. I when it's possible to deploy them for the first time
+	// margin check fails, then they will be cancelled without any penalties.
+	SpotLiquidityProvisionStatusPending SpotLiquidityProvisionStatus = proto.SpotLiquidityProvision_STATUS_PENDING
+)
+
 type TargetStakeParameters struct {
 	TimeWindow    int64
 	ScalingFactor num.Decimal
@@ -611,5 +632,408 @@ func (l LiquidityProvisionCancellation) String() string {
 }
 
 func (l LiquidityProvisionCancellation) GetMarketID() string {
+	return l.MarketID
+}
+
+type SpotLiquidityProvisionSubmission struct {
+	// Market identifier for the order, required field
+	MarketID string
+	// Specified as a unitless number that represents the amount of quote asset of the market
+	BuyCommitmentAmount *num.Uint
+	// Specified as a unitless number that represents the amount of base asset of the market
+	SellCommitmentAmount *num.Uint
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
+	Fee num.Decimal
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrder
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrder
+	// A reference to be added to every order created out of this liquidityProvisionSubmission
+	Reference string
+}
+
+func (l SpotLiquidityProvisionSubmission) IntoProto() *commandspb.SpotLiquidityProvisionSubmission {
+	lps := &commandspb.SpotLiquidityProvisionSubmission{
+		MarketId:             l.MarketID,
+		BuyCommitmentAmount:  num.UintToString(l.BuyCommitmentAmount),
+		SellCommitmentAmount: num.UintToString(l.SellCommitmentAmount),
+		Fee:                  l.Fee.String(),
+		Sells:                make([]*proto.LiquidityOrder, 0, len(l.Sells)),
+		Buys:                 make([]*proto.LiquidityOrder, 0, len(l.Buys)),
+		Reference:            l.Reference,
+	}
+
+	for _, sell := range l.Sells {
+		lps.Sells = append(lps.Sells, sell.IntoProto())
+	}
+
+	for _, buy := range l.Buys {
+		lps.Buys = append(lps.Buys, buy.IntoProto())
+	}
+	return lps
+}
+
+func SpotLiquidityProvisionSubmissionFromProto(p *commandspb.SpotLiquidityProvisionSubmission) (*SpotLiquidityProvisionSubmission, error) {
+	fee, err := num.DecimalFromString(p.Fee)
+	if err != nil {
+		return nil, err
+	}
+
+	buyCommitmentAmount := num.UintZero()
+	if len(p.BuyCommitmentAmount) > 0 {
+		var overflowed bool
+		buyCommitmentAmount, overflowed = num.UintFromString(p.BuyCommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid buy commitment amount")
+		}
+	}
+
+	sellCommitmentAmount := num.UintZero()
+	if len(p.SellCommitmentAmount) > 0 {
+		var overflowed bool
+		sellCommitmentAmount, overflowed = num.UintFromString(p.SellCommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid sell commitment amount")
+		}
+	}
+
+	l := SpotLiquidityProvisionSubmission{
+		Fee:                  fee,
+		MarketID:             p.MarketId,
+		BuyCommitmentAmount:  buyCommitmentAmount,
+		SellCommitmentAmount: sellCommitmentAmount,
+		Sells:                make([]*LiquidityOrder, 0, len(p.Sells)),
+		Buys:                 make([]*LiquidityOrder, 0, len(p.Buys)),
+		Reference:            p.Reference,
+	}
+
+	for _, sell := range p.Sells {
+		order, err := LiquidityOrderFromProto(sell)
+		if err != nil {
+			return nil, err
+		}
+		l.Sells = append(l.Sells, order)
+	}
+
+	for _, buy := range p.Buys {
+		order, err := LiquidityOrderFromProto(buy)
+		if err != nil {
+			return nil, err
+		}
+		l.Buys = append(l.Buys, order)
+	}
+	return &l, nil
+}
+
+func (l SpotLiquidityProvisionSubmission) String() string {
+	return fmt.Sprintf(
+		"marketID(%s) reference(%s) buyCommitmentAmount(%s) sellCommitmentAmount(%s) fee(%s) sells(%s) buys(%s)",
+		l.MarketID,
+		l.Reference,
+		uintPointerToString(l.BuyCommitmentAmount),
+		uintPointerToString(l.SellCommitmentAmount),
+		l.Fee.String(),
+		LiquidityOrders(l.Sells).String(),
+		LiquidityOrders(l.Buys).String(),
+	)
+}
+
+type SpotLiquidityProvision struct {
+	// Unique identifier
+	ID string
+	// Unique party identifier for the creator of the provision
+	Party string
+	// Timestamp for when the order was created at, in nanoseconds since the epoch
+	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+	CreatedAt int64
+	// Timestamp for when the order was updated at, in nanoseconds since the epoch
+	// - See [`VegaTimeResponse`](#api.VegaTimeResponse).`timestamp`
+	UpdatedAt int64
+	// Market identifier for the order, required field
+	MarketID string
+	// Specified as a unitless number that represents the amount of quote asset of the market
+	BuyCommitmentAmount *num.Uint
+	// Specified as a unitless number that represents the amount of base asset of the market
+	SellCommitmentAmount *num.Uint
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per seeting fees and rewarding liquidity providers
+	Fee num.Decimal
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrderReference
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrderReference
+	// Version of this liquidity provision order
+	Version uint64
+	// Status of this liquidity provision order
+	Status SpotLiquidityProvisionStatus
+	// A reference shared between this liquidity provision and all it's orders
+	Reference string
+}
+
+func (l SpotLiquidityProvision) String() string {
+	return fmt.Sprintf(
+		"ID(%s) marketID(%s) party(%s) status(%s) reference(%s) buyCommitmentAmount(%s) sellCommitmentAmount(%s) fee(%s) sells(%s) buys(%s) version(%v) createdAt(%v) updatedAt(%v)",
+		l.ID,
+		l.MarketID,
+		l.Party,
+		l.Status.String(),
+		l.Reference,
+		uintPointerToString(l.BuyCommitmentAmount),
+		uintPointerToString(l.SellCommitmentAmount),
+		l.Fee.String(),
+		LiquidityOrderReferences(l.Sells).String(),
+		LiquidityOrderReferences(l.Buys).String(),
+		l.Version,
+		l.CreatedAt,
+		l.UpdatedAt,
+	)
+}
+
+func (l SpotLiquidityProvision) IntoProto() *proto.SpotLiquidityProvision {
+	lp := &proto.SpotLiquidityProvision{
+		Id:                   l.ID,
+		PartyId:              l.Party,
+		CreatedAt:            l.CreatedAt,
+		UpdatedAt:            l.UpdatedAt,
+		MarketId:             l.MarketID,
+		BuyCommitmentAmount:  num.UintToString(l.BuyCommitmentAmount),
+		SellCommitmentAmount: num.UintToString(l.SellCommitmentAmount),
+		Fee:                  l.Fee.String(),
+		Version:              l.Version,
+		Status:               l.Status,
+		Reference:            l.Reference,
+		Sells:                make([]*proto.LiquidityOrderReference, 0, len(l.Sells)),
+		Buys:                 make([]*proto.LiquidityOrderReference, 0, len(l.Buys)),
+	}
+
+	for _, sell := range l.Sells {
+		lp.Sells = append(lp.Sells, sell.IntoProto())
+	}
+
+	for _, buy := range l.Buys {
+		lp.Buys = append(lp.Buys, buy.IntoProto())
+	}
+	return lp
+}
+
+func SpotLiquidityProvisionFromProto(p *proto.SpotLiquidityProvision) (*SpotLiquidityProvision, error) {
+	fee, _ := num.DecimalFromString(p.Fee)
+	buyCommitmentAmount := num.UintZero()
+	if len(p.BuyCommitmentAmount) > 0 {
+		var overflowed bool
+		buyCommitmentAmount, overflowed = num.UintFromString(p.BuyCommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid buy commitment amount")
+		}
+	}
+	sellCommitmentAmount := num.UintZero()
+	if len(p.SellCommitmentAmount) > 0 {
+		var overflowed bool
+		sellCommitmentAmount, overflowed = num.UintFromString(p.SellCommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid buy commitment amount")
+		}
+	}
+	l := SpotLiquidityProvision{
+		BuyCommitmentAmount:  buyCommitmentAmount,
+		SellCommitmentAmount: sellCommitmentAmount,
+		CreatedAt:            p.CreatedAt,
+		ID:                   p.Id,
+		MarketID:             p.MarketId,
+		Party:                p.PartyId,
+		Fee:                  fee,
+		Reference:            p.Reference,
+		Status:               p.Status,
+		UpdatedAt:            p.UpdatedAt,
+		Version:              p.Version,
+		Sells:                make([]*LiquidityOrderReference, 0, len(p.Sells)),
+		Buys:                 make([]*LiquidityOrderReference, 0, len(p.Buys)),
+	}
+
+	for _, sell := range p.Sells {
+		lor, err := LiquidityOrderReferenceFromProto(sell)
+		if err != nil {
+			return nil, err
+		}
+		l.Sells = append(l.Sells, lor)
+	}
+
+	for _, buy := range p.Buys {
+		lor, err := LiquidityOrderReferenceFromProto(buy)
+		if err != nil {
+			return nil, err
+		}
+		l.Buys = append(l.Buys, lor)
+	}
+
+	return &l, nil
+}
+
+type SpotLiquidityProvisionAmendment struct {
+	// Market identifier for the order, required field
+	MarketID string
+	// Specified as a unitless number that represents the amount of quote asset of the market
+	BuyCommitmentAmount *num.Uint
+	// Specified as a unitless number that represents the amount of base asset of the market
+	SellCommitmentAmount *num.Uint
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
+	Fee num.Decimal
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrder
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrder
+	// A reference to be added to every order created out of this liquidityProvisionAmendment
+	Reference string
+}
+
+func SpotLiquidityProvisionAmendmentFromProto(p *commandspb.SpotLiquidityProvisionAmendment) (*SpotLiquidityProvisionAmendment, error) {
+	fee, err := num.DecimalFromString(p.Fee)
+	if err != nil {
+		return nil, err
+	}
+
+	buyCommitmentAmount := num.UintZero()
+	if len(p.BuyCommitmentAmount) > 0 {
+		var overflowed bool
+		buyCommitmentAmount, overflowed = num.UintFromString(p.BuyCommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid buy commitment amount")
+		}
+	}
+
+	sellCommitmentAmount := num.UintZero()
+	if len(p.SellCommitmentAmount) > 0 {
+		var overflowed bool
+		sellCommitmentAmount, overflowed = num.UintFromString(p.SellCommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid sell commitment amount")
+		}
+	}
+
+	l := SpotLiquidityProvisionAmendment{
+		Fee:                  fee,
+		MarketID:             p.MarketId,
+		BuyCommitmentAmount:  buyCommitmentAmount,
+		SellCommitmentAmount: sellCommitmentAmount,
+		Sells:                make([]*LiquidityOrder, 0, len(p.Sells)),
+		Buys:                 make([]*LiquidityOrder, 0, len(p.Buys)),
+		Reference:            p.Reference,
+	}
+
+	for _, sell := range p.Sells {
+		offset := num.UintZero()
+
+		if len(p.SellCommitmentAmount) > 0 {
+			var overflowed bool
+			offset, overflowed = num.UintFromString(sell.Offset, 10)
+			if overflowed {
+				return nil, errors.New("invalid sell side offset")
+			}
+		}
+
+		order := &LiquidityOrder{
+			Reference:  sell.Reference,
+			Proportion: sell.Proportion,
+			Offset:     offset,
+		}
+		l.Sells = append(l.Sells, order)
+	}
+
+	for _, buy := range p.Buys {
+		offset := num.UintZero()
+
+		if len(p.BuyCommitmentAmount) > 0 {
+			var overflowed bool
+			offset, overflowed = num.UintFromString(buy.Offset, 10)
+			if overflowed {
+				return nil, errors.New("invalid buy side offset")
+			}
+		}
+
+		order := &LiquidityOrder{
+			Reference:  buy.Reference,
+			Proportion: buy.Proportion,
+			Offset:     offset,
+		}
+		l.Buys = append(l.Buys, order)
+	}
+	return &l, nil
+}
+
+func (a SpotLiquidityProvisionAmendment) IntoProto() *commandspb.SpotLiquidityProvisionAmendment {
+	lps := &commandspb.SpotLiquidityProvisionAmendment{
+		MarketId:             a.MarketID,
+		BuyCommitmentAmount:  num.UintToString(a.BuyCommitmentAmount),
+		SellCommitmentAmount: num.UintToString(a.SellCommitmentAmount),
+		Fee:                  a.Fee.String(),
+		Sells:                make([]*proto.LiquidityOrder, 0, len(a.Sells)),
+		Buys:                 make([]*proto.LiquidityOrder, 0, len(a.Buys)),
+		Reference:            a.Reference,
+	}
+
+	for _, sell := range a.Sells {
+		order := &proto.LiquidityOrder{
+			Reference:  sell.Reference,
+			Proportion: sell.Proportion,
+			Offset:     sell.Offset.String(),
+		}
+		lps.Sells = append(lps.Sells, order)
+	}
+
+	for _, buy := range a.Buys {
+		order := &proto.LiquidityOrder{
+			Reference:  buy.Reference,
+			Proportion: buy.Proportion,
+			Offset:     buy.Offset.String(),
+		}
+		lps.Buys = append(lps.Buys, order)
+	}
+	return lps
+}
+
+func (a SpotLiquidityProvisionAmendment) String() string {
+	return fmt.Sprintf(
+		"marketID(%s) reference(%s) buyCommitmentAmount(%s) sellCommitmentAmount(%s) fee(%s) sells(%v) buys(%v)",
+		a.MarketID,
+		a.Reference,
+		uintPointerToString(a.BuyCommitmentAmount),
+		uintPointerToString(a.SellCommitmentAmount),
+		a.Fee.String(),
+		LiquidityOrders(a.Sells).String(),
+		LiquidityOrders(a.Buys).String(),
+	)
+}
+
+func (a SpotLiquidityProvisionAmendment) GetMarketID() string {
+	return a.MarketID
+}
+
+func (a SpotLiquidityProvisionAmendment) ContainsOrders() bool {
+	return len(a.Sells) > 0 || len(a.Buys) > 0
+}
+
+type SpotLiquidityProvisionCancellation struct {
+	// Market identifier for the order, required field
+	MarketID string
+}
+
+func SpotLiquidityProvisionCancellationFromProto(p *commandspb.SpotLiquidityProvisionCancellation) (*SpotLiquidityProvisionCancellation, error) {
+	l := SpotLiquidityProvisionCancellation{
+		MarketID: p.MarketId,
+	}
+
+	return &l, nil
+}
+
+func (l SpotLiquidityProvisionCancellation) IntoProto() *commandspb.SpotLiquidityProvisionCancellation {
+	return &commandspb.SpotLiquidityProvisionCancellation{
+		MarketId: l.MarketID,
+	}
+}
+
+func (l SpotLiquidityProvisionCancellation) String() string {
+	return fmt.Sprintf("marketID(%s)", l.MarketID)
+}
+
+func (l SpotLiquidityProvisionCancellation) GetMarketID() string {
 	return l.MarketID
 }

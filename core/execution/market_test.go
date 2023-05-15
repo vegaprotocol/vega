@@ -187,8 +187,8 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket {
 	collateralEngine := collateral.New(tm.log, collateral.NewDefaultConfig(), tm.timeService, tm.broker)
 	// create asset with same decimal places as the market asset
-	mktAsset, _ := mktCfg.GetAsset()
-	cfgAsset := NewAssetStub(mktAsset, mktCfg.DecimalPlaces)
+	mktAssets, _ := mktCfg.GetAssets()
+	cfgAsset := NewAssetStub(mktAssets[0], mktCfg.DecimalPlaces)
 	assets := tm.Assets
 	if len(assets) == 0 {
 		assets = defaultCollateralAssets
@@ -224,16 +224,16 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	)
 	require.NoError(tm.t, err)
 
-	asset, err := mktCfg.GetAsset()
+	settlementAssets, err := mktCfg.GetAssets()
 	require.NoError(tm.t, err)
 
-	_, _, err = collateralEngine.CreateMarketAccounts(ctx, mktEngine.GetID(), asset)
+	_, _, err = collateralEngine.CreateMarketAccounts(ctx, mktEngine.GetID(), settlementAssets[0])
 	require.NoError(tm.t, err)
 
 	tm.market = &marketW{mktEngine}
 	tm.market.UpdateRiskFactorsForTest()
 	tm.collateralEngine = collateralEngine
-	tm.asset = asset
+	tm.asset = settlementAssets[0]
 	tm.mas = mas
 	tm.mktCfg = &mktCfg
 	tm.stateVar = statevarEngine
@@ -448,16 +448,16 @@ func getTestMarket2WithDP(
 		require.NoError(t, err)
 	}
 
-	asset, err := mkt.GetAsset()
+	settlementAssets, err := mkt.GetAssets()
 	assert.NoError(t, err)
 
 	// ignore response ids here + this cannot fail
-	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), asset)
+	_, _, err = collateralEngine.CreateMarketAccounts(context.Background(), mktEngine.GetID(), settlementAssets[0])
 	assert.NoError(t, err)
 
 	tm.market = &marketW{mktEngine}
 	tm.collateralEngine = collateralEngine
-	tm.asset = asset
+	tm.asset = settlementAssets[0]
 	tm.mas = mas
 	tm.mktCfg = mktCfg
 	tm.stateVar = statevar

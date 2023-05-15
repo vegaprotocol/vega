@@ -433,6 +433,8 @@ enum ProposalError {
   PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE = 45;
   // Validation failed for spot proposal
   PROPOSAL_ERROR_INVALID_SPOT = 46;
+  // Spot trading not enabled
+  PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED = 47;
 }
 
 // Governance vote

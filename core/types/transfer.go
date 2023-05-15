@@ -191,6 +191,6 @@ const (
 	TransferTypeClearAccount             TransferType = proto.TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT
 	TransferTypeCheckpointBalanceRestore TransferType = proto.TransferType_TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
 	TransferTypeSpot                     TransferType = proto.TransferType_TRANSFER_TYPE_SPOT
-	TransferTypeHoldingAccount           TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_ACCOUNT
-	TransferTypeReleaseHoldingAccount    TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_ACCOUNT //TODO change proto type to actual
+	TransferTypeHoldingAccount           TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_LOCK
+	TransferTypeReleaseHoldingAccount    TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_RELEASE
 )

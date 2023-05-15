@@ -58,17 +58,22 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	}
 
 	// ensure the asset for this new market exists
-	asset, err := marketConfig.GetAsset()
+	assets, err := marketConfig.GetAssets()
 	if err != nil {
 		return nil, err
 	}
-	if !e.collateral.AssetExists(asset) {
-		return nil, fmt.Errorf(
-			"unable to create a market %q with an invalid %q asset",
-			marketConfig.ID,
-			asset,
-		)
+
+	for _, asset := range assets {
+		if !e.collateral.AssetExists(asset) {
+			return nil, fmt.Errorf(
+				"unable to create a market %q with an invalid %q asset",
+				marketConfig.ID,
+				asset,
+			)
+		}
 	}
+
+	asset := assets[0]
 	ad, err := e.assets.Get(asset)
 	if err != nil {
 		e.log.Error("Failed to restore a market, unknown asset",
@@ -118,7 +123,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	// ensure this is set correctly
 	mkt.nextMTM = nextMTM
 
-	e.publishNewMarketInfos(ctx, mkt)
+	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.mkt)
 	return mkt, nil
 }
 

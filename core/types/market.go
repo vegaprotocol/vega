@@ -517,6 +517,15 @@ func InstrumentFromProto(i *proto.Instrument) *Instrument {
 	}
 }
 
+func (i Instrument) GetSpot() *Spot {
+	switch p := i.Product.(type) {
+	case *InstrumentSpot:
+		return p.Spot
+	default:
+		return nil
+	}
+}
+
 func (i Instrument) GetFuture() *Future {
 	switch p := i.Product.(type) {
 	case *InstrumentFuture:

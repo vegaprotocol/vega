@@ -74,7 +74,9 @@ type ExecutionEngine interface {
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
+	SubmitSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
+	UpdateSpotMarket(ctx context.Context, marketConfig *types.Market) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
@@ -82,6 +84,12 @@ type ExecutionEngine interface {
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
 	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
+
+	// Spot LP stuff
+	SubmitSpotLiquidityProvision(ctx context.Context, sub *types.SpotLiquidityProvisionSubmission, party, deterministicID string) error
+	CancelSpotLiquidityProvision(ctx context.Context, order *types.SpotLiquidityProvisionCancellation, party string) error
+	AmendSpotLiquidityProvision(ctx context.Context, order *types.SpotLiquidityProvisionAmendment, party string, deterministicID string) error
+
 	Hash() []byte
 
 	// End of block

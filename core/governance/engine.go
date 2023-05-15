@@ -45,6 +45,7 @@ var (
 	ErrUnsupportedAssetSourceType                = errors.New("unsupported asset source type")
 	ErrExpectedERC20Asset                        = errors.New("expected an ERC20 asset but was not")
 	ErrErc20AddressAlreadyInUse                  = errors.New("erc20 address already in use")
+	ErrSpotsNotEnabled                           = errors.New("spot trading not enabled")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams
@@ -65,6 +66,7 @@ type Markets interface {
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
+	SpotsMarketsEnabled() bool
 }
 
 // StakingAccounts ...
@@ -225,12 +227,20 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 	switch p.Terms.Change.GetTermType() {
 	case types.ProposalTermsTypeNewMarket:
 		te.m = &ToEnactNewMarket{}
+	case types.ProposalTermsTypeNewSpotMarket:
+		te.s = &ToEnactNewSpotMarket{}
 	case types.ProposalTermsTypeUpdateMarket:
 		mkt, perr, err := e.updatedMarketFromProposal(p)
 		if err != nil {
 			return nil, perr, err
 		}
 		te.updatedMarket = mkt
+	case types.ProposalTermsTypeUpdateSpotMarket:
+		mkt, perr, err := e.updatedSpotMarketFromProposal(p)
+		if err != nil {
+			return nil, perr, err
+		}
+		te.updatedSpotMarket = mkt
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		unp := p.Terms.GetUpdateNetworkParameter()
 		if unp != nil {
@@ -545,6 +555,10 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewSpotMarket()
 		auctionDuration := enactTime.Sub(closeTime)
+		if !e.markets.SpotsMarketsEnabled() {
+			e.rejectProposal(ctx, p, types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled)
+			return nil, fmt.Errorf("%w, %v", ErrSpotsNotEnabled, types.ProposalErrorSpotNotEnabled)
+		}
 		if perr, err := validateNewSpotMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -554,7 +568,7 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
-		tsb.m = &ToSubmitNewMarket{
+		tsb.s = &ToSubmitNewSpotMarket{
 			m: mkt,
 		}
 	}
@@ -899,6 +913,9 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
 	case types.ProposalTermsTypeNewSpotMarket:
+		if !e.markets.SpotsMarketsEnabled() {
+			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
+		}
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewSpotMarketChange(terms.GetNewSpotMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateSpotMarket:

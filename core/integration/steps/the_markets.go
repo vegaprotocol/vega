@@ -113,8 +113,8 @@ func updateMarkets(markets []*types.Market, updates []types.UpdateMarket, execut
 func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Engine) error {
 	assetsToEnable := map[string]struct{}{}
 	for _, mkt := range markets {
-		asset, _ := mkt.GetAsset()
-		assetsToEnable[asset] = struct{}{}
+		assets, _ := mkt.GetAssets()
+		assetsToEnable[assets[0]] = struct{}{}
 	}
 	for assetToEnable := range assetsToEnable {
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{

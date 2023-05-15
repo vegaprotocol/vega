@@ -90,6 +90,12 @@ func (t Tx) Command() txn.Command {
 		return txn.CancelLiquidityProvisionCommand
 	case *commandspb.InputData_LiquidityProvisionAmendment:
 		return txn.AmendLiquidityProvisionCommand
+	case *commandspb.InputData_SpotLiquidityProvisionSubmission:
+		return txn.SpotLiquidityProvisionCommand
+	case *commandspb.InputData_SpotLiquidityProvisionCancellation:
+		return txn.CancelSpotLiquidityProvisionCommand
+	case *commandspb.InputData_SpotLiquidityProvisionAmendment:
+		return txn.AmendSpotLiquidityProvisionCommand
 	case *commandspb.InputData_ProposalSubmission:
 		return txn.ProposeCommand
 	case *commandspb.InputData_AnnounceNode:
@@ -167,6 +173,12 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.LiquidityProvisionCancellation
 	case *commandspb.InputData_LiquidityProvisionAmendment:
 		return cmd.LiquidityProvisionAmendment
+	case *commandspb.InputData_SpotLiquidityProvisionSubmission:
+		return cmd.SpotLiquidityProvisionSubmission
+	case *commandspb.InputData_SpotLiquidityProvisionCancellation:
+		return cmd.SpotLiquidityProvisionCancellation
+	case *commandspb.InputData_SpotLiquidityProvisionAmendment:
+		return cmd.SpotLiquidityProvisionAmendment
 	case *commandspb.InputData_ProposalSubmission:
 		return cmd.ProposalSubmission
 	case *commandspb.InputData_AnnounceNode:
@@ -262,6 +274,24 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to LiquidityProvisionAmendment")
 		}
 		*underlyingCmd = *cmd.LiquidityProvisionAmendment
+	case *commandspb.InputData_SpotLiquidityProvisionSubmission:
+		underlyingCmd, ok := i.(*commandspb.SpotLiquidityProvisionSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to SpotLiquidityProvisionSubmission")
+		}
+		*underlyingCmd = *cmd.SpotLiquidityProvisionSubmission
+	case *commandspb.InputData_SpotLiquidityProvisionCancellation:
+		underlyingCmd, ok := i.(*commandspb.SpotLiquidityProvisionCancellation)
+		if !ok {
+			return errors.New("failed to unmarshall to SpotLiquidityProvisionCancellation")
+		}
+		*underlyingCmd = *cmd.SpotLiquidityProvisionCancellation
+	case *commandspb.InputData_SpotLiquidityProvisionAmendment:
+		underlyingCmd, ok := i.(*commandspb.SpotLiquidityProvisionAmendment)
+		if !ok {
+			return errors.New("failed to unmarshall to SpotLiquidityProvisionAmendment")
+		}
+		*underlyingCmd = *cmd.SpotLiquidityProvisionAmendment
 	case *commandspb.InputData_ProposalSubmission:
 		underlyingCmd, ok := i.(*commandspb.ProposalSubmission)
 		if !ok {

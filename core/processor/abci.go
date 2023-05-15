@@ -372,12 +372,25 @@ func NewApp(
 				addDeterministicID(app.DeliverLiquidityProvision),
 			),
 		).
+		HandleDeliverTx(txn.SpotLiquidityProvisionCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverSpotLiquidityProvision),
+			),
+		).
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
 			app.SendTransactionResult(app.DeliverCancelLiquidityProvision),
+		).
+		HandleDeliverTx(txn.CancelSpotLiquidityProvisionCommand,
+			app.SendTransactionResult(app.DeliverCancelSpotLiquidityProvision),
 		).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
 			app.SendTransactionResult(
 				addDeterministicID(app.DeliverAmendLiquidityProvision),
+			),
+		).
+		HandleDeliverTx(txn.AmendSpotLiquidityProvisionCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverAmendSpotLiquidityProvision),
 			),
 		).
 		HandleDeliverTx(txn.SubmitOracleDataCommand,
@@ -1486,10 +1499,26 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 		nm := toSubmit.NewMarket()
 
 		if err := app.exec.SubmitMarket(ctx, nm.Market(), party); err != nil {
-			app.log.Debug("unable to submit new market with liquidity submission",
+			app.log.Debug("unable to submit new market",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
-			// an error happened when submitting the market + liquidity
+			// an error happened when submitting the market
+			// we should cancel this proposal now
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject an non-existing proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
+			return err
+		}
+	} else if toSubmit.IsNewSpotMarket() {
+		nm := toSubmit.NewSpotMarket()
+		if err := app.exec.SubmitSpotMarket(ctx, nm.Market(), party); err != nil {
+			app.log.Debug("unable to submit new spot market",
+				logging.ProposalID(nm.Market().ID),
+				logging.Error(err))
+			// an error happened when submitting the market
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
 				// this should never happen
@@ -1553,6 +1582,25 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicID)
 }
 
+func (app *App) DeliverSpotLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	sub := &commandspb.SpotLiquidityProvisionSubmission{}
+	if err := tx.Unmarshal(sub); err != nil {
+		return err
+	}
+
+	// Convert protobuf message to local domain type
+	lps, err := types.SpotLiquidityProvisionSubmissionFromProto(sub)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert SpotLiquidityProvisionSubmission protobuf message to domain type",
+				logging.SpotLiquidityProvisionSubmissionProto(sub), logging.Error(err))
+		}
+		return err
+	}
+
+	return app.exec.SubmitSpotLiquidityProvision(ctx, lps, tx.Party(), deterministicID)
+}
+
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
 	cancel := &commandspb.LiquidityProvisionCancellation{}
 	if err := tx.Unmarshal(cancel); err != nil {
@@ -1582,6 +1630,35 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 	return nil
 }
 
+func (app *App) DeliverCancelSpotLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.SpotLiquidityProvisionCancellation{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a CANCEL spot Liquidity Provision request", logging.String("spot-liquidity-provision-market-id", cancel.MarketId))
+
+	lpc, err := types.SpotLiquidityProvisionCancellationFromProto(cancel)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert SpotLiquidityProvisionCancellation protobuf message to domain type",
+				logging.SpotLiquidityProvisionCancellationProto(cancel), logging.Error(err))
+		}
+		return err
+	}
+
+	err = app.exec.CancelSpotLiquidityProvision(ctx, lpc, tx.Party())
+	if err != nil {
+		app.log.Error("error on cancelling order", logging.String("spot-liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderCancelDebug {
+		app.log.Debug("Spot liquidity provision cancelled", logging.SpotLiquidityProvisionCancellation(*lpc))
+	}
+
+	return nil
+}
+
 func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	lp := &commandspb.LiquidityProvisionAmendment{}
 	if err := tx.Unmarshal(lp); err != nil {
@@ -1604,6 +1681,33 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, 
 	}
 	if app.cfg.LogOrderAmendDebug {
 		app.log.Debug("Liquidity Provision amended", logging.LiquidityProvisionAmendment(*lpa))
+	}
+
+	return nil
+}
+
+func (app *App) DeliverAmendSpotLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	lp := &commandspb.SpotLiquidityProvisionAmendment{}
+	if err := tx.Unmarshal(lp); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a AMEND Spot Liquidity Provision request", logging.String("spot-liquidity-provision-market-id", lp.MarketId))
+
+	// Convert protobuf into local domain type
+	lpa, err := types.SpotLiquidityProvisionAmendmentFromProto(lp)
+	if err != nil {
+		return err
+	}
+
+	// Submit the amend liquidity provision request to the Vega trading core
+	err = app.exec.AmendSpotLiquidityProvision(ctx, lpa, tx.Party(), deterministicID)
+	if err != nil {
+		app.log.Error("error on amending spot Liquidity Provision", logging.String("spot-liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderAmendDebug {
+		app.log.Debug("Liquidity Provision amended", logging.SpotLiquidityProvisionAmendment(*lpa))
 	}
 
 	return nil
@@ -1702,12 +1806,16 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		switch {
 		case toEnact.IsNewMarket():
 			app.enactMarket(ctx, prop)
+		case toEnact.IsNewSpotMarket():
+			app.enactSpotMarket(ctx, prop)
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateAsset():
 			app.enactAssetUpdate(ctx, prop, toEnact.UpdateAsset())
 		case toEnact.IsUpdateMarket():
 			app.enactUpdateMarket(ctx, prop, toEnact.UpdateMarket())
+		case toEnact.IsUpdateSpotMarket():
+			app.enactUpdateSpotMarket(ctx, prop, toEnact.UpdateSpotMarket())
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		case toEnact.IsFreeform():
@@ -1796,6 +1904,10 @@ func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
+}
+
+func (app *App) enactSpotMarket(_ context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
 }
 
 func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
@@ -1895,6 +2007,17 @@ func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, mar
 	if err := app.exec.UpdateMarket(ctx, market); err != nil {
 		prop.FailUnexpectedly(err)
 		app.log.Error("failed to update market",
+			logging.ProposalID(prop.ID),
+			logging.Error(err))
+		return
+	}
+	prop.State = types.ProposalStateEnacted
+}
+
+func (app *App) enactUpdateSpotMarket(ctx context.Context, prop *types.Proposal, market *types.Market) {
+	if err := app.exec.UpdateSpotMarket(ctx, market); err != nil {
+		prop.FailUnexpectedly(err)
+		app.log.Error("failed to update spot market",
 			logging.ProposalID(prop.ID),
 			logging.Error(err))
 		return

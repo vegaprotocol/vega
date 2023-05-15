@@ -103,6 +103,8 @@ const (
 	ProposalErrorQuadraticSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
 	// ProposalErrorInvalidFreeform Validation failed for spot proposal.
 	ProposalErrorInvalidSpot ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SPOT
+	// ProposalErrorSpotNotEnabled is returned when spots are not enabled
+	ProposalErrorSpotNotEnabled ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
 )
 
 type ProposalState = vegapb.Proposal_State
