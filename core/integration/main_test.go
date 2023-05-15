@@ -42,7 +42,7 @@ var (
 )
 
 func init() {
-	godog.BindCommandLineFlags("godog.", &gdOpts)
+	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
 	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
 
