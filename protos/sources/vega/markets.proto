@@ -20,6 +20,14 @@ message AuctionDuration {
   uint64 volume = 2;
 }
 
+// Spot product definition
+message Spot {
+  // Underlying base asset for the spot.
+  string base_asset = 1;
+  // Underlying quote asset name for the spot.
+  string quote_asset = 2;
+}
+
 // Future product definition
 message Future {
   // Underlying asset for the future.
@@ -67,6 +75,8 @@ message Instrument {
   oneof product {
     // Future.
     Future future = 100;
+    // Spot.
+    Spot spot = 101;
   }
 }
 

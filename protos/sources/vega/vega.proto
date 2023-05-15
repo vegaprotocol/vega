@@ -693,6 +693,9 @@ enum AccountType {
   // Per asset reward account for market proposers when the market goes above some trading threshold
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS = 17;
 
+  // Per asset account for holding in-flight unfilled orders funds
+  ACCOUNT_TYPE_HOLDING = 18;
+  
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -776,6 +779,12 @@ enum TransferType {
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
   // Balances restored after network restart
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
+  // Spot trade delivery
+  TRANSFER_TYPE_SPOT = 26;
+  // Spot moving funds to holding account
+  TRANSFER_TYPE_HOLDING_LOCK = 27;  
+  // Spot release funds from holding account
+  TRANSFER_TYPE_HOLDING_RELEASE = 28;  
 }
 
 // Represents a financial transfer within Vega
@@ -1094,6 +1103,59 @@ message LiquidityProvision {
   // Reference shared between this liquidity provision and all its orders.
   string reference = 12;
 }
+
+// Spot Liquidity provider commitment
+message SpotLiquidityProvision {
+  // Status of a liquidity provision order.
+  enum Status {
+    // Default value
+    STATUS_UNSPECIFIED = 0;
+    // Liquidity provision is active
+    STATUS_ACTIVE = 1;
+    // Liquidity provision was stopped by the network
+    STATUS_STOPPED = 2;
+    // Liquidity provision was cancelled by the liquidity provider
+    STATUS_CANCELLED = 3;
+    // Liquidity provision was invalid and got rejected
+    STATUS_REJECTED = 4;
+    // Liquidity provision is valid and accepted by network, but orders aren't deployed
+    STATUS_UNDEPLOYED = 5;
+    // Liquidity provision is valid and accepted by network
+    // but has never been deployed. If when it's possible to deploy the orders for the first time
+    // margin check fails, then they will be cancelled without any penalties.
+    STATUS_PENDING = 6;
+  }
+
+  // Unique ID for the liquidity provision.
+  string id = 1;
+  // Unique party ID for the creator of the provision.
+  string party_id = 2;
+  // Timestamp for when the order was created at, in nanoseconds.
+  int64 created_at = 3;
+  // Timestamp for when the order was updated at, in nanoseconds.
+  int64 updated_at = 4;
+  // Market ID for the order, required field.
+  string market_id = 5;
+  // Specified as a unitless number that represents the amount of quote asset of the market.
+  // This field is an unsigned integer scaled to the asset's decimal places.
+  string buy_commitment_amount = 6;
+  // Specified as a unitless number that represents the amount of base asset of the market.
+  // This field is an unsigned integer scaled to the asset's decimal places.
+  string sell_commitment_amount = 7;
+  // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
+  string fee = 8;
+  // Set of liquidity sell orders to meet the liquidity provision obligation.
+  repeated LiquidityOrderReference sells = 9;
+  // Set of liquidity buy orders to meet the liquidity provision obligation.
+  repeated LiquidityOrderReference buys = 10;
+  // Version of this liquidity provision order.
+  uint64 version = 11;
+  // Status of this liquidity provision order.
+  Status status = 12;
+  // Reference shared between this liquidity provision and all its orders.
+  string reference = 13;
+}
+
 
 // Ethereum configuration details.
 message EthereumConfig {

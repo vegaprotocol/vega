@@ -116,6 +116,7 @@ message Payload {
     BankingBridgeState banking_bridge_state = 56;
     SettlementState settlement_state = 57;
     LiquidityScores liquidity_scores = 58;
+    SpotLiquidityProvisions spot_liquidity_provisions = 59;
   }
 }
 
@@ -709,6 +710,12 @@ message LiquidityPartiesOrders {
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
+  // Market ID these provisions apply to. Required for key generation
+  string market_id = 2;
+}
+
+message SpotLiquidityProvisions {
+  repeated vega.SpotLiquidityProvision liquidity_provisions = 1;
   // Market ID these provisions apply to. Required for key generation
   string market_id = 2;
 }
