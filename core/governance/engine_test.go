@@ -1267,6 +1267,39 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 	}
 }
 
+func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
+	return &types.ProposalTermsNewSpotMarket{
+		NewSpotMarket: &types.NewSpotMarket{
+			Changes: &types.NewSpotMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "BTC/USDT Spot",
+					Code: "CRYPTO:BTCUSDT",
+					Product: &types.InstrumentConfigurationSpot{
+						Spot: &types.SpotProduct{
+							BaseAsset:  "BTC",
+							QuoteAsset: "USDT",
+						},
+					},
+				},
+				RiskParameters: &types.NewMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
+				DecimalPlaces: 0,
+				LpPriceRange:  num.DecimalFromFloat(0.95),
+			},
+		},
+	}
+}
+
 func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
 	var dt *types.DataSourceDefinition
 	if termExt {
@@ -1358,6 +1391,29 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 	}
 }
 
+func updateSpotMarketTerms() *types.ProposalTermsUpdateSpotMarket {
+	return &types.ProposalTermsUpdateSpotMarket{
+		UpdateSpotMarket: &types.UpdateSpotMarket{
+			MarketID: vgrand.RandomStr(5),
+			Changes: &types.UpdateSpotMarketConfiguration{
+				RiskParameters: &types.UpdateMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:     []string{"asset_class:fx/crypto", "product:futures"},
+				LpPriceRange: num.DecimalFromFloat(0.95),
+			},
+		},
+	}
+}
+
 func (e *tstEngine) submitProposal(t *testing.T, proposal types.Proposal) (*governance.ToSubmit, error) {
 	t.Helper()
 	return e.SubmitProposal(
@@ -1418,6 +1474,25 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 	}
 }
 
+func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newSpotMarketTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
 func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) types.Proposal {
 	id := e.newProposalID()
 	prop := types.Proposal{
@@ -1438,6 +1513,30 @@ func (e *tstEngine) newProposalForMarketUpdate(marketID, partyID string, now tim
 	switch p := prop.Terms.Change.(type) {
 	case *types.ProposalTermsUpdateMarket:
 		p.UpdateMarket.MarketID = marketID
+	}
+	return prop
+}
+
+func (e *tstEngine) newProposalForSpotMarketUpdate(marketID, partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	prop := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(96 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(4 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(2 * time.Hour).Unix(),
+			Change:              updateSpotMarketTerms(),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+	switch p := prop.Terms.Change.(type) {
+	case *types.ProposalTermsUpdateSpotMarket:
+		p.UpdateSpotMarket.MarketID = marketID
 	}
 	return prop
 }

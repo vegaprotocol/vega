@@ -3233,6 +3233,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
   "RewardMarketProposers - an account holding rewards for market proposers"
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
+  "AccountTypeHolding - an account for holding funds covering for in-flight unfilled orders"
+  ACCOUNT_TYPE_HOLDING
 }
 
 "Types that describe why a transfer has been made"

@@ -13,6 +13,8 @@
 package netparams
 
 const (
+	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+
 	// market related parameters.
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
@@ -175,6 +177,7 @@ const (
 )
 
 var AllKeys = map[string]struct{}{
+	SpotMarketTradingEnabled:                                 {},
 	MaxPeggedOrders:                                          {},
 	MaxGasPerBlock:                                           {},
 	DefaultGas:                                               {},

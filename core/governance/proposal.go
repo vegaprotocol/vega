@@ -128,6 +128,7 @@ func (t *ToEnact) UpdateAsset() *types.Asset {
 type ToSubmit struct {
 	p *types.Proposal
 	m *ToSubmitNewMarket
+	s *ToSubmitNewSpotMarket
 }
 
 func (t *ToSubmit) Proposal() *types.Proposal {
@@ -139,6 +140,22 @@ func (t ToSubmit) IsNewMarket() bool {
 }
 
 func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
+	return t.m
+}
+
+func (t ToSubmit) IsNewSpotMarket() bool {
+	return t.s != nil
+}
+
+func (t *ToSubmit) NewSpotMarket() *ToSubmitNewSpotMarket {
+	return t.s
+}
+
+type ToSubmitNewSpotMarket struct {
+	m *types.Market
+}
+
+func (t *ToSubmitNewSpotMarket) Market() *types.Market {
 	return t.m
 }
 

@@ -540,6 +540,23 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		tsb.m = &ToSubmitNewMarket{
 			m: mkt,
 		}
+	case types.ProposalTermsTypeNewSpotMarket:
+		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
+		newMarket := p.Terms.GetNewSpotMarket()
+		auctionDuration := enactTime.Sub(closeTime)
+		if perr, err := validateNewSpotMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct); err != nil {
+			e.rejectProposal(ctx, p, perr, err)
+			return nil, fmt.Errorf("%w, %v", err, perr)
+		}
+		mkt, perr, err := buildSpotMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
+		if err != nil {
+			e.rejectProposal(ctx, p, perr, err)
+			return nil, fmt.Errorf("%w, %v", err, perr)
+		}
+		tsb.m = &ToSubmitNewMarket{
+			m: mkt,
+		}
 	}
 
 	return tsb, nil
@@ -590,6 +607,10 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getUpdateNetworkParameterProposalParameters(), nil
 	case types.ProposalTermsTypeNewFreeform:
 		return e.getNewFreeformProposalParameters(), nil
+	case types.ProposalTermsTypeNewSpotMarket:
+		return e.getNewSpotMarketProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateSpotMarket:
+		return e.getUpdateSpotMarketProposalParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -699,6 +720,13 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 
 	if proposal.IsMarketUpdate() {
 		proposalError, err := e.validateMarketUpdate(proposal, params)
+		if err != nil {
+			return proposalError, err
+		}
+	}
+
+	if proposal.IsSpotMarketUpdate() {
+		proposalError, err := e.validateSpotMarketUpdate(proposal, params)
 		if err != nil {
 			return proposalError, err
 		}
@@ -822,6 +850,36 @@ func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *Proposal
 	return types.ProposalErrorUnspecified, nil
 }
 
+func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
+	updateMarket := proposal.SpotMarketUpdate()
+	if !e.markets.MarketExists(updateMarket.MarketID) {
+		e.log.Debug("market does not exist",
+			logging.MarketID(updateMarket.MarketID),
+			logging.PartyID(proposal.Party),
+			logging.ProposalID(proposal.ID))
+		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
+	}
+	for _, p := range e.activeProposals {
+		if p.ID == updateMarket.MarketID {
+			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
+		}
+	}
+
+	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(updateMarket.MarketID, proposal.Party)
+	if partyELS.LessThan(params.MinEquityLikeShare) {
+		e.log.Debug("proposer have insufficient equity-like share",
+			logging.String("expect-balance", params.MinEquityLikeShare.String()),
+			logging.String("proposer-balance", partyELS.String()),
+			logging.PartyID(proposal.Party),
+			logging.MarketID(updateMarket.MarketID),
+			logging.ProposalID(proposal.ID))
+		return types.ProposalErrorInsufficientEquityLikeShare,
+			fmt.Errorf("proposer have insufficient equity-like share, expected >= %v got %v", params.MinEquityLikeShare, partyELS)
+	}
+
+	return types.ProposalErrorUnspecified, nil
+}
+
 // validates proposed change.
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	enactTime := time.Unix(terms.EnactmentTimestamp, 0)
@@ -840,6 +898,12 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return terms.GetUpdateAsset().Validate()
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
+	case types.ProposalTermsTypeNewSpotMarket:
+		closeTime := time.Unix(terms.ClosingTimestamp, 0)
+		return validateNewSpotMarketChange(terms.GetNewSpotMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
+	case types.ProposalTermsTypeUpdateSpotMarket:
+		enct.shouldNotVerify = true
+		return validateUpdateSpotMarketChange(terms.GetUpdateSpotMarket(), enct)
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
@@ -941,6 +1005,32 @@ func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vot
 	}
 }
 
+func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, types.ProposalError, error) {
+	terms := p.Terms.GetUpdateSpotMarket()
+	existingMarket, exists := e.markets.GetMarket(terms.MarketID)
+	if !exists {
+		return nil, types.ProposalErrorInvalidMarket, fmt.Errorf("market \"%s\" doesn't exist anymore", terms.MarketID)
+	}
+
+	newMarket := &types.NewSpotMarket{
+		Changes: &types.NewSpotMarketConfiguration{
+			DecimalPlaces:             existingMarket.DecimalPlaces,
+			PositionDecimalPlaces:     existingMarket.PositionDecimalPlaces,
+			Metadata:                  terms.Changes.Metadata,
+			PriceMonitoringParameters: terms.Changes.PriceMonitoringParameters,
+			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
+			LpPriceRange:              terms.Changes.LpPriceRange,
+		},
+	}
+
+	if perr, err := validateUpdateSpotMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp}); err != nil {
+		return nil, perr, err
+	}
+
+	previousAuctionDuration := time.Duration(existingMarket.OpeningAuction.Duration) * time.Second
+	return buildSpotMarketFromProposal(existingMarket.ID, newMarket, e.netp, previousAuctionDuration)
+}
+
 func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.ProposalError, error) {
 	terms := p.Terms.GetUpdateMarket()
 	existingMarket, exists := e.markets.GetMarket(terms.MarketID)
@@ -984,10 +1074,10 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 	case nil:
 		return nil, types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.UpdateInstrumentConfigurationFuture:
-		asset, _ := existingMarket.GetAsset()
+		assets, _ := existingMarket.GetAssets()
 		newMarket.Changes.Instrument.Product = &types.InstrumentConfigurationFuture{
 			Future: &types.FutureProduct{
-				SettlementAsset:                     asset,
+				SettlementAsset:                     assets[0],
 				QuoteName:                           product.Future.QuoteName,
 				DataSourceSpecForSettlementData:     product.Future.DataSourceSpecForSettlementData,
 				DataSourceSpecForTradingTermination: product.Future.DataSourceSpecForTradingTermination,

@@ -101,6 +101,8 @@ const (
 	ProposalErrorLinearSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
 	// ProposalErrorSquaredSlippageOutOfRange squared slippage factor is negative or too large.
 	ProposalErrorQuadraticSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
+	// ProposalErrorInvalidFreeform Validation failed for spot proposal.
+	ProposalErrorInvalidSpot ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SPOT
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -133,6 +135,8 @@ const (
 	ProposalTermsTypeNewAsset
 	ProposalTermsTypeNewFreeform
 	ProposalTermsTypeUpdateAsset
+	ProposalTermsTypeNewSpotMarket
+	ProposalTermsTypeUpdateSpotMarket
 )
 
 type ProposalSubmission struct {
@@ -211,10 +215,28 @@ func (p *Proposal) IsMarketUpdate() bool {
 	}
 }
 
+func (p *Proposal) IsSpotMarketUpdate() bool {
+	switch p.Terms.Change.(type) {
+	case *ProposalTermsUpdateSpotMarket:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *Proposal) MarketUpdate() *UpdateMarket {
 	switch terms := p.Terms.Change.(type) {
 	case *ProposalTermsUpdateMarket:
 		return terms.UpdateMarket
+	default:
+		return nil
+	}
+}
+
+func (p *Proposal) SpotMarketUpdate() *UpdateSpotMarket {
+	switch terms := p.Terms.Change.(type) {
+	case *ProposalTermsUpdateSpotMarket:
+		return terms.UpdateSpotMarket
 	default:
 		return nil
 	}
@@ -427,6 +449,10 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		r.Change = ch
 	case *vegapb.ProposalTerms_NewFreeform:
 		r.Change = ch
+	case *vegapb.ProposalTerms_NewSpotMarket:
+		r.Change = ch
+	case *vegapb.ProposalTerms_UpdateSpotMarket:
+		r.Change = ch
 	}
 	return r
 }
@@ -483,6 +509,24 @@ func (p *ProposalTerms) GetUpdateMarket() *UpdateMarket {
 	}
 }
 
+func (p *ProposalTerms) GetNewSpotMarket() *NewSpotMarket {
+	switch c := p.Change.(type) {
+	case *ProposalTermsNewSpotMarket:
+		return c.NewSpotMarket
+	default:
+		return nil
+	}
+}
+
+func (p *ProposalTerms) GetUpdateSpotMarket() *UpdateSpotMarket {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateSpotMarket:
+		return c.UpdateSpotMarket
+	default:
+		return nil
+	}
+}
+
 func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 	switch c := p.Change.(type) {
 	case *ProposalTermsUpdateNetworkParameter:
@@ -520,6 +564,10 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change, err = NewUpdateAssetFromProto(ch)
 		case *vegapb.ProposalTerms_NewFreeform:
 			change = NewNewFreeformFromProto(ch)
+		case *vegapb.ProposalTerms_NewSpotMarket:
+			change, err = NewNewSpotMarketFromProto(ch)
+		case *vegapb.ProposalTerms_UpdateSpotMarket:
+			change, err = UpdateSpotMarketFromProto(ch)
 		}
 	}
 	if err != nil {

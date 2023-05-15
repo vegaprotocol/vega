@@ -13,22 +13,24 @@ var (
 	ErrUnknownAsset          = errors.New("unknown asset")
 )
 
-func (m *Market) GetAsset() (string, error) {
+func (m *Market) GetAssets() ([]string, error) {
 	if m.TradableInstrument == nil {
-		return "", ErrNilTradableInstrument
+		return []string{}, ErrNilTradableInstrument
 	}
 	if m.TradableInstrument.Instrument == nil {
-		return "", ErrNilInstrument
+		return []string{}, ErrNilInstrument
 	}
 	if m.TradableInstrument.Instrument.Product == nil {
-		return "", ErrNilProduct
+		return []string{}, ErrNilProduct
 	}
 
 	switch pimpl := m.TradableInstrument.Instrument.Product.(type) {
 	case *Instrument_Future:
-		return pimpl.Future.SettlementAsset, nil
+		return []string{pimpl.Future.SettlementAsset}, nil
+	case *Instrument_Spot:
+		return []string{pimpl.Spot.BaseAsset, pimpl.Spot.QuoteAsset}, nil
 	default:
-		return "", ErrUnknownAsset
+		return []string{}, ErrUnknownAsset
 	}
 }
 
