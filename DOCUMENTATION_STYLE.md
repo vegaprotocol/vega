@@ -11,10 +11,11 @@ When writing annotations for the protos and GraphQL, refer to the following guid
 
 ## Title structure
 
-- Text should match the rpc endpoints and have the titles like:
+Text should match the rpc endpoints and have the titles like:
 - “List Deposits” instead of “Deposits list”
 - “Get Deposit” instead of “Deposit”
-- When adding a new API, if the title seems a bit odd, reconsider the rpc endpoint name. “Get governances” for example, is not a real word and isn’t a helpful title
+
+When adding a new API, if the title seems a bit odd, reconsider the rpc endpoint name. “Get governances” for example, is not a real word and isn’t a helpful title.
 
 ## Naming terminology
 
