@@ -2,7 +2,7 @@
 
 When writing annotations for the protos and GraphQL, refer to the following guidance for good practices and specific style choices.
 
-## Good practice tips
+## Good practice tips
 
 - Look at how other doc-strings are written and formatted as a guide
 - Check your spelling for typos
@@ -34,7 +34,7 @@ If your new API doesn't fit into any of these categories then this is a prompt t
 - Id, id, or identifier
   - *USE*: ID
 - ID of X
-  - *USE*: X ID. Example: Market ID, not ID of the market
+  - *USE*: X ID. Example: Market ID, *not* ID of the market
 - data-node, or datanode
   - *USE*: data node
 - Pubkey 
