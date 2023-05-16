@@ -1,6 +1,6 @@
 # API docs style guide 
 
-When writing annotations for the protos and GraphQL, refer to the following guidance for good practices and specific style choices.
+When writing docs annotations for the protos, refer to the following guidance for good practices and specific style choices. While some of the guidance below is specific to protos, the general good practice tips are applicable to all docs.
 
 ## Good practice tips
 
