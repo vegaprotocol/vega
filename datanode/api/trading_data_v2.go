@@ -25,8 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
@@ -48,9 +46,10 @@ import (
 	v1 "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/version"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -126,10 +125,7 @@ func (t *TradingDataServiceV2) ListAccounts(ctx context.Context, req *v2.ListAcc
 		}
 	}
 
-	filter, err := entities.AccountFilterFromProto(req.Filter)
-	if err != nil {
-		return nil, formatE(ErrInvalidFilter, err)
-	}
+	filter := entities.AccountFilterFromProto(req.Filter)
 
 	accountBalances, pageInfo, err := t.accountService.QueryBalances(ctx, filter, pagination)
 	if err != nil {
@@ -246,9 +242,10 @@ func (t *TradingDataServiceV2) Info(_ context.Context, _ *v2.InfoRequest) (*v2.I
 func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.ListLedgerEntriesRequest) (*v2.ListLedgerEntriesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListLedgerEntriesV2")()
 
-	leFilter, err := entities.LedgerEntryFilterFromProto(req.Filter)
-	if err != nil {
-		return nil, formatE(ErrInvalidFilter, err)
+	leFilter := entities.LedgerEntryFilterFromProto(req.Filter)
+
+	if len(leFilter.FromAccountFilter.PartyIDs) == 0 && len(leFilter.ToAccountFilter.PartyIDs) == 0 {
+		return nil, errors.New("missing account party ID")
 	}
 
 	dateRange := entities.DateRangeFromProto(req.DateRange)
@@ -267,9 +264,47 @@ func (t *TradingDataServiceV2) ListLedgerEntries(ctx context.Context, req *v2.Li
 		return nil, formatE(err)
 	}
 
+	leEedges := make([]*v2.LedgerEntriesEdge, 0, len(edges))
+	for _, agg := range edges {
+		if agg == nil || agg.Node == nil {
+			continue
+		}
+
+		node := agg.Node
+		assetID := ptr.UnBox(node.AssetId)
+		edge := &v2.LedgerEntriesEdge{
+			Node: &vega.LedgerEntry{
+				FromAccount: &vega.AccountDetails{
+					AssetId:  assetID,
+					Type:     node.FromAccountType,
+					Owner:    node.FromAccountPartyId,
+					MarketId: node.FromAccountMarketId,
+				},
+				ToAccount: &vega.AccountDetails{
+					AssetId:  assetID,
+					Type:     node.ToAccountType,
+					Owner:    node.ToAccountPartyId,
+					MarketId: node.ToAccountMarketId,
+				},
+				Amount:             node.Quantity,
+				Type:               node.TransferType,
+				Timestamp:          node.Timestamp,
+				FromAccountBalance: node.FromAccountBalance,
+				ToAccountBalance:   node.ToAccountBalance,
+			},
+			Cursor: agg.Cursor,
+		}
+		leEedges = append(leEedges, edge)
+	}
+
 	return &v2.ListLedgerEntriesResponse{
+		// TODO: remove this once the client is updated to use the non-aggregated ledger entries
 		LedgerEntries: &v2.AggregatedLedgerEntriesConnection{
 			Edges:    edges,
+			PageInfo: pageInfo.ToProto(),
+		},
+		Entries: &v2.LedgerEntriesConnection{
+			Edges:    leEedges,
 			PageInfo: pageInfo.ToProto(),
 		},
 	}, nil
@@ -336,11 +371,7 @@ func (t *TradingDataServiceV2) ListBalanceChanges(ctx context.Context, req *v2.L
 		}
 	}
 
-	filter, err := entities.AccountFilterFromProto(req.Filter)
-	if err != nil {
-		return nil, formatE(ErrInvalidFilter, err)
-	}
-
+	filter := entities.AccountFilterFromProto(req.Filter)
 	dateRange := entities.DateRangeFromProto(req.DateRange)
 	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
 	if err != nil {

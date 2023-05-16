@@ -16,7 +16,7 @@ type LedgerEntryFilter struct {
 	// CloseOnAccountFilters is used to open/close the output set of entries under the FromAccount/ToAccount values.
 	// If true -> the output set will contain entries which sending and receiving accounts
 	// all match the criteria given in the `AccountFilter` type.
-	// Otherwise will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
+	// Otherwise, will contain entries that have a match the settings in both accounts (sending or receiving) or in one of them.
 	CloseOnAccountFilters CloseOnLimitOperation
 	// FromAccountFilter is a filter which is used to request properties for FromAccount field.
 	FromAccountFilter AccountFilter
@@ -27,20 +27,12 @@ type LedgerEntryFilter struct {
 	TransferTypes []LedgerMovementType
 }
 
-func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFilter, error) {
-	filter := LedgerEntryFilter{}
+func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) *LedgerEntryFilter {
+	filter := &LedgerEntryFilter{}
 	if pbFilter != nil {
 		filter.CloseOnAccountFilters = CloseOnLimitOperation(pbFilter.CloseOnAccountFilters)
-
-		var err error
-		filter.FromAccountFilter, err = AccountFilterFromProto(pbFilter.FromAccountFilter)
-		if err != nil {
-			return nil, err
-		}
-		filter.ToAccountFilter, err = AccountFilterFromProto(pbFilter.ToAccountFilter)
-		if err != nil {
-			return nil, err
-		}
+		filter.FromAccountFilter = AccountFilterFromProto(pbFilter.FromAccountFilter)
+		filter.ToAccountFilter = AccountFilterFromProto(pbFilter.ToAccountFilter)
 
 		if len(pbFilter.TransferTypes) > 0 {
 			filter.TransferTypes = make([]LedgerMovementType, len(pbFilter.TransferTypes))
@@ -53,5 +45,5 @@ func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFil
 		}
 	}
 
-	return &filter, nil
+	return filter
 }

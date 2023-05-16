@@ -516,6 +516,10 @@ models:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.PositionStatus
   LedgerEntry:
     model: code.vegaprotocol.io/vega/protos/vega.LedgerEntry
+  LedgerEntriesEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LedgerEntriesEdge
+  LedgerEntriesConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.LedgerEntriesConnection
   ERC20MultiSigSignerAddedBundle:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.ERC20MultiSigSignerAddedBundle
   ERC20MultiSigSignerRemovedBundle:

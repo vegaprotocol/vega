@@ -6,7 +6,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8221](https://github.com/vegaprotocol/vega/issues/8221) - Deprecate type `AggregatedLedgerEntry` in favour of `LedgerEntry` for `ListLedgerEntries` endpoint.
 
 ### 🛠 Improvements
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.

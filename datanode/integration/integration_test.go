@@ -261,6 +261,7 @@ func newTestConfig(postgresRuntimePath string) (*config.Config, error) {
 	cfg.SQLStore = databasetest.NewTestConfig(5432, "", postgresRuntimePath)
 	cfg.NetworkHistory.Enabled = false
 	cfg.SQLStore.RetentionPeriod = sqlstore.RetentionPeriodArchive
+	cfg.API.RateLimit.Enabled = false
 
 	return &cfg, nil
 }

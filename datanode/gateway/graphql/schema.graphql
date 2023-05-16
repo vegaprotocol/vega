@@ -542,7 +542,14 @@ type Query {
     filter: LedgerEntryFilter,
     dateRange: DateRange,
     pagination: Pagination
-  ) : AggregatedLedgerEntriesConnection!
+  ) : AggregatedLedgerEntriesConnection! @deprecated(reason: "Use ledgerEntriesConnection instead.")
+
+  "Get ledger entries by asset, market, party, account type, transfer type within the given date range."
+  ledgerEntriesConnection(
+    filter: LedgerEntryFilter,
+    dateRange: DateRange,
+    pagination: Pagination
+  ) : LedgerEntriesConnection!
 
   "Query for historic key rotations"
   keyRotationsConnection(id: ID, pagination: Pagination): KeyRotationConnection!
@@ -3991,12 +3998,22 @@ type AggregatedLedgerEntry {
 }
 
 type AggregatedLedgerEntriesEdge {
-  node: AggregatedLedgerEntry!
-  cursor: String!
+node: AggregatedLedgerEntry!
+cursor: String!
 }
 
 type AggregatedLedgerEntriesConnection {
   edges: [AggregatedLedgerEntriesEdge]!
+  pageInfo: PageInfo!
+}
+
+type LedgerEntriesEdge {
+  node: LedgerEntry!
+  cursor: String!
+}
+
+type LedgerEntriesConnection {
+  edges: [LedgerEntriesEdge]!
   pageInfo: PageInfo!
 }
 

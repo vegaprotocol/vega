@@ -503,6 +503,19 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Depo
 
 type myQueryResolver VegaResolverRoot
 
+func (r *myQueryResolver) LedgerEntriesConnection(_ context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.LedgerEntriesConnection, error) {
+	resp, err := r.tradingDataClientV2.ListLedgerEntries(context.Background(), &v2.ListLedgerEntriesRequest{
+		Filter:     filter,
+		DateRange:  dateRange,
+		Pagination: pagination,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list ledger entries: %w", err)
+	}
+
+	return resp.GetEntries(), nil
+}
+
 func (r *myQueryResolver) Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error) {
 	resp, err := r.tradingDataClientV2.ListTrades(ctx, &v2.ListTradesRequest{
 		MarketIds:  filter.MarketIds,

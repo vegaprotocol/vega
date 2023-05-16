@@ -24,8 +24,7 @@ type AccountFilter struct {
 	MarketIDs    []MarketID
 }
 
-func AccountFilterFromProto(pbFilter *v2.AccountFilter) (AccountFilter, error) {
-	filter := AccountFilter{}
+func AccountFilterFromProto(pbFilter *v2.AccountFilter) (filter AccountFilter) {
 	if pbFilter != nil {
 		if pbFilter.AssetId != "" {
 			filter.AssetID = AssetID(pbFilter.AssetId)
@@ -40,5 +39,5 @@ func AccountFilterFromProto(pbFilter *v2.AccountFilter) (AccountFilter, error) {
 			filter.MarketIDs = append(filter.MarketIDs, MarketID(marketID))
 		}
 	}
-	return filter, nil
+	return
 }

@@ -662,6 +662,16 @@ type ComplexityRoot struct {
 		Node   func(childComplexity int) int
 	}
 
+	LedgerEntriesConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	LedgerEntriesEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
 	LedgerEntry struct {
 		Amount             func(childComplexity int) int
 		FromAccountBalance func(childComplexity int) int
@@ -1464,6 +1474,7 @@ type ComplexityRoot struct {
 		KeyRotationsConnection             func(childComplexity int, id *string, pagination *v2.Pagination) int
 		LastBlockHeight                    func(childComplexity int) int
 		LedgerEntries                      func(childComplexity int, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) int
+		LedgerEntriesConnection            func(childComplexity int, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Market                             func(childComplexity int, id string) int
 		MarketsConnection                  func(childComplexity int, id *string, pagination *v2.Pagination, includeSettled *bool) int
 		MostRecentHistorySegment           func(childComplexity int) int
@@ -2268,6 +2279,7 @@ type QueryResolver interface {
 	GetMarketDataHistoryConnectionByID(ctx context.Context, id string, start *int64, end *int64, pagination *v2.Pagination) (*v2.MarketDataConnection, error)
 	BalanceChanges(ctx context.Context, filter *v2.AccountFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedBalanceConnection, error)
 	LedgerEntries(ctx context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.AggregatedLedgerEntriesConnection, error)
+	LedgerEntriesConnection(ctx context.Context, filter *v2.LedgerEntryFilter, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.LedgerEntriesConnection, error)
 	KeyRotationsConnection(ctx context.Context, id *string, pagination *v2.Pagination) (*v2.KeyRotationConnection, error)
 	LastBlockHeight(ctx context.Context) (string, error)
 	Market(ctx context.Context, id string) (*vega.Market, error)
@@ -4491,6 +4503,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KeyRotationEdge.Node(childComplexity), true
+
+	case "LedgerEntriesConnection.edges":
+		if e.complexity.LedgerEntriesConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.LedgerEntriesConnection.Edges(childComplexity), true
+
+	case "LedgerEntriesConnection.pageInfo":
+		if e.complexity.LedgerEntriesConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.LedgerEntriesConnection.PageInfo(childComplexity), true
+
+	case "LedgerEntriesEdge.cursor":
+		if e.complexity.LedgerEntriesEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.LedgerEntriesEdge.Cursor(childComplexity), true
+
+	case "LedgerEntriesEdge.node":
+		if e.complexity.LedgerEntriesEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.LedgerEntriesEdge.Node(childComplexity), true
 
 	case "LedgerEntry.amount":
 		if e.complexity.LedgerEntry.Amount == nil {
@@ -8229,6 +8269,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.LedgerEntries(childComplexity, args["filter"].(*v2.LedgerEntryFilter), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
 
+	case "Query.ledgerEntriesConnection":
+		if e.complexity.Query.LedgerEntriesConnection == nil {
+			break
+		}
+
+		args, err := ec.field_Query_ledgerEntriesConnection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.LedgerEntriesConnection(childComplexity, args["filter"].(*v2.LedgerEntryFilter), args["dateRange"].(*v2.DateRange), args["pagination"].(*v2.Pagination)), true
+
 	case "Query.market":
 		if e.complexity.Query.Market == nil {
 			break
@@ -11609,6 +11661,39 @@ func (ec *executionContext) field_Query_keyRotationsConnection_args(ctx context.
 		}
 	}
 	args["pagination"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_ledgerEntriesConnection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *v2.LedgerEntryFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOLedgerEntryFilter2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntryFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *v2.DateRange
+	if tmp, ok := rawArgs["dateRange"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateRange"))
+		arg1, err = ec.unmarshalODateRange2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐDateRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["dateRange"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -26496,6 +26581,214 @@ func (ec *executionContext) _KeyRotationEdge_cursor(ctx context.Context, field g
 func (ec *executionContext) fieldContext_KeyRotationEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "KeyRotationEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LedgerEntriesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.LedgerEntriesConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LedgerEntriesConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.LedgerEntriesEdge)
+	fc.Result = res
+	return ec.marshalNLedgerEntriesEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LedgerEntriesConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LedgerEntriesConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_LedgerEntriesEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_LedgerEntriesEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LedgerEntriesEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LedgerEntriesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.LedgerEntriesConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LedgerEntriesConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LedgerEntriesConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LedgerEntriesConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LedgerEntriesEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.LedgerEntriesEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LedgerEntriesEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.LedgerEntry)
+	fc.Result = res
+	return ec.marshalNLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLedgerEntry(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LedgerEntriesEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LedgerEntriesEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "fromAccountId":
+				return ec.fieldContext_LedgerEntry_fromAccountId(ctx, field)
+			case "toAccountId":
+				return ec.fieldContext_LedgerEntry_toAccountId(ctx, field)
+			case "amount":
+				return ec.fieldContext_LedgerEntry_amount(ctx, field)
+			case "type":
+				return ec.fieldContext_LedgerEntry_type(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_LedgerEntry_timestamp(ctx, field)
+			case "fromAccountBalance":
+				return ec.fieldContext_LedgerEntry_fromAccountBalance(ctx, field)
+			case "toAccountBalance":
+				return ec.fieldContext_LedgerEntry_toAccountBalance(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LedgerEntry", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LedgerEntriesEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.LedgerEntriesEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LedgerEntriesEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LedgerEntriesEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LedgerEntriesEdge",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -50910,6 +51203,67 @@ func (ec *executionContext) fieldContext_Query_ledgerEntries(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_ledgerEntriesConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_ledgerEntriesConnection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().LedgerEntriesConnection(rctx, fc.Args["filter"].(*v2.LedgerEntryFilter), fc.Args["dateRange"].(*v2.DateRange), fc.Args["pagination"].(*v2.Pagination))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.LedgerEntriesConnection)
+	fc.Result = res
+	return ec.marshalNLedgerEntriesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesConnection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_ledgerEntriesConnection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "edges":
+				return ec.fieldContext_LedgerEntriesConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_LedgerEntriesConnection_pageInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LedgerEntriesConnection", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_ledgerEntriesConnection_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_keyRotationsConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_keyRotationsConnection(ctx, field)
 	if err != nil {
@@ -71301,6 +71655,76 @@ func (ec *executionContext) _KeyRotationEdge(ctx context.Context, sel ast.Select
 	return out
 }
 
+var ledgerEntriesConnectionImplementors = []string{"LedgerEntriesConnection"}
+
+func (ec *executionContext) _LedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.LedgerEntriesConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ledgerEntriesConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LedgerEntriesConnection")
+		case "edges":
+
+			out.Values[i] = ec._LedgerEntriesConnection_edges(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._LedgerEntriesConnection_pageInfo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ledgerEntriesEdgeImplementors = []string{"LedgerEntriesEdge"}
+
+func (ec *executionContext) _LedgerEntriesEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.LedgerEntriesEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ledgerEntriesEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LedgerEntriesEdge")
+		case "node":
+
+			out.Values[i] = ec._LedgerEntriesEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._LedgerEntriesEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var ledgerEntryImplementors = []string{"LedgerEntry"}
 
 func (ec *executionContext) _LedgerEntry(ctx context.Context, sel ast.SelectionSet, obj *vega.LedgerEntry) graphql.Marshaler {
@@ -78753,6 +79177,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "ledgerEntriesConnection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_ledgerEntriesConnection(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "keyRotationsConnection":
 			field := field
 
@@ -84339,6 +84786,58 @@ func (ec *executionContext) marshalNKeyRotationConnection2ᚖcodeᚗvegaprotocol
 	return ec._KeyRotationConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLedgerEntriesConnection2codeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, v v2.LedgerEntriesConnection) graphql.Marshaler {
+	return ec._LedgerEntriesConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLedgerEntriesConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesConnection(ctx context.Context, sel ast.SelectionSet, v *v2.LedgerEntriesConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LedgerEntriesConnection(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLedgerEntriesEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesEdge(ctx context.Context, sel ast.SelectionSet, v []*v2.LedgerEntriesEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOLedgerEntriesEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalNLedgerEntry2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLedgerEntry(ctx context.Context, sel ast.SelectionSet, v *vega.LedgerEntry) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -87832,6 +88331,13 @@ func (ec *executionContext) marshalOKeyRotationEdge2ᚖcodeᚗvegaprotocolᚗio�
 		return graphql.Null
 	}
 	return ec._KeyRotationEdge(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLedgerEntriesEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐLedgerEntriesEdge(ctx context.Context, sel ast.SelectionSet, v *v2.LedgerEntriesEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LedgerEntriesEdge(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOLedgerEntry2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐLedgerEntry(ctx context.Context, sel ast.SelectionSet, v []*vega.LedgerEntry) graphql.Marshaler {

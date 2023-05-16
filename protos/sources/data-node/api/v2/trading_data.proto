@@ -115,16 +115,13 @@ service TradingDataService {
   // List ledger entries
   //
   // Get a list of ledger entries within the given date range.
-  // This query requests and sums the number of ledger entries from a given subset of accounts, specified via the 'filter' argument.
-  // It returns a time series - implemented as a list of AggregateLedgerEntry structs - with a row for every time
-  // the summed ledger entries of the set of specified accounts changes.
-  // Each account filter must contain no more than one party ID.
+  // This query returns all the ledger entries for a given subset of accounts, specified via the 'filter' argument.
   //
   // Entries can be filtered by:
-  //   - the sending account (market ID, asset ID, account type)
-  //   - receiving account (market ID, asset ID, account type)
-  //   - sending AND receiving account
+  //   - the sending account (party ID, market ID, asset ID, account type)
+  //   - receiving account (party ID, market ID, asset ID, account type)
   //   - transfer type either in addition to the above filters or as a standalone option
+  // Party ID is a required field, all other fields are optional.
   rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Ledger entries"};
   }
@@ -1102,6 +1099,22 @@ message PositionUpdates {
   repeated vega.Position positions = 1;
 }
 
+// Represents the ledger entry data with corresponding cursor for it
+message LedgerEntriesEdge {
+  // 'LedgerEntry' data.
+  vega.LedgerEntry node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of ledger entries data and corresponding page information.
+message LedgerEntriesConnection {
+  // Page of 'LedgerEntry' data and their corresponding cursors.
+  repeated LedgerEntriesEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
 // Ledger entry filter sets filters on returned set of ledger entries.
 message LedgerEntryFilter {
   // Determines whether an entry must have accounts matching both the account_from_filter
@@ -1127,6 +1140,7 @@ enum LedgerEntryField {
 // Represents an aggregated view of ledger entry data, sender and receiver accounts,
 // details and balances for both sides after the transfer has been made
 message AggregatedLedgerEntry {
+  option deprecated = true; // Use LedgerEntry instead
   // Removed ID field as it is not used, there is no ID for an aggregated ledger entry
   reserved 1;
   // Timestamp in Unix nanoseconds of the block in which the result is referring to.
@@ -1180,12 +1194,15 @@ message ExportLedgerEntriesRequest {
 
 // Response that is received when listing ledger entries
 message ListLedgerEntriesResponse {
-  // Page of aggregated ledger entries data and corresponding page information.
+  // Deprecated: Page of aggregated ledger entries data and corresponding page information.
   AggregatedLedgerEntriesConnection ledger_entries = 1;
+  // Page of ledger entries data and corresponding page information.
+  LedgerEntriesConnection entries = 2;
 }
 
 // Represents the aggregated ledger entry data with corresponding cursor for it
 message AggregatedLedgerEntriesEdge {
+  option deprecated = true; // Use LedgerEntriesEdge instead
   // 'AggregatedLedgerEntry' data.
   AggregatedLedgerEntry node = 1;
   // Cursor that can be used to fetch further pages.
@@ -1194,6 +1211,7 @@ message AggregatedLedgerEntriesEdge {
 
 // Page of aggregated ledger entries data and corresponding page information.
 message AggregatedLedgerEntriesConnection {
+  option deprecated = true; // Use LedgerEntriesConnection instead
   // Page of 'AggregatedLedgerEntry' data and their corresponding cursors.
   repeated AggregatedLedgerEntriesEdge edges = 1;
   // Page information that is used for fetching further pages.
