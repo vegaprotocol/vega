@@ -77,7 +77,27 @@ Use correct formatting when adding new API endpoints:
 - Tags - Choose from existing tags before adding a new tag. Tags are used to group similar APIs together in the REST documentation. If your new API doesn't fit into any of the existing tags, then this is a prompt to start a discussion about the best category for it.
 - Titles & descriptions 
 - Use a full stop for a description with no title. 
-- Format title and description: 
+
+### How to format title and description
+
+```
+#### example
+
+// This is a title, which needs to have a blank line below it
+//
+// This is a description
+// You can add more descriptions on further lines 
+string my_field = 1;
+
+#### next example
+
+// This is a title, and has no full stop at the end
+
+#### next example
+
+// This is a description, which needs a full stop at the end.
+string my_field =1;
+```
 
 ### Required and optional fields
 All fields in an API request should either be required and marked with “[(google.api.field.behaviour = REQUIRED)]”, or optional and marked explicitly as “optional” against the type in the protos. 
