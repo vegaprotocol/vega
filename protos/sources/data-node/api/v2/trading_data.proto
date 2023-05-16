@@ -1099,7 +1099,7 @@ message PositionUpdates {
   repeated vega.Position positions = 1;
 }
 
-// Represents the ledger entry data with corresponding cursor for it
+// Represents the ledger entry data with corresponding cursor for it.
 message LedgerEntriesEdge {
   // 'LedgerEntry' data.
   vega.LedgerEntry node = 1;
