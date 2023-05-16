@@ -1109,7 +1109,7 @@ message LedgerEntriesEdge {
 
 // Page of ledger entries data and corresponding page information.
 message LedgerEntriesConnection {
-  // Page of 'LedgerEntry' data and their corresponding cursors.
+  // Page of ledger entry data and their corresponding cursors.
   repeated LedgerEntriesEdge edges = 1;
   // Page information that is used for fetching further pages.
   PageInfo page_info = 2;
