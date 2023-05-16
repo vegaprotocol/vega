@@ -69,18 +69,44 @@ If your new API doesn't fit into any of these categories then this is a prompt t
 - If a returned value is a string that represents an integer, ensure that it describes if it is a signed or unsigned integer. Note: If the field is described as a number but the data type is a string, it is so that there is no loss of precision, or risk of integer overflow for large numbers.
 - If it’s a string that represents a decimalised number, describe how someone can determine what the decimal place is.
 
-## Formatting
+## Formatting protos
 
-Use correct formatting when adding new API endpoints: 
+Use correct formatting when adding new API endpoints to the protos: 
 
 - Required fields  
 - Tags - Choose from existing tags before adding a new tag. Tags are used to group similar APIs together in the REST documentation. If your new API doesn't fit into any of the existing tags, then this is a prompt to start a discussion about the best category for it.
 - Titles & descriptions 
 - Use a full stop for a description with no title. 
 
-### How to format title and description
+### How to format a proto API
 
 ```
+service ColourService {
+  // Get colour
+  //
+  // Get the first colour that this API offers
+  rpc GetName(GetNameRequest) returns (GetNameResponse) {}
+  // List colours
+  //
+  // List all the colours available
+  rpc ListColours(ListColoursRequest) returns (ListColoursResponse) {}
+}
+
+// Request for more information about colours.
+//
+// The response with details for each colour.
+message ListColoursRequest {
+   // Determines if colours that use blue should be shown. 
+   bool with_blue = 1;
+   
+   // There are lots of colours, so you can paginate the results.
+   optional Pagination pagination = 2;
+}
+```
+
+### Generic format for title and description
+
+``` 
 #### example
 
 // This is a title, which needs to have a blank line below it
@@ -95,7 +121,7 @@ string my_field = 1;
 
 #### next example
 
-// This is a description, which needs a full stop at the end.
+// This is a description, and it needs needs a full stop at the end.
 string my_field =1;
 ```
 
