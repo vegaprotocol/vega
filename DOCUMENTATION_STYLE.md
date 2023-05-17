@@ -86,7 +86,7 @@ service ColourService {
   // Get colour
   //
   // Get the first colour that this API offers
-  rpc GetName(GetNameRequest) returns (GetNameResponse) {}
+  rpc GetColour(GetColourRequest) returns (GetColourResponse) {}
   // List colours
   //
   // List all the colours available
