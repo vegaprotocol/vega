@@ -36,6 +36,8 @@ message StopOrder {
     STATUS_STOPPED = 3;
     // Stop order has been triggered and generated an order
     STATUS_TRIGGERRED = 4;
+    // Stop order has been expired
+    STATUS_EXPIRED = 5;
   }
 
   // The ID of order of this stop order
@@ -55,6 +57,10 @@ message StopOrder {
   int64 created_at = 7;
   // Last update of this stop order
   optional int64 updated_at = 8;
+  // The ID of the order created once the trigger is hit
+  string order_id = 9;
+  // The order to be submitted once the trigger is hit.
+  // OrderSubmission order_submission = 10;
 
 
   // The trigger which will need to be breached for the order

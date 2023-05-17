@@ -20,17 +20,29 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 		return errs.FinalAddForProperty("stop_orders_submission", ErrIsRequired)
 	}
 
+	var market1, market2 string
 	if cmd.FallsBelow != nil {
 		checkStopOrderSetup(
 			"stop_orders_submission.falls_below", errs, cmd.FallsBelow)
+		if cmd.FallsBelow.OrderSubmission != nil {
+			market1 = cmd.FallsBelow.OrderSubmission.MarketId
+		}
 	}
+
 	if cmd.RisesAbove != nil {
 		checkStopOrderSetup(
 			"stop_orders_submission.rises_below", errs, cmd.RisesAbove)
+		if cmd.RisesAbove.OrderSubmission != nil {
+			market2 = cmd.RisesAbove.OrderSubmission.MarketId
+		}
 	}
 
 	if cmd.FallsBelow == nil && cmd.RisesAbove == nil {
 		return errs.FinalAdd(ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow)
+	}
+
+	if cmd.FallsBelow != nil && cmd.RisesAbove != nil && market1 != market2 {
+		return errs.FinalAdd(ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame)
 	}
 
 	return errs

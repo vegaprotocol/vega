@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/num"
@@ -14,21 +15,52 @@ type StopOrderExpiryStrategy = vega.StopOrder_ExpiryStrategy
 
 const (
 	// Never valid
-	StopOrdeExpiryStrategyUnspecified StopOrderExpiryStrategy = vega.StopOrder_EXPIRY_STRATEGY_UNSPECIFIED
+	StopOrderExpiryStrategyUnspecified StopOrderExpiryStrategy = vega.StopOrder_EXPIRY_STRATEGY_UNSPECIFIED
 	// The stop order should be cancelled if the expiry time is reached.
 	StopOrderExpiryStrategyCancels = vega.StopOrder_EXPIRY_STRATEGY_CANCELS
 	// The order should be submitted if the expiry time is reached.
 	StopOrderExpiryStrategySubmit = vega.StopOrder_EXPIRY_STRATEGY_SUBMIT
 )
 
-type StopOrdersSubmission struct {
-	RisesAbove *StopOrderSetup
-	FallsBelow *StopOrderSetup
-}
+type StopOrderTriggerDirection = vega.StopOrder_TriggerDirection
+
+const (
+	// Never valid
+	StopOrderTriggerDirectionUnspecified StopOrderTriggerDirection = vega.StopOrder_TRIGGER_DIRECTION_UNSPECIFIED
+	// The stop order is triggered once the price falls below a certain level
+	StopOrderTriggerDirectionFallsBelow = vega.StopOrder_TRIGGER_DIRECTION_FALLS_BELOW
+	o                                   // The stop order is triggered once the price rises above a certain level
+	StopOrderTriggerDirectionRisesAbove = vega.StopOrder_TRIGGER_DIRECTION_RISES_ABOVE
+)
+
+type StopOrderStatus = vega.StopOrder_Status
+
+const (
+	// Never valid
+	StopOrderStatusUnspecified StopOrderStatus = vega.StopOrder_STATUS_UNSPECIFIED
+	// Pending to be executed once the trigger is breached
+	StopOrderStatusPending = vega.StopOrder_STATUS_CANCELLED
+	// Cancelled by the user
+	StopOrderStatusCancelled = vega.StopOrder_STATUS_CANCELLED
+	// Stopped by the network, e.g: OCO other side has been triggered
+	StopOrderStatusStopped = vega.StopOrder_STATUS_STOPPED
+	// Stop order has been triggered and generated an order
+	StopOrderStatusTiggered = vega.StopOrder_STATUS_TRIGGERRED
+	// Stop order has been expired
+	StopOrderStatusExpired = vega.StopOrder_STATUS_EXPIRED
+)
 
 type StopOrderExpiry struct {
 	ExpiresAt      *time.Time
 	ExpiryStrategy *StopOrderExpiryStrategy
+}
+
+func (s StopOrderExpiry) String() string {
+	return fmt.Sprintf(
+		"expiresAt(%v) expiryStrategy(%v)",
+		s.ExpiresAt,
+		s.ExpiryStrategy,
+	)
 }
 
 func (s *StopOrderExpiry) Expires() bool {
@@ -36,8 +68,17 @@ func (s *StopOrderExpiry) Expires() bool {
 }
 
 type StopOrderTrigger struct {
+	Direction             StopOrderTriggerDirection
 	price                 *num.Uint
 	trailingPercentOffset num.Decimal
+}
+
+func (s StopOrderTrigger) String() string {
+	return fmt.Sprintf(
+		"price(%v) trailingPercentOffset(%v)",
+		s.price,
+		s.trailingPercentOffset,
+	)
 }
 
 func (s *StopOrderTrigger) IsPrice() bool {
@@ -68,7 +109,19 @@ type StopOrderSetup struct {
 	Trigger         *StopOrderTrigger
 }
 
-func StopOrderSetupFromProto(psetup *commandspb.StopOrderSetup) (*StopOrderSetup, error) {
+func (s StopOrderSetup) String() string {
+	return fmt.Sprintf(
+		"orderSubmission(%v) expiry(%v) trigger(%v)",
+		s.OrderSubmission.String(),
+		s.Expiry.String(),
+		s.Trigger.String(),
+	)
+}
+
+func StopOrderSetupFromProto(
+	psetup *commandspb.StopOrderSetup,
+	direction StopOrderTriggerDirection,
+) (*StopOrderSetup, error) {
 	orderSubmission, err := NewOrderSubmissionFromProto(psetup.OrderSubmission)
 	if err != nil {
 		return nil, err
@@ -104,18 +157,23 @@ func StopOrderSetupFromProto(psetup *commandspb.StopOrderSetup) (*StopOrderSetup
 	}, nil
 }
 
+type StopOrdersSubmission struct {
+	RisesAbove *StopOrderSetup
+	FallsBelow *StopOrderSetup
+}
+
 func NewStopOrderSubmissionFromProto(psubmission *commandspb.StopOrdersSubmission) (*StopOrdersSubmission, error) {
 	var (
 		fallsBelow, risesAbove *StopOrderSetup
 		err                    error
 	)
 	if psubmission.FallsBelow != nil {
-		if fallsBelow, err = StopOrderSetupFromProto(psubmission.FallsBelow); err != nil {
+		if fallsBelow, err = StopOrderSetupFromProto(psubmission.FallsBelow, StopOrderTriggerDirectionFallsBelow); err != nil {
 			return nil, err
 		}
 	}
 	if psubmission.RisesAbove != nil {
-		if risesAbove, err = StopOrderSetupFromProto(psubmission.RisesAbove); err != nil {
+		if risesAbove, err = StopOrderSetupFromProto(psubmission.RisesAbove, StopOrderTriggerDirectionRisesAbove); err != nil {
 			return nil, err
 		}
 	}
@@ -124,4 +182,59 @@ func NewStopOrderSubmissionFromProto(psubmission *commandspb.StopOrdersSubmissio
 		FallsBelow: fallsBelow,
 		RisesAbove: risesAbove,
 	}, nil
+}
+
+func (s *StopOrdersSubmission) IntoStopOrders(
+	party, risesAboveID, fallsBelowID string,
+	now time.Time,
+) (risesAbove, fallsBelow *StopOrder) {
+	if s.RisesAbove != nil {
+		risesAbove = &StopOrder{
+			ID:              risesAboveID,
+			Party:           party,
+			OrderSubmission: s.RisesAbove.OrderSubmission,
+			OCOLinkID:       fallsBelowID,
+			Expiry:          s.RisesAbove.Expiry,
+			Trigger:         s.RisesAbove.Trigger,
+			Status:          StopOrderStatusPending,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		}
+	}
+
+	if s.FallsBelow != nil {
+		fallsBelow = &StopOrder{
+			ID:              fallsBelowID,
+			Party:           party,
+			OrderSubmission: s.FallsBelow.OrderSubmission,
+			OCOLinkID:       risesAboveID,
+			Expiry:          s.FallsBelow.Expiry,
+			Trigger:         s.FallsBelow.Trigger,
+			Status:          StopOrderStatusPending,
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		}
+	}
+
+	return risesAbove, fallsBelow
+}
+
+func (s StopOrdersSubmission) String() string {
+	return fmt.Sprintf(
+		"risesAbove(%v) fallsBelow(%v)",
+		s.RisesAbove.String(),
+		s.FallsBelow.String(),
+	)
+}
+
+type StopOrder struct {
+	ID              string
+	Party           string
+	OrderSubmission *OrderSubmission
+	OCOLinkID       string
+	Expiry          *StopOrderExpiry
+	Trigger         *StopOrderTrigger
+	Status          StopOrderStatus
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }

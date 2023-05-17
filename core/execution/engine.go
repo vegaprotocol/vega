@@ -595,6 +595,44 @@ func (e *Engine) canSubmitPeggedOrder() bool {
 	return uint64(e.totalPeggedOrdersCount) < e.maxPeggedOrders
 }
 
+func (e *Engine) SubmitStopOrders(
+	ctx context.Context,
+	submission *types.StopOrdersSubmission,
+	party string,
+	idgen IDGenerator,
+	orderID string) error {
+	var marketID string
+	if submission.FallsBelow != nil {
+		marketID = submission.FallsBelow.OrderSubmission.MarketID
+	} else {
+		marketID = submission.RisesAbove.OrderSubmission.MarketID
+	}
+
+	timer := metrics.NewTimeCounter(marketID, "execution", "SubmitStopOrders")
+	defer func() {
+		timer.EngineTimeCounterAdd()
+	}()
+
+	mkt, ok := e.markets[marketID]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+
+	conf, err := mkt.SubmitStopOrdersWithIDGeneratorAndOrderID(
+		ctx, submission, party, idgen, orderID)
+	if err != nil {
+		return err
+	}
+
+	_ = conf
+
+	// TODO: add stuff there if it traded immediatly
+	// metrics.OrderGaugeAdd(1, submission.MarketID)
+	// e.decrementOrderGaugeMetrics(submission.MarketID, conf.Order, conf.PassiveOrdersAffected)
+
+	return nil
+}
+
 // SubmitOrder checks the incoming order and submits it to a Vega market.
 func (e *Engine) SubmitOrder(
 	ctx context.Context,

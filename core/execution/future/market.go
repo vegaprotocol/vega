@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -141,6 +142,7 @@ type Market struct {
 
 	settlementAsset string
 	succeeded       bool
+	stopOrders      *stoporders.Pool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -286,6 +288,8 @@ func NewMarket(
 		lpPriceRange:              mkt.LPPriceRange,
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
+		stopOrders:                stoporders.New(log),
+		expiringStopOrders:        NewExpiringOrders(),
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -1292,6 +1296,38 @@ func (m *Market) SubmitOrder(
 	return m.SubmitOrderWithIDGeneratorAndOrderID(
 		ctx, orderSubmission, party, idgen, idgen.NextID(),
 	)
+}
+
+// SubmitOrder submits the given order.
+func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderID(
+	ctx context.Context,
+	submission *types.StopOrdersSubmission,
+	party string,
+	idgen IDGenerator,
+	orderID string,
+) (oc *types.OrderConfirmation, _ error) {
+	defer m.onTxProcessed()
+
+	m.idgen = idgen
+	defer func() { m.idgen = nil }()
+
+	var risesAboveID, fallsBelowID string
+	if submission.RisesAbove != nil {
+		risesAboveID = m.idgen.NextID()
+	}
+	if submission.FallsBelow != nil {
+		fallsBelowID = m.idgen.NextID()
+	}
+
+	risesAbove, fallsBelow := submission.IntoStopOrders(party, risesAboveID, fallsBelowID, m.timeService.GetTimeNow())
+
+	// first check if any match directly
+
+	// if no match, just insert them
+	m.stopOrders.Insert(risesAbove)
+	m.stopOrders.Insert(fallsBelow)
+
+	return nil, nil
 }
 
 // SubmitOrder submits the given order.
