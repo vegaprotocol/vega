@@ -1101,7 +1101,7 @@ message PositionUpdates {
 
 // Represents the ledger entry data with corresponding cursor for it.
 message LedgerEntriesEdge {
-  // 'LedgerEntry' data.
+  // Data for the ledger entry
   vega.LedgerEntry node = 1;
   // Cursor that can be used to fetch further pages.
   string cursor = 2;
