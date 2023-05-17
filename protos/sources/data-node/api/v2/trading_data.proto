@@ -115,7 +115,6 @@ service TradingDataService {
   // List ledger entries
   //
   // Get a list of ledger entries within the given date range.
-  // This query returns all the ledger entries for a given subset of accounts, specified via the 'filter' argument.
   //
   // Entries can be filtered by:
   //   - sending account: party ID, market ID, asset ID, account type
