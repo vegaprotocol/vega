@@ -124,6 +124,8 @@ func (t Tx) Command() txn.Command {
 		return txn.IssueSignatures
 	case *commandspb.InputData_BatchMarketInstructions:
 		return txn.BatchMarketInstructions
+	case *commandspb.InputData_StopOrdersSubmission:
+		return txn.StopOrdersSubmissionCommand
 	default:
 		panic("unsupported command")
 	}
@@ -201,6 +203,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.IssueSignatures
 	case *commandspb.InputData_BatchMarketInstructions:
 		return cmd.BatchMarketInstructions
+	case *commandspb.InputData_StopOrdersSubmission:
+		return cmd.StopOrdersSubmission
 	default:
 		return errors.New("unsupported command")
 	}
@@ -358,6 +362,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to BatchMarketInstructions")
 		}
 		*underlyingCmd = *cmd.BatchMarketInstructions
+	case *commandspb.InputData_StopOrdersSubmission:
+		underlyingCmd, ok := i.(*commandspb.StopOrdersSubmission)
+		if !ok {
+			return errors.New("failed to unmarshall to BatchMarketInstructions")
+		}
+		*underlyingCmd = *cmd.StopOrdersSubmission
 	default:
 		return errors.New("unsupported command")
 	}
