@@ -77,7 +77,10 @@ That configuration will apply to gRPC and REST. GraphQL is configured separately
 
 WebSocket connections use a different rate limiting mechanism. They are rate limited by a maximum allowed number of subscriptions per IP address. The default maximum is set to 250 connections. This can be changed in the following section of the data node configuration:
 
+```
 [API]
   Level = "Info"
   ...
   MaxSubscriptionPerClient = 250
+
+```
