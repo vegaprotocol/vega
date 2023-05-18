@@ -2172,7 +2172,7 @@ type MarketState struct {
 	LastTradeValue string `protobuf:"bytes,4,opt,name=last_trade_value,json=lastTradeValue,proto3" json:"last_trade_value,omitempty"`
 	// Total trade volume which last determined the growth rate of the market.
 	LastTradeVolume string `protobuf:"bytes,5,opt,name=last_trade_volume,json=lastTradeVolume,proto3" json:"last_trade_volume,omitempty"`
-	// Succession window in nanonseconds: the timestamp when this market cannot be succeeded anymore.
+	// Succession window in nanoseconds: the timestamp when this market cannot be succeeded anymore.
 	SuccessionWindow int64 `protobuf:"varint,6,opt,name=succession_window,json=successionWindow,proto3" json:"succession_window,omitempty"`
 	// The underlying market should be present in case the successor market is enacted during the succession window.
 	// This field can be omitted if the market is not yet settled.

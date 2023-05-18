@@ -256,7 +256,7 @@ message MarketState {
   // Total trade volume which last determined the growth rate of the market.
   string last_trade_volume = 5;
 
-  // Succession window in nanonseconds: the timestamp when this market cannot be succeeded anymore.
+  // Succession window in nanoseconds: the timestamp when this market cannot be succeeded anymore.
   int64 succession_window = 6;
 
   // The underlying market should be present in case the successor market is enacted during the succession window.

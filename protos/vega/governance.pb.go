@@ -795,7 +795,7 @@ type NewMarketConfiguration struct {
 	LinearSlippageFactor string `protobuf:"bytes,9,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
 	// Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,10,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
-	// Successor configuration. If this proposal is meant to suceed a given market, then this should be set.
+	// Successor configuration. If this proposal is meant to succeed a given market, then this should be set.
 	Successor *SuccessorConfiguration `protobuf:"bytes,11,opt,name=successor,proto3,oneof" json:"successor,omitempty"`
 }
 
