@@ -15,6 +15,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"code.vegaprotocol.io/vega/core/config"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
