@@ -27,6 +27,7 @@
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
 - [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
 - [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
+- [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
 
 
 ## 0.71.0

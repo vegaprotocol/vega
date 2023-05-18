@@ -43,7 +43,7 @@ type Manager struct {
 
 type walletConnection struct {
 	// connectedWallet is the projection of the wallet through the permissions
-	// and authentication system. On a regular wallet, there are no restrictions
+	// and authentication system. On a regular wallet, there is no restriction
 	// on what we can call, which doesn't fit the model of having allowed
 	// access, so we wrap the "regular wallet" behind the "connected wallet".
 	connectedWallet api.ConnectedWallet
@@ -384,8 +384,6 @@ func (m *Manager) loadPreviousSessionConnections(ctx context.Context) error {
 		}
 
 		m.tokenToConnection[session.Token] = &walletConnection{
-			// We are unable to build the connected the wallet at this point.
-			// We will have one when the user explicitly
 			connectedWallet: connectedWallet,
 			policy: &sessionPolicy{
 				// Since this session is being reloaded, we consider it to be
@@ -440,7 +438,7 @@ func (m *Manager) destroyConnectionsUsingThisWallet(walletName string) {
 }
 
 func (m *Manager) updateConnectionsUsingThisWallet(w wallet.Wallet) {
-	for token, connection := range m.tokenToConnection {
+	for _, connection := range m.tokenToConnection {
 		if connection.connectedWallet.Name() != w.Name() {
 			continue
 		}
@@ -452,7 +450,7 @@ func (m *Manager) updateConnectionsUsingThisWallet(w wallet.Wallet) {
 			updatedConnectedWallet, _ = api.NewConnectedWallet(connection.connectedWallet.Hostname(), w)
 		}
 
-		m.tokenToConnection[token].connectedWallet = updatedConnectedWallet
+		connection.connectedWallet = updatedConnectedWallet
 	}
 }
 
@@ -554,9 +552,6 @@ func NewManager(timeService TimeService, walletStore WalletStore, tokenStore Tok
 		interactor:                interactor,
 	}
 
-	walletStore.OnUpdate(m.refreshConnections)
-	tokenStore.OnUpdate(m.refreshLongLivingTokens)
-
 	ctx := context.Background()
 
 	if err := m.loadLongLivingConnections(ctx); err != nil {
@@ -566,6 +561,9 @@ func NewManager(timeService TimeService, walletStore WalletStore, tokenStore Tok
 	if err := m.loadPreviousSessionConnections(ctx); err != nil {
 		return nil, fmt.Errorf("could not load the previous session connections: %w", err)
 	}
+
+	walletStore.OnUpdate(m.refreshConnections)
+	tokenStore.OnUpdate(m.refreshLongLivingTokens)
 
 	return m, nil
 }
