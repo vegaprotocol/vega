@@ -776,6 +776,8 @@ enum TransferType {
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
   // Balances restored after network restart
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
+  // Insurance pool fraction transfer from parent to successor market.
+  TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION = 26;
 }
 
 // Represents a financial transfer within Vega

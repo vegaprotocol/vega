@@ -6,6 +6,7 @@ import "vega/assets.proto";
 import "vega/chain_events.proto";
 import "vega/events/v1/events.proto";
 import "vega/governance.proto";
+import "vega/markets.proto";
 import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1";
@@ -31,6 +32,7 @@ message Checkpoint {
   bytes staking = 11;
   bytes multisig_control = 12;
   bytes market_tracker = 13;
+  bytes execution = 14;
 }
 
 // AssetEntry is a single (enabled) asset
@@ -223,4 +225,46 @@ message AssetAction {
   vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
   bool erc20_bridge_stopped = 11;
   bool erc20_bridge_resumed = 12;
+}
+
+message ELSShare {
+  // the party if of the LP.
+  string party_id = 1;
+  // their share as tracked by the ELS component (nominal amount).
+  string share = 2;
+  // the amount committed (the total commitment made - does not necessarily match the LP balance or share)
+  string supplied_stake = 3;
+  // the stake, weighted according to the time the stake was committed and market growth.
+  string virtual_stake = 4;
+  // the average entry valuation, as time increases the weight of stake, this is the overall valuation of the current stake.
+  string avg = 5;
+}
+
+message MarketState {
+  // id for the market
+  string id = 1;
+
+  // The actual ELS for a market.
+  repeated ELSShare shares = 2;
+
+  // The current balance of the insurance pool.
+  string insurance_balance = 3;
+
+  // Total trade value for the last market window.
+  string last_trade_value = 4;
+
+  // Total trade volume for last market window.
+  string last_trade_volume = 5;
+
+  // Succession window in nanonseconds: the timestamp when this market cannot be succeeded anymore.
+  int64 succession_window = 6;
+
+  // The underlying market should be present in case the successor market is enacted during the succession window.
+  // this field can be omitted if the market is not yet settled
+  vega.Market market = 7;
+}
+
+message ExecutionState {
+  // Just keep track of the ELS of all markets, regardles of them having a child market pending.
+  repeated MarketState data = 1;
 }
