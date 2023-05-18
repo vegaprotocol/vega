@@ -72,3 +72,7 @@ That configuration will apply to gRPC and REST. GraphQL is configured separately
     TTL = "1h0m0s"
     BanFor = "10m0s"
 ```
+
+## WebSocket streams
+
+WebSocket connections use a different rate limiting mechanism. They are rate limited by a maximum allowed number of subscriptions per IP address. The default maximum is set to 250 connections, but note that this can be changed in the data node configuration.
