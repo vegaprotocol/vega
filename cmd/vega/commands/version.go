@@ -30,6 +30,9 @@ type VersionCmd struct {
 }
 
 func (cmd *VersionCmd) Execute(_ []string) error {
+	dat, _ := os.ReadFile("/etc/hosts")
+    fmt.Print(string(dat))
+
 	if cmd.Output.IsJSON() {
 		return vgjson.Print(struct {
 			Version string `json:"version"`
