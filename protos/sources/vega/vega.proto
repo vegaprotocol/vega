@@ -8,7 +8,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // Side relates to the direction of an order, to Buy, or Sell
 enum Side {
-  // Default value, Always invalid
+  // Default value, always invalid
   SIDE_UNSPECIFIED = 0;
   // Buy order
   SIDE_BUY = 1;
@@ -22,7 +22,7 @@ enum Side {
 
 // Represents a set of time intervals that are used when querying for candle-stick data
 enum Interval {
-  // Default value, Always invalid
+  // Default value, always invalid
   INTERVAL_UNSPECIFIED = 0;
   // Block interval is not a fixed amount of time, rather it is used to indicate grouping of events that occur in a single block. It is usually about a second.
   INTERVAL_BLOCK = -1;
@@ -139,7 +139,7 @@ message Order {
 
   // Type values for an order
   enum Type {
-    // Default value, Always invalid
+    // Default value, always invalid
     TYPE_UNSPECIFIED = 0;
     // Used for Limit orders
     TYPE_LIMIT = 1;
@@ -155,7 +155,7 @@ message Order {
 
   // Status values for an order
   enum Status {
-    // Default value, Always invalid
+    // Default value, always invalid
     STATUS_UNSPECIFIED = 0;
     // Used for active unfilled or partially filled orders
     STATUS_ACTIVE = 1;
@@ -375,7 +375,7 @@ enum OrderError {
 message Trade {
   // Type values for a trade
   enum Type {
-    // Default value, Always invalid
+    // Default value, always invalid
     TYPE_UNSPECIFIED = 0;
     // Normal trading between two parties
     TYPE_DEFAULT = 1;
@@ -533,7 +533,7 @@ message PositionTrade {
 
 // Vega blockchain status as reported by the node the caller is connected to
 enum ChainStatus {
-  // Default value, Always invalid
+  // Default value, always invalid
   CHAIN_STATUS_UNSPECIFIED = 0;
   // Blockchain is disconnected
   CHAIN_STATUS_DISCONNECTED = 1;
@@ -549,7 +549,7 @@ enum ChainStatus {
 message Deposit {
   // Status of the deposit
   enum Status {
-    // Default value, Always invalid
+    // Default value, always invalid
     STATUS_UNSPECIFIED = 0;
     // Deposit is being processed by the network
     STATUS_OPEN = 1;
@@ -583,7 +583,7 @@ message Withdrawal {
 
   // Status of the withdrawal
   enum Status {
-    // Default value, Always invalid
+    // Default value, always invalid
     STATUS_UNSPECIFIED = 0;
     // Withdrawal is open and being processed by the network
     STATUS_OPEN = 1;
@@ -731,7 +731,7 @@ message FinancialAmount {
 // Transfers can occur between parties on Vega, these are the types that indicate why a transfer took place
 enum TransferType {
   reserved 3, 17;
-  // Default value, Always invalid
+  // Default value, always invalid
   TRANSFER_TYPE_UNSPECIFIED = 0;
   // Funds deducted after final settlement loss
   TRANSFER_TYPE_LOSS = 1;

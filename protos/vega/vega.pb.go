@@ -24,7 +24,7 @@ const (
 type Side int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Side_SIDE_UNSPECIFIED Side = 0
 	// Buy order
 	Side_SIDE_BUY Side = 1
@@ -77,7 +77,7 @@ func (Side) EnumDescriptor() ([]byte, []int) {
 type Interval int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Interval_INTERVAL_UNSPECIFIED Interval = 0
 	// Block interval is not a fixed amount of time, rather it is used to indicate grouping of events that occur in a single block. It is usually about a second.
 	Interval_INTERVAL_BLOCK Interval = -1
@@ -571,7 +571,7 @@ func (OrderError) EnumDescriptor() ([]byte, []int) {
 type ChainStatus int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	ChainStatus_CHAIN_STATUS_UNSPECIFIED ChainStatus = 0
 	// Blockchain is disconnected
 	ChainStatus_CHAIN_STATUS_DISCONNECTED ChainStatus = 1
@@ -756,7 +756,7 @@ func (AccountType) EnumDescriptor() ([]byte, []int) {
 type TransferType int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	TransferType_TRANSFER_TYPE_UNSPECIFIED TransferType = 0
 	// Funds deducted after final settlement loss
 	TransferType_TRANSFER_TYPE_LOSS TransferType = 1
@@ -1198,7 +1198,7 @@ func (Order_TimeInForce) EnumDescriptor() ([]byte, []int) {
 type Order_Type int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Order_TYPE_UNSPECIFIED Order_Type = 0
 	// Used for Limit orders
 	Order_TYPE_LIMIT Order_Type = 1
@@ -1255,7 +1255,7 @@ func (Order_Type) EnumDescriptor() ([]byte, []int) {
 type Order_Status int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Order_STATUS_UNSPECIFIED Order_Status = 0
 	// Used for active unfilled or partially filled orders
 	Order_STATUS_ACTIVE Order_Status = 1
@@ -1333,7 +1333,7 @@ func (Order_Status) EnumDescriptor() ([]byte, []int) {
 type Trade_Type int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Trade_TYPE_UNSPECIFIED Trade_Type = 0
 	// Normal trading between two parties
 	Trade_TYPE_DEFAULT Trade_Type = 1
@@ -1392,7 +1392,7 @@ func (Trade_Type) EnumDescriptor() ([]byte, []int) {
 type Deposit_Status int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Deposit_STATUS_UNSPECIFIED Deposit_Status = 0
 	// Deposit is being processed by the network
 	Deposit_STATUS_OPEN Deposit_Status = 1
@@ -1449,7 +1449,7 @@ func (Deposit_Status) EnumDescriptor() ([]byte, []int) {
 type Withdrawal_Status int32
 
 const (
-	// Default value, Always invalid
+	// Default value, always invalid
 	Withdrawal_STATUS_UNSPECIFIED Withdrawal_Status = 0
 	// Withdrawal is open and being processed by the network
 	Withdrawal_STATUS_OPEN Withdrawal_Status = 1
