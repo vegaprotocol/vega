@@ -785,6 +785,8 @@ enum TransferType {
   TRANSFER_TYPE_HOLDING_LOCK = 27;
   // An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account.
   TRANSFER_TYPE_HOLDING_RELEASE = 28;
+  // Insurance pool fraction transfer from parent to successor market.
+  TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION = 29;
 }
 
 // Represents a financial transfer within Vega

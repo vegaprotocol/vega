@@ -99,12 +99,22 @@ message NewMarketConfiguration {
   string linear_slippage_factor = 9;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 10;
+  // Successor configuration. If this proposal is meant to suceed a given market, then this should be set.
+  optional SuccessorConfiguration successor = 11;
 }
 
 // New spot market on Vega
 message NewSpotMarket {
   // Configuration of the new spot market.
   NewSpotMarketConfiguration changes = 1;
+}
+
+// Configuration required to turn a new market proposal in to a successor market proposal.
+message SuccessorConfiguration {
+  // ID of the market that the successor should take over from.
+  string parent_market_id = 1;
+  // A decimal value between or equal to 0 and 1, specifying the fraction of the insurance pool balance that is carried over from the parent market to the successor.
+  string insurance_pool_fraction = 2;
 }
 
 // New market on Vega
