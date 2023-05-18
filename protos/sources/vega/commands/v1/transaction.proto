@@ -68,6 +68,13 @@ message InputData {
     AnnounceNode announce_node = 1014;
     // Command to submit a batch of order instructions to a market.
     BatchMarketInstructions batch_market_instructions = 1015;
+    // Command to submit a spot liquidity commitment.
+    SpotLiquidityProvisionSubmission spot_liquidity_provision_submission = 1016;
+    // Command to request cancelling a spot liquidity commitment.
+    SpotLiquidityProvisionCancellation spot_liquidity_provision_cancellation = 1017;
+    // Command to request amending a spot liquidity commitment.
+    SpotLiquidityProvisionAmendment spot_liquidity_provision_amendment = 1018;
+
 
     // Validator commands
 

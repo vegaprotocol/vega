@@ -9,6 +9,15 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+
+// Spot product configuration
+message SpotProduct {
+  // Base asset name.
+  string base_asset = 1;
+  // Quote asset name.
+  string quote_asset = 2;  
+}
+
 // Future product configuration
 message FutureProduct {
   // Asset ID for the product's settlement asset.
@@ -33,7 +42,35 @@ message InstrumentConfiguration {
   oneof product {
     // Future.
     FutureProduct future = 100;
+    // Spot.
+    SpotProduct spot = 101;
   }
+}
+
+// Configuration for a new spot market on Vega
+message NewSpotMarketConfiguration {
+  // New spot market instrument configuration.
+  InstrumentConfiguration instrument = 1;
+  // Decimal places used for the new market, sets the smallest price increment on the book.
+  uint64 decimal_places = 2;
+  // Optional new market metadata, tags.
+  repeated string metadata = 3;
+  // Price monitoring parameters.
+  PriceMonitoringParameters price_monitoring_parameters = 4;
+  // Specifies parameters related to target stake calculation.
+  TargetStakeParameters target_stake_parameters = 5; 
+  // New market risk model parameters.
+  oneof risk_parameters {
+    // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
+    SimpleModelParams simple = 100;
+    // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
+    LogNormalRiskModel log_normal = 101;
+  }
+  // Decimal places for order sizes, sets what size the smallest order / position on the market can be.
+  int64 position_decimal_places = 6;
+  // Percentage move up and down from the mid price which specifies the range of
+  // price levels over which automated liquidity provision orders will be deployed.
+  string lp_price_range = 7;
 }
 
 // Configuration for a new market on Vega
@@ -66,6 +103,12 @@ message NewMarketConfiguration {
   string quadratic_slippage_factor = 10;
 }
 
+// New spot market on Vega
+message NewSpotMarket {
+  // Configuration of the new spot market.
+  NewSpotMarketConfiguration changes = 1;
+}
+
 // New market on Vega
 message NewMarket {
   // Configuration of the new market.
@@ -78,6 +121,14 @@ message UpdateMarket {
   string market_id = 1;
   // Updated configuration of the market.
   UpdateMarketConfiguration changes = 2;
+}
+
+// Update an existing spot market on Vega
+message UpdateSpotMarket {
+  // Market ID the update is for.
+  string market_id = 1;
+  // Updated configuration of the spot market.
+  UpdateSpotMarketConfiguration changes = 2;
 }
 
 // Configuration to update a market on Vega
@@ -104,6 +155,26 @@ message UpdateMarketConfiguration {
   string linear_slippage_factor = 6;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 7;
+}
+
+// Configuration to update a spot market on Vega
+message UpdateSpotMarketConfiguration {
+  // Optional market metadata, tags.
+  repeated string metadata = 1;
+  // Price monitoring parameters.
+  PriceMonitoringParameters price_monitoring_parameters = 2;
+  // Specifies parameters related to target stake calculation.
+  TargetStakeParameters target_stake_parameters = 3; 
+  // Update market risk model parameters.
+  oneof risk_parameters {
+    // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
+    SimpleModelParams simple = 100;
+    // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
+    LogNormalRiskModel log_normal = 101;
+  }
+  // Percentage move up and down from the mid price which specifies the range of
+  // price levels over which automated liquidity provision orders will be deployed.
+  string lp_price_range = 4;  
 }
 
 // Instrument configuration
@@ -179,6 +250,10 @@ message ProposalTerms {
     NewFreeform new_freeform = 105;
     // Proposal change for updating an asset.
     UpdateAsset update_asset = 106;
+    // Proposal change for creating new spot market on Vega.
+    NewSpotMarket new_spot_market = 107;
+    // Proposal change for modifying an existing spot market on Vega.
+    UpdateSpotMarket update_spot_market = 108;
   }
 }
 
@@ -356,6 +431,10 @@ enum ProposalError {
   PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE = 44;
   // Quadratic slippage factor is out of range, either negative or too large
   PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE = 45;
+  // Validation failed for spot proposal
+  PROPOSAL_ERROR_INVALID_SPOT = 46;
+  // Spot trading not enabled
+  PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED = 47;
 }
 
 // Governance vote
