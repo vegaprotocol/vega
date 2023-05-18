@@ -250,10 +250,10 @@ message MarketState {
   // Current balance of the insurance pool.
   string insurance_balance = 3;
 
-  // Total trade value for which last determined the growth rate of the market.
+  // Total trade value which last determined the growth rate of the market.
   string last_trade_value = 4;
 
-  // Total trade volume for which last determined the growth rate of the market.
+  // Total trade volume which last determined the growth rate of the market.
   string last_trade_volume = 5;
 
   // Succession window in nanonseconds: the timestamp when this market cannot be succeeded anymore.

@@ -2168,9 +2168,9 @@ type MarketState struct {
 	Shares []*ELSShare `protobuf:"bytes,2,rep,name=shares,proto3" json:"shares,omitempty"`
 	// Current balance of the insurance pool.
 	InsuranceBalance string `protobuf:"bytes,3,opt,name=insurance_balance,json=insuranceBalance,proto3" json:"insurance_balance,omitempty"`
-	// Total trade value for which last determined the growth rate of the market.
+	// Total trade value which last determined the growth rate of the market.
 	LastTradeValue string `protobuf:"bytes,4,opt,name=last_trade_value,json=lastTradeValue,proto3" json:"last_trade_value,omitempty"`
-	// Total trade volume for which last determined the growth rate of the market.
+	// Total trade volume which last determined the growth rate of the market.
 	LastTradeVolume string `protobuf:"bytes,5,opt,name=last_trade_volume,json=lastTradeVolume,proto3" json:"last_trade_volume,omitempty"`
 	// Succession window in nanonseconds: the timestamp when this market cannot be succeeded anymore.
 	SuccessionWindow int64 `protobuf:"varint,6,opt,name=succession_window,json=successionWindow,proto3" json:"succession_window,omitempty"`
