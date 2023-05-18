@@ -627,22 +627,22 @@ type NewSpotMarketConfiguration struct {
 
 	// New spot market instrument configuration.
 	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Decimal places used for the new market, sets the smallest price increment on the book.
+	// Decimal places used for the new spot market, sets the smallest price increment on the book.
 	DecimalPlaces uint64 `protobuf:"varint,2,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Optional new market metadata, tags.
+	// Optional new spot arket metadata, tags.
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
 	// Specifies parameters related to target stake calculation.
 	TargetStakeParameters *TargetStakeParameters `protobuf:"bytes,5,opt,name=target_stake_parameters,json=targetStakeParameters,proto3" json:"target_stake_parameters,omitempty"`
-	// New market risk model parameters.
+	// New spot market risk model parameters.
 	//
 	// Types that are assignable to RiskParameters:
 	//
 	//	*NewSpotMarketConfiguration_Simple
 	//	*NewSpotMarketConfiguration_LogNormal
 	RiskParameters isNewSpotMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
-	// Decimal places for order sizes, sets what size the smallest order / position on the market can be.
+	// Decimal places for order sizes, sets what size the smallest order / position on the spot market can be.
 	PositionDecimalPlaces int64 `protobuf:"varint,6,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 }
 
@@ -759,30 +759,30 @@ func (*NewSpotMarketConfiguration_Simple) isNewSpotMarketConfiguration_RiskParam
 
 func (*NewSpotMarketConfiguration_LogNormal) isNewSpotMarketConfiguration_RiskParameters() {}
 
-// Configuration for a new market on Vega
+// Configuration for a new futures market on Vega
 type NewMarketConfiguration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// New market instrument configuration.
+	// New futures market instrument configuration.
 	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Decimal places used for the new market, sets the smallest price increment on the book.
+	// Decimal places used for the new futures market, sets the smallest price increment on the book.
 	DecimalPlaces uint64 `protobuf:"varint,2,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Optional new market metadata, tags.
+	// Optional new futures market metadata, tags.
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
 	// Liquidity monitoring parameters.
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,5,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
-	// New market risk model parameters.
+	// New futures market risk model parameters.
 	//
 	// Types that are assignable to RiskParameters:
 	//
 	//	*NewMarketConfiguration_Simple
 	//	*NewMarketConfiguration_LogNormal
 	RiskParameters isNewMarketConfiguration_RiskParameters `protobuf_oneof:"risk_parameters"`
-	// Decimal places for order sizes, sets what size the smallest order / position on the market can be.
+	// Decimal places for order sizes, sets what size the smallest order / position on the futures market can be.
 	PositionDecimalPlaces int64 `protobuf:"varint,6,opt,name=position_decimal_places,json=positionDecimalPlaces,proto3" json:"position_decimal_places,omitempty"`
 	// Percentage move up and down from the mid price which specifies the range of
 	// price levels over which automated liquidity provision orders will be deployed.
@@ -1033,7 +1033,7 @@ type UpdateMarket struct {
 
 	// Market ID the update is for.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Updated configuration of the market.
+	// Updated configuration of the futures market.
 	Changes *UpdateMarketConfiguration `protobuf:"bytes,2,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -1141,21 +1141,21 @@ func (x *UpdateSpotMarket) GetChanges() *UpdateSpotMarketConfiguration {
 	return nil
 }
 
-// Configuration to update a market on Vega
+// Configuration to update a futures market on Vega
 type UpdateMarketConfiguration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Updated market instrument configuration.
+	// Updated futures market instrument configuration.
 	Instrument *UpdateInstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
-	// Optional market metadata, tags.
+	// Optional futures market metadata, tags.
 	Metadata []string `protobuf:"bytes,2,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,3,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
 	// Liquidity monitoring parameters.
 	LiquidityMonitoringParameters *LiquidityMonitoringParameters `protobuf:"bytes,4,opt,name=liquidity_monitoring_parameters,json=liquidityMonitoringParameters,proto3" json:"liquidity_monitoring_parameters,omitempty"`
-	// Updated market risk model parameters.
+	// Updated futures market risk model parameters.
 	//
 	// Types that are assignable to RiskParameters:
 	//
@@ -1297,13 +1297,13 @@ type UpdateSpotMarketConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Optional market metadata, tags.
+	// Optional spot market metadata, tags.
 	Metadata []string `protobuf:"bytes,1,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,2,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`
 	// Specifies parameters related to target stake calculation.
 	TargetStakeParameters *TargetStakeParameters `protobuf:"bytes,3,opt,name=target_stake_parameters,json=targetStakeParameters,proto3" json:"target_stake_parameters,omitempty"`
-	// Update market risk model parameters.
+	// Update spot market risk model parameters.
 	//
 	// Types that are assignable to RiskParameters:
 	//
@@ -1907,12 +1907,12 @@ type isProposalTerms_Change interface {
 }
 
 type ProposalTerms_UpdateMarket struct {
-	// Proposal change for modifying an existing market on Vega.
+	// Proposal change for modifying an existing futures market on Vega.
 	UpdateMarket *UpdateMarket `protobuf:"bytes,101,opt,name=update_market,json=updateMarket,proto3,oneof"`
 }
 
 type ProposalTerms_NewMarket struct {
-	// Proposal change for creating new market on Vega.
+	// Proposal change for creating new futures market on Vega.
 	NewMarket *NewMarket `protobuf:"bytes,102,opt,name=new_market,json=newMarket,proto3,oneof"`
 }
 

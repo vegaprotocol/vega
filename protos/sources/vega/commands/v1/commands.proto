@@ -115,12 +115,12 @@ message LiquidityProvisionSubmission {
 
 // A liquidity provision submitted for a given spot market
 message SpotLiquidityProvisionSubmission {
-  // Market ID for the order, required field.
+  // Market ID for the order.
   string market_id = 1;
   // Specified as a unitless number that represents the amount of quote asset of the market.
   // This field is an unsigned integer scaled using the asset's decimal places.
   string buy_commitment_amount = 2;
-  // Specified as a unitless number that represents the amount of base asset of the market.
+  // Specified as a unitless number that represents the amount of the market's base asset.
   // This field is an unsigned integer scaled using the asset's decimal places.
   string sell_commitment_amount = 3;
   // Nominated liquidity fee factor, which is an input to the calculation of maker fees paid on the market, as per setting fees and rewarding liquidity providers.

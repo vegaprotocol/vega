@@ -806,9 +806,9 @@ const (
 	TransferType_TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE TransferType = 25
 	// Spot trade delivery
 	TransferType_TRANSFER_TYPE_SPOT TransferType = 26
-	// An internal instruction for transfer of a quantity corresponding to an active spot order from general account into a party holding account.
+	// An internal instruction to transfer a quantity corresponding to an active spot order from a general account into a party holding account.
 	TransferType_TRANSFER_TYPE_HOLDING_LOCK TransferType = 27
-	// An internal instruction for transfer of a excess quantity corresponding to an active spot order from holding account into a party general account.
+	// An internal instruction for transfer of an excess quantity corresponding to an active spot order from a holding account into a party general account.
 	TransferType_TRANSFER_TYPE_HOLDING_RELEASE TransferType = 28
 )
 
@@ -1507,7 +1507,7 @@ func (Withdrawal_Status) EnumDescriptor() ([]byte, []int) {
 type LiquidityProvision_Status int32
 
 const (
-	// Default value
+	// always invalid
 	LiquidityProvision_STATUS_UNSPECIFIED LiquidityProvision_Status = 0
 	// Liquidity provision is active
 	LiquidityProvision_STATUS_ACTIVE LiquidityProvision_Status = 1
@@ -1578,7 +1578,7 @@ func (LiquidityProvision_Status) EnumDescriptor() ([]byte, []int) {
 type SpotLiquidityProvision_Status int32
 
 const (
-	// Default value
+	// always invalid
 	SpotLiquidityProvision_STATUS_UNSPECIFIED SpotLiquidityProvision_Status = 0
 	// Liquidity provision is active
 	SpotLiquidityProvision_STATUS_ACTIVE SpotLiquidityProvision_Status = 1
@@ -5220,7 +5220,7 @@ type SpotLiquidityProvision struct {
 	UpdatedAt int64 `protobuf:"varint,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	// Market ID for the order, required field.
 	MarketId string `protobuf:"bytes,5,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Specified as a unitless number that represents the amount of quote asset of the market.
+	// Specified as a unitless number that represents the amount of the market's quote asset.
 	// This field is an unsigned integer scaled to the asset's decimal places.
 	BuyCommitmentAmount string `protobuf:"bytes,6,opt,name=buy_commitment_amount,json=buyCommitmentAmount,proto3" json:"buy_commitment_amount,omitempty"`
 	// Specified as a unitless number that represents the amount of base asset of the market.

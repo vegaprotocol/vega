@@ -761,19 +761,19 @@ message PartyOrders {
 
 message LiquidityPartiesOrders {
   repeated PartyOrders party_orders = 1;
-  // Market ID these orders apply to. Required for key generation
+  // Market ID these orders apply to.
   string market_id = 2;
 }
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
-  // Market ID these provisions apply to. Required for key generation
+  // Market ID these provisions apply to.
   string market_id = 2;
 }
 
 message SpotLiquidityProvisions {
   repeated vega.SpotLiquidityProvision liquidity_provisions = 1;
-  // Market ID these provisions apply to. Required for key generation
+  // Market ID these provisions apply to.
   string market_id = 2;
 }
 

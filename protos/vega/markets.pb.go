@@ -238,9 +238,9 @@ type Spot struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Asset ID of the underlying base asset for the spot.
+	// Asset ID of the underlying base asset for the spot product.
 	BaseAsset string `protobuf:"bytes,1,opt,name=base_asset,json=baseAsset,proto3" json:"base_asset,omitempty"`
-	// Asset ID of the underlying quote asset for the spot.
+	// Asset ID of the underlying quote asset for the spot product.
 	QuoteAsset string `protobuf:"bytes,2,opt,name=quote_asset,json=quoteAsset,proto3" json:"quote_asset,omitempty"`
 	// Name of the instrument.
 	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`

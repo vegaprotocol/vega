@@ -52,45 +52,45 @@ message InstrumentConfiguration {
 message NewSpotMarketConfiguration {
   // New spot market instrument configuration.
   InstrumentConfiguration instrument = 1;
-  // Decimal places used for the new market, sets the smallest price increment on the book.
+  // Decimal places used for the new spot market, sets the smallest price increment on the book.
   uint64 decimal_places = 2;
-  // Optional new market metadata, tags.
+  // Optional new spot arket metadata, tags.
   repeated string metadata = 3;
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 4;
   // Specifies parameters related to target stake calculation.
   TargetStakeParameters target_stake_parameters = 5;
-  // New market risk model parameters.
+  // New spot market risk model parameters.
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
     SimpleModelParams simple = 100;
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
   }
-  // Decimal places for order sizes, sets what size the smallest order / position on the market can be.
+  // Decimal places for order sizes, sets what size the smallest order / position on the spot market can be.
   int64 position_decimal_places = 6;
 }
 
-// Configuration for a new market on Vega
+// Configuration for a new futures market on Vega
 message NewMarketConfiguration {
-  // New market instrument configuration.
+  // New futures market instrument configuration.
   InstrumentConfiguration instrument = 1;
-  // Decimal places used for the new market, sets the smallest price increment on the book.
+  // Decimal places used for the new futures market, sets the smallest price increment on the book.
   uint64 decimal_places = 2;
-  // Optional new market metadata, tags.
+  // Optional new futures market metadata, tags.
   repeated string metadata = 3;
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 4;
   // Liquidity monitoring parameters.
   LiquidityMonitoringParameters liquidity_monitoring_parameters = 5;
-  // New market risk model parameters.
+  // New futures market risk model parameters.
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
     SimpleModelParams simple = 100;
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
   }
-  // Decimal places for order sizes, sets what size the smallest order / position on the market can be.
+  // Decimal places for order sizes, sets what size the smallest order / position on the futures market can be.
   int64 position_decimal_places = 6;
   // Percentage move up and down from the mid price which specifies the range of
   // price levels over which automated liquidity provision orders will be deployed.
@@ -117,7 +117,7 @@ message NewMarket {
 message UpdateMarket {
   // Market ID the update is for.
   string market_id = 1;
-  // Updated configuration of the market.
+  // Updated configuration of the futures market.
   UpdateMarketConfiguration changes = 2;
 }
 
@@ -129,17 +129,17 @@ message UpdateSpotMarket {
   UpdateSpotMarketConfiguration changes = 2;
 }
 
-// Configuration to update a market on Vega
+// Configuration to update a futures market on Vega
 message UpdateMarketConfiguration {
-  // Updated market instrument configuration.
+  // Updated futures market instrument configuration.
   UpdateInstrumentConfiguration instrument = 1;
-  // Optional market metadata, tags.
+  // Optional futures market metadata, tags.
   repeated string metadata = 2;
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 3;
   // Liquidity monitoring parameters.
   LiquidityMonitoringParameters liquidity_monitoring_parameters = 4;
-  // Updated market risk model parameters.
+  // Updated futures market risk model parameters.
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
     SimpleModelParams simple = 100;
@@ -157,13 +157,13 @@ message UpdateMarketConfiguration {
 
 // Configuration to update a spot market on Vega
 message UpdateSpotMarketConfiguration {
-  // Optional market metadata, tags.
+  // Optional spot market metadata, tags.
   repeated string metadata = 1;
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 2;
   // Specifies parameters related to target stake calculation.
   TargetStakeParameters target_stake_parameters = 3;
-  // Update market risk model parameters.
+  // Update spot market risk model parameters.
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
     SimpleModelParams simple = 100;
@@ -232,9 +232,9 @@ message ProposalTerms {
   int64 validation_timestamp = 3;
   // Changes being proposed.
   oneof change {
-    // Proposal change for modifying an existing market on Vega.
+    // Proposal change for modifying an existing futures market on Vega.
     UpdateMarket update_market = 101;
-    // Proposal change for creating new market on Vega.
+    // Proposal change for creating new futures market on Vega.
     NewMarket new_market = 102;
     // Proposal change for updating Vega network parameters.
     UpdateNetworkParameter update_network_parameter = 103;

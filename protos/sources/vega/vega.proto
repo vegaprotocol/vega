@@ -781,9 +781,9 @@ enum TransferType {
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
   // Spot trade delivery
   TRANSFER_TYPE_SPOT = 26;
-  // An internal instruction for transfer of a quantity corresponding to an active spot order from general account into a party holding account.
+  // An internal instruction to transfer a quantity corresponding to an active spot order from a general account into a party holding account.
   TRANSFER_TYPE_HOLDING_LOCK = 27;
-  // An internal instruction for transfer of a excess quantity corresponding to an active spot order from holding account into a party general account.
+  // An internal instruction for transfer of an excess quantity corresponding to an active spot order from a holding account into a party general account.
   TRANSFER_TYPE_HOLDING_RELEASE = 28;
 }
 
@@ -1059,7 +1059,7 @@ message LiquidityOrderReference {
 message LiquidityProvision {
   // Status of a liquidity provision order.
   enum Status {
-    // Default value
+    // always invalid
     STATUS_UNSPECIFIED = 0;
     // Liquidity provision is active
     STATUS_ACTIVE = 1;
@@ -1108,7 +1108,7 @@ message LiquidityProvision {
 message SpotLiquidityProvision {
   // Status of a liquidity provision order.
   enum Status {
-    // Default value
+    // always invalid
     STATUS_UNSPECIFIED = 0;
     // Liquidity provision is active
     STATUS_ACTIVE = 1;
@@ -1136,7 +1136,7 @@ message SpotLiquidityProvision {
   int64 updated_at = 4;
   // Market ID for the order, required field.
   string market_id = 5;
-  // Specified as a unitless number that represents the amount of quote asset of the market.
+  // Specified as a unitless number that represents the amount of the market's quote asset.
   // This field is an unsigned integer scaled to the asset's decimal places.
   string buy_commitment_amount = 6;
   // Specified as a unitless number that represents the amount of base asset of the market.

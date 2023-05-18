@@ -566,12 +566,12 @@ type SpotLiquidityProvisionSubmission struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID for the order, required field.
+	// Market ID for the order.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Specified as a unitless number that represents the amount of quote asset of the market.
 	// This field is an unsigned integer scaled using the asset's decimal places.
 	BuyCommitmentAmount string `protobuf:"bytes,2,opt,name=buy_commitment_amount,json=buyCommitmentAmount,proto3" json:"buy_commitment_amount,omitempty"`
-	// Specified as a unitless number that represents the amount of base asset of the market.
+	// Specified as a unitless number that represents the amount of the market's base asset.
 	// This field is an unsigned integer scaled using the asset's decimal places.
 	SellCommitmentAmount string `protobuf:"bytes,3,opt,name=sell_commitment_amount,json=sellCommitmentAmount,proto3" json:"sell_commitment_amount,omitempty"`
 	// Nominated liquidity fee factor, which is an input to the calculation of maker fees paid on the market, as per setting fees and rewarding liquidity providers.
