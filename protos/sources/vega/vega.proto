@@ -695,7 +695,7 @@ enum AccountType {
 
   // Per asset account for holding in-flight unfilled orders' funds
   ACCOUNT_TYPE_HOLDING = 18;
-  
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -781,10 +781,10 @@ enum TransferType {
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
   // Spot trade delivery
   TRANSFER_TYPE_SPOT = 26;
-  // An internal instruction for transfer of a quantity corresponding to an active spot order from general account into a party holding account. 
-  TRANSFER_TYPE_HOLDING_LOCK = 27;  
-  // An internal instruction for transfer of a excess quantity corresponding to an active spot order from holding account into a party general account. 
-  TRANSFER_TYPE_HOLDING_RELEASE = 28;  
+  // An internal instruction for transfer of a quantity corresponding to an active spot order from general account into a party holding account.
+  TRANSFER_TYPE_HOLDING_LOCK = 27;
+  // An internal instruction for transfer of a excess quantity corresponding to an active spot order from holding account into a party general account.
+  TRANSFER_TYPE_HOLDING_RELEASE = 28;
 }
 
 // Represents a financial transfer within Vega
@@ -1149,7 +1149,6 @@ message SpotLiquidityProvision {
   // Status of this liquidity provision order.
   Status status = 10;
 }
-
 
 // Ethereum configuration details.
 message EthereumConfig {

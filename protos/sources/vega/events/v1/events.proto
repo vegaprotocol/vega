@@ -308,7 +308,6 @@ message TxErrorEvent {
     commands.v1.SpotLiquidityProvisionSubmission spot_liquidity_provision_submission = 120;
     commands.v1.SpotLiquidityProvisionCancellation spot_liquidity_provision_cancellation = 121;
     commands.v1.SpotLiquidityProvisionAmendment spot_liquidity_provision_amendment = 122;
-
   }
 }
 

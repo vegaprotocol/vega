@@ -9,13 +9,12 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
-
 // Spot product configuration
 message SpotProduct {
   // Base asset ID.
   string base_asset = 1;
   // Quote asset ID.
-  string quote_asset = 2;  
+  string quote_asset = 2;
   // Product name.
   string name = 3;
 }
@@ -60,7 +59,7 @@ message NewSpotMarketConfiguration {
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 4;
   // Specifies parameters related to target stake calculation.
-  TargetStakeParameters target_stake_parameters = 5; 
+  TargetStakeParameters target_stake_parameters = 5;
   // New market risk model parameters.
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
@@ -69,7 +68,7 @@ message NewSpotMarketConfiguration {
     LogNormalRiskModel log_normal = 101;
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the market can be.
-  int64 position_decimal_places = 6;  
+  int64 position_decimal_places = 6;
 }
 
 // Configuration for a new market on Vega
@@ -163,14 +162,14 @@ message UpdateSpotMarketConfiguration {
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 2;
   // Specifies parameters related to target stake calculation.
-  TargetStakeParameters target_stake_parameters = 3; 
+  TargetStakeParameters target_stake_parameters = 3;
   // Update market risk model parameters.
   oneof risk_parameters {
     // Simple risk model parameters, valid only if MODEL_SIMPLE is selected.
     SimpleModelParams simple = 100;
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
-  }   
+  }
 }
 
 // Instrument configuration
