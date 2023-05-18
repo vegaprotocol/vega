@@ -629,7 +629,7 @@ type NewSpotMarketConfiguration struct {
 	Instrument *InstrumentConfiguration `protobuf:"bytes,1,opt,name=instrument,proto3" json:"instrument,omitempty"`
 	// Decimal places used for the new spot market, sets the smallest price increment on the book.
 	DecimalPlaces uint64 `protobuf:"varint,2,opt,name=decimal_places,json=decimalPlaces,proto3" json:"decimal_places,omitempty"`
-	// Optional new spot arket metadata, tags.
+	// Optional new spot market metadata, tags.
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
 	// Price monitoring parameters.
 	PriceMonitoringParameters *PriceMonitoringParameters `protobuf:"bytes,4,opt,name=price_monitoring_parameters,json=priceMonitoringParameters,proto3" json:"price_monitoring_parameters,omitempty"`

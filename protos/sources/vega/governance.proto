@@ -54,7 +54,7 @@ message NewSpotMarketConfiguration {
   InstrumentConfiguration instrument = 1;
   // Decimal places used for the new spot market, sets the smallest price increment on the book.
   uint64 decimal_places = 2;
-  // Optional new spot arket metadata, tags.
+  // Optional new spot market metadata, tags.
   repeated string metadata = 3;
   // Price monitoring parameters.
   PriceMonitoringParameters price_monitoring_parameters = 4;
