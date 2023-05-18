@@ -440,6 +440,8 @@ enum ProposalError {
   PROPOSAL_ERROR_INVALID_SPOT = 46;
   // Spot trading not enabled
   PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED = 47;
+  // Market proposal is invalid, either invalid insurance pool fraction, or it specifies a parent market that it can't succeed.
+  PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET = 48;
 }
 
 // Governance vote
