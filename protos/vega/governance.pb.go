@@ -452,7 +452,7 @@ type SuccessorFutureProduct struct {
 
 	// Data source spec describing the data source for settlement.
 	DataSourceSpecForSettlementData *DataSourceDefinition `protobuf:"bytes,1,opt,name=data_source_spec_for_settlement_data,json=dataSourceSpecForSettlementData,proto3" json:"data_source_spec_for_settlement_data,omitempty"`
-	// The external data source spec describing the data source of trading termination.
+	// External data source spec describing the data source of trading termination.
 	DataSourceSpecForTradingTermination *DataSourceDefinition `protobuf:"bytes,2,opt,name=data_source_spec_for_trading_termination,json=dataSourceSpecForTradingTermination,proto3" json:"data_source_spec_for_trading_termination,omitempty"`
 	// Binding between the data source spec and the settlement data.
 	DataSourceSpecBinding *DataSourceSpecToFutureBinding `protobuf:"bytes,3,opt,name=data_source_spec_binding,json=dataSourceSpecBinding,proto3" json:"data_source_spec_binding,omitempty"`
@@ -607,7 +607,7 @@ type InstrumentConfiguration_Future struct {
 }
 
 type InstrumentConfiguration_SuccessorFuture struct {
-	// Future but for successor proposals.
+	// Future product but for successor market proposals.
 	SuccessorFuture *SuccessorFutureProduct `protobuf:"bytes,200,opt,name=successor_future,json=successorFuture,proto3,oneof"`
 }
 
@@ -789,9 +789,9 @@ type SuccessorMarketConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the market this proposal should succeed
+	// ID of the market that the successor should take over from.
 	ParentMarketId string `protobuf:"bytes,1,opt,name=parent_market_id,json=parentMarketId,proto3" json:"parent_market_id,omitempty"`
-	// A decimal value between 0 and 1, specifying the fraction of the insurance pool balance is carried over from the parent market to the successor.
+	// A decimal value between or equal to 0 and 1, specifying the fraction of the insurance pool balance that is carried over from the parent market to the successor.
 	InsurancePoolFraction string `protobuf:"bytes,2,opt,name=insurance_pool_fraction,json=insurancePoolFraction,proto3" json:"insurance_pool_fraction,omitempty"`
 	// Optional new market metadata, tags.
 	Metadata []string `protobuf:"bytes,3,rep,name=metadata,proto3" json:"metadata,omitempty"`
@@ -1801,7 +1801,7 @@ type ProposalTerms_UpdateAsset struct {
 }
 
 type ProposalTerms_SuccessorMarket struct {
-	// Proposal change for the successor market.
+	// Proposal change for adding a successor market.
 	SuccessorMarket *SuccessorMarket `protobuf:"bytes,107,opt,name=successor_market,json=successorMarket,proto3,oneof"`
 }
 

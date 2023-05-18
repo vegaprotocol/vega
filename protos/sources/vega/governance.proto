@@ -27,7 +27,7 @@ message FutureProduct {
 message SuccessorFutureProduct {
   // Data source spec describing the data source for settlement.
   vega.DataSourceDefinition data_source_spec_for_settlement_data = 1;
-  // The external data source spec describing the data source of trading termination.
+  // External data source spec describing the data source of trading termination.
   vega.DataSourceDefinition data_source_spec_for_trading_termination = 2;
   // Binding between the data source spec and the settlement data.
   DataSourceSpecToFutureBinding data_source_spec_binding = 3;
@@ -43,7 +43,7 @@ message InstrumentConfiguration {
   oneof product {
     // Future.
     FutureProduct future = 100;
-    // Future but for successor proposals.
+    // Future product but for successor market proposals.
     SuccessorFutureProduct successor_future = 200;
   }
 }
@@ -80,9 +80,9 @@ message NewMarketConfiguration {
 
 // Configuration of a new successor market
 message SuccessorMarketConfiguration {
-  // The ID of the market this proposal should succeed
+  // ID of the market that the successor should take over from.
   string parent_market_id = 1;
-  // A decimal value between 0 and 1, specifying the fraction of the insurance pool balance is carried over from the parent market to the successor.
+  // A decimal value between or equal to 0 and 1, specifying the fraction of the insurance pool balance that is carried over from the parent market to the successor.
   string insurance_pool_fraction = 2;
   // Optional new market metadata, tags.
   repeated string metadata = 3;
@@ -231,7 +231,7 @@ message ProposalTerms {
     NewFreeform new_freeform = 105;
     // Proposal change for updating an asset.
     UpdateAsset update_asset = 106;
-    // Proposal change for the successor market.
+    // Proposal change for adding a successor market.
     SuccessorMarket successor_market = 107;
   }
 }

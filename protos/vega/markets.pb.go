@@ -1472,9 +1472,9 @@ type Market struct {
 	LinearSlippageFactor string `protobuf:"bytes,13,opt,name=linear_slippage_factor,json=linearSlippageFactor,proto3" json:"linear_slippage_factor,omitempty"`
 	// Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
 	QuadraticSlippageFactor string `protobuf:"bytes,14,opt,name=quadratic_slippage_factor,json=quadraticSlippageFactor,proto3" json:"quadratic_slippage_factor,omitempty"`
-	// The ID of the market this market succeeds
+	// ID of the market this market succeeds
 	ParentMarketId *string `protobuf:"bytes,15,opt,name=parent_market_id,json=parentMarketId,proto3,oneof" json:"parent_market_id,omitempty"`
-	// The fraction of the insurance pool of the parent market this market inherits (range 0 through 1)
+	// The fraction of the parent market's insurance pool that this market inherits; range 0 through 1.
 	InsurancePoolFraction *string `protobuf:"bytes,16,opt,name=insurance_pool_fraction,json=insurancePoolFraction,proto3,oneof" json:"insurance_pool_fraction,omitempty"`
 }
 

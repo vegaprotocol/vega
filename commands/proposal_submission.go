@@ -129,6 +129,9 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkUpdateAssetChanges(c))
 	case *protoTypes.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
+	case *protoTypes.ProposalTerms_SuccessorMarket:
+		// @TODO validate successor proposal
+		return errs
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}

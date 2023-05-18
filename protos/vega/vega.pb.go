@@ -800,7 +800,7 @@ const (
 	TransferType_TRANSFER_TYPE_CLEAR_ACCOUNT TransferType = 24
 	// Balances restored after network restart
 	TransferType_TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE TransferType = 25
-	// Insurance pool fraction transfer from parent to successor market.
+	// Transfer of insurance pool fraction from parent to successor market.
 	TransferType_TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION TransferType = 26
 )
 

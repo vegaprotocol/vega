@@ -2078,15 +2078,15 @@ type ELSShare struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// the party if of the LP.
+	// Party ID of the liquidity provider.
 	PartyId string `protobuf:"bytes,1,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// their share as tracked by the ELS component (nominal amount).
+	// The equity-like share of the liquidity provider, representing their share in the total provided liquidity expressed as a value between 0 and 1.
 	Share string `protobuf:"bytes,2,opt,name=share,proto3" json:"share,omitempty"`
-	// the amount committed (the total commitment made - does not necessarily match the LP balance or share)
+	// Amount committed. This is the total commitment made. It does not necessarily match the LP balance.
 	SuppliedStake string `protobuf:"bytes,3,opt,name=supplied_stake,json=suppliedStake,proto3" json:"supplied_stake,omitempty"`
-	// the stake, weighted according to the time the stake was committed and market growth.
+	// LP stake, weighted according to the time the stake was committed and market growth.
 	VirtualStake string `protobuf:"bytes,4,opt,name=virtual_stake,json=virtualStake,proto3" json:"virtual_stake,omitempty"`
-	// the average entry valuation, as time increases the weight of stake, this is the overall valuation of the current stake.
+	// Average entry valuation. As time increases the weight of stake, this is the overall valuation of the current stake.
 	Avg string `protobuf:"bytes,5,opt,name=avg,proto3" json:"avg,omitempty"`
 }
 
@@ -2162,20 +2162,20 @@ type MarketState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// id for the market
+	// Unique ID for the market
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The actual ELS for a market.
+	// The current equity-like share data for a market.
 	Shares []*ELSShare `protobuf:"bytes,2,rep,name=shares,proto3" json:"shares,omitempty"`
-	// The current balance of the insurance pool.
+	// Current balance of the insurance pool.
 	InsuranceBalance string `protobuf:"bytes,3,opt,name=insurance_balance,json=insuranceBalance,proto3" json:"insurance_balance,omitempty"`
-	// Total trade value for the last market window.
+	// Total trade value for which last determined the growth rate of the market.
 	LastTradeValue string `protobuf:"bytes,4,opt,name=last_trade_value,json=lastTradeValue,proto3" json:"last_trade_value,omitempty"`
-	// Total trade volume for last market window.
+	// Total trade volume for which last determined the growth rate of the market.
 	LastTradeVolume string `protobuf:"bytes,5,opt,name=last_trade_volume,json=lastTradeVolume,proto3" json:"last_trade_volume,omitempty"`
 	// Succession window in nanonseconds: the timestamp when this market cannot be succeeded anymore.
 	SuccessionWindow int64 `protobuf:"varint,6,opt,name=succession_window,json=successionWindow,proto3" json:"succession_window,omitempty"`
 	// The underlying market should be present in case the successor market is enacted during the succession window.
-	// this field can be omitted if the market is not yet settled
+	// This field can be omitted if the market is not yet settled.
 	Market *vega.Market `protobuf:"bytes,7,opt,name=market,proto3" json:"market,omitempty"`
 }
 
@@ -2265,7 +2265,7 @@ type ExecutionState struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Just keep track of the ELS of all markets, regardles of them having a child market pending.
+	// Market data that should be preserved, like equity-like shares, and settled markets that have pending successor markets.
 	Data []*MarketState `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
