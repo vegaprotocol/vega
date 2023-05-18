@@ -693,7 +693,7 @@ enum AccountType {
   // Per asset reward account for market proposers when the market goes above some trading threshold
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS = 17;
 
-  // Per asset account for holding in-flight unfilled orders funds
+  // Per asset account for holding in-flight unfilled orders' funds
   ACCOUNT_TYPE_HOLDING = 18;
   
   // Note: If adding an enum value, add a matching entry in:
@@ -781,9 +781,9 @@ enum TransferType {
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
   // Spot trade delivery
   TRANSFER_TYPE_SPOT = 26;
-  // Spot moving funds to holding account
+  // An internal instruction for transfer of a quantity corresponding to an active spot order from general account into a party holding account. 
   TRANSFER_TYPE_HOLDING_LOCK = 27;  
-  // Spot release funds from holding account
+  // An internal instruction for transfer of a excess quantity corresponding to an active spot order from holding account into a party general account. 
   TRANSFER_TYPE_HOLDING_RELEASE = 28;  
 }
 
@@ -1104,7 +1104,7 @@ message LiquidityProvision {
   string reference = 12;
 }
 
-// Spot Liquidity provider commitment
+// Liquidity provider commitment for spot market
 message SpotLiquidityProvision {
   // Status of a liquidity provision order.
   enum Status {
@@ -1144,16 +1144,10 @@ message SpotLiquidityProvision {
   string sell_commitment_amount = 7;
   // Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers.
   string fee = 8;
-  // Set of liquidity sell orders to meet the liquidity provision obligation.
-  repeated LiquidityOrderReference sells = 9;
-  // Set of liquidity buy orders to meet the liquidity provision obligation.
-  repeated LiquidityOrderReference buys = 10;
   // Version of this liquidity provision order.
-  uint64 version = 11;
+  uint64 version = 9;
   // Status of this liquidity provision order.
-  Status status = 12;
-  // Reference shared between this liquidity provision and all its orders.
-  string reference = 13;
+  Status status = 10;
 }
 
 

@@ -12,10 +12,12 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // Spot product configuration
 message SpotProduct {
-  // Base asset name.
+  // Base asset ID.
   string base_asset = 1;
-  // Quote asset name.
+  // Quote asset ID.
   string quote_asset = 2;  
+  // Product name.
+  string name = 3;
 }
 
 // Future product configuration
@@ -67,10 +69,7 @@ message NewSpotMarketConfiguration {
     LogNormalRiskModel log_normal = 101;
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the market can be.
-  int64 position_decimal_places = 6;
-  // Percentage move up and down from the mid price which specifies the range of
-  // price levels over which automated liquidity provision orders will be deployed.
-  string lp_price_range = 7;
+  int64 position_decimal_places = 6;  
 }
 
 // Configuration for a new market on Vega
@@ -171,10 +170,7 @@ message UpdateSpotMarketConfiguration {
     SimpleModelParams simple = 100;
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
-  }
-  // Percentage move up and down from the mid price which specifies the range of
-  // price levels over which automated liquidity provision orders will be deployed.
-  string lp_price_range = 4;  
+  }   
 }
 
 // Instrument configuration

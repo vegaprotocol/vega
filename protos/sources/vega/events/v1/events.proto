@@ -737,7 +737,7 @@ enum BusEventType {
   // Event indicating parties have become, or were, distressed but still have an active position.
   BUS_EVENT_TYPE_DISTRESSED_POSITIONS = 58;
 
-  // Event indicating a spot liquidity provision has been created or updated
+  // Event indicating a spot liquidity provision has been created or updated.
   BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION = 59;
 
   // Event indicating a market related event, for example when a market opens
@@ -867,7 +867,7 @@ message BusEvent {
     ExpiredOrders expired_orders = 156;
     // Open positions on the market that are/were distressed
     DistressedPositions distressed_positions = 157;
-    // SpotLiquidityProvision  events
+    // Spot liquidity provision events
     SpotLiquidityProvision spot_liquidity_provision = 158;
 
     // Market tick events

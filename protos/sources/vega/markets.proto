@@ -22,10 +22,12 @@ message AuctionDuration {
 
 // Spot product definition
 message Spot {
-  // Underlying base asset for the spot.
+  // Asset ID of the underlying base asset for the spot.
   string base_asset = 1;
-  // Underlying quote asset name for the spot.
+  // Asset ID of the underlying quote asset for the spot.
   string quote_asset = 2;
+  // Name of the instrument.
+  string name = 3;
 }
 
 // Future product definition

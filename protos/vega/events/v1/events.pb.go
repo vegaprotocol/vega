@@ -202,7 +202,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS BusEventType = 57
 	// Event indicating parties have become, or were, distressed but still have an active position.
 	BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS BusEventType = 58
-	// Event indicating a spot liquidity provision has been created or updated
+	// Event indicating a spot liquidity provision has been created or updated.
 	BusEventType_BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION BusEventType = 59
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101
@@ -5458,7 +5458,7 @@ type BusEvent_DistressedPositions struct {
 }
 
 type BusEvent_SpotLiquidityProvision struct {
-	// SpotLiquidityProvision  events
+	// Spot liquidity provision events
 	SpotLiquidityProvision *vega.SpotLiquidityProvision `protobuf:"bytes,158,opt,name=spot_liquidity_provision,json=spotLiquidityProvision,proto3,oneof"`
 }
 
