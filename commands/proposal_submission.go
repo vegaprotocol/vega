@@ -121,6 +121,10 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkNewMarketChanges(c))
 	case *protoTypes.ProposalTerms_UpdateMarket:
 		errs.Merge(checkUpdateMarketChanges(c))
+	case *protoTypes.ProposalTerms_NewSpotMarket:
+		errs.Merge(checkNewSpotMarketChanges(c))
+	case *protoTypes.ProposalTerms_UpdateSpotMarket:
+		errs.Merge(checkUpdateSpotMarketChanges(c))
 	case *protoTypes.ProposalTerms_UpdateNetworkParameter:
 		errs.Merge(checkNetworkParameterUpdateChanges(c))
 	case *protoTypes.ProposalTerms_NewAsset:
@@ -346,6 +350,52 @@ func checkERC20UpdateAssetSource(s *protoTypes.AssetDetailsUpdate_Erc20) Errors 
 	return errs
 }
 
+func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) Errors {
+	errs := NewErrors()
+
+	if change.NewSpotMarket == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market", ErrIsRequired)
+	}
+
+	if change.NewSpotMarket.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes", ErrIsRequired)
+	}
+
+	changes := change.NewSpotMarket.Changes
+	isCorrectProduct := false
+
+	if changes.Instrument == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument", ErrIsRequired)
+	}
+
+	if changes.Instrument.Product == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product", ErrIsRequired)
+	}
+
+	switch changes.Instrument.Product.(type) {
+	case *protoTypes.InstrumentConfiguration_Spot:
+		isCorrectProduct = true
+	default:
+		isCorrectProduct = false
+	}
+
+	if !isCorrectProduct {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product", ErrIsMismatching)
+	}
+	if changes.DecimalPlaces >= 150 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.decimal_places", ErrMustBeLessThan150)
+	}
+
+	if changes.PositionDecimalPlaces >= 7 || changes.PositionDecimalPlaces <= -7 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.position_decimal_places", ErrMustBeWithinRange7)
+	}
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_spot_market.changes"))
+	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.new_spot_market.changes"))
+	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_spot_market.changes.instrument"))
+	errs.Merge(checkNewSpotRiskParameters(changes))
+	return errs
+}
+
 func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 	errs := NewErrors()
 
@@ -400,7 +450,7 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
-	errs.Merge(checkNewInstrument(changes.Instrument))
+	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_market.changes.instrument"))
 	errs.Merge(checkNewRiskParameters(changes))
 
 	return errs
@@ -459,6 +509,31 @@ func checkUpdateMarketChanges(change *protoTypes.ProposalTerms_UpdateMarket) Err
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.update_market.changes"))
 	errs.Merge(checkUpdateInstrument(changes.Instrument))
 	errs.Merge(checkUpdateRiskParameters(changes))
+
+	return errs
+}
+
+func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMarket) Errors {
+	errs := NewErrors()
+
+	if change.UpdateSpotMarket == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market", ErrIsRequired)
+	}
+
+	if len(change.UpdateSpotMarket.MarketId) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrIsRequired)
+	} else if !IsVegaPubkey(change.UpdateSpotMarket.MarketId) {
+		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.market_id", ErrShouldBeAValidVegaID)
+	}
+
+	if change.UpdateSpotMarket.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes", ErrIsRequired)
+	}
+
+	changes := change.UpdateSpotMarket.Changes
+	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_spot_market.changes"))
+	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.update_spot_market.changes"))
+	errs.Merge(checkUpdateSpotRiskParameters(changes))
 
 	return errs
 }
@@ -538,29 +613,46 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	return errs
 }
 
-func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration) Errors {
+func checkTargetStakeParams(targetStakeParameters *protoTypes.TargetStakeParameters, parentProperty string) Errors {
+	errs := NewErrors()
+	if targetStakeParameters == nil {
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.target_stake_parameters", parentProperty), ErrIsRequired)
+	}
+
+	if targetStakeParameters.TimeWindow <= 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.target_stake_parameters.time_window", parentProperty), ErrMustBePositive)
+	}
+	if targetStakeParameters.ScalingFactor <= 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.target_stake_parameters.scaling_factor", parentProperty), ErrMustBePositive)
+	}
+	return errs
+}
+
+func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent string) Errors {
 	errs := NewErrors()
 
 	if instrument == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument", ErrIsRequired)
+		return errs.FinalAddForProperty(parent, ErrIsRequired)
 	}
 
 	if len(instrument.Name) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.name", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.name", parent), ErrIsRequired)
 	}
 	if len(instrument.Code) == 0 {
-		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.code", ErrIsRequired)
+		errs.AddForProperty(fmt.Sprintf("%s.code", parent), ErrIsRequired)
 	}
 
 	if instrument.Product == nil {
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product", ErrIsRequired)
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.product", parent), ErrIsRequired)
 	}
 
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
+	case *protoTypes.InstrumentConfiguration_Spot:
+		errs.Merge(checkNewSpot(product.Spot))
 	default:
-		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product", ErrIsNotValid)
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.product", parent), ErrIsNotValid)
 	}
 
 	return errs
@@ -609,6 +701,25 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.new_market.changes.instrument.product.future", false))
 	errs.Merge(checkNewOracleBinding(future))
 
+	return errs
+}
+
+func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
+	errs := NewErrors()
+
+	if spot == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot", ErrIsRequired)
+	}
+
+	if len(spot.BaseAsset) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.base_asset", ErrIsRequired)
+	}
+	if len(spot.QuoteAsset) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.quote_asset", ErrIsRequired)
+	}
+	if len(spot.Name) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.instrument.product.spot.name", ErrIsRequired)
+	}
 	return errs
 }
 
@@ -822,6 +933,25 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 	return errs
 }
 
+func checkNewSpotRiskParameters(config *protoTypes.NewSpotMarketConfiguration) Errors {
+	errs := NewErrors()
+
+	if config.RiskParameters == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters", ErrIsRequired)
+	}
+
+	switch parameters := config.RiskParameters.(type) {
+	case *protoTypes.NewSpotMarketConfiguration_Simple:
+		errs.Merge(checkNewSpotSimpleParameters(parameters))
+	case *protoTypes.NewSpotMarketConfiguration_LogNormal:
+		errs.Merge(checkNewSpotLogNormalRiskParameters(parameters))
+	default:
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters", ErrIsNotValid)
+	}
+
+	return errs
+}
+
 func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Errors {
 	errs := NewErrors()
 
@@ -836,6 +966,25 @@ func checkUpdateRiskParameters(config *protoTypes.UpdateMarketConfiguration) Err
 		errs.Merge(checkUpdateLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters", ErrIsNotValid)
+	}
+
+	return errs
+}
+
+func checkUpdateSpotRiskParameters(config *protoTypes.UpdateSpotMarketConfiguration) Errors {
+	errs := NewErrors()
+
+	if config.RiskParameters == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters", ErrIsRequired)
+	}
+
+	switch parameters := config.RiskParameters.(type) {
+	case *protoTypes.UpdateSpotMarketConfiguration_Simple:
+		errs.Merge(checkUpdateSpotSimpleParameters(parameters))
+	case *protoTypes.UpdateSpotMarketConfiguration_LogNormal:
+		errs.Merge(checkUpdateSpotLogNormalRiskParameters(parameters))
+	default:
+		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters", ErrIsNotValid)
 	}
 
 	return errs
@@ -865,6 +1014,30 @@ func checkNewSimpleParameters(params *protoTypes.NewMarketConfiguration_Simple) 
 	return errs
 }
 
+func checkNewSpotSimpleParameters(params *protoTypes.NewSpotMarketConfiguration_Simple) Errors {
+	errs := NewErrors()
+
+	if params.Simple == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple", ErrIsRequired)
+	}
+
+	if params.Simple.MinMoveDown > 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
+	}
+
+	if params.Simple.MaxMoveUp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
+	}
+
+	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
+		errs.AddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.simple.probability_of_trading",
+			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
+		)
+	}
+
+	return errs
+}
+
 func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Simple) Errors {
 	errs := NewErrors()
 
@@ -882,6 +1055,30 @@ func checkUpdateSimpleParameters(params *protoTypes.UpdateMarketConfiguration_Si
 
 	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.simple.probability_of_trading",
+			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
+		)
+	}
+
+	return errs
+}
+
+func checkUpdateSpotSimpleParameters(params *protoTypes.UpdateSpotMarketConfiguration_Simple) Errors {
+	errs := NewErrors()
+
+	if params.Simple == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple", ErrIsRequired)
+	}
+
+	if params.Simple.MinMoveDown > 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple.min_move_down", ErrMustBeNegativeOrZero)
+	}
+
+	if params.Simple.MaxMoveUp < 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple.max_move_up", ErrMustBePositiveOrZero)
+	}
+
+	if params.Simple.ProbabilityOfTrading < 0 || params.Simple.ProbabilityOfTrading > 1 {
+		errs.AddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.simple.probability_of_trading",
 			fmt.Errorf("should be between 0 (inclusive) and 1 (inclusive)"),
 		)
 	}
@@ -968,6 +1165,90 @@ func checkUpdateLogNormalRiskParameters(params *protoTypes.UpdateMarketConfigura
 
 	if math.IsNaN(params.LogNormal.Params.R) {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+	}
+
+	return errs
+}
+
+func checkNewSpotLogNormalRiskParameters(params *protoTypes.NewSpotMarketConfiguration_LogNormal) Errors {
+	errs := NewErrors()
+
+	if params.LogNormal == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal", ErrIsRequired)
+	}
+
+	if params.LogNormal.Params == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
+	}
+
+	if params.LogNormal.RiskAversionParameter < 1e-8 || params.LogNormal.RiskAversionParameter > 0.1 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.risk_aversion_parameter", errors.New("must be between [1e-8, 0.1]"))
+	}
+
+	if params.LogNormal.Tau < 1e-8 || params.LogNormal.Tau > 1 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.tau", errors.New("must be between [1e-8, 1]"))
+	}
+
+	if math.IsNaN(params.LogNormal.Params.Mu) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
+	}
+
+	if params.LogNormal.Params.Mu < -1e-6 || params.LogNormal.Params.Mu > 1e-6 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.mu", errors.New("must be between [-1e-6,1e-6]"))
+	}
+
+	if math.IsNaN(params.LogNormal.Params.Sigma) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
+	}
+
+	if params.LogNormal.Params.Sigma < 1e-3 || params.LogNormal.Params.Sigma > 50 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.sigma", errors.New("must be between [1e-3,50]"))
+	}
+
+	if math.IsNaN(params.LogNormal.Params.R) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
+	}
+
+	if params.LogNormal.Params.R < -1 || params.LogNormal.Params.R > 1 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_spot_market.changes.risk_parameters.log_normal.params.r", errors.New("must be between [-1,1]"))
+	}
+
+	return errs
+}
+
+func checkUpdateSpotLogNormalRiskParameters(params *protoTypes.UpdateSpotMarketConfiguration_LogNormal) Errors {
+	errs := NewErrors()
+
+	if params.LogNormal == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal", ErrIsRequired)
+	}
+
+	if params.LogNormal.Params == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params", ErrIsRequired)
+	}
+
+	if params.LogNormal.RiskAversionParameter <= 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.risk_aversion_parameter", ErrMustBePositive)
+	}
+
+	if params.LogNormal.Tau <= 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.tau", ErrMustBePositive)
+	}
+
+	if math.IsNaN(params.LogNormal.Params.Mu) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.mu", ErrIsNotValidNumber)
+	}
+
+	if math.IsNaN(params.LogNormal.Params.Sigma) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrIsNotValidNumber)
+	}
+
+	if params.LogNormal.Params.Sigma <= 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.sigma", ErrMustBePositive)
+	}
+
+	if math.IsNaN(params.LogNormal.Params.R) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_spot_market.changes.risk_parameters.log_normal.params.r", ErrIsNotValidNumber)
 	}
 
 	return errs

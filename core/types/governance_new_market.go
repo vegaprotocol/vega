@@ -356,7 +356,7 @@ func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_L
 type instrumentConfigurationProduct interface {
 	isInstrumentConfigurationProduct()
 	icpIntoProto() interface{}
-	Asset() string
+	Assets() []string
 	DeepClone() instrumentConfigurationProduct
 	String() string
 }
@@ -381,8 +381,8 @@ func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduc
 	}
 }
 
-func (i InstrumentConfigurationFuture) Asset() string {
-	return i.Future.SettlementAsset
+func (i InstrumentConfigurationFuture) Assets() []string {
+	return i.Future.Assets()
 }
 
 type InstrumentConfiguration struct {
@@ -411,6 +411,8 @@ func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	}
 	switch pr := p.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
+		r.Product = pr
+	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = pr
 	}
 	return r
@@ -442,6 +444,14 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+			},
+		}
+	case *vegapb.InstrumentConfiguration_Spot:
+		r.Product = &InstrumentConfigurationSpot{
+			Spot: &SpotProduct{
+				Name:       pr.Spot.Name,
+				BaseAsset:  pr.Spot.BaseAsset,
+				QuoteAsset: pr.Spot.QuoteAsset,
 			},
 		}
 	}
@@ -501,8 +511,8 @@ func (f FutureProduct) String() string {
 	)
 }
 
-func (f FutureProduct) Asset() string {
-	return f.SettlementAsset
+func (f FutureProduct) Assets() []string {
+	return []string{f.SettlementAsset}
 }
 
 type MetadataList []string

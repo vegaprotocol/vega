@@ -58,10 +58,11 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	}
 
 	// ensure the asset for this new market exists
-	asset, err := marketConfig.GetAsset()
+	assets, err := marketConfig.GetAssets()
 	if err != nil {
 		return nil, err
 	}
+	asset := assets[0]
 	if !e.collateral.AssetExists(asset) {
 		return nil, fmt.Errorf(
 			"unable to create a market %q with an invalid %q asset",

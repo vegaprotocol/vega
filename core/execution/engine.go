@@ -207,6 +207,11 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 }
 
+func (e *Engine) SpotsMarketsEnabled() bool {
+	// TODO replace with real implementation
+	return false
+}
+
 func (e *Engine) Hash() []byte {
 	e.log.Debug("hashing markets")
 
@@ -271,11 +276,7 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 	if _, ok := e.markets[marketID]; !ok {
 		return false
 	}
-	asset, err := e.markets[marketID].mkt.GetAsset()
-	if err != nil {
-		return false
-	}
-	quantum, err := e.collateral.GetAssetQuantum(asset)
+	quantum, err := e.collateral.GetAssetQuantum(e.markets[marketID].settlementAsset)
 	if err != nil {
 		return false
 	}
@@ -310,10 +311,11 @@ func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.
 	}
 
 	if isNewMarket {
-		asset, err := marketConfig.GetAsset()
+		assets, err := marketConfig.GetAssets()
 		if err != nil {
 			e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
 		}
+		asset := assets[0]
 		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
 	}
 
@@ -361,10 +363,12 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	now := e.timeService.GetTimeNow()
 
 	// ensure the asset for this new market exists
-	asset, err := marketConfig.GetAsset()
+	assets, err := marketConfig.GetAssets()
 	if err != nil {
 		return err
 	}
+	asset := assets[0]
+
 	if !e.collateral.AssetExists(asset) {
 		e.log.Error("unable to create a market with an invalid asset",
 			logging.MarketID(marketConfig.ID),

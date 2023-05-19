@@ -80,15 +80,14 @@ func (m *Market) SubmitLiquidityProvision(
 
 	// we will need both bond account and the margin account, let's create
 	// them now
-	asset, _ := m.mkt.GetAsset()
-	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), asset)
+	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(ctx, party, m.GetID(), m.settlementAsset)
 	if err != nil {
 		// error happen, we can't even have the bond account taken
 		// if this is not an amendment, we cancel the liquidity provision
 		needsCancel = true
 		return err
 	}
-	_, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.GetID(), asset)
+	_, err = m.collateral.CreatePartyMarginAccount(ctx, party, m.GetID(), m.settlementAsset)
 	if err != nil {
 		needsCancel = true
 		return err
@@ -105,7 +104,7 @@ func (m *Market) SubmitLiquidityProvision(
 		Owner: party,
 		Amount: &types.FinancialAmount{
 			Amount: amount.Clone(), // clone here, we're using amount again in case of rollback
-			Asset:  asset,
+			Asset:  m.settlementAsset,
 		},
 		Type:      ty,
 		MinAmount: amount.Clone(),
@@ -346,11 +345,10 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		return nil
 	}
 
-	asset, _ := m.mkt.GetAsset()
 	party := newOrders[0].Party
 	// get the new balance
 	marginAcc, _ := m.collateral.GetPartyMarginAccount(
-		m.GetID(), party, asset)
+		m.GetID(), party, m.settlementAsset)
 	initialMargin := marginAcc.Balance
 
 	submittedIDs := []string{}
@@ -429,15 +427,14 @@ func (m *Market) rollBackMargin(
 	party string,
 	initialMargin *num.Uint,
 ) error {
-	asset, _ := m.mkt.GetAsset()
 	// get the new balance
 	marginAcc, err := m.collateral.GetPartyMarginAccount(
-		m.GetID(), party, asset)
+		m.GetID(), party, m.settlementAsset)
 	if err != nil {
 		m.log.Error("could not get margin account",
 			logging.PartyID(party),
 			logging.MarketID(m.GetID()),
-			logging.AssetID(asset),
+			logging.AssetID(m.settlementAsset),
 			logging.Error(err))
 		return err
 	}
@@ -453,7 +450,7 @@ func (m *Market) rollBackMargin(
 		Owner: party,
 		Amount: &types.FinancialAmount{
 			Amount: amount,
-			Asset:  asset,
+			Asset:  m.settlementAsset,
 		},
 		Type:      types.TransferTypeMarginHigh,
 		MinAmount: amount.Clone(),
@@ -461,7 +458,7 @@ func (m *Market) rollBackMargin(
 
 	// then trigger the rollback
 	resp, err := m.collateral.RollbackMarginUpdateOnOrder(
-		ctx, m.GetID(), asset, &transfer)
+		ctx, m.GetID(), m.settlementAsset, &transfer)
 	if err != nil {
 		m.log.Debug("error rolling back party margin",
 			logging.PartyID(party),
@@ -628,9 +625,8 @@ func (m *Market) cancelLiquidityProvision(
 
 	// now we move back the funds from the bond account to the general account
 	// of the party
-	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
-		ctx, party, m.GetID(), asset)
+		ctx, party, m.GetID(), m.settlementAsset)
 	if err != nil {
 		m.log.Debug("could not get the party bond account",
 			logging.String("party-id", party),
@@ -646,7 +642,7 @@ func (m *Market) cancelLiquidityProvision(
 			Owner: party,
 			Amount: &types.FinancialAmount{
 				Amount: bondAcc.Balance,
-				Asset:  asset,
+				Asset:  m.settlementAsset,
 			},
 			Type:      types.TransferTypeBondHigh,
 			MinAmount: bondAcc.Balance.Clone(),
@@ -658,7 +654,7 @@ func (m *Market) cancelLiquidityProvision(
 			return err
 		}
 		m.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{tresp}))
-		m.collateral.RemoveBondAccount(party, m.GetID(), asset)
+		m.collateral.RemoveBondAccount(party, m.GetID(), m.settlementAsset)
 	}
 
 	// now let's update the fee selection
@@ -928,16 +924,15 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 func (m *Market) ensureLiquidityProvisionBond(
 	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) (*types.Transfer, error) {
-	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(
-		ctx, party, m.GetID(), asset)
+		ctx, party, m.GetID(), m.settlementAsset)
 	if err != nil {
 		return nil, err
 	}
 
 	// first check if there's enough funds in the gen + bond
 	// account to cover the new commitment
-	if !m.collateral.CanCoverBond(m.GetID(), party, asset, sub.CommitmentAmount.Clone()) {
+	if !m.collateral.CanCoverBond(m.GetID(), party, m.settlementAsset, sub.CommitmentAmount.Clone()) {
 		return nil, ErrCommitmentSubmissionNotAllowed
 	}
 
@@ -951,7 +946,7 @@ func (m *Market) ensureLiquidityProvisionBond(
 		Owner: party,
 		Amount: &types.FinancialAmount{
 			Amount: amount,
-			Asset:  asset,
+			Asset:  m.settlementAsset,
 		},
 		Type:      ty,
 		MinAmount: amount.Clone(),
@@ -977,11 +972,10 @@ func (m *Market) ensureLiquidityProvisionBond(
 }
 
 func (m *Market) ensureLPCommitmentAmount(amount *num.Uint) error {
-	asset, _ := m.mkt.GetAsset()
-	quantum, err := m.collateral.GetAssetQuantum(asset)
+	quantum, err := m.collateral.GetAssetQuantum(m.settlementAsset)
 	if err != nil {
 		m.log.Panic("could not get quantum for asset, this should never happen",
-			logging.AssetID(asset),
+			logging.AssetID(m.settlementAsset),
 			logging.Error(err),
 		)
 	}

@@ -1267,6 +1267,39 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 	}
 }
 
+func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
+	return &types.ProposalTermsNewSpotMarket{
+		NewSpotMarket: &types.NewSpotMarket{
+			Changes: &types.NewSpotMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "BTC/USDT Spot",
+					Code: "CRYPTO:BTCUSDT",
+					Product: &types.InstrumentConfigurationSpot{
+						Spot: &types.SpotProduct{
+							Name:       "BTC/USDT",
+							BaseAsset:  "BTC",
+							QuoteAsset: "USDT",
+						},
+					},
+				},
+				RiskParameters: &types.NewMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
+				DecimalPlaces: 0,
+			},
+		},
+	}
+}
+
 func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsUpdateMarket {
 	var dt *types.DataSourceDefinition
 	if termExt {
@@ -1411,6 +1444,25 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newMarketTerms(termFilter, termBinding, termExt),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newSpotMarketTerms(),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
