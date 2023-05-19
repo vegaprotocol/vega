@@ -2860,7 +2860,7 @@ func TestHoldingAccount(t *testing.T) {
 	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
 
 	// we're have 1000 in the general account and 0 in the holding
-	// transfering 800 from the general account to the holding account in two transfers of 400
+	// transferring 800 from the general account to the holding account in two transfers of 400
 	// expect to have the holding account balance = 800 and the general account balance = 200
 
 	// holding account does not exist yet - it will be created
