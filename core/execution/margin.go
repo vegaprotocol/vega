@@ -26,11 +26,10 @@ import (
 func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 	ctx context.Context, pos *positions.MarketPosition,
 ) error {
-	asset, _ := m.mkt.GetAsset()
 	market := m.GetID()
 
 	// first we build the margin events from the collateral.
-	e, err := m.collateral.GetPartyMargin(pos, asset, market)
+	e, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, market)
 	if err != nil {
 		return err
 	}
@@ -57,11 +56,10 @@ func (m *Market) calcMarginsLiquidityProvisionAmendContinuous(
 func (m *Market) calcMarginsLiquidityProvisionAmendAuction(
 	ctx context.Context, pos *positions.MarketPosition, price *num.Uint,
 ) (events.Risk, error) {
-	asset, _ := m.mkt.GetAsset()
 	market := m.GetID()
 
 	// first we build the margin events from the collateral.
-	e, err := m.collateral.GetPartyMargin(pos, asset, market)
+	e, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, market)
 	if err != nil {
 		return nil, err
 	}
@@ -99,11 +97,10 @@ func (m *Market) calcMargins(ctx context.Context, pos *positions.MarketPosition,
 
 func (m *Market) updateMargin(ctx context.Context, pos []events.MarketPosition) []events.Risk {
 	price := m.getCurrentMarkPrice()
-	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
 	margins := make([]events.Margin, 0, len(pos))
 	for _, p := range pos {
-		e, err := m.collateral.GetPartyMargin(p, asset, mID)
+		e, err := m.collateral.GetPartyMargin(p, m.settlementAsset, mID)
 		if err != nil {
 			m.log.Error("Failed to get margin event for party position",
 				logging.String("party", p.Party()),
@@ -123,9 +120,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 	if !ok {
 		return nil, nil, nil
 	}
-	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
-	e, err := m.collateral.GetPartyMargin(cPos, asset, mID)
+	e, err := m.collateral.GetPartyMargin(cPos, m.settlementAsset, mID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -139,9 +135,8 @@ func (m *Market) marginsAuction(ctx context.Context, order *types.Order) ([]even
 
 func (m *Market) margins(ctx context.Context, mpos *positions.MarketPosition, order *types.Order) ([]events.Risk, []events.MarketPosition, error) {
 	price := m.getMarketObservable(order.Price.Clone())
-	asset, _ := m.mkt.GetAsset()
 	mID := m.GetID()
-	pos, err := m.collateral.GetPartyMargin(mpos, asset, mID)
+	pos, err := m.collateral.GetPartyMargin(mpos, m.settlementAsset, mID)
 	if err != nil {
 		return nil, nil, err
 	}

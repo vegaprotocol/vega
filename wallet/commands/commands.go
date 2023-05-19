@@ -68,6 +68,12 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckIssueSignatures(cmd.IssueSignatures)
 	case *walletpb.SubmitTransactionRequest_BatchMarketInstructions:
 		cmdErr = commands.CheckBatchMarketInstructions(cmd.BatchMarketInstructions)
+	case *walletpb.SubmitTransactionRequest_SpotLiquidityProvisionSubmission:
+		cmdErr = commands.CheckSpotLiquidityProvisionSubmission(cmd.SpotLiquidityProvisionSubmission)
+	case *walletpb.SubmitTransactionRequest_SpotLiquidityProvisionCancellation:
+		cmdErr = commands.CheckSpotLiquidityProvisionCancellation(cmd.SpotLiquidityProvisionCancellation)
+	case *walletpb.SubmitTransactionRequest_SpotLiquidityProvisionAmendment:
+		cmdErr = commands.CheckSpotLiquidityProvisionAmendment(cmd.SpotLiquidityProvisionAmendment)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
@@ -182,6 +188,18 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 	case *walletpb.SubmitTransactionRequest_BatchMarketInstructions:
 		data.Command = &commandspb.InputData_BatchMarketInstructions{
 			BatchMarketInstructions: req.GetBatchMarketInstructions(),
+		}
+	case *walletpb.SubmitTransactionRequest_SpotLiquidityProvisionSubmission:
+		data.Command = &commandspb.InputData_SpotLiquidityProvisionSubmission{
+			SpotLiquidityProvisionSubmission: req.GetSpotLiquidityProvisionSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_SpotLiquidityProvisionCancellation:
+		data.Command = &commandspb.InputData_SpotLiquidityProvisionCancellation{
+			SpotLiquidityProvisionCancellation: req.GetSpotLiquidityProvisionCancellation(),
+		}
+	case *walletpb.SubmitTransactionRequest_SpotLiquidityProvisionAmendment:
+		data.Command = &commandspb.InputData_SpotLiquidityProvisionAmendment{
+			SpotLiquidityProvisionAmendment: req.GetSpotLiquidityProvisionAmendment(),
 		}
 	default:
 		panic(fmt.Sprintf("command %v is not supported", cmd))

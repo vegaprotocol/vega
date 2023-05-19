@@ -162,7 +162,6 @@ func (m *Market) transferMarginsContinuous(ctx context.Context, risk []events.Ri
 
 func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*types.LedgerMovement, error) {
 	mID := m.GetID()
-	asset, _ := m.mkt.GetAsset()
 	ret := make([]*types.LedgerMovement, 0, len(closed))
 	for _, c := range closed {
 		if !m.liquidity.IsLiquidityProvider(c.Party()) {
@@ -176,7 +175,7 @@ func (m *Market) bondSlashing(ctx context.Context, closed ...events.Margin) ([]*
 			Owner: c.Party(),
 			Amount: &types.FinancialAmount{
 				Amount: penalty,
-				Asset:  asset,
+				Asset:  c.Asset(),
 			},
 			Type:      types.TransferTypeBondSlashing,
 			MinAmount: num.UintZero(),

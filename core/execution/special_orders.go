@@ -351,12 +351,11 @@ func (m *Market) updateMargins(ctx context.Context, partiesPos map[string]events
 		positions     = make([]events.MarketPosition, 0, len(partiesPos))
 		marginsBefore = map[string]*num.Uint{}
 		id            = m.GetID()
-		assetID, _    = m.mkt.GetAsset()
 	)
 	// now we can check parties positions
 	for party, pos := range partiesPos {
 		positions = append(positions, pos)
-		mar, err := m.collateral.GetPartyMarginAccount(id, party, assetID)
+		mar, err := m.collateral.GetPartyMarginAccount(id, party, m.settlementAsset)
 		if err != nil {
 			m.log.Panic("party have position without a margin",
 				logging.MarketID(id),

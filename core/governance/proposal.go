@@ -37,14 +37,16 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p             *proposal
-	m             *ToEnactNewMarket
-	newAsset      *types.Asset
-	updatedAsset  *types.Asset
-	n             *types.NetworkParameter
-	as            *types.AssetDetails
-	updatedMarket *types.Market
-	f             *ToEnactFreeform
+	p                 *proposal
+	m                 *ToEnactNewMarket
+	s                 *ToEnactNewSpotMarket
+	newAsset          *types.Asset
+	updatedAsset      *types.Asset
+	n                 *types.NetworkParameter
+	as                *types.AssetDetails
+	updatedMarket     *types.Market
+	updatedSpotMarket *types.Market
+	f                 *ToEnactFreeform
 }
 
 // ToEnactNewMarket is just a empty struct, to signal
@@ -53,11 +55,17 @@ type ToEnact struct {
 // end of opening auction or so).
 type ToEnactNewMarket struct{}
 
+type ToEnactNewSpotMarket struct{}
+
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
 
 func (t ToEnact) IsNewMarket() bool {
 	return t.m != nil
+}
+
+func (t ToEnact) IsNewSpotMarket() bool {
+	return t.s != nil
 }
 
 func (t ToEnact) IsNewAsset() bool {
@@ -67,6 +75,10 @@ func (t ToEnact) IsNewAsset() bool {
 
 func (t ToEnact) IsUpdateMarket() bool {
 	return t.updatedMarket != nil
+}
+
+func (t ToEnact) IsUpdateSpotMarket() bool {
+	return t.updatedSpotMarket != nil
 }
 
 func (t ToEnact) IsUpdateNetworkParameter() bool {
@@ -101,6 +113,10 @@ func (t *ToEnact) UpdateMarket() *types.Market {
 	return t.updatedMarket
 }
 
+func (t *ToEnact) UpdateSpotMarket() *types.Market {
+	return t.updatedSpotMarket
+}
+
 func (t *ToEnact) NewFreeform() *ToEnactFreeform {
 	return t.f
 }
@@ -128,6 +144,7 @@ func (t *ToEnact) UpdateAsset() *types.Asset {
 type ToSubmit struct {
 	p *types.Proposal
 	m *ToSubmitNewMarket
+	s *ToSubmitNewSpotMarket
 }
 
 func (t *ToSubmit) Proposal() *types.Proposal {
@@ -139,6 +156,22 @@ func (t ToSubmit) IsNewMarket() bool {
 }
 
 func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
+	return t.m
+}
+
+func (t ToSubmit) IsNewSpotMarket() bool {
+	return t.s != nil
+}
+
+func (t *ToSubmit) NewSpotMarket() *ToSubmitNewSpotMarket {
+	return t.s
+}
+
+type ToSubmitNewSpotMarket struct {
+	m *types.Market
+}
+
+func (t *ToSubmitNewSpotMarket) Market() *types.Market {
 	return t.m
 }
 

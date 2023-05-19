@@ -3233,6 +3233,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
   "RewardMarketProposers - an account holding rewards for market proposers"
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
+  "AccountTypeHolding - an account for holding funds covering for active unfilled orders"
+  ACCOUNT_TYPE_HOLDING
 }
 
 "Types that describe why a transfer has been made"
@@ -3285,6 +3287,12 @@ enum TransferType {
   TRANSFER_TYPE_CLEAR_ACCOUNT
   "Balances are being restored to the user's account following a checkpoint restart of the network"
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
+  "Spot trade delivery"
+  TRANSFER_TYPE_SPOT
+  "An internal instruction to transfer a quantity corresponding to an active spot order from a general account into a party holding account"
+  TRANSFER_TYPE_HOLDING_LOCK
+  "An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account"
+  TRANSFER_TYPE_HOLDING_RELEASE
 
 }
 
