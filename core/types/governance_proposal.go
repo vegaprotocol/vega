@@ -101,7 +101,7 @@ const (
 	ProposalErrorLinearSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
 	// ProposalErrorSquaredSlippageOutOfRange squared slippage factor is negative or too large.
 	ProposalErrorQuadraticSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
-	// ProposalErrorInvalidSuccessorMarket indicates the successor market paramters were invalid.
+	// ProposalErrorInvalidSuccessorMarket indicates the successor market parameters were invalid.
 	ProposalErrorInvalidSuccessorMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
 )
 
@@ -239,7 +239,7 @@ func (p *Proposal) IsSuccessorMarket() bool {
 	if p.Terms == nil || p.Terms.Change == nil {
 		return false
 	}
-	if nm := p.NewMarket(); p != nil {
+	if nm := p.NewMarket(); nm != nil {
 		return nm.Changes.Successor != nil
 	}
 	return false

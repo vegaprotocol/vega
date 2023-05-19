@@ -155,9 +155,7 @@ func (t *ToSubmit) InsurancePoolFraction() *num.Decimal {
 }
 
 type ToSubmitNewMarket struct {
-	m              *types.Market
-	insuranceShare *num.Decimal
-	succeeds       string
+	m *types.Market
 }
 
 func (t *ToSubmitNewMarket) Market() *types.Market {
