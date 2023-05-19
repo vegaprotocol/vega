@@ -2844,3 +2844,196 @@ func stringToInt(s string) int {
 	i, _ := strconv.Atoi(s)
 	return i
 }
+
+func TestHoldingAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+
+	// create the general account for the source general account
+	id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	// holding account does not exist yet - it will be created
+	le, err := eng.TransferToHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(800),
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(800), le.Balances[0].Balance)
+
+	// check general account balance is 200
+	z, err := eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(200), z.Balance)
+
+	// request to release from the holding account
+	// holding account does not exist yet - it will be created
+	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(800),
+		},
+	})
+	require.NoError(t, err)
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeGeneral, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(800), le.Balances[0].Balance)
+
+	// check general account balance is 1000
+	z, err = eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(1000), z.Balance)
+}
+
+func TestClearSpotMarket(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// create a spot market and top up the fees account before we try to close the market
+	err := eng.CreateSpotMarketAccounts(context.Background(), testMarketID, "BTC")
+	require.NoError(t, err)
+
+	acc, err := eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+
+	eng.IncrementBalance(context.Background(), acc.ID, num.NewUint(1000))
+
+	acc, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+
+	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC")
+	require.NoError(t, err)
+
+	globalReward, err := eng.GetGlobalRewardAccount("BTC")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(1000), globalReward.Balance)
+
+	// the liquidity and makes fees should be removed at this point
+	_, err = eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
+	require.Error(t, err)
+
+	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	require.Error(t, err)
+}
+
+func TestCreateSpotMarketAccounts(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	err := eng.CreateSpotMarketAccounts(context.Background(), testMarketID, "BTC")
+	require.NoError(t, err)
+
+	// check that accounts were created for liquidity and maker fees
+	_, err = eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+
+	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+}
+
+func TestPartyHasSufficientBalance(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// first check when general account of the source does not exist
+	err := eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	require.Error(t, err)
+
+	ctx := context.Background()
+	// create the general account for the source general account
+	id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1001))
+	require.Error(t, err)
+	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	require.NoError(t, err)
+	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(900))
+	require.NoError(t, err)
+}
+
+func TestCreatePartyHoldingAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+
+	_, err := eng.CreatePartyHoldingAccount(ctx, "zohar", "BTC2")
+	// asset does not exist
+	require.Error(t, err)
+
+	id, err := eng.CreatePartyHoldingAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	eng.IncrementBalance(ctx, id, num.NewUint(1000))
+
+	// check holding account balance
+	acc, err := eng.GetAccountByID(id)
+	require.Equal(t, types.AccountTypeHolding, acc.Type)
+	require.Equal(t, num.NewUint(1000), acc.Balance)
+}
+
+func TestTransferSpot(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	ctx := context.Background()
+	// first check when general account of the source does not exist
+	_, err := eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900))
+	require.Error(t, err)
+
+	// create the general account for the source general account
+	id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	// transfer successfully
+	_, err = eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900))
+	require.NoError(t, err)
+
+	// check balances
+	z, err := eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+
+	j, err := eng.GetPartyGeneralAccount("jeremy", "BTC")
+	require.NoError(t, err)
+
+	require.Equal(t, num.NewUint(100), z.Balance)
+	require.Equal(t, num.NewUint(900), j.Balance)
+
+	// try to transfer more than in the account should transfer all
+	_, err = eng.TransferSpot(ctx, "jeremy", "zohar", "BTC", num.NewUint(1000))
+	require.NoError(t, err)
+
+	// check balances
+	z, err = eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+
+	j, err = eng.GetPartyGeneralAccount("jeremy", "BTC")
+	require.NoError(t, err)
+
+	require.Equal(t, num.NewUint(1000), z.Balance)
+	require.Equal(t, num.UintZero(), j.Balance)
+}
