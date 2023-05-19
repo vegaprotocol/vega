@@ -393,7 +393,7 @@ func TestCheckpointWithMarketUpdateProposals(t *testing.T) {
 
 	// Load checkpoint
 	eng2.markets.EXPECT().
-		GetMarket(proposalID).
+		GetMarket(proposalID, gomock.Any()).
 		AnyTimes().
 		Return(expectedMarket, true)
 	eng2.markets.EXPECT().UpdateMarket(gomock.Any(), gomock.Any()).Times(1)

@@ -38,6 +38,7 @@ var (
 		types.CollateralCheckpoint,            // without balances, governance (proposals, bonds) are difficult
 		types.NetParamsCheckpoint,             // net params should go right after assets and collateral, so vote tokens are restored
 		types.MarketActivityTrackerCheckpoint, // restore market activity information - needs to happen before governance
+		types.ExecutionCheckpoint,             // we should have the parent market state restored before we start loading governance, so successor markets can inherit the correct state
 		types.GovernanceCheckpoint,            // depends on all of the above
 		types.EpochCheckpoint,                 // restore epoch information... so delegation sequence ID's make sense
 		types.MultisigControlCheckpoint,       // restore the staking information, so delegation make sense
