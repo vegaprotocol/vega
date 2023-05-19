@@ -43,6 +43,7 @@ var (
 	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow  = errors.New("must have at least one of rises above or falls bellow")
 	ErrMustHaveAStopOrderTrigger                   = errors.New("must have a stop order trigger")
 	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame = errors.New("falls below and rises above market id must be the same")
+	ErrTrailingPercentOffsetMinimalIncrementMustBe = errors.New("trailing percent offset minimal increment must be >= 0.001")
 )
 
 type Errors map[string][]error

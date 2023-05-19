@@ -20,7 +20,7 @@ type Pool struct {
 	// useful to find back a party from an order
 	orderToParty map[string]string
 	priced       *PricedStopOrders
-	trailing     *TrailingPercentOffsetStopOrders
+	trailing     *TrailingStopOrders
 }
 
 func New(log *logging.Logger) *Pool {
@@ -29,7 +29,7 @@ func New(log *logging.Logger) *Pool {
 		orders:       map[string]map[string]*types.StopOrder{},
 		orderToParty: map[string]string{},
 		priced:       &PricedStopOrders{},
-		trailing:     &TrailingPercentOffsetStopOrders{},
+		trailing:     &TrailingStopOrders{},
 	}
 }
 
@@ -48,7 +48,7 @@ func (p *Pool) Insert(order *types.StopOrder) {
 	case order.Trigger.IsPrice():
 		p.priced.Insert(order.ID, order.Trigger.Price().Clone(), order.Trigger.Direction)
 	case order.Trigger.IsTrailingPercenOffset():
-		p.trailing.Insert(order)
+		p.trailing.Insert(order.ID, order.Trigger.TrailingPercentOffset(), order.Trigger.Direction)
 	}
 }
 
