@@ -82,4 +82,5 @@ WebSocket connections use a different rate limiting mechanism. They are rate lim
   Level = "Info"
   ...
   MaxSubscriptionPerClient = 250
+  
 ```
