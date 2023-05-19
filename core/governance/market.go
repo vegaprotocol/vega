@@ -331,7 +331,7 @@ func validateAssetBasic(assetID string, assets Assets, deepCheck bool) (types.Pr
 	}
 	if !assets.IsEnabled(assetID) {
 		return types.ProposalErrorInvalidAsset,
-			fmt.Errorf("assets is not enabled %v", assetID)
+			fmt.Errorf("asset is not enabled %v", assetID)
 	}
 	return types.ProposalErrorUnspecified, nil
 }

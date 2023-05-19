@@ -82,12 +82,12 @@ var commandName = map[Command]string{
 	WithdrawCommand:                     "Withdraw",
 	ProposeCommand:                      "Proposal",
 	VoteCommand:                         "Vote on Proposal",
-	AnnounceNodeCommand:                 "Register new Node",
+	AnnounceNodeCommand:                 "Register New Node",
 	NodeVoteCommand:                     "Node Vote",
 	NodeSignatureCommand:                "Node Signature",
 	LiquidityProvisionCommand:           "Liquidity Provision Order",
-	CancelLiquidityProvisionCommand:     "Cancel LiquidityProvision Order",
-	AmendLiquidityProvisionCommand:      "Amend LiquidityProvision Order",
+	CancelLiquidityProvisionCommand:     "Cancel Liquidity Provision Order",
+	AmendLiquidityProvisionCommand:      "Amend Liquidity Provision Order",
 	ChainEventCommand:                   "Chain Event",
 	SubmitOracleDataCommand:             "Submit Oracle Data",
 	DelegateCommand:                     "Delegate",
@@ -102,8 +102,8 @@ var commandName = map[Command]string{
 	IssueSignatures:                     "Issue Signatures",
 	BatchMarketInstructions:             "Batch Market Instructions",
 	SpotLiquidityProvisionCommand:       "Spot Liquidity Provision Order",
-	CancelSpotLiquidityProvisionCommand: "Spot Cancel LiquidityProvision Order",
-	AmendSpotLiquidityProvisionCommand:  "Spot Amend LiquidityProvision Order",
+	CancelSpotLiquidityProvisionCommand: "Spot Cancel Liquidity Provision Order",
+	AmendSpotLiquidityProvisionCommand:  "Spot Amend Liquidity Provision Order",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
