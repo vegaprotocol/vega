@@ -155,6 +155,21 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.markets = markets
 		return nil
 	})
+	s.Step(`the successor markets:$`, func(table *godog.Table) error {
+		markets, err := steps.TheSuccessorMarkets(successorConfig, execsetup.executionEngine, execsetup.netParams, table)
+		if err != nil {
+			return err
+		}
+		execsetup.markets = append(execsetup.markets, markets...)
+		return nil
+	})
+
+	s.Step(`the successor market "([^"]+)" is enacted$`, func(successor string) error {
+		if err := steps.TheSuccesorMarketIsEnacted(successor, execsetup.markets, execsetup.executionEngine); err != nil {
+			return err
+		}
+		return nil
+	})
 
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for all the markets$`, func(amountstr string) error {

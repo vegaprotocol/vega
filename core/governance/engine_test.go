@@ -1629,7 +1629,7 @@ func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market,
 func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.Market) {
 	t.Helper()
 	e.markets.EXPECT().
-		GetMarket(marketID).
+		GetMarket(marketID, gomock.Any()).
 		Times(1).
 		Return(market, true)
 }

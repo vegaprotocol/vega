@@ -248,7 +248,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.accs[externalID] = externalAcc
 
 		// This account originally wan't added to the app-state hash of accounts because it can always be "reconstructed" from
-		// the withdrawal/deposits in banking. For snapshotting we we need to restore it and so instead of trying to make
+		// the withdrawal/deposits in banking. For snapshotting we need to restore it and so instead of trying to make
 		// something thats already complicated more complex. we're just going to include it in the apphash which then gets
 		// included in the snapshot.
 		// see https://github.com/vegaprotocol/vega/pull/2745 for more information
@@ -312,6 +312,43 @@ func (e *Engine) PropagateAssetUpdate(ctx context.Context, asset types.Asset) er
 func (e *Engine) AssetExists(assetID string) bool {
 	_, ok := e.enabledAssets[assetID]
 	return ok
+}
+
+func (e *Engine) GetInsurancePoolBalance(marketID, asset string) (*num.Uint, bool) {
+	insID := e.accountID(marketID, systemOwner, asset, types.AccountTypeInsurance)
+	if ins, err := e.GetAccountByID(insID); err == nil {
+		return ins.Balance.Clone(), true
+	}
+	return nil, false
+}
+
+func (e *Engine) SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement {
+	pInsB, ok := e.GetInsurancePoolBalance(parent, asset)
+	if !ok || pInsB.IsZero() {
+		return nil
+	}
+	frac, _ := num.UintFromDecimal(num.DecimalFromUint(pInsB).Mul(fraction).Floor())
+	if frac.IsZero() {
+		return nil
+	}
+	insID := e.accountID(parent, systemOwner, asset, types.AccountTypeInsurance)
+	pIns, _ := e.GetAccountByID(insID)
+	sIns := e.GetOrCreateMarketInsurancePoolAccount(ctx, successor, asset)
+	// create transfer
+	req := &types.TransferRequest{
+		FromAccount: []*types.Account{
+			pIns,
+		},
+		ToAccount: []*types.Account{
+			sIns,
+		},
+		Amount:    frac,
+		MinAmount: frac.Clone(),
+		Asset:     asset,
+		Type:      types.TransferTypeSuccessorInsuranceFraction,
+	}
+	le, _ := e.getLedgerEntries(ctx, req)
+	return le
 }
 
 // this func uses named returns because it makes body of the func look clearer.

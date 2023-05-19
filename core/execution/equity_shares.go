@@ -14,7 +14,9 @@ package execution
 
 import (
 	"fmt"
+	"sort"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
@@ -37,6 +39,8 @@ type EquityShares struct {
 	totalPStake num.Decimal
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
+	// the same map as above, but used at the end of the opening auction in successor markets to carry over ELS
+	parentLPs map[string]*lp
 
 	openingAuctionEnded bool
 }
@@ -48,6 +52,33 @@ func NewEquityShares(mvp num.Decimal) *EquityShares {
 		totalPStake: num.DecimalZero(),
 		totalVStake: num.DecimalZero(),
 		lps:         map[string]*lp{},
+		parentLPs:   map[string]*lp{},
+	}
+}
+
+func (es *EquityShares) InheritELS(shares []*types.ELSShare) {
+	for _, els := range shares {
+		if current, ok := es.lps[els.PartyID]; ok {
+			update, _ := num.UintFromDecimal(current.stake)
+			// update the totals:
+			es.totalPStake = es.totalPStake.Sub(current.stake).Add(els.SuppliedStake)
+			es.totalVStake = es.totalVStake.Sub(current.vStake).Add(els.VStake)
+			// make it look like the old ELS data was part of this market...
+			current.stake = els.SuppliedStake
+			current.vStake = els.VStake
+			current.avg = els.Avg
+			current.share = els.Share
+			// then treat the current commitment as a change to the commitment amount:
+			es.SetPartyStake(els.PartyID, update)
+		} else {
+			// this LP hasn't committed to this market (yet)
+			es.parentLPs[els.PartyID] = &lp{
+				stake:  els.SuppliedStake,
+				share:  els.Share,
+				vStake: els.VStake,
+				avg:    els.Avg,
+			}
+		}
 	}
 }
 
@@ -60,6 +91,11 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	}
 	es.openingAuctionEnded = true
 	es.r = num.DecimalZero()
+	if len(es.parentLPs) > 0 {
+		// set the ELS in successor markets
+		// es.resolveParentLPs()
+		es.parentLPs = nil // ditch the old data
+	}
 }
 
 func (es *EquityShares) UpdateVStake() {
@@ -110,6 +146,17 @@ func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {
 
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
+	if !es.openingAuctionEnded && len(es.parentLPs) > 0 {
+		if parent, ok := es.parentLPs[id]; ok {
+			// we can only reach this point if we've inherited from a parent market, and this
+			// party, at that time, hadn't made a commitment yet
+			es.lps[id] = parent
+			// add the old ELS data to the running totals
+			es.totalPStake = es.totalPStake.Add(parent.stake)
+			es.totalVStake = es.totalVStake.Add(parent.vStake)
+			delete(es.parentLPs, id) // we've restored this now, so remove from this map
+		}
+	}
 	v, found := es.lps[id]
 	if newStakeU == nil || newStakeU.IsZero() {
 		if found {
@@ -259,4 +306,89 @@ func (es *EquityShares) updateAllELS() {
 			v.share = eq
 		}
 	}
+}
+
+func (es *EquityShares) getCPShares() []*types.ELSShare {
+	shares := make([]*types.ELSShare, 0, len(es.lps))
+	for id, els := range es.lps {
+		shares = append(shares, &types.ELSShare{
+			PartyID:       id,
+			Share:         els.share,
+			SuppliedStake: els.stake,
+			VStake:        els.vStake,
+			Avg:           els.avg,
+		})
+	}
+	// make sure data is sorted
+	sort.SliceStable(shares, func(i, j int) bool {
+		return shares[i].PartyID > shares[j].PartyID
+	})
+	return shares
+}
+
+func (es *EquityShares) setCPShares(shares []*types.ELSShare) {
+	es.lps = make(map[string]*lp, len(shares))
+	es.totalPStake = num.DecimalZero()
+	es.totalVStake = num.DecimalZero()
+	for _, share := range shares {
+		lp := lp{
+			avg:    share.Avg,
+			share:  share.Share,
+			stake:  share.SuppliedStake,
+			vStake: share.VStake,
+		}
+		es.totalPStake = es.totalPStake.Add(lp.stake)
+		es.totalVStake = es.totalVStake.Add(lp.vStake)
+		es.lps[share.PartyID] = &lp
+	}
+}
+
+func (es *EquityShares) InheritELSBatch(shares []*types.ELSShare) {
+	// the simple way is to just keep track of all previous ELS data
+	// once we leave opening auction, we call `resolveParentLPs` and work it all out
+	// of course, we could instead check the map of parties who already provided liquidity
+	// and do what we need to do for those parties here, and add the remainder to the partentLP map
+	for _, els := range shares {
+		lp := lp{
+			stake:  els.SuppliedStake,
+			share:  els.Share,
+			vStake: els.VStake,
+			avg:    els.Avg,
+		}
+		es.parentLPs[els.PartyID] = &lp
+		// es.totalPStake = es.totalPStake.Add(els.SuppliedStake)
+		// es.totalVStake = es.totalVStake.Add(els.VStake)
+	}
+	if es.openingAuctionEnded {
+		es.resolveParentLPs()
+	}
+}
+
+func (es *EquityShares) resolveParentLPs() {
+	for id, lp := range es.parentLPs {
+		if sLP, ok := es.lps[id]; ok {
+			// ok, this party carries over their ELS, but the amounts may differ, first check if the amount is different:
+			if sLP.stake.Equal(lp.stake) {
+				// physical stake is identical, let's update the vStake total:
+				es.totalVStake = es.totalVStake.Sub(sLP.vStake).Add(lp.vStake)
+				// and update the vStake and avg
+				sLP.vStake = lp.vStake
+				sLP.avg = lp.avg
+			} else {
+				// now this one is a bit trickier -> we should swap out the new commitment, and treat it as a change in commitment:
+				// step 1: update the the totals:
+				es.totalVStake = es.totalVStake.Sub(sLP.vStake).Add(lp.vStake)
+				// remove the new physical stake, add the old
+				es.totalPStake = es.totalPStake.Sub(sLP.stake).Add(lp.stake)
+				newCommitment, _ := num.UintFromDecimal(sLP.stake)
+				es.lps[id] = lp // assign it the old LP
+				// now apply the different stake as though it's an amendment of the old one
+				es.SetPartyStake(id, newCommitment)
+			}
+		}
+	}
+	// recalculate all ELS
+	es.updateAllELS()
+	// clear the data
+	es.parentLPs = map[string]*lp{}
 }

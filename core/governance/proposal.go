@@ -142,6 +142,18 @@ func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
 	return t.m
 }
 
+func (t *ToSubmit) ParentMarketID() string {
+	return t.m.m.ParentMarketID
+}
+
+func (t *ToSubmit) InsurancePoolFraction() *num.Decimal {
+	if len(t.m.m.ParentMarketID) == 0 {
+		return nil
+	}
+	ipf := t.m.m.InsurancePoolFraction
+	return &ipf
+}
+
 type ToSubmitNewMarket struct {
 	m *types.Market
 }

@@ -19,6 +19,7 @@ import (
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 	types0 "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -417,6 +418,20 @@ func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.Orde
 func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
+}
+
+// SucceedMarket mocks base method.
+func (m *MockExecutionEngine) SucceedMarket(arg0 context.Context, arg1, arg2 string, arg3 decimal.Decimal) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SucceedMarket", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SucceedMarket indicates an expected call of SucceedMarket.
+func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2, arg3)
 }
 
 // UpdateMarket mocks base method.

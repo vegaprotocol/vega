@@ -75,6 +75,10 @@ func (fs *FeeSplitter) Elapsed() time.Duration {
 	return fs.currentTime.Sub(fs.timeWindowStart)
 }
 
+func (fs *FeeSplitter) SetElapsed(e time.Duration) {
+	fs.timeWindowStart = fs.currentTime.Add(-e)
+}
+
 func (fs *FeeSplitter) activeWindowLength(mvw time.Duration) time.Duration {
 	t := fs.Elapsed()
 	return t - num.MaxV(t-mvw, 0)

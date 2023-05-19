@@ -16,6 +16,7 @@
 - [8296](https://github.com/vegaprotocol/vega/issues/8296) - Improve error handling for invalid proposal validation timestamp
 - [8318](https://github.com/vegaprotocol/vega/issues/8318) - Proto definitions for spots
 - [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
+- [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
