@@ -2987,6 +2987,7 @@ func TestCreatePartyHoldingAccount(t *testing.T) {
 
 	// check holding account balance
 	acc, err := eng.GetAccountByID(id)
+	require.NoError(t, err)
 	require.Equal(t, types.AccountTypeHolding, acc.Type)
 	require.Equal(t, num.NewUint(1000), acc.Balance)
 }
