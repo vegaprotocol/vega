@@ -330,6 +330,10 @@ type InstrumentSpot struct {
 	Spot *Spot
 }
 
+func (InstrumentSpot) Type() ProductType {
+	return ProductTypeSpot
+}
+
 func (i InstrumentSpot) String() string {
 	return fmt.Sprintf(
 		"spot(%s)",
@@ -367,6 +371,10 @@ func (s Spot) String() string {
 
 type InstrumentFuture struct {
 	Future *Future
+}
+
+func (InstrumentFuture) Type() ProductType {
+	return ProductTypeFuture
 }
 
 func (i InstrumentFuture) String() string {
@@ -485,11 +493,24 @@ func (m *Market) GetAssets() ([]string, error) {
 	return m.TradableInstrument.Instrument.Product.getAssets()
 }
 
-func (i InstrumentFuture) GetQuoteName() (string, error) {
-	if i.Future == nil {
-		return "", ErrUnknownAsset
+func (m *Market) ProductType() ProductType {
+	return m.TradableInstrument.Instrument.Product.Type()
+}
+
+func (m *Market) GetFuture() *InstrumentFuture {
+	if m.ProductType() == ProductTypeFuture {
+		f, _ := m.TradableInstrument.Instrument.Product.(*InstrumentFuture)
+		return f
 	}
-	return i.Future.QuoteName, nil
+	return nil
+}
+
+func (m *Market) GetSpot() *InstrumentSpot {
+	if m.ProductType() == ProductTypeSpot {
+		s, _ := m.TradableInstrument.Instrument.Product.(*InstrumentSpot)
+		return s
+	}
+	return nil
 }
 
 func (i InstrumentFuture) iIntoProto() interface{} {
@@ -500,7 +521,7 @@ type iProto interface {
 	iIntoProto() interface{}
 	getAssets() ([]string, error)
 	String() string
-	GetQuoteName() (string, error)
+	Type() ProductType
 }
 
 type Instrument struct {
@@ -510,6 +531,7 @@ type Instrument struct {
 	Metadata *InstrumentMetadata
 	// Types that are valid to be assigned to Product:
 	//	*InstrumentFuture
+	//	*InstrumentSpot
 	Product iProto
 }
 

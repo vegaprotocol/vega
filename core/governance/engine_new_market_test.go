@@ -120,14 +120,15 @@ func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
 	eng.ensureAllAssetEnabled(t)
 	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
 	// GetMarket will be called in validateChange & intoSubmit
+	pFuture := proposal.NewMarket().Changes.GetFuture()
 	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(2).Return(
 		types.Market{
 			TradableInstrument: &types.TradableInstrument{
 				Instrument: &types.Instrument{
 					Product: &types.InstrumentFuture{
 						Future: &types.Future{
-							SettlementAsset: proposal.NewMarket().Changes.Instrument.Product.Asset(),
-							QuoteName:       proposal.NewMarket().Changes.Instrument.Product.QuoteName(),
+							SettlementAsset: pFuture.Future.SettlementAsset,
+							QuoteName:       pFuture.Future.SettlementAsset,
 						},
 					},
 				},
@@ -186,14 +187,15 @@ func testRejectSuccessorProductMismatch(t *testing.T) {
 	eng.ensureAllAssetEnabled(t)
 	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidSuccessorMarket)
 	// GetMarket will only be called once, the second call will never happen due to the product mismatch
+	fProduct := proposal.NewMarket().Changes.GetFuture()
 	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(1).Return(
 		types.Market{
 			TradableInstrument: &types.TradableInstrument{
 				Instrument: &types.Instrument{
 					Product: &types.InstrumentFuture{
 						Future: &types.Future{
-							SettlementAsset: fmt.Sprintf("not%s", proposal.NewMarket().Changes.Instrument.Product.Asset()),
-							QuoteName:       fmt.Sprintf("not%s", proposal.NewMarket().Changes.Instrument.Product.QuoteName()),
+							SettlementAsset: fmt.Sprintf("not%s", fProduct.Future.SettlementAsset),
+							QuoteName:       fmt.Sprintf("not%s", fProduct.Future.QuoteName),
 						},
 					},
 				},
@@ -292,10 +294,10 @@ func testSubmittingSparseSuccessorProposal(t *testing.T) {
 	// no risk factors or price monitoring parameters set, make sure the quote name and settlement assets match, though
 	nm = successor.NewMarket()
 	iconfig := nm.Changes.Instrument.Product.(*types.InstrumentConfigurationFuture)
-	asset, err := parent.GetAsset()
+	assets, err := parent.GetAssets()
 	require.NoError(t, err)
-	quote, err := parent.TradableInstrument.Instrument.Product.GetQuoteName()
-	require.NoError(t, err)
+	asset := assets[0]
+	quote := parent.GetFuture().Future.QuoteName
 	iconfig.Future.SettlementAsset = asset
 	iconfig.Future.QuoteName = quote
 	nm.Changes.Instrument.Product = iconfig

@@ -640,21 +640,17 @@ func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (type
 }
 
 func validateParentProduct(prop *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
-	asset, err := parent.GetAsset()
-	if err != nil {
-		// this shouldn't be possible, but let's handle all errors
-		return types.ProposalErrorInvalidSuccessorMarket, err
+	// make sure parent and successor are future markets
+	parentFuture := parent.GetFuture()
+	propFuture := prop.Changes.GetFuture()
+	if propFuture == nil || parentFuture == nil {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("parent and successor markets must both be future markets")
 	}
-	qName, err := parent.TradableInstrument.Instrument.Product.GetQuoteName()
-	if err != nil {
-		// this shouldn't be possible, but let's handle all errors
-		return types.ProposalErrorInvalidSuccessorMarket, err
+	if propFuture.Future.SettlementAsset != parentFuture.Future.SettlementAsset {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use asset %s", parentFuture.Future.SettlementAsset)
 	}
-	if prop.Changes.Instrument.Product.Asset() != asset {
-		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use asset %s", asset)
-	}
-	if prop.Changes.Instrument.Product.QuoteName() != qName {
-		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use quote name %s", qName)
+	if propFuture.Future.QuoteName != parentFuture.Future.QuoteName {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use quote name %s", parentFuture.Future.QuoteName)
 	}
 	return types.ProposalErrorUnspecified, nil
 }
