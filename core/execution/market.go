@@ -166,6 +166,7 @@ type MarketCollateral interface {
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetInsurancePoolBalance(marketID, asset string) (*num.Uint, bool)
 }
 
 // AuctionState ...
@@ -636,6 +637,12 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
 	}
 	return canLeave
+}
+
+func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState) {
+	// add the trade value from the parent
+	m.feeSplitter.tradeValue = pstate.LastTradeValue.Clone()
+	m.equityShares.InheritELS(pstate.Shares)
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {

@@ -92,7 +92,7 @@ func (e *Engine) SetLiquidityFee(v num.Decimal) {
 }
 
 // CalculateForContinuousMode calculate the fee for
-// trades which were produced from a market running in
+// trades which were produced from a market running
 // in continuous trading mode.
 // A single FeesTransfer is produced here as all fees
 // are paid by the aggressive order.
@@ -227,7 +227,7 @@ func (e *Engine) CalculateForAuctionMode(
 }
 
 // CalculateForFrequentBatchesAuctionMode calculate the fee for
-// trades which were produced from a market running in
+// trades which were produced from a market running
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
 // single party.

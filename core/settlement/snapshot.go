@@ -69,7 +69,6 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 
 		e.lastMarkPrice = data.LastMarkPrice
 
-		// We don't restore positions here, we get those from the positions engine post restore
 		// restore trades
 		tradeMap := map[string][]*settlementTrade{}
 		for _, trade := range data.Trades {

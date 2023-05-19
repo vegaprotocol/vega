@@ -721,9 +721,12 @@ type Market struct {
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
 
-	TradingMode      MarketTradingMode
-	State            MarketState
-	MarketTimestamps *MarketTimestamps
+	TradingMode           MarketTradingMode
+	State                 MarketState
+	MarketTimestamps      *MarketTimestamps
+	asset                 string
+	ParentMarketID        string
+	InsurancePoolFraction num.Decimal
 }
 
 func MarketFromProto(mkt *proto.Market) (*Market, error) {
@@ -733,6 +736,14 @@ func MarketFromProto(mkt *proto.Market) (*Market, error) {
 	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
 	if err != nil {
 		return nil, err
+	}
+	insFraction := num.DecimalZero()
+	if mkt.InsurancePoolFraction != nil && len(*mkt.InsurancePoolFraction) > 0 {
+		insFraction = num.MustDecimalFromString(*mkt.InsurancePoolFraction)
+	}
+	parent := ""
+	if mkt.ParentMarketId != nil {
+		parent = *mkt.ParentMarketId
 	}
 
 	m := &Market{
@@ -750,6 +761,8 @@ func MarketFromProto(mkt *proto.Market) (*Market, error) {
 		LPPriceRange:                  lppr,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		ParentMarketID:                parent,
+		InsurancePoolFraction:         insFraction,
 	}
 	return m, nil
 }
@@ -781,6 +794,12 @@ func (m Market) IntoProto() *proto.Market {
 	if m.LiquidityMonitoringParameters != nil {
 		lms = m.LiquidityMonitoringParameters.IntoProto()
 	}
+	var parent, insPoolFrac *string
+	if len(m.ParentMarketID) != 0 {
+		pid, insf := m.ParentMarketID, m.InsurancePoolFraction.String()
+		parent = &pid
+		insPoolFrac = &insf
+	}
 	r := &proto.Market{
 		Id:                            m.ID,
 		TradableInstrument:            ti,
@@ -796,6 +815,8 @@ func (m Market) IntoProto() *proto.Market {
 		LpPriceRange:                  m.LPPriceRange.String(),
 		LinearSlippageFactor:          m.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
+		InsurancePoolFraction:         insPoolFrac,
+		ParentMarketId:                parent,
 	}
 	return r
 }

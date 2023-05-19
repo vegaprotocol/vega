@@ -105,6 +105,8 @@ const (
 	ProposalErrorInvalidSpot ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SPOT
 	// ProposalErrorSpotNotEnabled is returned when spots are not enabled.
 	ProposalErrorSpotNotEnabled ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
+	// ProposalErrorInvalidSuccessorMarket indicates the successor market parameters were invalid.
+	ProposalErrorInvalidSuccessorMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -239,9 +241,29 @@ func (p *Proposal) SpotMarketUpdate() *UpdateSpotMarket {
 	switch terms := p.Terms.Change.(type) {
 	case *ProposalTermsUpdateSpotMarket:
 		return terms.UpdateSpotMarket
+}
+  
+func (p *Proposal) IsNewMarket() bool {
+	return p.Terms.Change.GetTermType() == ProposalTermsTypeNewMarket
+}
+
+func (p *Proposal) NewMarket() *NewMarket {
+	switch terms := p.Terms.Change.(type) {
+	case *ProposalTermsNewMarket:
+		return terms.NewMarket
 	default:
 		return nil
 	}
+}
+
+func (p *Proposal) IsSuccessorMarket() bool {
+	if p.Terms == nil || p.Terms.Change == nil {
+		return false
+	}
+	if nm := p.NewMarket(); nm != nil {
+		return nm.Changes.Successor != nil
+	}
+	return false
 }
 
 func (p *Proposal) WaitForNodeVote() {

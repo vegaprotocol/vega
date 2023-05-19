@@ -685,6 +685,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
+		{
+			Param:   netparams.SuccessorLaunchWindow,
+			Watcher: svcs.executionEngine.OnSuccessorMarketTimeWindowUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)

@@ -35,6 +35,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type engineFake struct {
+	*execution.Engine
+	ctrl       *gomock.Controller
+	broker     *bmocks.MockBroker
+	timeSvc    *mocks.MockTimeService
+	collateral *mocks.MockCollateral
+	oracle     *mocks.MockOracleEngine
+	statevar   *mocks.MockStateVarEngine
+	epoch      *mocks.MockEpochEngine
+	asset      *mocks.MockAssets
+}
+
+func getMockedEngine(t *testing.T) *engineFake {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	log := logging.NewTestLogger()
+	execConfig := execution.NewDefaultConfig()
+	broker := bmocks.NewMockBroker(ctrl)
+	// broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	timeService := mocks.NewMockTimeService(ctrl)
+	// timeService.EXPECT().GetTimeNow().AnyTimes()
+
+	collateralService := mocks.NewMockCollateral(ctrl)
+	// collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
+	// collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	oracleService := mocks.NewMockOracleEngine(ctrl)
+	// oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	statevar := mocks.NewMockStateVarEngine(ctrl)
+	// statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	// statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	epochEngine := mocks.NewMockEpochEngine(ctrl)
+	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
+	asset := mocks.NewMockAssets(ctrl)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewMarketActivityTracker(log, epochEngine), asset)
+	return &engineFake{
+		Engine:     exec,
+		ctrl:       ctrl,
+		broker:     broker,
+		timeSvc:    timeService,
+		collateral: collateralService,
+		oracle:     oracleService,
+		statevar:   statevar,
+		epoch:      epochEngine,
+		asset:      asset,
+	}
+}
+
 func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	t.Helper()
 	ctrl := gomock.NewController(t)

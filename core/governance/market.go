@@ -52,6 +52,8 @@ var (
 	ErrMissingSpotProduct = errors.New("missing spot product")
 	// ErrInvalidRiskParameter ...
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
+	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
+	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
 )
 
 func assignProduct(
@@ -233,6 +235,11 @@ func buildMarketFromProposal(
 		LPPriceRange:                  definition.Changes.LpPriceRange,
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
+	}
+	// successor proposal
+	if suc := definition.Successor(); suc != nil {
+		market.ParentMarketID = suc.ParentID
+		market.InsurancePoolFraction = suc.InsurancePoolFraction
 	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
@@ -567,7 +574,18 @@ func validateNewMarketChange(
 	netp NetParams,
 	openingAuctionDuration time.Duration,
 	etu *enactmentTime,
+	parent *types.Market,
 ) (types.ProposalError, error) {
+	// if this is a successor market, check if that's set up fine:
+	if suc := terms.Successor(); suc != nil {
+		if perr, err := validateInsurancePoolFraction(suc.InsurancePoolFraction); err != nil {
+			return perr, err
+		}
+		// we know parent argument will be non-nil, otherwise the proposal would've been rejected already
+		if perr, err := validateParentMarket(terms, parent); err != nil {
+			return perr, err
+		}
+	}
 	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
 		return perr, err
 	}
@@ -589,6 +607,18 @@ func validateNewMarketChange(
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
 		return perr, err
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateParentMarket(prop *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateInsurancePoolFraction(frac num.Decimal) (types.ProposalError, error) {
+	one := num.DecimalFromInt64(1)
+	if frac.IsNegative() || frac.GreaterThan(one) {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("insurance pool fraction should be in range 0-1, was %s", frac.String())
 	}
 	return types.ProposalErrorUnspecified, nil
 }

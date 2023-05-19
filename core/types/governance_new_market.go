@@ -85,6 +85,21 @@ type NewMarket struct {
 	Changes *NewMarketConfiguration
 }
 
+func (n NewMarket) ParentMarketID() (string, bool) {
+	if n.Changes.Successor == nil {
+		return "", false
+	}
+	return n.Changes.Successor.ParentID, true
+}
+
+func (n NewMarket) Successor() *SuccessorConfig {
+	if n.Changes.Successor == nil {
+		return nil
+	}
+	cpy := *n.Changes.Successor
+	return &cpy
+}
+
 func (n NewMarket) IntoProto() *vegapb.NewMarket {
 	var changes *vegapb.NewMarketConfiguration
 	if n.Changes != nil {
@@ -110,6 +125,11 @@ func (n NewMarket) String() string {
 	)
 }
 
+type SuccessorConfig struct {
+	ParentID              string
+	InsurancePoolFraction num.Decimal
+}
+
 type NewMarketConfiguration struct {
 	Instrument                    *InstrumentConfiguration
 	DecimalPlaces                 uint64
@@ -121,6 +141,7 @@ type NewMarketConfiguration struct {
 	LpPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
+	Successor                     *SuccessorConfig
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -164,6 +185,9 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 	}
+	if n.Successor != nil {
+		r.Successor = n.Successor.IntoProto()
+	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewMarketConfiguration_Simple:
 		r.RiskParameters = rp
@@ -194,6 +218,10 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	}
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
+	}
+	if n.Successor != nil {
+		cs := *n.Successor
+		cpy.Successor = &cs
 	}
 	return cpy
 }
@@ -268,7 +296,25 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 			r.RiskParameters = NewMarketConfigurationLogNormalFromProto(rp)
 		}
 	}
+	if p.Successor != nil {
+		r.Successor = SuccessorConfigFromProto(p.Successor)
+	}
 	return r, nil
+}
+
+func SuccessorConfigFromProto(p *vegapb.SuccessorConfiguration) *SuccessorConfig {
+	f, _ := num.DecimalFromString(p.InsurancePoolFraction)
+	return &SuccessorConfig{
+		ParentID:              p.ParentMarketId,
+		InsurancePoolFraction: f,
+	}
+}
+
+func (s *SuccessorConfig) IntoProto() *vegapb.SuccessorConfiguration {
+	return &vegapb.SuccessorConfiguration{
+		ParentMarketId:        s.ParentID,
+		InsurancePoolFraction: s.InsurancePoolFraction.String(),
+	}
 }
 
 type newRiskParams interface {
