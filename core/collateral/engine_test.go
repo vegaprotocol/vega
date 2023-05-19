@@ -2910,7 +2910,7 @@ func TestClearSpotMarket(t *testing.T) {
 
 	eng.IncrementBalance(context.Background(), acc.ID, num.NewUint(1000))
 
-	acc, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
 	require.NoError(t, err)
 
 	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC")
