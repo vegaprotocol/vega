@@ -2,6 +2,8 @@ package stoporders
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -70,7 +72,7 @@ func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 		delete(p.orders, v)
 	}
 
-	return nil
+	return orderIDs
 }
 
 func (p *PricedStopOrders) trigger(
@@ -125,7 +127,7 @@ func (p *PricedStopOrders) insertOrUpdate(
 func (p *PricedStopOrders) Remove(id string) error {
 	oaps, ok := p.orders[id]
 	if !ok {
-		return ErrPriceNotFound
+		return ErrOrderNotFound
 	}
 
 	delete(p.orders, id)
@@ -156,7 +158,7 @@ func (p *PricedStopOrders) removeAndMaybeDelete(
 	for n, v := range oap.orders {
 		// this is our ID
 		if v == id {
-			slices.Delete(oap.orders, n, n+1)
+			oap.orders = slices.Delete(oap.orders, n, n+1)
 			break
 		}
 	}
@@ -173,4 +175,22 @@ func (p *PricedStopOrders) removeAndMaybeDelete(
 	}
 
 	return nil
+}
+
+func (p *PricedStopOrders) dumpTree(tree *btree.BTreeG[*ordersAtPrice]) string {
+	var out []string
+	tree.Ascend(func(item *ordersAtPrice) bool {
+		out = append(out, fmt.Sprintf("%v:%v", item.price.String(), item.orders))
+		return true
+	})
+	return strings.Join(out, ",")
+
+}
+
+func (p *PricedStopOrders) DumpRisesAbove() string {
+	return p.dumpTree(p.risesAbove)
+}
+
+func (p *PricedStopOrders) DumpFallsBelow() string {
+	return p.dumpTree(p.fallsBelow)
 }
