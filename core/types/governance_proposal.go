@@ -241,8 +241,11 @@ func (p *Proposal) SpotMarketUpdate() *UpdateSpotMarket {
 	switch terms := p.Terms.Change.(type) {
 	case *ProposalTermsUpdateSpotMarket:
 		return terms.UpdateSpotMarket
+	default:
+		return nil
+	}
 }
-  
+
 func (p *Proposal) IsNewMarket() bool {
 	return p.Terms.Change.GetTermType() == ProposalTermsTypeNewMarket
 }
