@@ -294,7 +294,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 		return err
 	}
 	// @TODO ensure we keep these succession maps nice and tidy
-	// ATM we're likely deleting too much, or could do things at a better point in thime
+	// ATM we're likely deleting too much, or could do things at a better point in time
 	// We start opening auction before finalising proposals, so this would reject markets before they should be rejected
 	/*if parent, ok := e.isSuccessor[marketID]; ok {
 		// @TODO get state from parent market, and pass through to the successor market
