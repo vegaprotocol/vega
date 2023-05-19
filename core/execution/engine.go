@@ -335,8 +335,8 @@ func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string, in
 	}
 	// we have an actual parent market and some state, so this is a "true" successor market.
 	if pMarket != nil {
-		asset, _ := pMarket.GetAsset()
-		lm := e.collateral.SuccessorInsuranceFraction(ctx, successor, parent, asset, insuranceFraction)
+		assets, _ := pMarket.GetAssets()
+		lm := e.collateral.SuccessorInsuranceFraction(ctx, successor, parent, assets[0], insuranceFraction)
 		e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
 		// now we can set the ELS stuff
 		sMkt.InheritParent(ctx, cpState)

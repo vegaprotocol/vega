@@ -8,10 +8,9 @@ import (
 func (m *Market) GetCPState() *types.CPMarketState {
 	shares := m.equityShares.getCPShares()
 	id := m.mkt.ID
-	asset, _ := m.mkt.GetAsset()
 	// get all LP accounts, we don't have to sort this slice because we're fetching the balances
 	// in the same order as we got the ELS shares (which is already a deterministically sorted slice).
-	ipb, ok := m.collateral.GetInsurancePoolBalance(id, asset)
+	ipb, ok := m.collateral.GetInsurancePoolBalance(id, m.settlementAsset)
 	if !ok {
 		ipb = num.UintZero()
 	}
