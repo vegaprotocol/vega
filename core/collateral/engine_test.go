@@ -2859,41 +2859,63 @@ func TestHoldingAccount(t *testing.T) {
 	// topup the source general account
 	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
 
+	// we're have 1000 in the general account and 0 in the holding
+	// transfering 800 from the general account to the holding account in two transfers of 400
+	// expect to have the holding account balance = 800 and the general account balance = 200
+
 	// holding account does not exist yet - it will be created
 	le, err := eng.TransferToHoldingAccount(ctx, &types.Transfer{
 		Owner: "zohar",
 		Amount: &types.FinancialAmount{
 			Asset:  "BTC",
-			Amount: num.NewUint(800),
+			Amount: num.NewUint(400),
 		},
 	})
 	require.NoError(t, err)
 	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
-	require.Equal(t, num.NewUint(800), le.Balances[0].Balance)
+	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
+
+	// holding account does not exist yet - it will be created
+	le, err = eng.TransferToHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(400),
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
 
 	// check general account balance is 200
 	z, err := eng.GetPartyGeneralAccount("zohar", "BTC")
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(200), z.Balance)
 
-	// request to release from the holding account
-	// holding account does not exist yet - it will be created
+	// request to release 200 from the holding account
 	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
 		Owner: "zohar",
 		Amount: &types.FinancialAmount{
 			Asset:  "BTC",
-			Amount: num.NewUint(800),
+			Amount: num.NewUint(200),
 		},
 	})
 	require.NoError(t, err)
-	require.NoError(t, err)
 	require.Equal(t, types.AccountTypeGeneral, le.Balances[0].Account.Type)
-	require.Equal(t, num.NewUint(800), le.Balances[0].Balance)
+	require.Equal(t, num.NewUint(200), le.Balances[0].Balance)
 
-	// check general account balance is 1000
-	z, err = eng.GetPartyGeneralAccount("zohar", "BTC")
+	// now request to release 600 more
+	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(600),
+		},
+	})
+
 	require.NoError(t, err)
-	require.Equal(t, num.NewUint(1000), z.Balance)
+	require.Equal(t, num.UintZero(), le.Entries[0].FromAccountBalance)
+	require.Equal(t, num.NewUint(1000), le.Entries[0].ToAccountBalance)
 }
 
 func TestClearSpotMarket(t *testing.T) {
