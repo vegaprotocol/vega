@@ -724,7 +724,6 @@ type Market struct {
 	TradingMode           MarketTradingMode
 	State                 MarketState
 	MarketTimestamps      *MarketTimestamps
-	asset                 string
 	ParentMarketID        string
 	InsurancePoolFraction num.Decimal
 }
