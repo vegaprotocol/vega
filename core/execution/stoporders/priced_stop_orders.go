@@ -1,7 +1,6 @@
 package stoporders
 
 import (
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -9,11 +8,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/google/btree"
-)
-
-var (
-	ErrPriceNotFound = errors.New("price not found")
-	ErrOrderNotFound = errors.New("order not found")
 )
 
 type ordersAtPrice struct {
@@ -56,7 +50,6 @@ func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 	orderIDs := p.trigger(
 		p.fallsBelow,
 		p.fallsBelow.DescendGreaterThan,
-		p.fallsBelow.Delete,
 		newPrice,
 	)
 
@@ -65,7 +58,6 @@ func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 		p.trigger(
 			p.risesAbove,
 			p.risesAbove.AscendLessThan,
-			p.risesAbove.Delete,
 			newPrice,
 		)...,
 	)
@@ -81,7 +73,6 @@ func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 func (p *PricedStopOrders) trigger(
 	tree *btree.BTreeG[*ordersAtPrice],
 	findFn func(pivot *ordersAtPrice, iterator btree.ItemIteratorG[*ordersAtPrice]),
-	deleteFn func(item *ordersAtPrice) (*ordersAtPrice, bool),
 	newPrice *num.Uint,
 ) []string {
 	orderIDs := []string{}

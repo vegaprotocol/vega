@@ -1,16 +1,11 @@
 package stoporders
 
 import (
-	"errors"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"golang.org/x/exp/maps"
-)
-
-var (
-	ErrStopOrderNotFound = errors.New("stop order not found")
 )
 
 type Pool struct {

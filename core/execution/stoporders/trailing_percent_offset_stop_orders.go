@@ -1,16 +1,12 @@
 package stoporders
 
 import (
-	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/google/btree"
-)
-
-var (
-	ErrNoPriceToOffset = errors.New("no price to offset")
+	"golang.org/x/exp/slices"
 )
 
 type ordersAtOffset struct {
@@ -53,26 +49,47 @@ type TrailingStopOrders struct {
 
 func NewTrailingStopOrders() *TrailingStopOrders {
 	return &TrailingStopOrders{
-		lastSeenPrice: num.UintZero(),
-		orders:        map[string]orderAtOffsetStat{},
-		risesAbove:    btree.NewG(2, lessFuncOffsetsAtPrice),
-		fallsBelow:    btree.NewG(2, lessFuncOffsetsAtPrice),
+		orders:     map[string]orderAtOffsetStat{},
+		risesAbove: btree.NewG(2, lessFuncOffsetsAtPrice),
+		fallsBelow: btree.NewG(2, lessFuncOffsetsAtPrice),
 	}
 }
 
 func (p *TrailingStopOrders) PriceUpdated(newPrice *num.Uint) []string {
-	out := []string{}
+	// short circuit for very first update,
+	// not much to do here, just set the newPrice
+	// and move on
+	if p.lastSeenPrice == nil {
+		p.lastSeenPrice = newPrice.Clone()
+		return nil
+	}
+
+	var out []string
 	// price increased, move trailing prices buckets
 	// for fallsBelow and executed triggers for risesAbove
 	if p.lastSeenPrice.LT(newPrice) {
-		p.adjustBuckets(p.fallsBelow, newPrice)
-		out = p.trigger(p.risesAbove, newPrice)
+		p.adjustBuckets(p.fallsBelow, p.fallsBelow.AscendLessThan, newPrice)
+		out = p.trigger(p.risesAbove,
+			p.risesAbove.Ascend,
+			func(a *num.Uint, b *num.Uint) bool { return a.GT(b) },
+			func(a num.Decimal, b num.Decimal) bool { return a.GreaterThan(b) },
+			newPrice)
 	} else if p.lastSeenPrice.GT(newPrice) {
-		p.adjustBuckets(p.risesAbove, newPrice)
-		out = p.trigger(p.fallsBelow, newPrice)
+		p.adjustBuckets(p.risesAbove, p.risesAbove.DescendGreaterThan, newPrice)
+		out = p.trigger(
+			p.fallsBelow,
+			p.fallsBelow.Descend,
+			func(a *num.Uint, b *num.Uint) bool { return a.LT(b) },
+			func(a num.Decimal, b num.Decimal) bool { return a.LessThan(b) },
+			newPrice)
 	} else {
 		// nothing happened
 		return nil
+	}
+
+	// remove orders from the mapping
+	for _, v := range out {
+		delete(p.orders, v)
 	}
 
 	p.lastSeenPrice = newPrice.Clone()
@@ -82,16 +99,95 @@ func (p *TrailingStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 
 func (p *TrailingStopOrders) adjustBuckets(
 	tree *btree.BTreeG[*offsetsAtPrice],
-	price *num.Uint,
+	findFn func(*offsetsAtPrice, btree.ItemIteratorG[*offsetsAtPrice]),
+	newPrice *num.Uint,
 ) {
+	// first we get all prices to adjust
+	item := &offsetsAtPrice{price: newPrice}
+	pricesToAdjust := []*num.Uint{}
+	findFn(item, func(oap *offsetsAtPrice) bool {
+		fmt.Printf("NEW PRICE:%v IN:%s\n", newPrice.String(), oap)
+		pricesToAdjust = append(pricesToAdjust, oap.price.Clone())
+		return true
+	})
 
+	// now for each of them, we pull the orders, and insert them in the new price.
+	for _, price := range pricesToAdjust {
+		current := &offsetsAtPrice{price: price}
+		// no error to check, we just iterated over,
+		// impossible we would not find it.
+		oap, _ := tree.Get(current)
+
+		// now for each orders of every leaf we can add at the new price
+		oap.offsets.Ascend(func(oao *ordersAtOffset) bool {
+			for _, order := range oao.orders {
+				p.insertOrUpdateOffsetAtPrice(
+					tree, order, newPrice, oao.offset,
+				)
+			}
+			return true
+		})
+
+		// now we delete this one, it's not needed anymore
+		_, _ = tree.Delete(current)
+	}
 }
 
 func (p *TrailingStopOrders) trigger(
 	tree *btree.BTreeG[*offsetsAtPrice],
+	iterateFn func(btree.ItemIteratorG[*offsetsAtPrice]),
+	cmpPriceFn func(*num.Uint, *num.Uint) bool,
+	cmpOffsetFn func(num.Decimal, num.Decimal) bool,
 	price *num.Uint,
-) []string {
-	return nil
+) (orders []string) {
+	priceDec := price.ToDecimal()
+	toRemovePrices := []*num.Uint{}
+	iterateFn(func(item *offsetsAtPrice) bool {
+		if cmpPriceFn(item.price, price) {
+			return false
+		}
+		leafPriceDec := item.price.ToDecimal()
+		_ = priceDec
+		_ = leafPriceDec
+
+		fmt.Printf("CURRENT PRICE: %v\n", item.price.String())
+		toRemoveOffsets := []num.Decimal{}
+		// now in here, we iterate all the
+		item.offsets.Ascend(func(item *ordersAtOffset) bool {
+			offsetedPrice := leafPriceDec.Add(leafPriceDec.Mul(item.offset))
+			fmt.Printf("%v -> %v\n", item.offset.String(), offsetedPrice.String())
+			if cmpOffsetFn(offsetedPrice, priceDec) {
+				// we have still margin, no need to process the others
+				return false
+			}
+
+			toRemoveOffsets = append(toRemoveOffsets, item.offset)
+
+			return true
+		})
+
+		// now remove all
+		for _, o := range toRemoveOffsets {
+			oao, _ := item.offsets.Delete(&ordersAtOffset{offset: o})
+			// add to the list of orders
+			orders = append(orders, oao.orders...)
+		}
+
+		// now we check if the offsets at the price have been depleted,
+		// and add them to the list to eventually remove
+		if item.offsets.Len() <= 0 {
+			toRemovePrices = append(toRemovePrices, item.price.Clone())
+		}
+
+		return true
+	})
+
+	// now we remove all depleted prices
+	for _, p := range toRemovePrices {
+		_, _ = tree.Delete(&offsetsAtPrice{price: p})
+	}
+
+	return orders
 }
 
 func (p *TrailingStopOrders) Insert(
@@ -145,7 +241,62 @@ func (p *TrailingStopOrders) insertOrUpdateOrderAtOffset(
 	tree.ReplaceOrInsert(oap)
 }
 
-func (p *TrailingStopOrders) Remove(id string) {}
+func (p *TrailingStopOrders) Remove(id string) error {
+	o, ok := p.orders[id]
+	if !ok {
+		return ErrOrderNotFound
+	}
+
+	// we can remove from the map now
+	delete(p.orders, id)
+
+	switch o.direction {
+	case types.StopOrderTriggerDirectionFallsBelow:
+	case types.StopOrderTriggerDirectionRisesAbove:
+	}
+
+	return nil
+}
+
+func (p *TrailingStopOrders) removeInner(
+	tree *btree.BTreeG[*offsetsAtPrice],
+	id string,
+	offset num.Decimal,
+) {
+	var deletePrice *num.Uint
+	tree.Ascend(func(item *offsetsAtPrice) bool {
+		innerItem := &ordersAtOffset{offset: offset}
+		// does that offset exists at that price?
+		oao, ok := item.offsets.Get(innerItem)
+		if !ok {
+			return true // nope, keep moving
+		}
+
+		var continu = true
+		for n, v := range oao.orders {
+			// we found our order!
+			if v == id {
+				oao.orders = slices.Delete(oao.orders, n, n+1)
+				continu = false
+				break
+			}
+		}
+
+		if len(oao.orders) <= 0 {
+			item.offsets.Delete(innerItem)
+		}
+
+		if item.offsets.Len() <= 0 {
+			deletePrice = item.price.Clone()
+		}
+
+		return continu
+	})
+
+	if deletePrice != nil {
+		tree.Delete(&offsetsAtPrice{price: deletePrice})
+	}
+}
 
 func (p *TrailingStopOrders) DumpRisesAbove() string {
 	return dumpTree(p.risesAbove)
