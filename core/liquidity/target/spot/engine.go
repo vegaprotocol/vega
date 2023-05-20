@@ -96,7 +96,7 @@ func (e *Engine) RecordTotalStake(ts uint64, now time.Time) error {
 	return nil
 }
 
-// GetTargetStake returns target stake based current time
+// GetTargetStake returns target stake based current time.
 func (e *Engine) GetTargetStake(now time.Time) *num.Uint {
 	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxTotalStake(minTime)
