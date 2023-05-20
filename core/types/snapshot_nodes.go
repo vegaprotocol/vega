@@ -297,6 +297,10 @@ type PayloadLiquidityTarget struct {
 	Target *snapshot.LiquidityTarget
 }
 
+type PayloadSpotLiquidityTarget struct {
+	Target *snapshot.SpotLiquidityTarget
+}
+
 type PayloadProtocolUpgradeProposals struct {
 	Proposals *snapshot.ProtocolUpgradeProposals
 }
@@ -812,6 +816,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquiditySuppliedFromProto(dt)
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
+	case *snapshot.Payload_SpotLiquidityTarget:
+		ret.Data = PayloadSpotLiquidityTargetFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
@@ -948,6 +954,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_NetworkParameters:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityTarget:
+		ret.Data = dt
+	case *snapshot.Payload_SpotLiquidityTarget:
 		ret.Data = dt
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = dt
@@ -1114,6 +1122,28 @@ func (*PayloadLiquidityTarget) Namespace() SnapshotNamespace {
 }
 
 func (p *PayloadLiquidityTarget) Key() string {
+	return fmt.Sprintf("target:%v", p.Target.MarketId)
+}
+
+func PayloadSpotLiquidityTargetFromProto(s *snapshot.Payload_SpotLiquidityTarget) *PayloadSpotLiquidityTarget {
+	return &PayloadSpotLiquidityTarget{
+		Target: s.SpotLiquidityTarget,
+	}
+}
+
+func (*PayloadSpotLiquidityTarget) isPayload() {}
+
+func (p *PayloadSpotLiquidityTarget) plToProto() interface{} {
+	return &snapshot.Payload_SpotLiquidityTarget{
+		SpotLiquidityTarget: p.Target,
+	}
+}
+
+func (*PayloadSpotLiquidityTarget) Namespace() SnapshotNamespace {
+	return LiquidityTargetSnapshot
+}
+
+func (p *PayloadSpotLiquidityTarget) Key() string {
 	return fmt.Sprintf("target:%v", p.Target.MarketId)
 }
 
