@@ -279,6 +279,7 @@ type Market struct {
 	mtmDelta               time.Duration
 
 	settlementAsset string
+	succeeded       bool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -433,6 +434,10 @@ func NewMarket(
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
 	market.assetDP = uint32(assetDetails.DecimalPlaces())
 	return market, nil
+}
+
+func (m *Market) IsSucceeded() bool {
+	return m.succeeded
 }
 
 func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine products.OracleEngine) error {

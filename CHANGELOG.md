@@ -21,6 +21,7 @@
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
+- [8334](https://github.com/vegaprotocol/vega/issues/8334) - Implement market succession in execution engine.
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
