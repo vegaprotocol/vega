@@ -26,6 +26,13 @@ var (
 	ErrMissingSlippageFactor   = errors.New("slippage factor not specified")
 )
 
+type ProductType int32
+
+const (
+	ProductTypeFuture ProductType = iota
+	ProductTypeSpot
+)
+
 type ProposalTermsNewMarket struct {
 	NewMarket *NewMarket
 }
@@ -242,6 +249,26 @@ func (n NewMarketConfiguration) String() string {
 	)
 }
 
+func (n NewMarketConfiguration) ProductType() ProductType {
+	return n.Instrument.Product.Type()
+}
+
+func (n NewMarketConfiguration) GetFuture() *InstrumentConfigurationFuture {
+	if n.ProductType() == ProductTypeFuture {
+		f, _ := n.Instrument.Product.(*InstrumentConfigurationFuture)
+		return f
+	}
+	return nil
+}
+
+func (n NewMarketConfiguration) GetSpot() *InstrumentConfigurationSpot {
+	if n.ProductType() == ProductTypeSpot {
+		f, _ := n.Instrument.Product.(*InstrumentConfigurationSpot)
+		return f
+	}
+	return nil
+}
+
 func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMarketConfiguration, error) {
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
@@ -405,6 +432,7 @@ type instrumentConfigurationProduct interface {
 	Assets() []string
 	DeepClone() instrumentConfigurationProduct
 	String() string
+	Type() ProductType
 }
 
 type InstrumentConfigurationFuture struct {
@@ -431,10 +459,15 @@ func (i InstrumentConfigurationFuture) Assets() []string {
 	return i.Future.Assets()
 }
 
+func (InstrumentConfigurationFuture) Type() ProductType {
+	return ProductTypeFuture
+}
+
 type InstrumentConfiguration struct {
 	Name string
 	Code string
 	// *InstrumentConfigurationFuture
+	// *InstrumentConfigurationSpot
 	Product instrumentConfigurationProduct
 }
 

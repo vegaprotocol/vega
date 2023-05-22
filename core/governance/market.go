@@ -576,23 +576,19 @@ func validateNewMarketChange(
 	etu *enactmentTime,
 	parent *types.Market,
 ) (types.ProposalError, error) {
-	// if this is a successor market, check if that's set up fine:
-	if suc := terms.Successor(); suc != nil {
-		if perr, err := validateInsurancePoolFraction(suc.InsurancePoolFraction); err != nil {
-			return perr, err
-		}
-		// we know parent argument will be non-nil, otherwise the proposal would've been rejected already
-		if perr, err := validateParentMarket(terms, parent); err != nil {
-			return perr, err
-		}
-	}
+	// in all cases, the instrument must be specified and validated, successor markets included.
 	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
 		return perr, err
 	}
-	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
+	// verify opening auction duration, works the same for successor markets
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
 		return perr, err
 	}
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+	// if this is a successor market, check if that's set up fine:
+	if perr, err := validateSuccessorMarket(terms, parent); err != nil {
+		return perr, err
+	}
+	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
 	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
@@ -611,7 +607,51 @@ func validateNewMarketChange(
 	return types.ProposalErrorUnspecified, nil
 }
 
-func validateParentMarket(prop *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+	suc := terms.Successor()
+	if parent == nil && suc == nil {
+		return types.ProposalErrorUnspecified, nil
+	}
+	// if parent is not nil, then terms.Successor() was not nil and vice-versa. Either both are set or neither is.
+	if perr, err := validateInsurancePoolFraction(suc.InsurancePoolFraction); err != nil {
+		return perr, err
+	}
+	if perr, err := validateParentProduct(terms, parent); err != nil {
+		return perr, err
+	}
+	// ensure price monitoring parameters are either set, or inherited:
+	if terms.Changes.PriceMonitoringParameters == nil && parent.PriceMonitoringSettings != nil && parent.PriceMonitoringSettings.Parameters != nil {
+		terms.Changes.PriceMonitoringParameters = parent.PriceMonitoringSettings.Parameters.DeepClone()
+	}
+	// same, but ensure the risk parameters are not nil
+	if terms.Changes.RiskParameters == nil && parent.TradableInstrument.RiskModel != nil {
+		switch rm := parent.TradableInstrument.RiskModel.(type) {
+		case *types.TradableInstrumentSimpleRiskModel:
+			terms.Changes.RiskParameters = &types.NewMarketConfigurationSimple{
+				Simple: rm.SimpleRiskModel.Params.DeepClone(),
+			}
+		case *types.TradableInstrumentLogNormalRiskModel:
+			terms.Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
+				LogNormal: rm.LogNormalRiskModel.DeepClone(),
+			}
+		}
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateParentProduct(prop *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+	// make sure parent and successor are future markets
+	parentFuture := parent.GetFuture()
+	propFuture := prop.Changes.GetFuture()
+	if propFuture == nil || parentFuture == nil {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("parent and successor markets must both be future markets")
+	}
+	if propFuture.Future.SettlementAsset != parentFuture.Future.SettlementAsset {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use asset %s", parentFuture.Future.SettlementAsset)
+	}
+	if propFuture.Future.QuoteName != parentFuture.Future.QuoteName {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use quote name %s", parentFuture.Future.QuoteName)
+	}
 	return types.ProposalErrorUnspecified, nil
 }
 
