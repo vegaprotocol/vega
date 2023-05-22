@@ -353,6 +353,21 @@ func (mr *MockCollateralMockRecorder) GetAssetQuantum(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetQuantum", reflect.TypeOf((*MockCollateral)(nil).GetAssetQuantum), arg0)
 }
 
+// GetInsurancePoolBalance mocks base method.
+func (m *MockCollateral) GetInsurancePoolBalance(arg0, arg1 string) (*num.Uint, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInsurancePoolBalance", arg0, arg1)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// GetInsurancePoolBalance indicates an expected call of GetInsurancePoolBalance.
+func (mr *MockCollateralMockRecorder) GetInsurancePoolBalance(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInsurancePoolBalance", reflect.TypeOf((*MockCollateral)(nil).GetInsurancePoolBalance), arg0, arg1)
+}
+
 // GetMarketLiquidityFeeAccount mocks base method.
 func (m *MockCollateral) GetMarketLiquidityFeeAccount(arg0, arg1 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
@@ -562,6 +577,20 @@ func (m *MockCollateral) RollbackMarginUpdateOnOrder(arg0 context.Context, arg1,
 func (mr *MockCollateralMockRecorder) RollbackMarginUpdateOnOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackMarginUpdateOnOrder", reflect.TypeOf((*MockCollateral)(nil).RollbackMarginUpdateOnOrder), arg0, arg1, arg2, arg3)
+}
+
+// SuccessorInsuranceFraction mocks base method.
+func (m *MockCollateral) SuccessorInsuranceFraction(arg0 context.Context, arg1, arg2, arg3 string, arg4 decimal.Decimal) *types.LedgerMovement {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SuccessorInsuranceFraction", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	return ret0
+}
+
+// SuccessorInsuranceFraction indicates an expected call of SuccessorInsuranceFraction.
+func (mr *MockCollateralMockRecorder) SuccessorInsuranceFraction(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuccessorInsuranceFraction", reflect.TypeOf((*MockCollateral)(nil).SuccessorInsuranceFraction), arg0, arg1, arg2, arg3, arg4)
 }
 
 // TransferFees mocks base method.

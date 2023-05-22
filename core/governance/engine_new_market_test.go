@@ -48,6 +48,15 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Voting with insufficient participation makes the new market proposal declined", testVotingWithInsufficientParticipationMakesNewMarketProposalDeclined)
 }
 
+func TestProposalForSuccessorMarket(t *testing.T) {
+	t.Run("Submitting a proposal for fully defined successor market succeeds", testSubmittingProposalForFullSuccessorMarketSucceeds)
+	t.Run("Submitting a sparse successor market proposal inherits from parent", testSubmittingSparseSuccessorProposal)
+
+	t.Run("Reject successor markets with an invalid insurance pool fraction", testRejectSuccessorInvalidInsurancePoolFraction)
+	t.Run("Reject successor market proposal if the product is incompatible", testRejectSuccessorProductMismatch)
+	t.Run("Reject successor market if the parent market does not exist", testRejectSuccessorNoParent)
+}
+
 func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -68,6 +77,251 @@ func testSubmittingProposalForNewMarketSucceeds(t *testing.T) {
 	require.NotNil(t, toSubmit)
 	assert.True(t, toSubmit.IsNewMarket())
 	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	suc := types.SuccessorConfig{
+		ParentID:              "parentID",
+		InsurancePoolFraction: num.DecimalFromFloat(.5),
+	}
+	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc)
+	// returns a pointer directly to the change, but reassign just in case it doesn't
+	nm := proposal.NewMarket()
+	// ensure price monitoring params are set
+	if nm.Changes.PriceMonitoringParameters == nil {
+		nm.Changes.PriceMonitoringParameters = &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{
+				{
+					Horizon:          5,
+					HorizonDec:       num.DecimalFromFloat(5),
+					Probability:      num.DecimalFromFloat(.95),
+					AuctionExtension: 1,
+				},
+			},
+		}
+	}
+	// ensure risk model params are set
+	if nm.Changes.RiskParameters == nil {
+		nm.Changes.RiskParameters = &types.NewMarketConfigurationSimple{
+			Simple: &types.SimpleModelParams{},
+		}
+	}
+	proposal.Terms.Change = &types.ProposalTermsNewMarket{
+		NewMarket: nm,
+	}
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+	// GetMarket will be called in validateChange & intoSubmit
+	pFuture := proposal.NewMarket().Changes.GetFuture()
+	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(2).Return(
+		types.Market{
+			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
+					Product: &types.InstrumentFuture{
+						Future: &types.Future{
+							SettlementAsset: pFuture.Future.SettlementAsset,
+							QuoteName:       pFuture.Future.SettlementAsset,
+						},
+					},
+				},
+			},
+		}, true)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	require.NotNil(t, toSubmit.NewMarket().Market())
+}
+
+func testRejectSuccessorInvalidInsurancePoolFraction(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	suc := types.SuccessorConfig{
+		ParentID:              "parentID",
+		InsurancePoolFraction: num.DecimalFromFloat(5), // out of range 0-1
+	}
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true, &suc)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidSuccessorMarket)
+	// GetMarket will only be called once, the second call will never happen due to the insurance pool fraction being invalid
+	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(1).Return(types.Market{}, true) // market can be empty, we won't access the settlement/quote stuff
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	require.Nil(t, toSubmit)
+}
+
+func testRejectSuccessorProductMismatch(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	suc := types.SuccessorConfig{
+		ParentID:              "parentID",
+		InsurancePoolFraction: num.DecimalFromFloat(0),
+	}
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true, &suc)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidSuccessorMarket)
+	// GetMarket will only be called once, the second call will never happen due to the product mismatch
+	fProduct := proposal.NewMarket().Changes.GetFuture()
+	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(1).Return(
+		types.Market{
+			TradableInstrument: &types.TradableInstrument{
+				Instrument: &types.Instrument{
+					Product: &types.InstrumentFuture{
+						Future: &types.Future{
+							SettlementAsset: fmt.Sprintf("not%s", fProduct.Future.SettlementAsset),
+							QuoteName:       fmt.Sprintf("not%s", fProduct.Future.QuoteName),
+						},
+					},
+				},
+			},
+		}, true)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	require.Nil(t, toSubmit)
+}
+
+func testRejectSuccessorNoParent(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	suc := types.SuccessorConfig{
+		ParentID:              "parentID",
+		InsurancePoolFraction: num.DecimalFromFloat(0),
+	}
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true, &suc)
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidSuccessorMarket)
+	// only called once, validateChange already flags this error (missing parent)
+	eng.markets.EXPECT().GetMarket(suc.ParentID, true).Times(1).Return(types.Market{}, false)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.Error(t, err)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingSparseSuccessorProposal(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// start by proposing a regular market, just because this is an easier way to get a fully configured market
+	// that the execution engine fake will return, it never hurts to cover this flow several times anyway...
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newProposalForNewMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true)
+
+	// now make sure we have price monitoring and risk parameters on the parent market
+	nm := proposal.NewMarket()
+	// ensure price monitoring params are set
+	if nm.Changes.PriceMonitoringParameters == nil {
+		nm.Changes.PriceMonitoringParameters = &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{
+				{
+					Horizon:          5,
+					HorizonDec:       num.DecimalFromFloat(5),
+					Probability:      num.DecimalFromFloat(.95),
+					AuctionExtension: 1,
+				},
+			},
+		}
+	}
+	// ensure risk model params are set
+	if nm.Changes.RiskParameters == nil {
+		nm.Changes.RiskParameters = &types.NewMarketConfigurationSimple{
+			Simple: &types.SimpleModelParams{},
+		}
+	}
+	proposal.Terms.Change = &types.ProposalTermsNewMarket{
+		NewMarket: nm,
+	}
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectOpenProposalEvent(t, party.Id, proposal.ID)
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	// get the parent market type
+	parent := toSubmit.NewMarket().Market()
+	require.NotNil(t, parent)
+
+	// now for the successor proposal: return this market from execution engine as though it was enacted:
+	eng.markets.EXPECT().GetMarket(parent.ID, true).Times(2).Return(*parent, true)
+	suc := types.SuccessorConfig{
+		ParentID:              parent.ID,
+		InsurancePoolFraction: num.DecimalFromFloat(1),
+	}
+	// ensure the oracle data is very different indeed
+	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
+	successor := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, false, &suc)
+	// no risk factors or price monitoring parameters set, make sure the quote name and settlement assets match, though
+	nm = successor.NewMarket()
+	iconfig := nm.Changes.Instrument.Product.(*types.InstrumentConfigurationFuture)
+	assets, err := parent.GetAssets()
+	require.NoError(t, err)
+	asset := assets[0]
+	quote := parent.GetFuture().Future.QuoteName
+	iconfig.Future.SettlementAsset = asset
+	iconfig.Future.QuoteName = quote
+	nm.Changes.Instrument.Product = iconfig
+	// ensure risk model and price monitoring params are not set
+	nm.Changes.RiskParameters = nil
+	nm.Changes.PriceMonitoringParameters = nil
+	successor.Terms.Change = &types.ProposalTermsNewMarket{
+		NewMarket: nm,
+	}
+
+	// when
+	eng.expectOpenProposalEvent(t, party.Id, successor.ID)
+	toSubmit, err = eng.submitProposal(t, successor)
+
+	// then
+	require.NoError(t, err)
+	require.NotNil(t, toSubmit)
+	assert.True(t, toSubmit.IsNewMarket())
+	successorM := toSubmit.NewMarket().Market()
+	require.NotNil(t, successorM)
+
+	// ensure the risk and price monitoring stuff was copied over correctly:
+	require.EqualValues(t, parent.PriceMonitoringSettings, successorM.PriceMonitoringSettings)
+	require.EqualValues(t, parent.TradableInstrument.RiskModel, successorM.TradableInstrument.RiskModel)
 }
 
 func testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds(t *testing.T) {

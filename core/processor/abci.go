@@ -1485,6 +1485,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 	if toSubmit.IsNewMarket() {
 		nm := toSubmit.NewMarket()
 
+		// @TODO pass in parent and insurance pool share if required
 		if err := app.exec.SubmitMarket(ctx, nm.Market(), party); err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
@@ -1700,6 +1701,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 	for _, toEnact := range toEnactProposals {
 		prop := toEnact.Proposal()
 		switch {
+		case prop.IsSuccessorMarket():
+			app.enactSuccessorMarket(ctx, prop)
 		case toEnact.IsNewMarket():
 			app.enactMarket(ctx, prop)
 		case toEnact.IsNewAsset():
@@ -1790,6 +1793,22 @@ func (app *App) enactAssetUpdate(_ context.Context, prop *types.Proposal, update
 
 	// then instruct the notary to start getting signature from validators
 	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetUpdate, signature)
+}
+
+func (app *App) enactSuccessorMarket(ctx context.Context, prop *types.Proposal) {
+	// @TODO remove parent market (or flag as ready to be removed)
+	// transfer the insurance pool balance and ELS state
+	// then finally:
+	successor := prop.ID
+	nm := prop.NewMarket()
+	parent := nm.Changes.Successor.ParentID
+	ins := nm.Changes.Successor.InsurancePoolFraction
+	if err := app.exec.SucceedMarket(ctx, successor, parent, ins); err != nil {
+		prop.State = types.ProposalStateFailed
+		prop.ErrorDetails = err.Error()
+		return
+	}
+	prop.State = types.ProposalStateEnacted
 }
 
 func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {

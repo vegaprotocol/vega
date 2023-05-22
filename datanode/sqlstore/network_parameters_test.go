@@ -77,6 +77,34 @@ func TestNetParams(t *testing.T) {
 	})
 }
 
+func TestIgnoreDeprecated(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	netParamStore := sqlstore.NewNetworkParameters(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	block1 := addTestBlock(t, ctx, blockStore)
+	block2 := addTestBlock(t, ctx, blockStore)
+
+	deprecatedKey := "reward.staking.delegation.payoutFraction"
+
+	param1 := addNetParam(t, ctx, netParamStore, "foo", "bar", block1)
+	param2 := addNetParam(t, ctx, netParamStore, "cake", "apples", block1)
+	_ = addNetParam(t, ctx, netParamStore, deprecatedKey, "banana", block2)
+
+	t.Run("GetAll excluding deprecated", func(t *testing.T) {
+		expected := []entities.NetworkParameter{param2, param1}
+		pagination := entities.CursorPagination{}
+		actual, _, err := netParamStore.GetAll(ctx, pagination)
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("GetByKey deprecated not found", func(t *testing.T) {
+		_, err := netParamStore.GetByKey(ctx, deprecatedKey)
+		assert.Equal(t, entities.ErrNotFound, err)
+	})
+}
+
 func TestNetworkParameterPagination(t *testing.T) {
 	t.Run("should return all network parameters if no pagination is specified", testNetworkParameterPaginationNoPagination)
 	t.Run("should return first page of network parameters if first is provided", testNetworkParameterPaginationFirst)

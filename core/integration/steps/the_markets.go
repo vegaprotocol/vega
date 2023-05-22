@@ -17,6 +17,7 @@ import (
 	"fmt"
 
 	"github.com/cucumber/godog"
+	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
@@ -89,6 +90,43 @@ func TheMarkets(
 	return markets, nil
 }
 
+func TheSuccessorMarkets(
+	config *market.SuccessorConfig,
+	exec Execution,
+	netparams *netparams.Store,
+	table *godog.Table,
+) ([]types.Market, error) {
+	rows := parseSuccessorMarketTable(table)
+	markets := make([]types.Market, 0, len(rows))
+
+	for _, row := range rows {
+		mkt, err := newSuccessorMarket(config, exec, netparams, successorRow{row: row})
+		if err != nil {
+			return nil, err
+		}
+		markets = append(markets, mkt)
+	}
+
+	// submit the successor markets and start opening auction as we tend to do
+	if err := submitMarkets(markets, exec); err != nil {
+		return nil, err
+	}
+	return markets, nil
+}
+
+func TheSuccesorMarketIsEnacted(sID string, markets []types.Market, exec Execution) error {
+	for _, mkt := range markets {
+		if mkt.ID == sID {
+			parent := mkt.ParentMarketID
+			if err := exec.SucceedMarket(context.Background(), sID, parent, mkt.InsurancePoolFraction); err != nil {
+				return fmt.Errorf("couldn't enact the successor market %s (parent: %s): %v", sID, parent, err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("couldn't enact successor market %s - no such market ID", sID)
+}
+
 func submitMarkets(markets []types.Market, executionEngine Execution) error {
 	for i := range markets {
 		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID"); err != nil {
@@ -113,8 +151,8 @@ func updateMarkets(markets []*types.Market, updates []types.UpdateMarket, execut
 func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Engine) error {
 	assetsToEnable := map[string]struct{}{}
 	for _, mkt := range markets {
-		asset, _ := mkt.GetAsset()
-		assetsToEnable[asset] = struct{}{}
+		assets, _ := mkt.GetAssets()
+		assetsToEnable[assets[0]] = struct{}{}
 	}
 	for assetToEnable := range assetsToEnable {
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
@@ -281,6 +319,52 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	return update
 }
 
+func newSuccessorMarket(config *market.SuccessorConfig, exec Execution, netparams *netparams.Store, row successorRow) (types.Market, error) {
+	parent, ok := exec.GetMarket(config.ParentID, true)
+	if !ok {
+		return types.Market{}, errors.Errorf("parent market %s does not exist", config.ParentID)
+	}
+	cfg := parent.DeepClone()
+	cfg.ParentMarketID = config.ParentID
+	cfg.InsurancePoolFraction = config.InsuranceFraction
+	// @TODO create a marketRow type for successors
+	cfg.ID = row.id()
+	if ls, ok := row.tryLinearSlippageFactor(); ok {
+		cfg.LinearSlippageFactor = num.DecimalFromFloat(ls)
+	}
+	if qs, ok := row.tryQuadraticSlippageFactor(); ok {
+		cfg.QuadraticSlippageFactor = num.DecimalFromFloat(qs)
+	}
+	if pr, ok := row.tryLpPriceRange(); ok {
+		cfg.LPPriceRange = num.DecimalFromFloat(pr)
+	}
+	if pd, ok := row.positionDecimals(); ok {
+		cfg.PositionDecimalPlaces = pd
+	}
+	if dp, ok := row.decimals(); ok {
+		cfg.DecimalPlaces = dp
+	}
+	if pm, ok := row.priceMonitoring(); ok {
+		priceMon, err := config.PriceMonitoring.Get(pm)
+		if err != nil {
+			return types.Market{}, err
+		}
+		cfg.PriceMonitoringSettings = types.PriceMonitoringSettingsFromProto(priceMon)
+	}
+	if lm, ok := row.liquidityMonitoring(); ok {
+		liqM, err := config.LiquidityMonitoring.GetType(lm)
+		if err != nil {
+			return types.Market{}, err
+		}
+		setLiquidityMonitoringNetParams(liqM, netparams)
+		// these ought to get applied as they are specified, perhaps this is where netparams still need to be applied, though
+		cfg.LiquidityMonitoringParameters = liqM
+	}
+	// ensure market is active
+	cfg.State = types.MarketStateActive
+	return *cfg, nil
+}
+
 func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
@@ -322,19 +406,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we do this step here manually
-	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
-	}
-
-	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		liqMon.TargetStakeParameters.ScalingFactor = sf
-	}
-
-	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		liqMon.TriggeringRatio = tr
-	}
+	setLiquidityMonitoringNetParams(liqMon, netparams)
 
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
@@ -384,6 +456,22 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	return m
 }
 
+func setLiquidityMonitoringNetParams(liqMon *types.LiquidityMonitoringParameters, netparams *netparams.Store) {
+	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
+	// so we do this step here manually
+	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
+		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
+	}
+
+	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
+		liqMon.TargetStakeParameters.ScalingFactor = sf
+	}
+
+	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
+		liqMon.TriggeringRatio = tr
+	}
+}
+
 func openingAuction(row marketRow) *types.AuctionDuration {
 	auction := &types.AuctionDuration{
 		Duration: row.auctionDuration(),
@@ -430,11 +518,32 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	})
 }
 
+func parseSuccessorMarketTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"id",
+		"parent id",
+		"linear slippage factor",
+		"quadratic slippage factor",
+		"insurance pool fraction",
+		"risk model",
+	}, []string{
+		"lp price range", // we will default to parent values
+		"decimal places",
+		"position decimal places",
+		"liquidity monitoring",
+		"price monitoring",
+	})
+}
+
 type marketRow struct {
 	row RowWrapper
 }
 
 type marketUpdateRow struct {
+	row RowWrapper
+}
+
+type successorRow struct {
 	row RowWrapper
 }
 
@@ -574,4 +683,57 @@ func (r marketUpdateRow) tryQuadraticSlippageFactor() (float64, bool) {
 		return r.row.MustF64("quadratic slippage factor"), true
 	}
 	return -1, false
+}
+
+func (s successorRow) id() string {
+	return s.row.MustStr("id")
+}
+
+func (s successorRow) tryLinearSlippageFactor() (float64, bool) {
+	if s.row.HasColumn("linear slippage factor") {
+		return s.row.MustF64("linear slippage factor"), true
+	}
+	return 0, false
+}
+
+func (s successorRow) tryQuadraticSlippageFactor() (float64, bool) {
+	if s.row.HasColumn("quadratic slippage factor") {
+		return s.row.MustF64("quadratic slippage factor"), true
+	}
+	return 0, false
+}
+
+func (s successorRow) tryLpPriceRange() (float64, bool) {
+	if s.row.HasColumn("lp price range") {
+		return s.row.MustF64("lp price range"), true
+	}
+	return 0, false
+}
+
+func (s successorRow) positionDecimals() (int64, bool) {
+	if s.row.HasColumn("position decimal places") {
+		return s.row.MustI64("position decimal places"), true
+	}
+	return 0, false
+}
+
+func (s successorRow) decimals() (uint64, bool) {
+	if s.row.HasColumn("decimal places") {
+		return s.row.MustU64("decimal places"), true
+	}
+	return 0, false
+}
+
+func (s successorRow) priceMonitoring() (string, bool) {
+	if s.row.HasColumn("price monitoring") {
+		return s.row.MustStr("price monitoring"), true
+	}
+	return "", false
+}
+
+func (s successorRow) liquidityMonitoring() (string, bool) {
+	if s.row.HasColumn("liquidity monitoring") {
+		return s.row.MustStr("liquidity monitoring"), true
+	}
+	return "", false
 }

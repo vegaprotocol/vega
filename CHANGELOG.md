@@ -6,6 +6,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
+- [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
 - [8221](https://github.com/vegaprotocol/vega/issues/8221) - Deprecate type `AggregatedLedgerEntry` in favour of `LedgerEntry` for `ListLedgerEntries` endpoint.
 
 ### 🛠 Improvements
@@ -14,6 +15,13 @@
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
 - [8283](https://github.com/vegaprotocol/vega/issues/8283) - Add disclaimer to the wallet `CLI`
 - [8296](https://github.com/vegaprotocol/vega/issues/8296) - Improve error handling for invalid proposal validation timestamp
+- [8318](https://github.com/vegaprotocol/vega/issues/8318) - Proto definitions for spots
+- [8117](https://github.com/vegaprotocol/vega/issues/8117) - Added spots governance implementation
+- [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
+- [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
+- [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
+- [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
+- [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
@@ -26,6 +34,7 @@
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
 - [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
 - [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
+- [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
 
 
 ## 0.71.0

@@ -82,7 +82,7 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 	require.Equal(t, len(expectedMarkets), len(proposals.Proposals))
 
 	for i, expectedMarket := range expectedMarkets {
-		m, exists := ex.GetMarket(expectedMarket)
+		m, exists := ex.GetMarket(expectedMarket, false)
 		require.True(t, exists)
 		require.Equal(t, types.MarketTradingModeOpeningAuction, m.TradingMode)
 		require.Equal(t, types.MarketStatePending, m.State)

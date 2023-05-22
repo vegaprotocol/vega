@@ -166,6 +166,7 @@ type MarketCollateral interface {
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 	GetAssetQuantum(asset string) (num.Decimal, error)
+	GetInsurancePoolBalance(marketID, asset string) (*num.Uint, bool)
 }
 
 // AuctionState ...
@@ -276,6 +277,8 @@ type Market struct {
 	settlementDataInMarket *num.Numeric
 	nextMTM                time.Time
 	mtmDelta               time.Duration
+
+	settlementAsset string
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -422,6 +425,9 @@ func NewMarket(
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
 	}
 
+	assets, _ := mkt.GetAssets()
+	market.settlementAsset = assets[0]
+
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementData(market.settlementData)
@@ -433,16 +439,10 @@ func (m *Market) Update(ctx context.Context, config *types.Market, oracleEngine 
 	config.TradingMode = m.mkt.TradingMode
 	config.State = m.mkt.State
 	config.MarketTimestamps = m.mkt.MarketTimestamps
-
 	recalcMargins := !config.TradableInstrument.RiskModel.Equal(m.mkt.TradableInstrument.RiskModel)
-
-	asset, err := m.mkt.GetAsset()
-	if err != nil {
-		return err
-	}
-	config.SetAsset(asset)
-
 	m.mkt = config
+	assets, _ := config.GetAssets()
+	m.settlementAsset = assets[0]
 
 	if m.mkt.State == types.MarketStateTradingTerminated {
 		m.tradableInstrument.Instrument.UnsubscribeSettlementData(ctx)
@@ -639,6 +639,12 @@ func (m *Market) CanLeaveOpeningAuction() bool {
 	return canLeave
 }
 
+func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState) {
+	// add the trade value from the parent
+	m.feeSplitter.tradeValue = pstate.LastTradeValue.Clone()
+	m.equityShares.InheritELS(pstate.Shares)
+}
+
 func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.mkt.State != types.MarketStateProposed {
 		return ErrCannotStartOpeningAuctionForMarketNotInProposedState
@@ -827,9 +833,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 		parties = append(parties, k)
 	}
 
-	asset, _ := m.mkt.GetAsset()
 	sort.Strings(parties)
-	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties)
 	if err != nil {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
@@ -838,7 +843,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	}
 
 	// unregister state-variables
-	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
+	m.stateVarEngine.UnregisterStateVariable(m.settlementAsset, m.mkt.ID)
 
 	if len(clearMarketTransfers) > 0 {
 		m.broker.Send(events.NewLedgerMovements(ctx, clearMarketTransfers))
@@ -846,7 +851,6 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
-	m.mkt.MarketTimestamps.Close = m.timeService.GetTimeNow().UnixNano()
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
@@ -1040,16 +1044,14 @@ func (m *Market) enterAuction(ctx context.Context) {
 // an event to the state variable engine.
 func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
 	m.log.Info("OnOpeningAuctionFirstUncrossingPrice event fired", logging.String("market", m.mkt.ID))
-	asset, _ := m.mkt.GetAsset()
-	m.stateVarEngine.ReadyForTimeTrigger(asset, m.mkt.ID)
-	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.EventTypeOpeningAuctionFirstUncrossingPrice)
+	m.stateVarEngine.ReadyForTimeTrigger(m.settlementAsset, m.mkt.ID)
+	m.stateVarEngine.NewEvent(m.settlementAsset, m.mkt.ID, statevar.EventTypeOpeningAuctionFirstUncrossingPrice)
 }
 
 // OnAuctionEnded is called whenever an auction is ended and emits an event to the state var engine.
 func (m *Market) OnAuctionEnded() {
 	m.log.Info("OnAuctionEnded event fired", logging.String("market", m.mkt.ID))
-	asset, _ := m.mkt.GetAsset()
-	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.EventTypeAuctionEnded)
+	m.stateVarEngine.NewEvent(m.settlementAsset, m.mkt.ID, statevar.EventTypeAuctionEnded)
 }
 
 // leaveAuction : Return the orderbook and market to continuous trading.
@@ -1263,8 +1265,7 @@ func (m *Market) validateOrder(ctx context.Context, order *types.Order) (err err
 }
 
 func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error {
-	asset, _ := m.mkt.GetAsset()
-	if !m.collateral.HasGeneralAccount(order.Party, asset) {
+	if !m.collateral.HasGeneralAccount(order.Party, m.settlementAsset) {
 		// adding order to the buffer first
 		order.Status = types.OrderStatusRejected
 		order.Reason = types.OrderErrorInsufficientAssetBalance
@@ -1275,12 +1276,12 @@ func (m *Market) validateAccounts(ctx context.Context, order *types.Order) error
 	}
 
 	// ensure party have a general account, and margin account is / can be created
-	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.Party, order.MarketID, asset)
+	_, err := m.collateral.CreatePartyMarginAccount(ctx, order.Party, order.MarketID, m.settlementAsset)
 	if err != nil {
 		m.log.Error("Margin account verification failed",
 			logging.String("party-id", order.Party),
 			logging.String("market-id", m.GetID()),
-			logging.String("asset", asset),
+			logging.String("asset", m.settlementAsset),
 		)
 		// adding order to the buffer first
 		order.Status = types.OrderStatusRejected
@@ -1311,7 +1312,6 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 // all excess margin on MTM without having to call the latter by iterating all positions, and then
 // fetching said position again my party.
 func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.MarketPosition) {
-	asset, _ := m.mkt.GetAsset()
 	evts := make([]events.Event, 0, len(positions))
 	for _, pos := range positions {
 		// if the party still have a position in the settlement engine,
@@ -1327,7 +1327,7 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		transfers, err := m.collateral.ClearPartyMarginAccount(
-			ctx, pos.Party(), m.GetID(), asset)
+			ctx, pos.Party(), m.GetID(), m.settlementAsset)
 		if err != nil {
 			m.log.Error("unable to clear party margin account", logging.Error(err))
 			return
@@ -1632,19 +1632,16 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		return err
 	}
 
-	var (
-		transfers []*types.LedgerMovement
-		asset, _  = m.mkt.GetAsset()
-	)
+	var transfers []*types.LedgerMovement
 
 	if !m.as.InAuction() {
-		transfers, err = m.collateral.TransferFeesContinuousTrading(ctx, m.GetID(), asset, fees)
+		transfers, err = m.collateral.TransferFeesContinuousTrading(ctx, m.GetID(), m.settlementAsset, fees)
 	} else if m.as.IsMonitorAuction() {
 		// @TODO handle this properly
-		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, fees)
 	} else if m.as.IsFBA() {
 		// @TODO implement transfer for auction types
-		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+		transfers, err = m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, fees)
 	}
 
 	if err != nil {
@@ -1785,11 +1782,10 @@ func (m *Market) confirmMTM(
 			// if bond slashing occurred then amounts in "closed" will not be accurate
 			if len(transfers) > 0 {
 				m.broker.Send(events.NewLedgerMovements(ctx, transfers))
-				asset, _ := m.mkt.GetAsset()
 				closedRecalculated := make([]events.Margin, 0, len(closed))
 				for _, c := range closed {
 					if pos, ok := m.position.GetPositionByPartyID(c.Party()); ok {
-						margin, err := m.collateral.GetPartyMargin(pos, asset, m.mkt.ID)
+						margin, err := m.collateral.GetPartyMargin(pos, m.settlementAsset, m.mkt.ID)
 						if err != nil {
 							m.log.Error("couldn't get party margin",
 								logging.PartyID(c.Party()),
@@ -2064,13 +2060,11 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// of updated orders to send to liquidity engine
 	orderUpdates = append(orderUpdates, confirmation.PassiveOrdersAffected...)
 
-	asset, _ := m.mkt.GetAsset()
-
 	// pay the fees now
 	fees, distressedPartiesFees := m.fee.CalculateFeeForPositionResolution(
 		confirmation.Trades, closedMPs)
 
-	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), asset, fees)
+	tresps, err := m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, fees)
 	if err != nil {
 		// FIXME(): we may figure a better error handling in here
 		m.log.Error("unable to transfer fees for positions resolutions",
@@ -2134,10 +2128,9 @@ func (m *Market) finalizePartiesCloseOut(
 	m.settlement.RemoveDistressed(ctx, closed)
 	// then from positions
 	closedMPs = m.position.RemoveDistressed(closedMPs)
-	asset, _ := m.mkt.GetAsset()
 	// finally remove from collateral (moving funds where needed)
 	movements, err := m.collateral.RemoveDistressed(
-		ctx, closedMPs, m.GetID(), asset)
+		ctx, closedMPs, m.GetID(), m.settlementAsset)
 	if err != nil {
 		m.log.Panic(
 			"Failed to remove distressed accounts cleanly",
@@ -2174,10 +2167,9 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		Type:          types.OrderTypeNetwork,
 	}
 
-	asset, _ := m.mkt.GetAsset()
 	marginLevels := types.MarginLevels{
 		MarketID:  m.mkt.GetID(),
-		Asset:     asset,
+		Asset:     m.settlementAsset,
 		Timestamp: now,
 	}
 
@@ -2322,8 +2314,7 @@ func (m *Market) setLastTradedPrice(trade *types.Trade) {
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "collateralAndRisk")
 	defer timer.EngineTimeCounterAdd()
-	asset, _ := m.mkt.GetAsset()
-	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, asset)
+	evts, response, err := m.collateral.MarkToMarket(ctx, m.GetID(), settle, m.settlementAsset)
 	if err != nil {
 		m.log.Error(
 			"Failed to process mark to market settlement (collateral)",
@@ -3396,8 +3387,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 	}
 
-	asset, _ := m.mkt.GetAsset()
-	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), asset, parties)
+	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties)
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",
 			logging.String("market-id", m.GetID()),
@@ -3405,7 +3395,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 		return
 	}
 
-	m.stateVarEngine.UnregisterStateVariable(asset, m.mkt.ID)
+	m.stateVarEngine.UnregisterStateVariable(m.settlementAsset, m.mkt.ID)
 
 	// then send the responses
 	if len(tresps) > 0 {
@@ -3450,12 +3440,7 @@ func lpsToLiquidityProviderFeeShare(lps map[string]*lp, ls map[string]num.Decima
 }
 
 func (m *Market) distributeLiquidityFees(ctx context.Context) error {
-	asset, err := m.mkt.GetAsset()
-	if err != nil {
-		return fmt.Errorf("failed to get asset: %w", err)
-	}
-
-	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetID(), asset)
+	acc, err := m.collateral.GetMarketLiquidityFeeAccount(m.mkt.GetID(), m.settlementAsset)
 	if err != nil {
 		return fmt.Errorf("failed to get market liquidity fee account: %w", err)
 	}
@@ -3481,7 +3466,7 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 	}
 
 	m.marketActivityTracker.UpdateFeesFromTransfers(m.GetID(), feeTransfer.Transfers())
-	resp, err := m.collateral.TransferFees(ctx, m.GetID(), asset, feeTransfer)
+	resp, err := m.collateral.TransferFees(ctx, m.GetID(), m.settlementAsset, feeTransfer)
 	if err != nil {
 		return fmt.Errorf("failed to transfer fees: %w", err)
 	}

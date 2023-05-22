@@ -116,7 +116,14 @@ message Payload {
     BankingBridgeState banking_bridge_state = 56;
     SettlementState settlement_state = 57;
     LiquidityScores liquidity_scores = 58;
+    SpotLiquidityProvisions spot_liquidity_provisions = 59;
+    SpotLiquidityTarget spot_liquidity_target = 60;
   }
+}
+
+message TimestampedTotalStake {
+  uint64 total_stake = 1;
+  int64 time = 2;
 }
 
 message TimestampedOpenInterest {
@@ -131,6 +138,15 @@ message LiquidityTarget {
   repeated uint64 current_open_interests = 4;
   repeated TimestampedOpenInterest previous_open_interests = 5;
   TimestampedOpenInterest max_open_interests = 6;
+}
+
+message SpotLiquidityTarget {
+  string market_id = 1;
+  int64 current_time = 2;
+  int64 scheduled_truncate = 3;
+  repeated uint64 current_total_stake = 4;
+  repeated TimestampedTotalStake previous_total_stake = 5;
+  TimestampedTotalStake max_total_stake = 6;
 }
 
 message LiquidityOffsetProbabilityPair {
@@ -391,11 +407,52 @@ message EquityShare {
   string p_mvp = 5;
 }
 
+message SpotEquityShareLP {
+  string id = 1;
+  string stake = 2;
+  string buy_stake = 3;
+  string sell_stake = 4;
+  string share = 5;
+  string avg = 6;
+  string vshare = 7;
+  string buy_vshare = 8;
+  string sell_vshare = 9;
+}
+
+message SpotEquityShare {
+  string mvp = 1;
+  bool opening_auction_ended = 2;
+  repeated SpotEquityShareLP lps = 3;
+  string r = 4;
+  string p_mvp = 5;
+}
+
 message FeeSplitter {
   int64 time_window_start = 1;
   string trade_value = 2;
   string avg = 3;
   uint64 window = 4;
+}
+
+message SpotMarket {
+  vega.Market market = 1;
+  PriceMonitor price_monitor = 2;
+  AuctionState auction_state = 3;
+  PeggedOrders pegged_orders = 4;
+  repeated vega.Order expiring_orders = 5;
+  string last_best_bid = 6;
+  string last_best_ask = 7;
+  string last_mid_bid = 8;
+  string last_mid_ask = 9;
+  string last_market_value_proxy = 10;
+  int64 last_equity_share_distributed = 11;
+  SpotEquityShare equity_share = 12;
+  string current_mark_price = 13;
+  FeeSplitter fee_splitter = 14;
+  int64 next_mark_to_market = 15;
+  string last_traded_price = 16;
+  repeated string parties = 17;
+  bool closed = 18;
 }
 
 message Market {
@@ -429,6 +486,7 @@ message PeggedOrders {
 
 message ExecutionMarkets {
   repeated Market markets = 1;
+  repeated SpotMarket spot_markets = 2;
 }
 
 message Position {
@@ -703,13 +761,19 @@ message PartyOrders {
 
 message LiquidityPartiesOrders {
   repeated PartyOrders party_orders = 1;
-  // Market ID these orders apply to. Required for key generation
+  // Market ID these orders apply to.
   string market_id = 2;
 }
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
-  // Market ID these provisions apply to. Required for key generation
+  // Market ID these provisions apply to.
+  string market_id = 2;
+}
+
+message SpotLiquidityProvisions {
+  repeated vega.SpotLiquidityProvision liquidity_provisions = 1;
+  // Market ID these provisions apply to.
   string market_id = 2;
 }
 

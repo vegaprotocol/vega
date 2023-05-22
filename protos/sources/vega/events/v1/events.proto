@@ -256,6 +256,9 @@ message TransactionResult {
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
     commands.v1.KeyRotateSubmission key_rotate_submission = 120;
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
+    commands.v1.SpotLiquidityProvisionSubmission spot_liquidity_provision_submission = 122;
+    commands.v1.SpotLiquidityProvisionCancellation spot_liquidity_provision_cancellation = 123;
+    commands.v1.SpotLiquidityProvisionAmendment spot_liquidity_provision_amendment = 124;
   }
 
   // extra details about the transaction processing
@@ -302,6 +305,9 @@ message TxErrorEvent {
     commands.v1.ProtocolUpgradeProposal protocol_upgrade_proposal = 117;
     commands.v1.IssueSignatures issue_signatures = 118;
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
+    commands.v1.SpotLiquidityProvisionSubmission spot_liquidity_provision_submission = 120;
+    commands.v1.SpotLiquidityProvisionCancellation spot_liquidity_provision_cancellation = 121;
+    commands.v1.SpotLiquidityProvisionAmendment spot_liquidity_provision_amendment = 122;
   }
 }
 
@@ -730,6 +736,9 @@ enum BusEventType {
   // Event indicating parties have become, or were, distressed but still have an active position.
   BUS_EVENT_TYPE_DISTRESSED_POSITIONS = 58;
 
+  // Event indicating a spot liquidity provision has been created or updated.
+  BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION = 59;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -857,6 +866,8 @@ message BusEvent {
     ExpiredOrders expired_orders = 156;
     // Open positions on the market that are/were distressed
     DistressedPositions distressed_positions = 157;
+    // Spot liquidity provision events
+    SpotLiquidityProvision spot_liquidity_provision = 158;
 
     // Market tick events
     MarketEvent market = 1001;

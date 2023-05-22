@@ -163,6 +163,7 @@ func NewMarketFromSnapshot(
 		lpPriceRange:               mkt.LPPriceRange,
 		linearSlippageFactor:       mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
+		settlementAsset:            asset,
 	}
 
 	for _, p := range em.Parties {

@@ -54,7 +54,7 @@ func getTestMarket() types.Market {
 				Metadata: &types.InstrumentMetadata{
 					Tags: []string{"AAA", "BBB"},
 				},
-				Product: types.InstrumentFuture{
+				Product: &types.InstrumentFuture{
 					Future: &types.Future{
 						SettlementAsset: "",
 						QuoteName:       "",
