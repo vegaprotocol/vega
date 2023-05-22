@@ -32,7 +32,7 @@ var oracleSpecOrdering = TableOrdering{
 }
 
 const (
-	sqlOracleSpecColumns = `id, created_at, updated_at, signers, filters, status, tx_hash, vega_time`
+	sqlOracleSpecColumns = `id, created_at, updated_at, data, status, tx_hash, vega_time`
 )
 
 func NewOracleSpec(connectionSource *ConnectionSource) *OracleSpec {
@@ -43,28 +43,19 @@ func NewOracleSpec(connectionSource *ConnectionSource) *OracleSpec {
 
 func (os *OracleSpec) Upsert(ctx context.Context, spec *entities.OracleSpec) error {
 	query := fmt.Sprintf(`insert into oracle_specs(%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8)
+values ($1, $2, $3, $4, $5, $6, $7)
 on conflict (id, vega_time) do update
 set
 	created_at=EXCLUDED.created_at,
 	updated_at=EXCLUDED.updated_at,
-	signers=EXCLUDED.signers,
-	filters=EXCLUDED.filters,
+	data=EXCLUDED.data,
 	status=EXCLUDED.status,
 	tx_hash=EXCLUDED.tx_hash`, sqlOracleSpecColumns)
 
 	defer metrics.StartSQLQuery("OracleSpec", "Upsert")()
-	dataSourceSpec := spec.ExternalDataSourceSpec.Spec
-	signers := []entities.Signer{}
-	filters := []entities.Filter{}
-	if dataSourceSpec.Data != nil {
-		if dataSourceSpec.Data.External != nil {
-			filters = dataSourceSpec.Data.External.Filters
-			signers = dataSourceSpec.Data.External.Signers
-		}
-	}
-	if _, err := os.Connection.Exec(ctx, query, dataSourceSpec.ID, dataSourceSpec.CreatedAt, dataSourceSpec.UpdatedAt, signers,
-		filters, dataSourceSpec.Status, dataSourceSpec.TxHash, dataSourceSpec.VegaTime); err != nil {
+	specData := spec.ExternalDataSourceSpec.Spec
+	if _, err := os.Connection.Exec(ctx, query, specData.ID, specData.CreatedAt, specData.UpdatedAt, specData.Data,
+		specData.Status, specData.TxHash, specData.VegaTime); err != nil {
 		return err
 	}
 
@@ -74,7 +65,7 @@ set
 func (os *OracleSpec) GetSpecByID(ctx context.Context, specID string) (*entities.OracleSpec, error) {
 	defer metrics.StartSQLQuery("OracleSpec", "GetByID")()
 
-	var spec entities.DataSourceSpecRaw
+	var spec entities.DataSourceSpec
 	query := fmt.Sprintf(`%s
 where id = $1
 order by id, vega_time desc`, getOracleSpecsQuery())
@@ -83,26 +74,29 @@ order by id, vega_time desc`, getOracleSpecsQuery())
 	if err != nil {
 		return nil, os.wrapE(err)
 	}
-	oracleSpec := dataSourceSpecRawToOracleSpec(spec)
-	return &oracleSpec, err
+	return &entities.OracleSpec{
+		ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
+			Spec: &spec,
+		},
+	}, err
 }
 
 func (os *OracleSpec) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.OracleSpec, error) {
 	defer metrics.StartSQLQuery("OracleSpec", "GetByTxHash")()
 
-	var specsRaw []entities.DataSourceSpecRaw
+	var specs []*entities.DataSourceSpec
 	query := "SELECT * FROM oracle_specs WHERE tx_hash = $1"
-	err := pgxscan.Select(ctx, os.Connection, &specsRaw, query, txHash)
+	err := pgxscan.Select(ctx, os.Connection, &specs, query, txHash)
 	if err != nil {
 		return nil, os.wrapE(err)
 	}
 
-	specs := []entities.OracleSpec{}
-	for _, spec := range specsRaw {
-		specs = append(specs, dataSourceSpecRawToOracleSpec(spec))
+	oSpecs := []entities.OracleSpec{}
+	for _, spec := range specs {
+		oSpecs = append(oSpecs, entities.OracleSpec{ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{Spec: spec}})
 	}
 
-	return specs, err
+	return oSpecs, err
 }
 
 func (os *OracleSpec) GetSpecsWithCursorPagination(ctx context.Context, specID string, pagination entities.CursorPagination) (
@@ -134,11 +128,11 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 	[]entities.OracleSpec, entities.PageInfo, error,
 ) {
 	var (
-		dataSpecs []entities.DataSourceSpecRaw
-		specs     = []entities.OracleSpec{}
-		pageInfo  entities.PageInfo
-		err       error
-		args      []interface{}
+		specs    []entities.DataSourceSpec
+		oSpecs   = []entities.OracleSpec{}
+		pageInfo entities.PageInfo
+		err      error
+		args     []interface{}
 	)
 
 	query := getOracleSpecsQuery()
@@ -147,39 +141,22 @@ func (os *OracleSpec) getSpecsWithPageInfo(ctx context.Context, pagination entit
 		return nil, pageInfo, err
 	}
 
-	if err = pgxscan.Select(ctx, os.Connection, &dataSpecs, query, args...); err != nil {
+	if err = pgxscan.Select(ctx, os.Connection, &specs, query, args...); err != nil {
 		return nil, pageInfo, fmt.Errorf("querying oracle specs: %w", err)
 	}
 
-	if len(dataSpecs) > 0 {
-		for i := range dataSpecs {
-			specs = append(specs, dataSourceSpecRawToOracleSpec(dataSpecs[i]))
+	if len(specs) > 0 {
+		for i := range specs {
+			oSpecs = append(oSpecs, entities.OracleSpec{
+				ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
+					Spec: &specs[i],
+				},
+			})
 		}
 	}
-	specs, pageInfo = entities.PageEntities[*v2.OracleSpecEdge](specs, pagination)
+	oSpecs, pageInfo = entities.PageEntities[*v2.OracleSpecEdge](oSpecs, pagination)
 
-	return specs, pageInfo, nil
-}
-
-func dataSourceSpecRawToOracleSpec(spec entities.DataSourceSpecRaw) entities.OracleSpec {
-	return entities.OracleSpec{
-		ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
-			Spec: &entities.DataSourceSpec{
-				ID:        spec.ID,
-				CreatedAt: spec.CreatedAt,
-				UpdatedAt: spec.UpdatedAt,
-				Data: &entities.DataSourceDefinition{
-					External: &entities.DataSourceDefinitionExternal{
-						Signers: spec.Signers,
-						Filters: spec.Filters,
-					},
-				},
-				Status:   spec.Status,
-				TxHash:   spec.TxHash,
-				VegaTime: spec.VegaTime,
-			},
-		},
-	}
+	return oSpecs, pageInfo, nil
 }
 
 func getOracleSpecsQuery() string {

@@ -44,6 +44,7 @@
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
 - [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
 - [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
+- [8299](https://github.com/vegaprotocol/vega/issues/8299) - Fix listing of internal data sources in GraphQL.
 - [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
 - [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
 - [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate

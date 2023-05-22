@@ -2,10 +2,17 @@ package types
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+)
+
+var (
+	ErrSignerIsEmpty     = errors.New("signer is empty")
+	ErrSignerInValidHex  = errors.New("signer is not a valid hex")
+	ErrSignerUnknownType = errors.New("unknown type of signer")
 )
 
 // PubKey.
@@ -14,11 +21,9 @@ type PubKey struct {
 }
 
 func (p PubKey) IntoProto() *datapb.PubKey {
-	pk := &datapb.PubKey{}
-	if p.Key != "" {
-		pk.Key = p.Key
+	return &datapb.PubKey{
+		Key: p.Key,
 	}
-	return pk
 }
 
 func (p PubKey) String() string {
@@ -29,10 +34,6 @@ func (p PubKey) String() string {
 }
 
 func (p PubKey) DeepClone() *PubKey {
-	if p.Key == "" {
-		return &PubKey{}
-	}
-
 	return &PubKey{
 		Key: p.Key,
 	}
@@ -72,7 +73,7 @@ func (s SignerPubKey) GetSignerType() DataSignerType {
 
 func (s SignerPubKey) DeepClone() dataSourceSpec {
 	if s.PubKey == nil {
-		return &SignerPubKey{}
+		return &SignerPubKey{} // ?
 	}
 	return &SignerPubKey{
 		PubKey: s.PubKey,
@@ -80,13 +81,24 @@ func (s SignerPubKey) DeepClone() dataSourceSpec {
 }
 
 func (s SignerPubKey) IsEmpty() bool {
+	if s.PubKey == nil {
+		return true
+	}
 	return s.PubKey.Key == ""
 }
 
-func (s SignerPubKey) AsHex(prepend bool) dataSourceSpec {
+func (s SignerPubKey) AsHex(prepend bool) (dataSourceSpec, error) {
+	if s.PubKey == nil {
+		return &s, ErrSignerIsEmpty
+	}
+
+	if s.PubKey.Key == "" {
+		return nil, ErrSignerIsEmpty
+	}
+
 	// Check if the content is already hex encoded
 	if strings.HasPrefix(s.PubKey.Key, "0x") {
-		return &s
+		return &s, nil
 	}
 
 	validHex, _ := isHex(s.PubKey.Key)
@@ -94,28 +106,30 @@ func (s SignerPubKey) AsHex(prepend bool) dataSourceSpec {
 		if prepend {
 			s.PubKey.Key = fmt.Sprintf("0x%s", s.PubKey.Key)
 		}
-		return &s
+		return &s, nil
 	}
 
 	// If the content is not a valid Hex - encode it
 	s.PubKey.Key = fmt.Sprintf("0x%s", hex.EncodeToString([]byte(s.PubKey.Key)))
-	return &s
+	return &s, nil
 }
 
 func (s SignerPubKey) AsString() (dataSourceSpec, error) {
+	if s.PubKey == nil {
+		return nil, ErrSignerIsEmpty
+	}
+
 	// Check if the content is hex encoded
 	st := strings.TrimPrefix(s.PubKey.Key, "0x")
-	_, err := isHex(st)
-	if err != nil {
-		return &s, fmt.Errorf("signer is not a valid hex: %v", err)
-	}
+	validHex, _ := isHex(st)
+	if validHex {
+		decoded, err := hex.DecodeString(st)
+		if err != nil {
+			return &s, fmt.Errorf("error decoding signer: %v", err)
+		}
 
-	decoded, err := hex.DecodeString(s.PubKey.Key)
-	if err != nil {
-		return &s, fmt.Errorf("error decoding signer: %v", err)
+		s.PubKey.Key = string(decoded)
 	}
-
-	s.PubKey.Key = string(decoded)
 	return &s, nil
 }
 
@@ -124,8 +138,8 @@ func (s SignerPubKey) Serialize() []byte {
 	return append([]byte{byte(SignerPubKeyPrepend)}, []byte(c)...)
 }
 
-func DeserializePubKey(data []byte) SignerPubKey {
-	return SignerPubKey{
+func DeserializePubKey(data []byte) *SignerPubKey {
+	return &SignerPubKey{
 		PubKey: &PubKey{
 			Key: string(data),
 		},
@@ -134,11 +148,11 @@ func DeserializePubKey(data []byte) SignerPubKey {
 
 func PubKeyFromProto(s *datapb.Signer_PubKey) *SignerPubKey {
 	var pubKey *PubKey
-	if s.PubKey != nil {
-		pubKey = &PubKey{}
-
-		if s.PubKey.Key != "" {
-			pubKey.Key = s.PubKey.Key
+	if s != nil {
+		if s.PubKey != nil {
+			pubKey = &PubKey{
+				Key: s.PubKey.Key,
+			}
 		}
 	}
 
@@ -153,12 +167,9 @@ type ETHAddress struct {
 }
 
 func (e ETHAddress) IntoProto() *datapb.ETHAddress {
-	ethAddress := &datapb.ETHAddress{}
-	if e.Address != "" {
-		ethAddress.Address = e.Address
+	return &datapb.ETHAddress{
+		Address: e.Address,
 	}
-
-	return ethAddress
 }
 
 func (e ETHAddress) String() string {
@@ -169,10 +180,6 @@ func (e ETHAddress) String() string {
 }
 
 func (e ETHAddress) DeepClone() *ETHAddress {
-	if e.Address == "" {
-		return &ETHAddress{}
-	}
-
 	return &ETHAddress{
 		Address: e.Address,
 	}
@@ -186,7 +193,7 @@ func (s SignerETHAddress) isDataSourceSpec() {}
 
 func (s SignerETHAddress) String() string {
 	return fmt.Sprintf(
-		"signerETHAddres(%s)",
+		"signerETHAddress(%s)",
 		reflectPointerToString(s.ETHAddress),
 	)
 }
@@ -212,7 +219,7 @@ func (s SignerETHAddress) GetSignerType() DataSignerType {
 
 func (s SignerETHAddress) DeepClone() dataSourceSpec {
 	if s.ETHAddress == nil {
-		return &SignerETHAddress{}
+		return &SignerETHAddress{} // ?
 	}
 	return &SignerETHAddress{
 		ETHAddress: s.ETHAddress,
@@ -220,13 +227,24 @@ func (s SignerETHAddress) DeepClone() dataSourceSpec {
 }
 
 func (s SignerETHAddress) IsEmpty() bool {
+	if s.ETHAddress == nil {
+		return true
+	}
 	return s.ETHAddress.Address == ""
 }
 
-func (s SignerETHAddress) AsHex(prepend bool) dataSourceSpec {
+func (s SignerETHAddress) AsHex(prepend bool) (dataSourceSpec, error) {
+	if s.ETHAddress == nil {
+		return nil, ErrSignerIsEmpty
+	}
+
+	if s.ETHAddress.Address == "" {
+		return nil, ErrSignerIsEmpty
+	}
+
 	// Check if the content is already hex encoded
 	if strings.HasPrefix(s.ETHAddress.Address, "0x") {
-		return &s
+		return &s, nil
 	}
 
 	validHex, _ := isHex(s.ETHAddress.Address)
@@ -234,27 +252,29 @@ func (s SignerETHAddress) AsHex(prepend bool) dataSourceSpec {
 		if prepend {
 			s.ETHAddress.Address = fmt.Sprintf("0x%s", s.ETHAddress.Address)
 		}
-		return &s
+		return &s, nil
 	}
 
 	s.ETHAddress.Address = fmt.Sprintf("0x%s", hex.EncodeToString([]byte(s.ETHAddress.Address)))
-	return &s
+	return &s, nil
 }
 
 func (s SignerETHAddress) AsString() (dataSourceSpec, error) {
+	if s.ETHAddress == nil {
+		return nil, ErrSignerIsEmpty
+	}
+
 	// Check if the content is hex encoded
 	st := strings.TrimPrefix(s.ETHAddress.Address, "0x")
-	_, err := isHex(st)
-	if err != nil {
-		return &s, fmt.Errorf("signer is not a valid hex: %v", err)
-	}
+	validHex, _ := isHex(st)
+	if validHex {
+		decoded, err := hex.DecodeString(st)
+		if err != nil {
+			return &s, fmt.Errorf("error decoding signer: %v", err)
+		}
 
-	decoded, err := hex.DecodeString(s.ETHAddress.Address)
-	if err != nil {
-		return &s, fmt.Errorf("error decoding signer: %v", err)
+		s.ETHAddress.Address = string(decoded)
 	}
-
-	s.ETHAddress.Address = string(decoded)
 	return &s, nil
 }
 
@@ -263,8 +283,8 @@ func (s SignerETHAddress) Serialize() []byte {
 	return append([]byte{byte(ETHAddressPrepend)}, []byte(c)...)
 }
 
-func DeserializeETHAddress(data []byte) SignerETHAddress {
-	return SignerETHAddress{
+func DeserializeETHAddress(data []byte) *SignerETHAddress {
+	return &SignerETHAddress{
 		ETHAddress: &ETHAddress{
 			Address: "0x" + string(data),
 		},
@@ -273,11 +293,11 @@ func DeserializeETHAddress(data []byte) SignerETHAddress {
 
 func ETHAddressFromProto(s *datapb.Signer_EthAddress) *SignerETHAddress {
 	var ethAddress *ETHAddress
-	if s.EthAddress != nil {
-		ethAddress = &ETHAddress{}
-
-		if s.EthAddress.Address != "" {
-			ethAddress.Address = s.EthAddress.Address
+	if s != nil {
+		if s.EthAddress != nil {
+			ethAddress = &ETHAddress{
+				Address: s.EthAddress.Address,
+			}
 		}
 	}
 
@@ -299,7 +319,7 @@ type dataSourceSpec interface {
 	oneOfProto() interface{}
 	DeepClone() dataSourceSpec
 	GetSignerType() DataSignerType
-	AsHex(bool) dataSourceSpec
+	AsHex(bool) (dataSourceSpec, error)
 	AsString() (dataSourceSpec, error)
 	String() string
 	IsEmpty() bool
@@ -315,15 +335,19 @@ func (s Signer) oneOfProto() interface{} {
 	return s.IntoProto()
 }
 
+// IntoProto will always return a `datapb.Signer` that needs to be checked
+// if it has any content afterwards.
 func (s Signer) IntoProto() *datapb.Signer {
-	sig := s.Signer.oneOfProto()
 	signer := &datapb.Signer{}
+	if s.Signer != nil {
+		sig := s.Signer.oneOfProto()
 
-	switch tp := sig.(type) {
-	case *datapb.Signer_PubKey:
-		signer.Signer = tp
-	case *datapb.Signer_EthAddress:
-		signer.Signer = tp
+		switch tp := sig.(type) {
+		case *datapb.Signer_PubKey:
+			signer.Signer = tp
+		case *datapb.Signer_EthAddress:
+			signer.Signer = tp
+		}
 	}
 
 	return signer
@@ -340,33 +364,40 @@ func (s Signer) String() string {
 }
 
 func (s Signer) IsEmpty() bool {
-	return s.Signer.IsEmpty()
+	if s.Signer != nil {
+		return s.Signer.IsEmpty()
+	}
+	return true
 }
 
 func (s Signer) GetSignerPubKey() *PubKey {
-	switch t := s.Signer.(type) {
-	case *SignerPubKey:
-		return t.PubKey
-	default:
-		return nil
+	if s.Signer != nil {
+		switch t := s.Signer.(type) {
+		case *SignerPubKey:
+			return t.PubKey
+		}
 	}
+	return nil
 }
 
 func (s Signer) GetSignerETHAddress() *ETHAddress {
-	switch t := s.Signer.(type) {
-	case *SignerETHAddress:
-		return t.ETHAddress
-	default:
-		return nil
+	if s.Signer != nil {
+		switch t := s.Signer.(type) {
+		case *SignerETHAddress:
+			return t.ETHAddress
+		}
 	}
+	return nil
 }
 
 func (s Signer) GetSignerType() DataSignerType {
-	switch s.Signer.(type) {
-	case *SignerPubKey:
-		return DataSignerTypePubKey
-	case *SignerETHAddress:
-		return DataSignerTypeEthAddress
+	if s.Signer != nil {
+		switch s.Signer.(type) {
+		case *SignerPubKey:
+			return DataSignerTypePubKey
+		case *SignerETHAddress:
+			return DataSignerTypeEthAddress
+		}
 	}
 
 	return DataSignerTypeUnspecified
@@ -405,9 +436,10 @@ func SignersIntoProto(s []*Signer) []*datapb.Signer {
 	if len(s) > 0 {
 		protoSigners = make([]*datapb.Signer, len(s))
 		for i, signer := range s {
-			sign := signer.oneOfProto()
-			protoSigners[i] = sign.(*datapb.Signer)
-			// protoSigners[i] = signer.IntoProto()
+			if signer != nil {
+				sign := signer.oneOfProto()
+				protoSigners[i] = sign.(*datapb.Signer)
+			}
 		}
 	}
 
@@ -419,24 +451,28 @@ func SignersToStringList(s []*Signer) []string {
 
 	if len(s) > 0 {
 		for _, signer := range s {
-			signers = append(signers, signer.String())
+			if signer != nil {
+				signers = append(signers, signer.String())
+			}
 		}
 		return signers
 	}
 	return signers
 }
 
-// SignersFromProto returns a list of signers after checking the list length.
+// SignersFromProto returns a list of signers.
+// The list is allowed to be empty.
 func SignersFromProto(s []*datapb.Signer) []*Signer {
 	signers := []*Signer{}
 	if len(s) > 0 {
 		signers = make([]*Signer, len(s))
 		for i, signer := range s {
-			signers[i] = SignerFromProto(signer)
+			if s != nil {
+				signers[i] = SignerFromProto(signer)
+			}
 		}
 		return signers
 	}
-
 	return signers
 }
 
@@ -450,36 +486,50 @@ const (
 // SignerAsHex represents the signer as a hex encoded string.
 // We export this function as a standalone option because there are cases when we are not sure
 // what is the signer type we deal with.
-func SignerAsHex(signer *Signer) *Signer {
+func SignerAsHex(signer *Signer) (*Signer, error) {
 	switch signer.GetSignerType() {
 	case DataSignerTypePubKey:
-		s := signer.Signer.(*SignerPubKey).AsHex(false)
-		return &Signer{s}
+		if signer.Signer != nil {
+			s, err := signer.Signer.(*SignerPubKey).AsHex(false)
+			return &Signer{s}, err
+		}
+		return nil, ErrSignerIsEmpty
 
 	case DataSignerTypeEthAddress:
-		s := signer.Signer.(*SignerETHAddress).AsHex(false)
-		return &Signer{s}
+		if signer.Signer != nil {
+			s, err := signer.Signer.(*SignerETHAddress).AsHex(false)
+			return &Signer{s}, err
+		}
+		return nil, ErrSignerIsEmpty
 	}
 
 	// If the signer type is not among the ones we know, we do not care to
 	// encode or decode it.
-	return nil
+	return nil, ErrSignerUnknownType
 }
 
 // SignerAsString represents the Signer content as a string.
 func SignerAsString(signer *Signer) (*Signer, error) {
 	switch signer.GetSignerType() {
 	case DataSignerTypePubKey:
-		s, err := signer.Signer.(*SignerPubKey).AsString()
-		return &Signer{s}, err
+		if signer.Signer != nil {
+			s, err := signer.Signer.(*SignerPubKey).AsString()
+
+			return &Signer{s}, err
+		}
+		return nil, ErrSignerIsEmpty
+
 	case DataSignerTypeEthAddress:
-		s, err := signer.Signer.(*SignerETHAddress).AsString()
-		return &Signer{s}, err
+		if signer.Signer != nil {
+			s, err := signer.Signer.(*SignerETHAddress).AsString()
+			return &Signer{s}, err
+		}
+		return nil, ErrSignerIsEmpty
 	}
 
 	// If the signer type is not among the ones we know, we do not care to
 	// encode or decode it.
-	return nil, fmt.Errorf("unknown signer type")
+	return nil, ErrSignerUnknownType
 }
 
 func isHex(src string) (bool, error) {
@@ -500,15 +550,27 @@ func isHex(src string) (bool, error) {
 func (s *Signer) Serialize() ([]byte, error) {
 	switch s.GetSignerType() {
 	case DataSignerTypePubKey:
-		return s.Signer.(*SignerPubKey).Serialize(), nil
+		if s.Signer != nil {
+			pk, _ := s.Signer.(*SignerPubKey)
+			if pk.PubKey != nil {
+				return pk.Serialize(), nil
+			}
+		}
+		return nil, ErrSignerIsEmpty
 
 	case DataSignerTypeEthAddress:
-		return s.Signer.(*SignerETHAddress).Serialize(), nil
+		if s.Signer != nil {
+			ea, _ := s.Signer.(*SignerETHAddress)
+			if ea.ETHAddress != nil {
+				return ea.Serialize(), nil
+			}
+		}
+		return nil, ErrSignerIsEmpty
 	}
 
 	// If the signer type is not among the ones we know, we do not care to
 	// encode or decode it.
-	return nil, fmt.Errorf("error from serializing signer: unknown signer type")
+	return nil, ErrSignerUnknownType
 }
 
 func DeserializeSigner(content []byte) *Signer {
@@ -530,6 +592,18 @@ func DeserializeSigner(content []byte) *Signer {
 	return &Signer{Signer: nil}
 }
 
-func NewSigner() *Signer {
-	return &Signer{}
+func NewSigner(t DataSignerType) *Signer {
+	switch t {
+	case DataSignerTypePubKey:
+		return &Signer{
+			Signer: &SignerPubKey{},
+		}
+
+	case DataSignerTypeEthAddress:
+		return &Signer{
+			Signer: &SignerETHAddress{},
+		}
+	}
+	// No indication if the given type is unknown.
+	return nil
 }

@@ -14,7 +14,6 @@ package entities
 
 import (
 	"code.vegaprotocol.io/vega/protos/vega"
-	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -33,87 +32,4 @@ func (ti *TradableInstrument) UnmarshalJSON(data []byte) error {
 
 func (ti TradableInstrument) ToProto() *vega.TradableInstrument {
 	return ti.TradableInstrument
-}
-
-func FiltersFromProto(filters []*v1.Filter) []Filter {
-	if len(filters) == 0 {
-		return nil
-	}
-
-	results := make([]Filter, 0, len(filters))
-	for _, filter := range filters {
-		conditions := make([]Condition, 0, len(filter.Conditions))
-
-		for _, condition := range filter.Conditions {
-			conditions = append(conditions, Condition{
-				Operator: condition.Operator,
-				Value:    condition.Value,
-			})
-		}
-
-		var ndp *uint64
-		if filter.Key.NumberDecimalPlaces != nil {
-			v := *filter.Key.NumberDecimalPlaces
-			ndp = &v
-		}
-		results = append(results, Filter{
-			Key: PropertyKey{
-				Name:          filter.Key.Name,
-				Type:          filter.Key.Type,
-				DecimalPlaces: ndp,
-			},
-			Conditions: conditions,
-		})
-	}
-
-	return results
-}
-
-func filtersToProto(filters []Filter) []*v1.Filter {
-	if len(filters) == 0 {
-		return nil
-	}
-
-	results := make([]*v1.Filter, 0, len(filters))
-	for _, filter := range filters {
-		conditions := make([]*v1.Condition, 0, len(filter.Conditions))
-		for _, condition := range filter.Conditions {
-			conditions = append(conditions, &v1.Condition{
-				Operator: condition.Operator,
-				Value:    condition.Value,
-			})
-		}
-
-		var ndp *uint64
-		if filter.Key.DecimalPlaces != nil {
-			v := *filter.Key.DecimalPlaces
-			ndp = &v
-		}
-		results = append(results, &v1.Filter{
-			Key: &v1.PropertyKey{
-				Name:                filter.Key.Name,
-				Type:                filter.Key.Type,
-				NumberDecimalPlaces: ndp,
-			},
-			Conditions: conditions,
-		})
-	}
-
-	return results
-}
-
-type Filter struct {
-	Key        PropertyKey `json:"key"`
-	Conditions []Condition `json:"conditions"`
-}
-
-type PropertyKey struct {
-	Name          string `json:"name"`
-	Type          v1.PropertyKey_Type
-	DecimalPlaces *uint64 `json:"number_decimal_places,omitempty"`
-}
-
-type Condition struct {
-	Operator v1.Condition_Operator
-	Value    string
 }

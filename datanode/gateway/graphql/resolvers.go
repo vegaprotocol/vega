@@ -95,6 +95,18 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
 }
 
+func (r *VegaResolverRoot) DataSourceDefinition() DataSourceDefinitionResolver {
+	return (*myDataSourceDefinitionResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinitionExternal() DataSourceDefinitionExternalResolver {
+	return (*myDataSourceDefinitionExternalResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinitionInternal() DataSourceDefinitionInternalResolver {
+	return (*myDataSourceDefinitionInternalResolver)(r)
+}
+
 func (r *VegaResolverRoot) DataSourceSpecConfiguration() DataSourceSpecConfigurationResolver {
 	return (*myDataSourceSpecConfigurationResolver)(r)
 }
@@ -237,10 +249,6 @@ func (r *VegaResolverRoot) NewAsset() NewAssetResolver {
 
 func (r *VegaResolverRoot) UpdateAsset() UpdateAssetResolver {
 	return (*updateAssetResolver)(r)
-}
-
-func (r *VegaResolverRoot) UpdateFutureProduct() UpdateFutureProductResolver {
-	return (*updateFutureProductResolver)(r)
 }
 
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
