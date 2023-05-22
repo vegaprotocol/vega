@@ -1179,7 +1179,7 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsNewMarket {
+func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
 	var dt *types.DataSourceDefinition
 	if termExt {
 		if termFilter == nil {
@@ -1262,6 +1262,7 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 				LpPriceRange:            num.DecimalFromFloat(0.95),
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				Successor:               successor,
 			},
 		},
 	}
@@ -1443,7 +1444,26 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, nil),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",

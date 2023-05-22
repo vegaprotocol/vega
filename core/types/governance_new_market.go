@@ -405,6 +405,7 @@ type instrumentConfigurationProduct interface {
 	Assets() []string
 	DeepClone() instrumentConfigurationProduct
 	String() string
+	QuoteName() string
 }
 
 type InstrumentConfigurationFuture struct {
@@ -429,6 +430,10 @@ func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduc
 
 func (i InstrumentConfigurationFuture) Assets() []string {
 	return i.Future.Assets()
+}
+
+func (i InstrumentConfigurationFuture) QuoteName() string {
+	return i.Future.QuoteName
 }
 
 type InstrumentConfiguration struct {

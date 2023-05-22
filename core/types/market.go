@@ -485,6 +485,13 @@ func (m *Market) GetAssets() ([]string, error) {
 	return m.TradableInstrument.Instrument.Product.getAssets()
 }
 
+func (i InstrumentFuture) GetQuoteName() (string, error) {
+	if i.Future == nil {
+		return "", ErrUnknownAsset
+	}
+	return i.Future.QuoteName, nil
+}
+
 func (i InstrumentFuture) iIntoProto() interface{} {
 	return i.IntoProto()
 }
@@ -493,6 +500,7 @@ type iProto interface {
 	iIntoProto() interface{}
 	getAssets() ([]string, error)
 	String() string
+	GetQuoteName() (string, error)
 }
 
 type Instrument struct {
