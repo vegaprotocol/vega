@@ -18,6 +18,7 @@
 - [8117](https://github.com/vegaprotocol/vega/issues/8117) - Added spots governance implementation
 - [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
 - [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
+- [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
