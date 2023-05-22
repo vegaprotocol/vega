@@ -341,6 +341,14 @@ func (i InstrumentSpot) String() string {
 	)
 }
 
+// GetQuoteName must be implemented to satisfy the iProto interface.
+func (i InstrumentSpot) GetQuoteName() (string, error) {
+	if i.Spot == nil {
+		return "", ErrUnknownAsset
+	}
+	return i.Spot.Name, nil
+}
+
 type Spot struct {
 	Name       string
 	BaseAsset  string
