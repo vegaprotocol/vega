@@ -13,7 +13,7 @@ type DataSourceSpecConfiguration struct {
 	Filters []*DataSourceSpecFilter
 }
 
-func (s *DataSourceSpecConfiguration) isDataSourceType() {}
+//func (s *DataSourceSpecConfiguration) isDataSourceType() {}
 
 func (s *DataSourceSpecConfiguration) oneOfProto() interface{} {
 	return s
@@ -55,16 +55,18 @@ func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigur
 	return dsc
 }
 
-func (s *DataSourceSpecConfiguration) DeepClone() dataSourceType {
+func (s *DataSourceSpecConfiguration) DeepClone() oracleSourceType {
 	return &DataSourceSpecConfiguration{
 		Signers: s.Signers,
 		Filters: DeepCloneDataSourceSpecFilters(s.Filters),
 	}
 }
 
+func (s *DataSourceSpecConfiguration) isOracleSourceType() {}
+
 // DataSourceSpecConfigurationFromProto tries to build the DataSourceSpecConfiguration object
 // from the given proto object.
-func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) *DataSourceSpecConfiguration {
+func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) oracleSourceType {
 	ds := &DataSourceSpecConfiguration{}
 	if protoConfig != nil {
 		// SignersFromProto returns a list of signers after checking the list length.
@@ -77,7 +79,7 @@ func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConf
 
 // This is the base data source.
 type DataSourceDefinitionExternalOracle struct {
-	Oracle *DataSourceSpecConfiguration
+	Oracle oracleSourceType
 }
 
 func (e *DataSourceDefinitionExternalOracle) isDataSourceType() {}
@@ -109,9 +111,10 @@ func (e *DataSourceDefinitionExternalOracle) oneOfProto() interface{} {
 }
 
 func (e *DataSourceDefinitionExternalOracle) DeepClone() dataSourceType {
-	if e.Oracle == nil {
+	if e.Oracle != nil {
+
 		return &DataSourceDefinitionExternalOracle{
-			Oracle: &DataSourceSpecConfiguration{},
+			Oracle: e.Oracle,
 		}
 	}
 

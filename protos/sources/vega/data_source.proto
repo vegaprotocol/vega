@@ -5,6 +5,9 @@ package vega;
 import "vega/data/v1/data.proto";
 import "vega/data/v1/spec.proto";
 
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
 // DataSourceDefinition represents the top level object that deals with data sources.
@@ -37,12 +40,55 @@ message DataSourceDefinitionInternal {
 message DataSourceDefinitionExternal {
   // Types of External data sources
   oneof source_type {
-    DataSourceSpecConfiguration oracle = 1;
+    DataSourceSpecConfiguration base = 1;
+    EthCallSpecConfiguration eth = 2;
   }
 }
 
-// All types of external data sources use the same configuration set for meeting requirements
-// in order for the data to be useful for Vega - valid signatures and matching filters.
+// EthCallSpecConfiguration type is to be used when handling ETH Oracle data source specs.
+// The content of this type is derived from calling an Ethereum read contract.
+message EthCallSpecConfiguration {
+  // A deterministic id, created from hashing time+address
+  string id = 1;
+  uint64 time = 2;
+
+  // Ethereum address of the contract
+  string address = 3;
+  // ABI of the Ethereum contract
+  google.protobuf.ListValue abi = 4;
+  // Name of the method to call on the contract.
+  string method = 5;
+  // Arguments used to pass to the method call.
+  repeated google.protobuf.Value args = 6;
+
+  // The signers of the data
+  repeated vega.data.v1.Signer signers = 7;
+  // Simple list of filters used as example, ETH most probably will not use these ones. // ?
+  repeated vega.data.v1.EthereumSourceSpecFilter filters = 8;
+}
+
+// EthTimeTrigger is a trigger for an Ethereum call based on the Ethereum block timestamp.
+// Can be a oneoff or a recurring.
+message EthTimeTrigger {
+  // The first block in which the Ethereum time is greater than or equal to this time (in seconds since the UNIX epoch)
+  // If this value is not specified, the call will begin repeating straight away.
+  optional uint64 initial = 1;
+  // Optionally repeat the call every n seconds.
+  optional uint64 every = 2;
+  // Optionally stop repeating the call once the Ethereum time is greated than this time (in seconds since the UNIX epoch)
+  optional uint64 until = 3;
+}
+
+// Trigger defines when the contract should be called
+message Trigger {
+  oneof trigger {
+    EthTimeTrigger eth_time_trigger = 1;
+  }
+}
+
+
+// A base type of external data source definition that can be used when meeting requirements
+// In order for the data to be useful for Vega - valid signatures and matching filters are required
 message DataSourceSpecConfiguration {
   // Signers is the list of authorized signatures that signed the data for this
   // source. All the signatures in the data source data should be contained in this

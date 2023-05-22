@@ -108,6 +108,19 @@ func (df DataSourceSpecFilters) String() string {
 	return "[" + strings.Join(strs, ", ") + "]"
 }
 
+type EthereumSourceSpecFilter struct {
+}
+
+func EthereumSourceSpecFilterFromProto() *EthereumSourceSpecFilter {
+
+}
+
+func (e *EthereumSourceSpecFilter) IntoProto() *vegapb.EthereumSourceSpecFilter {
+
+}
+
+// ....
+
 func DataSourceSpecFiltersFromProto(protoFilters []*datapb.Filter) []*DataSourceSpecFilter {
 	if len(protoFilters) > 0 {
 		dsf := make([]*DataSourceSpecFilter, len(protoFilters))
@@ -319,3 +332,13 @@ func ExternalDataSourceSpecFromProto(specProto *vegapb.ExternalDataSourceSpec) *
 		Spec: &DataSourceSpec{},
 	}
 }
+
+type timeTrigger interface {
+	isTimeTrigger()
+}
+
+type Trigger struct {
+	trigger timeTrigger
+}
+
+func (t *Trigger) isTimeTrigger() {}

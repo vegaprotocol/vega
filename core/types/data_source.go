@@ -134,7 +134,6 @@ type dataSourceType interface {
 
 	String() string
 	DeepClone() dataSourceType
-	// ToDataSourceSpec() *DataSourceSpec
 }
 
 type DataSourceDefinition struct {
@@ -163,6 +162,8 @@ func (s DataSourceDefinition) IntoProto() *vegapb.DataSourceDefinition {
 								},
 							},
 						}
+					case *vegapb.DataSourceDefinitionExternal_Eth:
+						// ...
 					}
 				}
 			}
@@ -281,10 +282,17 @@ func (s DataSourceDefinition) GetSigners() []*Signer {
 		case *vegapb.DataSourceDefinition_External:
 			if dsn.External != nil {
 				if dsn.External.SourceType != nil {
-					o := dsn.External.GetOracle()
-					if o != nil {
-						signers = SignersFromProto(o.Signers)
+					switch edsn := dsn.External.SourceType.(type) {
+					case *vegapb.DataSourceDefinitionExternal_Oracle:
+						o := dsn.External.GetOracle()
+						if o != nil {
+							signers = SignersFromProto(o.Signers)
+						}
+
+					case *vegapb.DataSourceDefinitionExternal_Eth:
+						// ...
 					}
+
 				}
 			}
 		case **vegapb.DataSourceDefinition_Internal:
@@ -311,6 +319,9 @@ func (s DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 						if o != nil {
 							filters = DataSourceSpecFiltersFromProto(o.Filters)
 						}
+
+					case *vegapb.DataSourceDefinitionExternal_Eth:
+						// ...
 					}
 				}
 			}
@@ -376,8 +387,9 @@ func (s DataSourceDefinition) GetDataSourceSpecConfiguration() *vegapb.DataSourc
 	return &vegapb.DataSourceSpecConfiguration{}
 }
 
+
 // NewDataSourceDefinition creates a new EMPTY DataSourceDefinition object.
-func NewDataSourceDefinition(tp int) *DataSourceDefinition {
+func NewDataSourceDefinition(tp int, ) *DataSourceDefinition {
 	ds := &DataSourceDefinition{}
 	switch tp {
 	case vegapb.DataSourceDefinitionTypeInt:

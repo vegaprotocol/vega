@@ -68,3 +68,7 @@ message Condition {
     OPERATOR_LESS_THAN_OR_EQUAL = 5;
   }
 }
+
+message EthereumSourceSpecFilter {
+
+}

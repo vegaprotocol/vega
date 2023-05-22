@@ -5,10 +5,10 @@ import (
 )
 
 type DataSourceDefinitionExternal struct {
-	SourceType dataSourceType
+	SourceType oracleSourceType
 }
 
-func (e *DataSourceDefinitionExternal) isDataSourceType() {}
+func (e *DataSourceDefinitionExternal) isOracleSourceType() {}
 
 func (e *DataSourceDefinitionExternal) oneOfProto() interface{} {
 	return e.IntoProto()
@@ -25,6 +25,8 @@ func (e *DataSourceDefinitionExternal) IntoProto() *vegapb.DataSourceDefinitionE
 			ds = &vegapb.DataSourceDefinitionExternal{
 				SourceType: dsn,
 			}
+		case **vegapb.DataSourceDefinitionExternal_Eth:
+			// ...
 		}
 	}
 
@@ -39,7 +41,7 @@ func (e *DataSourceDefinitionExternal) String() string {
 	return ""
 }
 
-func (e *DataSourceDefinitionExternal) DeepClone() dataSourceType {
+func (e *DataSourceDefinitionExternal) DeepClone() oracleSourceType {
 	if e.SourceType != nil {
 		return e.SourceType.DeepClone()
 	}
