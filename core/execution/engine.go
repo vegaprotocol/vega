@@ -322,13 +322,17 @@ func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string, in
 		return ErrMarketDoesNotExist
 	}
 	pm, ok := e.GetMarket(parent, true)
-	var parentM *types.Market
-	parentState, sok := e.marketCPStates[parent]
 	if !ok {
 		// so we have a successor market that has passed the vote, but the parent market either already was succeeded
 		// or the proposal vote closed when the parent market was still around, but it wasn't enacted until now
 		// and since then the parent market state expired. Should we reject this proposal or enact it as a non-successor?
+		// this market was proposed as a successor, but the parent ID will have been set to nil at this point, but let's make sure:
+		mkt.mkt.ParentMarketID = ""
+		mkt.mkt.InsurancePoolFraction = num.DecimalZero()
+		return nil
 	}
+	var parentM *types.Market
+	parentState, sok := e.marketCPStates[parent]
 	if pmo, ok := e.markets[parent]; ok {
 		// mark as succeeded so the state is excluded from checkpoint data
 		pmo.succeeded = true
