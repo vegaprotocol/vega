@@ -316,6 +316,10 @@ func (i InstrumentConfigurationSpot) String() string {
 	)
 }
 
+func (InstrumentConfigurationSpot) Type() ProductType {
+	return ProductTypeSpot
+}
+
 func (i InstrumentConfigurationSpot) DeepClone() instrumentConfigurationProduct {
 	if i.Spot == nil {
 		return &InstrumentConfigurationFuture{}
