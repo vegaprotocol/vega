@@ -354,7 +354,7 @@ func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string, in
 	// pass in the ELS and the like
 	mkt.InheritParent(ctx, parentState)
 	// if the parent market is in trading terminated state, then just remove it from the CP states
-	if parentM.State == types.MarketStateTradingTerminated {
+	if parentM.State == types.MarketStateSettled {
 		delete(e.marketCPStates, parent)
 	}
 	// we already set up the successor market accordingly, now we should clean up the state
