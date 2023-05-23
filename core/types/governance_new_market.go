@@ -330,6 +330,10 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 }
 
 func SuccessorConfigFromProto(p *vegapb.SuccessorConfiguration) *SuccessorConfig {
+	// successor config is optional, but make sure that, if provided, it's not set to empty parent market ID
+	if len(p.ParentMarketId) == 0 {
+		return nil
+	}
 	f, _ := num.DecimalFromString(p.InsurancePoolFraction)
 	return &SuccessorConfig{
 		ParentID:              p.ParentMarketId,

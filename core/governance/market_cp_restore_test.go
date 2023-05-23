@@ -46,6 +46,9 @@ import (
 //go:embed testcp/checkpoint.cp
 var cpFile []byte
 
+//go:embed testcp/scp.cp
+var cpSuccessorFile []byte
+
 // Disable 'TestMarketRestoreFromCheckpoint' for now. 'testcp/checkpoint.cp' needs to be regenerated for the new data sourcing types.
 // Rest of functions disabled because linter complains.
 
@@ -75,6 +78,41 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 		"954410d873a6d1a419b8a11e7e3a5178f65b976f3140bb78fc97d21daf08877f",
 		"14719259af09239e479c107c6a69dbdae05dbde619ad06632af27a2fc2c9a9c7",
 		"3201812426fed4cc6d5cfbacdaa54e738791deb9f72743f8b18d3e9f6a3e222c",
+	}
+	govProposalsCP, _ := gov.Checkpoint()
+	proposals := &checkpointpb.Proposals{}
+	err := proto.Unmarshal(govProposalsCP, proposals)
+	require.NoError(t, err)
+	require.Equal(t, len(expectedMarkets), len(proposals.Proposals))
+
+	for i, expectedMarket := range expectedMarkets {
+		m, exists := ex.GetMarket(expectedMarket, false)
+		require.True(t, exists)
+		require.Equal(t, types.MarketTradingModeOpeningAuction, m.TradingMode)
+		require.Equal(t, types.MarketStatePending, m.State)
+		require.Equal(t, expectedMarket, proposals.Proposals[i].Id)
+	}
+}
+
+func TestMarketRestoreFromCheckpointWithEmptySuccessor(t *testing.T) {
+	t.Skipf("Skipping test as need to regenerate testcp/checkpoint.cp with appropriate values for LP - Zohar to fix")
+	now := time.Now()
+	ex, gov, cpEng := createExecutionEngine(t, now)
+	genesis := &checkpoint.GenesisState{
+		CheckpointHash:  "45ff656ab5f434ceb47329d109874a8d81c7f987d1e08f913f22265a809da766",
+		CheckpointState: base64.StdEncoding.EncodeToString(cpSuccessorFile),
+	}
+	gd := &struct {
+		Checkpoint *checkpoint.GenesisState `json:"checkpoint"`
+	}{}
+
+	gd.Checkpoint = genesis
+	gdBytes, _ := json.Marshal(gd)
+
+	require.NoError(t, cpEng.UponGenesis(context.Background(), gdBytes))
+
+	expectedMarkets := []string{
+		"2dca7baa5f7269b08d053668bca03f97f72e9a162327eebd941c54f1f9fb8f80",
 	}
 	govProposalsCP, _ := gov.Checkpoint()
 	proposals := &checkpointpb.Proposals{}

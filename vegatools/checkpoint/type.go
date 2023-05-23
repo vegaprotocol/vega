@@ -27,19 +27,20 @@ type all struct {
 func newAll() *all {
 	return &all{
 		messages: map[string]proto.Message{
-			"governance":         new(checkpoint.Proposals),
-			"assets":             new(checkpoint.Assets),
-			"collateral":         new(checkpoint.Collateral),
-			"network_parameters": new(checkpoint.NetParams),
-			"delegation":         new(checkpoint.Delegate),
-			"epoch":              new(events.EpochEvent),
-			"block":              new(checkpoint.Block),
-			"rewards":            new(checkpoint.Rewards),
-			"banking":            new(checkpoint.Banking),
-			"validators":         new(checkpoint.Validators),
-			"staking":            new(checkpoint.Staking),
-			"multisig_control":   new(checkpoint.MultisigControl),
-			"market_tracker":     new(checkpoint.MarketTracker),
+			"governance":         &checkpoint.Proposals{},
+			"assets":             &checkpoint.Assets{},
+			"collateral":         &checkpoint.Collateral{},
+			"network_parameters": &checkpoint.NetParams{},
+			"delegation":         &checkpoint.Delegate{},
+			"epoch":              &events.EpochEvent{},
+			"block":              &checkpoint.Block{},
+			"rewards":            &checkpoint.Rewards{},
+			"banking":            &checkpoint.Banking{},
+			"validators":         &checkpoint.Validators{},
+			"staking":            &checkpoint.Staking{},
+			"multisig_control":   &checkpoint.MultisigControl{},
+			"market_tracker":     &checkpoint.MarketTracker{},
+			"execution":          &checkpoint.ExecutionState{},
 		},
 	}
 }
