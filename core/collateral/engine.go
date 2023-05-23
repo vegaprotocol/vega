@@ -2877,7 +2877,7 @@ func (e *Engine) GetRewardAccountsByType(rewardAcccountType types.AccountType) [
 	return accounts
 }
 
-// TransferToHoldingAccount locks funds from general account into holding account account of the party.
+// TransferToHoldingAccount locks funds from general account into holding account of the party.
 func (e *Engine) TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error) {
 	generalAccountID := e.accountID(transfer.Market, transfer.Owner, transfer.Amount.Asset, types.AccountTypeGeneral)
 	generalAccount, err := e.GetAccountByID(generalAccountID)
