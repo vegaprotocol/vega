@@ -98,7 +98,7 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 		after = &cursor
 	}
 
-	transactions, err := b.store.ListTransactions(ctx, req.Filters, limit, before, after)
+	transactions, err := b.store.ListTransactions(ctx, req.Filters, req.TxType, req.Party, limit, before, after)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

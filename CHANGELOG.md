@@ -6,6 +6,7 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
+- [7684](https://github.com/vegaprotocol/vega/issues/7684) - Deprecate the filters map in `BlockExplorer` `ListTransactions` API and add `tx_type` and `party` parameters.
 - [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
 
 ### 🛠 Improvements

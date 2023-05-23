@@ -106,6 +106,15 @@ var commandName = map[Command]string{
 	AmendSpotLiquidityProvisionCommand:  "Spot Amend Liquidity Provision Order",
 }
 
+func CommandNameExists(cmd string) bool {
+	for _, v := range commandName {
+		if v == cmd {
+			return true
+		}
+	}
+	return false
+}
+
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
 	case NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, ValidatorHeartbeatCommand, RotateKeySubmissionCommand, StateVariableProposalCommand, RotateEthereumKeySubmissionCommand:

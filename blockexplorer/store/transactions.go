@@ -21,6 +21,7 @@ import (
 	"github.com/georgysavva/scany/pgxscan"
 
 	"code.vegaprotocol.io/vega/blockexplorer/entities"
+	"code.vegaprotocol.io/vega/core/txn"
 	pb "code.vegaprotocol.io/vega/protos/blockexplorer/api/v1"
 )
 
@@ -56,6 +57,8 @@ func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transactio
 
 func (s *Store) ListTransactions(ctx context.Context,
 	filters map[string]string,
+	txType []string,
+	party []string,
 	limit uint32,
 	before *entities.TxCursor,
 	after *entities.TxCursor,
@@ -78,13 +81,30 @@ func (s *Store) ListTransactions(ctx context.Context,
 		predicates = append(predicates, predicate)
 	}
 
+	if len(txType) > 0 {
+		txTypesBytes := make([][]byte, len(txType))
+		for i, tt := range txType {
+			txTypesBytes[i] = []byte(tt)
+		}
+		predicates = append(predicates, fmt.Sprintf("tx_results.tx_type = ANY(%s)", nextBindVar(&args, txType)))
+	}
+
+	if len(party) > 0 {
+		partiesBytes := make([][]byte, len(party))
+		for i, p := range party {
+			partiesBytes[i] = []byte(p)
+		}
+		predicates = append(predicates, fmt.Sprintf("tx_results.sender = ANY(%s) OR tx_results.receiver = ANY(%s)",
+			nextBindVar(&args, party), nextBindVar(&args, party)))
+	}
+
 	for key, value := range filters {
 		var predicate string
 
 		if key == "tx.submitter" {
 			// tx.submitter is lifted out of attributes and into tx_results by a trigger for faster access
 			predicate = fmt.Sprintf("tx_results.submitter=%s", nextBindVar(&args, value))
-		} else if key == "cmd.type" {
+		} else if key == "cmd.type" && txn.CommandNameExists(value) {
 			predicate = fmt.Sprintf("tx_results.cmd_type=%s", nextBindVar(&args, value))
 		} else if key == "block.height" {
 			// much quicker to filter block height by joining to the block table than looking in attributes

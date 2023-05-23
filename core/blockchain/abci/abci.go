@@ -18,6 +18,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/blockchain"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 
 	"github.com/tendermint/tendermint/abci/types"
 )
@@ -194,7 +195,158 @@ func AddCommonDeliverTxEvents(resp types.ResponseDeliverTx, tx Tx) types.Respons
 	return resp
 }
 
+const (
+	TxTypeStakeDeposited                     = "StakeDeposited"
+	TxTypeStakeRemoved                       = "StakeRemoved"
+	TxTypeBuiltinAssetDeposit                = "BuiltinAssetDeposit"
+	TxTypeBuiltinAssetWithdrawal             = "BuiltinAssetWithdrawal"
+	TxTypeERC20Deposit                       = "ERC20Deposit"
+	TxTypeERC20Withdrawal                    = "ERC20Withdrawal"
+	TxTypeTransfer                           = "Transfer"
+	TxTypeOrderSubmission                    = "OrderSubmission"
+	TxTypeOrderCancellation                  = "OrderCancellation"
+	TxTypeOrderAmendment                     = "OrderAmendment"
+	TxTypeVoteSubmission                     = "VoteSubmission"
+	TxTypeWithdrawSubmission                 = "WithdrawSubmission"
+	TxTypeLiquidityProvisionSubmission       = "LiquidityProvisionSubmission"
+	TxTypeLiquidityProvisionCancellation     = "LiquidityProvisionCancellation"
+	TxTypeLiquidityProvisionAmendment        = "LiquidityProvisionAmendment"
+	TxTypeSpotLiquidityProvisionSubmission   = "SpotLiquidityProvisionSubmission"
+	TxTypeSpotLiquidityProvisionCancellation = "SpotLiquidityProvisionCancellation"
+	TxTypeSpotLiquidityProvisionAmendment    = "SpotLiquidityProvisionAmendment"
+	TxTypeProposalSubmission                 = "ProposalSubmission"
+	TxTypeAnnounceNode                       = "AnnounceNode"
+	TxTypeNodeVote                           = "NodeVote"
+	TxTypeNodeSignature                      = "NodeSignature"
+	TxTypeOracleDataSubmission               = "OracleDataSubmission"
+	TxTypeDelegateSubmission                 = "DelegateSubmission"
+	TxTypeUndelegateSubmission               = "UndelegateSubmission"
+	TxTypeKeyRotateSubmission                = "KeyRotateSubmission"
+	TxTypeStateVariableProposal              = "StateVariableProposal"
+	TxTypeCancelTransfer                     = "CancelTransfer"
+	TxTypeValidatorHeartbeat                 = "ValidatorHeartbeat"
+	TxTypeEthereumKeyRotateSubmission        = "EthereumKeyRotateSubmission"
+	TxTypeProtocolUpgradeProposal            = "ProtocolUpgradeProposal"
+	TxTypeIssueSignatures                    = "IssueSignatures"
+	TxTypeBatchMarketInstructions            = "BatchMarketInstructions"
+)
+
+type txType struct {
+	Type     string
+	Sender   string
+	Receiver string
+}
+
+func GetTxType(tx Tx) (txt txType) {
+	if tx.GetCmd() == nil {
+		return
+	}
+
+	switch c := tx.GetCmd().(type) {
+	case *commandspb.InputData_ChainEvent:
+		ce := c.ChainEvent
+		if ce == nil {
+			return
+		}
+
+		if se := ce.GetStakingEvent(); se != nil {
+			if sed := se.GetStakeDeposited(); sed != nil {
+				txt.Type = TxTypeStakeDeposited
+				txt.Receiver = sed.GetVegaPublicKey()
+			}
+			if ser := se.GetStakeRemoved(); ser != nil {
+				txt.Type = TxTypeStakeRemoved
+				txt.Receiver = ser.GetVegaPublicKey()
+			}
+		}
+		if bi := ce.GetBuiltin(); bi != nil {
+			if bid := bi.GetDeposit(); bid != nil {
+				txt.Type = TxTypeBuiltinAssetDeposit
+				txt.Receiver = bid.GetPartyId()
+			}
+			if biw := bi.GetWithdrawal(); biw != nil {
+				txt.Type = TxTypeBuiltinAssetWithdrawal
+				txt.Sender = biw.GetPartyId()
+			}
+		}
+		if e20 := ce.GetErc20(); e20 != nil {
+			if e20d := e20.GetDeposit(); e20d != nil {
+				txt.Type = TxTypeERC20Deposit
+				txt.Receiver = e20d.GetTargetPartyId()
+			}
+			if e20w := e20.GetWithdrawal(); e20w != nil {
+				txt.Type = TxTypeERC20Withdrawal
+				txt.Sender = tx.Party() // TODO: ???
+			}
+		}
+	case *commandspb.InputData_Transfer:
+		tr := c.Transfer
+		if tr == nil {
+			return
+		}
+		txt.Type = TxTypeTransfer
+		txt.Receiver = tr.GetTo()
+		txt.Sender = tx.Party() // TODO: ???
+	case *commandspb.InputData_OrderSubmission:
+		txt.Type = TxTypeOrderSubmission
+	case *commandspb.InputData_OrderCancellation:
+		txt.Type = TxTypeOrderCancellation
+	case *commandspb.InputData_OrderAmendment:
+		txt.Type = TxTypeOrderAmendment
+	case *commandspb.InputData_VoteSubmission:
+		txt.Type = TxTypeVoteSubmission
+	case *commandspb.InputData_WithdrawSubmission:
+		txt.Type = TxTypeWithdrawSubmission
+	case *commandspb.InputData_LiquidityProvisionSubmission:
+		txt.Type = TxTypeLiquidityProvisionSubmission
+	case *commandspb.InputData_LiquidityProvisionCancellation:
+		txt.Type = TxTypeLiquidityProvisionCancellation
+	case *commandspb.InputData_LiquidityProvisionAmendment:
+		txt.Type = TxTypeLiquidityProvisionAmendment
+	case *commandspb.InputData_SpotLiquidityProvisionSubmission:
+		txt.Type = TxTypeSpotLiquidityProvisionSubmission
+	case *commandspb.InputData_SpotLiquidityProvisionCancellation:
+		txt.Type = TxTypeSpotLiquidityProvisionCancellation
+	case *commandspb.InputData_SpotLiquidityProvisionAmendment:
+		txt.Type = TxTypeSpotLiquidityProvisionAmendment
+	case *commandspb.InputData_ProposalSubmission:
+		txt.Type = TxTypeProposalSubmission
+	case *commandspb.InputData_AnnounceNode:
+		txt.Type = TxTypeAnnounceNode
+	case *commandspb.InputData_NodeVote:
+		txt.Type = TxTypeNodeVote
+	case *commandspb.InputData_NodeSignature:
+		txt.Type = TxTypeNodeSignature
+	case *commandspb.InputData_OracleDataSubmission:
+		txt.Type = TxTypeOracleDataSubmission
+	case *commandspb.InputData_DelegateSubmission:
+		txt.Type = TxTypeDelegateSubmission
+	case *commandspb.InputData_UndelegateSubmission:
+		txt.Type = TxTypeUndelegateSubmission
+	case *commandspb.InputData_KeyRotateSubmission:
+		txt.Type = TxTypeKeyRotateSubmission
+	case *commandspb.InputData_StateVariableProposal:
+		txt.Type = TxTypeStateVariableProposal
+	case *commandspb.InputData_CancelTransfer:
+		txt.Type = TxTypeCancelTransfer
+	case *commandspb.InputData_ValidatorHeartbeat:
+		txt.Type = TxTypeValidatorHeartbeat
+	case *commandspb.InputData_EthereumKeyRotateSubmission:
+		txt.Type = TxTypeEthereumKeyRotateSubmission
+	case *commandspb.InputData_ProtocolUpgradeProposal:
+		txt.Type = TxTypeProtocolUpgradeProposal
+	case *commandspb.InputData_IssueSignatures:
+		txt.Type = TxTypeIssueSignatures
+	case *commandspb.InputData_BatchMarketInstructions:
+		txt.Type = TxTypeBatchMarketInstructions
+	}
+
+	return
+}
+
 func getBaseTxEvents(tx Tx) []types.Event {
+	txt := GetTxType(tx)
+
 	base := []types.Event{
 		{
 			Type: "tx",
@@ -202,6 +354,36 @@ func getBaseTxEvents(tx Tx) []types.Event {
 				{
 					Key:   []byte("submitter"),
 					Value: []byte(tx.PubKeyHex()),
+					Index: true,
+				},
+			},
+		},
+		{
+			Type: "tx",
+			Attributes: []types.EventAttribute{
+				{
+					Key:   []byte("type"),
+					Value: []byte(txt.Type),
+					Index: true,
+				},
+			},
+		},
+		{
+			Type: "tx",
+			Attributes: []types.EventAttribute{
+				{
+					Key:   []byte("sender"),
+					Value: []byte(txt.Sender),
+					Index: true,
+				},
+			},
+		},
+		{
+			Type: "tx",
+			Attributes: []types.EventAttribute{
+				{
+					Key:   []byte("receiver"),
+					Value: []byte(txt.Receiver),
 					Index: true,
 				},
 			},
