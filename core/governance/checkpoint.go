@@ -86,7 +86,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			enct.current = prop.Terms.EnactmentTimestamp
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct)
 			if err != nil {
-				e.log.Panic("Failed to convert proposal into market")
+				e.log.Panic("Failed to convert proposal into market", logging.Error(err))
 			}
 			nm := toSubmit.NewMarket()
 			err = e.markets.RestoreMarket(ctx, nm.Market())
