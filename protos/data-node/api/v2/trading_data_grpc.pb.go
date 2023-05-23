@@ -71,14 +71,13 @@ type TradingDataServiceClient interface {
 	// List ledger entries
 	//
 	// Get a list of ledger entries within the given date range.
-	// This query returns all the ledger entries for a given subset of accounts, specified via the 'filter' argument.
 	//
 	// Entries can be filtered by:
-	//   - the sending account (party ID, market ID, asset ID, account type)
-	//   - receiving account (party ID, market ID, asset ID, account type)
+	//   - sending account: party ID, market ID, asset ID, account type
+	//   - receiving account: party ID, market ID, asset ID, account type
 	//   - transfer type either in addition to the above filters or as a standalone option
 	//
-	// Party ID is a required field, all other fields are optional.
+	// It is required to filter by at least one party ID on either side of the transfer.
 	ListLedgerEntries(ctx context.Context, in *ListLedgerEntriesRequest, opts ...grpc.CallOption) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//
@@ -1690,14 +1689,13 @@ type TradingDataServiceServer interface {
 	// List ledger entries
 	//
 	// Get a list of ledger entries within the given date range.
-	// This query returns all the ledger entries for a given subset of accounts, specified via the 'filter' argument.
 	//
 	// Entries can be filtered by:
-	//   - the sending account (party ID, market ID, asset ID, account type)
-	//   - receiving account (party ID, market ID, asset ID, account type)
+	//   - sending account: party ID, market ID, asset ID, account type
+	//   - receiving account: party ID, market ID, asset ID, account type
 	//   - transfer type either in addition to the above filters or as a standalone option
 	//
-	// Party ID is a required field, all other fields are optional.
+	// It is required to filter by at least one party ID on either side of the transfer.
 	ListLedgerEntries(context.Context, *ListLedgerEntriesRequest) (*ListLedgerEntriesResponse, error)
 	// Export ledger entries
 	//

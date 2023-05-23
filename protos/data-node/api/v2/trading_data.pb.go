@@ -2567,13 +2567,13 @@ func (x *PositionUpdates) GetPositions() []*vega.Position {
 	return nil
 }
 
-// Represents the ledger entry data with corresponding cursor for it
+// Represents the ledger entry data with corresponding cursor for it.
 type LedgerEntriesEdge struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// 'LedgerEntry' data.
+	// Data for the ledger entry
 	Node *vega.LedgerEntry `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
 	// Cursor that can be used to fetch further pages.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
@@ -2631,7 +2631,7 @@ type LedgerEntriesConnection struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Page of 'LedgerEntry' data and their corresponding cursors.
+	// Page of ledger entry data and their corresponding cursors.
 	Edges []*LedgerEntriesEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
 	// Page information that is used for fetching further pages.
 	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`

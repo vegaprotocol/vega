@@ -120,8 +120,7 @@ service TradingDataService {
   //   - sending account: party ID, market ID, asset ID, account type
   //   - receiving account: party ID, market ID, asset ID, account type
   //   - transfer type either in addition to the above filters or as a standalone option
-
-It is required to filter by at least one party ID on either side of the transfer.
+  // It is required to filter by at least one party ID on either side of the transfer.
   rpc ListLedgerEntries(ListLedgerEntriesRequest) returns (ListLedgerEntriesResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Ledger entries"};
   }
