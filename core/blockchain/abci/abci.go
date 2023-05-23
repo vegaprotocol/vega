@@ -231,13 +231,13 @@ const (
 	TxTypeBatchMarketInstructions            = "BatchMarketInstructions"
 )
 
-type txType struct {
+type TxType struct {
 	Type     string
 	Sender   string
 	Receiver string
 }
 
-func GetTxType(tx Tx) (txt txType) {
+func GetTxType(tx Tx) (txt TxType) {
 	if tx.GetCmd() == nil {
 		return
 	}
