@@ -18,20 +18,18 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/core/types/statevar"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 )
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine
 
 var (
 	// ErrMarketDoesNotExist is returned when the market does not exist.
@@ -47,12 +45,6 @@ var (
 	ErrSuccessorMarketDoesNotExist = errors.New("successor market does not exist")
 )
 
-// TimeService ...
-
-type TimeService interface {
-	GetTimeNow() time.Time
-}
-
 // OracleEngine ...
 type OracleEngine interface {
 	ListensToSigners(oracles.OracleData) bool
@@ -60,48 +52,20 @@ type OracleEngine interface {
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
-// Broker (no longer need to mock this, use the broker/mocks wrapper).
-type Broker interface {
-	Send(event events.Event)
-	SendBatch(events []events.Event)
-}
-
-type Collateral interface {
-	MarketCollateral
-	AssetExists(string) bool
-	CreateMarketAccounts(context.Context, string, string) (string, string, error)
-	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
-}
-
-type StateVarEngine interface {
-	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.EventType, result func(context.Context, statevar.StateVariableResult) error) error
-	UnregisterStateVariable(asset, market string)
-	NewEvent(asset, market string, eventType statevar.EventType)
-	ReadyForTimeTrigger(asset, mktID string)
-}
-
-type Assets interface {
-	Get(assetID string) (*assets.Asset, error)
-}
-
-type IDGenerator interface {
-	NextID() string
-}
-
 // Engine is the execution engine.
 type Engine struct {
 	Config
 	log *logging.Logger
 
-	markets    map[string]*Market
-	marketsCpy []*Market
-	collateral Collateral
-	assets     Assets
+	markets    map[string]*future.Market
+	marketsCpy []*future.Market
+	collateral common.Collateral
+	assets     common.Assets
 
-	broker                Broker
-	timeService           TimeService
-	stateVarEngine        StateVarEngine
-	marketActivityTracker *MarketActivityTracker
+	broker                common.Broker
+	timeService           common.TimeService
+	stateVarEngine        common.StateVarEngine
+	marketActivityTracker *common.MarketActivityTracker
 
 	oracle OracleEngine
 
@@ -167,13 +131,13 @@ func defaultNetParamsValues() netParamsValues {
 func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
-	ts TimeService,
-	collateral Collateral,
+	ts common.TimeService,
+	collateral common.Collateral,
 	oracle OracleEngine,
-	broker Broker,
-	stateVarEngine StateVarEngine,
-	marketActivityTracker *MarketActivityTracker,
-	assets Assets,
+	broker common.Broker,
+	stateVarEngine common.StateVarEngine,
+	marketActivityTracker *common.MarketActivityTracker,
+	assets common.Assets,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -181,7 +145,7 @@ func NewEngine(
 	e := &Engine{
 		log:                   log,
 		Config:                executionConfig,
-		markets:               map[string]*Market{},
+		markets:               map[string]*future.Market{},
 		timeService:           ts,
 		collateral:            collateral,
 		assets:                assets,
@@ -299,15 +263,14 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 		return err
 	}
 	// proposal was accepted, meaning the vote was closed, there may still be some time left to enact it
-	mDef := mkt.mkt
+	mDef := mkt.Mkt()
 	if len(mDef.ParentMarketID) == 0 {
 		return nil
 	}
 	// see if the parent market is still around
 	if _, ok := e.GetMarket(mDef.ParentMarketID, true); !ok {
 		// there is no parent market anywhere, this market is now treated as a regular non-successor market
-		mkt.mkt.ParentMarketID = ""
-		mkt.mkt.InsurancePoolFraction = num.DecimalZero()
+		mkt.ResetParentIDAndInsurancePoolFraction()
 	}
 	return nil
 }
@@ -327,16 +290,15 @@ func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string, in
 		// or the proposal vote closed when the parent market was still around, but it wasn't enacted until now
 		// and since then the parent market state expired. Should we reject this proposal or enact it as a non-successor?
 		// this market was proposed as a successor, but the parent ID will have been set to nil at this point, but let's make sure:
-		mkt.mkt.ParentMarketID = ""
-		mkt.mkt.InsurancePoolFraction = num.DecimalZero()
+		mkt.ResetParentIDAndInsurancePoolFraction()
 		return nil
 	}
 	var parentM *types.Market
 	parentState, sok := e.marketCPStates[parent]
 	if pmo, ok := e.markets[parent]; ok {
 		// mark as succeeded so the state is excluded from checkpoint data
-		pmo.succeeded = true
-		parentM = pmo.mkt
+		pmo.SetSucceeded()
+		parentM = pmo.Mkt()
 		// it may be possible that there is no CP state for this market yet
 		if !sok {
 			parentState = pmo.GetCPState()
@@ -346,9 +308,9 @@ func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string, in
 		// if we got the parent market type from GetMarket, but the market is not in e.markets,
 		// we got it from marketCPStates, and parentState will be set
 	}
-	if !mkt.mkt.InsurancePoolFraction.IsZero() {
-		assets, _ := mkt.mkt.GetAssets()
-		lm := e.collateral.SuccessorInsuranceFraction(ctx, successor, parent, assets[0], mkt.mkt.InsurancePoolFraction)
+	if !mkt.Mkt().InsurancePoolFraction.IsZero() {
+		assets, _ := mkt.Mkt().GetAssets()
+		lm := e.collateral.SuccessorInsuranceFraction(ctx, successor, parent, assets[0], mkt.Mkt().InsurancePoolFraction)
 		e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
 	}
 	// pass in the ELS and the like
@@ -375,7 +337,7 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 	if _, ok := e.markets[marketID]; !ok {
 		return false
 	}
-	quantum, err := e.collateral.GetAssetQuantum(e.markets[marketID].settlementAsset)
+	quantum, err := e.collateral.GetAssetQuantum(e.markets[marketID].GetSettlementAsset())
 	if err != nil {
 		return false
 	}
@@ -454,17 +416,17 @@ func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) e
 	return nil
 }
 
-func (e *Engine) publishNewMarketInfos(ctx context.Context, mkt *Market) {
+func (e *Engine) publishNewMarketInfos(ctx context.Context, mkt *future.Market) {
 	// we send a market data event for this market when it's created so graphql does not fail
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.mkt))
-	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
+	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.Mkt()))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.Mkt()))
 }
 
-func (e *Engine) publishUpdateMarketInfos(ctx context.Context, mkt *Market) {
+func (e *Engine) publishUpdateMarketInfos(ctx context.Context, mkt *future.Market) {
 	// we send a market data event for this market when it's created so graphql does not fail
 	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.Mkt()))
 }
 
 // submitMarket will submit a new market configuration to the network.
@@ -499,7 +461,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		)
 		return err
 	}
-	mkt, err := NewMarket(
+	mkt, err := future.NewMarket(
 		ctx,
 		e.log,
 		e.Risk,
@@ -537,7 +499,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	return e.propagateInitialNetParams(ctx, mkt)
 }
 
-func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
+func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Market) error {
 	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
 	}
@@ -604,11 +566,7 @@ func (e *Engine) removeMarket(mktID string) {
 	delete(e.markets, mktID)
 	for i, mkt := range e.marketsCpy {
 		if mkt.GetID() == mktID {
-			mkt.matching.StopSnapshots()
-			mkt.position.StopSnapshots()
-			mkt.liquidity.StopSnapshots()
-			mkt.settlement.StopSnapshots()
-			mkt.tsCalc.StopSnapshots()
+			mkt.StopSnapshots()
 
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
@@ -633,7 +591,7 @@ func (e *Engine) SubmitOrder(
 	ctx context.Context,
 	submission *types.OrderSubmission,
 	party string,
-	idgen IDGenerator,
+	idgen common.IDGenerator,
 	orderID string,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(submission.MarketID, "execution", "SubmitOrder")
@@ -672,7 +630,7 @@ func (e *Engine) AmendOrder(
 	ctx context.Context,
 	amendment *types.OrderAmendment,
 	party string,
-	idgen IDGenerator,
+	idgen common.IDGenerator,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
@@ -723,7 +681,7 @@ func (e *Engine) CancelOrder(
 	ctx context.Context,
 	cancel *types.OrderCancellation,
 	party string,
-	idgen IDGenerator,
+	idgen common.IDGenerator,
 ) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(cancel.MarketID, "execution", "CancelOrder")
 	defer func() {
@@ -751,7 +709,7 @@ func (e *Engine) CancelOrder(
 func (e *Engine) cancelOrder(
 	ctx context.Context,
 	party, market, orderID string,
-	idgen IDGenerator,
+	idgen common.IDGenerator,
 ) ([]*types.OrderCancellationConfirmation, error) {
 	mkt, ok := e.markets[market]
 	if !ok {
@@ -791,7 +749,7 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 
 	for _, mkt := range e.marketsCpy {
 		confs, err := mkt.CancelAllOrders(ctx, party)
-		if err != nil && err != ErrTradingNotAllowed {
+		if err != nil && err != common.ErrTradingNotAllowed {
 			return nil, err
 		}
 		confirmations = append(confirmations, confs...)
@@ -1217,7 +1175,7 @@ func (e *Engine) GetEquityLikeShareForMarketAndParty(market, party string) (num.
 	if !ok {
 		return num.DecimalZero(), false
 	}
-	return mkt.equityShares.SharesFromParty(party), true
+	return mkt.GetEquityShares().SharesFromParty(party), true
 }
 
 func (e *Engine) GetAsset(assetID string) (types.Asset, bool) {

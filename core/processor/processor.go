@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
@@ -68,9 +68,9 @@ type DelegationEngine interface {
 //nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
