@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vega/commands/verify"
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/genesis"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/core/validators"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -142,6 +143,13 @@ func testVerifyNetworkParams(t *testing.T) {
 	// Check for invalid checkpoint overwrite network parameter
 	gs = genesis.DefaultState()
 	gs.NetParamsOverwrite = []string{"NOTREAL"}
+	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+
+	// Check for deprecated parameter in genesis
+	gs = genesis.DefaultState()
+	for k := range netparams.Deprecated {
+		gs.NetParams[k] = "hello"
+	}
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
 }
 
