@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
+	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
@@ -20,6 +21,13 @@ var One = num.UintOne()
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
+
+// OracleEngine ...
+type OracleEngine interface {
+	ListensToSigners(oracles.OracleData) bool
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
+	Unsubscribe(context.Context, oracles.SubscriptionID)
+}
 
 // PriceMonitor interface to handle price monitoring/auction triggers
 // @TODO the interface shouldn't be imported here.

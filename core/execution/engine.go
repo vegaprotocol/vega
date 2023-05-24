@@ -23,7 +23,6 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
-	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -45,13 +44,6 @@ var (
 	ErrSuccessorMarketDoesNotExist = errors.New("successor market does not exist")
 )
 
-// OracleEngine ...
-type OracleEngine interface {
-	ListensToSigners(oracles.OracleData) bool
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
-	Unsubscribe(context.Context, oracles.SubscriptionID)
-}
-
 // Engine is the execution engine.
 type Engine struct {
 	Config
@@ -67,7 +59,7 @@ type Engine struct {
 	stateVarEngine        common.StateVarEngine
 	marketActivityTracker *common.MarketActivityTracker
 
-	oracle OracleEngine
+	oracle common.OracleEngine
 
 	npv netParamsValues
 
@@ -133,7 +125,7 @@ func NewEngine(
 	executionConfig Config,
 	ts common.TimeService,
 	collateral common.Collateral,
-	oracle OracleEngine,
+	oracle common.OracleEngine,
 	broker common.Broker,
 	stateVarEngine common.StateVarEngine,
 	marketActivityTracker *common.MarketActivityTracker,
