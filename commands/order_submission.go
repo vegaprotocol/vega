@@ -96,6 +96,35 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 		}
 	}
 
+	// iceberg checks
+	if cmd.IcebergOpts != nil {
+		iceberg := cmd.IcebergOpts
+		if iceberg.InitialPeakSize < iceberg.MinimumPeakSize {
+			errs.AddForProperty("order_submission.iceberg_opts.initial_peak_size", errors.New("must be >= order_submission.iceberg_opts.minimum_peak_size"))
+		}
+
+		if iceberg.MinimumPeakSize <= 0 {
+			errs.AddForProperty("order_submission.iceberg_opts.minimum_peak_size", ErrMustBePositive)
+		}
+
+		if iceberg.InitialPeakSize > cmd.Size {
+			errs.AddForProperty("order_submission.iceberg_opts.initial_peak_size", errors.New("must be <= order_submission.size"))
+		}
+
+		if cmd.Type != types.Order_TYPE_LIMIT {
+			errs.AddForProperty("order_submission.type", errors.New("iceberg order must be of type LIMIT"))
+		}
+
+		if cmd.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
+			cmd.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
+			errs.AddForProperty("order_submission.time_in_force", errors.New("iceberg order must be a persistent order"))
+		}
+
+		if cmd.ReduceOnly {
+			errs.AddForProperty("order_submission.reduce_only", errors.New("iceberg order must not be reduce-only"))
+		}
+	}
+
 	if cmd.PeggedOrder != nil {
 		if cmd.PeggedOrder.Reference == types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			errs.AddForProperty("order_submission.pegged_order.reference", ErrIsRequired)
