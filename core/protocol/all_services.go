@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/limits"
@@ -81,7 +82,7 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	marketActivityTracker *execution.MarketActivityTracker
+	marketActivityTracker *common.MarketActivityTracker
 	statevar              *statevar.Engine
 	snapshot              *snapshot.Engine
 	executionEngine       *execution.Engine
@@ -217,7 +218,7 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
-	svcs.marketActivityTracker = execution.NewMarketActivityTracker(svcs.log, svcs.epochService)
+	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
 
