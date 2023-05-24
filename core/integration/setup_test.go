@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/notary"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/validators"
@@ -158,7 +159,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	marketActivityTracker := execution.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
+	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
 	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.UintZero()
 	execsetup.witness = validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)

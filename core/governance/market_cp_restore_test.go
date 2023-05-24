@@ -26,7 +26,8 @@ import (
 	"code.vegaprotocol.io/vega/core/checkpoint"
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/execution"
-	emocks "code.vegaprotocol.io/vega/core/execution/mocks"
+	"code.vegaprotocol.io/vega/core/execution/common"
+	emocks "code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/governance/mocks"
 	"code.vegaprotocol.io/vega/core/netparams"
@@ -137,7 +138,7 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	notary := amocks.NewMockNotary(ctrl)
 
 	asset := assets.New(log, assets.NewDefaultConfig(), getNodeWallet().Ethereum, nil, broker, bridgeView, notary, false)
-	marketTracker := execution.NewMarketActivityTracker(log, epochEngine)
+	marketTracker := common.NewMarketActivityTracker(log, epochEngine)
 	exec := execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, marketTracker, asset)
 	accounts := mocks.NewMockStakingAccounts(ctrl)
 
