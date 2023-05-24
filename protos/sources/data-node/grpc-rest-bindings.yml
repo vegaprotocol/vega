@@ -147,6 +147,9 @@ http:
       get: "/api/v2/networkhistory/bootstrap"
     - selector: datanode.api.v2.TradingDataService.ExportNetworkHistory
       get: "/api/v2/networkhistory/export"
+    - selector: datanode.api.v2.TradingDataService.GetRiskFactors
+      get: "/api/v2/risk/factors/{market_id}"
+
 
     # websockets
 
