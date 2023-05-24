@@ -1063,6 +1063,10 @@ func (b *OrderBook) GetBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) 
 	return b.sell.BestStaticPriceAndVolume()
 }
 
+func (b *OrderBook) GetLastTradedPrice() *num.Uint {
+	return b.lastTradedPrice
+}
+
 // PrintState prints the actual state of the book.
 // this should be use only in debug / non production environment as it
 // rely a lot on logging.
