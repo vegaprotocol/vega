@@ -66,7 +66,7 @@ See https://docs.tendermint.com/master/app-dev/subscribing-to-events-via-websock
 for more information about the query syntax.
 
 Example:
-watch "tm.event = 'NewBlock'" "tm.event = 'Tx'"`
+watch "tm.event = 'NewBlock'" "tm.event = 'Transaction'"`
 	)
 	_, err := parser.AddCommand("watch", shortDesc, longDesc, &watch{})
 	return err

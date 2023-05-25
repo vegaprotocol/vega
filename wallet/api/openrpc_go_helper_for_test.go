@@ -168,14 +168,18 @@ func retrieveFieldName(field reflect.StructField) (string, bool, error) {
 			return "", false, fmt.Errorf("field is exported but does not have a JSON tag")
 		}
 
-		// No json tag, so it's not meant to be used in the API
+		// No json tag, so it is not meant to be used in the API.
 		return "", false, nil
 	}
 
 	// the first value is the name in the JSON tag
-	name := strings.Split(jsonValue, ",")[0]
+	jsonName := strings.Split(jsonValue, ",")[0]
 
-	return name, true, nil
+	if strings.ToLower(field.Name) != strings.ToLower(jsonName) {
+		return "", false, fmt.Errorf("field name %q does not match JSON name %q", field.Name, jsonName)
+	}
+
+	return jsonName, true, nil
 }
 
 func goTypeToJSONType(fieldType reflect.Type) (nodeType, error) {

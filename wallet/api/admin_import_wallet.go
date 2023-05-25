@@ -67,7 +67,7 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 				Name:    kp.AlgorithmName(),
 				Version: kp.AlgorithmVersion(),
 			},
-			Meta: kp.Metadata(),
+			Metadata: kp.Metadata(),
 		},
 	}, nil
 }
