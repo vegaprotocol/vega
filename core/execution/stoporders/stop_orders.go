@@ -1,9 +1,11 @@
 package stoporders
 
 import (
+	"log"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
 	"golang.org/x/exp/maps"
 )
@@ -26,6 +28,70 @@ func New(log *logging.Logger) *Pool {
 		priced:       &PricedStopOrders{},
 		trailing:     &TrailingStopOrders{},
 	}
+}
+
+func (p *Pool) PriceUpdated(newPrice *num.Uint) []*types.StopOrder {
+	// first update prices and get triggered orders
+	ids := append(
+		p.priced.PriceUpdated(newPrice),
+		p.trailing.PriceUpdated(newPrice)...,
+	)
+
+	stopOrders := []*types.StopOrder{}
+
+	// first get all the orders which got triggered
+	for _, v := range ids {
+		pid, ok := p.orderToParty[v]
+		if !ok {
+			log.Panic("order in tree but not in pool", logging.String("order-id", v))
+		}
+
+		// not needed anymore
+		delete(p.orderToParty, v)
+
+		orders, ok := p.orders[pid]
+		if !ok {
+			p.log.Panic("party was expected to have orders but have none",
+				logging.String("party-id", pid), logging.String("order-id", v))
+		}
+
+		// now we are down to the actual order
+		sorder, ok := orders[v]
+		if !ok {
+			p.log.Panic("party was expected to have an order",
+				logging.String("party-id", pid), logging.String("order-id", v))
+		}
+
+		stopOrders = append(stopOrders, sorder)
+
+		// now we can cleanup
+		delete(orders, v)
+		if len(orders) <= 0 {
+			// we can remove the trader altogether
+			delete(p.orders, pid)
+		}
+	}
+
+	// now we get all the OCO oposited to them as they shall
+	// be cancelled now
+	for _, v := range stopOrders[:] {
+		res, err := p.Remove(v.Party, v.OCOLinkID)
+		if err != nil {
+			// that should never happen, this mean for some
+			// reason that the other side of the OCO has been
+			// remove and left the pool in a bad state
+			p.log.Panic("other side of the oco missing from the pool",
+				logging.Error(err),
+				logging.PartyID(v.Party),
+				logging.OrderID(v.OCOLinkID))
+		}
+
+		// only one order returned here
+		stopOrders = append(stopOrders, res[0])
+
+	}
+
+	return stopOrders
 }
 
 func (p *Pool) Insert(order *types.StopOrder) {
