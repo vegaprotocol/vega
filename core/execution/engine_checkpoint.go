@@ -34,10 +34,6 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
-	if len(data) == 0 {
-		e.marketCPStates = map[string]*types.CPMarketState{}
-		return nil
-	}
 	wrapper := checkpoint.ExecutionState{}
 	if err := proto.Unmarshal(data, &wrapper); err != nil {
 		return err

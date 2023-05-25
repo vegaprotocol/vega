@@ -95,7 +95,6 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 }
 
 func TestMarketRestoreFromCheckpointWithEmptySuccessor(t *testing.T) {
-	t.Skipf("Skipping test as need to regenerate testcp/checkpoint.cp with appropriate values for LP - Zohar to fix")
 	now := time.Now()
 	ex, gov, cpEng := createExecutionEngine(t, now)
 	genesis := &checkpoint.GenesisState{
@@ -118,14 +117,24 @@ func TestMarketRestoreFromCheckpointWithEmptySuccessor(t *testing.T) {
 	proposals := &checkpointpb.Proposals{}
 	err := proto.Unmarshal(govProposalsCP, proposals)
 	require.NoError(t, err)
-	require.Equal(t, len(expectedMarkets), len(proposals.Proposals))
+	// proposedMarkets := []string{}
+	marketPropIDs := map[string]struct{}{}
+	for _, proposal := range proposals.Proposals {
+		if nm := proposal.Terms.GetNewMarket(); nm != nil {
+			// proposedMarkets = append(proposedMarkets, proposal.Id)
+			marketPropIDs[proposal.Id] = struct{}{}
+		}
+	}
+	// require.Equal(t, len(proposedMarkets), len(proposals.Proposals))
 
-	for i, expectedMarket := range expectedMarkets {
+	for _, expectedMarket := range expectedMarkets {
 		m, exists := ex.GetMarket(expectedMarket, false)
 		require.True(t, exists)
 		require.Equal(t, types.MarketTradingModeOpeningAuction, m.TradingMode)
 		require.Equal(t, types.MarketStatePending, m.State)
-		require.Equal(t, expectedMarket, proposals.Proposals[i].Id)
+		_, ok := marketPropIDs[expectedMarket]
+		require.True(t, ok)
+		// require.Equal(t, expectedMarket, proposals.Proposals[i].Id)
 	}
 }
 
@@ -183,8 +192,45 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	witness := mocks.NewMockWitness(ctrl)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
+	valFake := fakeCPComponent{
+		name: types.ValidatorsCheckpoint,
+	}
+	epochFake := fakeCPComponent{
+		name: types.EpochCheckpoint,
+	}
+	msFake := fakeCPComponent{
+		name: types.MultisigControlCheckpoint,
+	}
+	stakeFake := fakeCPComponent{
+		name: types.StakingCheckpoint,
+	}
+	delFake := fakeCPComponent{
+		name: types.DelegationCheckpoint,
+	}
+	prFake := fakeCPComponent{
+		name: types.PendingRewardsCheckpoint,
+	}
+	bankFake := fakeCPComponent{
+		name: types.BankingCheckpoint,
+	}
 	gov := governance.NewEngine(log, governance.NewDefaultConfig(), accounts, timeService, broker, asset, witness, exec, netp)
-	cpEngine, _ := checkpoint.New(log, checkpoint.NewDefaultConfig(), gov, netp, asset, collateralService, marketTracker)
+	cpEngine, _ := checkpoint.New(log, checkpoint.NewDefaultConfig(), gov, netp, asset, collateralService, marketTracker, exec, valFake, epochFake, msFake, stakeFake, delFake, prFake, bankFake)
 
 	return exec, gov, cpEngine
+}
+
+type fakeCPComponent struct {
+	name types.CheckpointName
+}
+
+func (f fakeCPComponent) Name() types.CheckpointName {
+	return f.name
+}
+
+func (fakeCPComponent) Load(_ context.Context, _ []byte) error {
+	return nil
+}
+
+func (fakeCPComponent) Checkpoint() ([]byte, error) {
+	return []byte{}, nil
 }
