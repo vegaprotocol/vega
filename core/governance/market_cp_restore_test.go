@@ -117,15 +117,18 @@ func TestMarketRestoreFromCheckpointWithEmptySuccessor(t *testing.T) {
 	proposals := &checkpointpb.Proposals{}
 	err := proto.Unmarshal(govProposalsCP, proposals)
 	require.NoError(t, err)
-	// proposedMarkets := []string{}
+	proposedMarkets := []string{}
 	marketPropIDs := map[string]struct{}{}
 	for _, proposal := range proposals.Proposals {
 		if nm := proposal.Terms.GetNewMarket(); nm != nil {
-			// proposedMarkets = append(proposedMarkets, proposal.Id)
+			proposedMarkets = append(proposedMarkets, proposal.Id)
 			marketPropIDs[proposal.Id] = struct{}{}
 		}
 	}
-	// require.Equal(t, len(proposedMarkets), len(proposals.Proposals))
+	require.Equal(t, len(expectedMarkets), len(proposedMarkets))
+	// this is a real cp file, we expect asset proposals etc... to be included, so
+	// the total number of proposals must be > just the market proposals
+	require.Less(t, len(expectedMarkets), len(proposals.Proposals))
 
 	for _, expectedMarket := range expectedMarkets {
 		m, exists := ex.GetMarket(expectedMarket, false)
@@ -134,7 +137,6 @@ func TestMarketRestoreFromCheckpointWithEmptySuccessor(t *testing.T) {
 		require.Equal(t, types.MarketStatePending, m.State)
 		_, ok := marketPropIDs[expectedMarket]
 		require.True(t, ok)
-		// require.Equal(t, expectedMarket, proposals.Proposals[i].Id)
 	}
 }
 
