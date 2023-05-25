@@ -46,6 +46,9 @@ import (
 //go:embed testcp/checkpoint.cp
 var cpFile []byte
 
+//go:embed testcp/scp.cp
+var cpSuccessorFile []byte
+
 // Disable 'TestMarketRestoreFromCheckpoint' for now. 'testcp/checkpoint.cp' needs to be regenerated for the new data sourcing types.
 // Rest of functions disabled because linter complains.
 
@@ -88,6 +91,52 @@ func TestMarketRestoreFromCheckpoint(t *testing.T) {
 		require.Equal(t, types.MarketTradingModeOpeningAuction, m.TradingMode)
 		require.Equal(t, types.MarketStatePending, m.State)
 		require.Equal(t, expectedMarket, proposals.Proposals[i].Id)
+	}
+}
+
+func TestMarketRestoreFromCheckpointWithEmptySuccessor(t *testing.T) {
+	now := time.Now()
+	ex, gov, cpEng := createExecutionEngine(t, now)
+	genesis := &checkpoint.GenesisState{
+		CheckpointHash:  "45ff656ab5f434ceb47329d109874a8d81c7f987d1e08f913f22265a809da766",
+		CheckpointState: base64.StdEncoding.EncodeToString(cpSuccessorFile),
+	}
+	gd := &struct {
+		Checkpoint *checkpoint.GenesisState `json:"checkpoint"`
+	}{}
+
+	gd.Checkpoint = genesis
+	gdBytes, _ := json.Marshal(gd)
+
+	require.NoError(t, cpEng.UponGenesis(context.Background(), gdBytes))
+
+	expectedMarkets := []string{
+		"2dca7baa5f7269b08d053668bca03f97f72e9a162327eebd941c54f1f9fb8f80",
+	}
+	govProposalsCP, _ := gov.Checkpoint()
+	proposals := &checkpointpb.Proposals{}
+	err := proto.Unmarshal(govProposalsCP, proposals)
+	require.NoError(t, err)
+	proposedMarkets := []string{}
+	marketPropIDs := map[string]struct{}{}
+	for _, proposal := range proposals.Proposals {
+		if nm := proposal.Terms.GetNewMarket(); nm != nil {
+			proposedMarkets = append(proposedMarkets, proposal.Id)
+			marketPropIDs[proposal.Id] = struct{}{}
+		}
+	}
+	require.Equal(t, len(expectedMarkets), len(proposedMarkets))
+	// this is a real cp file, we expect asset proposals etc... to be included, so
+	// the total number of proposals must be > just the market proposals
+	require.Less(t, len(expectedMarkets), len(proposals.Proposals))
+
+	for _, expectedMarket := range expectedMarkets {
+		m, exists := ex.GetMarket(expectedMarket, false)
+		require.True(t, exists)
+		require.Equal(t, types.MarketTradingModeOpeningAuction, m.TradingMode)
+		require.Equal(t, types.MarketStatePending, m.State)
+		_, ok := marketPropIDs[expectedMarket]
+		require.True(t, ok)
 	}
 }
 
@@ -145,8 +194,45 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	witness := mocks.NewMockWitness(ctrl)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
+	valFake := fakeCPComponent{
+		name: types.ValidatorsCheckpoint,
+	}
+	epochFake := fakeCPComponent{
+		name: types.EpochCheckpoint,
+	}
+	msFake := fakeCPComponent{
+		name: types.MultisigControlCheckpoint,
+	}
+	stakeFake := fakeCPComponent{
+		name: types.StakingCheckpoint,
+	}
+	delFake := fakeCPComponent{
+		name: types.DelegationCheckpoint,
+	}
+	prFake := fakeCPComponent{
+		name: types.PendingRewardsCheckpoint,
+	}
+	bankFake := fakeCPComponent{
+		name: types.BankingCheckpoint,
+	}
 	gov := governance.NewEngine(log, governance.NewDefaultConfig(), accounts, timeService, broker, asset, witness, exec, netp)
-	cpEngine, _ := checkpoint.New(log, checkpoint.NewDefaultConfig(), gov, netp, asset, collateralService, marketTracker)
+	cpEngine, _ := checkpoint.New(log, checkpoint.NewDefaultConfig(), gov, netp, asset, collateralService, marketTracker, exec, valFake, epochFake, msFake, stakeFake, delFake, prFake, bankFake)
 
 	return exec, gov, cpEngine
+}
+
+type fakeCPComponent struct {
+	name types.CheckpointName
+}
+
+func (f fakeCPComponent) Name() types.CheckpointName {
+	return f.name
+}
+
+func (fakeCPComponent) Load(_ context.Context, _ []byte) error {
+	return nil
+}
+
+func (fakeCPComponent) Checkpoint() ([]byte, error) {
+	return []byte{}, nil
 }
