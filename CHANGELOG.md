@@ -20,6 +20,7 @@
 - [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
 - [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
+- [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
 - [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`

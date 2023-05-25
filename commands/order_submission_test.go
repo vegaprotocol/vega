@@ -48,6 +48,91 @@ func TestCheckOrderSubmission(t *testing.T) {
 	t.Run("Submitting a pegged order with side sell and mid reference and non-positive offset fails", testPeggedOrderSubmissionWithSideSellAndMidReferenceAndNonPositiveOffsetFails)
 	t.Run("Submitting a pegged order with side sell and mid reference and positive offset succeeds", testPeggedOrderSubmissionWithSideSellAndMidReferenceAndPositiveOffsetSucceeds)
 	t.Run("Submitting Post or Reduce only orders", testSubmittingPostOrReduceOnlyOrders)
+	t.Run("Submitting iceberg orders", testSubmittingIcebergOrders)
+}
+
+func testSubmittingIcebergOrders(t *testing.T) {
+	testCases := []struct {
+		submission commandspb.OrderSubmission
+		errString  string
+		field      string
+	}{
+		{
+			submission: commandspb.OrderSubmission{
+				IcebergOpts: &commandspb.IcebergOpts{
+					InitialPeakSize: 5,
+					MinimumPeakSize: 100,
+				},
+			},
+			errString: "must be >= order_submission.iceberg_opts.minimum_peak_size",
+			field:     "order_submission.iceberg_opts.initial_peak_size",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				IcebergOpts: &commandspb.IcebergOpts{
+					InitialPeakSize: 100,
+					MinimumPeakSize: 10,
+				},
+				TimeInForce: types.Order_TIME_IN_FORCE_FOK,
+			},
+			errString: "iceberg order must be a persistent order",
+			field:     "order_submission.time_in_force",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				IcebergOpts: &commandspb.IcebergOpts{
+					InitialPeakSize: 100,
+					MinimumPeakSize: 10,
+				},
+				TimeInForce: types.Order_TIME_IN_FORCE_IOC,
+			},
+			errString: "iceberg order must be a persistent order",
+			field:     "order_submission.time_in_force",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				IcebergOpts: &commandspb.IcebergOpts{
+					InitialPeakSize: 100,
+					MinimumPeakSize: 10,
+				},
+				Type: types.Order_TYPE_MARKET,
+			},
+			errString: "iceberg order must be of type LIMIT",
+			field:     "order_submission.type",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Size: 50,
+				IcebergOpts: &commandspb.IcebergOpts{
+					InitialPeakSize: 100,
+					MinimumPeakSize: 10,
+				},
+			},
+			errString: "must be <= order_submission.size",
+			field:     "order_submission.iceberg_opts.initial_peak_size",
+		},
+		{
+			submission: commandspb.OrderSubmission{
+				Size:       200,
+				ReduceOnly: true,
+				IcebergOpts: &commandspb.IcebergOpts{
+					InitialPeakSize: 100,
+					MinimumPeakSize: 10,
+				},
+			},
+			errString: "iceberg order must not be reduce-only",
+			field:     "order_submission.reduce_only",
+		},
+	}
+
+	for _, tc := range testCases {
+		errs := checkOrderSubmission(&tc.submission).Get(tc.field)
+		if len(tc.errString) == 0 {
+			assert.Len(t, errs, 0)
+			continue
+		}
+		assert.Contains(t, errs, errors.New(tc.errString))
+	}
 }
 
 func testSubmittingPostOrReduceOnlyOrders(t *testing.T) {

@@ -108,6 +108,16 @@ message PeggedOrder {
   string offset = 2;
 }
 
+// Details of an iceberg order
+message IcebergOrder {
+  // Size of the order that will be made visible if the iceberg order is refreshed at the end of a transaction.
+  uint64 initial_peak_size = 1;
+  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
+  uint64 minimum_peak_size = 2;
+  // Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed.
+  uint64 reserved_remaining = 3;
+}
+
 // Orders can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
 message Order {
   // Time In Force for an order
@@ -226,6 +236,8 @@ message Order {
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 21;
+  // Details of an iceberg order
+  optional IcebergOrder iceberg_order = 22;
 }
 
 // Used when cancelling an order

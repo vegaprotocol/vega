@@ -56,6 +56,16 @@ message OrderSubmission {
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 11;
+  // Parameters used to specify an iceberg order.
+  optional IcebergOpts iceberg_opts = 12;
+}
+
+// Iceberg order options
+message IcebergOpts {
+  // Size of the order that is initially made visible and can cause a trade within a single transaction.
+  uint64 initial_peak_size = 1;
+  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
+  uint64 minimum_peak_size = 2;
 }
 
 // Order cancellation is a request to cancel an existing order on Vega
