@@ -89,7 +89,7 @@ func testAdminListKeysWithValidParamsSucceeds(t *testing.T) {
 	// then
 	require.Nil(t, errorDetails)
 	assert.Equal(t, api.AdminListKeysResult{
-		PublicKeys: []api.AdminNamedPublicKey{{
+		Keys: []api.AdminNamedPublicKey{{
 			Name:      firstKey.Name(),
 			PublicKey: firstKey.PublicKey(),
 		}},

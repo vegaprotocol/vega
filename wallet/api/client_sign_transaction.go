@@ -31,7 +31,7 @@ type ClientParsedSignTransactionParams struct {
 }
 
 type ClientSignTransactionResult struct {
-	Tx *commandspb.Transaction `json:"transaction"`
+	Transaction *commandspb.Transaction `json:"transaction"`
 }
 
 type ClientSignTransaction struct {
@@ -166,7 +166,7 @@ func (h *ClientSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.NotifySuccessfulRequest(ctx, traceID, 2, TransactionSuccessfullySigned)
 
 	return ClientSignTransactionResult{
-		Tx: tx,
+		Transaction: tx,
 	}, nil
 }
 

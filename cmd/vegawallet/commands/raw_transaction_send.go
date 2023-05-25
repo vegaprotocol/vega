@@ -210,7 +210,7 @@ func PrintTXSendResponse(w io.Writer, res api.AdminSendRawTransactionResult) {
 	str := p.String()
 	defer p.Print(str)
 	str.CheckMark().SuccessText("Transaction successfully sent").NextSection()
-	str.Text("Transaction Hash:").NextLine().WarningText(res.TxHash).NextSection()
+	str.Text("Transaction Hash:").NextLine().WarningText(res.TransactionHash).NextSection()
 	str.Text("Sent at:").NextLine().WarningText(res.SentAt.Format(time.ANSIC)).NextSection()
 	str.Text("Selected node:").NextLine().WarningText(res.Node.Host).NextLine()
 }

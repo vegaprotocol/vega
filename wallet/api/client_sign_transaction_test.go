@@ -159,7 +159,7 @@ func testSigningTransactionWithValidParamsSucceeds(t *testing.T) {
 	// then
 	assert.Nil(t, errorDetails)
 	require.NotEmpty(t, result)
-	assert.NotEmpty(t, result.Tx)
+	assert.NotEmpty(t, result.Transaction)
 }
 
 func testSigningTransactionWithoutNeededPermissionsDoesNotSignTransaction(t *testing.T) {

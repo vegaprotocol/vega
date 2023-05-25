@@ -42,6 +42,8 @@
 - [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
 - [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
 - [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate
+- [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
+- [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
 
 
 ## 0.71.0

@@ -82,7 +82,7 @@ func BuildCmdSignMessage(w io.Writer, handler SignMessageHandler, rf *RootFlags)
 				return printer.FprintJSON(w, struct {
 					Signature string `json:"signature"`
 				}{
-					Signature: resp.Base64Signature,
+					Signature: resp.EncodedSignature,
 				})
 			}
 
@@ -134,7 +134,7 @@ func (f *SignMessageFlags) Validate() (api.AdminSignMessageParams, string, error
 	if len(f.PubKey) == 0 {
 		return api.AdminSignMessageParams{}, "", flags.MustBeSpecifiedError("pubkey")
 	}
-	req.PubKey = f.PubKey
+	req.PublicKey = f.PubKey
 
 	if len(f.Message) == 0 {
 		return api.AdminSignMessageParams{}, "", flags.MustBeSpecifiedError("message")
@@ -160,7 +160,7 @@ func PrintSignMessageResponse(w io.Writer, req api.AdminSignMessageResult) {
 	defer p.Print(str)
 
 	str.CheckMark().SuccessText("Message signature successful").NextSection()
-	str.Text("Signature (base64-encoded):").NextLine().WarningText(req.Base64Signature).NextSection()
+	str.Text("Signature (base64-encoded):").NextLine().WarningText(req.EncodedSignature).NextSection()
 
 	str.BlueArrow().InfoText("Sign a message").NextLine()
 	str.Text("To verify a message, see the following command:").NextSection()

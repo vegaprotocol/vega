@@ -127,7 +127,7 @@ func PrintListKeysResponse(w io.Writer, resp api.AdminListKeysResult) {
 	str := p.String()
 	defer p.Print(str)
 
-	for i, key := range resp.PublicKeys {
+	for i, key := range resp.Keys {
 		if i != 0 {
 			str.NextLine()
 		}

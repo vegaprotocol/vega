@@ -33,10 +33,10 @@ type ClientParsedSendTransactionParams struct {
 }
 
 type ClientSendTransactionResult struct {
-	ReceivedAt time.Time               `json:"receivedAt"`
-	SentAt     time.Time               `json:"sentAt"`
-	TxHash     string                  `json:"transactionHash"`
-	Tx         *commandspb.Transaction `json:"transaction"`
+	ReceivedAt      time.Time               `json:"receivedAt"`
+	SentAt          time.Time               `json:"sentAt"`
+	TransactionHash string                  `json:"transactionHash"`
+	Transaction     *commandspb.Transaction `json:"transaction"`
 }
 
 type ClientSendTransaction struct {
@@ -182,10 +182,10 @@ func (h *ClientSendTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	h.interactor.NotifySuccessfulTransaction(ctx, traceID, 2, txHash, protoToJSON(rawInputData), protoToJSON(tx), sentAt, currentNode.Host())
 
 	return ClientSendTransactionResult{
-		ReceivedAt: receivedAt,
-		SentAt:     sentAt,
-		TxHash:     txHash,
-		Tx:         tx,
+		ReceivedAt:      receivedAt,
+		SentAt:          sentAt,
+		TransactionHash: txHash,
+		Transaction:     tx,
 	}, nil
 }
 

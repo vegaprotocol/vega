@@ -31,9 +31,9 @@ type ClientParsedCheckTransactionParams struct {
 }
 
 type ClientCheckTransactionResult struct {
-	ReceivedAt time.Time               `json:"receivedAt"`
-	SentAt     time.Time               `json:"sentAt"`
-	Tx         *commandspb.Transaction `json:"transaction"`
+	ReceivedAt  time.Time               `json:"receivedAt"`
+	SentAt      time.Time               `json:"sentAt"`
+	Transaction *commandspb.Transaction `json:"transaction"`
 }
 
 type ClientCheckTransaction struct {
@@ -177,9 +177,9 @@ func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.P
 	h.interactor.NotifySuccessfulRequest(ctx, traceID, 2, TransactionSuccessfullyChecked)
 
 	return ClientCheckTransactionResult{
-		ReceivedAt: receivedAt,
-		SentAt:     sentAt,
-		Tx:         tx,
+		ReceivedAt:  receivedAt,
+		SentAt:      sentAt,
+		Transaction: tx,
 	}, nil
 }
 
