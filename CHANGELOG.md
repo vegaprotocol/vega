@@ -27,6 +27,7 @@
 - [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
 - [8334](https://github.com/vegaprotocol/vega/issues/8334) - Implement market succession in execution engine.
 - [8354](https://github.com/vegaprotocol/vega/issues/8354) - refactor execution package
+- [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
 
 
 ### 🐛 Fixes

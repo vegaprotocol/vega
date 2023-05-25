@@ -141,7 +141,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		parentMarketID = parent
 	}
 
-	insurancePoolFraction := (*num.Decimal)(nil)
+	var insurancePoolFraction *num.Decimal
 	if market.InsurancePoolFraction != nil && *market.InsurancePoolFraction != "" {
 		insurance, err := num.DecimalFromString(*market.InsurancePoolFraction)
 		if err != nil {

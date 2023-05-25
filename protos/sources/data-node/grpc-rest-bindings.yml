@@ -67,6 +67,8 @@ http:
       get: "/api/v2/market/{market_id}"
     - selector: datanode.api.v2.TradingDataService.ListMarkets
       get: "/api/v2/markets"
+    - selector: datanode.api.v2.TradingDataService.ListSuccessorMarkets
+      get: "/api/v2/successor_markets/{market_id}"
     - selector: datanode.api.v2.TradingDataService.GetParty
       get: "/api/v2/party/{party_id}"
     - selector: datanode.api.v2.TradingDataService.ListParties

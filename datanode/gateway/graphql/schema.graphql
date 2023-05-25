@@ -3388,14 +3388,14 @@ type NewMarket {
   linearSlippageFactor: String!
   "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
-  "Successor configuration. If this proposal is meant to succeed a given market, then this should be set."
+  "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
   successorConfiguration: SuccessorConfiguration
 }
 
 type SuccessorConfiguration {
-  "The ID of the market this proposal should succeed"
+  "ID of the market this proposal will succeed"
   parentMarketId: String!
-  "A decimal value between 0 and 1, specifying the fraction of the insurance pool balance is carried over from the parent market to the successor."
+  "Decimal value between 0 and 1, specifying the fraction of the insurance pool balance is carried over from the parent market to the successor."
   insurancePoolFraction: String!
 }
 

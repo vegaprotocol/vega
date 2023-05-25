@@ -346,8 +346,9 @@ service TradingDataService {
 
   // List successor markets
   //
-  // Given a market id, return the full lineage of markets since inception, or all successor markets since and including
-  // the given market id.
+  // Given a market ID, return the full lineage of markets since inception, or all successor markets since and including
+  // the given market ID. The markets will be returned in succession order, i.e. the market at position i will be the parent
+  // of the market at position i+1.
   rpc ListSuccessorMarkets(ListSuccessorMarketsRequest) returns (ListSuccessorMarketsResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
@@ -1981,19 +1982,19 @@ message MarketConnection {
   PageInfo page_info = 2;
 }
 
-// Request for listing successor markets
+// Request for listing successor markets.
 message ListSuccessorMarketsRequest {
   // Market ID that is a member of the succession chain. This can be the original market
-  // or any subsequent child market that succeeded.
+  // or any subsequent child market that succeeded it.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Flag to indicate whether or not to include the full succession chain, or only list
-  // the children of the given market ID. If true, the full succession chain
+  // the children of the given market ID. If true, the full succession chain is in included.
   bool full_history = 2;
 }
 
-// Response from listing successor markets request.
+// Response from a list successor markets request.
 message ListSuccessorMarketsResponse {
-  // List of markets and corresponding page information.
+  // List of markets in the succession chain.
   repeated vega.Market markets = 1;
 }
 
@@ -2435,7 +2436,7 @@ message ListGovernanceDataRequest {
     TYPE_NEW_FREE_FORM = 6;
     // Update asset proposals
     TYPE_UPDATE_ASSET = 7;
-    // Successor Markets
+    // Successor markets
     TYPE_SUCCESSOR_MARKET = 8;
   }
   // Restrict proposals to those with the given state.
