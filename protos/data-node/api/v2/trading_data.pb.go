@@ -8271,11 +8271,11 @@ type ListSuccessorMarketsRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Market ID that is a member of the succession chain. This can be the original market
+	// Market ID that is a member of the succession line. This can be the original market
 	// or any subsequent child market that succeeded it.
 	MarketId string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
-	// Flag to indicate whether or not to include the full succession chain, or only list
-	// the children of the given market ID. If true, the full succession chain is included.
+	// Flag to indicate whether or not to include the full succession line, or only list
+	// the children of the given market ID. If true, the full succession line is included.
 	IncludeFullHistory bool `protobuf:"varint,2,opt,name=include_full_history,json=includeFullHistory,proto3" json:"include_full_history,omitempty"`
 }
 
@@ -8331,7 +8331,7 @@ type ListSuccessorMarketsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// List of markets in the succession chain.
+	// List of markets in the succession line.
 	Markets []*vega.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
 }
 

@@ -677,12 +677,12 @@ type Query {
   "Get statistics about the Vega node"
   statistics: Statistics!
 
-  "List markets in a succession chain"
+  "List markets in a succession line"
   successorMarkets(
-    "Market ID of any market in the succession chain"
+    "Market ID of any market in the succession line"
     marketId: ID!,
     """
-    Flag indicating whether to include the full succession chain or not.
+    Flag indicating whether to include the full succession line or not.
     If not specified, the default is false.
     When false, only the requested market and its children are returned.
     """
