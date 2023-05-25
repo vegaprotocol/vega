@@ -933,3 +933,237 @@ func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) 
 		EndCursor:       wantEndCursor,
 	}, pageInfo)
 }
+
+func TestSuccessorMarkets(t *testing.T) {
+	t.Run("should create a market lineage record when a successor market proposal is approved", testMarketLineageCreated)
+	t.Run("ListSuccessorMarkets should return the market lineage", testListSuccessorMarkets)
+}
+
+func testMarketLineageCreated(t *testing.T) {
+	bs, md := setupMarketsTest(t)
+
+	parentMarket := entities.Market{
+		ID:           entities.MarketID("deadbeef01"),
+		InstrumentID: "deadbeef01",
+	}
+
+	successorMarketA := entities.Market{
+		ID:             entities.MarketID("deadbeef02"),
+		InstrumentID:   "deadbeef02",
+		ParentMarketID: parentMarket.ID,
+	}
+
+	successorMarketB := entities.Market{
+		ID:             entities.MarketID("deadbeef03"),
+		InstrumentID:   "deadbeef03",
+		ParentMarketID: successorMarketA.ID,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	conn := connectionSource.Connection
+	var rowCount int64
+
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
+	t.Run("parent market should create a market lineage record with no parent market id", func(t *testing.T) {
+		parentMarket.VegaTime = block.VegaTime
+		parentMarket.State = entities.MarketStateProposed
+		err := md.Upsert(ctx, &parentMarket)
+		require.NoError(t, err)
+		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, parentMarket.ID).Scan(&rowCount)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), rowCount)
+
+		block = source.getNextBlock(t, ctx)
+		parentMarket.State = entities.MarketStatePending
+		parentMarket.VegaTime = block.VegaTime
+
+		err = md.Upsert(ctx, &parentMarket)
+		require.NoError(t, err)
+		var marketID, parentMarketID, rootID entities.MarketID
+		err = conn.QueryRow(ctx,
+			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
+			parentMarket.ID,
+		).Scan(&marketID, &parentMarketID, &rootID)
+		require.NoError(t, err)
+		assert.Equal(t, parentMarket.ID, marketID)
+		assert.Equal(t, entities.MarketID(""), parentMarketID)
+		assert.Equal(t, parentMarket.ID, rootID)
+	})
+
+	block = source.getNextBlock(t, ctx)
+	t.Run("successor market should create a market lineage record pointing to the parent market and the root market", func(t *testing.T) {
+		successorMarketA.VegaTime = block.VegaTime
+		successorMarketA.State = entities.MarketStateProposed
+		err := md.Upsert(ctx, &successorMarketA)
+		require.NoError(t, err)
+		// proposed market successor only, so it should not create a lineage record yet
+		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketA.ID).Scan(&rowCount)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), rowCount)
+
+		block = source.getNextBlock(t, ctx)
+		successorMarketA.State = entities.MarketStatePending
+		err = md.Upsert(ctx, &successorMarketA)
+		require.NoError(t, err)
+		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
+		var marketID, parentMarketID, rootID entities.MarketID
+		err = conn.QueryRow(ctx,
+			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
+			successorMarketA.ID,
+		).Scan(&marketID, &parentMarketID, &rootID)
+		require.NoError(t, err)
+		assert.Equal(t, successorMarketA.ID, marketID)
+		assert.Equal(t, parentMarket.ID, parentMarketID)
+		assert.Equal(t, parentMarket.ID, rootID)
+	})
+
+	block = source.getNextBlock(t, ctx)
+	t.Run("second successor market should create a lineage record pointing to the parent market and the root market", func(t *testing.T) {
+		successorMarketB.VegaTime = block.VegaTime
+		successorMarketB.State = entities.MarketStateProposed
+		err := md.Upsert(ctx, &successorMarketB)
+		require.NoError(t, err)
+		// proposed market successor only, so it should not create a lineage record yet
+		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketB.ID).Scan(&rowCount)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), rowCount)
+
+		block = source.getNextBlock(t, ctx)
+		successorMarketB.State = entities.MarketStatePending
+		err = md.Upsert(ctx, &successorMarketB)
+		require.NoError(t, err)
+		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
+		var marketID, parentMarketID, rootID entities.MarketID
+		err = conn.QueryRow(ctx,
+			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
+			successorMarketB.ID,
+		).Scan(&marketID, &parentMarketID, &rootID)
+		require.NoError(t, err)
+		assert.Equal(t, successorMarketB.ID, marketID)
+		assert.Equal(t, successorMarketA.ID, parentMarketID)
+		assert.Equal(t, parentMarket.ID, rootID)
+	})
+}
+
+func testListSuccessorMarkets(t *testing.T) {
+	_, md, entries := setupSuccessorMarkets(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
+	defer cancel()
+
+	t.Run("should list the full history if children only is false", func(t *testing.T) {
+		got, err := md.ListSuccessorMarkets(ctx, "deadbeef02", true)
+		require.NoError(t, err)
+		want := []entities.Market{
+			entries[5],
+			entries[6],
+			entries[8],
+		}
+
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("should list only the successor markets if children only is true", func(t *testing.T) {
+		got, err := md.ListSuccessorMarkets(ctx, "deadbeef02", false)
+		require.NoError(t, err)
+		want := []entities.Market{
+			entries[6],
+			entries[8],
+		}
+
+		assert.Equal(t, want, got)
+	})
+}
+
+func setupSuccessorMarkets(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, []entities.Market) {
+	t.Helper()
+
+	bs, md := setupMarketsTest(t)
+
+	parentMarket := entities.Market{
+		ID:           entities.MarketID("deadbeef01"),
+		InstrumentID: "deadbeef01",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+	}
+
+	successorMarketA := entities.Market{
+		ID:           entities.MarketID("deadbeef02"),
+		InstrumentID: "deadbeef02",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+		ParentMarketID: parentMarket.ID,
+	}
+
+	successorMarketB := entities.Market{
+		ID:           entities.MarketID("deadbeef03"),
+		InstrumentID: "deadbeef03",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+		ParentMarketID: successorMarketA.ID,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	source := &testBlockSource{bs, time.Now()}
+
+	upserts := []struct {
+		market entities.Market
+		state  entities.MarketState
+	}{
+		{
+			market: parentMarket,
+			state:  entities.MarketStateProposed,
+		},
+		{
+			market: parentMarket,
+			state:  entities.MarketStatePending,
+		},
+		{
+			market: parentMarket,
+			state:  entities.MarketStateActive,
+		},
+		{
+			market: successorMarketA,
+			state:  entities.MarketStateProposed,
+		},
+		{
+			market: successorMarketA,
+			state:  entities.MarketStatePending,
+		},
+		{
+			market: parentMarket,
+			state:  entities.MarketStateSettled,
+		},
+		{
+			market: successorMarketA,
+			state:  entities.MarketStateActive,
+		},
+		{
+			market: successorMarketB,
+			state:  entities.MarketStateProposed,
+		},
+		{
+			market: successorMarketB,
+			state:  entities.MarketStatePending,
+		},
+	}
+
+	entries := make([]entities.Market, 0, len(upserts))
+
+	for _, u := range upserts {
+		block := source.getNextBlock(t, ctx)
+		u.market.VegaTime = block.VegaTime
+		u.market.State = u.state
+		err := md.Upsert(ctx, &u.market)
+		entries = append(entries, u.market)
+		require.NoError(t, err)
+	}
+
+	return bs, md, entries
+}

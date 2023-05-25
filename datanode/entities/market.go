@@ -47,6 +47,8 @@ type Market struct {
 	LpPriceRange                  string
 	LinearSlippageFactor          *decimal.Decimal
 	QuadraticSlippageFactor       *decimal.Decimal
+	ParentMarketID                MarketID
+	InsurancePoolFraction         *decimal.Decimal
 }
 
 type MarketCursor struct {
@@ -133,6 +135,21 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		quadraticSlippageFactor = &factor
 	}
 
+	parentMarketID := MarketID("")
+	if market.ParentMarketId != nil && *market.ParentMarketId != "" {
+		parent := MarketID(*market.ParentMarketId)
+		parentMarketID = parent
+	}
+
+	insurancePoolFraction := (*num.Decimal)(nil)
+	if market.InsurancePoolFraction != nil && *market.InsurancePoolFraction != "" {
+		insurance, err := num.DecimalFromString(*market.InsurancePoolFraction)
+		if err != nil {
+			return nil, fmt.Errorf("'%v' is not a valid number for insurance pool fraction", market.InsurancePoolFraction)
+		}
+		insurancePoolFraction = &insurance
+	}
+
 	return &Market{
 		ID:                            MarketID(market.Id),
 		TxHash:                        txHash,
@@ -151,6 +168,8 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		LpPriceRange:                  market.LpPriceRange,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		ParentMarketID:                parentMarketID,
+		InsurancePoolFraction:         insurancePoolFraction,
 	}, nil
 }
 

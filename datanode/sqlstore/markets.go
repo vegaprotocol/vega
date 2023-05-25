@@ -14,6 +14,7 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -82,7 +83,8 @@ var marketOrdering = TableOrdering{
 const (
 	sqlMarketsColumns = `id, tx_hash, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
-		trading_mode, state, market_timestamps, position_decimal_places, lp_price_range, linear_slippage_factor, quadratic_slippage_factor`
+		trading_mode, state, market_timestamps, position_decimal_places, lp_price_range, linear_slippage_factor, quadratic_slippage_factor,
+		parent_market_id, insurance_pool_fraction`
 )
 
 func NewMarkets(connectionSource *ConnectionSource) *Markets {
@@ -95,7 +97,7 @@ func NewMarkets(connectionSource *ConnectionSource) *Markets {
 
 func (m *Markets) Upsert(ctx context.Context, market *entities.Market) error {
 	query := fmt.Sprintf(`insert into markets(%s)
-values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 on conflict (id, vega_time) do update
 set
 	instrument_id=EXCLUDED.instrument_id,
@@ -112,13 +114,15 @@ set
 	lp_price_range=EXCLUDED.lp_price_range,
 	linear_slippage_factor=EXCLUDED.linear_slippage_factor,
     quadratic_slippage_factor=EXCLUDED.quadratic_slippage_factor,
+    parent_market_id=EXCLUDED.parent_market_id,
+    insurance_pool_fraction=EXCLUDED.insurance_pool_fraction,
 	tx_hash=EXCLUDED.tx_hash;`, sqlMarketsColumns)
 
 	defer metrics.StartSQLQuery("Markets", "Upsert")()
 	if _, err := m.Connection.Exec(ctx, query, market.ID, market.TxHash, market.VegaTime, market.InstrumentID, market.TradableInstrument, market.DecimalPlaces,
 		market.Fees, market.OpeningAuction, market.PriceMonitoringSettings, market.LiquidityMonitoringParameters,
 		market.TradingMode, market.State, market.MarketTimestamps, market.PositionDecimalPlaces, market.LpPriceRange,
-		market.LinearSlippageFactor, market.QuadraticSlippageFactor); err != nil {
+		market.LinearSlippageFactor, market.QuadraticSlippageFactor, market.ParentMarketID, market.InsurancePoolFraction); err != nil {
 		err = fmt.Errorf("could not insert market into database: %w", err)
 		return err
 	}
@@ -232,4 +236,42 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 
 	m.allCache[key] = cacheValue{markets: markets, pageInfo: pageInfo}
 	return markets, pageInfo, nil
+}
+
+func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool) ([]entities.Market, error) {
+	if marketID == "" {
+		return nil, errors.New("invalid market ID. Market ID cannot be empty")
+	}
+
+	args := make([]interface{}, 0)
+
+	lineageFilter := ""
+
+	if !fullHistory {
+		lineageFilter = "and vega_time >= (select vega_time from lineage_root)"
+	}
+
+	query := fmt.Sprintf(`
+		with lineage_root(root_id, vega_time) as (
+            select root_id, vega_time
+            from market_lineage
+            where market_id = %s
+        ), lineage(market_id, parent_id, root_id) as (
+			select market_id, parent_market_id, root_id
+            from market_lineage
+            where root_id = (select root_id from lineage_root)
+			%s
+		) select distinct on (m.id) m.*
+        from markets m
+        join lineage l on l.market_id = m.id
+        order by m.id, vega_time desc
+`, nextBindVar(&args, entities.MarketID(marketID)), lineageFilter)
+
+	var markets []entities.Market
+
+	if err := pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+		return markets, m.wrapE(err)
+	}
+
+	return markets, nil
 }

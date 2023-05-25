@@ -252,6 +252,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
+  SuccessorConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.SuccessorConfiguration
   FutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.FutureProduct
   Asset:
