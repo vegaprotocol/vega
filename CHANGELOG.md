@@ -24,6 +24,7 @@
 - [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
 - [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
 - [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
+- [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
 
 ## 0.71.5
 
