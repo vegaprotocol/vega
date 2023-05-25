@@ -1776,6 +1776,7 @@
           "result": {
             "name": "Success",
             "value": {
+              "name": "Key 1",
               "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
               "algorithm": {
                 "name": "vega/ed25519",
@@ -1785,10 +1786,6 @@
                 {
                   "key": "portfolio",
                   "value": "btc"
-                },
-                {
-                  "key": "name",
-                  "value": "Key 1"
                 }
               ],
               "isTainted": false

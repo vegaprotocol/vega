@@ -175,7 +175,7 @@ func retrieveFieldName(field reflect.StructField) (string, bool, error) {
 	// the first value is the name in the JSON tag
 	jsonName := strings.Split(jsonValue, ",")[0]
 
-	if strings.ToLower(field.Name) != strings.ToLower(jsonName) {
+	if strings.ToLower(field.Name) != strings.ToLower(jsonName) { //nolint:staticcheck
 		return "", false, fmt.Errorf("field name %q does not match JSON name %q", field.Name, jsonName)
 	}
 
