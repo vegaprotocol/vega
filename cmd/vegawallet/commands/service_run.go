@@ -260,7 +260,9 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		close(sentTransactions)
 	})
 
-	policyBuilderFunc, err := policyBuilder(cliLog, p, f, consentRequests, sentTransactions)
+	jobRunner := vgjob.NewRunner(context.Background())
+
+	policy, err := buildPolicy(jobRunner.Ctx(), cliLog, p, f, consentRequests, sentTransactions)
 	if err != nil {
 		return err
 	}
@@ -272,21 +274,17 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 		close(responseChan)
 	})
 
-	interactorBuilderFunc := func(ctx context.Context) walletapi.Interactor {
-		return interactor.NewSequentialInteractor(ctx, receptionChan, responseChan)
+	seqInteractor := interactor.NewSequentialInteractor(jobRunner.Ctx(), receptionChan, responseChan)
+
+	connectionsManager, err := connections.NewManager(serviceV2.NewStdTime(), walletStore, tokenStore, sessionStore, seqInteractor)
+	if err != nil {
+		return fmt.Errorf("could not create the connection manager: %w", err)
 	}
+	closer.Add(func() {
+		connectionsManager.EndAllSessionConnections()
+	})
 
-	connectionsManagerBuilderFunc := func(interactor walletapi.Interactor) (*connections.Manager, error) {
-		connectionsManager, err := connections.NewManager(serviceV2.NewStdTime(), walletStore, tokenStore, sessionStore, interactor)
-		if err != nil {
-			return nil, fmt.Errorf("could not create the connection manager: %w", err)
-		}
-		return connectionsManager, nil
-	}
-
-	serviceStarter := service.NewStarter(walletStore, netStore, svcStore, connectionsManagerBuilderFunc, policyBuilderFunc, interactorBuilderFunc, loggerBuilderFunc)
-
-	jobRunner := vgjob.NewRunner(context.Background())
+	serviceStarter := service.NewStarter(walletStore, netStore, svcStore, connectionsManager, policy, seqInteractor, loggerBuilderFunc)
 
 	rc, err := serviceStarter.Start(jobRunner, f.Network, f.NoVersionCheck)
 	if err != nil {
@@ -324,21 +322,17 @@ func RunService(w io.Writer, rf *RootFlags, f *RunServiceFlags) error {
 	return nil
 }
 
-func policyBuilder(cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServiceFlags, consentRequests chan serviceV1.ConsentRequest, sentTransactions chan serviceV1.SentTransaction) (service.PolicyBuilderFunc, error) {
+func buildPolicy(ctx context.Context, cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServiceFlags, consentRequests chan serviceV1.ConsentRequest, sentTransactions chan serviceV1.SentTransaction) (serviceV1.Policy, error) {
 	if vgterm.HasTTY() {
 		cliLog.Info("TTY detected")
 		if f.EnableAutomaticConsent {
 			cliLog.Info("Automatic consent enabled")
 			p.Print(p.String().WarningBangMark().WarningText("Automatic consent enabled").NextLine())
-			return func(_ context.Context) serviceV1.Policy {
-				return serviceV1.NewAutomaticConsentPolicy()
-			}, nil
+			return serviceV1.NewAutomaticConsentPolicy(), nil
 		}
 		cliLog.Info("Explicit consent enabled")
 		p.Print(p.String().CheckMark().Text("Explicit consent enabled").NextLine())
-		return func(ctx context.Context) serviceV1.Policy {
-			return serviceV1.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions)
-		}, nil
+		return serviceV1.NewExplicitConsentPolicy(ctx, consentRequests, sentTransactions), nil
 	}
 
 	cliLog.Info("No TTY detected")
@@ -349,9 +343,7 @@ func policyBuilder(cliLog *zap.Logger, p *printer.InteractivePrinter, f *RunServ
 	}
 
 	cliLog.Info("Automatic consent enabled.")
-	return func(_ context.Context) serviceV1.Policy {
-		return serviceV1.NewAutomaticConsentPolicy()
-	}, nil
+	return serviceV1.NewAutomaticConsentPolicy(), nil
 }
 
 func buildJSONFileLogger(vegaPaths paths.Paths, logDir paths.StatePath, logLevel string) (*zap.Logger, string, zap.AtomicLevel, error) {
