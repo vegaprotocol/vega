@@ -1988,8 +1988,8 @@ message ListSuccessorMarketsRequest {
   // or any subsequent child market that succeeded it.
   string market_id = 1 [(google.api.field_behavior) = REQUIRED];
   // Flag to indicate whether or not to include the full succession chain, or only list
-  // the children of the given market ID. If true, the full succession chain is in included.
-  bool full_history = 2;
+  // the children of the given market ID. If true, the full succession chain is included.
+  bool include_full_history = 2;
 }
 
 // Response from a list successor markets request.

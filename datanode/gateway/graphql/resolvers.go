@@ -1293,8 +1293,8 @@ func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string,
 	}
 
 	req := &v2.ListSuccessorMarketsRequest{
-		MarketId:    marketID,
-		FullHistory: getAll,
+		MarketId:           marketID,
+		IncludeFullHistory: getAll,
 	}
 
 	resp, err := r.tradingDataClientV2.ListSuccessorMarkets(ctx, req)

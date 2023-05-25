@@ -213,8 +213,9 @@ type TradingDataServiceClient interface {
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
 	// List successor markets
 	//
-	// Given a market id, return the full lineage of markets since inception, or all successor markets since and including
-	// the given market id.
+	// Given a market ID, return the full lineage of markets since inception, or all successor markets since and including
+	// the given market ID. The markets will be returned in succession order, i.e. the market at position i will be the parent
+	// of the market at position i+1.
 	ListSuccessorMarkets(ctx context.Context, in *ListSuccessorMarketsRequest, opts ...grpc.CallOption) (*ListSuccessorMarketsResponse, error)
 	// Get party
 	//
@@ -1848,8 +1849,9 @@ type TradingDataServiceServer interface {
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
 	// List successor markets
 	//
-	// Given a market id, return the full lineage of markets since inception, or all successor markets since and including
-	// the given market id.
+	// Given a market ID, return the full lineage of markets since inception, or all successor markets since and including
+	// the given market ID. The markets will be returned in succession order, i.e. the market at position i will be the parent
+	// of the market at position i+1.
 	ListSuccessorMarkets(context.Context, *ListSuccessorMarketsRequest) (*ListSuccessorMarketsResponse, error)
 	// Get party
 	//

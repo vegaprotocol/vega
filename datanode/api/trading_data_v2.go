@@ -1099,7 +1099,7 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2.ListSuccessorMarketsRequest) (*v2.ListSuccessorMarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListSuccessorMarkets")()
 
-	markets, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.FullHistory)
+	markets, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetAllPaged, err)
 	}
