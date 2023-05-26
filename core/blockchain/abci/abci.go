@@ -224,11 +224,13 @@ const (
 	TxTypeKeyRotateSubmission                = "KeyRotateSubmission"
 	TxTypeStateVariableProposal              = "StateVariableProposal"
 	TxTypeCancelTransfer                     = "CancelTransfer"
-	TxTypeValidatorHeartbeat                 = "ValidatorHeartbeat"
-	TxTypeEthereumKeyRotateSubmission        = "EthereumKeyRotateSubmission"
-	TxTypeProtocolUpgradeProposal            = "ProtocolUpgradeProposal"
-	TxTypeIssueSignatures                    = "IssueSignatures"
-	TxTypeBatchMarketInstructions            = "BatchMarketInstructions"
+	// TxTypeValidatorHeartbeat                 = "ValidatorHeartbeat"
+	TxTypeEthereumKeyRotateSubmission = "EthereumKeyRotateSubmission"
+	TxTypeProtocolUpgradeProposal     = "ProtocolUpgradeProposal"
+	TxTypeIssueSignatures             = "IssueSignatures"
+	TxTypeBatchMarketInstructions     = "BatchMarketInstructions"
+	TxTypeERC20MultisigSignerAdded    = "ERC20MultisigSignerAdded"
+	TxTypeERC20MultisigSignerRemoved  = "ERC20MultisigSignerRemoved"
 )
 
 type TxType struct {
@@ -238,18 +240,9 @@ type TxType struct {
 }
 
 func GetTxType(tx Tx) (txt TxType) {
-	if tx.GetCmd() == nil {
-		return
-	}
-
 	switch c := tx.GetCmd().(type) {
-	case *commandspb.InputData_ChainEvent:
-		ce := c.ChainEvent
-		if ce == nil {
-			return
-		}
-
-		if se := ce.GetStakingEvent(); se != nil {
+	case *commandspb.ChainEvent:
+		if se := c.GetStakingEvent(); se != nil {
 			if sed := se.GetStakeDeposited(); sed != nil {
 				txt.Type = TxTypeStakeDeposited
 				txt.Receiver = sed.GetVegaPublicKey()
@@ -259,7 +252,7 @@ func GetTxType(tx Tx) (txt TxType) {
 				txt.Receiver = ser.GetVegaPublicKey()
 			}
 		}
-		if bi := ce.GetBuiltin(); bi != nil {
+		if bi := c.GetBuiltin(); bi != nil {
 			if bid := bi.GetDeposit(); bid != nil {
 				txt.Type = TxTypeBuiltinAssetDeposit
 				txt.Receiver = bid.GetPartyId()
@@ -269,84 +262,112 @@ func GetTxType(tx Tx) (txt TxType) {
 				txt.Sender = biw.GetPartyId()
 			}
 		}
-		if e20 := ce.GetErc20(); e20 != nil {
+		if e20 := c.GetErc20(); e20 != nil {
 			if e20d := e20.GetDeposit(); e20d != nil {
 				txt.Type = TxTypeERC20Deposit
 				txt.Receiver = e20d.GetTargetPartyId()
 			}
 			if e20w := e20.GetWithdrawal(); e20w != nil {
 				txt.Type = TxTypeERC20Withdrawal
-				txt.Sender = tx.Party() // TODO: ???
+				txt.Sender = tx.Party() // TODO: what else to do here?
 			}
 		}
-	case *commandspb.InputData_Transfer:
-		tr := c.Transfer
-		if tr == nil {
-			return
+		if erc20ms := c.GetErc20Multisig(); erc20ms != nil {
+			if erc20msadd := erc20ms.GetSignerAdded(); erc20msadd != nil {
+				txt.Type = TxTypeERC20MultisigSignerAdded
+				txt.Sender = erc20msadd.GetNewSigner() // TODO: what else to do here?
+			}
+			if erc20msrem := erc20ms.GetSignerRemoved(); erc20msrem != nil {
+				txt.Type = TxTypeERC20MultisigSignerRemoved
+				txt.Sender = erc20msrem.GetOldSigner() // TODO: what else to do here?
+			}
 		}
+	case *commandspb.Transfer:
 		txt.Type = TxTypeTransfer
-		txt.Receiver = tr.GetTo()
+		txt.Receiver = c.GetTo()
 		txt.Sender = tx.Party() // TODO: ???
-	case *commandspb.InputData_OrderSubmission:
+	case *commandspb.OrderSubmission:
 		txt.Type = TxTypeOrderSubmission
-	case *commandspb.InputData_OrderCancellation:
+		txt.Sender = tx.Party()
+	case *commandspb.OrderCancellation:
 		txt.Type = TxTypeOrderCancellation
-	case *commandspb.InputData_OrderAmendment:
+		txt.Sender = tx.Party()
+	case *commandspb.OrderAmendment:
 		txt.Type = TxTypeOrderAmendment
-	case *commandspb.InputData_VoteSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.VoteSubmission:
 		txt.Type = TxTypeVoteSubmission
-	case *commandspb.InputData_WithdrawSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.WithdrawSubmission:
 		txt.Type = TxTypeWithdrawSubmission
-	case *commandspb.InputData_LiquidityProvisionSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.LiquidityProvisionSubmission:
 		txt.Type = TxTypeLiquidityProvisionSubmission
-	case *commandspb.InputData_LiquidityProvisionCancellation:
+		txt.Sender = tx.Party()
+	case *commandspb.LiquidityProvisionCancellation:
 		txt.Type = TxTypeLiquidityProvisionCancellation
-	case *commandspb.InputData_LiquidityProvisionAmendment:
+		txt.Sender = tx.Party()
+	case *commandspb.LiquidityProvisionAmendment:
 		txt.Type = TxTypeLiquidityProvisionAmendment
-	case *commandspb.InputData_SpotLiquidityProvisionSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.SpotLiquidityProvisionSubmission:
 		txt.Type = TxTypeSpotLiquidityProvisionSubmission
-	case *commandspb.InputData_SpotLiquidityProvisionCancellation:
+		txt.Sender = tx.Party()
+	case *commandspb.SpotLiquidityProvisionCancellation:
 		txt.Type = TxTypeSpotLiquidityProvisionCancellation
-	case *commandspb.InputData_SpotLiquidityProvisionAmendment:
+		txt.Sender = tx.Party()
+	case *commandspb.SpotLiquidityProvisionAmendment:
 		txt.Type = TxTypeSpotLiquidityProvisionAmendment
-	case *commandspb.InputData_ProposalSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.ProposalSubmission:
 		txt.Type = TxTypeProposalSubmission
-	case *commandspb.InputData_AnnounceNode:
+		txt.Sender = tx.Party()
+	case *commandspb.AnnounceNode:
 		txt.Type = TxTypeAnnounceNode
-	case *commandspb.InputData_NodeVote:
+		txt.Sender = tx.Party()
+	case *commandspb.NodeVote: // TODO: do we need this?
 		txt.Type = TxTypeNodeVote
-	case *commandspb.InputData_NodeSignature:
+		txt.Sender = tx.Party()
+	case *commandspb.NodeSignature:
 		txt.Type = TxTypeNodeSignature
-	case *commandspb.InputData_OracleDataSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.OracleDataSubmission:
 		txt.Type = TxTypeOracleDataSubmission
-	case *commandspb.InputData_DelegateSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.DelegateSubmission:
 		txt.Type = TxTypeDelegateSubmission
-	case *commandspb.InputData_UndelegateSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.UndelegateSubmission:
 		txt.Type = TxTypeUndelegateSubmission
-	case *commandspb.InputData_KeyRotateSubmission:
+		txt.Sender = tx.Party()
+	case *commandspb.KeyRotateSubmission:
 		txt.Type = TxTypeKeyRotateSubmission
-	case *commandspb.InputData_StateVariableProposal:
+		txt.Sender = tx.Party()
+	case *commandspb.StateVariableProposal:
 		txt.Type = TxTypeStateVariableProposal
-	case *commandspb.InputData_CancelTransfer:
+		txt.Sender = tx.Party()
+	case *commandspb.CancelTransfer:
 		txt.Type = TxTypeCancelTransfer
-	case *commandspb.InputData_ValidatorHeartbeat:
-		txt.Type = TxTypeValidatorHeartbeat
-	case *commandspb.InputData_EthereumKeyRotateSubmission:
+		txt.Sender = tx.Party()
+	// case *commandspb.ValidatorHeartbeat: TODO: do we need this?
+	// 	txt.Type = TxTypeValidatorHeartbeat
+	case *commandspb.EthereumKeyRotateSubmission:
 		txt.Type = TxTypeEthereumKeyRotateSubmission
-	case *commandspb.InputData_ProtocolUpgradeProposal:
+		txt.Sender = tx.Party()
+	case *commandspb.ProtocolUpgradeProposal:
 		txt.Type = TxTypeProtocolUpgradeProposal
-	case *commandspb.InputData_IssueSignatures:
+		txt.Sender = tx.Party()
+	case *commandspb.IssueSignatures:
 		txt.Type = TxTypeIssueSignatures
-	case *commandspb.InputData_BatchMarketInstructions:
+		txt.Sender = tx.Party()
+	case *commandspb.BatchMarketInstructions:
 		txt.Type = TxTypeBatchMarketInstructions
+		txt.Sender = tx.Party()
 	}
-
 	return
 }
 
 func getBaseTxEvents(tx Tx) []types.Event {
-	txt := GetTxType(tx)
-
 	base := []types.Event{
 		{
 			Type: "tx",
@@ -354,36 +375,6 @@ func getBaseTxEvents(tx Tx) []types.Event {
 				{
 					Key:   []byte("submitter"),
 					Value: []byte(tx.PubKeyHex()),
-					Index: true,
-				},
-			},
-		},
-		{
-			Type: "tx",
-			Attributes: []types.EventAttribute{
-				{
-					Key:   []byte("type"),
-					Value: []byte(txt.Type),
-					Index: true,
-				},
-			},
-		},
-		{
-			Type: "tx",
-			Attributes: []types.EventAttribute{
-				{
-					Key:   []byte("sender"),
-					Value: []byte(txt.Sender),
-					Index: true,
-				},
-			},
-		},
-		{
-			Type: "tx",
-			Attributes: []types.EventAttribute{
-				{
-					Key:   []byte("receiver"),
-					Value: []byte(txt.Receiver),
 					Index: true,
 				},
 			},
@@ -405,6 +396,32 @@ func getBaseTxEvents(tx Tx) []types.Event {
 	cmd := tx.GetCmd()
 	if cmd == nil {
 		return base
+	}
+
+	txt := GetTxType(tx)
+
+	if txt.Type != "" {
+		base[0].Attributes = append(base[0].Attributes, types.EventAttribute{
+			Key:   []byte("type"),
+			Value: []byte(txt.Type),
+			Index: true,
+		})
+	}
+
+	if txt.Sender != "" {
+		base[0].Attributes = append(base[0].Attributes, types.EventAttribute{
+			Key:   []byte("sender"),
+			Value: []byte(txt.Sender),
+			Index: true,
+		})
+	}
+
+	if txt.Receiver != "" {
+		base[0].Attributes = append(base[0].Attributes, types.EventAttribute{
+			Key:   []byte("receiver"),
+			Value: []byte(txt.Receiver),
+			Index: true,
+		})
 	}
 
 	var market string

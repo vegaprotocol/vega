@@ -98,16 +98,24 @@ func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTra
 		after = &cursor
 	}
 
-	transactions, err := b.store.ListTransactions(ctx, req.Filters, req.TxType, req.Party, limit, before, after)
+	transactions, err := b.store.ListTransactions(
+		ctx,
+		req.Filters,
+		req.TxType,
+		req.Party,
+		req.Sender,
+		req.Receiver,
+		limit,
+		before,
+		after,
+	)
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
-	resp := pb.ListTransactionsResponse{
+	return &pb.ListTransactionsResponse{
 		Transactions: transactions,
-	}
-
-	return &resp, nil
+	}, nil
 }
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

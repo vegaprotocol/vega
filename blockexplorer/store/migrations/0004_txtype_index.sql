@@ -24,7 +24,7 @@ $$;
 CREATE TRIGGER update_txresult_tx_type AFTER INSERT ON attributes
     FOR EACH ROW
     WHEN (NEW.composite_key='tx.type')
-EXECUTE function update_txresult_tx_type();
+    EXECUTE function update_txresult_tx_type();
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_txresult_sender()
@@ -44,7 +44,7 @@ $$;
 CREATE TRIGGER update_txresult_sender AFTER INSERT ON attributes
     FOR EACH ROW
     WHEN (NEW.composite_key='tx.sender')
-EXECUTE function update_txresult_tx_type();
+    EXECUTE function update_txresult_sender();
 
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_txresult_receiver()
@@ -64,7 +64,7 @@ $$;
 CREATE TRIGGER update_txresult_receiver AFTER INSERT ON attributes
     FOR EACH ROW
     WHEN (NEW.composite_key='tx.receiver')
-    EXECUTE function update_txresult_tx_type();
+    EXECUTE function update_txresult_receiver();
 
 
 -- +goose Down

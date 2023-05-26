@@ -69,9 +69,14 @@ message ListTransactionsRequest {
   // And we might add more filters to support the legacy ones, if needed
   // Filters to apply to the request
   map<string, string> filters = 4  [deprecated = true];
-  // TxTypeFilter
+  // TxTypeFilter (command or chain event)
   repeated string tx_type = 5;
+  // PartyFilter (either sender or receiver)
   repeated string party = 6;
+  // Sender of the transaction
+  repeated string sender = 7;
+  // Receiver of the transaction
+  repeated string receiver = 8;
 }
 
 message ListTransactionsResponse {
