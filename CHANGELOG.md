@@ -23,6 +23,7 @@
 
 ### 🐛 Fixes
 - [8251](https://github.com/vegaprotocol/vega/issues/8251) - Fix bug in expired orders optimisation resulting in non deterministic order sequence numbers
+- [8385](https://github.com/vegaprotocol/vega/issues/8385) - Add code patches to swap out addresses of `ETH` bridges.
 
 
 ## 0.71.3

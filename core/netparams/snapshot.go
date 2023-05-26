@@ -14,19 +14,24 @@ package netparams
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/logging"
+	"github.com/ethereum/go-ethereum/common"
 
 	"code.vegaprotocol.io/vega/libs/proto"
+	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type snapState struct {
-	data  []byte
-	pl    *types.NetParams
-	index map[string]int
-	t     *types.PayloadNetParams
+	data        []byte
+	pl          *types.NetParams
+	index       map[string]int
+	t           *types.PayloadNetParams
+	postPatches []patchDesc
 }
 
 func newSnapState(store map[string]value) *snapState {
@@ -34,6 +39,30 @@ func newSnapState(store map[string]value) *snapState {
 		pl:    &types.NetParams{},
 		index: make(map[string]int, len(store)),
 		t:     &types.PayloadNetParams{},
+		postPatches: []patchDesc{
+			{
+				Key:      BlockchainsEthereumConfig,
+				Validate: false,
+				SetValue: func(ctx context.Context, p *patchDesc, s *Store) error {
+					v := vega.EthereumConfig{}
+					if err := s.GetJSONStruct(p.Key, &v); err != nil {
+						return fmt.Errorf("could not get the ethereum config (%w)", err)
+					}
+					have := common.HexToAddress(v.CollateralBridgeContract.Address)
+					old := common.HexToAddress("0xF332091caF859094772058105f30F18633C9b1ff")
+					if have.String() == old.String() {
+						v.CollateralBridgeContract.Address = common.HexToAddress("0x19C8eF5187F1aE6642e6C20233E59b46ae91c0Cb").String()
+						v.CollateralBridgeContract.DeploymentBlockHeight = 3563322
+					}
+					b, err := json.Marshal(v)
+					if err != nil {
+						return fmt.Errorf("failed to marshal the updated ethereum config (%w)", err)
+					}
+					p.Value = string(b)
+					return nil
+				},
+			},
+		},
 	}
 	// set pointer
 	state.t.NetParams = state.pl
@@ -145,4 +174,27 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	s.state.data, err = proto.Marshal(pl.IntoProto())
 	s.paramUpdates = map[string]struct{}{}
 	return nil, err
+}
+
+func (s *Store) OnStateLoaded(ctx context.Context) error {
+	dispatch := make([]string, 0, len(s.state.postPatches))
+	for _, patch := range s.state.postPatches {
+		if patch.SetValue != nil {
+			if err := patch.SetValue(ctx, &patch, s); err != nil {
+				s.log.Panic("Failed to get the patched value", logging.Error(err))
+			}
+		}
+		if err := s.UpdateOptionalValidation(ctx, patch.Key, patch.Value, patch.Validate); err != nil {
+			s.log.Panic("Failed to patch the state", logging.Error(err))
+		}
+		dispatch = append(dispatch, patch.Key)
+	}
+	for _, k := range dispatch {
+		if err := s.dispatchUpdate(ctx, k); err != nil {
+			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
+		}
+	}
+	// patches have been applied, remove the patch descriptors
+	s.state.postPatches = nil
+	return nil
 }
