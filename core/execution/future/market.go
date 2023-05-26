@@ -127,7 +127,7 @@ type Market struct {
 	feeSplitter                *common.FeeSplitter
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
-	equityShares               *EquityShares
+	equityShares               *common.EquityShares
 	minLPStakeQuantumMultiple  num.Decimal
 
 	stateVarEngine        common.StateVarEngine
@@ -271,7 +271,7 @@ func NewMarket(
 		peggedOrders:              common.NewPeggedOrders(log, timeService),
 		expiringOrders:            common.NewExpiringOrders(),
 		feeSplitter:               common.NewFeeSplitter(),
-		equityShares:              NewEquityShares(num.DecimalZero()),
+		equityShares:              common.NewEquityShares(num.DecimalZero()),
 		lastBestAskPrice:          num.UintZero(),
 		lastMidSellPrice:          num.UintZero(),
 		lastMidBuyPrice:           num.UintZero(),
@@ -313,7 +313,7 @@ func (m *Market) Mkt() *types.Market {
 	return m.mkt
 }
 
-func (m *Market) GetEquityShares() *EquityShares {
+func (m *Market) GetEquityShares() *common.EquityShares {
 	return m.equityShares
 }
 
@@ -490,7 +490,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		SuppliedStake:             m.getSuppliedStake().String(),
 		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
-		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps, m.liquidity.GetAverageLiquidityScores()),
+		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidity.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
 	}
 }
@@ -3321,25 +3321,6 @@ func (m *Market) stopAllLiquidityProvisionOnReject(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func lpsToLiquidityProviderFeeShare(lps map[string]*lp, ls map[string]num.Decimal) []*types.LiquidityProviderFeeShare {
-	out := make([]*types.LiquidityProviderFeeShare, 0, len(lps))
-	for k, v := range lps {
-		out = append(out, &types.LiquidityProviderFeeShare{
-			Party:                 k,
-			EquityLikeShare:       v.share.String(),
-			AverageEntryValuation: v.avg.String(),
-			AverageScore:          ls[k].String(),
-		})
-	}
-
-	// sort then so we produce the same output on all nodes
-	sort.SliceStable(out, func(i, j int) bool {
-		return out[i].Party < out[j].Party
-	})
-
-	return out
 }
 
 func (m *Market) distributeLiquidityFees(ctx context.Context) error {

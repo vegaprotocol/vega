@@ -6,7 +6,7 @@ import (
 )
 
 func (m *Market) GetCPState() *types.CPMarketState {
-	shares := m.equityShares.getCPShares()
+	shares := m.equityShares.GetCPShares()
 	id := m.mkt.ID
 	// get all LP accounts, we don't have to sort this slice because we're fetching the balances
 	// in the same order as we got the ELS shares (which is already a deterministically sorted slice).
@@ -30,7 +30,7 @@ func (m *Market) GetCPState() *types.CPMarketState {
 func (m *Market) LoadCPState(state *types.CPMarketState) {
 	m.mkt = state.Market
 	m.feeSplitter.SetTradeValue(state.LastTradeValue)
-	m.equityShares.setCPShares(state.Shares)
+	m.equityShares.SetCPShares(state.Shares)
 	// @TODO bond account and insurance account
 }
 
@@ -38,6 +38,6 @@ func (m *Market) SetSuccessorELS(state *types.CPMarketState) {
 	// carry over traded value from predecessor
 	m.feeSplitter.AddTradeValue(state.LastTradeValue)
 	// load equity like shares
-	m.equityShares.setCPShares(state.Shares)
+	m.equityShares.SetCPShares(state.Shares)
 	// @TODO force a recalculation for the LP's who actually are present
 }

@@ -82,7 +82,7 @@ func (m *Market) State() types.MarketState {
 
 // Return the number if liquidity provisions in the market.
 func (m *Market) GetLPSCount() int {
-	return len(m.equityShares.lps)
+	return m.equityShares.GetLPSCount()
 }
 
 // Return the state of the LP submission for the given partyID.
