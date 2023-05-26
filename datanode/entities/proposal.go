@@ -35,6 +35,7 @@ var (
 	ProposalTypeUpdateMarket           = ProposalType(v2.ListGovernanceDataRequest_TYPE_UPDATE_MARKET)
 	ProposalTypeUpdateNetworkParameter = ProposalType(v2.ListGovernanceDataRequest_TYPE_NETWORK_PARAMETERS)
 	ProposalTypeNewFreeform            = ProposalType(v2.ListGovernanceDataRequest_TYPE_NEW_FREE_FORM)
+	ProposalTypeSuccessorMarket        = ProposalType(v2.ListGovernanceDataRequest_TYPE_SUCCESSOR_MARKET)
 )
 
 func (p *ProposalType) String() string {
@@ -56,6 +57,8 @@ func (p *ProposalType) String() string {
 		return "updateNetworkParameter"
 	case ProposalTypeNewFreeform:
 		return "newFreeform"
+	case ProposalTypeSuccessorMarket:
+		return "successorMarket"
 	default:
 		return "unknown"
 	}

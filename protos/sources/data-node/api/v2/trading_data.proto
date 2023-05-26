@@ -344,6 +344,15 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
   }
 
+  // List successor markets
+  //
+  // Given a market ID, return the full lineage of markets since inception, or all successor markets since and including
+  // the given market ID. The markets will be returned in succession order, i.e. the market at position i will be the parent
+  // of the market at position i+1.
+  rpc ListSuccessorMarkets(ListSuccessorMarketsRequest) returns (ListSuccessorMarketsResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Markets"};
+  }
+
   // Get party
   //
   // Get a single party
@@ -1973,6 +1982,22 @@ message MarketConnection {
   PageInfo page_info = 2;
 }
 
+// Request for listing successor markets.
+message ListSuccessorMarketsRequest {
+  // Market ID that is a member of the succession line. This can be the original market
+  // or any subsequent child market that succeeded it.
+  string market_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // Flag to indicate whether or not to include the full succession line, or only list
+  // the children of the given market ID. If true, the full succession line is included.
+  bool include_full_history = 2;
+}
+
+// Response from a list successor markets request.
+message ListSuccessorMarketsResponse {
+  // List of markets in the succession line.
+  repeated vega.Market markets = 1;
+}
+
 // -- Parties --
 
 // Request to get party by ID
@@ -2411,6 +2436,8 @@ message ListGovernanceDataRequest {
     TYPE_NEW_FREE_FORM = 6;
     // Update asset proposals
     TYPE_UPDATE_ASSET = 7;
+    // Successor markets
+    TYPE_SUCCESSOR_MARKET = 8;
   }
   // Restrict proposals to those with the given state.
   optional vega.Proposal.State proposal_state = 1;
