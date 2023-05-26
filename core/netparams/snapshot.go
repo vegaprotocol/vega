@@ -49,10 +49,9 @@ func newSnapState(store map[string]value) *snapState {
 						return fmt.Errorf("could not get the ethereum config (%w)", err)
 					}
 					have := common.HexToAddress(v.CollateralBridgeContract.Address)
-					old := common.HexToAddress("0xF332091caF859094772058105f30F18633C9b1ff")
+					old := common.HexToAddress("0x124Dd8a6044ef048614AEA0AAC86643a8Ae1312D")
 					if have.String() == old.String() {
-						v.CollateralBridgeContract.Address = common.HexToAddress("0x19C8eF5187F1aE6642e6C20233E59b46ae91c0Cb").String()
-						v.CollateralBridgeContract.DeploymentBlockHeight = 3563322
+						v.CollateralBridgeContract.Address = common.HexToAddress("0x23872549cE10B40e31D6577e0A920088B0E0666a").String()
 					}
 					b, err := json.Marshal(v)
 					if err != nil {
@@ -177,7 +176,6 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 }
 
 func (s *Store) OnStateLoaded(ctx context.Context) error {
-	dispatch := make([]string, 0, len(s.state.postPatches))
 	for _, patch := range s.state.postPatches {
 		if patch.SetValue != nil {
 			if err := patch.SetValue(ctx, &patch, s); err != nil {
@@ -187,12 +185,8 @@ func (s *Store) OnStateLoaded(ctx context.Context) error {
 		if err := s.UpdateOptionalValidation(ctx, patch.Key, patch.Value, patch.Validate); err != nil {
 			s.log.Panic("Failed to patch the state", logging.Error(err))
 		}
-		dispatch = append(dispatch, patch.Key)
-	}
-	for _, k := range dispatch {
-		if err := s.dispatchUpdate(ctx, k); err != nil {
-			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
-		}
+		// ensure paramUpdate will be dispatched
+		s.paramUpdates[patch.Key] = struct{}{}
 	}
 	// patches have been applied, remove the patch descriptors
 	s.state.postPatches = nil
