@@ -231,7 +231,7 @@ func testSnapshotWithPatch(t *testing.T) {
 	cfg := vega.EthereumConfig{}
 	err := netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, &cfg)
 	assert.NoError(t, err)
-	old := common.HexToAddress("0xF332091caF859094772058105f30F18633C9b1ff").String()
+	old := common.HexToAddress("0x124Dd8a6044ef048614AEA0AAC86643a8Ae1312D").String()
 	cfg.CollateralBridgeContract.Address = old
 	// now get JSON string of the to-patch value
 	b, err := json.Marshal(cfg)
@@ -242,7 +242,7 @@ func testSnapshotWithPatch(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, check.CollateralBridgeContract.Address, old)
 	// when loading a snapshot, expect the address to have changed to:
-	exp := common.HexToAddress("0x19C8eF5187F1aE6642e6C20233E59b46ae91c0Cb").String()
+	exp := common.HexToAddress("0x23872549cE10B40e31D6577e0A920088B0E0666a").String()
 	netp2 := getTestNetParams(t)
 	netp2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	defer netp2.ctrl.Finish()
