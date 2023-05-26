@@ -186,7 +186,7 @@ func TestCalculateOpenClosedVolume(t *testing.T) {
 	require.Equal(t, int64(0), open)
 	require.Equal(t, int64(50), closed)
 
-	// we have a pending open volume of -100 and we get a new sell trade of 50, expect to return opened 0, close -50
+	// we have a pending open volume of -100 and we get a new buy trade of 50, expect to return opened 0, close -50
 	open, closed = entities.CalculateOpenClosedVolume(-100, 50)
 	require.Equal(t, int64(0), open)
 	require.Equal(t, int64(-50), closed)
@@ -196,7 +196,7 @@ func TestCalculateOpenClosedVolume(t *testing.T) {
 	require.Equal(t, int64(-50), open)
 	require.Equal(t, int64(100), closed)
 
-	// we have a pending open volume of -100 and we get a new sell trade of 50, expect to return opened 50, close -100
+	// we have a pending open volume of -100 and we get a new buy trade of 150, expect to return opened 50, close -100
 	open, closed = entities.CalculateOpenClosedVolume(-100, 150)
 	require.Equal(t, int64(50), open)
 	require.Equal(t, int64(-100), closed)
