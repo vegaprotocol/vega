@@ -20,9 +20,13 @@ import (
 
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/netparams"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/protos/vega"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -68,6 +72,7 @@ func TestCheckpoint(t *testing.T) {
 	t.Run("test get snapshot not empty with overwrite", testNonEmptyCheckpointWithOverWrite)
 	t.Run("test get snapshot invalid", testInvalidCheckpoint)
 	t.Run("test notification is sent after checkpoint load", testCheckpointNotificationsDelivered)
+	t.Run("test get snapshot with patch", testSnapshotWithPatch)
 }
 
 func testRegisterDispatchFunctionFailure(t *testing.T) {
@@ -213,6 +218,49 @@ func testGetDuration(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = netp.GetDuration(netparams.GovernanceProposalAssetMinProposerBalance)
 	assert.EqualError(t, err, "not a time.Duration value")
+}
+
+func testSnapshotWithPatch(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+	ctx := context.Background()
+
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// ensure the ETH config is to be patched
+	cfg := vega.EthereumConfig{}
+	err := netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, &cfg)
+	assert.NoError(t, err)
+	old := common.HexToAddress("0xF332091caF859094772058105f30F18633C9b1ff").String()
+	cfg.CollateralBridgeContract.Address = old
+	// now get JSON string of the to-patch value
+	b, err := json.Marshal(cfg)
+	assert.NoError(t, err)
+	netp.UpdateOptionalValidation(ctx, netparams.BlockchainsEthereumConfig, string(b), false)
+	check := vega.EthereumConfig{}
+	err = netp.GetJSONStruct(netparams.BlockchainsEthereumConfig, &check)
+	assert.NoError(t, err)
+	assert.Equal(t, check.CollateralBridgeContract.Address, old)
+	// when loading a snapshot, expect the address to have changed to:
+	exp := common.HexToAddress("0x19C8eF5187F1aE6642e6C20233E59b46ae91c0Cb").String()
+	netp2 := getTestNetParams(t)
+	netp2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	defer netp2.ctrl.Finish()
+	snap, _, err := netp.GetState("")
+	assert.NoError(t, err)
+	require.NotEmpty(t, snap)
+
+	// prepare state
+	pType := types.Payload{}.IntoProto()
+	assert.NoError(t, proto.Unmarshal(snap, pType))
+
+	_, err = netp2.LoadState(ctx, types.PayloadFromProto(pType))
+	assert.NoError(t, err)
+	assert.NoError(t, netp2.OnStateLoaded(ctx))
+	got := &vega.EthereumConfig{}
+	assert.NoError(t, netp2.GetJSONStruct(netparams.BlockchainsEthereumConfig, got))
+	// ensure the patch was applied
+	assert.Equal(t, got.CollateralBridgeContract.Address, exp)
 }
 
 func testNonEmptyCheckpoint(t *testing.T) {
