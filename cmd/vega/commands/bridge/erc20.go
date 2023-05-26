@@ -40,6 +40,7 @@ type ERC20Cmd struct {
 	VerifyListAsset        ERC20VerifyListAssetCmd        `command:"verify_list_asset" description:"Verify signatures to add a new erc20 asset to the erc20 bridge"`
 	RemoveAsset            ERC20RemoveAssetCmd            `command:"remove_asset" description:"Remove an erc20 asset from the erc20 bridge"`
 	WithdrawAsset          ERC20WithdrawAssetCmd          `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
+	VerifyWithdrawAsset    ERC20VerifyWithdrawAssetCmd    `command:"verify_withdraw_asset" description:"Verify withdraw ERC20 from the bridge"`
 	SetBridgeAddress       ERC20SetBridgeAddressCmd       `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
 	SetMultisigControl     ERC20SetMultisigControlCmd     `command:"set_multisig_control" description:"Update the bridge address use by the asset pool"`
 	GlobalResume           ERC20GlobalResumeCmd           `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
@@ -92,6 +93,7 @@ func ERC20() *ERC20Cmd {
 		VerifyListAsset:        ERC20VerifyListAssetCmd{},
 		RemoveAsset:            ERC20RemoveAssetCmd{},
 		WithdrawAsset:          ERC20WithdrawAssetCmd{},
+		VerifyWithdrawAsset:    ERC20VerifyWithdrawAssetCmd{},
 		SetAssetLimits:         ERC20SetAssetLimitsCmd{},
 		VerifySetAssetLimits:   ERC20VerifySetAssetLimitsCmd{},
 		SetBridgeAddress:       ERC20SetBridgeAddressCmd{},
@@ -145,6 +147,56 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 	}
 
 	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20VerifyWithdrawAssetCmd struct {
+	TokenAddress    string `long:"token-address" required:"true" description:"The Ethereum address of the new token"`
+	Amount          string `long:"amount" required:"true" description:"The amount to be withdrawn"`
+	ReceiverAddress string `long:"receiver-address" required:"true" description:"The ethereum address of the wallet which is to receive the funds"`
+	BridgeAddress   string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
+	Nonce           string `long:"nonce" required:"true" description:"A nonce for this signature"`
+	Creation        int64  `long:"creation" required:"true" description:"creation time of the withdrawal (timestamp)"`
+	Signatures      string `long:"signatures" required:"true" description:"signatures of the withdrawal"`
+}
+
+func (opts *ERC20VerifyWithdrawAssetCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10")
+	}
+
+	amount, overflowed := num.UintFromString(opts.Amount, 10)
+	if overflowed {
+		return errors.New("invalid amount, needs to be base 10")
+	}
+
+	creation := time.Unix(opts.Creation, 0)
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	addresses, err := erc20Logic.VerifyWithdrawAsset(
+		opts.TokenAddress, amount, opts.ReceiverAddress, creation, nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(addresses)
+	for _, v := range addresses {
+		fmt.Printf("%v\n", v)
+	}
 	return nil
 }
 

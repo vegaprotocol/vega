@@ -280,6 +280,23 @@ func (e ERC20Logic) WithdrawAsset(
 	creation time.Time,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
+	msg, err := e.buildWithdrawAssetMessage(
+		tokenAddress, amount, ethPartyAddress, creation, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return sign(e.signer, msg)
+}
+
+func (e ERC20Logic) buildWithdrawAssetMessage(
+	tokenAddress string,
+	amount *num.Uint,
+	ethPartyAddress string,
+	creation time.Time,
+	nonce *num.Uint,
+) ([]byte, error) {
 	typAddr, err := abi.NewType("address", "", nil)
 	if err != nil {
 		return nil, err
@@ -336,12 +353,43 @@ func (e ERC20Logic) WithdrawAsset(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	return packBufAndSubmitter(buf, e.bridgeAddr)
+}
+
+func (e ERC20Logic) VerifyWithdrawAsset(
+	tokenAddress string,
+	amount *num.Uint,
+	ethPartyAddress string,
+	creation time.Time,
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	msg, err := e.buildWithdrawAssetMessage(
+		tokenAddress, amount, ethPartyAddress, creation, nonce,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+		return nil, err
 	}
 
-	return sign(e.signer, msg)
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
 }
 
 func (e ERC20Logic) SetAssetLimits(
