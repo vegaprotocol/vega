@@ -27,7 +27,7 @@
 - [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
 - [8334](https://github.com/vegaprotocol/vega/issues/8334) - Implement market succession in execution engine.
 - [8354](https://github.com/vegaprotocol/vega/issues/8354) - refactor execution package
-- [8383](https://github.com/vegaprotocol/vega/issues/8383) - Move equity shares to common
+- [8394](https://github.com/vegaprotocol/vega/issues/8394) - Get rid of spot liquidity provision commands and data structures.
 
 
 ### 🐛 Fixes

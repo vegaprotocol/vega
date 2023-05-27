@@ -242,22 +242,10 @@ func LiquidityProvisionSubmissionProto(
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
-func SpotLiquidityProvisionSubmissionProto(
-	lp *commandspb.SpotLiquidityProvisionSubmission,
-) zap.Field {
-	return zap.String("spot-liquidity-provision-submission", lp.String())
-}
-
 func LiquidityProvisionSubmission(
 	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
-}
-
-func SpotLiquidityProvisionSubmission(
-	lp fmt.Stringer,
-) zap.Field {
-	return zap.String("spot-liquidity-provision-submission", lp.String())
 }
 
 func LiquidityProvisionCancellationProto(
@@ -266,22 +254,10 @@ func LiquidityProvisionCancellationProto(
 	return zap.String("liquidity-provision-cancellation", lp.String())
 }
 
-func SpotLiquidityProvisionCancellationProto(
-	lp *commandspb.SpotLiquidityProvisionCancellation,
-) zap.Field {
-	return zap.String("spot-liquidity-provision-cancellation", lp.String())
-}
-
 func LiquidityProvisionCancellation(
 	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("liquidity-provision-cancellation", lp.String())
-}
-
-func SpotLiquidityProvisionCancellation(
-	lp fmt.Stringer,
-) zap.Field {
-	return zap.String("spot-liquidity-provision-cancellation", lp.String())
 }
 
 func LiquidityProvisionAmendmentProto(
@@ -290,22 +266,10 @@ func LiquidityProvisionAmendmentProto(
 	return zap.String("liquidity-provision-amendment", lp.String())
 }
 
-func SpotLiquidityProvisionAmendmentProto(
-	lp *commandspb.SpotLiquidityProvisionAmendment,
-) zap.Field {
-	return zap.String("spot-liquidity-provision-amendment", lp.String())
-}
-
 func LiquidityProvisionAmendment(
 	lp fmt.Stringer,
 ) zap.Field {
 	return zap.String("liquidity-provision-amendment", lp.String())
-}
-
-func SpotLiquidityProvisionAmendment(
-	lp fmt.Stringer,
-) zap.Field {
-	return zap.String("spot-liquidity-provision-amendment", lp.String())
 }
 
 func WithdrawSubmissionProto(
