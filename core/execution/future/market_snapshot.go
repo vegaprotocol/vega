@@ -147,7 +147,7 @@ func NewMarketFromSnapshot(
 		pMonitor:                   pMonitor,
 		peggedOrders:               common.NewPeggedOrdersFromSnapshot(log, timeService, em.PeggedOrders),
 		expiringOrders:             common.NewExpiringOrdersFromState(em.ExpiringOrders),
-		equityShares:               NewEquitySharesFromSnapshot(em.EquityShare),
+		equityShares:               common.NewEquitySharesFromSnapshot(em.EquityShare),
 		lastBestBidPrice:           em.LastBestBid.Clone(),
 		lastBestAskPrice:           em.LastBestAsk.Clone(),
 		lastMidBuyPrice:            em.LastMidBid.Clone(),

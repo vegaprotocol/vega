@@ -10,7 +10,7 @@
 // of this software will be governed by version 3 or later of the GNU General
 // Public License.
 
-package future
+package common
 
 import (
 	"fmt"
@@ -56,6 +56,10 @@ func NewEquityShares(mvp num.Decimal) *EquityShares {
 	}
 }
 
+func (es *EquityShares) GetLPSCount() int {
+	return len(es.lps)
+}
+
 func (es *EquityShares) InheritELS(shares []*types.ELSShare) {
 	for _, els := range shares {
 		if current, ok := es.lps[els.PartyID]; ok {
@@ -80,6 +84,25 @@ func (es *EquityShares) InheritELS(shares []*types.ELSShare) {
 			}
 		}
 	}
+}
+
+func (es *EquityShares) LpsToLiquidityProviderFeeShare(ls map[string]num.Decimal) []*types.LiquidityProviderFeeShare {
+	out := make([]*types.LiquidityProviderFeeShare, 0, len(es.lps))
+	for k, v := range es.lps {
+		out = append(out, &types.LiquidityProviderFeeShare{
+			Party:                 k,
+			EquityLikeShare:       v.share.String(),
+			AverageEntryValuation: v.avg.String(),
+			AverageScore:          ls[k].String(),
+		})
+	}
+
+	// sort then so we produce the same output on all nodes
+	sort.SliceStable(out, func(i, j int) bool {
+		return out[i].Party < out[j].Party
+	})
+
+	return out
 }
 
 // OpeningAuctionEnded signal to the EquityShare that the
@@ -308,7 +331,7 @@ func (es *EquityShares) updateAllELS() {
 	}
 }
 
-func (es *EquityShares) getCPShares() []*types.ELSShare {
+func (es *EquityShares) GetCPShares() []*types.ELSShare {
 	shares := make([]*types.ELSShare, 0, len(es.lps))
 	for id, els := range es.lps {
 		shares = append(shares, &types.ELSShare{
@@ -326,7 +349,7 @@ func (es *EquityShares) getCPShares() []*types.ELSShare {
 	return shares
 }
 
-func (es *EquityShares) setCPShares(shares []*types.ELSShare) {
+func (es *EquityShares) SetCPShares(shares []*types.ELSShare) {
 	es.lps = make(map[string]*lp, len(shares))
 	es.totalPStake = num.DecimalZero()
 	es.totalVStake = num.DecimalZero()
