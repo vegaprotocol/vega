@@ -196,34 +196,30 @@ func AddCommonDeliverTxEvents(resp types.ResponseDeliverTx, tx Tx) types.Respons
 }
 
 const (
-	TxTypeStakeDeposited                     = "StakeDeposited"
-	TxTypeStakeRemoved                       = "StakeRemoved"
-	TxTypeBuiltinAssetDeposit                = "BuiltinAssetDeposit"
-	TxTypeBuiltinAssetWithdrawal             = "BuiltinAssetWithdrawal"
-	TxTypeERC20Deposit                       = "ERC20Deposit"
-	TxTypeERC20Withdrawal                    = "ERC20Withdrawal"
-	TxTypeTransfer                           = "Transfer"
-	TxTypeOrderSubmission                    = "OrderSubmission"
-	TxTypeOrderCancellation                  = "OrderCancellation"
-	TxTypeOrderAmendment                     = "OrderAmendment"
-	TxTypeVoteSubmission                     = "VoteSubmission"
-	TxTypeWithdrawSubmission                 = "WithdrawSubmission"
-	TxTypeLiquidityProvisionSubmission       = "LiquidityProvisionSubmission"
-	TxTypeLiquidityProvisionCancellation     = "LiquidityProvisionCancellation"
-	TxTypeLiquidityProvisionAmendment        = "LiquidityProvisionAmendment"
-	TxTypeSpotLiquidityProvisionSubmission   = "SpotLiquidityProvisionSubmission"
-	TxTypeSpotLiquidityProvisionCancellation = "SpotLiquidityProvisionCancellation"
-	TxTypeSpotLiquidityProvisionAmendment    = "SpotLiquidityProvisionAmendment"
-	TxTypeProposalSubmission                 = "ProposalSubmission"
-	TxTypeAnnounceNode                       = "AnnounceNode"
-	TxTypeNodeVote                           = "NodeVote"
-	TxTypeNodeSignature                      = "NodeSignature"
-	TxTypeOracleDataSubmission               = "OracleDataSubmission"
-	TxTypeDelegateSubmission                 = "DelegateSubmission"
-	TxTypeUndelegateSubmission               = "UndelegateSubmission"
-	TxTypeKeyRotateSubmission                = "KeyRotateSubmission"
-	TxTypeStateVariableProposal              = "StateVariableProposal"
-	TxTypeCancelTransfer                     = "CancelTransfer"
+	TxTypeStakeDeposited                 = "StakeDeposited"
+	TxTypeStakeRemoved                   = "StakeRemoved"
+	TxTypeBuiltinAssetDeposit            = "BuiltinAssetDeposit"
+	TxTypeBuiltinAssetWithdrawal         = "BuiltinAssetWithdrawal"
+	TxTypeERC20Deposit                   = "ERC20Deposit"
+	TxTypeERC20Withdrawal                = "ERC20Withdrawal"
+	TxTypeTransfer                       = "Transfer"
+	TxTypeOrderSubmission                = "OrderSubmission"
+	TxTypeOrderCancellation              = "OrderCancellation"
+	TxTypeOrderAmendment                 = "OrderAmendment"
+	TxTypeVoteSubmission                 = "VoteSubmission"
+	TxTypeWithdrawSubmission             = "WithdrawSubmission"
+	TxTypeLiquidityProvisionSubmission   = "LiquidityProvisionSubmission"
+	TxTypeLiquidityProvisionCancellation = "LiquidityProvisionCancellation"
+	TxTypeProposalSubmission             = "ProposalSubmission"
+	TxTypeAnnounceNode                   = "AnnounceNode"
+	TxTypeNodeVote                       = "NodeVote"
+	TxTypeNodeSignature                  = "NodeSignature"
+	TxTypeOracleDataSubmission           = "OracleDataSubmission"
+	TxTypeDelegateSubmission             = "DelegateSubmission"
+	TxTypeUndelegateSubmission           = "UndelegateSubmission"
+	TxTypeKeyRotateSubmission            = "KeyRotateSubmission"
+	TxTypeStateVariableProposal          = "StateVariableProposal"
+	TxTypeCancelTransfer                 = "CancelTransfer"
 	// TxTypeValidatorHeartbeat                 = "ValidatorHeartbeat".
 	TxTypeEthereumKeyRotateSubmission = "EthereumKeyRotateSubmission"
 	TxTypeProtocolUpgradeProposal     = "ProtocolUpgradeProposal"
@@ -307,18 +303,6 @@ func GetTxType(tx Tx) (txt TxType) {
 		txt.Sender = tx.Party()
 	case *commandspb.LiquidityProvisionCancellation:
 		txt.Type = TxTypeLiquidityProvisionCancellation
-		txt.Sender = tx.Party()
-	case *commandspb.LiquidityProvisionAmendment:
-		txt.Type = TxTypeLiquidityProvisionAmendment
-		txt.Sender = tx.Party()
-	case *commandspb.SpotLiquidityProvisionSubmission:
-		txt.Type = TxTypeSpotLiquidityProvisionSubmission
-		txt.Sender = tx.Party()
-	case *commandspb.SpotLiquidityProvisionCancellation:
-		txt.Type = TxTypeSpotLiquidityProvisionCancellation
-		txt.Sender = tx.Party()
-	case *commandspb.SpotLiquidityProvisionAmendment:
-		txt.Type = TxTypeSpotLiquidityProvisionAmendment
 		txt.Sender = tx.Party()
 	case *commandspb.ProposalSubmission:
 		txt.Type = TxTypeProposalSubmission
