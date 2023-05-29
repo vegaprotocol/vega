@@ -68,7 +68,7 @@ message ListTransactionsRequest {
   // Deprecated: This field will be removed in favour of the fields below
   // More filters may be added to support the legacy ones, if needed
   // Filters to apply to the request
-  map<string, string> filters = 4  [deprecated = true];
+  map<string, string> filters = 4 [deprecated = true];
   // Transaction type filter, for command or chain event
   repeated string tx_type = 5;
   // Party ID filter, can be sender or receiver
