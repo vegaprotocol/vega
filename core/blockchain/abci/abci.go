@@ -224,7 +224,7 @@ const (
 	TxTypeKeyRotateSubmission                = "KeyRotateSubmission"
 	TxTypeStateVariableProposal              = "StateVariableProposal"
 	TxTypeCancelTransfer                     = "CancelTransfer"
-	// TxTypeValidatorHeartbeat                 = "ValidatorHeartbeat"
+	// TxTypeValidatorHeartbeat                 = "ValidatorHeartbeat".
 	TxTypeEthereumKeyRotateSubmission = "EthereumKeyRotateSubmission"
 	TxTypeProtocolUpgradeProposal     = "ProtocolUpgradeProposal"
 	TxTypeIssueSignatures             = "IssueSignatures"
@@ -239,6 +239,7 @@ type TxType struct {
 	Receiver string
 }
 
+// nolint: nakedret
 func GetTxType(tx Tx) (txt TxType) {
 	switch c := tx.GetCmd().(type) {
 	case *commandspb.ChainEvent:

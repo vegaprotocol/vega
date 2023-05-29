@@ -65,13 +65,13 @@ message ListTransactionsRequest {
   optional string before = 2;
   // Optional cursor to paginate the request
   optional string after = 3;
-  // Deprecated: We will remove this field in favor ov the fields below
-  // And we might add more filters to support the legacy ones, if needed
+  // Deprecated: This field will be removed in favour of the fields below
+  // More filters may be added to support the legacy ones, if needed
   // Filters to apply to the request
   map<string, string> filters = 4  [deprecated = true];
-  // TxTypeFilter (command or chain event)
+  // Transaction type filter, for command or chain event
   repeated string tx_type = 5;
-  // PartyFilter (either sender or receiver)
+  // Party ID filter, can be sender or receiver
   repeated string party = 6;
   // Sender of the transaction
   repeated string sender = 7;

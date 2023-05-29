@@ -226,15 +226,15 @@ type ListTransactionsRequest struct {
 	Before *string `protobuf:"bytes,2,opt,name=before,proto3,oneof" json:"before,omitempty"`
 	// Optional cursor to paginate the request
 	After *string `protobuf:"bytes,3,opt,name=after,proto3,oneof" json:"after,omitempty"`
-	// Deprecated: We will remove this field in favor ov the fields below
-	// And we might add more filters to support the legacy ones, if needed
+	// Deprecated: This field will be removed in favour of the fields below
+	// More filters may be added to support the legacy ones, if needed
 	// Filters to apply to the request
 	//
 	// Deprecated: Do not use.
 	Filters map[string]string `protobuf:"bytes,4,rep,name=filters,proto3" json:"filters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// TxTypeFilter (command or chain event)
+	// Transaction type filter, for command or chain event
 	TxType []string `protobuf:"bytes,5,rep,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"`
-	// PartyFilter (either sender or receiver)
+	// Party ID filter, can be sender or receiver
 	Party []string `protobuf:"bytes,6,rep,name=party,proto3" json:"party,omitempty"`
 	// Sender of the transaction
 	Sender []string `protobuf:"bytes,7,rep,name=sender,proto3" json:"sender,omitempty"`
