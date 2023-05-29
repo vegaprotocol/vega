@@ -32,7 +32,8 @@ const (
                        size, remaining, time_in_force, type, status,
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
-                       tx_hash, vega_time, seq_num, post_only, reduce_only`
+                       tx_hash, vega_time, seq_num, post_only, reduce_only, reserved_remaining, 
+                       initial_peak_size, minimum_peak_size`
 
 	ordersFilterDateColumn = "vega_time"
 
@@ -65,7 +66,7 @@ func (os *Orders) Flush(ctx context.Context) ([]entities.Order, error) {
 	return os.batcher.Flush(ctx, os.Connection)
 }
 
-// Add inserts an order update row into the database if an row for this (block time, order id, version)
+// Add inserts an order update row into the database if a row for this (block time, order id, version)
 // does not already exist; otherwise update the existing row with information supplied.
 // Currently we only store the last update to an order per block, so the order history is not
 // complete if multiple updates happen in one block.

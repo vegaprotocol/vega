@@ -78,9 +78,10 @@ type OrderSubmission struct {
 	// set internally by the node to return a unique reference identifier for the order submission
 	Reference string
 	// Used to specify the details for a pegged order
-	PeggedOrder *PeggedOrder
-	PostOnly    bool
-	ReduceOnly  bool
+	PeggedOrder  *PeggedOrder
+	PostOnly     bool
+	ReduceOnly   bool
+	IcebergOrder *IcebergOrder
 }
 
 func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
@@ -88,6 +89,15 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 	if o.PeggedOrder != nil {
 		pegged = o.PeggedOrder.IntoProto()
 	}
+
+	var iceberg *commandspb.IcebergOpts
+	if o.IcebergOrder != nil {
+		iceberg = &commandspb.IcebergOpts{
+			InitialPeakSize: o.IcebergOrder.InitialPeakSize,
+			MinimumPeakSize: o.IcebergOrder.MinimumPeakSize,
+		}
+	}
+
 	return &commandspb.OrderSubmission{
 		MarketId: o.MarketID,
 		// Need to update protobuf to use string TODO UINT
@@ -101,6 +111,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 		PeggedOrder: pegged,
 		PostOnly:    o.PostOnly,
 		ReduceOnly:  o.ReduceOnly,
+		IcebergOpts: iceberg,
 	}
 }
 
@@ -119,18 +130,27 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 		return nil, err
 	}
 
+	var iceberg *IcebergOrder
+	if p.IcebergOpts != nil {
+		iceberg = &IcebergOrder{
+			InitialPeakSize: p.IcebergOpts.InitialPeakSize,
+			MinimumPeakSize: p.IcebergOpts.MinimumPeakSize,
+		}
+	}
+
 	return &OrderSubmission{
-		MarketID:    p.MarketId,
-		Price:       price,
-		Size:        p.Size,
-		Side:        p.Side,
-		TimeInForce: p.TimeInForce,
-		ExpiresAt:   p.ExpiresAt,
-		Type:        p.Type,
-		Reference:   p.Reference,
-		PeggedOrder: peggedOrder,
-		PostOnly:    p.PostOnly,
-		ReduceOnly:  p.ReduceOnly,
+		MarketID:     p.MarketId,
+		Price:        price,
+		Size:         p.Size,
+		Side:         p.Side,
+		TimeInForce:  p.TimeInForce,
+		ExpiresAt:    p.ExpiresAt,
+		Type:         p.Type,
+		Reference:    p.Reference,
+		PeggedOrder:  peggedOrder,
+		PostOnly:     p.PostOnly,
+		ReduceOnly:   p.ReduceOnly,
+		IcebergOrder: iceberg,
 	}, nil
 }
 
@@ -152,21 +172,30 @@ func (o OrderSubmission) String() string {
 }
 
 func (o OrderSubmission) IntoOrder(party string) *Order {
+	var iceberg *IcebergOrder
+	if o.IcebergOrder != nil {
+		iceberg = &IcebergOrder{
+			InitialPeakSize: o.IcebergOrder.InitialPeakSize,
+			MinimumPeakSize: o.IcebergOrder.MinimumPeakSize,
+		}
+	}
+
 	return &Order{
-		MarketID:    o.MarketID,
-		Party:       party,
-		Side:        o.Side,
-		Price:       o.Price,
-		Size:        o.Size,
-		Remaining:   o.Size,
-		TimeInForce: o.TimeInForce,
-		Type:        o.Type,
-		Status:      proto.Order_STATUS_ACTIVE,
-		ExpiresAt:   o.ExpiresAt,
-		Reference:   o.Reference,
-		PeggedOrder: o.PeggedOrder,
-		PostOnly:    o.PostOnly,
-		ReduceOnly:  o.ReduceOnly,
+		MarketID:     o.MarketID,
+		Party:        party,
+		Side:         o.Side,
+		Price:        o.Price,
+		Size:         o.Size,
+		Remaining:    o.Size,
+		TimeInForce:  o.TimeInForce,
+		Type:         o.Type,
+		Status:       proto.Order_STATUS_ACTIVE,
+		ExpiresAt:    o.ExpiresAt,
+		Reference:    o.Reference,
+		PeggedOrder:  o.PeggedOrder,
+		PostOnly:     o.PostOnly,
+		ReduceOnly:   o.ReduceOnly,
+		IcebergOrder: iceberg,
 	}
 }
 

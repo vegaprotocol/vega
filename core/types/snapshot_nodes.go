@@ -297,6 +297,10 @@ type PayloadLiquidityTarget struct {
 	Target *snapshot.LiquidityTarget
 }
 
+type PayloadSpotLiquidityTarget struct {
+	Target *snapshot.SpotLiquidityTarget
+}
+
 type PayloadProtocolUpgradeProposals struct {
 	Proposals *snapshot.ProtocolUpgradeProposals
 }
@@ -352,7 +356,7 @@ type ExecSpotMarket struct {
 	LastMidAsk                 *num.Uint
 	LastMarketValueProxy       num.Decimal
 	LastEquityShareDistributed int64
-	EquityShare                *SpotEquityShare
+	EquityShare                *EquityShare
 	CurrentMarkPrice           *num.Uint
 	LastTradedPrice            *num.Uint
 	FeeSplitter                *FeeSplitter
@@ -465,26 +469,6 @@ type EquityShareLP struct {
 	Share  num.Decimal
 	Avg    num.Decimal
 	VStake num.Decimal
-}
-
-type SpotEquityShare struct {
-	Mvp                 num.Decimal
-	PMvp                num.Decimal
-	R                   num.Decimal
-	OpeningAuctionEnded bool
-	Lps                 []*SpotEquityShareLP
-}
-
-type SpotEquityShareLP struct {
-	ID         string
-	BuyStake   num.Decimal
-	SellStake  num.Decimal
-	Stake      num.Decimal
-	Share      num.Decimal
-	Avg        num.Decimal
-	VStake     num.Decimal
-	BuyVStake  num.Decimal
-	SellVStake num.Decimal
 }
 
 type ActiveAssets struct {
@@ -812,6 +796,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquiditySuppliedFromProto(dt)
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
+	case *snapshot.Payload_SpotLiquidityTarget:
+		ret.Data = PayloadSpotLiquidityTargetFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
@@ -948,6 +934,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_NetworkParameters:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityTarget:
+		ret.Data = dt
+	case *snapshot.Payload_SpotLiquidityTarget:
 		ret.Data = dt
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = dt
@@ -1114,6 +1102,28 @@ func (*PayloadLiquidityTarget) Namespace() SnapshotNamespace {
 }
 
 func (p *PayloadLiquidityTarget) Key() string {
+	return fmt.Sprintf("target:%v", p.Target.MarketId)
+}
+
+func PayloadSpotLiquidityTargetFromProto(s *snapshot.Payload_SpotLiquidityTarget) *PayloadSpotLiquidityTarget {
+	return &PayloadSpotLiquidityTarget{
+		Target: s.SpotLiquidityTarget,
+	}
+}
+
+func (*PayloadSpotLiquidityTarget) isPayload() {}
+
+func (p *PayloadSpotLiquidityTarget) plToProto() interface{} {
+	return &snapshot.Payload_SpotLiquidityTarget{
+		SpotLiquidityTarget: p.Target,
+	}
+}
+
+func (*PayloadSpotLiquidityTarget) Namespace() SnapshotNamespace {
+	return LiquidityTargetSnapshot
+}
+
+func (p *PayloadSpotLiquidityTarget) Key() string {
 	return fmt.Sprintf("target:%v", p.Target.MarketId)
 }
 
@@ -2653,97 +2663,6 @@ func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
 	}
 }
 
-func SpotEquityShareFromProto(es *snapshot.SpotEquityShare) *SpotEquityShare {
-	var mvp, r, pMvp num.Decimal
-	if len(es.Mvp) > 0 {
-		mvp, _ = num.DecimalFromString(es.Mvp)
-	}
-	if len(es.R) > 0 {
-		r, _ = num.DecimalFromString(es.R)
-	}
-	if len(es.PMvp) > 0 {
-		pMvp, _ = num.DecimalFromString(es.PMvp)
-	}
-	ret := SpotEquityShare{
-		Mvp:                 mvp,
-		PMvp:                pMvp,
-		R:                   r,
-		OpeningAuctionEnded: es.OpeningAuctionEnded,
-		Lps:                 make([]*SpotEquityShareLP, 0, len(es.Lps)),
-	}
-	for _, s := range es.Lps {
-		ret.Lps = append(ret.Lps, SpotEquityShareLPFromProto(s))
-	}
-	return &ret
-}
-
-func (e SpotEquityShare) IntoProto() *snapshot.SpotEquityShare {
-	ret := snapshot.SpotEquityShare{
-		Mvp:                 e.Mvp.String(),
-		PMvp:                e.PMvp.String(),
-		R:                   e.R.String(),
-		OpeningAuctionEnded: e.OpeningAuctionEnded,
-		Lps:                 make([]*snapshot.SpotEquityShareLP, 0, len(e.Lps)),
-	}
-	for _, s := range e.Lps {
-		ret.Lps = append(ret.Lps, s.IntoProto())
-	}
-	return &ret
-}
-
-func SpotEquityShareLPFromProto(esl *snapshot.SpotEquityShareLP) *SpotEquityShareLP {
-	var stake, vStake, share, avg, buyStake, sellStake, buyVStake, sellVStake num.Decimal
-	if len(esl.Stake) > 0 {
-		stake, _ = num.DecimalFromString(esl.Stake)
-	}
-	if len(esl.BuyStake) > 0 {
-		buyStake, _ = num.DecimalFromString(esl.BuyStake)
-	}
-	if len(esl.SellStake) > 0 {
-		sellStake, _ = num.DecimalFromString(esl.BuyStake)
-	}
-	if len(esl.Vshare) > 0 {
-		vStake, _ = num.DecimalFromString(esl.Vshare)
-	}
-	if len(esl.BuyVshare) > 0 {
-		buyVStake, _ = num.DecimalFromString(esl.BuyVshare)
-	}
-	if len(esl.SellVshare) > 0 {
-		sellVStake, _ = num.DecimalFromString(esl.SellVshare)
-	}
-	if len(esl.Share) > 0 {
-		share, _ = num.DecimalFromString(esl.Share)
-	}
-	if len(esl.Avg) > 0 {
-		avg, _ = num.DecimalFromString(esl.Avg)
-	}
-	return &SpotEquityShareLP{
-		ID:         esl.Id,
-		Stake:      stake,
-		Share:      share,
-		Avg:        avg,
-		VStake:     vStake,
-		BuyStake:   buyStake,
-		SellStake:  sellStake,
-		BuyVStake:  buyVStake,
-		SellVStake: sellVStake,
-	}
-}
-
-func (e SpotEquityShareLP) IntoProto() *snapshot.SpotEquityShareLP {
-	return &snapshot.SpotEquityShareLP{
-		Id:         e.ID,
-		Stake:      e.Stake.String(),
-		BuyStake:   e.BuyStake.String(),
-		SellStake:  e.SellStake.String(),
-		Share:      e.Share.String(),
-		Avg:        e.Avg.String(),
-		Vshare:     e.VStake.String(),
-		BuyVshare:  e.BuyVStake.String(),
-		SellVshare: e.SellVStake.String(),
-	}
-}
-
 func PeggedOrdersStateFromProto(s *snapshot.PeggedOrders) *PeggedOrdersState {
 	po := &PeggedOrdersState{
 		Parked: make([]*Order, 0, len(s.ParkedOrders)),
@@ -3072,7 +2991,7 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 		PeggedOrders:               PeggedOrdersStateFromProto(em.PeggedOrders),
 		ExpiringOrders:             make([]*Order, 0, len(em.ExpiringOrders)),
 		LastEquityShareDistributed: em.LastEquityShareDistributed,
-		EquityShare:                SpotEquityShareFromProto(em.EquityShare),
+		EquityShare:                EquityShareFromProto(em.EquityShare),
 		LastBestAsk:                lastBA,
 		LastBestBid:                lastBB,
 		LastMidAsk:                 lastMA,

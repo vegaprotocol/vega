@@ -49,7 +49,7 @@ type ParsedAdminSignTransactionParams struct {
 }
 
 type AdminSignTransactionResult struct {
-	Tx                 *commandspb.Transaction `json:"transaction"`
+	Transaction        *commandspb.Transaction `json:"transaction"`
 	EncodedTransaction string                  `json:"encodedTransaction"`
 }
 
@@ -137,7 +137,7 @@ func (h *AdminSignTransaction) Handle(ctx context.Context, rawParams jsonrpc.Par
 	}
 
 	return AdminSignTransactionResult{
-		Tx:                 tx,
+		Transaction:        tx,
 		EncodedTransaction: base64.StdEncoding.EncodeToString(rawTx),
 	}, nil
 }

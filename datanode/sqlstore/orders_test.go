@@ -35,6 +35,7 @@ import (
 func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block entities.Block, party entities.Party, market entities.Market, reference string,
 	side types.Side, timeInForce types.OrderTimeInForce, orderType types.OrderType, status types.OrderStatus,
 	price, size, remaining int64, seqNum uint64, version int32, lpID []byte, createdAt time.Time, txHash entities.TxHash,
+	icebergOpts *vega.IcebergOrder,
 ) entities.Order {
 	t.Helper()
 	order := entities.Order{
@@ -60,7 +61,11 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		SeqNum:          seqNum,
 		TxHash:          txHash,
 	}
-
+	if icebergOpts != nil {
+		order.InitialPeakSize = ptr.From(int64(icebergOpts.InitialPeakSize))
+		order.MinimumPeakSize = ptr.From(int64(icebergOpts.MinimumPeakSize))
+		order.ReservedRemaining = ptr.From(int64(icebergOpts.ReservedRemaining))
+	}
 	err := os.Add(order)
 	require.NoError(t, err)
 	return order
@@ -102,11 +107,23 @@ func TestOrders(t *testing.T) {
 	}
 
 	// Make some orders
+	icebergs := []entities.Order{}
 	orders := make([]entities.Order, numTestOrders)
 	updatedOrders := make([]entities.Order, numTestOrders)
 	numOrdersUpdatedInDifferentBlock := 0
 	version := int32(1)
+
 	for i := 0; i < numTestOrders; i++ {
+		var iceberg *vega.IcebergOrder
+		// every 10th is a berg
+		if i%10 == 0 {
+			iceberg = &vega.IcebergOrder{
+				InitialPeakSize:   8,
+				MinimumPeakSize:   5,
+				ReservedRemaining: 10,
+			}
+		}
+
 		order := addTestOrder(t, os,
 			entities.OrderID(helpers.GenerateID()),
 			block,
@@ -125,8 +142,12 @@ func TestOrders(t *testing.T) {
 			nil,
 			block.VegaTime,
 			txHashFromString(fmt.Sprintf("tx_hash_%d", i)),
+			iceberg,
 		)
 		orders[i] = order
+		if iceberg != nil {
+			icebergs = append(icebergs, order)
+		}
 
 		// Don't update 1/4 of the orders
 		if i%4 == 0 {
@@ -212,6 +233,16 @@ func TestOrders(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, entities.ErrNotFound, err)
 		assert.Equal(t, entities.Order{}, fetchedOrder)
+	})
+
+	t.Run("GetByOrderID_Icebergs", func(t *testing.T) {
+		for _, berg := range icebergs {
+			o, err := os.GetOrder(ctx, berg.ID.String(), nil)
+			assert.NoError(t, err)
+			assert.Equal(t, berg.InitialPeakSize, o.InitialPeakSize)
+			assert.Equal(t, berg.MinimumPeakSize, o.MinimumPeakSize)
+			assert.Equal(t, berg.ReservedRemaining, o.ReservedRemaining)
+		}
 	})
 }
 
@@ -390,7 +421,7 @@ func generateTestOrders(t *testing.T, ctx context.Context, blocks []entities.Blo
 		}
 		ref := fmt.Sprintf("reference-%d", i)
 		orders[i] = addTestOrder(t, os, to.id, to.block, to.party, to.market, ref, to.side,
-			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1), nil, to.createdAt, defaultTxHash)
+			to.timeInForce, to.orderType, to.status, to.price, to.size, to.remaining, uint64(i), int32(1), nil, to.createdAt, defaultTxHash, nil)
 	}
 
 	return orders
@@ -801,7 +832,7 @@ func generateTestOrdersForCursorPagination(t *testing.T, ctx context.Context, st
 		}
 		cursors[i] = entities.NewCursor(orderCursor.String())
 		orders[i] = addTestOrder(t, stores.os, order.id, order.block, order.party, order.market, order.reference, order.side, order.timeInForce,
-			order.orderType, order.status, order.price, order.size, order.remaining, seqNum, order.version, order.lpID, order.createdAt, defaultTxHash)
+			order.orderType, order.status, order.price, order.size, order.remaining, seqNum, order.version, order.lpID, order.createdAt, defaultTxHash, nil)
 	}
 
 	// Make sure we flush the batcher and write the orders to the database

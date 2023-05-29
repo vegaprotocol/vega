@@ -60,6 +60,10 @@ func CalculateLiquidationPriceWithSlippageFactors(sizePosition int64, buyOrders,
 }
 
 func calculateLiquidationPrice(openVolume num.Decimal, currentPrice, collateralAvailable num.Decimal, linearSlippageFactor, quadraticSlippageFactor, riskFactorLong, riskFactorShort num.Decimal) (num.Decimal, error) {
+	if openVolume.IsZero() {
+		return num.DecimalZero(), nil
+	}
+
 	rf := riskFactorLong
 	if openVolume.IsNegative() {
 		rf = riskFactorShort

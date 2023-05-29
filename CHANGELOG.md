@@ -19,10 +19,17 @@
 - [8117](https://github.com/vegaprotocol/vega/issues/8117) - Added spots governance implementation
 - [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
 - [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
+- [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
+- [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
+- [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement iceberg orders in data node
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
+- [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
 - [8334](https://github.com/vegaprotocol/vega/issues/8334) - Implement market succession in execution engine.
+- [8354](https://github.com/vegaprotocol/vega/issues/8354) - refactor execution package
+- [8394](https://github.com/vegaprotocol/vega/issues/8394) - Get rid of spot liquidity provision commands and data structures.
+
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
@@ -36,6 +43,11 @@
 - [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
 - [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
 - [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
+- [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
+- [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate
+- [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
+- [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
+- [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
 
 
 ## 0.71.0

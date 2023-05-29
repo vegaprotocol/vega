@@ -205,8 +205,8 @@ func testSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	// then
 	assert.Nil(t, errorDetails)
 	require.NotEmpty(t, result)
-	assert.Equal(t, txHash, result.TxHash)
-	assert.NotEmpty(t, result.Tx)
+	assert.Equal(t, txHash, result.TransactionHash)
+	assert.NotEmpty(t, result.Transaction)
 }
 
 func testSendingTransactionWithoutNeededPermissionsDoesNotSendTransaction(t *testing.T) {

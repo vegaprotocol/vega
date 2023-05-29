@@ -164,8 +164,8 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	assert.Nil(t, errorDetails)
-	assert.Equal(t, hash, result.TxHash)
-	assert.NotEmpty(t, result.Tx)
+	assert.Equal(t, hash, result.TransactionHash)
+	assert.NotEmpty(t, result.Transaction)
 }
 
 func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {

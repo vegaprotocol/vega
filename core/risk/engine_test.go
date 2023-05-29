@@ -1251,6 +1251,36 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 			riskFactorShort:         0.11,
 			collateralAvailable:     50800,
 		},
+		{
+			markPrice:      123.4,
+			positionFactor: 1,
+			positionSize:   1,
+			buyOrders:      []*risk.OrderInfo{},
+			sellOrders: []*risk.OrderInfo{
+				{2, num.NewDecimalFromFloat(0), true},
+				{99, num.NewDecimalFromFloat(0), true},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     2345,
+		},
+		{
+			markPrice:      123.4,
+			positionFactor: 1,
+			positionSize:   1,
+			buyOrders:      []*risk.OrderInfo{},
+			sellOrders: []*risk.OrderInfo{
+				{1, num.NewDecimalFromFloat(0), true},
+				{100, num.NewDecimalFromFloat(0), true},
+			},
+			linearSlippageFactor:    0.01,
+			quadraticSlippageFactor: 0.000001,
+			riskFactorLong:          0.1,
+			riskFactorShort:         0.11,
+			collateralAvailable:     2345,
+		},
 	}
 
 	for i, tc := range testCases {
@@ -1280,6 +1310,18 @@ func TestLiquidationPriceWithOrders(t *testing.T) {
 		}
 		if tc.positionSize < 0 {
 			require.True(t, withSell.LessThanOrEqual(positionOnly), fmt.Sprintf("Test case %v:", i+1))
+		}
+
+		for _, o := range tc.buyOrders {
+			if o.IsMarketOrder {
+				o.Price = markPrice
+			}
+		}
+
+		for _, o := range tc.sellOrders {
+			if o.IsMarketOrder {
+				o.Price = markPrice
+			}
 		}
 
 		sort.Slice(tc.buyOrders, func(i, j int) bool {
