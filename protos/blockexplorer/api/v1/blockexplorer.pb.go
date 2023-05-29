@@ -236,9 +236,9 @@ type ListTransactionsRequest struct {
 	TxType []string `protobuf:"bytes,5,rep,name=tx_type,json=txType,proto3" json:"tx_type,omitempty"`
 	// Party ID filter, can be sender or receiver
 	Party []string `protobuf:"bytes,6,rep,name=party,proto3" json:"party,omitempty"`
-	// Sender of the transaction
+	// Sender of the transaction, where it applies
 	Sender []string `protobuf:"bytes,7,rep,name=sender,proto3" json:"sender,omitempty"`
-	// Receiver of the transaction
+	// Receiver of the transaction, where it applies
 	Receiver []string `protobuf:"bytes,8,rep,name=receiver,proto3" json:"receiver,omitempty"`
 }
 

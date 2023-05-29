@@ -73,9 +73,9 @@ message ListTransactionsRequest {
   repeated string tx_type = 5;
   // Party ID filter, can be sender or receiver
   repeated string party = 6;
-  // Sender of the transaction
+  // Sender of the transaction, where it applies
   repeated string sender = 7;
-  // Receiver of the transaction
+  // Receiver of the transaction, where it applies
   repeated string receiver = 8;
 }
 
