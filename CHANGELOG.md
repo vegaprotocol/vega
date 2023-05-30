@@ -7,7 +7,6 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
-
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🛠 Improvements
@@ -18,6 +17,11 @@
 
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
+
+## 0.71.6
+
+### 🐛 Fixes
+- [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
 
 ## 0.71.5
 
