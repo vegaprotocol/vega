@@ -345,7 +345,12 @@ func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types
 		total = total.Add(feesData[party].ToDecimal())
 	}
 	for _, party := range parties {
-		scores = append(scores, &types.PartyContibutionScore{Party: party, Score: feesData[party].ToDecimal().Div(total)})
+		if total.IsZero() {
+			scores = append(scores, &types.PartyContibutionScore{Party: party, Score: num.DecimalZero()})
+		} else {
+			scores = append(scores, &types.PartyContibutionScore{Party: party, Score: feesData[party].ToDecimal().Div(total)})
+		}
+
 	}
 	return scores
 }

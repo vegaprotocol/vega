@@ -425,6 +425,34 @@ func TestMarketTrackerStateChange(t *testing.T) {
 	require.False(t, bytes.Equal(state1, state3))
 }
 
+func TestFeesTrackerWith0(t *testing.T) {
+	epochEngine := &TestEpochEngine{}
+	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	epochEngine.target(context.Background(), types.Epoch{Seq: 1})
+
+	tracker.MarketProposed("asset1", "market1", "me")
+	transfersM1 := []*types.Transfer{
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party1", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+		{Owner: "party2", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.UintZero()}},
+	}
+	tracker.UpdateFeesFromTransfers("market1", transfersM1)
+	scores := tracker.GetFeePartyScores("market1", types.TransferTypeMakerFeeReceive)
+	require.Equal(t, "0", scores[0].Score.String())
+	require.Equal(t, "party1", scores[0].Party)
+	require.Equal(t, "0", scores[1].Score.String())
+	require.Equal(t, "party2", scores[1].Party)
+}
+
 func TestFeesTracker(t *testing.T) {
 	epochEngine := &TestEpochEngine{}
 	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
