@@ -2436,8 +2436,6 @@ message ListGovernanceDataRequest {
     TYPE_NEW_FREE_FORM = 6;
     // Update asset proposals
     TYPE_UPDATE_ASSET = 7;
-    // Successor markets
-    TYPE_SUCCESSOR_MARKET = 8;
   }
   // Restrict proposals to those with the given state.
   optional vega.Proposal.State proposal_state = 1;
