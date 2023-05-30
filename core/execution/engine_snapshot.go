@@ -110,6 +110,9 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 		)
 		return nil, err
 	}
+	if em.IsSucceeded {
+		mkt.SetSucceeded()
+	}
 
 	e.markets[marketConfig.ID] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)

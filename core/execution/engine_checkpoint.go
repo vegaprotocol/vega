@@ -19,7 +19,6 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 		e.marketCPStates[id] = state
 	}
 	data := make([]*types.CPMarketState, 0, len(e.marketCPStates))
-	// @TODO prune the marketCPStates
 	for _, s := range e.marketCPStates {
 		data = append(data, s)
 	}
@@ -34,6 +33,11 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 }
 
 func (e *Engine) Load(ctx context.Context, data []byte) error {
+	if len(data) == 0 {
+		// because the checkpoint data may be missing from older checkpoint data
+		e.marketCPStates = map[string]*types.CPMarketState{}
+		return nil
+	}
 	wrapper := checkpoint.ExecutionState{}
 	if err := proto.Unmarshal(data, &wrapper); err != nil {
 		return err

@@ -257,7 +257,7 @@ func newServices(
 	svcs.registerTimeServiceCallbacks()
 
 	// checkpoint engine
-	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker)
+	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker, svcs.executionEngine)
 	if err != nil {
 		return nil, err
 	}

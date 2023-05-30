@@ -29,6 +29,7 @@
 - [8354](https://github.com/vegaprotocol/vega/issues/8354) - refactor execution package
 - [8394](https://github.com/vegaprotocol/vega/issues/8394) - Get rid of spot liquidity provision commands and data structures.
 - [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
+- [8347](https://github.com/vegaprotocol/vega/issues/8347) - Market state (`ELS`) to be included in checkpoint data.
 
 
 ### 🐛 Fixes

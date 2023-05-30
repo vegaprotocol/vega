@@ -322,6 +322,14 @@ func (m *Market) ResetParentIDAndInsurancePoolFraction() {
 	m.mkt.InsurancePoolFraction = num.DecimalZero()
 }
 
+func (m *Market) GetParentMarketID() string {
+	return m.mkt.ParentMarketID
+}
+
+func (m *Market) GetInsurancePoolFraction() num.Decimal {
+	return m.mkt.InsurancePoolFraction
+}
+
 func (m *Market) SetSucceeded() {
 	m.succeeded = true
 }

@@ -457,6 +457,7 @@ message Market {
   string last_traded_price = 20;
   repeated string parties = 21;
   bool closed = 22;
+  bool succeeded = 23;
 }
 
 message PeggedOrders {
