@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
+	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
@@ -82,8 +83,12 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 			value.Value = v
 			go func() {
 				// ensure the record in the DB is updated, because of the mutex, use a routine
-				np.Add(ctx, value)
-				delete(np.override, key)
+				err := np.Add(context.Background(), value)
+				if err != nil {
+					np.log.Warn("failed to override network parameter", logging.String("key", key), logging.Error(err))
+				} else {
+					delete(np.override, key)
+				}
 			}()
 		}
 		return value, nil
@@ -99,8 +104,12 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	if v, ok := np.override[parameter.Key]; ok {
 		parameter.Value = v
 		go func() {
-			np.Add(ctx, parameter) // same here, ensure we update the DB
-			delete(np.override, parameter.Key)
+			err := np.Add(context.Background(), parameter) // same here, ensure we update the DB
+			if err != nil {
+				np.log.Warn("failed to override network parameter", logging.String("key", parameter.Key), logging.Error(err))
+			} else {
+				delete(np.override, parameter.Key)
+			}
 		}()
 	}
 
