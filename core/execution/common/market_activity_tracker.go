@@ -350,7 +350,6 @@ func (mat *MarketActivityTracker) GetFeePartyScores(market string, feeType types
 		} else {
 			scores = append(scores, &types.PartyContibutionScore{Party: party, Score: feesData[party].ToDecimal().Div(total)})
 		}
-
 	}
 	return scores
 }
