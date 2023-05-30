@@ -82,7 +82,7 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 			value.Value = v
 			go func() {
 				// ensure the record in the DB is updated, because of the mutex, use a routine
-				np.Add(ctx, value)
+				np.Add(context.Background(), value)
 				delete(np.override, key)
 			}()
 		}
@@ -99,7 +99,7 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	if v, ok := np.override[parameter.Key]; ok {
 		parameter.Value = v
 		go func() {
-			np.Add(ctx, parameter) // same here, ensure we update the DB
+			np.Add(context.Background(), parameter) // same here, ensure we update the DB
 			delete(np.override, parameter.Key)
 		}()
 	}
