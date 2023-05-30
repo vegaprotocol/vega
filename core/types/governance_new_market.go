@@ -93,7 +93,7 @@ type NewMarket struct {
 }
 
 func (n NewMarket) ParentMarketID() (string, bool) {
-	if n.Changes.Successor == nil {
+	if n.Changes.Successor == nil || len(n.Changes.Successor.ParentID) == 0 {
 		return "", false
 	}
 	return n.Changes.Successor.ParentID, true
