@@ -19,6 +19,8 @@ import (
 	"math"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -49,6 +51,9 @@ type Market struct {
 	QuadraticSlippageFactor       *decimal.Decimal
 	ParentMarketID                MarketID
 	InsurancePoolFraction         *decimal.Decimal
+	// Not saved in the market table, but used when retrieving data from the database.
+	// This will be populated when a market has a successor
+	SuccessorMarketID MarketID
 }
 
 type MarketCursor struct {
@@ -184,6 +189,21 @@ func (m Market) ToProto() *vega.Market {
 		quadraticSlippageFactor = m.QuadraticSlippageFactor.String()
 	}
 
+	var parentMarketID, insurancePoolFraction *string
+
+	if m.ParentMarketID != "" {
+		parentMarketID = ptr.From(m.ParentMarketID.String())
+	}
+
+	if m.InsurancePoolFraction != nil {
+		insurancePoolFraction = ptr.From(m.InsurancePoolFraction.String())
+	}
+
+	var successorMarketID *string
+	if m.SuccessorMarketID != "" {
+		successorMarketID = ptr.From(m.SuccessorMarketID.String())
+	}
+
 	return &vega.Market{
 		Id:                 m.ID.String(),
 		TradableInstrument: m.TradableInstrument.ToProto(),
@@ -202,6 +222,9 @@ func (m Market) ToProto() *vega.Market {
 		LpPriceRange:                  m.LpPriceRange,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		ParentMarketId:                parentMarketID,
+		InsurancePoolFraction:         insurancePoolFraction,
+		SuccessorMarketId:             successorMarketID,
 	}
 }
 

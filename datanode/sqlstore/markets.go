@@ -141,6 +141,20 @@ set
 	return nil
 }
 
+func getSelect() string {
+	return `with lineage(market_id, parent_market_id) as (
+	select market_id, parent_market_id
+    from market_lineage
+)
+select mc.id,  mc.tx_hash,  mc.vega_time,  mc.instrument_id,  mc.tradable_instrument,  mc.decimal_places,
+		mc.fees, mc.opening_auction, mc.price_monitoring_settings, mc.liquidity_monitoring_parameters,
+		mc.trading_mode, mc.state, mc.market_timestamps, mc.position_decimal_places, mc.lp_price_range, mc.linear_slippage_factor, mc.quadratic_slippage_factor,
+		mc.parent_market_id, mc.insurance_pool_fraction, ml.market_id as successor_market_id
+from markets_current mc
+left join lineage ml on mc.id = ml.parent_market_id
+`
+}
+
 func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market, error) {
 	m.cacheLock.Lock()
 	defer m.cacheLock.Unlock()
@@ -151,11 +165,11 @@ func (m *Markets) GetByID(ctx context.Context, marketID string) (entities.Market
 		return market, nil
 	}
 
-	query := fmt.Sprintf(`select %s
-from markets_current
+	query := fmt.Sprintf(`%s
 where id = $1
 order by id, vega_time desc
-`, sqlMarketsColumns)
+`, getSelect())
+
 	defer metrics.StartSQLQuery("Markets", "GetByID")()
 	err := pgxscan.Get(ctx, m.Connection, &market, query, entities.MarketID(marketID))
 
@@ -170,7 +184,7 @@ func (m *Markets) GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]en
 	defer metrics.StartSQLQuery("Markets", "GetByTxHash")()
 
 	var markets []entities.Market
-	query := fmt.Sprintf(`SELECT %s FROM markets where tx_hash = $1`, sqlMarketsColumns)
+	query := fmt.Sprintf(`%s where tx_hash = $1`, getSelect())
 	err := pgxscan.Select(ctx, m.Connection, &markets, query, txHash)
 
 	if err == nil {
@@ -214,9 +228,8 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 		settledClause = " AND state != 'STATE_SETTLED'"
 	}
 
-	query := fmt.Sprintf(`select %s
-		from markets_current
-		where state != 'STATE_REJECTED' %s`, sqlMarketsColumns, settledClause)
+	query := fmt.Sprintf(`%s
+		where state != 'STATE_REJECTED' %s`, getSelect(), settledClause)
 
 	var (
 		pageInfo entities.PageInfo
@@ -261,9 +274,10 @@ func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, ful
             from market_lineage
             where root_id = (select root_id from lineage_root)
 			%s
-		) select distinct on (m.id) m.*
+		) select distinct on (m.id) m.*, s.market_id as successor_market_id
         from markets m
         join lineage l on l.market_id = m.id
+		left join lineage s on l.market_id = s.parent_id
         order by m.id, vega_time desc
 `, nextBindVar(&args, entities.MarketID(marketID)), lineageFilter)
 

@@ -4174,7 +4174,7 @@ type PartyConnection {
 type MarketEdge {
   "The market"
   node: Market!
-    "The cursor for this market"
+  "The cursor for this market"
   cursor: String!
 }
 

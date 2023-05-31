@@ -299,6 +299,8 @@ message Market {
   optional string parent_market_id = 15;
   // The fraction of the parent market's insurance pool that this market inherits; range 0 through 1.
   optional string insurance_pool_fraction = 16;
+  // ID of the market that succeeds this market if it exists. This will be populated by the system when the successor market is enabled.
+  optional string successor_market_id = 17;
 }
 
 // Time stamps for important times about creating, enacting etc the market

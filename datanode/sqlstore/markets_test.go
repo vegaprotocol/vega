@@ -937,6 +937,7 @@ func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) 
 func TestSuccessorMarkets(t *testing.T) {
 	t.Run("should create a market lineage record when a successor market proposal is approved", testMarketLineageCreated)
 	t.Run("ListSuccessorMarkets should return the market lineage", testListSuccessorMarkets)
+	t.Run("GetMarket should return the market with its parent and successor if they exist", testGetMarketWithParentAndSuccessor)
 }
 
 func testMarketLineageCreated(t *testing.T) {
@@ -1077,6 +1078,34 @@ func testListSuccessorMarkets(t *testing.T) {
 	})
 }
 
+func testGetMarketWithParentAndSuccessor(t *testing.T) {
+	_, md, _ := setupSuccessorMarkets(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
+	defer cancel()
+
+	t.Run("should return successor market id only if the first market in a succession line", func(t *testing.T) {
+		got, err := md.GetByID(ctx, "deadbeef01")
+		require.NoError(t, err)
+		assert.Equal(t, "", got.ParentMarketID.String())
+		assert.Equal(t, "deadbeef02", got.SuccessorMarketID.String())
+	})
+
+	t.Run("should return parent and successor market id if the market is within a succession line", func(t *testing.T) {
+		got, err := md.GetByID(ctx, "deadbeef02")
+		require.NoError(t, err)
+		assert.Equal(t, "deadbeef01", got.ParentMarketID.String())
+		assert.Equal(t, "deadbeef03", got.SuccessorMarketID.String())
+	})
+
+	t.Run("should return parent market id only if the last market in a succession line", func(t *testing.T) {
+		got, err := md.GetByID(ctx, "deadbeef03")
+		require.NoError(t, err)
+		assert.Equal(t, "deadbeef02", got.ParentMarketID.String())
+		assert.Equal(t, "", got.SuccessorMarketID.String())
+	})
+}
+
 func setupSuccessorMarkets(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, []entities.Market) {
 	t.Helper()
 
@@ -1099,6 +1128,8 @@ func setupSuccessorMarkets(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, [
 		ParentMarketID: parentMarket.ID,
 	}
 
+	parentMarket.SuccessorMarketID = successorMarketA.ID
+
 	successorMarketB := entities.Market{
 		ID:           entities.MarketID("deadbeef03"),
 		InstrumentID: "deadbeef03",
@@ -1107,6 +1138,8 @@ func setupSuccessorMarkets(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, [
 		},
 		ParentMarketID: successorMarketA.ID,
 	}
+
+	successorMarketA.SuccessorMarketID = successorMarketB.ID
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
