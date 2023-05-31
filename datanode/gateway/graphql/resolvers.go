@@ -1285,6 +1285,26 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 	return resp.GetSegment(), nil
 }
 
+func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool) ([]*vega.Market, error) {
+	getAll := false
+
+	if fullHistory != nil {
+		getAll = *fullHistory
+	}
+
+	req := &v2.ListSuccessorMarketsRequest{
+		MarketId:           marketID,
+		IncludeFullHistory: getAll,
+	}
+
+	resp, err := r.tradingDataClientV2.ListSuccessorMarkets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetMarkets(), nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot
