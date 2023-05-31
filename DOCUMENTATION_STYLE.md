@@ -1,4 +1,4 @@
-# API docs style guide 
+# API docs style guide
 
 When writing docs annotations for the protos, refer to the following guidance for good practices and specific style choices. While some of the guidance below is specific to protos, the general good practice tips are applicable to all docs.
 
@@ -20,10 +20,10 @@ When adding a new API, if the title seems a bit odd, reconsider the rpc endpoint
 ## Naming terminology
 
 - **Get**: Used when API is for requesting a single data point. Get order; Get latest trade.
-- **List**: Used when API is for requesting multiple data points. List orders; List trades; List network parameters. 
+- **List**: Used when API is for requesting multiple data points. List orders; List trades; List network parameters.
 - **Estimate**: Used when API is requesting approximate information based on other pieces of data. Estimate margin; Estimate fee.
 - **Export**: Used when API will provide a CSV file output of the data, or potentially other output formats.
-- **Observe**: Used for WebSocket only, to denote streaming/subscription. Observe trades; Observe candle data. 
+- **Observe**: Used for WebSocket only, to denote streaming/subscription. Observe trades; Observe candle data.
 
 If your new API doesn't fit into any of these categories then this is a prompt to start a discussion about the best name for it.
 
@@ -38,20 +38,20 @@ If your new API doesn't fit into any of these categories then this is a prompt t
   - *USE*: X ID. Example: Market ID, *not* ID of the market
 - data-node, or datanode
   - *USE*: data node
-- Pubkey 
+- Pubkey
   - *USE*: party ID, optionally can describe that party ID is the same as public key
 
 ## Wording
 
 - Use the imperative verb. Example: “Get a list”, *not* “Gets a list”
-- Use standardised information for pagination connection. 
+- Use standardised information for pagination connection.
   - Example: “Page of positions data and corresponding page information.”, *not* “List of 0 or more positions.”
-- The description should not be the title repeated. 
+- The description should not be the title repeated.
   - Example: “Get deposit”, should say more than just “Get deposit.” as a summary.
 
 ## Things to avoid
 
-- Statements in parentheses 
+- Statements in parentheses
   - Example: ”Get the current network limits, such as if bootstrapping is finished, and if proposals are enabled, etc.”, *not* “Get the current network limits (is bootstrapping finished, are proposals enabled etc..)”
 - Beginning descriptions with A/an/the
   - Example: “Name of the node operator”, *not* “The name of the node operator”
@@ -63,7 +63,7 @@ If your new API doesn't fit into any of these categories then this is a prompt t
 - CSV
 - ERC-20. In some cases it’s already coded as ERC20 so that is an exception, but it should be capitalised, at a minimum
 - Unless it’s a specific project name, transport, or registered name, it does not need to be capitalised
-- *Do not capitalise* protocol upgrade, trade, data node, validator, node operator, core, etc.. 
+- *Do not capitalise* protocol upgrade, trade, data node, validator, node operator, core, etc..
 
 ## Add helpful guidance for users
 
@@ -72,12 +72,12 @@ If your new API doesn't fit into any of these categories then this is a prompt t
 
 ## Formatting protos
 
-Use correct formatting when adding new API endpoints to the protos: 
+Use correct formatting when adding new API endpoints to the protos:
 
-- Required fields  
+- Required fields
 - Tags - Choose from existing tags before adding a new tag. Tags are used to group similar APIs together in the REST documentation. If your new API doesn't fit into any of the existing tags, then this is a prompt to start a discussion about the best category for it.
-- Titles & descriptions 
-- Use a full stop for a description with no title. 
+- Titles & descriptions
+- Use a full stop for a description with no title.
 
 ### How to format a proto API
 
@@ -97,9 +97,9 @@ service ColourService {
 //
 // The response with details for each colour.
 message ListColoursRequest {
-   // Determines if colours that use blue should be shown. 
+   // Determines if colours that use blue should be shown.
    bool with_blue = 1;
-   
+
    // There are lots of colours, so you can paginate the results.
    optional Pagination pagination = 2;
 }
@@ -107,13 +107,13 @@ message ListColoursRequest {
 
 ### Generic format for title and description
 
-``` 
+```
 #### example
 
 // This is a title, which needs to have a blank line below it
 //
 // This is a description
-// You can add more descriptions on further lines 
+// You can add more descriptions on further lines
 string my_field = 1;
 
 #### next example
@@ -122,18 +122,18 @@ string my_field = 1;
 
 #### next example
 
-// This is a description, and it needs needs a full stop at the end.
+// This is a description, and it needs a full stop at the end.
 string my_field =1;
 ```
 
 ### Required and optional fields
-All fields in an API request should either be required and marked with “[(google.api.field.behaviour = REQUIRED)]”, or optional and marked explicitly as “optional” against the type in the protos. 
+All fields in an API request should either be required and marked with “[(google.api.field.behaviour = REQUIRED)]”, or optional and marked explicitly as “optional” against the type in the protos.
 
-When describing a field in a doc-string, it does not need to explicitly say whether it is optional or required. It is implied by the annotations. 
+When describing a field in a doc-string, it does not need to explicitly say whether it is optional or required. It is implied by the annotations.
 
 Example: *Do not* start a doc-string with “Optionally….”, or end one with “is required.”
 
-*If a field is optional* describe what happens if it is not set, but only if it is not obvious. 
+*If a field is optional* describe what happens if it is not set, but only if it is not obvious.
 
 Example: An optional field that filters the returned list. It can be made clear in the description (words like “restrict” and “filter”) that not providing a value will return them all. On the other hand, an optional field that takes an epoch-seq will need to state somewhere that not setting it will return the data for latest epoch.
 
@@ -145,7 +145,7 @@ message NewAPIRequest {
     // A required field. Being set to “” is a VALIDATION ERROR
     string market_id = 1; [(google.api.field.behaviour = REQUIRED)]
 
-    // An optional field. 
+    // An optional field.
     optional string party_id = 2;
 
     // DO NOT DO THIS
