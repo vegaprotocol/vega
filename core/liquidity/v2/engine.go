@@ -14,9 +14,7 @@ package liquidity
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
-	"math/rand"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
@@ -24,21 +22,17 @@ import (
 	"code.vegaprotocol.io/vega/core/risk"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/types/statevar"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-
-	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
 	ErrLiquidityProvisionDoesNotExist  = errors.New("liquidity provision does not exist")
 	ErrLiquidityProvisionAlreadyExists = errors.New("liquidity provision already exists")
 	ErrCommitmentAmountIsZero          = errors.New("commitment amount is zero")
-	ErrEmptyShape                      = errors.New("liquidity provision contains an empty shape")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity OrderBook
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity/v2 OrderBook
 type OrderBook interface {
 	GetOrdersPerParty(party string) []*types.Order
 	GetBestStaticBidPrice() (*num.Uint, error)
@@ -47,7 +41,7 @@ type OrderBook interface {
 	GetLastTradedPrice() *num.Uint
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/liquidity RiskModel,PriceMonitor,IDGen
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/liquidity/v2 RiskModel,PriceMonitor,IDGen
 
 // Broker - event bus (no mocks needed).
 type Broker interface {
@@ -57,7 +51,7 @@ type Broker interface {
 
 // TimeService provide the time of the vega node using the tm time.
 //
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity TimeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/core/liquidity/v2 TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 }
@@ -87,6 +81,9 @@ type AuctionState interface {
 	InAuction() bool
 }
 
+type TargetStateFunc func() *num.Uint
+
+// shell we delete it after deleting the LP
 type slaPerformance struct {
 	s                  time.Duration
 	start              time.Time
@@ -94,7 +91,7 @@ type slaPerformance struct {
 }
 
 type SlaPenalty struct {
-	fee, bond num.Decimal
+	Fee, Bond num.Decimal
 }
 
 // Engine handles Liquidity provision.
@@ -116,6 +113,8 @@ type Engine struct {
 	// fields used for liquidity score calculation (quality of deployed orders)
 	avgScores map[string]num.Decimal
 	nAvg      int64 // counter for the liquidity score running average
+
+	getTargetStake TargetStateFunc
 
 	// sla related net params
 	stakeToCcyVolume               num.Decimal
@@ -155,6 +154,7 @@ func NewEngine(config Config,
 	nonPerformanceBondPenaltySlope num.Decimal,
 	nonPerformanceBondPenaltyMax num.Decimal,
 	performanceHysteresisEpochs uint,
+	getTargetStake TargetStateFunc,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -174,6 +174,8 @@ func NewEngine(config Config,
 		// provisions related state
 		provisions: newSnapshotableProvisionsPerParty(),
 
+		getTargetStake: getTargetStake,
+
 		// SLA commitment
 		slaPerformance: map[string]*slaPerformance{},
 
@@ -188,206 +190,6 @@ func NewEngine(config Config,
 	e.ResetAverageLiquidityScores() // initialise
 
 	return e
-}
-
-func (e *Engine) getMidPrice() (*num.Uint, error) {
-	bestBid, err := e.orderBook.GetBestStaticBidPrice()
-	if err != nil {
-		return nil, err
-	}
-
-	bestAsk, err := e.orderBook.GetBestStaticAskPrice()
-	if err != nil {
-		return nil, err
-	}
-
-	two := num.NewUint(2)
-	midPrice := num.UintZero()
-	if !bestBid.IsZero() && !bestAsk.IsZero() {
-		midPrice = midPrice.Div(num.Sum(bestBid, bestAsk), two)
-	}
-
-	return midPrice, nil
-}
-
-func (e *Engine) doesLPMeetsCommitment(party string) bool {
-	lp, ok := e.provisions.Get(party)
-	if !ok {
-		return false
-	}
-
-	one := num.DecimalOne()
-
-	var minPrice, maxPrice num.Decimal
-	if e.auctionState.InAuction() {
-		priceFactor := num.Min(e.orderBook.GetLastTradedPrice(), e.orderBook.GetIndicativePrice()).ToDecimal()
-
-		// (1.0-market.liquidity.priceRange) x min(last trade price, indicative uncrossing price)
-		minPrice = one.Sub(e.priceRange).Mul(priceFactor)
-		// (1.0+market.liquidity.priceRange) x max(last trade price, indicative uncrossing price)
-		maxPrice = one.Sub(e.priceRange).Mul(priceFactor)
-	} else {
-		mid, err := e.getMidPrice()
-		// if there is no mid price then LP is not meeting their committed volume of notional.
-		if err != nil || mid.IsZero() {
-			return false
-		}
-
-		midD := mid.ToDecimal()
-		// (1.0 - market.liquidity.priceRange) x mid
-		minPrice = one.Sub(e.priceRange).Mul(midD)
-		// (1.0 + market.liquidity.priceRange) x mid
-		maxPrice = one.Add(e.priceRange).Mul(midD)
-	}
-
-	notionalVolume := num.DecimalZero()
-	orders := e.getAllActiveOrders(party)
-
-	for _, o := range orders {
-		price := o.Price.ToDecimal()
-
-		// this order is in range and does contribute to the volume on notional
-		if price.GreaterThanOrEqual(minPrice) && price.LessThanOrEqual(maxPrice) {
-			notionalVolume = notionalVolume.Add(price)
-		}
-	}
-
-	requiredLiquidity := e.stakeToCcyVolume.Mul(lp.CommitmentAmount.ToDecimal())
-	return notionalVolume.GreaterThanOrEqual(requiredLiquidity)
-}
-
-func (e *Engine) ResetSLAEpoch(now time.Time) {
-	for party, commitment := range e.slaPerformance {
-		if e.doesLPMeetsCommitment(party) {
-			commitment.start = now
-		}
-
-		commitment.s = 0
-	}
-
-	e.slaEpochStart = now
-}
-
-func (e *Engine) calculateFeePenalty(timeBookFraction num.Decimal) num.Decimal {
-	one := num.DecimalOne()
-
-	// TODO karel make this prettier
-	return one.Sub(
-		timeBookFraction.Sub(e.commitmentMinTimeFraction).Div(one.Sub(e.commitmentMinTimeFraction)),
-	).Mul(e.slaCompetitionFactor)
-}
-
-func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal {
-	// TODO karel make this prettier
-	min := num.MinD(
-		e.nonPerformanceBondPenaltyMax,
-		e.nonPerformanceBondPenaltySlope.Mul(num.DecimalOne().Sub(timeBookFraction.Div(e.commitmentMinTimeFraction))),
-	)
-
-	return num.MaxD(num.DecimalZero(), min)
-}
-
-func (e *Engine) selectFeePenalty(currentPenalty num.Decimal, allPenalties []num.Decimal) num.Decimal {
-	l := len(allPenalties)
-	if l < 2 {
-		return currentPenalty
-	}
-
-	performanceHysteresisPeriod := e.performanceHysteresisEpochs - 1
-	// Select window windowStart for hysteresis period
-	windowStart := l - int(performanceHysteresisPeriod)
-	if windowStart < 0 {
-		windowStart = 0
-	}
-
-	periodAveragePenalty := num.DecimalZero()
-	for _, p := range allPenalties[windowStart:] {
-		periodAveragePenalty = periodAveragePenalty.Add(p)
-	}
-
-	periodAveragePenalty = periodAveragePenalty.Div(num.NewDecimalFromFloat(float64(performanceHysteresisPeriod)))
-	return num.MaxD(currentPenalty, periodAveragePenalty)
-}
-
-func (e *Engine) CalculateSLAPenalties(now time.Time) {
-	observedEpochLength := e.slaEpochStart.Sub(now)
-
-	penaltiesPerParty := map[string]*SlaPenalty{}
-
-	for party, commitment := range e.slaPerformance {
-		timeBookFraction := num.DecimalFromInt64(int64(commitment.s / observedEpochLength))
-
-		var feePenalty, bondPenalty num.Decimal
-
-		if timeBookFraction.LessThan(e.commitmentMinTimeFraction) {
-			feePenalty = num.DecimalOne()
-			bondPenalty = num.DecimalOne()
-		} else {
-			feePenalty = e.calculateFeePenalty(timeBookFraction)
-			bondPenalty = e.calculateBondPenalty(timeBookFraction)
-		}
-
-		commitment.allEpochsPenalties = append(commitment.allEpochsPenalties, feePenalty)
-
-		penaltiesPerParty[party] = &SlaPenalty{
-			bond: bondPenalty,
-			fee:  e.selectFeePenalty(feePenalty, commitment.allEpochsPenalties),
-		}
-	}
-
-	e.slaPenalties = penaltiesPerParty
-}
-
-func (e *Engine) GetSLAPenalties() map[string]*SlaPenalty {
-	return e.slaPenalties
-}
-
-type TX struct {
-	ID string
-}
-
-func (t TX) Hash() []byte {
-	return crypto.Hash([]byte(t.ID))
-}
-
-func (e *Engine) generateKSla(txs []TX) int {
-	bytes := []byte{}
-	for _, tx := range txs {
-		bytes = append(bytes, tx.Hash()...)
-	}
-
-	hash := crypto.Hash(bytes)
-	seed := binary.BigEndian.Uint64(hash)
-
-	rand.Seed(int64(seed))
-
-	min := 1
-	max := len(txs)
-	return rand.Intn(max-min+1) + min
-}
-
-func (e *Engine) BeginBlock(req abcitypes.RequestBeginBlock, txs []TX) {
-	e.kSla = e.generateKSla(txs)
-}
-
-func (e *Engine) TxProcessed(txCount int) {
-	// Check if the k transaction has been processed
-	if e.kSla != txCount {
-		return
-	}
-
-	for party, commitment := range e.slaPerformance {
-		meetsCommitment := e.doesLPMeetsCommitment(party)
-
-		// if LP started meeting commitment
-		// else if LP stopped meeting commitment
-		if meetsCommitment && commitment.start.IsZero() {
-			commitment.start = e.timeService.GetTimeNow()
-		} else if !meetsCommitment && !commitment.start.IsZero() {
-			commitment.s += e.timeService.GetTimeNow().Sub(commitment.start)
-			commitment.start = time.Time{}
-		}
-	}
 }
 
 // IsLiquidityProvider returns true if the party hold any liquidity commitment.
@@ -430,6 +232,7 @@ func (e *Engine) stopLiquidityProvision(
 
 	// now delete all stuff
 	e.provisions.Delete(party)
+	delete(e.slaPerformance, party)
 	return nil
 }
 
@@ -476,19 +279,6 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 	return nil
 }
 
-func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
-	if lp.Fee.IsZero() && !lp.ContainsOrders() && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
-		return errors.New("empty liquidity provision amendment content")
-	}
-
-	// If orders fee is provided, we need it to be valid
-	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
-		return errors.New("invalid liquidity provision fee")
-	}
-
-	return nil
-}
-
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
@@ -522,35 +312,28 @@ func (e *Engine) SubmitLiquidityProvision(
 		return err
 	}
 
-	if lp := e.LiquidityProvisionByPartyID(party); lp != nil {
+	if foundLp := e.LiquidityProvisionByPartyID(party); foundLp != nil {
 		return ErrLiquidityProvisionAlreadyExists
 	}
 
-	var (
-		now = e.timeService.GetTimeNow().UnixNano()
-		lp  = &types.LiquidityProvision{
-			ID:               idgen.NextID(),
-			MarketID:         lps.MarketID,
-			Party:            party,
-			CreatedAt:        now,
-			Fee:              lps.Fee,
-			Status:           types.LiquidityProvisionStatusPending,
-			Reference:        lps.Reference,
-			Version:          1,
-			CommitmentAmount: lps.CommitmentAmount,
-			UpdatedAt:        now,
-		}
-	)
-
-	// regardless of the final operation (create,update or delete) we finish
-	// sending an event.
-	defer func() {
-		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-	}()
+	now := e.timeService.GetTimeNow().UnixNano()
+	lp := &types.LiquidityProvision{
+		ID:               idgen.NextID(),
+		MarketID:         lps.MarketID,
+		Party:            party,
+		CreatedAt:        now,
+		Fee:              lps.Fee,
+		Status:           types.LiquidityProvisionStatusActive,
+		Reference:        lps.Reference,
+		Version:          1,
+		CommitmentAmount: lps.CommitmentAmount,
+		UpdatedAt:        now,
+	}
 
 	e.provisions.Set(party, lp)
 	e.slaPerformance[party] = &slaPerformance{}
 
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	return nil
 }
 
@@ -598,21 +381,26 @@ func (e *Engine) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
 	e.stakeToCcyVolume = stakeToCcyVolume
 }
 
-func (e *Engine) OnPriceRange(priceRange num.Decimal) {
+func (e *Engine) OnPriceRangeUpdate(priceRange num.Decimal) {
 	e.priceRange = priceRange
 }
 
-func (e *Engine) OnCommitmentMinTimeFraction(commitmentMinTimeFraction num.Decimal) {
+func (e *Engine) OnCommitmentMinTimeFractionUpdate(commitmentMinTimeFraction num.Decimal) {
 	e.commitmentMinTimeFraction = commitmentMinTimeFraction
 }
 
-func (e *Engine) OnSlaCompetitionFactor(slaCompetitionFactor num.Decimal) {
+func (e *Engine) OnSlaCompetitionFactorUpdate(slaCompetitionFactor num.Decimal) {
 	e.slaCompetitionFactor = slaCompetitionFactor
 }
 
-func (e *Engine) OnNonPerformanceBondPenaltySlope(nonPerformanceBondPenaltySlope num.Decimal) {
+func (e *Engine) OnNonPerformanceBondPenaltySlopeUpdate(nonPerformanceBondPenaltySlope num.Decimal) {
 	e.nonPerformanceBondPenaltySlope = nonPerformanceBondPenaltySlope
 }
-func (e *Engine) OnNonPerformanceBondPenaltyMax(nonPerformanceBondPenaltyMax num.Decimal) {
+
+func (e *Engine) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyMax num.Decimal) {
 	e.nonPerformanceBondPenaltyMax = nonPerformanceBondPenaltyMax
+}
+
+func (e *Engine) OnPerformanceHysteresisEpochsUpdate(performanceHysteresisEpochs uint) {
+	e.performanceHysteresisEpochs = performanceHysteresisEpochs
 }

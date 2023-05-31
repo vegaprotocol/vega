@@ -24,6 +24,11 @@ import (
 
 type LiquidityProvisionStatus = proto.LiquidityProvision_Status
 
+// LiquidityProvisionStatusActive
+// LiquidityProvisionStatusStopped
+// LiquidityProvisionStatusCancelled
+// LiquidityProvisionStatusRejected
+
 const (
 	// LiquidityProvisionUnspecified The default value.
 	LiquidityProvisionUnspecified LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_UNSPECIFIED
