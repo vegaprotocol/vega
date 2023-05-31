@@ -1049,7 +1049,7 @@ func testMarketLineageCreated(t *testing.T) {
 }
 
 func testListSuccessorMarkets(t *testing.T) {
-	_, md, entries := setupSuccessorMarkets(t)
+	md, entries := setupSuccessorMarkets(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
@@ -1079,7 +1079,7 @@ func testListSuccessorMarkets(t *testing.T) {
 }
 
 func testGetMarketWithParentAndSuccessor(t *testing.T) {
-	_, md, _ := setupSuccessorMarkets(t)
+	md, _ := setupSuccessorMarkets(t)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
 	defer cancel()
@@ -1106,7 +1106,7 @@ func testGetMarketWithParentAndSuccessor(t *testing.T) {
 	})
 }
 
-func setupSuccessorMarkets(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, []entities.Market) {
+func setupSuccessorMarkets(t *testing.T) (*sqlstore.Markets, []entities.Market) {
 	t.Helper()
 
 	bs, md := setupMarketsTest(t)
@@ -1198,5 +1198,5 @@ func setupSuccessorMarkets(t *testing.T) (*sqlstore.Blocks, *sqlstore.Markets, [
 		require.NoError(t, err)
 	}
 
-	return bs, md, entries
+	return md, entries
 }
