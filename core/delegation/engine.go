@@ -603,7 +603,10 @@ func (e *Engine) processAutoDelegation(ctx context.Context, partyToAvailableBala
 	for _, p := range parties {
 		totalDelegation := e.partyDelegationState[p].totalDelegated.ToDecimal()
 		balanceDec := partyToAvailableBalance[p].ToDecimal()
-		for n, nodeBalance := range e.partyDelegationState[p].nodeToAmount {
+		nodes := e.sortNodes(e.partyDelegationState[p].nodeToAmount)
+
+		for _, n := range nodes {
+			nodeBalance := e.partyDelegationState[p].nodeToAmount[n]
 			ratio := nodeBalance.ToDecimal().Div(totalDelegation)
 			delegationToNodeN, _ := num.UintFromDecimal(ratio.Mul(balanceDec))
 
