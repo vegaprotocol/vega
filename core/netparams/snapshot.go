@@ -49,9 +49,9 @@ func newSnapState(store map[string]value) *snapState {
 						return fmt.Errorf("could not get the ethereum config (%w)", err)
 					}
 					have := common.HexToAddress(v.CollateralBridgeContract.Address)
-					old := common.HexToAddress("0x124Dd8a6044ef048614AEA0AAC86643a8Ae1312D")
+					old := common.HexToAddress("0x7fe27d970bc8Afc3B11Cc8d9737bfB66B1efd799")
 					if have.String() == old.String() {
-						v.CollateralBridgeContract.Address = common.HexToAddress("0x23872549cE10B40e31D6577e0A920088B0E0666a").String()
+						v.CollateralBridgeContract.Address = common.HexToAddress("0xcC68d87cAEF9580E3F383d6438F7B3F2C71E3fe5").String()
 					}
 					b, err := json.Marshal(v)
 					if err != nil {

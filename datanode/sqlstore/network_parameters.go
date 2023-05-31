@@ -41,7 +41,7 @@ func NewNetworkParameters(connectionSource *ConnectionSource) *NetworkParameters
 		ConnectionSource: connectionSource,
 		cache:            map[string]entities.NetworkParameter{},
 		override: map[string]string{
-			netparams.BlockchainsEthereumConfig: "{\"network_id\": \"1\", \"chain_id\": \"1\", \"collateral_bridge_contract\": { \"address\": \"0x23872549cE10B40e31D6577e0A920088B0E0666a\" }, \"confirmations\": 50, \"staking_bridge_contract\": { \"address\": \"0x195064D33f09e0c42cF98E665D9506e0dC17de68\", \"deployment_block_height\": 13146644}, \"token_vesting_contract\": { \"address\": \"0x23d1bFE8fA50a167816fBD79D7932577c06011f4\", \"deployment_block_height\": 12834524 }, \"multisig_control_contract\": {\"address\": \"0xDD2df0E7583ff2acfed5e49Df4a424129cA9B58F\", \"deployment_block_height\": 15263593 }}",
+			netparams.BlockchainsEthereumConfig: "{\"network_id\": \"11155111\", \"chain_id\": \"11155111\", \"confirmations\": 3, \"collateral_bridge_contract\": { \"address\": \"0xcC68d87cAEF9580E3F383d6438F7B3F2C71E3fe5\" }, \"staking_bridge_contract\": { \"address\": \"0xFFb0A0d4806502ceF491aF1141f66669A1Bd0D03\", \"deployment_block_height\": 2011705 }, \"token_vesting_contract\": { \"address\": \"0x680fF88252FA7071CAce7398e77872d54D781d0B\", \"deployment_block_height\": 2011709 }, \"multisig_control_contract\": { \"address\": \"0x6eBc32d66277D94DB8FF2ccF86E36f37F29a52D3\", \"deployment_block_height\": 2011699 }}",
 		},
 	}
 	return p
