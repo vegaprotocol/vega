@@ -68,6 +68,7 @@ func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T)
 	}
 
 	amendCnt := 0
+	exec.EXPECT().TransactionFinished(gomock.Any(), "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23").Times(1)
 	exec.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).DoAndReturn(
 		func(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) ([]*types.OrderConfirmation, error) {
 			amendCnt++
@@ -151,6 +152,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	}
 
 	cancelCnt := 0
+	exec.EXPECT().TransactionFinished(gomock.Any(), "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23").Times(1)
 	exec.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
 		func(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
 			cancelCnt++
@@ -263,6 +265,7 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 			return nil, nil
 		},
 	)
+	exec.EXPECT().TransactionFinished(gomock.Any(), "926df3b689a5440fe21cad7069ebcedc46f75b2b23ce11002a1ee2254e339f23").Times(1)
 
 	err := proc.ProcessBatch(
 		context.Background(),

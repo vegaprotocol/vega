@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	"golang.org/x/exp/maps"
 )
 
 type BMIProcessor struct {
@@ -71,6 +73,9 @@ func (p *BMIProcessor) ProcessBatch(
 	// returned error from ABCI
 	errCnt := 0
 
+	// keep track of all the markets that have had and order amended or submitted
+	markets := map[string]struct{}{}
+
 	// first we generate the IDs for all new orders,
 	// these need to be determinitistic
 	idgen := idgeneration.New(determinitisticID)
@@ -113,6 +118,7 @@ func (p *BMIProcessor) ProcessBatch(
 				amend, err = types.NewOrderAmendmentFromProto(protoAmend)
 				if err == nil {
 					_, err = p.exec.AmendOrder(ctx, amend, party, idgen)
+					markets[amend.MarketID] = struct{}{}
 				}
 			}
 		}
@@ -137,6 +143,7 @@ func (p *BMIProcessor) ProcessBatch(
 			if submit, err = types.NewOrderSubmissionFromProto(protoSubmit); err == nil {
 				var conf *types.OrderConfirmation
 				conf, err = p.exec.SubmitOrder(ctx, submit, party, idgen, submissionsIDs[i])
+				markets[submit.MarketID] = struct{}{}
 				if conf != nil {
 					stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 					stats.AddTotalTrades(uint64(len(conf.Trades)))
@@ -154,6 +161,13 @@ func (p *BMIProcessor) ProcessBatch(
 	}
 
 	errs.isPartial = errCnt != len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)
+
+	// tell the execution engine that our batch is done, sorting first for the determinism
+	sorted := maps.Keys(markets)
+	sort.Strings(sorted)
+	for _, m := range sorted {
+		p.exec.TransactionFinished(ctx, m)
+	}
 
 	return errs.ErrorOrNil()
 }

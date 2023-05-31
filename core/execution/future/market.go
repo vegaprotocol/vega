@@ -110,8 +110,9 @@ type Market struct {
 
 	as common.AuctionState
 
-	peggedOrders   *common.PeggedOrders
-	expiringOrders *common.ExpiringOrders
+	peggedOrders     *common.PeggedOrders
+	expiringOrders   *common.ExpiringOrders
+	icebergRefreshes []*types.Order
 
 	// Store the previous price values so we can see what has changed
 	lastBestBidPrice *num.Uint
@@ -285,6 +286,7 @@ func NewMarket(
 		lpPriceRange:              mkt.LPPriceRange,
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
+		icebergRefreshes:          []*types.Order{},
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -990,8 +992,11 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		m.log.Error("Error leaving auction", logging.Error(err))
 	}
 
-	// Process each confirmation & apply fee calculations to each trade
+	// track any icebergs that trade so that they can be checked for refreshing
+	icebergRefreshes := []*types.Order{}
 	evts := make([]events.Event, 0, len(uncrossedOrders))
+
+	// Process each confirmation & apply fee calculations to each trade
 	for _, uncrossedOrder := range uncrossedOrders {
 		// handle fees first
 		err := m.applyFees(ctx, uncrossedOrder.Order, uncrossedOrder.Trades)
@@ -999,6 +1004,15 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 			// @TODO this ought to be an event
 			m.log.Error("Unable to apply fees to order",
 				logging.String("OrderID", uncrossedOrder.Order.ID))
+		}
+
+		if uncrossedOrder.Order.NeedsRefreshing() {
+			icebergRefreshes = append(icebergRefreshes, uncrossedOrder.Order)
+		}
+		for _, po := range uncrossedOrder.PassiveOrdersAffected {
+			if po.NeedsRefreshing() {
+				icebergRefreshes = append(icebergRefreshes, po)
+			}
 		}
 
 		// then do the confirmation
@@ -1012,6 +1026,9 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 
 	// send order events in a single batch, it's more efficient
 	m.broker.SendBatch(evts)
+
+	// now refresh the iceberg orders
+	m.RefreshIcebergOrders(ctx, icebergRefreshes)
 
 	// will hold all orders which have been updated by the uncrossing
 	// or which were cancelled at end of auction
@@ -1256,6 +1273,13 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 	m.broker.SendBatch(evts)
 }
 
+// TransactionFinished is used to signal to the market that the current order transaction has ended,
+// for batch orders this will be called once at the end of all the actions in the batch.
+func (m *Market) TransactionFinished(ctx context.Context) {
+	m.RefreshIcebergOrders(ctx, m.icebergRefreshes)
+	m.icebergRefreshes = []*types.Order{}
+}
+
 // SubmitOrder submits the given order.
 func (m *Market) SubmitOrder(
 	ctx context.Context,
@@ -1451,6 +1475,22 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 
 	// this is no op for non reduce-only orders
 	order.ClearUpExtraRemaining()
+
+	if order.IcebergOrder != nil && order.Remaining > 0 {
+		// now trades have been generated for the aggressive iceberg based on the
+		// full size, set the peak limits and push is straight into the book
+		peak := num.MinV(order.Remaining, order.IcebergOrder.InitialPeakSize)
+		order.IcebergOrder.ReservedRemaining = order.Remaining - peak
+		order.Remaining = peak
+		m.matching.SubmitIcebergOrder(order)
+	}
+
+	// check if any affected iceberg orders will need a refresh
+	for _, po := range confirmation.PassiveOrdersAffected {
+		if po.IcebergOrder != nil && po.NeedsRefreshing() {
+			m.icebergRefreshes = append(m.icebergRefreshes, po)
+		}
+	}
 
 	// this means our reduce-only order (IOC) have been stopped
 	// from trading to the point it would flip the position,
@@ -2726,6 +2766,17 @@ func (m *Market) amendOrder(
 		return nil, nil, common.ErrMarginCheckFailed
 	}
 
+	icebergSizeChange := false
+	if amendedOrder.IcebergOrder != nil {
+		// iceberg orders size changes can always be done in-place because they either:
+		// 1) decrease the size, which is already done in-place for all orders
+		// 2) increase the size, which only increases the reserved remaining and not the "active" remaining of the iceberg
+		// so set a flag to indicate this special case
+		sizeIncrease = false
+		sizeDecrease = false
+		icebergSizeChange = true
+	}
+
 	// if increase in size or change in price
 	// ---> DO atomic cancel and submit
 	if priceShift || sizeIncrease {
@@ -2734,7 +2785,7 @@ func (m *Market) amendOrder(
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
-	if expiryChange || sizeDecrease || timeInForceChange {
+	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeChange {
 		ret := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if sizeDecrease {
 			// ensure we release excess if party reduced the size of their order
@@ -2799,6 +2850,58 @@ func (m *Market) validateOrderAmendment(
 	return nil
 }
 
+// applyOrderAmendmentSizeIceberg update the orders reservedRemaining fields of an iceberg order
+// given the delta change.
+func applyOrderAmendmentSizeIceberg(order *types.Order, delta int64) {
+	// handle increase in size
+	if delta > 0 {
+		order.Size += uint64(delta)
+		order.IcebergOrder.ReservedRemaining += uint64(delta)
+		return
+	}
+
+	// handle decrease in size
+	dec := uint64(-delta)
+	order.Size -= dec
+
+	if order.IcebergOrder.ReservedRemaining >= dec {
+		order.IcebergOrder.ReservedRemaining -= dec
+		return
+	}
+
+	diff := dec - order.IcebergOrder.ReservedRemaining
+	if order.Remaining > diff {
+		order.Remaining = dec - order.IcebergOrder.ReservedRemaining
+	} else {
+		order.Remaining = 0
+	}
+	order.IcebergOrder.ReservedRemaining = 0
+}
+
+// applyOrderAmendmentSizeDelta update the orders size/remaining fields based on the size an direction of the given delta.
+func applyOrderAmendmentSizeDelta(order *types.Order, delta int64) {
+	if order.IcebergOrder != nil {
+		applyOrderAmendmentSizeIceberg(order, delta)
+		return
+	}
+
+	// handle size increase
+	if delta > 0 {
+		order.Size += uint64(delta)
+		order.Remaining += uint64(delta)
+		return
+	}
+
+	// handle size decrease
+	dec := uint64(-delta)
+	order.Size -= dec
+	if order.Remaining > dec {
+		order.Remaining -= dec
+	} else {
+		order.Remaining = 0
+	}
+}
+
 // this function assume the amendment have been validated before.
 func (m *Market) applyOrderAmendment(
 	existingOrder *types.Order,
@@ -2828,17 +2931,7 @@ func (m *Market) applyOrderAmendment(
 
 	// apply size changes
 	if delta := amendment.SizeDelta; delta != 0 {
-		if delta < 0 {
-			order.Size -= uint64(-delta)
-			if order.Remaining > uint64(-delta) {
-				order.Remaining -= uint64(-delta)
-			} else {
-				order.Remaining = 0
-			}
-		} else {
-			order.Size += uint64(delta)
-			order.Remaining += uint64(delta)
-		}
+		applyOrderAmendmentSizeDelta(order, delta)
 	}
 
 	// apply tif
@@ -2927,6 +3020,13 @@ func (m *Market) orderCancelReplace(
 	// replace the trades in the confirmation to have
 	// the ones with the fees embedded
 	conf.Trades = trades
+
+	// check for iceberg refreshes
+	for _, po := range conf.PassiveOrdersAffected {
+		if po.IcebergOrder != nil && po.NeedsRefreshing() {
+			m.icebergRefreshes = append(m.icebergRefreshes, po)
+		}
+	}
 
 	// if the order is not staying in the book, then we remove it
 	// from the potential positions

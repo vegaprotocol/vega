@@ -26,6 +26,43 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+func (m *Market) RefreshIcebergOrders(ctx context.Context, icebergs []*types.Order) {
+	evts := []events.Event{}
+	for _, o := range icebergs {
+		// if the slice contains duplciates and we've already refreshed don't do it again
+		if !o.NeedsRefreshing() {
+			continue
+		}
+
+		// cancel it if its exists (it might not if the peak was fully consumed)
+		if _, err := m.matching.GetOrderByID(o.ID); err == nil {
+			if _, err := m.matching.CancelOrder(o); err != nil {
+				m.log.Panic("could not remove iceberg order", logging.Error(err))
+			}
+		}
+
+		// make sure it is active again
+		o.Status = types.OrderStatusActive
+
+		// calculate the refill amount
+		refill := o.IcebergOrder.InitialPeakSize - o.Remaining
+		refill = num.MinV(refill, o.IcebergOrder.ReservedRemaining)
+
+		o.Remaining += refill
+		o.IcebergOrder.ReservedRemaining -= refill
+
+		// tell the orderbook about so that it can be placed back on at the end of the queue
+		m.matching.SubmitIcebergOrder(o)
+
+		// TODO: check for crossed book may be somewhere here https://github.com/vegaprotocol/vega/issues/8374
+
+		evts = append(evts, events.NewOrderEvent(ctx, o))
+	}
+
+	// send out about the refresh changes
+	m.broker.SendBatch(evts)
+}
+
 func (m *Market) repricePeggedOrders(
 	ctx context.Context,
 	changes uint8,

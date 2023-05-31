@@ -133,6 +133,33 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	return num.UintZero(), 0, errors.New("no non pegged orders found on the book")
 }
 
+func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *types.Order, priceLevelIndex int, orderIndex int) (uint64, error) {
+	if amendOrder.Remaining > oldOrder.Remaining {
+		// iceberg amend should never increase the visible remaining
+		return 0, types.ErrOrderAmendFailure
+	}
+
+	// set the new order in the level
+	s.levels[priceLevelIndex].orders[orderIndex] = amendOrder
+
+	// iceberg orders are a little different because they can be increased or decreased in size but
+	// amended in place. This is because on increase only the reserve amount it changed.
+	oldReserved := oldOrder.IcebergOrder.ReservedRemaining
+	amendReserved := amendOrder.IcebergOrder.ReservedRemaining
+	if amendReserved > oldReserved {
+		// only increased the reserve so the book volume is not changed
+		return 0, nil
+	}
+
+	if amendReserved < oldReserved {
+		reduceBy := oldOrder.Remaining - amendOrder.Remaining
+		s.levels[priceLevelIndex].reduceVolume(reduceBy)
+		return reduceBy, nil
+	}
+
+	return 0, nil
+}
+
 func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	priceLevelIndex := -1
 	orderIndex := -1
@@ -160,12 +187,16 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 		return 0, types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Size < orderAmend.Size &&
-		oldOrder.Remaining < orderAmend.Size {
+	if oldOrder.Reference != orderAmend.Reference {
 		return 0, types.ErrOrderAmendFailure
 	}
 
-	if oldOrder.Reference != orderAmend.Reference {
+	if oldOrder.IcebergOrder != nil {
+		return s.amendIcebergOrder(orderAmend, oldOrder, priceLevelIndex, orderIndex)
+	}
+
+	if oldOrder.Size < orderAmend.Size &&
+		oldOrder.Remaining < orderAmend.Size {
 		return 0, types.ErrOrderAmendFailure
 	}
 

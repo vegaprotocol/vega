@@ -381,6 +381,23 @@ func (i IcebergOrder) String() string {
 	)
 }
 
+func (o *Order) NeedsRefreshing() bool {
+	if o.IcebergOrder == nil {
+		return false
+	}
+
+	// not under the peak yet
+	if o.Remaining > o.IcebergOrder.MinimumPeakSize {
+		return false
+	}
+
+	// nothing left to refresh with
+	if o.IcebergOrder.ReservedRemaining == 0 {
+		return false
+	}
+	return true
+}
+
 type OrderConfirmation struct {
 	Order                 *Order
 	Trades                []*Trade

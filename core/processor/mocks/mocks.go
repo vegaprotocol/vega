@@ -434,6 +434,18 @@ func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2, arg3 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2, arg3)
 }
 
+// TransactionFinished mocks base method.
+func (m *MockExecutionEngine) TransactionFinished(arg0 context.Context, arg1 string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "TransactionFinished", arg0, arg1)
+}
+
+// TransactionFinished indicates an expected call of TransactionFinished.
+func (mr *MockExecutionEngineMockRecorder) TransactionFinished(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionFinished", reflect.TypeOf((*MockExecutionEngine)(nil).TransactionFinished), arg0, arg1)
+}
+
 // UpdateMarket mocks base method.
 func (m *MockExecutionEngine) UpdateMarket(arg0 context.Context, arg1 *types.Market) error {
 	m.ctrl.T.Helper()

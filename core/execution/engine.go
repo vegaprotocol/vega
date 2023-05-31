@@ -1252,3 +1252,12 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 	e.successorWindow = window
 	return nil
 }
+
+func (e *Engine) TransactionFinished(ctx context.Context, marketID string) {
+	mkt, ok := e.markets[marketID]
+	if !ok {
+		e.log.Error("market does not exist at the end of order transaction", logging.String("mid", marketID))
+		return
+	}
+	mkt.TransactionFinished(ctx)
+}

@@ -781,6 +781,25 @@ func (b *OrderBook) ReplaceOrder(rm, rpl *types.Order) (*types.OrderConfirmation
 	return b.SubmitOrder(rpl)
 }
 
+// SubmitIcebergOrder adds an iceberg order directly to the book.
+func (b *OrderBook) SubmitIcebergOrder(order *types.Order) {
+	if order.IcebergOrder == nil {
+		b.log.Panic("only iceberg orders should be here", logging.Order(order))
+	}
+
+	// TODO: this is likely to change during https://github.com/vegaprotocol/vega/issues/8374
+	// so lets not dwell
+
+	b.log.Info("inserting iceberg order", logging.Order(order))
+	b.getSide(order.Side).addOrder(order)
+	if b.auction {
+		b.indicativePriceAndVolume.AddVolumeAtPrice(
+			order.Price, order.Remaining, order.Side)
+	}
+
+	b.add(order)
+}
+
 func (b *OrderBook) ReSubmitSpecialOrders(order *types.Order) {
 	// not allowed to submit a normal order here
 	if len(order.LiquidityProvisionID) <= 0 && order.PeggedOrder == nil {
@@ -847,8 +866,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	// if order is persistent type add to order book to the correct side
-	// and we did not hit a error / wash trade error
-	if order.IsPersistent() && err == nil {
+	// and there was not an error / wash trade error. If it is an aggressive iceberg order
+	// it is added to the orderbook later once the peak sizes have been calculated.
+	if order.IsPersistent() && err == nil && order.IcebergOrder == nil {
 		b.getSide(order.Side).addOrder(order)
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
@@ -903,7 +923,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		order.Reason = types.OrderErrorSelfTrading
 	}
 
-	if order.Status == types.OrderStatusActive {
+	if order.Status == types.OrderStatusActive && order.IcebergOrder == nil {
 		b.add(order)
 	}
 

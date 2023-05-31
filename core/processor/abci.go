@@ -1349,6 +1349,8 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 			logging.Error(err))
 	}
 
+	app.exec.TransactionFinished(ctx, os.MarketID)
+
 	return err
 }
 
@@ -1404,6 +1406,9 @@ func (app *App) DeliverAmendOrder(
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
 	}
+
+	app.exec.TransactionFinished(ctx, oa.MarketID)
+
 	if app.cfg.LogOrderAmendDebug {
 		app.log.Debug("Order amended", logging.Order(*msg.Order))
 	}
