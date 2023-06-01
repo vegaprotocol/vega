@@ -192,110 +192,6 @@ func NewEngine(config Config,
 	return e
 }
 
-// IsLiquidityProvider returns true if the party hold any liquidity commitment.
-func (e *Engine) IsLiquidityProvider(party string) bool {
-	_, ok := e.provisions.Get(party)
-	return ok
-}
-
-// ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
-func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
-	return e.provisions.ProvisionsPerParty
-}
-
-// GetInactiveParties returns a set of all the parties
-// with inactive commitment.
-// @TODO karel change this function to use real orderbook
-func (e *Engine) GetInactiveParties() map[string]struct{} {
-	ret := map[string]struct{}{}
-	for _, p := range e.provisions.ProvisionsPerParty {
-		if p.Status != types.LiquidityProvisionStatusActive {
-			ret[p.Party] = struct{}{}
-		}
-	}
-	return ret
-}
-
-func (e *Engine) stopLiquidityProvision(
-	ctx context.Context, party string, status types.LiquidityProvisionStatus,
-) error {
-	lp, ok := e.provisions.Get(party)
-	if !ok {
-		return errors.New("party have no liquidity provision orders")
-	}
-
-	now := e.timeService.GetTimeNow().UnixNano()
-
-	lp.Status = status
-	lp.UpdatedAt = now
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-
-	// now delete all stuff
-	e.provisions.Delete(party)
-	delete(e.slaPerformance, party)
-	return nil
-}
-
-// RejectLiquidityProvision removes a parties commitment of liquidity.
-func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
-	return e.stopLiquidityProvision(
-		ctx, party, types.LiquidityProvisionStatusRejected)
-}
-
-// CancelLiquidityProvision removes a parties commitment of liquidity
-// Returns the liquidityOrders if any.
-func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
-	return e.stopLiquidityProvision(
-		ctx, party, types.LiquidityProvisionStatusCancelled)
-}
-
-// StopLiquidityProvision removes a parties commitment of liquidity
-// Returns the liquidityOrders if any.
-func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) error {
-	return e.stopLiquidityProvision(
-		ctx, party, types.LiquidityProvisionStatusStopped)
-}
-
-func (e *Engine) ValidateLiquidityProvisionSubmission(
-	lp *types.LiquidityProvisionSubmission,
-	zeroCommitmentIsValid bool,
-) (err error) {
-	// we check if the commitment is 0 which would mean this is a cancel
-	// a cancel does not need validations
-	if lp.CommitmentAmount.IsZero() {
-		if zeroCommitmentIsValid {
-			return nil
-		}
-		return ErrCommitmentAmountIsZero
-	}
-
-	// not sure how to check for a missing fee, 0 could be valid
-	// then again, that validation should've happened before reaching this point
-	// if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
-	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
-		return errors.New("invalid liquidity provision fee")
-	}
-
-	return nil
-}
-
-func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
-	// here we just build a liquidityProvision and set its
-	// status to rejected before sending it through the bus
-	lp := &types.LiquidityProvision{
-		ID:               id,
-		Fee:              lps.Fee,
-		MarketID:         lps.MarketID,
-		Party:            party,
-		Status:           types.LiquidityProvisionStatusRejected,
-		CreatedAt:        e.timeService.GetTimeNow().UnixNano(),
-		CommitmentAmount: lps.CommitmentAmount.Clone(),
-		Reference:        lps.Reference,
-	}
-
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-}
-
 // SubmitLiquidityProvision handles a new liquidity provision submission.
 // It's used to create, update or delete a LiquidityProvision.
 // The LiquidityProvision is created if submitted for the first time, updated if a
@@ -335,6 +231,94 @@ func (e *Engine) SubmitLiquidityProvision(
 
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	return nil
+}
+
+// RejectLiquidityProvision removes a parties commitment of liquidity.
+func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
+	return e.stopLiquidityProvision(
+		ctx, party, types.LiquidityProvisionStatusRejected)
+}
+
+// CancelLiquidityProvision removes a parties commitment of liquidity
+// Returns the liquidityOrders if any.
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) error {
+	return e.stopLiquidityProvision(
+		ctx, party, types.LiquidityProvisionStatusCancelled)
+}
+
+// StopLiquidityProvision removes a parties commitment of liquidity
+// Returns the liquidityOrders if any.
+func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) error {
+	return e.stopLiquidityProvision(
+		ctx, party, types.LiquidityProvisionStatusStopped)
+}
+
+func (e *Engine) ValidateLiquidityProvisionSubmission(
+	lp *types.LiquidityProvisionSubmission,
+	zeroCommitmentIsValid bool,
+) (err error) {
+	// we check if the commitment is 0 which would mean this is a cancel
+	// a cancel does not need validations
+	if lp.CommitmentAmount.IsZero() {
+		if zeroCommitmentIsValid {
+			return nil
+		}
+		return ErrCommitmentAmountIsZero
+	}
+
+	// not sure how to check for a missing fee, 0 could be valid
+	// then again, that validation should've happened before reaching this point
+	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
+		return errors.New("invalid liquidity provision fee")
+	}
+
+	return nil
+}
+
+func (e *Engine) stopLiquidityProvision(
+	ctx context.Context, party string, status types.LiquidityProvisionStatus,
+) error {
+	lp, ok := e.provisions.Get(party)
+	if !ok {
+		return errors.New("party have no liquidity provision orders")
+	}
+
+	now := e.timeService.GetTimeNow().UnixNano()
+
+	lp.Status = status
+	lp.UpdatedAt = now
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+
+	// now delete all stuff
+	e.provisions.Delete(party)
+	delete(e.slaPerformance, party)
+	return nil
+}
+
+func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
+	lp := &types.LiquidityProvision{
+		ID:               id,
+		Fee:              lps.Fee,
+		MarketID:         lps.MarketID,
+		Party:            party,
+		Status:           types.LiquidityProvisionStatusRejected,
+		CreatedAt:        e.timeService.GetTimeNow().UnixNano(),
+		CommitmentAmount: lps.CommitmentAmount.Clone(),
+		Reference:        lps.Reference,
+	}
+
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+}
+
+// IsLiquidityProvider returns true if the party hold any liquidity commitment.
+func (e *Engine) IsLiquidityProvider(party string) bool {
+	_, ok := e.provisions.Get(party)
+	return ok
+}
+
+// ProvisionsPerParty returns the registered a map of party-id -> LiquidityProvision.
+func (e *Engine) ProvisionsPerParty() ProvisionsPerParty {
+	return e.provisions.ProvisionsPerParty
 }
 
 // LiquidityProvisionByPartyID returns the LP associated to a Party if any.

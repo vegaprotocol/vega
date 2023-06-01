@@ -76,12 +76,15 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) {
 		timeBookFraction := s.Div(observedEpochLengthD)
 
 		var feePenalty, bondPenalty num.Decimal
+
+		// if LP meets commitment
+		// else LP does not meet commitment
 		if timeBookFraction.LessThan(e.commitmentMinTimeFraction) {
 			feePenalty = num.DecimalOne()
-			bondPenalty = num.DecimalOne()
+			bondPenalty = e.calculateBondPenalty(timeBookFraction)
 		} else {
 			feePenalty = e.calculateCurrentFeePenalty(timeBookFraction)
-			bondPenalty = e.calculateBondPenalty(timeBookFraction)
+			bondPenalty = num.DecimalZero()
 		}
 
 		commitment.allEpochsPenalties = append(commitment.allEpochsPenalties, feePenalty)
@@ -203,7 +206,9 @@ func (e *Engine) calculateHysteresisFeePenalty(currentPenalty num.Decimal, previ
 		periodAveragePenalty = periodAveragePenalty.Add(p)
 	}
 
-	periodAveragePenalty = periodAveragePenalty.Div(num.NewDecimalFromFloat(float64(e.performanceHysteresisEpochs)))
+	performanceHysteresisEpochsD := num.NewDecimalFromFloat(float64(e.performanceHysteresisEpochs))
+
+	periodAveragePenalty = periodAveragePenalty.Div(performanceHysteresisEpochsD)
 	return num.MaxD(currentPenalty, periodAveragePenalty)
 }
 

@@ -44,17 +44,11 @@ func (l Provisions) feeForTarget(t *num.Uint) num.Decimal {
 	return l[len(l)-1].Fee
 }
 
-type lpsByFee Provisions
-
-func (l lpsByFee) Len() int           { return len(l) }
-func (l lpsByFee) Less(i, j int) bool { return l[i].Fee.LessThan(l[j].Fee) }
-func (l lpsByFee) Swap(i, j int)      { l[i], l[j] = l[j], l[i] }
-
 // sortByFee sorts in-place and returns the LiquidityProvisions for convenience.
 func (l Provisions) sortByFee() Provisions {
-	byFee := lpsByFee(l)
-	sort.Sort(byFee)
-	return Provisions(byFee)
+	sort.Slice(l, func(i, j int) bool { return l[i].Fee.LessThan(l[j].Fee) })
+
+	return Provisions(l)
 }
 
 // Provisions is a map of parties to *types.LiquidityProvision.
