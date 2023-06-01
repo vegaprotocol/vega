@@ -22,6 +22,7 @@
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
 - [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
 - [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement iceberg orders in data node
+- [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
 - [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
