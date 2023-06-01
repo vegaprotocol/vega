@@ -2220,7 +2220,6 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 	}
 
 	c := make(chan []*types.Order)
-	var orders []*types.Order
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
@@ -2239,7 +2238,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			orders = orders[:0]
+			orders := []*types.Order{}
 			if snapshot := o.GetSnapshot(); snapshot != nil {
 				orders = append(orders, snapshot.Orders...)
 			}
