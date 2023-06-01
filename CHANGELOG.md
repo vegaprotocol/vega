@@ -22,6 +22,7 @@
 
 ### 🐛 Fixes
 - [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
+- [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
 
 ## 0.71.5
 
@@ -44,7 +45,6 @@
 
 ### 🐛 Fixes
 - [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
-
 
 ## 0.71.1
 
