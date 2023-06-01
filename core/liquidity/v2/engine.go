@@ -83,7 +83,6 @@ type AuctionState interface {
 
 type TargetStateFunc func() *num.Uint
 
-// shell we delete it after deleting the LP
 type slaPerformance struct {
 	s                  time.Duration
 	start              time.Time
