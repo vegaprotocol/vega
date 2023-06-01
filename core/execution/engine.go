@@ -599,7 +599,7 @@ func (e *Engine) SubmitStopOrders(
 	ctx context.Context,
 	submission *types.StopOrdersSubmission,
 	party string,
-	idgen IDGenerator,
+	idgen common.IDGenerator,
 	orderID string) error {
 	var marketID string
 	if submission.FallsBelow != nil {

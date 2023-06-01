@@ -67,46 +67,37 @@ const (
 	IssueSignatures Command = 0x59
 	// ProtocolUpgradeCommand Command ...
 	BatchMarketInstructions Command = 0x5A
-	// SpotLiquidityProvisionCommand ...
-	SpotLiquidityProvisionCommand Command = 0x5B
-	// CancelSpotLiquidityProvisionCommand ...
-	CancelSpotLiquidityProvisionCommand Command = 0x5C
-	// AmendSpotLiquidityProvisionCommand ...
-	AmendSpotLiquidityProvisionCommand Command = 0x5D
 	// StopOrdersSubmissionCommand ...
-	StopOrdersSubmissionCommand Command = 0x5E
+	StopOrdersSubmissionCommand Command = 0x5B
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:                  "Submit Order",
-	CancelOrderCommand:                  "Cancel Order",
-	AmendOrderCommand:                   "Amend Order",
-	WithdrawCommand:                     "Withdraw",
-	ProposeCommand:                      "Proposal",
-	VoteCommand:                         "Vote on Proposal",
-	AnnounceNodeCommand:                 "Register New Node",
-	NodeVoteCommand:                     "Node Vote",
-	NodeSignatureCommand:                "Node Signature",
-	LiquidityProvisionCommand:           "Liquidity Provision Order",
-	CancelLiquidityProvisionCommand:     "Cancel Liquidity Provision Order",
-	AmendLiquidityProvisionCommand:      "Amend Liquidity Provision Order",
-	ChainEventCommand:                   "Chain Event",
-	SubmitOracleDataCommand:             "Submit Oracle Data",
-	DelegateCommand:                     "Delegate",
-	UndelegateCommand:                   "Undelegate",
-	RotateKeySubmissionCommand:          "Key Rotate Submission",
-	StateVariableProposalCommand:        "State Variable Proposal",
-	TransferFundsCommand:                "Transfer Funds",
-	CancelTransferFundsCommand:          "Cancel Transfer Funds",
-	ValidatorHeartbeatCommand:           "Validator Heartbeat",
-	RotateEthereumKeySubmissionCommand:  "Ethereum Key Rotate Submission",
-	ProtocolUpgradeCommand:              "Protocol Upgrade",
-	IssueSignatures:                     "Issue Signatures",
-	BatchMarketInstructions:             "Batch Market Instructions",
-	SpotLiquidityProvisionCommand:       "Spot Liquidity Provision Order",
-	CancelSpotLiquidityProvisionCommand: "Spot Cancel Liquidity Provision Order",
-	AmendSpotLiquidityProvisionCommand:  "Spot Amend Liquidity Provision Order",
-	StopOrdersSubmissionCommand:         "Stop Orders Submission",
+	SubmitOrderCommand:                 "Submit Order",
+	CancelOrderCommand:                 "Cancel Order",
+	AmendOrderCommand:                  "Amend Order",
+	WithdrawCommand:                    "Withdraw",
+	ProposeCommand:                     "Proposal",
+	VoteCommand:                        "Vote on Proposal",
+	AnnounceNodeCommand:                "Register New Node",
+	NodeVoteCommand:                    "Node Vote",
+	NodeSignatureCommand:               "Node Signature",
+	LiquidityProvisionCommand:          "Liquidity Provision Order",
+	CancelLiquidityProvisionCommand:    "Cancel Liquidity Provision Order",
+	AmendLiquidityProvisionCommand:     "Amend Liquidity Provision Order",
+	ChainEventCommand:                  "Chain Event",
+	SubmitOracleDataCommand:            "Submit Oracle Data",
+	DelegateCommand:                    "Delegate",
+	UndelegateCommand:                  "Undelegate",
+	RotateKeySubmissionCommand:         "Key Rotate Submission",
+	StateVariableProposalCommand:       "State Variable Proposal",
+	TransferFundsCommand:               "Transfer Funds",
+	CancelTransferFundsCommand:         "Cancel Transfer Funds",
+	ValidatorHeartbeatCommand:          "Validator Heartbeat",
+	RotateEthereumKeySubmissionCommand: "Ethereum Key Rotate Submission",
+	ProtocolUpgradeCommand:             "Protocol Upgrade",
+	IssueSignatures:                    "Issue Signatures",
+	BatchMarketInstructions:            "Batch Market Instructions",
+	StopOrdersSubmissionCommand:        "Stop Orders Submission",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

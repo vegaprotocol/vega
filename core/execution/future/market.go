@@ -140,9 +140,10 @@ type Market struct {
 	nextMTM                time.Time
 	mtmDelta               time.Duration
 
-	settlementAsset string
-	succeeded       bool
-	stopOrders      *stoporders.Pool
+	settlementAsset    string
+	succeeded          bool
+	stopOrders         *stoporders.Pool
+	expiringStopOrders *common.ExpiringOrders
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -289,7 +290,7 @@ func NewMarket(
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
 		stopOrders:                stoporders.New(log),
-		expiringStopOrders:        NewExpiringOrders(),
+		expiringStopOrders:        common.NewExpiringOrders(),
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -1303,7 +1304,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderID(
 	ctx context.Context,
 	submission *types.StopOrdersSubmission,
 	party string,
-	idgen IDGenerator,
+	idgen common.IDGenerator,
 	orderID string,
 ) (oc *types.OrderConfirmation, _ error) {
 	defer m.onTxProcessed()
