@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -12,19 +13,32 @@ import (
 type Spec struct {
 	Call
 	Trigger
+	Filter
+	Normaliser
+	requiredConfirmations uint64
 }
 
-func NewSpec(call Call, trigger Trigger) Spec {
+func NewSpec(call Call, trigger Trigger, filter Filter, normaliser Normaliser, requiredConfirmations uint64) Spec {
 	return Spec{
-		Call:    call,
-		Trigger: trigger,
+		Call:                  call,
+		Trigger:               trigger,
+		Filter:                filter,
+		Normaliser:            normaliser,
+		requiredConfirmations: requiredConfirmations,
 	}
+}
+
+func (s Spec) RequiredConfirmations() uint64 {
+	return s.requiredConfirmations
 }
 
 func (s Spec) Hash() []byte {
 	hashFunc := sha3.New256()
 	hashFunc.Write(s.Call.Hash())
 	hashFunc.Write(s.Trigger.Hash())
+	hashFunc.Write(s.Filter.Hash())
+	hashFunc.Write([]byte(fmt.Sprintf("requiredconfirmations: %v", s.requiredConfirmations)))
+
 	return hashFunc.Sum(nil)
 }
 
@@ -64,11 +78,14 @@ func (s Spec) ToProto() (*vega.DataSourceDefinition, error) {
 			External: &vega.DataSourceDefinitionExternal{
 				SourceType: &vega.DataSourceDefinitionExternal_EthCall{
 					EthCall: &vega.EthCallSpec{
-						Address: s.address.Hex(),
-						Abi:     &abiPBList,
-						Method:  s.method,
-						Args:    argsPBValue,
-						Trigger: s.Trigger.ToProto(),
+						Address:               s.address.Hex(),
+						Abi:                   &abiPBList,
+						Method:                s.method,
+						Args:                  argsPBValue,
+						Trigger:               s.Trigger.ToProto(),
+						Filter:                s.Filter.ToProto(),
+						Normaliser:            s.Normaliser.ToProto(),
+						RequiredConfirmations: s.RequiredConfirmations(),
 					},
 				},
 			},
@@ -122,8 +139,21 @@ func NewSpecFromProto(proto *vega.DataSourceDefinition) (Spec, error) {
 		return Spec{}, fmt.Errorf("unable to create trigger: %w", err)
 	}
 
+	filter, err := FilterFromProto(ethCallProto.Filter)
+	if err != nil {
+		return Spec{}, fmt.Errorf("unable to create filter: %w", err)
+	}
+
+	normaliser, err := NormaliserFromProto(ethCallProto.Normaliser)
+	if err != nil {
+		return Spec{}, fmt.Errorf("unable to create filter: %w", err)
+	}
+
 	return Spec{
-		Call:    call,
-		Trigger: trigger,
+		Call:                  call,
+		Trigger:               trigger,
+		Filter:                filter,
+		Normaliser:            normaliser,
+		requiredConfirmations: ethCallProto.RequiredConfirmations,
 	}, nil
 }

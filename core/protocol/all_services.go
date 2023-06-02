@@ -16,6 +16,8 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
+
 	"code.vegaprotocol.io/vega/libs/subscribers"
 
 	"code.vegaprotocol.io/vega/core/assets"
@@ -82,23 +84,24 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	marketActivityTracker *common.MarketActivityTracker
-	statevar              *statevar.Engine
-	snapshot              *snapshot.Engine
-	executionEngine       *execution.Engine
-	governance            *governance.Engine
-	collateral            *collateral.Engine
-	oracle                *oracles.Engine
-	oracleAdaptors        *adaptors.Adaptors
-	netParams             *netparams.Store
-	delegation            *delegation.Engine
-	limits                *limits.Engine
-	rewards               *rewards.Engine
-	checkpoint            *checkpoint.Engine
-	spam                  *spam.Engine
-	pow                   processor.PoWEngine
-	builtinOracle         *oracles.Builtin
-	codec                 abci.Codec
+	marketActivityTracker   *common.MarketActivityTracker
+	statevar                *statevar.Engine
+	snapshot                *snapshot.Engine
+	executionEngine         *execution.Engine
+	governance              *governance.Engine
+	collateral              *collateral.Engine
+	oracle                  *oracles.Engine
+	oracleAdaptors          *adaptors.Adaptors
+	netParams               *netparams.Store
+	delegation              *delegation.Engine
+	limits                  *limits.Engine
+	rewards                 *rewards.Engine
+	checkpoint              *checkpoint.Engine
+	spam                    *spam.Engine
+	pow                     processor.PoWEngine
+	builtinOracle           *oracles.Builtin
+	codec                   abci.Codec
+	ethereumOraclesVerifier *oracles.EthereumOracleVerifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -197,6 +200,15 @@ func newServices(
 
 	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology, version.Get())
 	svcs.witness = validators.NewWitness(svcs.ctx, svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
+
+	specEngine, err := ethcall.NewEngine(svcs.log, ethcall.Config{}, nil, svcs.eventForwarder)
+	if err != nil {
+		svcs.log.Error("unable to initialise eth call engine", logging.Error(err))
+		return nil, err
+	}
+
+	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.oracle,
+		&oracles.EthCallSpecSourceAdapter{Engine: specEngine}, svcs.ethClient, svcs.ethConfirmations)
 
 	// this is done to go around circular deps...
 	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)
@@ -368,6 +380,8 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.banking.OnTick,
 		svcs.assets.OnTick,
 		svcs.limits.OnTick,
+
+		svcs.ethereumOraclesVerifier.OnTick,
 	)
 }
 

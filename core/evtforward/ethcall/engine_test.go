@@ -36,10 +36,14 @@ func TestEngine(t *testing.T) {
 	require.NoError(t, err)
 	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
 	trigger := ethcall.TimeTrigger{Initial: currentEthTime, Every: 20}
+	filter := ethcall.CallResultFilter{}
+	normaliser := ethcall.EthDecimalsNormaliser{}
 
 	spec := ethcall.Spec{
-		Call:    call,
-		Trigger: trigger,
+		Call:       call,
+		Trigger:    trigger,
+		Filter:     filter,
+		Normaliser: normaliser,
 	}
 
 	specID, err := e.AddSpec(spec)

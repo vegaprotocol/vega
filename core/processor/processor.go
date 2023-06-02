@@ -222,8 +222,9 @@ type NetworkParameters interface {
 }
 
 type Oracle struct {
-	Engine   OraclesEngine
-	Adaptors OracleAdaptors
+	Engine                  OraclesEngine
+	Adaptors                OracleAdaptors
+	EthereumOraclesVerifier EthereumOracleVerifier
 }
 
 type OraclesEngine interface {
@@ -234,6 +235,10 @@ type OraclesEngine interface {
 
 type OracleAdaptors interface {
 	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+}
+
+type EthereumOracleVerifier interface {
+	ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error
 }
 
 type Limits interface {

@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"code.vegaprotocol.io/vega/core/types"
+
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -32,7 +34,13 @@ func TestSpec(t *testing.T) {
 		Every:   5,
 	}
 
-	originalSpec := ethcall.NewSpec(call, trigger)
+	normaliser := ethcall.EthDecimalsNormaliser{
+		Decimals: 5,
+	}
+
+	filter := ethcall.CallResultFilter{Filters: types.DataSourceSpecFilters{}}
+
+	originalSpec := ethcall.NewSpec(call, trigger, filter, normaliser, 12)
 
 	require.NoError(t, err)
 
