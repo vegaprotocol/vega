@@ -40,7 +40,7 @@ func TestSpec(t *testing.T) {
 
 	filter := ethcall.CallResultFilter{Filters: types.DataSourceSpecFilters{}}
 
-	originalSpec := ethcall.NewSpec(call, trigger, filter, normaliser)
+	originalSpec := ethcall.NewSpec(call, trigger, filter, normaliser, 12)
 
 	require.NoError(t, err)
 

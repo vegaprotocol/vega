@@ -380,6 +380,8 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.banking.OnTick,
 		svcs.assets.OnTick,
 		svcs.limits.OnTick,
+
+		svcs.ethereumOraclesVerifier.OnTick,
 	)
 }
 

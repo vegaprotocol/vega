@@ -115,7 +115,7 @@ const (
 	NodeVote_TYPE_SIGNER_THRESHOLD_SET NodeVote_Type = 11
 	// Node vote to validate a new assert governance proposal
 	NodeVote_TYPE_GOVERNANCE_VALIDATE_ASSET NodeVote_Type = 12
-	// Node vote for an ethereum contract call result
+	// Node vote for an Ethereum contract call result
 	NodeVote_TYPE_ETHEREUM_CONTRACT_CALL_RESULT NodeVote_Type = 13
 )
 
