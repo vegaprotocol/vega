@@ -229,6 +229,10 @@ type PayloadStakeVerifierRemoved struct {
 	StakeVerifierRemoved []*StakeRemoved
 }
 
+type PayloadEthContractCallEvent struct {
+	EthContractCallEvent []*EthContractCallEvent
+}
+
 type PayloadEpoch struct {
 	EpochState *EpochState
 }
@@ -797,6 +801,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakeVerifierDepositedFromProto(dt)
 	case *snapshot.Payload_StakeVerifierRemoved:
 		ret.Data = PayloadStakeVerifierRemovedFromProto(dt)
+	case *snapshot.Payload_EthContractCallResults:
+		ret.Data = PayloadEthContractCallEventFromProto(dt)
 	case *snapshot.Payload_Topology:
 		ret.Data = PayloadTopologyFromProto(dt)
 	case *snapshot.Payload_LiquidityParameters:
@@ -977,6 +983,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_SettlementState:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityScores:
+		ret.Data = dt
+	case *snapshot.Payload_EthContractCallResults:
 		ret.Data = dt
 	}
 	return &ret
@@ -3785,6 +3793,59 @@ func (*PayloadNotary) Key() string {
 
 func (*PayloadNotary) Namespace() SnapshotNamespace {
 	return NotarySnapshot
+}
+
+func PayloadEthContractCallEventFromProto(svd *snapshot.Payload_EthContractCallResults) *PayloadEthContractCallEvent {
+	pending := make([]*EthContractCallEvent, 0, len(svd.EthContractCallResults.PendingContractCallResult))
+
+	for _, pr := range svd.EthContractCallResults.PendingContractCallResult {
+		result := &EthContractCallEvent{
+			BlockHeight: pr.BlockHeight,
+			BlockTime:   pr.BlockTime,
+			SpecId:      pr.SpecId,
+			Result:      pr.Result,
+		}
+
+		pending = append(pending, result)
+	}
+
+	return &PayloadEthContractCallEvent{
+		EthContractCallEvent: pending,
+	}
+}
+
+func (p *PayloadEthContractCallEvent) IntoProto() *snapshot.Payload_EthContractCallResults {
+	pending := make([]*snapshot.EthContractCallResult, 0, len(p.EthContractCallEvent))
+
+	for _, p := range p.EthContractCallEvent {
+		pending = append(pending,
+			&snapshot.EthContractCallResult{
+				BlockHeight: p.BlockHeight,
+				BlockTime:   p.BlockTime,
+				SpecId:      p.SpecId,
+				Result:      p.Result,
+			})
+	}
+
+	return &snapshot.Payload_EthContractCallResults{
+		EthContractCallResults: &snapshot.EthContractCallResults{
+			PendingContractCallResult: pending,
+		},
+	}
+}
+
+func (*PayloadEthContractCallEvent) isPayload() {}
+
+func (p *PayloadEthContractCallEvent) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadEthContractCallEvent) Key() string {
+	return "ethcontractcallevent"
+}
+
+func (*PayloadEthContractCallEvent) Namespace() SnapshotNamespace {
+	return EthereumOracleVerifierSnapshot
 }
 
 func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRemoved) *PayloadStakeVerifierRemoved {
