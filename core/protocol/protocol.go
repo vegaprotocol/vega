@@ -108,8 +108,9 @@ func New(
 			svcs.topology,
 			svcs.netParams,
 			&processor.Oracle{
-				Engine:   svcs.oracle,
-				Adaptors: svcs.oracleAdaptors,
+				Engine:                  svcs.oracle,
+				Adaptors:                svcs.oracleAdaptors,
+				EthereumOraclesVerifier: svcs.ethereumOraclesVerifier,
 			},
 			svcs.delegation,
 			svcs.limits,

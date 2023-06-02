@@ -131,6 +131,9 @@ func (app *App) processChainEvent(
 		default:
 			return errors.New("unsupported erc20 multisig event")
 		}
+	case *commandspb.ChainEvent_ContractCall:
+		callResult := types.EthereumContractCallResultFromProto(c.ContractCall)
+		return app.oracles.EthereumOraclesVerifier.ProcessEthereumContractCallResult(callResult)
 	default:
 		return ErrUnsupportedChainEvent
 	}
