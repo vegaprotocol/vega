@@ -1,4 +1,4 @@
-Feature: Amend orders
+Feature: Iceberg orders
 
   Background:
     Given the markets:
@@ -8,6 +8,87 @@ Feature: Amend orders
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+
+  @iceberg
+  Scenario: Iceberg order submission with valid TIF's
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | BTC   | 10000  |
+      | party2 | BTC   | 10000  |
+      | aux    | BTC   | 100000 |
+      | aux2   | BTC   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | only |
+      | party1 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTC | 10           | 5            | post |
+
+    Then the iceberg orders should have the following states:
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party1 | ETH/DEC19 | buy  | 10             | 10    | STATUS_ACTIVE | 90              |
+
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | expires in | initial peak | minimum peak | only |
+      | party2 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTT | 3600       | 8            | 4            | post |
+
+    Then the iceberg orders should have the following states:
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party2 | ETH/DEC19 | buy  | 8              | 10    | STATUS_ACTIVE | 92              |
+
+  @iceberg-margin
+  @notworking
+  Scenario: Iceberg order margin calculation
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount |
+      | party1 | BTC   | 10000  |
+      | party2 | BTC   | 10000  |
+      | aux    | BTC   | 100000 |
+      | aux2   | BTC   | 100000 |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | only |
+      | party1 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTC | 10           | 5            | post |
+
+    Then the iceberg orders should have the following states:
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party1 | ETH/DEC19 | buy  | 10             | 10    | STATUS_ACTIVE | 90              |
+
+    # The below margin and general balances could be wrong - but the issue here is NO margin is taken from the party
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 120    | 9880    |
+
+    # And another party places a normal limit order for the same price and quantity, then the same margin should be taken
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    # The below margin and general balances could be wrong - but the issue here is NO margin is taken from the party
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party2 | BTC   | ETH/DEC19 | 120    | 9880    |
+
 
   @iceberg
   Scenario: iceberg basic refresh
