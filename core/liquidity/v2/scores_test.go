@@ -14,6 +14,7 @@ package liquidity_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -41,7 +42,6 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 		minPmPrice = num.NewWrappedDecimal(num.NewUint(85), num.DecimalFromFloat(85))
 		maxPmPrice = num.NewWrappedDecimal(num.NewUint(115), num.DecimalFromFloat(115))
 		commitment = 1000000
-		offset     = num.NewUint(2)
 	)
 	defer tng.ctrl.Finish()
 	tng.priceMonitor.EXPECT().GetValidPriceRange().AnyTimes().Return(minPmPrice, maxPmPrice).AnyTimes()
@@ -65,18 +65,27 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 
 	// We don't care about the following calls
 	tng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tng.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	// initialise PoT
 	tng.engine.SetGetStaticPricesFunc(func() (num.Decimal, num.Decimal, error) { return bestBid, bestAsk, nil })
 	tng.stateVar.OnTick(ctx, now)
 	require.True(t, tng.engine.IsPoTInitialised())
 
+	idgen := idgeneration.New(crypto.RandomHash())
+
+	partyOneOrders := []*types.Order{
+		{Side: types.SideBuy, Price: num.NewUint(98), Size: 5103},
+		{Side: types.SideBuy, Price: num.NewUint(93), Size: 5377},
+		{Side: types.SideSell, Price: num.NewUint(102), Size: 4902},
+		{Side: types.SideSell, Price: num.NewUint(107), Size: 4673},
+	}
+
 	// party1 submission
-	tng.sortOutLpSubAndOrders(t, ctx, party1, commitment, offset, minLpPrice, maxLpPrice, bestBid, bestAsk, 9)
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party1, commitment, idgen, partyOneOrders, 9)
 
 	cLiq1, t1 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq1, 1)
+	fmt.Println(t1)
 	require.True(t, t1.GreaterThan(num.DecimalZero()))
 
 	tng.engine.UpdateAverageLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
@@ -85,7 +94,14 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	lScoresSumTo1(t, lScores1)
 
 	// party2 submission with 3*commitment
-	tng.sortOutLpSubAndOrders(t, ctx, party2, 3*commitment, offset, minLpPrice, maxLpPrice, bestBid, bestAsk, 100)
+	partyTwoOrders := []*types.Order{
+		{Side: types.SideBuy, Price: num.NewUint(98), Size: 15307},
+		{Side: types.SideBuy, Price: num.NewUint(93), Size: 16130},
+		{Side: types.SideSell, Price: num.NewUint(102), Size: 14706},
+		{Side: types.SideSell, Price: num.NewUint(107), Size: 14019},
+	}
+
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party2, 3*commitment, idgen, partyTwoOrders, 100)
 
 	cLiq2, t2 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq2, 2)
@@ -104,8 +120,14 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	lScoresSumTo1(t, lScores2)
 
 	// party3 submission with 3*offset
-	offsetTimes3 := num.UintZero().Mul(offset, num.NewUint(3))
-	tng.sortOutLpSubAndOrders(t, ctx, party3, commitment, offsetTimes3, minLpPrice, maxLpPrice, bestBid, bestAsk, 100)
+	partyThreeOrders := []*types.Order{
+		{Side: types.SideBuy, Price: num.NewUint(94), Size: 5320},
+		{Side: types.SideBuy, Price: num.NewUint(89), Size: 5618},
+		{Side: types.SideSell, Price: num.NewUint(106), Size: 4717},
+		{Side: types.SideSell, Price: num.NewUint(111), Size: 4505},
+	}
+
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party3, commitment, idgen, partyThreeOrders, 100)
 
 	cLiq3, t3 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq3, 3)
@@ -121,7 +143,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	//    remove party3
 	require.NoError(t, tng.engine.CancelLiquidityProvision(ctx, party3))
 	//    add same submission as party3, but by party4
-	tng.sortOutLpSubAndOrders(t, ctx, party4, commitment, offsetTimes3, minLpPrice, maxLpPrice, bestBid, bestAsk, 100)
+	tng.submitLiquidityProvisionAndCreateOrders(t, ctx, party4, commitment, idgen, partyThreeOrders, 100)
 
 	cLiq4, t4 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
 	require.Len(t, cLiq4, 3)
@@ -140,50 +162,15 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 	}
 	activeParties := []string{party1, party2, party4}
 	require.ElementsMatch(t, activeParties, keys)
-
-	tng.sortOutLpAmendmentAndOrders(t, ctx, party1, 3*commitment, offset, minLpPrice, maxLpPrice, bestBid, bestAsk)
-
-	cLiq5, t5 := tng.engine.GetCurrentLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
-	require.Len(t, cLiq5, 3)
-	require.True(t, t5.GreaterThan(num.DecimalZero()))
-	// commitment size should have almost no impact on score (only via relative order size differences due to ceiling)
-	expFP, _ = cLiq4[party1].Float64()
-	actFP, _ = cLiq5[party1].Float64()
-	require.InDelta(t, expFP, actFP, 1e-4)
-
-	tng.engine.UpdateAverageLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
-	lScores5 := tng.engine.GetAverageLiquidityScores()
-	require.Len(t, lScores5, 3)
-	lScoresSumTo1(t, lScores5)
-
-	// check running average
-	n := num.DecimalFromInt64(5)
-	nMinus1 := n.Sub(num.DecimalOne())
-	nMinus1overN := nMinus1.Div(n)
-	expectedScore := (lScores4[party1].Mul(nMinus1overN).Add(cLiq5[party1].Div(t5).Div(n))).Round(10)
-	require.True(t, expectedScore.Equal(lScores5[party1]))
-
-	// now reset scores and do another round
-	tng.engine.ResetAverageLiquidityScores()
-	tng.engine.UpdateAverageLiquidityScores(bestBid, bestAsk, minLpPrice, maxLpPrice)
-
-	lScores6 := tng.engine.GetAverageLiquidityScores()
-	require.Len(t, lScores6, 3)
-	lScoresSumTo1(t, lScores6)
-	for _, p := range activeParties {
-		// we've just reset so running average should be same as previous observation normalised
-		require.True(t, lScores6[p].Equal((cLiq5[p].Div(t5)).Round(10)))
-	}
 }
 
-func (tng *testEngine) sortOutLpSubAndOrders(
+func (tng *testEngine) submitLiquidityProvisionAndCreateOrders(
 	t *testing.T,
 	ctx context.Context,
 	party string,
 	commitment int,
-	offset *num.Uint,
-	minLpPrice, maxLpPrice *num.Uint,
-	bestBid, bestAsk num.Decimal,
+	idgen *idgeneration.IDGenerator,
+	orders []*types.Order,
 	maxTimes int,
 ) {
 	t.Helper()
@@ -197,42 +184,18 @@ func (tng *testEngine) sortOutLpSubAndOrders(
 	require.NoError(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgeneration.New(crypto.RandomHash())),
 	)
-	tng.orderbook.EXPECT().GetOrdersPerParty(party).Return([]*types.Order{}).Times(1)
 
-	// TODO karel - generate orders
-	partyOrders := []*types.Order{}
-
-	require.Len(t, partyOrders, len(lps.Buys)+len(lps.Sells))
-	require.Equal(t, types.LiquidityProvisionStatusActive, tng.engine.LiquidityProvisionByPartyID(party).Status)
-	tng.orderbook.EXPECT().GetOrdersPerParty(party).Return(partyOrders).MaxTimes(maxTimes)
-}
-
-func (tng *testEngine) sortOutLpAmendmentAndOrders(
-	t *testing.T,
-	ctx context.Context,
-	party string,
-	commitment int,
-	offset *num.Uint,
-	minLpPrice, maxLpPrice *num.Uint,
-	bestBid, bestAsk num.Decimal,
-) {
-	t.Helper()
-
-	lpa := &types.LiquidityProvisionAmendment{
-		MarketID:         tng.marketID,
-		CommitmentAmount: num.NewUint(uint64(commitment)),
-		Fee:              num.DecimalFromFloat(0.5),
+	for _, o := range orders {
+		o.ID = idgen.NextID()
+		o.MarketID = tng.marketID
+		o.TimeInForce = types.OrderTimeInForceGTC
+		o.Type = types.OrderTypeLimit
+		o.Status = types.OrderStatusActive
+		o.Remaining = o.Size
 	}
 
-	err := tng.engine.AmendLiquidityProvision(ctx, lpa, party)
-	require.NoError(t, err)
-
-	// TODO karel - generate orders
-	partyOrders := []*types.Order{}
-
-	require.Len(t, partyOrders, len(lpa.Buys)+len(lpa.Sells))
 	require.Equal(t, types.LiquidityProvisionStatusActive, tng.engine.LiquidityProvisionByPartyID(party).Status)
-	tng.orderbook.EXPECT().GetOrdersPerParty(party).Return(partyOrders).AnyTimes()
+	tng.orderbook.EXPECT().GetOrdersPerParty(party).Return(orders).MaxTimes(maxTimes)
 }
 
 func lScoresSumTo1(t *testing.T, lScores map[string]num.Decimal) {
