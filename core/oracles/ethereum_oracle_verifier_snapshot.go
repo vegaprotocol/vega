@@ -88,7 +88,7 @@ func (s *EthereumOracleVerifier) LoadState(ctx context.Context, payload *types.P
 
 func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthContractCallEvent, p *types.Payload) error {
 	s.log.Debug("restoring pending call events snapshot", logging.Int("n_pending", len(results)))
-	s.pendingCallEvents = make([]*pendingCallEvents, 0, len(results))
+	s.pendingCallEvents = make([]*pendingCallEvent, 0, len(results))
 
 	for _, callEvent := range results {
 		// this populates the id/hash structs
@@ -96,7 +96,7 @@ func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthCo
 			s.log.Panic("pendingCallEvents's unexpectedly pre-populated when restoring from snapshot")
 		}
 
-		pending := &pendingCallEvents{
+		pending := &pendingCallEvent{
 			callEvent: *callEvent,
 			check:     func() error { return s.checkCallEventResult(*callEvent) },
 		}

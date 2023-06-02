@@ -18,12 +18,13 @@ type Spec struct {
 	requiredConfirmations uint64
 }
 
-func NewSpec(call Call, trigger Trigger, filter Filter, normaliser Normaliser) Spec {
+func NewSpec(call Call, trigger Trigger, filter Filter, normaliser Normaliser, requiredConfirmations uint64) Spec {
 	return Spec{
-		Call:       call,
-		Trigger:    trigger,
-		Filter:     filter,
-		Normaliser: normaliser,
+		Call:                  call,
+		Trigger:               trigger,
+		Filter:                filter,
+		Normaliser:            normaliser,
+		requiredConfirmations: requiredConfirmations,
 	}
 }
 

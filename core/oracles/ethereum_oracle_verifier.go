@@ -64,7 +64,7 @@ type EthereumOracleVerifier struct {
 	ethContractCaller ethereum.ContractCaller
 	ethConfirmations  EthereumConfirmations
 
-	pendingCallEvents    []*pendingCallEvents
+	pendingCallEvents    []*pendingCallEvent
 	finalizedCallResults []*types.EthContractCallEvent
 
 	mu     sync.Mutex
@@ -74,17 +74,17 @@ type EthereumOracleVerifier struct {
 	snapshotState *ethereumOracleVerifierSnapshotState
 }
 
-type pendingCallEvents struct {
+type pendingCallEvent struct {
 	callEvent types.EthContractCallEvent
 	check     func() error
 }
 
-func (p pendingCallEvents) GetID() string { return p.callEvent.Hash() }
+func (p pendingCallEvent) GetID() string { return p.callEvent.Hash() }
 
-func (p pendingCallEvents) GetType() types.NodeVoteType {
+func (p pendingCallEvent) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeEthereumContractCallResult
 }
-func (p *pendingCallEvents) Check() error { return p.check() }
+func (p *pendingCallEvent) Check() error { return p.check() }
 
 func NewEthereumOracleVerifier(
 	log *logging.Logger,
@@ -137,7 +137,7 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 		return ErrDuplicatedEthereumCallEvent
 	}
 
-	pending := &pendingCallEvents{
+	pending := &pendingCallEvent{
 		callEvent: callEvent,
 		check:     func() error { return s.checkCallEventResult(callEvent) },
 	}
@@ -191,13 +191,14 @@ func (s *EthereumOracleVerifier) removePendingCallEvent(id string) error {
 }
 
 func (s *EthereumOracleVerifier) onCallEventVerified(event interface{}, ok bool) {
-	pv, isPendingCallEvent := event.(*pendingCallEvents)
+	pv, isPendingCallEvent := event.(*pendingCallEvent)
 	if !isPendingCallEvent {
-		s.log.Error("oracle verifier received invalid event")
+		s.log.Errorf("expected pending call event got %T", event)
+		return
 	}
 
 	if err := s.removePendingCallEvent(pv.GetID()); err != nil {
-		s.log.Error("could not remove pending stake deposited event", logging.Error(err))
+		s.log.Error("could not remove pending call event", logging.Error(err))
 	}
 
 	if ok {
@@ -211,13 +212,13 @@ func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, callResult := range s.finalizedCallResults {
 		spec, err := s.ethCallSpecSource.GetSpec(callResult.SpecId)
 		if err != nil {
-			s.log.Errorf("failed to get spec for call result: %w", err)
+			s.log.Error("failed to get spec for call result", logging.Error(err))
 			continue
 		}
 
 		normalisedData, err := spec.Normalise(callResult.Result)
 		if err != nil {
-			s.log.Errorf("failed to normalise oracle data: %w", err)
+			s.log.Error("failed to normalise oracle data", logging.Error(err))
 			continue
 		}
 
