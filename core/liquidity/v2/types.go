@@ -47,8 +47,7 @@ func (l Provisions) feeForTarget(t *num.Uint) num.Decimal {
 // sortByFee sorts in-place and returns the LiquidityProvisions for convenience.
 func (l Provisions) sortByFee() Provisions {
 	sort.Slice(l, func(i, j int) bool { return l[i].Fee.LessThan(l[j].Fee) })
-
-	return Provisions(l)
+	return l
 }
 
 // Provisions is a map of parties to *types.LiquidityProvision.
