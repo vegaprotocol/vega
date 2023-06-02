@@ -258,7 +258,7 @@ func (p *TrailingStopOrders) Remove(id string) error {
 	return nil
 }
 
-func (p *TrailingStopOrders) removeInner(
+func (p *TrailingStopOrders) remove(
 	tree *btree.BTreeG[*offsetsAtPrice],
 	id string,
 	offset num.Decimal,

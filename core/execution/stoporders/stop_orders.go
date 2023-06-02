@@ -135,19 +135,19 @@ func (p *Pool) Remove(
 			orders = append(orders, partyOrders[order.OCOLinkID])
 		}
 
-		p.removeInner(orders)
+		p.remove(orders)
 
 		return orders, nil
 	}
 
 	orders := maps.Values(partyOrders)
 	sort.Slice(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
-	p.removeInner(orders)
+	p.remove(orders)
 
 	return orders, nil
 }
 
-func (p *Pool) removeInner(orders []*types.StopOrder) {
+func (p *Pool) remove(orders []*types.StopOrder) {
 	for _, order := range orders {
 		delete(p.orderToParty, order.ID)
 		delete(p.orders[order.Party], order.ID)
@@ -185,7 +185,7 @@ func (p *Pool) RemoveExpired(orderIDs []string) []*types.StopOrder {
 
 	orders := maps.Values(ordersM)
 	sort.Slice(orders, func(i, j int) bool { return orders[i].ID < orders[j].ID })
-	p.removeInner(orders)
+	p.remove(orders)
 
 	return orders
 }
