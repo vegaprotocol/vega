@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -161,7 +162,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	block := addTestBlock(t, ctx, bs)
 
-	marketProto := getTestMarket()
+	marketProto := getTestMarket(true)
 	marketProto.LiquidityMonitoringParameters.TriggeringRatio = "0.3"
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
@@ -200,7 +201,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
 		block = addTestBlock(t, ctx, bs)
-		marketProto = getTestMarket()
+		marketProto = getTestMarket(false)
 
 		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
@@ -266,7 +267,41 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	})
 }
 
-func getTestMarket() *vega.Market {
+func getTestMarket(termInt bool) *vega.Market {
+	term := &vega.DataSourceSpec{
+		Id:        "",
+		CreatedAt: 0,
+		UpdatedAt: 0,
+		Data: vega.NewDataSourceDefinition(
+			vega.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&vega.DataSourceSpecConfiguration{
+				Signers: nil,
+				Filters: nil,
+			},
+		),
+		Status: 0,
+	}
+
+	if termInt {
+		term = &vega.DataSourceSpec{
+			Id:        "",
+			CreatedAt: 0,
+			UpdatedAt: 0,
+			Data: vega.NewDataSourceDefinition(
+				vega.DataSourceDefinitionTypeInt,
+			).SetTimeTriggerConditionConfig(
+				[]*v1.Condition{
+					{
+						Operator: v1.Condition_OPERATOR_GREATER_THAN,
+						Value:    "test-value",
+					},
+				},
+			),
+			Status: 0,
+		}
+	}
+
 	return &vega.Market{
 		Id: "DEADBEEF",
 		TradableInstrument: &vega.TradableInstrument{
@@ -295,20 +330,7 @@ func getTestMarket() *vega.Market {
 							),
 							Status: 0,
 						},
-						DataSourceSpecForTradingTermination: &vega.DataSourceSpec{
-							Id:        "",
-							CreatedAt: 0,
-							UpdatedAt: 0,
-							Data: vega.NewDataSourceDefinition(
-								vega.DataSourceDefinitionTypeExt,
-							).SetOracleConfig(
-								&vega.DataSourceSpecConfiguration{
-									Signers: nil,
-									Filters: nil,
-								},
-							),
-							Status: 0,
-						},
+						DataSourceSpecForTradingTermination: term,
 						DataSourceSpecBinding: &vega.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",

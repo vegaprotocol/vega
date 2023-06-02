@@ -24,7 +24,7 @@ import (
 type oracleSpecResolver VegaResolverRoot
 
 func (o *oracleSpecResolver) DataSourceSpec(_ context.Context, obj *vegapb.OracleSpec) (extDss *ExternalDataSourceSpec, _ error) {
-	extDss = &ExternalDataSourceSpec{Spec: &DataSourceSpec{Data: &DataSourceDefinition{}}}
+	extDss = &ExternalDataSourceSpec{Spec: &DataSourceSpec{Data: &vegapb.DataSourceDefinition{}}}
 	if obj.ExternalDataSourceSpec != nil {
 		extDss.Spec = resolveDataSourceSpec(obj.ExternalDataSourceSpec.Spec)
 	}
@@ -87,27 +87,41 @@ func resolveSigner(obj any) (signer SignerKind) {
 	return
 }
 
-func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *DataSourceDefinition) {
-	ds = &DataSourceDefinition{}
-	if d == nil {
+func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *vegapb.DataSourceDefinition) {
+	ds = &vegapb.DataSourceDefinition{}
+	if d == nil || d.SourceType == nil {
 		return
 	}
-	switch dst := d.SourceType.(type) {
-	case *vegapb.DataSourceDefinition_External:
-		ds.SourceType = DataSourceDefinitionExternal{
-			SourceType: dst.External.GetOracle(),
-		}
-	case *vegapb.DataSourceDefinition_Internal:
-		ds.SourceType = DataSourceDefinitionInternal{
-			SourceType: dst.Internal.GetTime(),
+	data := d.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *vegapb.DataSourceSpecConfiguration:
+
+			ds.SourceType = &vegapb.DataSourceDefinition_External{
+				External: &vegapb.DataSourceDefinitionExternal{
+					SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+						Oracle: tp,
+					},
+				},
+			}
+
+		case *vegapb.DataSourceSpecConfigurationTime:
+			ds.SourceType = &vegapb.DataSourceDefinition_Internal{
+				Internal: &vegapb.DataSourceDefinitionInternal{
+					SourceType: &vegapb.DataSourceDefinitionInternal_Time{
+						Time: tp,
+					},
+				},
+			}
 		}
 	}
+
 	return
 }
 
 func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {
 	ds = &DataSourceSpec{
-		Data: &DataSourceDefinition{},
+		Data: &vegapb.DataSourceDefinition{},
 	}
 	if d == nil {
 		return

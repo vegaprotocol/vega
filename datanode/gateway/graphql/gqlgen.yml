@@ -272,8 +272,16 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.PeggedOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
+  DataSourceDefinition:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinition
+  DataSourceDefinitionExternal:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionExternal
+  DataSourceDefinitionInternal:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionInternal
   DataSourceSpecConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
+  DataSourceSpecConfigurationTime:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
   OracleSpec:
     model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
   Filter:

@@ -53,6 +53,9 @@ type ResolverRoot interface {
 	AuctionEvent() AuctionEventResolver
 	Candle() CandleResolver
 	CoreSnapshotData() CoreSnapshotDataResolver
+	DataSourceDefinition() DataSourceDefinitionResolver
+	DataSourceDefinitionExternal() DataSourceDefinitionExternalResolver
+	DataSourceDefinitionInternal() DataSourceDefinitionInternalResolver
 	DataSourceSpecConfiguration() DataSourceSpecConfigurationResolver
 	Delegation() DelegationResolver
 	Deposit() DepositResolver
@@ -114,7 +117,6 @@ type ResolverRoot interface {
 	TransactionResult() TransactionResultResolver
 	Transfer() TransferResolver
 	UpdateAsset() UpdateAssetResolver
-	UpdateFutureProduct() UpdateFutureProductResolver
 	UpdateMarket() UpdateMarketResolver
 	UpdateMarketConfiguration() UpdateMarketConfigurationResolver
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
@@ -1945,6 +1947,15 @@ type CoreSnapshotDataResolver interface {
 
 	VegaCoreVersion(ctx context.Context, obj *v1.CoreSnapshotData) (string, error)
 }
+type DataSourceDefinitionResolver interface {
+	SourceType(ctx context.Context, obj *vega.DataSourceDefinition) (DataSourceKind, error)
+}
+type DataSourceDefinitionExternalResolver interface {
+	SourceType(ctx context.Context, obj *vega.DataSourceDefinitionExternal) (ExternalDataSourceKind, error)
+}
+type DataSourceDefinitionInternalResolver interface {
+	SourceType(ctx context.Context, obj *vega.DataSourceDefinitionInternal) (InternalDataSourceKind, error)
+}
 type DataSourceSpecConfigurationResolver interface {
 	Signers(ctx context.Context, obj *vega.DataSourceSpecConfiguration) ([]*Signer, error)
 }
@@ -1993,9 +2004,6 @@ type FutureResolver interface {
 }
 type FutureProductResolver interface {
 	SettlementAsset(ctx context.Context, obj *vega.FutureProduct) (*vega.Asset, error)
-
-	DataSourceSpecForSettlementData(ctx context.Context, obj *vega.FutureProduct) (*DataSourceDefinition, error)
-	DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.FutureProduct) (*DataSourceDefinition, error)
 }
 type InstrumentResolver interface {
 	Product(ctx context.Context, obj *vega.Instrument) (Product, error)
@@ -2420,10 +2428,6 @@ type TransferResolver interface {
 type UpdateAssetResolver interface {
 	Quantum(ctx context.Context, obj *vega.UpdateAsset) (string, error)
 	Source(ctx context.Context, obj *vega.UpdateAsset) (UpdateAssetSource, error)
-}
-type UpdateFutureProductResolver interface {
-	DataSourceSpecForSettlementData(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error)
-	DataSourceSpecForTradingTermination(ctx context.Context, obj *vega.UpdateFutureProduct) (*DataSourceDefinition, error)
 }
 type UpdateMarketResolver interface {
 	UpdateMarketConfiguration(ctx context.Context, obj *vega.UpdateMarket) (*vega.UpdateMarketConfiguration, error)
@@ -17663,7 +17667,7 @@ func (ec *executionContext) fieldContext_Data_broadcastAt(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _DataSourceDefinition_sourceType(ctx context.Context, field graphql.CollectedField, obj *DataSourceDefinition) (ret graphql.Marshaler) {
+func (ec *executionContext) _DataSourceDefinition_sourceType(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceDefinition) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceDefinition_sourceType(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -17677,7 +17681,7 @@ func (ec *executionContext) _DataSourceDefinition_sourceType(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SourceType, nil
+		return ec.resolvers.DataSourceDefinition().SourceType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17698,8 +17702,8 @@ func (ec *executionContext) fieldContext_DataSourceDefinition_sourceType(ctx con
 	fc = &graphql.FieldContext{
 		Object:     "DataSourceDefinition",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type DataSourceKind does not have child fields")
 		},
@@ -17707,7 +17711,7 @@ func (ec *executionContext) fieldContext_DataSourceDefinition_sourceType(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _DataSourceDefinitionExternal_sourceType(ctx context.Context, field graphql.CollectedField, obj *DataSourceDefinitionExternal) (ret graphql.Marshaler) {
+func (ec *executionContext) _DataSourceDefinitionExternal_sourceType(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceDefinitionExternal) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceDefinitionExternal_sourceType(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -17721,7 +17725,7 @@ func (ec *executionContext) _DataSourceDefinitionExternal_sourceType(ctx context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SourceType, nil
+		return ec.resolvers.DataSourceDefinitionExternal().SourceType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17742,8 +17746,8 @@ func (ec *executionContext) fieldContext_DataSourceDefinitionExternal_sourceType
 	fc = &graphql.FieldContext{
 		Object:     "DataSourceDefinitionExternal",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ExternalDataSourceKind does not have child fields")
 		},
@@ -17751,7 +17755,7 @@ func (ec *executionContext) fieldContext_DataSourceDefinitionExternal_sourceType
 	return fc, nil
 }
 
-func (ec *executionContext) _DataSourceDefinitionInternal_sourceType(ctx context.Context, field graphql.CollectedField, obj *DataSourceDefinitionInternal) (ret graphql.Marshaler) {
+func (ec *executionContext) _DataSourceDefinitionInternal_sourceType(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceDefinitionInternal) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceDefinitionInternal_sourceType(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -17765,7 +17769,7 @@ func (ec *executionContext) _DataSourceDefinitionInternal_sourceType(ctx context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SourceType, nil
+		return ec.resolvers.DataSourceDefinitionInternal().SourceType(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17786,8 +17790,8 @@ func (ec *executionContext) fieldContext_DataSourceDefinitionInternal_sourceType
 	fc = &graphql.FieldContext{
 		Object:     "DataSourceDefinitionInternal",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type InternalDataSourceKind does not have child fields")
 		},
@@ -17950,9 +17954,9 @@ func (ec *executionContext) _DataSourceSpec_data(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceDefinition)
+	res := resTmp.(*vega.DataSourceDefinition)
 	fc.Result = res
-	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx, field.Selections, res)
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_DataSourceSpec_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -18108,7 +18112,7 @@ func (ec *executionContext) fieldContext_DataSourceSpecConfiguration_filters(ctx
 	return fc, nil
 }
 
-func (ec *executionContext) _DataSourceSpecConfigurationTime_conditions(ctx context.Context, field graphql.CollectedField, obj *DataSourceSpecConfigurationTime) (ret graphql.Marshaler) {
+func (ec *executionContext) _DataSourceSpecConfigurationTime_conditions(ctx context.Context, field graphql.CollectedField, obj *vega.DataSourceSpecConfigurationTime) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DataSourceSpecConfigurationTime_conditions(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -25555,7 +25559,7 @@ func (ec *executionContext) _FutureProduct_dataSourceSpecForSettlementData(ctx c
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.FutureProduct().DataSourceSpecForSettlementData(rctx, obj)
+		return obj.DataSourceSpecForSettlementData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25567,17 +25571,17 @@ func (ec *executionContext) _FutureProduct_dataSourceSpecForSettlementData(ctx c
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceDefinition)
+	res := resTmp.(*vega.DataSourceDefinition)
 	fc.Result = res
-	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx, field.Selections, res)
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FutureProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "FutureProduct",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "sourceType":
@@ -25603,7 +25607,7 @@ func (ec *executionContext) _FutureProduct_dataSourceSpecForTradingTermination(c
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.FutureProduct().DataSourceSpecForTradingTermination(rctx, obj)
+		return obj.DataSourceSpecForTradingTermination, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25615,17 +25619,17 @@ func (ec *executionContext) _FutureProduct_dataSourceSpecForTradingTermination(c
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceDefinition)
+	res := resTmp.(*vega.DataSourceDefinition)
 	fc.Result = res
-	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx, field.Selections, res)
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_FutureProduct_dataSourceSpecForTradingTermination(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "FutureProduct",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "sourceType":
@@ -62921,7 +62925,7 @@ func (ec *executionContext) _UpdateFutureProduct_dataSourceSpecForSettlementData
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateFutureProduct().DataSourceSpecForSettlementData(rctx, obj)
+		return obj.DataSourceSpecForSettlementData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -62933,17 +62937,17 @@ func (ec *executionContext) _UpdateFutureProduct_dataSourceSpecForSettlementData
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceDefinition)
+	res := resTmp.(*vega.DataSourceDefinition)
 	fc.Result = res
-	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx, field.Selections, res)
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdateFutureProduct_dataSourceSpecForSettlementData(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UpdateFutureProduct",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "sourceType":
@@ -62969,7 +62973,7 @@ func (ec *executionContext) _UpdateFutureProduct_dataSourceSpecForTradingTermina
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.UpdateFutureProduct().DataSourceSpecForTradingTermination(rctx, obj)
+		return obj.DataSourceSpecForTradingTermination, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -62981,17 +62985,17 @@ func (ec *executionContext) _UpdateFutureProduct_dataSourceSpecForTradingTermina
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*DataSourceDefinition)
+	res := resTmp.(*vega.DataSourceDefinition)
 	fc.Result = res
-	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx, field.Selections, res)
+	return ec.marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_UpdateFutureProduct_dataSourceSpecForTradingTermination(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "UpdateFutureProduct",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "sourceType":
@@ -67292,16 +67296,16 @@ func (ec *executionContext) _DataSourceKind(ctx context.Context, sel ast.Selecti
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case DataSourceDefinitionInternal:
+	case vega.DataSourceDefinitionInternal:
 		return ec._DataSourceDefinitionInternal(ctx, sel, &obj)
-	case *DataSourceDefinitionInternal:
+	case *vega.DataSourceDefinitionInternal:
 		if obj == nil {
 			return graphql.Null
 		}
 		return ec._DataSourceDefinitionInternal(ctx, sel, obj)
-	case DataSourceDefinitionExternal:
+	case vega.DataSourceDefinitionExternal:
 		return ec._DataSourceDefinitionExternal(ctx, sel, &obj)
-	case *DataSourceDefinitionExternal:
+	case *vega.DataSourceDefinitionExternal:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -67368,9 +67372,9 @@ func (ec *executionContext) _InternalDataSourceKind(ctx context.Context, sel ast
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case DataSourceSpecConfigurationTime:
+	case vega.DataSourceSpecConfigurationTime:
 		return ec._DataSourceSpecConfigurationTime(ctx, sel, &obj)
-	case *DataSourceSpecConfigurationTime:
+	case *vega.DataSourceSpecConfigurationTime:
 		if obj == nil {
 			return graphql.Null
 		}
@@ -69169,7 +69173,7 @@ func (ec *executionContext) _Data(ctx context.Context, sel ast.SelectionSet, obj
 
 var dataSourceDefinitionImplementors = []string{"DataSourceDefinition"}
 
-func (ec *executionContext) _DataSourceDefinition(ctx context.Context, sel ast.SelectionSet, obj *DataSourceDefinition) graphql.Marshaler {
+func (ec *executionContext) _DataSourceDefinition(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceDefinition) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceDefinitionImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -69178,12 +69182,25 @@ func (ec *executionContext) _DataSourceDefinition(ctx context.Context, sel ast.S
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DataSourceDefinition")
 		case "sourceType":
+			field := field
 
-			out.Values[i] = ec._DataSourceDefinition_sourceType(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataSourceDefinition_sourceType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69197,7 +69214,7 @@ func (ec *executionContext) _DataSourceDefinition(ctx context.Context, sel ast.S
 
 var dataSourceDefinitionExternalImplementors = []string{"DataSourceDefinitionExternal", "DataSourceKind"}
 
-func (ec *executionContext) _DataSourceDefinitionExternal(ctx context.Context, sel ast.SelectionSet, obj *DataSourceDefinitionExternal) graphql.Marshaler {
+func (ec *executionContext) _DataSourceDefinitionExternal(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceDefinitionExternal) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceDefinitionExternalImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -69206,12 +69223,25 @@ func (ec *executionContext) _DataSourceDefinitionExternal(ctx context.Context, s
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DataSourceDefinitionExternal")
 		case "sourceType":
+			field := field
 
-			out.Values[i] = ec._DataSourceDefinitionExternal_sourceType(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataSourceDefinitionExternal_sourceType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69225,7 +69255,7 @@ func (ec *executionContext) _DataSourceDefinitionExternal(ctx context.Context, s
 
 var dataSourceDefinitionInternalImplementors = []string{"DataSourceDefinitionInternal", "DataSourceKind"}
 
-func (ec *executionContext) _DataSourceDefinitionInternal(ctx context.Context, sel ast.SelectionSet, obj *DataSourceDefinitionInternal) graphql.Marshaler {
+func (ec *executionContext) _DataSourceDefinitionInternal(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceDefinitionInternal) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceDefinitionInternalImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -69234,12 +69264,25 @@ func (ec *executionContext) _DataSourceDefinitionInternal(ctx context.Context, s
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DataSourceDefinitionInternal")
 		case "sourceType":
+			field := field
 
-			out.Values[i] = ec._DataSourceDefinitionInternal_sourceType(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DataSourceDefinitionInternal_sourceType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -69348,7 +69391,7 @@ func (ec *executionContext) _DataSourceSpecConfiguration(ctx context.Context, se
 
 var dataSourceSpecConfigurationTimeImplementors = []string{"DataSourceSpecConfigurationTime", "InternalDataSourceKind"}
 
-func (ec *executionContext) _DataSourceSpecConfigurationTime(ctx context.Context, sel ast.SelectionSet, obj *DataSourceSpecConfigurationTime) graphql.Marshaler {
+func (ec *executionContext) _DataSourceSpecConfigurationTime(ctx context.Context, sel ast.SelectionSet, obj *vega.DataSourceSpecConfigurationTime) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, dataSourceSpecConfigurationTimeImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -71382,45 +71425,19 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "dataSourceSpecForSettlementData":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._FutureProduct_dataSourceSpecForSettlementData(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._FutureProduct_dataSourceSpecForSettlementData(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "dataSourceSpecForTradingTermination":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._FutureProduct_dataSourceSpecForTradingTermination(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._FutureProduct_dataSourceSpecForTradingTermination(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "dataSourceSpecBinding":
 
 			out.Values[i] = ec._FutureProduct_dataSourceSpecBinding(ctx, field, obj)
@@ -82728,54 +82745,28 @@ func (ec *executionContext) _UpdateFutureProduct(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._UpdateFutureProduct_quoteName(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "dataSourceSpecForSettlementData":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateFutureProduct_dataSourceSpecForSettlementData(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._UpdateFutureProduct_dataSourceSpecForSettlementData(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "dataSourceSpecForTradingTermination":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._UpdateFutureProduct_dataSourceSpecForTradingTermination(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._UpdateFutureProduct_dataSourceSpecForTradingTermination(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "dataSourceSpecBinding":
 
 			out.Values[i] = ec._UpdateFutureProduct_dataSourceSpecBinding(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -84267,11 +84258,7 @@ func (ec *executionContext) marshalNData2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋda
 	return ec._Data(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDataSourceDefinition2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx context.Context, sel ast.SelectionSet, v DataSourceDefinition) graphql.Marshaler {
-	return ec._DataSourceDefinition(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐDataSourceDefinition(ctx context.Context, sel ast.SelectionSet, v *DataSourceDefinition) graphql.Marshaler {
+func (ec *executionContext) marshalNDataSourceDefinition2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐDataSourceDefinition(ctx context.Context, sel ast.SelectionSet, v *vega.DataSourceDefinition) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
