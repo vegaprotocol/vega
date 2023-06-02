@@ -15,6 +15,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cucumber/godog"
 	"github.com/pkg/errors"
@@ -129,7 +130,7 @@ func TheSuccesorMarketIsEnacted(sID string, markets []types.Market, exec Executi
 
 func submitMarkets(markets []types.Market, executionEngine Execution) error {
 	for i := range markets {
-		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID"); err != nil {
+		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", time.Now()); err != nil {
 			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
 		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
