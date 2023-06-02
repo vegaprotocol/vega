@@ -14,16 +14,13 @@ package netparams
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/ethereum/go-ethereum/common"
 
 	"code.vegaprotocol.io/vega/libs/proto"
-	"code.vegaprotocol.io/vega/protos/vega"
 )
 
 type snapState struct {
@@ -36,34 +33,10 @@ type snapState struct {
 
 func newSnapState(store map[string]value) *snapState {
 	state := &snapState{
-		pl:    &types.NetParams{},
-		index: make(map[string]int, len(store)),
-		t:     &types.PayloadNetParams{},
-		postPatches: []patchDesc{
-			{
-				Key:      BlockchainsEthereumConfig,
-				Validate: false,
-				SetValue: func(ctx context.Context, p *patchDesc, s *Store) error {
-					v := vega.EthereumConfig{}
-					// update the confirmations to 64
-					v.Confirmations = 64
-					if err := s.GetJSONStruct(p.Key, &v); err != nil {
-						return fmt.Errorf("could not get the ethereum config (%w)", err)
-					}
-					have := common.HexToAddress(v.CollateralBridgeContract.Address)
-					old := common.HexToAddress("0x124Dd8a6044ef048614AEA0AAC86643a8Ae1312D")
-					if have.String() == old.String() {
-						v.CollateralBridgeContract.Address = common.HexToAddress("0x23872549cE10B40e31D6577e0A920088B0E0666a").String()
-					}
-					b, err := json.Marshal(v)
-					if err != nil {
-						return fmt.Errorf("failed to marshal the updated ethereum config (%w)", err)
-					}
-					p.Value = string(b)
-					return nil
-				},
-			},
-		},
+		pl:          &types.NetParams{},
+		index:       make(map[string]int, len(store)),
+		t:           &types.PayloadNetParams{},
+		postPatches: []patchDesc{},
 	}
 	// set pointer
 	state.t.NetParams = state.pl

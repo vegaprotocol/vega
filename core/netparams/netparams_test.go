@@ -242,7 +242,7 @@ func testSnapshotWithPatch(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, check.CollateralBridgeContract.Address, old)
 	// when loading a snapshot, expect the address to have changed to:
-	exp := common.HexToAddress("0x23872549cE10B40e31D6577e0A920088B0E0666a").String()
+	exp := common.HexToAddress("0x124Dd8a6044ef048614AEA0AAC86643a8Ae1312D").String()
 	netp2 := getTestNetParams(t)
 	netp2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	defer netp2.ctrl.Finish()
