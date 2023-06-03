@@ -45,6 +45,8 @@ func newSnapState(store map[string]value) *snapState {
 				Validate: false,
 				SetValue: func(ctx context.Context, p *patchDesc, s *Store) error {
 					v := vega.EthereumConfig{}
+					// update the confirmations to 64
+					v.Confirmations = 64
 					if err := s.GetJSONStruct(p.Key, &v); err != nil {
 						return fmt.Errorf("could not get the ethereum config (%w)", err)
 					}
