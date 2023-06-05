@@ -25,6 +25,7 @@
 - [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders in `graphQL`
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
 - [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`

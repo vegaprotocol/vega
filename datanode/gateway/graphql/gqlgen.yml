@@ -270,6 +270,8 @@ models:
         resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.PeggedOrder
+  IcebergOrder:
+    model: code.vegaprotocol.io/vega/protos/vega.IcebergOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
   DataSourceDefinition:
