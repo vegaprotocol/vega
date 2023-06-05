@@ -210,6 +210,31 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	assert.Equal(t, "0", pp.RealisedPnl)
 	assert.Equal(t, "50", pp.UnrealisedPnl)
 	assert.EqualValues(t, 6, pp.OpenVolume)
+	// now close a position to see some realised PnL
+	trade = vega.Trade{
+		Id:       "t4",
+		MarketId: market,
+		Price:    "1250",
+		Size:     1,
+		Buyer:    "buyer",
+		Seller:   party,
+	}
+	position.UpdateWithTrade(trade, true, dp)
+	pp = position.ToProto()
+	assert.Equal(t, "42", pp.RealisedPnl)
+	assert.Equal(t, "208", pp.UnrealisedPnl)
+	assert.EqualValues(t, 5, pp.OpenVolume)
+	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
+		tradeStub{
+			size:  -1,
+			price: num.NewUint(1250),
+		},
+	}, 1, dp)
+	position.UpdateWithPositionSettlement(ps)
+	pp = position.ToProto()
+	assert.Equal(t, "42", pp.RealisedPnl)
+	assert.Equal(t, "208", pp.UnrealisedPnl)
+	assert.EqualValues(t, 5, pp.OpenVolume)
 }
 
 func TestPnLWithTradeDecimals(t *testing.T) {
