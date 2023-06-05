@@ -25,6 +25,7 @@
 - [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
 - [8226](https://github.com/vegaprotocol/vega/issues/8226) - Fix auto initialise failure when initialising empty node
+- [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 
 ## 0.71.5
 
