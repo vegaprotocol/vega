@@ -35,7 +35,7 @@
 - [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
 - [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
-- [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for ListSuccessorMarkets.
+- [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
 
 ### 🐛 Fixes
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
