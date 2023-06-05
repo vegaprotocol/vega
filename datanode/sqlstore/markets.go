@@ -80,6 +80,11 @@ var marketOrdering = TableOrdering{
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
 }
 
+var lineageOrdering = TableOrdering{
+	ColumnOrdering{Name: "id", Sorting: ASC},
+	ColumnOrdering{Name: "vega_time", Sorting: DESC},
+}
+
 const (
 	sqlMarketsColumns = `id, tx_hash, vega_time, instrument_id, tradable_instrument, decimal_places,
 		fees, opening_auction, price_monitoring_settings, liquidity_monitoring_parameters,
@@ -251,9 +256,9 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	return markets, pageInfo, nil
 }
 
-func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool) ([]entities.Market, error) {
+func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool, pagination entities.CursorPagination) ([]entities.Market, entities.PageInfo, error) {
 	if marketID == "" {
-		return nil, errors.New("invalid market ID. Market ID cannot be empty")
+		return nil, entities.PageInfo{}, errors.New("invalid market ID. Market ID cannot be empty")
 	}
 
 	args := make([]interface{}, 0)
@@ -278,14 +283,20 @@ func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, ful
         from markets m
         join lineage l on l.market_id = m.id
 		left join lineage s on l.market_id = s.parent_id
-        order by m.id, vega_time desc
 `, nextBindVar(&args, entities.MarketID(marketID)), lineageFilter)
 
 	var markets []entities.Market
-
-	if err := pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
-		return markets, m.wrapE(err)
+	var pageInfo entities.PageInfo
+	var err error
+	query, args, err = PaginateQuery[entities.MarketCursor](query, args, lineageOrdering, pagination)
+	if err != nil {
+		return markets, pageInfo, err
 	}
 
-	return markets, nil
+	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+		return markets, entities.PageInfo{}, m.wrapE(err)
+	}
+
+	markets, pageInfo = entities.PageEntities[*v2.MarketEdge](markets, pagination)
+	return markets, pageInfo, nil
 }

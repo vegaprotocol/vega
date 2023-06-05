@@ -1099,19 +1099,28 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2.ListSuccessorMarketsRequest) (*v2.ListSuccessorMarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListSuccessorMarkets")()
 
-	markets, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory)
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	markets, pageInfo, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory, pagination)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetAllPaged, err)
 	}
 
-	protoMarkets := make([]*vega.Market, len(markets))
+	edges, err := makeEdges[*v2.MarketEdge](markets)
+	if err != nil {
+		return nil, formatE(err)
+	}
 
-	for i, v := range markets {
-		protoMarkets[i] = v.ToProto()
+	marketsConnection := &v2.MarketConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.ListSuccessorMarketsResponse{
-		Markets: protoMarkets,
+		Markets: marketsConnection,
 	}, nil
 }
 

@@ -1990,12 +1990,14 @@ message ListSuccessorMarketsRequest {
   // Flag to indicate whether or not to include the full succession line, or only list
   // the children of the given market ID. If true, the full succession line is included.
   bool include_full_history = 2;
+  // Pagination control
+  Pagination pagination = 3;
 }
 
 // Response from a list successor markets request.
 message ListSuccessorMarketsResponse {
   // List of markets in the succession line.
-  repeated vega.Market markets = 1;
+  MarketConnection markets = 1;
 }
 
 // -- Parties --

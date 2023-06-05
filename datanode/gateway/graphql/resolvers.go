@@ -1293,7 +1293,7 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 	return resp.GetSegment(), nil
 }
 
-func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool) ([]*vega.Market, error) {
+func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.MarketConnection, error) {
 	getAll := false
 
 	if fullHistory != nil {
@@ -1303,6 +1303,7 @@ func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string,
 	req := &v2.ListSuccessorMarketsRequest{
 		MarketId:           marketID,
 		IncludeFullHistory: getAll,
+		Pagination:         pagination,
 	}
 
 	resp, err := r.tradingDataClientV2.ListSuccessorMarkets(ctx, req)
