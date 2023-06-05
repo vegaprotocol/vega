@@ -831,6 +831,7 @@ type ComplexityRoot struct {
 		QuadraticSlippageFactor       func(childComplexity int) int
 		RiskFactors                   func(childComplexity int) int
 		State                         func(childComplexity int) int
+		SuccessorMarketId             func(childComplexity int) int
 		TradableInstrument            func(childComplexity int) int
 		TradesConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		TradingMode                   func(childComplexity int) int
@@ -5273,6 +5274,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.State(childComplexity), true
+
+	case "Market.successorMarketID":
+		if e.complexity.Market.SuccessorMarketId == nil {
+			break
+		}
+
+		return e.complexity.Market.SuccessorMarketId(childComplexity), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -12903,6 +12911,8 @@ func (ec *executionContext) fieldContext_AccountBalance_market(ctx context.Conte
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -13501,6 +13511,8 @@ func (ec *executionContext) fieldContext_AccountEvent_market(ctx context.Context
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -21694,6 +21706,8 @@ func (ec *executionContext) fieldContext_Entities_markets(ctx context.Context, f
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -28087,6 +28101,8 @@ func (ec *executionContext) fieldContext_LiquidityProvision_market(ctx context.C
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -30027,6 +30043,8 @@ func (ec *executionContext) fieldContext_MarginLevels_market(ctx context.Context
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -32072,6 +32090,47 @@ func (ec *executionContext) fieldContext_Market_insurancePoolFraction(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Market_successorMarketID(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Market_successorMarketID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SuccessorMarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Market_successorMarketID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketConnection_edges(ctx, field)
 	if err != nil {
@@ -32265,6 +32324,8 @@ func (ec *executionContext) fieldContext_MarketData_market(ctx context.Context, 
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -33938,6 +33999,8 @@ func (ec *executionContext) fieldContext_MarketDepth_market(ctx context.Context,
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -34381,6 +34444,8 @@ func (ec *executionContext) fieldContext_MarketDepthUpdate_market(ctx context.Co
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -34663,6 +34728,8 @@ func (ec *executionContext) fieldContext_MarketEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -41430,6 +41497,8 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -44965,6 +45034,8 @@ func (ec *executionContext) fieldContext_Position_market(ctx context.Context, fi
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -51369,6 +51440,8 @@ func (ec *executionContext) fieldContext_Query_market(ctx context.Context, field
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -59611,6 +59684,8 @@ func (ec *executionContext) fieldContext_Trade_market(ctx context.Context, field
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -73216,6 +73291,10 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 		case "insurancePoolFraction":
 
 			out.Values[i] = ec._Market_insurancePoolFraction(ctx, field, obj)
+
+		case "successorMarketID":
+
+			out.Values[i] = ec._Market_successorMarketID(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
