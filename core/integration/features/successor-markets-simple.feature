@@ -157,18 +157,13 @@ Feature: Simple example of successor markets
 
     When the successor market "ETH/DEC21" is enacted
     Then the network moves ahead "1" blocks
-    # The bond for market ETH/DEC20 should be released back to the general balance
     And the parties should have the following account balances:
       | party  | asset | market id | margin         | general                   | bond             |
-      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999994136448522140017 | 3905000000000000 |
-      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999994136448522140017 | 0                |
-      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999994136448522140017 | 1905000000000000 |
+      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999992231448522140017 | 3905000000000000 |
+      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999992231448522140017 | 1905000000000000 |
+      | lpprov | ETH   | ETH/DEC21 | 0              | 9999999992231448522140017 | 1905000000000000 |
     # Then the market state should be "STATE_REJECTED" for the market "ETH/DEC20"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
-    When the oracles broadcast data signed with "0xCAFECAFE1":
-      | name               | value |
-      | prices.ETH.value   | 975   |
-    Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     Then the parties place the following orders:
       | party   | market id | side | volume | price  | resulting trades | type       | tif     | reference |
       | trader1 | ETH/DEC21 | buy  | 5      | 1001   | 0                | TYPE_LIMIT | TIF_GTC | t1-b-1    |
@@ -182,7 +177,23 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
 
+    When the network moves ahead "1" blocks
+    # The bond for market ETH/DEC20 should be released back to the general balance
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin         | general                   | bond             |
+      | lpprov | ETH   | ETH/DEC19 | 53551477859983 | 9999999994110319986844383 | 3905000000000000 |
+      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999994110319986844383 | 0                |
+      | lpprov | ETH   | ETH/DEC21 | 26128535295634 | 9999999994110319986844383 | 1905000000000000 |
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC20"
+    When the oracles broadcast data signed with "0xCAFECAFE1":
+      | name               | value |
+      | prices.ETH.value   | 975   |
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin         | general                   | bond             |
+      | lpprov | ETH   | ETH/DEC19 | 0              | 9999999998068871464704366 | 0                |
+      | lpprov | ETH   | ETH/DEC20 | 0              | 9999999998068871464704366 | 0                |
+      | lpprov | ETH   | ETH/DEC21 | 26128535295634 | 9999999998068871464704366 | 1905000000000000 |
+    And the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
 
   @SuccessorMarketSimple
   Scenario: 003 Enact a successor market while the parent market is still in active state
