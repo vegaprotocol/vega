@@ -1876,6 +1876,9 @@ type Market {
   Optional: When a successor market is created, a fraction of the parent market's insurance pool can be transferred to the successor market
   """
   insurancePoolFraction: String
+
+  "Optional: Market ID of the successor to this market if one exists"
+  successorMarketID: ID
 }
 
 """
