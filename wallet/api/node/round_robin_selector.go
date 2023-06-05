@@ -29,6 +29,8 @@ type RoundRobinSelector struct {
 
 	// nodes is the list of the nodes we are connected to.
 	nodes []Node
+
+	mu sync.Mutex
 }
 
 // Node returns the next node in line among the healthiest nodes.
@@ -51,39 +53,47 @@ type RoundRobinSelector struct {
 // fail to identify the truly healthy ones. That's the major reason to favour
 // highly trusted and stable nodes.
 func (ns *RoundRobinSelector) Node(ctx context.Context, reporterFn SelectionReporter) (Node, error) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
 	healthiestNodesIndexes, err := ns.retrieveHealthiestNodes(ctx, reporterFn)
 	if err != nil {
 		ns.log.Error("no healthy node available")
 		return nil, err
 	}
 
-	reporterFn(InfoEvent, "Starting round-robin selection of the node...")
+	var selectedIndex int
+	if len(healthiestNodesIndexes) > 1 {
+		reporterFn(InfoEvent, "Starting round-robin selection of the node...")
 
-	lowestHealthyIndex := healthiestNodesIndexes[0]
-	highestHealthyIndex := healthiestNodesIndexes[len(healthiestNodesIndexes)-1]
+		lowestHealthyIndex := healthiestNodesIndexes[0]
+		highestHealthyIndex := healthiestNodesIndexes[len(healthiestNodesIndexes)-1]
 
-	if lowestHealthyIndex == highestHealthyIndex {
-		// We have a single healthy node, so no other choice than using it.
-		return ns.selectNode(lowestHealthyIndex, reporterFn), nil
-	}
-
-	currentIndex := int(ns.currentIndex.Load())
-
-	if currentIndex < lowestHealthyIndex || currentIndex >= highestHealthyIndex {
-		// If the current index is outside the boundaries of the healthy indexes,
-		// or already equal to the highest index, we get back to the first healthy
-		// index.
-		return ns.selectNode(lowestHealthyIndex, reporterFn), nil
-	}
-
-	selectedIndex := lowestHealthyIndex
-	for _, healthyIndex := range healthiestNodesIndexes {
-		if currentIndex < healthyIndex {
-			// As soon as the current index is lower thant the healthy index, it
-			// means we found the next healthy node to use.
-			selectedIndex = healthyIndex
-			break
+		if lowestHealthyIndex == highestHealthyIndex {
+			// We have a single healthy node, so no other choice than using it.
+			return ns.selectNode(lowestHealthyIndex, reporterFn), nil
 		}
+
+		currentIndex := int(ns.currentIndex.Load())
+
+		if currentIndex < lowestHealthyIndex || currentIndex >= highestHealthyIndex {
+			// If the current index is outside the boundaries of the healthy indexes,
+			// or already equal to the highest index, we get back to the first healthy
+			// index.
+			return ns.selectNode(lowestHealthyIndex, reporterFn), nil
+		}
+
+		selectedIndex = lowestHealthyIndex
+		for _, healthyIndex := range healthiestNodesIndexes {
+			if currentIndex < healthyIndex {
+				// As soon as the current index is lower than the healthy index, it
+				// means we found the next healthy node to use.
+				selectedIndex = healthyIndex
+				break
+			}
+		}
+	} else {
+		selectedIndex = healthiestNodesIndexes[0]
 	}
 
 	selectedNode := ns.selectNode(selectedIndex, reporterFn)
@@ -94,6 +104,9 @@ func (ns *RoundRobinSelector) Node(ctx context.Context, reporterFn SelectionRepo
 // Stop stops all the registered nodes. If a node raises an error during
 // closing, the selector ignores it and carry on a best-effort.
 func (ns *RoundRobinSelector) Stop() {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
 	for _, n := range ns.nodes {
 		// Ignoring errors to ensure we close as many connections as possible.
 		_ = n.Stop()
@@ -117,16 +130,20 @@ func (ns *RoundRobinSelector) selectNode(selectedIndex int, reporterFn Selection
 func (ns *RoundRobinSelector) retrieveHealthiestNodes(ctx context.Context, reporterFn SelectionReporter) ([]int, error) {
 	ns.log.Info("start evaluating nodes health based on each others state")
 
-	nodeStatsHashes, err := ns.collectNodesInformation(ctx, reporterFn)
+	nodeStats, err := ns.collectNodesInformation(ctx, reporterFn)
 	if err != nil {
 		return nil, err
 	}
 
-	nodesGroupedByHash := ns.groupNodeIndexesByHash(nodeStatsHashes)
+	if len(nodeStats) == 1 {
+		return []int{nodeStats[0].index}, nil
+	}
+
+	nodesGroupedByHash := ns.groupNodesByStatsHash(nodeStats)
 
 	hashCount := len(nodesGroupedByHash)
 
-	reporterFn(InfoEvent, "Looking for healthiest nodes...")
+	reporterFn(InfoEvent, "Figuring out the healthy nodes...")
 
 	rankedHashes := ns.rankHashes(hashCount, nodesGroupedByHash)
 
@@ -164,7 +181,7 @@ func (ns *RoundRobinSelector) rankHashes(hashCount int, nodesGroupedByHash map[s
 			// we just ensure a deterministic sorting.
 			// This can be wrong, but at least it's consistently wrong.
 			if rankedHashes[i].blockHeight == rankedHashes[j].blockHeight {
-				return rankedHashes[i].hash < rankedHashes[j].hash
+				return rankedHashes[i].statsHash < rankedHashes[j].statsHash
 			}
 			return rankedHashes[i].blockHeight < rankedHashes[j].blockHeight
 		}
@@ -174,26 +191,26 @@ func (ns *RoundRobinSelector) rankHashes(hashCount int, nodesGroupedByHash map[s
 	return rankedHashes
 }
 
-func (ns *RoundRobinSelector) groupNodeIndexesByHash(nodeStatsHashes []nodeHash) map[string]nodesByHash {
-	nodesGroupedByHash := map[string]nodesByHash{}
-	for _, statsHash := range nodeStatsHashes {
-		sh, hashAlreadyTracked := nodesGroupedByHash[statsHash.hash]
+func (ns *RoundRobinSelector) groupNodesByStatsHash(nodesStats []nodeStat) map[string]nodesByHash {
+	nodesGroupedByStatsHash := map[string]nodesByHash{}
+	for _, nodeStats := range nodesStats {
+		sh, hashAlreadyTracked := nodesGroupedByStatsHash[nodeStats.statsHash]
 		if !hashAlreadyTracked {
-			nodesGroupedByHash[statsHash.hash] = nodesByHash{
-				hash:         statsHash.hash,
-				blockHeight:  statsHash.blockHeight,
-				nodesIndexes: []int{statsHash.index},
+			nodesGroupedByStatsHash[nodeStats.statsHash] = nodesByHash{
+				statsHash:    nodeStats.statsHash,
+				blockHeight:  nodeStats.blockHeight,
+				nodesIndexes: []int{nodeStats.index},
 			}
 			continue
 		}
 
-		sh.nodesIndexes = append(sh.nodesIndexes, statsHash.index)
-		nodesGroupedByHash[statsHash.hash] = sh
+		sh.nodesIndexes = append(sh.nodesIndexes, nodeStats.index)
+		nodesGroupedByStatsHash[nodeStats.statsHash] = sh
 	}
-	return nodesGroupedByHash
+	return nodesGroupedByStatsHash
 }
 
-func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, reporterFn SelectionReporter) ([]nodeHash, error) {
+func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, reporterFn SelectionReporter) ([]nodeStat, error) {
 	reporterFn(InfoEvent, "Collecting nodes information to evaluate their health...")
 
 	nodesCount := len(ns.nodes)
@@ -201,20 +218,20 @@ func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, repor
 	wg := sync.WaitGroup{}
 	wg.Add(nodesCount)
 
-	nodeHashes := make([]*nodeHash, nodesCount)
+	nodeHashes := make([]*nodeStat, nodesCount)
 	for nodeIndex, node := range ns.nodes {
 		_index := nodeIndex
 		_node := node
 		go func() {
 			defer wg.Done()
 
-			hash, blockHeight := ns.queryNodeInformation(ctx, _node, reporterFn)
-			if hash == "" {
+			statsHash, blockHeight := ns.queryNodeInformation(ctx, _node, reporterFn)
+			if statsHash == "" {
 				return
 			}
 
-			nodeHashes[_index] = &nodeHash{
-				hash:        hash,
+			nodeHashes[_index] = &nodeStat{
+				statsHash:   statsHash,
 				blockHeight: blockHeight,
 				index:       _index,
 			}
@@ -223,7 +240,7 @@ func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, repor
 
 	wg.Wait()
 
-	filteredNodeHashes := []nodeHash{}
+	filteredNodeHashes := []nodeStat{}
 	for _, nodeHash := range nodeHashes {
 		if nodeHash != nil {
 			filteredNodeHashes = append(filteredNodeHashes, *nodeHash)
@@ -238,9 +255,9 @@ func (ns *RoundRobinSelector) collectNodesInformation(ctx context.Context, repor
 	}
 
 	if respondingNodeCount > 1 {
-		reporterFn(SuccessEvent, fmt.Sprintf("Successfully collected information on %d nodes", respondingNodeCount))
+		reporterFn(SuccessEvent, fmt.Sprintf("%d nodes are responding", respondingNodeCount))
 	} else {
-		reporterFn(SuccessEvent, "Successfully collected information on 1 node")
+		reporterFn(SuccessEvent, "1 node is responding")
 	}
 
 	return filteredNodeHashes, nil
@@ -281,14 +298,14 @@ func NewRoundRobinSelector(log *zap.Logger, nodes ...Node) (*RoundRobinSelector,
 	}, nil
 }
 
-type nodeHash struct {
-	hash        string
+type nodeStat struct {
+	statsHash   string
 	blockHeight uint64
 	index       int
 }
 
 type nodesByHash struct {
-	hash         string
+	statsHash    string
 	blockHeight  uint64
 	nodesIndexes []int
 }

@@ -183,16 +183,21 @@ func (f *Interaction) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// CancelRequest cancels a request that is waiting for user inputs.
-// It can't cancel a request when there is no response awaited.
-type CancelRequest struct{}
-
 // RequestWalletConnectionReview is a request emitted when a third-party
 // application wants to connect to a wallet.
 type RequestWalletConnectionReview struct {
 	Hostname string `json:"hostname"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh <-chan error `json:"-"`
 }
 
 // RequestWalletSelection is a request emitted when the service requires the user
@@ -204,6 +209,15 @@ type RequestWalletSelection struct {
 	AvailableWallets []string `json:"availableWallets"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh chan error `json:"-"`
 }
 
 // RequestPassphrase is a request emitted when the service wants to confirm
@@ -214,6 +228,15 @@ type RequestPassphrase struct {
 	Reason string `json:"reason"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh chan error `json:"-"`
 }
 
 // RequestPermissionsReview is a review request emitted when a third-party
@@ -224,6 +247,15 @@ type RequestPermissionsReview struct {
 	Permissions map[string]string `json:"permissions"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh chan error `json:"-"`
 }
 
 // RequestTransactionReviewForSending is a review request emitted when a third-party
@@ -236,6 +268,15 @@ type RequestTransactionReviewForSending struct {
 	ReceivedAt  time.Time `json:"receivedAt"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh chan error `json:"-"`
 }
 
 // RequestTransactionReviewForChecking is a review request when a third-party
@@ -248,6 +289,15 @@ type RequestTransactionReviewForChecking struct {
 	ReceivedAt  time.Time `json:"receivedAt"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh chan error `json:"-"`
 }
 
 // RequestTransactionReviewForSigning is a review request when a third-party
@@ -260,6 +310,15 @@ type RequestTransactionReviewForSigning struct {
 	ReceivedAt  time.Time `json:"receivedAt"`
 
 	StepNumber uint8 `json:"stepNumber"`
+
+	// ResponseCh is the channel in which the response to that request is expected.
+	ResponseCh chan<- Interaction `json:"-"`
+
+	// ControlCh is the channel we use to communicate state of the request to
+	// the UI. If the request gets canceled on the third-party application side,
+	// we close this channel and the UI, that is listening to it, has to react
+	// accordingly.
+	ControlCh chan error `json:"-"`
 }
 
 // WalletConnectionDecision is a specific response for interactor.RequestWalletConnectionReview.
@@ -290,6 +349,10 @@ type EnteredPassphrase struct {
 type SelectedWallet struct {
 	Wallet string `json:"wallet"`
 }
+
+// CancelRequest cancels a request that is waiting for user inputs.
+// It can't cancel a request when there is no response awaited.
+type CancelRequest struct{}
 
 // InteractionSessionBegan is a notification that is emitted when the interaction
 // session begin. It only carries informational value on a request lifecycle. This

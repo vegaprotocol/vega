@@ -37,10 +37,11 @@ type ClientCheckTransactionResult struct {
 }
 
 type ClientCheckTransaction struct {
-	walletStore  WalletStore
-	interactor   Interactor
-	nodeSelector node.Selector
-	spam         SpamHandler
+	walletStore       WalletStore
+	interactor        Interactor
+	nodeSelector      node.Selector
+	spam              SpamHandler
+	requestController *RequestController
 }
 
 func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Params, connectedWallet ConnectedWallet) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
@@ -75,6 +76,12 @@ func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.P
 		return nil, InvalidParams(errs)
 	}
 
+	iAmDone, err := h.requestController.IsPublicKeyAlreadyInUse(params.PublicKey)
+	if err != nil {
+		return nil, RequestNotPermittedError(err)
+	}
+	defer iAmDone()
+
 	if err := h.interactor.NotifyInteractionSessionBegan(ctx, traceID, TransactionReviewWorkflow, 2); err != nil {
 		return nil, RequestNotPermittedError(err)
 	}
@@ -93,6 +100,8 @@ func (h *ClientCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.P
 		if !approved {
 			return nil, UserRejectionError(ErrUserRejectedCheckingOfTransaction)
 		}
+	} else {
+		h.interactor.Log(ctx, traceID, InfoLog, fmt.Sprintf("Trying to check the transaction: %v", request.String()))
 	}
 
 	h.interactor.Log(ctx, traceID, InfoLog, "Looking for a healthy node...")
@@ -216,11 +225,12 @@ func validateCheckTransactionParams(rawParams jsonrpc.Params) (ClientParsedCheck
 	}, nil
 }
 
-func NewClientCheckTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler) *ClientCheckTransaction {
+func NewClientCheckTransaction(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, pow SpamHandler, requestController *RequestController) *ClientCheckTransaction {
 	return &ClientCheckTransaction{
-		walletStore:  walletStore,
-		interactor:   interactor,
-		nodeSelector: nodeSelector,
-		spam:         pow,
+		walletStore:       walletStore,
+		interactor:        interactor,
+		nodeSelector:      nodeSelector,
+		spam:              pow,
+		requestController: requestController,
 	}
 }
