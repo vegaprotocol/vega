@@ -45,12 +45,6 @@ pipeline {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
         BUILD_UID="${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_CONFIG="${env.WORKSPACE}/docker-home"
-        DOCKER_BUILD_ARCH = "${ isPRBuild() ? 'linux/amd64' : 'linux/arm64,linux/amd64' }"
-        DOCKER_IMAGE_TAG = "${ env.TAG_NAME ? 'latest' : env.BRANCH_NAME }"
-        DOCKER_VEGA_BUILDER_NAME="vega-${BUILD_UID}"
-        DOCKER_DATANODE_BUILDER_NAME="data-node-${BUILD_UID}"
-        DOCKER_VEGAWALLET_BUILDER_NAME="vegawallet-${BUILD_UID}"
     }
 
     stages {
@@ -61,7 +55,6 @@ pipeline {
                     script {
                         publicIP = agent.getPublicIP()
                         print("Jenkins Agent public IP is: " + publicIP)
-                        vegautils.dockerCleanup()
                     }
                 }
             }
@@ -119,56 +112,8 @@ pipeline {
                 }
             }
         }
-
-        stage('Docker login') {
-            options { retry(3) }
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh label: 'docker login ghcr.io', script: '''#!/bin/bash -e
-                        echo "${PASSWORD}" | docker login --username ${USERNAME} --password-stdin ghcr.io
-                    '''
-                }
-            }
-        }
         //
         // End PREPARE
-        //
-
-        //
-        // Begin COMPILE
-        //
-        stage('Compile') {
-            options { retry(3) }
-            steps {
-                sh 'printenv'
-                dir('vega') {
-                    sh label: 'Compile', script: """#!/bin/bash -e
-                        go build -v \
-                            -o ../build/ \
-                            ./cmd/vega \
-                            ./cmd/data-node \
-                            ./cmd/vegawallet
-                    """
-                    sh label: 'check for modifications', script: 'git diff'
-                }
-                dir("build") {
-                    sh label: 'list files', script: '''#!/bin/bash -e
-                        pwd
-                        ls -lah
-                    '''
-                    sh label: 'Sanity check', script: '''#!/bin/bash -e
-                        file *
-                    '''
-                    sh label: 'get version', script: '''#!/bin/bash -e
-                        ./vega version
-                        ./data-node version
-                        ./vegawallet software version
-                    '''
-                }
-            }
-        }
-        //
-        // End COMPILE
         //
 
         //
@@ -233,103 +178,6 @@ pipeline {
                         }
                     }
                 }
-                stage('protos') {
-                    environment {
-                        GOPATH = "${env.WORKSPACE}/GOPATH"
-                        GOBIN = "${env.GOPATH}/bin"
-                        PATH = "${env.GOBIN}:${env.PATH}"
-                    }
-                    stages {
-                        stage('Install dependencies') {
-                            // We are using specific tools versions
-                            // Please use exactly the same versions when modifying protos
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh 'printenv'
-                                    sh './script/gettools.sh'
-                                }
-                            }
-                        }
-                        stage('buf lint') {
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh '''#!/bin/bash -e
-                                        buf lint
-                                    '''
-                                }
-                            }
-                            post {
-                                failure {
-                                    sh 'printenv'
-                                    echo "params=${params}"
-                                    sh 'buf --version'
-                                    sh 'which buf'
-                                    sh 'git diff'
-                                }
-                            }
-                        }
-                        stage('proto format check') {
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh '''#!/bin/bash -e
-                                        make proto_format_check
-                                    '''
-                                }
-                            }
-                            post {
-                                failure {
-                                    sh 'printenv'
-                                    echo "params=${params}"
-                                    sh 'buf --version'
-                                    sh 'which buf'
-                                    sh 'git diff'
-                                }
-                            }
-                        }
-                        stage('proto check') {
-                            options { retry(3) }
-                            steps {
-                                sh label: 'copy vega repo', script: '''#!/bin/bash -e
-                                        cp -r ./vega ./vega-proto-check
-                                    '''
-                                dir('vega-proto-check') {
-                                    sh '''#!/bin/bash -e
-                                        make proto_check
-                                    '''
-                                }
-                                sh label: 'remove vega copy', script: '''#!/bin/bash -e
-                                        rm -rf ./vega-proto-check
-                                    '''
-                            }
-                            post {
-                                failure {
-                                    sh 'printenv'
-                                    echo "params=${params}"
-                                    sh 'buf --version'
-                                    sh 'which buf'
-                                    sh 'git diff'
-                                }
-                            }
-                        }
-                    }
-                }
-                stage('create docker builders') {
-                    steps {
-                        sh label: 'vega builder', script: """#!/bin/bash -e
-                            docker buildx create --bootstrap --name ${DOCKER_VEGA_BUILDER_NAME}
-                        """
-                        sh label: 'data-node builder', script: """#!/bin/bash -e
-                            docker buildx create --bootstrap --name ${DOCKER_DATANODE_BUILDER_NAME}
-                        """
-                        sh label: 'vegawallet builder', script: """#!/bin/bash -e
-                            docker buildx create --bootstrap --name ${DOCKER_VEGAWALLET_BUILDER_NAME}
-                        """
-                        sh 'docker buildx ls'
-                    }
-                }  // docker builders
             }
         }
         //
@@ -340,9 +188,6 @@ pipeline {
         // Begin TESTS
         //
         stage('Tests') {
-            environment {
-                DOCKER_IMAGE_TAG_VERSION = "${ env.TAG_NAME ?: versionHash }"
-            }
             parallel {
                 stage('unit tests') {
                     options { retry(3) }
@@ -462,85 +307,112 @@ pipeline {
                         }
                     }
                 }
-
-                //
-                // Build docker images during system-tests
-                //
-                stage("vega docker image") {
-                    options {
-                        retry(2)
+                stage('protos') {
+                    environment {
+                        GOPATH = "${env.WORKSPACE}/GOPATH"
+                        GOBIN = "${env.GOPATH}/bin"
+                        PATH = "${env.GOBIN}:${env.PATH}"
                     }
-                    steps {
-                        dir('vega') {
-                            sh 'printenv'
-                            sh label: 'build vega docker image', script: """#!/bin/bash -e
-                                docker buildx build \
-                                    --builder ${DOCKER_VEGA_BUILDER_NAME} \
-                                    --platform=${DOCKER_BUILD_ARCH} \
-                                    -f docker/vega.dockerfile \
-                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG} \
-                                    -t ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSION} \
-                                    ${env.BRANCH_NAME == 'develop' ? '--push' : ''} .
-                            """
+                    stages {
+                        stage('Install dependencies') {
+                            // We are using specific tools versions
+                            // Please use exactly the same versions when modifying protos
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh 'printenv'
+                                    sh './script/gettools.sh'
+                                }
+                            }
                         }
-                    }
-                    post {
-                        failure {
-                            sh 'printenv'
-                            echo "params=${params}"
-                            sh 'docker buildx ls'
+                        stage('buf lint') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        buf lint
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                        stage('proto format check') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_format_check
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                        stage('proto check') {
+                            options { retry(3) }
+                            steps {
+                                sh label: 'copy vega repo', script: '''#!/bin/bash -e
+                                        cp -r ./vega ./vega-proto-check
+                                    '''
+                                dir('vega-proto-check') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_check
+                                    '''
+                                }
+                                sh label: 'remove vega copy', script: '''#!/bin/bash -e
+                                        rm -rf ./vega-proto-check
+                                    '''
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
                         }
                     }
                 }
-                stage("data-node docker image") {
-                    options {
-                        retry(2)
-                    }
+                stage('Compile visor') {
+                    options { retry(3) }
                     steps {
+                        sh 'printenv'
                         dir('vega') {
-                            sh 'printenv'
-                            sh label: 'build data-node docker image', script: """#!/bin/bash -e
-                                docker buildx build \
-                                    --builder ${DOCKER_DATANODE_BUILDER_NAME} \
-                                    --platform=${DOCKER_BUILD_ARCH} \
-                                    -f docker/data-node.dockerfile \
-                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG} \
-                                    -t ghcr.io/vegaprotocol/vega/data-node:${DOCKER_IMAGE_TAG_VERSION} \
-                                    ${env.BRANCH_NAME == 'develop' ? '--push' : ''} .
+                            sh label: 'Compile', script: """#!/bin/bash -e
+                                go build -v \
+                                    -o ../build/ \
+                                    ./cmd/visor
                             """
+                            sh label: 'check for modifications', script: 'git diff'
                         }
-                    }
-                    post {
-                        failure {
-                            sh 'printenv'
-                            echo "params=${params}"
-                            sh 'docker buildx ls'
-                        }
-                    }
-                }
-                stage("vegawallet docker image") {
-                    options {
-                        retry(2)
-                    }
-                    steps {
-                        dir('vega') {
-                            sh 'printenv'
-                            sh label: 'build vegawallet docker image', script: """#!/bin/bash -e
-                                docker buildx build \
-                                    --builder ${DOCKER_VEGAWALLET_BUILDER_NAME} \
-                                    --platform=${DOCKER_BUILD_ARCH} \
-                                    -f docker/vegawallet.dockerfile \
-                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG} \
-                                    -t ghcr.io/vegaprotocol/vega/vegawallet:${DOCKER_IMAGE_TAG_VERSION} \
-                                    ${env.BRANCH_NAME == 'develop' ? '--push' : ''} .
-                            """
-                        }
-                    }
-                    post {
-                        failure {
-                            sh 'printenv'
-                            echo "params=${params}"
-                            sh 'docker buildx ls'
+                        dir("build") {
+                            sh label: 'list files', script: '''#!/bin/bash -e
+                                pwd
+                                ls -lah
+                            '''
+                            sh label: 'Sanity check', script: '''#!/bin/bash -e
+                                file *
+                            '''
+                            sh label: 'get version', script: '''#!/bin/bash -e
+                                ./visor version
+                            '''
                         }
                     }
                 }
@@ -566,31 +438,6 @@ pipeline {
             }
         }
         always {
-            retry(3) {
-                sh label: 'destroy vega docker builder',
-                returnStatus: true,  // ignore exit code
-                script: """#!/bin/bash -e
-                    docker buildx rm --force ${DOCKER_VEGA_BUILDER_NAME}
-                """
-                sh label: 'destroy data-node docker builder',
-                returnStatus: true,  // ignore exit code
-                script: """#!/bin/bash -e
-                    docker buildx rm --force ${DOCKER_DATANODE_BUILDER_NAME}
-                """
-                sh label: 'destroy vegawallet docker builder',
-                returnStatus: true,  // ignore exit code
-                script: """#!/bin/bash -e
-                    docker buildx rm --force ${DOCKER_VEGAWALLET_BUILDER_NAME}
-                """
-                script {
-                    vegautils.dockerCleanup()
-                }
-                sh label: 'docker logout ghcr.io',
-                returnStatus: true,  // ignore exit code
-                script: '''#!/bin/bash -e
-                    docker logout ghcr.io
-                '''
-            }
             cleanWs()
         }
     }
