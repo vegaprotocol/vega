@@ -1063,6 +1063,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ts := mocks.NewMockTimeService(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
+	banking := mocks.NewMockBanking(ctrl)
 
 	// Set default network parameters
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
@@ -1084,7 +1085,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1"))
 
 	// Initialise engine as validator
-	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp)
+	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp, banking)
 	require.NotNil(t, eng)
 
 	tEng := &tstEngine{

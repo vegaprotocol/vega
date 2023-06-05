@@ -75,7 +75,9 @@ type Collateral interface {
 		feeTransfers []*types.Transfer,
 		feeTransfersAccountTypes []types.AccountType,
 	) ([]*types.LedgerMovement, error)
+	GovernanceTransferFunds(ctx context.Context, transfers []*types.Transfer, accountTypes []types.AccountType, references []string) ([]*types.LedgerMovement, error)
 	PropagateAssetUpdate(ctx context.Context, asset types.Asset) error
+	GetSystemAccountBalance(asset, market string, accountType types.AccountType) (*num.Uint, error)
 }
 
 // Witness provide foreign chain resources validations.
@@ -145,6 +147,11 @@ type Engine struct {
 	scheduledTransfers         map[int64][]scheduledTransfer
 	transferFeeFactor          num.Decimal
 	minTransferQuantumMultiple num.Decimal
+
+	scheduledGovernanceTransfers    map[int64][]*types.GovernanceTransfer
+	recurringGovernanceTransfers    []*types.GovernanceTransfer
+	recurringGovernanceTransfersMap map[string]*types.GovernanceTransfer
+
 	// recurring transfers in the order they were created
 	recurringTransfers []*types.RecurringTransfer
 	// transfer id to recurringTransfers
@@ -154,6 +161,9 @@ type Engine struct {
 	bridgeView  ERC20BridgeView
 
 	minWithdrawQuantumMultiple num.Decimal
+
+	maxGovTransferAmount   *num.Uint
+	maxGovTransferFraction num.Decimal
 }
 
 type withdrawalRef struct {
@@ -183,34 +193,47 @@ func New(
 	log.SetLevel(cfg.Level.Get())
 
 	return &Engine{
-		cfg:                        cfg,
-		log:                        log,
-		timeService:                tsvc,
-		broker:                     broker,
-		col:                        col,
-		witness:                    witness,
-		assets:                     assets,
-		notary:                     notary,
-		top:                        top,
-		ethEventSource:             ethEventSource,
-		assetActs:                  map[string]*assetAction{},
-		seen:                       treeset.NewWithStringComparator(),
-		withdrawals:                map[string]withdrawalRef{},
-		deposits:                   map[string]*types.Deposit{},
-		withdrawalCnt:              big.NewInt(0),
-		bss:                        &bankingSnapshotState{},
-		scheduledTransfers:         map[int64][]scheduledTransfer{},
-		recurringTransfers:         []*types.RecurringTransfer{},
-		recurringTransfersMap:      map[string]*types.RecurringTransfer{},
-		transferFeeFactor:          num.DecimalZero(),
-		minTransferQuantumMultiple: num.DecimalZero(),
-		minWithdrawQuantumMultiple: num.DecimalZero(),
-		marketActivityTracker:      marketActivityTracker,
+		cfg:                             cfg,
+		log:                             log,
+		timeService:                     tsvc,
+		broker:                          broker,
+		col:                             col,
+		witness:                         witness,
+		assets:                          assets,
+		notary:                          notary,
+		top:                             top,
+		ethEventSource:                  ethEventSource,
+		assetActs:                       map[string]*assetAction{},
+		seen:                            treeset.NewWithStringComparator(),
+		withdrawals:                     map[string]withdrawalRef{},
+		deposits:                        map[string]*types.Deposit{},
+		withdrawalCnt:                   big.NewInt(0),
+		bss:                             &bankingSnapshotState{},
+		scheduledTransfers:              map[int64][]scheduledTransfer{},
+		recurringTransfers:              []*types.RecurringTransfer{},
+		recurringTransfersMap:           map[string]*types.RecurringTransfer{},
+		scheduledGovernanceTransfers:    map[int64][]*types.GovernanceTransfer{},
+		recurringGovernanceTransfers:    []*types.GovernanceTransfer{},
+		recurringGovernanceTransfersMap: map[string]*types.GovernanceTransfer{},
+		transferFeeFactor:               num.DecimalZero(),
+		minTransferQuantumMultiple:      num.DecimalZero(),
+		minWithdrawQuantumMultiple:      num.DecimalZero(),
+		marketActivityTracker:           marketActivityTracker,
 		bridgeState: &bridgeState{
 			active: true,
 		},
 		bridgeView: bridgeView,
 	}
+}
+
+func (e *Engine) OnMaxFractionChanged(ctx context.Context, f num.Decimal) error {
+	e.maxGovTransferFraction = f
+	return nil
+}
+
+func (e *Engine) OnMaxAmountChanged(ctx context.Context, f num.Decimal) error {
+	e.maxGovTransferAmount, _ = num.UintFromDecimal(f)
+	return nil
 }
 
 func (e *Engine) OnMinWithdrawQuantumMultiple(ctx context.Context, f num.Decimal) error {
@@ -238,6 +261,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.currentEpoch = ep.Seq
 	case proto.EpochAction_EPOCH_ACTION_END:
 		e.distributeRecurringTransfers(ctx, e.currentEpoch)
+		e.distributeRecurringGovernanceTransfers(ctx, e.currentEpoch)
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}
@@ -312,6 +336,9 @@ func (e *Engine) OnTick(ctx context.Context, _ time.Time) {
 			logging.Error(err),
 		)
 	}
+
+	// process governance transfers
+	e.distributeScheduledGovernanceTransfers(ctx)
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

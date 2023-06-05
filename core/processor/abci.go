@@ -1715,6 +1715,10 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		case toEnact.IsFreeform():
 			app.enactFreeform(ctx, prop)
+		case toEnact.IsNewTransfer():
+			app.enactNewTransfer(ctx, prop)
+		case toEnact.IsCancelTransfer():
+			app.enactCancelTransfer(prop)
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -1820,6 +1824,29 @@ func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
 	// There is nothing to enact in a freeform proposal so we just set the state
 	prop.State = types.ProposalStateEnacted
+}
+
+func (app *App) enactNewTransfer(ctx context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
+	proposal := prop.Terms.GetNewTransfer().Changes
+
+	if err := app.banking.VerifyGovernanceTransfer(proposal); err != nil {
+		app.log.Error("failed to enact governance transfer - invalid transfer", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProporsalErrorInvalidGovernanceTransfer, err)
+		return
+	}
+
+	app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
+}
+
+func (app *App) enactCancelTransfer(prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
+	transferID := prop.Terms.GetCancelTransfer().Changes.TransferID
+	if err := app.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
+		app.log.Error("failed to enact governance transfer cancellation - invalid transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
+		return
+	}
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
