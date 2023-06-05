@@ -1077,7 +1077,7 @@ func testListSuccessorMarkets(t *testing.T) {
 	defer cancel()
 
 	t.Run("should list the full history if children only is false", func(t *testing.T) {
-		got, err := md.ListSuccessorMarkets(ctx, "deadbeef02", true)
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef02", true, entities.CursorPagination{})
 		require.NoError(t, err)
 		want := []entities.Market{
 			entries[5],
@@ -1089,7 +1089,7 @@ func testListSuccessorMarkets(t *testing.T) {
 	})
 
 	t.Run("should list only the successor markets if children only is true", func(t *testing.T) {
-		got, err := md.ListSuccessorMarkets(ctx, "deadbeef02", false)
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef02", false, entities.CursorPagination{})
 		require.NoError(t, err)
 		want := []entities.Market{
 			entries[6],
@@ -1097,6 +1097,44 @@ func testListSuccessorMarkets(t *testing.T) {
 		}
 
 		assert.Equal(t, want, got)
+	})
+
+	t.Run("should paginate results if pagination is provided", func(t *testing.T) {
+		first := int32(2)
+		after := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: entries[5].VegaTime,
+				ID:       entries[5].ID,
+			}.String(),
+		).Encode()
+		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+		require.NoError(t, err)
+		got, pageInfo, err := md.ListSuccessorMarkets(ctx, "deadbeef01", true, pagination)
+		require.NoError(t, err)
+		want := []entities.Market{
+			entries[6],
+			entries[8],
+		}
+
+		assert.Equal(t, want, got, "paged successor markets do not match")
+		wantStartCursor := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: entries[6].VegaTime,
+				ID:       entries[6].ID,
+			}.String(),
+		).Encode()
+		wantEndCursor := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: entries[8].VegaTime,
+				ID:       entries[8].ID,
+			}.String(),
+		).Encode()
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: true,
+			StartCursor:     wantStartCursor,
+			EndCursor:       wantEndCursor,
+		}, pageInfo)
 	})
 }
 

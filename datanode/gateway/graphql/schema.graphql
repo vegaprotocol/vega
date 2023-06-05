@@ -697,7 +697,9 @@ type Query {
     When false, only the requested market and its children are returned.
     """
     fullHistory: Boolean,
-  ): [Market]
+    "Optional pagination information"
+    pagination: Pagination
+  ): MarketConnection
 
   "Get a list of all trades and apply any given filters to the results"
   trades(
