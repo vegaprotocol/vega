@@ -215,89 +215,6 @@ pipeline {
                         }
                     }
                 }
-                stage('protos') {
-                    environment {
-                        GOPATH = "${env.WORKSPACE}/GOPATH"
-                        GOBIN = "${env.GOPATH}/bin"
-                        PATH = "${env.GOBIN}:${env.PATH}"
-                    }
-                    stages {
-                        stage('Install dependencies') {
-                            // We are using specific tools versions
-                            // Please use exactly the same versions when modifying protos
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh 'printenv'
-                                    sh './script/gettools.sh'
-                                }
-                            }
-                        }
-                        stage('buf lint') {
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh '''#!/bin/bash -e
-                                        buf lint
-                                    '''
-                                }
-                            }
-                            post {
-                                failure {
-                                    sh 'printenv'
-                                    echo "params=${params}"
-                                    sh 'buf --version'
-                                    sh 'which buf'
-                                    sh 'git diff'
-                                }
-                            }
-                        }
-                        stage('proto format check') {
-                            options { retry(3) }
-                            steps {
-                                dir('vega') {
-                                    sh '''#!/bin/bash -e
-                                        make proto_format_check
-                                    '''
-                                }
-                            }
-                            post {
-                                failure {
-                                    sh 'printenv'
-                                    echo "params=${params}"
-                                    sh 'buf --version'
-                                    sh 'which buf'
-                                    sh 'git diff'
-                                }
-                            }
-                        }
-                        stage('proto check') {
-                            options { retry(3) }
-                            steps {
-                                sh label: 'copy vega repo', script: '''#!/bin/bash -e
-                                        cp -r ./vega ./vega-proto-check
-                                    '''
-                                dir('vega-proto-check') {
-                                    sh '''#!/bin/bash -e
-                                        make proto_check
-                                    '''
-                                }
-                                sh label: 'remove vega copy', script: '''#!/bin/bash -e
-                                        rm -rf ./vega-proto-check
-                                    '''
-                            }
-                            post {
-                                failure {
-                                    sh 'printenv'
-                                    echo "params=${params}"
-                                    sh 'buf --version'
-                                    sh 'which buf'
-                                    sh 'git diff'
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
         //
@@ -423,6 +340,89 @@ pipeline {
                             echo "params=${params}"
                             dir('vega') {
                                 sh 'git diff'
+                            }
+                        }
+                    }
+                }
+                stage('protos') {
+                    environment {
+                        GOPATH = "${env.WORKSPACE}/GOPATH"
+                        GOBIN = "${env.GOPATH}/bin"
+                        PATH = "${env.GOBIN}:${env.PATH}"
+                    }
+                    stages {
+                        stage('Install dependencies') {
+                            // We are using specific tools versions
+                            // Please use exactly the same versions when modifying protos
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh 'printenv'
+                                    sh './script/gettools.sh'
+                                }
+                            }
+                        }
+                        stage('buf lint') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        buf lint
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                        stage('proto format check') {
+                            options { retry(3) }
+                            steps {
+                                dir('vega') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_format_check
+                                    '''
+                                }
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
+                            }
+                        }
+                        stage('proto check') {
+                            options { retry(3) }
+                            steps {
+                                sh label: 'copy vega repo', script: '''#!/bin/bash -e
+                                        cp -r ./vega ./vega-proto-check
+                                    '''
+                                dir('vega-proto-check') {
+                                    sh '''#!/bin/bash -e
+                                        make proto_check
+                                    '''
+                                }
+                                sh label: 'remove vega copy', script: '''#!/bin/bash -e
+                                        rm -rf ./vega-proto-check
+                                    '''
+                            }
+                            post {
+                                failure {
+                                    sh 'printenv'
+                                    echo "params=${params}"
+                                    sh 'buf --version'
+                                    sh 'which buf'
+                                    sh 'git diff'
+                                }
                             }
                         }
                     }
