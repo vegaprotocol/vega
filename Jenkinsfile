@@ -117,43 +117,6 @@ pipeline {
         //
 
         //
-        // Begin COMPILE
-        //
-        stage('Compile') {
-            options { retry(3) }
-            steps {
-                sh 'printenv'
-                dir('vega') {
-                    sh label: 'Compile', script: """#!/bin/bash -e
-                        go build -v \
-                            -o ../build/ \
-                            ./cmd/vega \
-                            ./cmd/data-node \
-                            ./cmd/vegawallet
-                    """
-                    sh label: 'check for modifications', script: 'git diff'
-                }
-                dir("build") {
-                    sh label: 'list files', script: '''#!/bin/bash -e
-                        pwd
-                        ls -lah
-                    '''
-                    sh label: 'Sanity check', script: '''#!/bin/bash -e
-                        file *
-                    '''
-                    sh label: 'get version', script: '''#!/bin/bash -e
-                        ./vega version
-                        ./data-node version
-                        ./vegawallet software version
-                    '''
-                }
-            }
-        }
-        //
-        // End COMPILE
-        //
-
-        //
         // Begin LINTERS
         //
         stage('Linters') {
@@ -424,6 +387,32 @@ pipeline {
                                     sh 'git diff'
                                 }
                             }
+                        }
+                    }
+                }
+                stage('Compile visor') {
+                    options { retry(3) }
+                    steps {
+                        sh 'printenv'
+                        dir('vega') {
+                            sh label: 'Compile', script: """#!/bin/bash -e
+                                go build -v \
+                                    -o ../build/ \
+                                    ./cmd/visor
+                            """
+                            sh label: 'check for modifications', script: 'git diff'
+                        }
+                        dir("build") {
+                            sh label: 'list files', script: '''#!/bin/bash -e
+                                pwd
+                                ls -lah
+                            '''
+                            sh label: 'Sanity check', script: '''#!/bin/bash -e
+                                file *
+                            '''
+                            sh label: 'get version', script: '''#!/bin/bash -e
+                                ./visor version
+                            '''
                         }
                     }
                 }
