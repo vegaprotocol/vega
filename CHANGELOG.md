@@ -38,6 +38,7 @@
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 
 ### 🐛 Fixes
+- [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
 - [8251](https://github.com/vegaprotocol/vega/issues/8251) - Fix bug in expired orders optimisation resulting in non deterministic order sequence numbers
