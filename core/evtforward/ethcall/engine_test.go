@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
+
 	"code.vegaprotocol.io/vega/core/config/encoding"
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall/mocks"
@@ -32,22 +34,42 @@ func TestEngine(t *testing.T) {
 	e, err := ethcall.NewEngine(log, TEST_CONFIG, tc.client, forwarder)
 	require.NoError(t, err)
 
-	call, err := ethcall.NewCall("get_uint256", []any{big.NewInt(66)}, tc.contractAddr.Hex(), tc.abiBytes)
-	require.NoError(t, err)
 	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
-	trigger := ethcall.TimeTrigger{Initial: currentEthTime, Every: 20}
-	filter := ethcall.CallResultFilter{}
-	normaliser := ethcall.EthDecimalsNormaliser{}
 
-	spec := ethcall.Spec{
-		Call:       call,
-		Trigger:    trigger,
-		Filter:     filter,
-		Normaliser: normaliser,
+	argsAsJson, err := ethcall.AnyArgsToJson([]any{big.NewInt(66)})
+	require.NoError(t, err)
+
+	ethCallSpec := &types.EthCallSpec{
+		Address:  tc.contractAddr.Hex(),
+		AbiJson:  string(tc.abiBytes),
+		Method:   "get_uint256",
+		ArgsJson: argsAsJson,
+		Trigger: &types.EthCallTrigger{
+			EthTrigger: &types.EthTimeTrigger{
+				Initial: currentEthTime,
+				Every:   20,
+				Until:   0,
+			},
+		},
+		RequiredConfirmations: 0,
+		Filter:                &types.EthFilter{Filters: nil},
+		Normaliser:            &types.EthDecimalsNormaliser{Decimals: 0},
 	}
 
-	specID, err := e.AddSpec(spec)
+	oracleSpec := types.OracleSpec{
+		ExternalDataSourceSpec: &types.ExternalDataSourceSpec{
+			Spec: &types.DataSourceSpec{
+				Data: &types.DataSourceDefinition{SourceType: ethCallSpec},
+			},
+		},
+	}
+
+	err = e.OnSpecActivated(context.Background(), oracleSpec)
+
 	require.NoError(t, err)
+
+	datasource, ok := e.GetDataSource(ethCallSpec.HashHex())
+	assert.True(t, ok)
 
 	// Make sure engine has a previous block to compare to
 	e.OnTick(ctx, time.Now())
@@ -61,13 +83,14 @@ func TestEngine(t *testing.T) {
 	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
 		cc := ce.GetContractCall()
 		require.NotNil(t, cc)
-		res, err := spec.UnpackResult(cc.Result)
+
+		res, err := datasource.Normalise(cc.Result)
 		require.NoError(t, err)
 
 		assert.Equal(t, cc.BlockHeight, uint64(3))
 		assert.Equal(t, cc.BlockTime, uint64(30))
-		assert.Equal(t, cc.SpecId, specID)
-		require.Equal(t, res, []any{big.NewInt(66)})
+		assert.Equal(t, cc.SpecId, ethCallSpec.HashHex())
+		require.Equal(t, res["price"], "[66]")
 	})
 	tc.client.Commit()
 	e.OnTick(ctx, time.Now())

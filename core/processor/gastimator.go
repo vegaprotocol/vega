@@ -72,8 +72,7 @@ func (g *Gastimator) GetMaxGas() uint64 {
 
 func (g *Gastimator) GetPriority(tx abci.Tx) uint64 {
 	switch tx.Command() {
-	case txn.ProposeCommand,
-		txn.VoteCommand:
+	case txn.ProposeCommand, txn.VoteCommand:
 		return medium
 	default:
 		if tx.Command().IsValidatorCommand() {

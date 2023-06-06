@@ -211,12 +211,12 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(1), func(ctx context.Context, sid oracles.SubscriptionID) {}, nil)
 
 	oe.EXPECT().
 		Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
-		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {})
+		Return(subscriptionID(2), func(ctx context.Context, sid oracles.SubscriptionID) {}, nil)
 
 	future, err := products.NewFuture(ctx, log, f, oe)
 	if err != nil {
