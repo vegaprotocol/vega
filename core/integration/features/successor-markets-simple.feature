@@ -113,6 +113,10 @@ Feature: Simple example of successor markets
 
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the network treasury balance should be "0" for the asset "USD"
+    And the liquidity provider fee shares for the market "ETH/DEC19" should be:
+      | party   | equity like share | average entry valuation |
+      | lpprov1 | 0.9               | 9000                    |
+      | lpprov2 | 0.1               | 10000                   |
 
      # make LP commitment while market is still pending
     And the parties submit the following liquidity provision:
@@ -121,10 +125,6 @@ Feature: Simple example of successor markets
       | lp1 | lpprov1 | ETH/DEC20 | 2000              | 0.1 | sell | ASK              | 10        | 100    | submission |
       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | buy  | BID              | 10        | 100    | submission |
       | lp2 | lpprov2 | ETH/DEC20 | 8000              | 0.1 | sell | ASK              | 10        | 100    | submission |
-    And the liquidity provider fee shares for the market "ETH/DEC19" should be:
-      | party   | equity like share | average entry valuation |
-      | lpprov1 | 0.9               | 9000                    |
-      | lpprov2 | 0.1               | 10000                   |
     
     Then the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
