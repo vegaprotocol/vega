@@ -856,9 +856,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	if order.IcebergOrder != nil && order.Status == types.OrderStatusActive {
 		// now trades have been generated for the aggressive iceberg based on the
 		// full size, set the peak limits ready for it to be added to the book.
-		peak := num.MinV(order.Remaining, order.IcebergOrder.InitialPeakSize)
-		order.IcebergOrder.ReservedRemaining = order.Remaining - peak
-		order.Remaining = peak
+		order.SetIcebergPeaks()
 	}
 
 	// if order is persistent type add to order book to the correct side
