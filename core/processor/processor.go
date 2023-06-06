@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
@@ -68,15 +68,16 @@ type DelegationEngine interface {
 //nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
+	SucceedMarket(ctx context.Context, successor, parent string, insuranceFraction num.Decimal) error
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error

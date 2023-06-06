@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -1091,6 +1092,26 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 
 	return &v2.ListMarketsResponse{
 		Markets: marketsConnection,
+	}, nil
+}
+
+// ListSuccessorMarkets returns the successor chain for a given market.
+func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2.ListSuccessorMarketsRequest) (*v2.ListSuccessorMarketsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListSuccessorMarkets")()
+
+	markets, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetAllPaged, err)
+	}
+
+	protoMarkets := make([]*vega.Market, len(markets))
+
+	for i, v := range markets {
+		protoMarkets[i] = v.ToProto()
+	}
+
+	return &v2.ListSuccessorMarketsResponse{
+		Markets: protoMarkets,
 	}, nil
 }
 
@@ -3327,6 +3348,10 @@ func (t *TradingDataServiceV2) GetVegaTime(ctx context.Context, _ *v2.GetVegaTim
 func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistoryRequest, stream v2.TradingDataService_ExportNetworkHistoryServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ExportNetworkHistory")()
 
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	if req.Table == v2.Table_TABLE_UNSPECIFIED {
 		return formatE(ErrNetworkHistoryNoTableName, errors.New("empty table name"))
 	}
@@ -3421,6 +3446,10 @@ func partitionSegmentsByDBVersion(segments []segment.Full) [][]segment.Full {
 func (t *TradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Context, *v2.GetMostRecentNetworkHistorySegmentRequest) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentNetworkHistorySegment")()
 
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	segment, err := t.NetworkHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
 		if errors.Is(err, store.ErrSegmentNotFound) {
@@ -3440,6 +3469,10 @@ func (t *TradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Contex
 // ListAllNetworkHistorySegments returns all network history segments.
 func (t *TradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v2.ListAllNetworkHistorySegmentsRequest) (*v2.ListAllNetworkHistorySegmentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllNetworkHistorySegments")()
+
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
 
 	segments, err := t.NetworkHistoryService.ListAllHistorySegments()
 	if err != nil {
@@ -3475,6 +3508,11 @@ func toHistorySegment(segment segment.Full) *v2.HistorySegment {
 // GetActiveNetworkHistoryPeerAddresses returns the active network history peer addresses.
 func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Context, *v2.GetActiveNetworkHistoryPeerAddressesRequest) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	return &v2.GetActiveNetworkHistoryPeerAddressesResponse{
 		IpAddresses: t.NetworkHistoryService.GetActivePeerIPAddresses(),
 	}, nil
@@ -3483,6 +3521,10 @@ func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Cont
 // NetworkHistoryStatus returns the network history status.
 func (t *TradingDataServiceV2) GetNetworkHistoryStatus(context.Context, *v2.GetNetworkHistoryStatusRequest) (*v2.GetNetworkHistoryStatusResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkHistoryStatus")()
+
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
 
 	connectedPeerAddresses, err := t.NetworkHistoryService.GetConnectedPeerAddresses()
 	if err != nil {
@@ -3510,6 +3552,10 @@ func (t *TradingDataServiceV2) GetNetworkHistoryStatus(context.Context, *v2.GetN
 
 // NetworkHistoryBootstrapPeers returns the network history bootstrap peers.
 func (t *TradingDataServiceV2) GetNetworkHistoryBootstrapPeers(context.Context, *v2.GetNetworkHistoryBootstrapPeersRequest) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	return &v2.GetNetworkHistoryBootstrapPeersResponse{BootstrapPeers: t.NetworkHistoryService.GetBootstrapPeers()}, nil
 }
 

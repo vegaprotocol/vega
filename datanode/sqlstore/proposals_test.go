@@ -41,6 +41,7 @@ func addTestProposal(
 	state entities.ProposalState,
 	rationale entities.ProposalRationale,
 	terms entities.ProposalTerms,
+	reason entities.ProposalError,
 ) entities.Proposal {
 	t.Helper()
 	p := entities.Proposal{
@@ -52,6 +53,7 @@ func addTestProposal(
 		VegaTime:                block.VegaTime,
 		ProposalTime:            block.VegaTime,
 		Rationale:               rationale,
+		Reason:                  reason,
 		RequiredMajority:        num.MustDecimalFromString("0.5"),
 		RequiredParticipation:   num.MustDecimalFromString("0.7"),
 		RequiredLPMajority:      nil,
@@ -75,7 +77,14 @@ func assertProposalsMatch(t *testing.T, expected, actual []entities.Proposal) {
 
 func assertProposalMatch(t *testing.T, expected, actual entities.Proposal) {
 	t.Helper()
-	ignoreProtoState := cmpopts.IgnoreUnexported(vega.ProposalTerms{}, vega.ProposalRationale{}, vega.NewMarket{}, vega.NewAsset{})
+	ignoreProtoState := cmpopts.IgnoreUnexported(
+		vega.ProposalTerms{},
+		vega.ProposalRationale{},
+		vega.NewMarket{},
+		vega.NewAsset{},
+		vega.NewMarketConfiguration{},
+		vega.SuccessorConfiguration{},
+	)
 	assert.Empty(t, cmp.Diff(actual, expected, ignoreProtoState))
 }
 
@@ -98,8 +107,8 @@ func TestProposals(t *testing.T) {
 
 	reference1 := helpers.GenerateID()
 	reference2 := helpers.GenerateID()
-	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1)
-	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2)
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
+	prop2 := addTestProposal(t, ctx, propStore, id2, party2, reference2, block1, entities.ProposalStateEnacted, rationale2, terms2, entities.ProposalErrorUnspecified)
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -941,10 +950,76 @@ func createPaginationTestProposals(t *testing.T, ctx context.Context, pps *sqlst
 		terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}}
 		terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewAsset{NewAsset: &vega.NewAsset{}}}}
 
-		proposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1)
-		proposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2)
+		proposals[i] = addTestProposal(t, ctx, pps, id1, parties[0], ref1, block, states[i], rationale1, terms1, entities.ProposalErrorUnspecified)
+		proposals[i+10] = addTestProposal(t, ctx, pps, id2, parties[1], ref2, block2, states[i], rationale2, terms2, entities.ProposalErrorUnspecified)
 		i++
 	}
 
 	return proposals, parties
+}
+
+func TestProposeSuccessorMarket(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	partyStore := sqlstore.NewParties(connectionSource)
+	propStore := sqlstore.NewProposals(connectionSource)
+	blockStore := sqlstore.NewBlocks(connectionSource)
+	block1 := addTestBlock(t, ctx, blockStore)
+
+	party1 := addTestParty(t, ctx, partyStore, block1)
+	rationale1 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}
+	rationale2 := entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}
+	terms1 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+		Changes: &vega.NewMarketConfiguration{
+			Instrument:                    nil,
+			DecimalPlaces:                 0,
+			Metadata:                      nil,
+			PriceMonitoringParameters:     nil,
+			LiquidityMonitoringParameters: nil,
+			RiskParameters:                nil,
+			PositionDecimalPlaces:         0,
+			LpPriceRange:                  "",
+			LinearSlippageFactor:          "",
+			QuadraticSlippageFactor:       "",
+			Successor:                     nil,
+		},
+	}}}}
+	terms2 := entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+		Changes: &vega.NewMarketConfiguration{
+			Instrument:                    nil,
+			DecimalPlaces:                 0,
+			Metadata:                      nil,
+			PriceMonitoringParameters:     nil,
+			LiquidityMonitoringParameters: nil,
+			RiskParameters:                nil,
+			PositionDecimalPlaces:         0,
+			LpPriceRange:                  "",
+			LinearSlippageFactor:          "",
+			QuadraticSlippageFactor:       "",
+			Successor: &vega.SuccessorConfiguration{
+				ParentMarketId:        "deadbeef",
+				InsurancePoolFraction: "0.5",
+			},
+		},
+	}}}}
+	id1 := helpers.GenerateID()
+	id2 := helpers.GenerateID()
+
+	reference1 := helpers.GenerateID()
+	reference2 := helpers.GenerateID()
+	prop1 := addTestProposal(t, ctx, propStore, id1, party1, reference1, block1, entities.ProposalStateEnacted, rationale1, terms1, entities.ProposalErrorUnspecified)
+	prop2 := addTestProposal(t, ctx, propStore, id2, party1, reference2, block1, entities.ProposalStateRejected, rationale2, terms2, entities.ProposalErrorInvalidSuccessorMarket)
+
+	t.Run("GetByID", func(t *testing.T) {
+		want := prop1
+		got, err := propStore.GetByID(ctx, prop1.ID.String())
+		require.NoError(t, err)
+		assertProposalMatch(t, want, got)
+
+		want = prop2
+		got, err = propStore.GetByID(ctx, prop2.ID.String())
+		require.NoError(t, err)
+		assertProposalMatch(t, want, got)
+	})
 }

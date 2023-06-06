@@ -13,6 +13,8 @@
 package netparams
 
 const (
+	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+
 	// market related parameters.
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
@@ -149,6 +151,7 @@ const (
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
+	SuccessorLaunchWindow              = "network.liquidity.successorLaunchWindowLength"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -174,7 +177,14 @@ const (
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
 )
 
+var Deprecated = map[string]struct{}{
+	StakingAndDelegationRewardPayoutFraction:    {},
+	StakingAndDelegationRewardPayoutDelay:       {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch: {},
+}
+
 var AllKeys = map[string]struct{}{
+	SpotMarketTradingEnabled:                                 {},
 	MaxPeggedOrders:                                          {},
 	MaxGasPerBlock:                                           {},
 	DefaultGas:                                               {},
@@ -291,4 +301,5 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                        {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
 	SpamProtectionMinMultisigUpdates:                         {},
+	SuccessorLaunchWindow:                                    {},
 }

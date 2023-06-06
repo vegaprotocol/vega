@@ -403,7 +403,7 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	params := e.activeParams[paramIndex]
 	idx := tx.BlockHeight() % ringSize
 	// if the block height doesn't match out expectation or is older than what's allowed by the parameters used for the transaction then reject
-	if e.blockHeight[idx] != tx.BlockHeight() || tx.BlockHeight()+params.spamPoWNumberOfPastBlocks < e.currentBlock {
+	if e.blockHeight[idx] != tx.BlockHeight() || tx.BlockHeight()+params.spamPoWNumberOfPastBlocks <= e.currentBlock {
 		if e.log.IsDebug() {
 			e.log.Debug("unknown block height", logging.Uint64("current-block-height", e.currentBlock), logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		}

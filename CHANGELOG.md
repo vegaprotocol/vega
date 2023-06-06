@@ -6,13 +6,36 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
 
 ### 🛠 Improvements
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
-
+- [8283](https://github.com/vegaprotocol/vega/issues/8283) - Add disclaimer to the wallet `CLI`
+- [8296](https://github.com/vegaprotocol/vega/issues/8296) - Improve error handling for invalid proposal validation timestamp
+- [8318](https://github.com/vegaprotocol/vega/issues/8318) - Proto definitions for spots
+- [8117](https://github.com/vegaprotocol/vega/issues/8117) - Added spots governance implementation
+- [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
+- [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
+- [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
+- [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
+- [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
+- [8398](https://github.com/vegaprotocol/vega/issues/8398) - Implement iceberg orders in data node
+- [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
+- [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
+- [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
+- [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
+- [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
+- [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
+- [8334](https://github.com/vegaprotocol/vega/issues/8334) - Implement market succession in execution engine.
+- [8354](https://github.com/vegaprotocol/vega/issues/8354) - refactor execution package
+- [8394](https://github.com/vegaprotocol/vega/issues/8394) - Get rid of spot liquidity provision commands and data structures.
+- [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
+- [8347](https://github.com/vegaprotocol/vega/issues/8347) - Market state (`ELS`) to be included in checkpoint data.
+- [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
+- [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
+- [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 
 ### 🐛 Fixes
 - [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
@@ -25,7 +48,18 @@
 - [8225](https://github.com/vegaprotocol/vega/issues/8225) - Better error handling in `ListEntities`
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
 - [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
-
+- [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
+- [8299](https://github.com/vegaprotocol/vega/issues/8299) - Fix listing of internal data sources in GraphQL.
+- [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
+- [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
+- [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate
+- [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
+- [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
+- [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
+- [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
+- [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
+- [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
+- [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 
 ## 0.71.0
 

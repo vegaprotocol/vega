@@ -79,7 +79,7 @@ func NewCmdCreateWallet(w io.Writer, rf *RootFlags) *cobra.Command {
 			Key: firstPublicKey{
 				PublicKey: result.Key.PublicKey,
 				Algorithm: result.Key.Algorithm,
-				Meta:      result.Key.Meta,
+				Meta:      result.Key.Metadata,
 			},
 		}, nil
 	}

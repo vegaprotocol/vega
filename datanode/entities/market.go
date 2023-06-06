@@ -19,6 +19,8 @@ import (
 	"math"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/ptr"
+
 	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"code.vegaprotocol.io/vega/protos/vega"
@@ -47,6 +49,11 @@ type Market struct {
 	LpPriceRange                  string
 	LinearSlippageFactor          *decimal.Decimal
 	QuadraticSlippageFactor       *decimal.Decimal
+	ParentMarketID                MarketID
+	InsurancePoolFraction         *decimal.Decimal
+	// Not saved in the market table, but used when retrieving data from the database.
+	// This will be populated when a market has a successor
+	SuccessorMarketID MarketID
 }
 
 type MarketCursor struct {
@@ -133,6 +140,21 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		quadraticSlippageFactor = &factor
 	}
 
+	parentMarketID := MarketID("")
+	if market.ParentMarketId != nil && *market.ParentMarketId != "" {
+		parent := MarketID(*market.ParentMarketId)
+		parentMarketID = parent
+	}
+
+	var insurancePoolFraction *num.Decimal
+	if market.InsurancePoolFraction != nil && *market.InsurancePoolFraction != "" {
+		insurance, err := num.DecimalFromString(*market.InsurancePoolFraction)
+		if err != nil {
+			return nil, fmt.Errorf("'%v' is not a valid number for insurance pool fraction", market.InsurancePoolFraction)
+		}
+		insurancePoolFraction = &insurance
+	}
+
 	return &Market{
 		ID:                            MarketID(market.Id),
 		TxHash:                        txHash,
@@ -151,6 +173,8 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 		LpPriceRange:                  market.LpPriceRange,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		ParentMarketID:                parentMarketID,
+		InsurancePoolFraction:         insurancePoolFraction,
 	}, nil
 }
 
@@ -163,6 +187,21 @@ func (m Market) ToProto() *vega.Market {
 	quadraticSlippageFactor := ""
 	if m.QuadraticSlippageFactor != nil {
 		quadraticSlippageFactor = m.QuadraticSlippageFactor.String()
+	}
+
+	var parentMarketID, insurancePoolFraction *string
+
+	if m.ParentMarketID != "" {
+		parentMarketID = ptr.From(m.ParentMarketID.String())
+	}
+
+	if m.InsurancePoolFraction != nil {
+		insurancePoolFraction = ptr.From(m.InsurancePoolFraction.String())
+	}
+
+	var successorMarketID *string
+	if m.SuccessorMarketID != "" {
+		successorMarketID = ptr.From(m.SuccessorMarketID.String())
 	}
 
 	return &vega.Market{
@@ -183,6 +222,9 @@ func (m Market) ToProto() *vega.Market {
 		LpPriceRange:                  m.LpPriceRange,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		ParentMarketId:                parentMarketID,
+		InsurancePoolFraction:         insurancePoolFraction,
+		SuccessorMarketId:             successorMarketID,
 	}
 }
 

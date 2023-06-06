@@ -55,11 +55,10 @@ const (
 )
 
 var (
-	client                  *graphql.Client
-	integrationTestsEnabled = flag.Bool("integration", false, "run integration tests")
-	blockWhenDone           = flag.Bool("block", false, "leave services running after tests are complete NOTE: EMBEDDED POSGRESQL WILL NOT SHUT DOWN PROPERLY")
-	writeGolden             = flag.Bool("golden", false, "write query results to 'golden' files for comparison")
-	goldenDir               string
+	client        *graphql.Client
+	blockWhenDone = flag.Bool("block", false, "leave services running after tests are complete NOTE: EMBEDDED POSGRESQL WILL NOT SHUT DOWN PROPERLY")
+	writeGolden   = flag.Bool("golden", false, "write query results to 'golden' files for comparison")
+	goldenDir     string
 )
 
 func TestMain(m *testing.M) {
@@ -67,8 +66,8 @@ func TestMain(m *testing.M) {
 	ctx, cfunc := context.WithCancel(context.Background())
 	defer cfunc()
 
-	if !*integrationTestsEnabled {
-		log.Print("Skipping integration tests. To enable pass -integration flag to 'go test'")
+	if testing.Short() {
+		log.Print("Skipping datanode integration tests, go test run with -short")
 		return
 	}
 

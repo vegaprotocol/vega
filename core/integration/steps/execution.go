@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // the interface for execution engine. The execution engine itself will be wrapped
@@ -34,4 +35,6 @@ type Execution interface {
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	BlockEnd(ctx context.Context)
+	GetMarket(parentID string, settled bool) (types.Market, bool)
+	SucceedMarket(ctx context.Context, successor, parent string, fraction num.Decimal) error
 }

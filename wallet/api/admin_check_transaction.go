@@ -43,7 +43,7 @@ type ParsedAdminCheckTransactionParams struct {
 type AdminCheckTransactionResult struct {
 	ReceivedAt         time.Time               `json:"receivedAt"`
 	SentAt             time.Time               `json:"sentAt"`
-	Tx                 *commandspb.Transaction `json:"transaction"`
+	Transaction        *commandspb.Transaction `json:"transaction"`
 	Node               AdminNodeInfoResult     `json:"node"`
 	EncodedTransaction string                  `json:"encodedTransaction"`
 }
@@ -141,9 +141,9 @@ func (h *AdminCheckTransaction) Handle(ctx context.Context, rawParams jsonrpc.Pa
 	}
 
 	return AdminCheckTransactionResult{
-		ReceivedAt: receivedAt,
-		SentAt:     sentAt,
-		Tx:         tx,
+		ReceivedAt:  receivedAt,
+		SentAt:      sentAt,
+		Transaction: tx,
 		Node: AdminNodeInfoResult{
 			Host: currentNode.Host(),
 		},

@@ -58,18 +58,18 @@ func (mr *MockMarketsMockRecorder) GetEquityLikeShareForMarketAndParty(arg0, arg
 }
 
 // GetMarket mocks base method.
-func (m *MockMarkets) GetMarket(arg0 string) (types.Market, bool) {
+func (m *MockMarkets) GetMarket(arg0 string, arg1 bool) (types.Market, bool) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetMarket", arg0)
+	ret := m.ctrl.Call(m, "GetMarket", arg0, arg1)
 	ret0, _ := ret[0].(types.Market)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
 
 // GetMarket indicates an expected call of GetMarket.
-func (mr *MockMarketsMockRecorder) GetMarket(arg0 interface{}) *gomock.Call {
+func (mr *MockMarketsMockRecorder) GetMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarket", reflect.TypeOf((*MockMarkets)(nil).GetMarket), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarket", reflect.TypeOf((*MockMarkets)(nil).GetMarket), arg0, arg1)
 }
 
 // GetMarketState mocks base method.
@@ -113,6 +113,20 @@ func (m *MockMarkets) RestoreMarket(arg0 context.Context, arg1 *types.Market) er
 func (mr *MockMarketsMockRecorder) RestoreMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreMarket", reflect.TypeOf((*MockMarkets)(nil).RestoreMarket), arg0, arg1)
+}
+
+// SpotsMarketsEnabled mocks base method.
+func (m *MockMarkets) SpotsMarketsEnabled() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SpotsMarketsEnabled")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// SpotsMarketsEnabled indicates an expected call of SpotsMarketsEnabled.
+func (mr *MockMarketsMockRecorder) SpotsMarketsEnabled() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpotsMarketsEnabled", reflect.TypeOf((*MockMarkets)(nil).SpotsMarketsEnabled))
 }
 
 // StartOpeningAuction mocks base method.

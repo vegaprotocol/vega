@@ -14,7 +14,9 @@ package core_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"testing"
@@ -26,7 +28,6 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"github.com/spf13/pflag"
 )
 
 var (
@@ -41,13 +42,18 @@ var (
 )
 
 func init() {
-	godog.BindCommandLineFlags("godog.", &gdOpts)
-	pflag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
+	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
+	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
 
 func TestMain(m *testing.M) {
-	pflag.Parse()
-	gdOpts.Paths = pflag.Args()
+	flag.Parse()
+	gdOpts.Paths = flag.Args()
+
+	if testing.Short() {
+		log.Print("Skipping core integration tests, go test run with -short")
+		return
+	}
 
 	status := godog.TestSuite{
 		Name:                 "godogs",
@@ -149,13 +155,28 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.markets = markets
 		return nil
 	})
+	s.Step(`the successor markets:$`, func(table *godog.Table) error {
+		markets, err := steps.TheSuccessorMarkets(successorConfig, execsetup.executionEngine, execsetup.netParams, table)
+		if err != nil {
+			return err
+		}
+		execsetup.markets = append(execsetup.markets, markets...)
+		return nil
+	})
+
+	s.Step(`the successor market "([^"]+)" is enacted$`, func(successor string) error {
+		if err := steps.TheSuccesorMarketIsEnacted(successor, execsetup.markets, execsetup.executionEngine); err != nil {
+			return err
+		}
+		return nil
+	})
 
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for all the markets$`, func(amountstr string) error {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
-			asset, _ := mkt.GetAsset()
-			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.ID, asset)
+			assets, _ := mkt.GetAssets()
+			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.ID, assets[0])
 			if err != nil {
 				return err
 			}
@@ -253,6 +274,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the average block duration is "([^"]+)"$`, func(blockTime string) error {
 		return steps.TheAverageBlockDurationIs(execsetup.block, blockTime)
+	})
+
+	s.Step(`^the parties place the following iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the iceberg orders should have the following states:$`, func(table *godog.Table) error {
+		return steps.TheIcebergOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {

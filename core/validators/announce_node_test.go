@@ -28,6 +28,7 @@ import (
 )
 
 func TestTendermintKey(t *testing.T) {
+	t.Parallel()
 	notBase64 := "170ffakjde"
 	require.Error(t, validators.VerifyTendermintKey(notBase64))
 
@@ -35,20 +36,16 @@ func TestTendermintKey(t *testing.T) {
 	require.NoError(t, validators.VerifyTendermintKey(validKey))
 }
 
-func TestSignVerifyAnnounceNode(t *testing.T) {
-	cmd := createSignedAnnounceCommand(t)
-	require.NoError(t, validators.VerifyAnnounceNode(cmd))
-}
-
-func TestDoubleAnnounce(t *testing.T) {
+func TestAnnounceNode(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
 	tt := getTestTopology(t)
 	cmd := createSignedAnnounceCommand(t)
-	ctx := context.Background()
 
-	// Add it once
+	// Now announce it and check the signature verify
 	require.NoError(t, tt.Topology.ProcessAnnounceNode(ctx, cmd))
 
-	// Add it again
+	// Announce it again
 	require.ErrorIs(t, tt.Topology.ProcessAnnounceNode(ctx, cmd), validators.ErrVegaNodeAlreadyRegisterForChain)
 }
 
@@ -95,11 +92,11 @@ func createTestNodeWallets(t *testing.T) *nodewallets.NodeWallets {
 	walletsPass := vgrand.RandomStr(10)
 
 	if _, err := nodewallets.GenerateEthereumWallet(vegaPaths, registryPass, walletsPass, "", false); err != nil {
-		panic("couldn't generate Ethereum node wallet for tests")
+		t.Fatal("couldn't generate Ethereum node wallet for tests")
 	}
 
 	if _, err := nodewallets.GenerateVegaWallet(vegaPaths, registryPass, walletsPass, false); err != nil {
-		panic("couldn't generate Vega node wallet for tests")
+		t.Fatal("couldn't generate Vega node wallet for tests")
 	}
 	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, registryPass)
 	require.NoError(t, err)

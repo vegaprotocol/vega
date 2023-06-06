@@ -108,6 +108,16 @@ message PeggedOrder {
   string offset = 2;
 }
 
+// Details of an iceberg order
+message IcebergOrder {
+  // Size of the order that will be made visible if the iceberg order is refreshed at the end of a transaction.
+  uint64 initial_peak_size = 1;
+  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
+  uint64 minimum_peak_size = 2;
+  // Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed.
+  uint64 reserved_remaining = 3;
+}
+
 // Orders can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
 message Order {
   // Time In Force for an order
@@ -226,6 +236,8 @@ message Order {
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 21;
+  // Details of an iceberg order
+  optional IcebergOrder iceberg_order = 22;
 }
 
 // Used when cancelling an order
@@ -693,6 +705,9 @@ enum AccountType {
   // Per asset reward account for market proposers when the market goes above some trading threshold
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS = 17;
 
+  // Per asset account for holding in-flight unfilled orders' funds
+  ACCOUNT_TYPE_HOLDING = 18;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -776,6 +791,14 @@ enum TransferType {
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
   // Balances restored after network restart
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
+  // Spot trade delivery
+  TRANSFER_TYPE_SPOT = 26;
+  // An internal instruction to transfer a quantity corresponding to an active spot order from a general account into a party holding account.
+  TRANSFER_TYPE_HOLDING_LOCK = 27;
+  // An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account.
+  TRANSFER_TYPE_HOLDING_RELEASE = 28;
+  // Insurance pool fraction transfer from parent to successor market.
+  TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION = 29;
 }
 
 // Represents a financial transfer within Vega
@@ -1050,7 +1073,7 @@ message LiquidityOrderReference {
 message LiquidityProvision {
   // Status of a liquidity provision order.
   enum Status {
-    // Default value
+    // Always invalid
     STATUS_UNSPECIFIED = 0;
     // Liquidity provision is active
     STATUS_ACTIVE = 1;

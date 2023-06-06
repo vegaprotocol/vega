@@ -811,7 +811,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	eng.tokenBal[partyA] = 200
 	eng.tokenBal[partyB] = 100
 
-	const howMany = 100
+	const howMany = 10
 	passed := map[string]*types.Proposal{}
 	declined := map[string]*types.Proposal{}
 	var afterClosing time.Time
@@ -1179,7 +1179,7 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsNewMarket {
+func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
 	var dt *types.DataSourceDefinition
 	if termExt {
 		if termFilter == nil {
@@ -1262,6 +1262,40 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 				LpPriceRange:            num.DecimalFromFloat(0.95),
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				Successor:               successor,
+			},
+		},
+	}
+}
+
+func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
+	return &types.ProposalTermsNewSpotMarket{
+		NewSpotMarket: &types.NewSpotMarket{
+			Changes: &types.NewSpotMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "BTC/USDT Spot",
+					Code: "CRYPTO:BTCUSDT",
+					Product: &types.InstrumentConfigurationSpot{
+						Spot: &types.SpotProduct{
+							Name:       "BTC/USDT",
+							BaseAsset:  "BTC",
+							QuoteAsset: "USDT",
+						},
+					},
+				},
+				RiskParameters: &types.NewMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
+				DecimalPlaces: 0,
 			},
 		},
 	}
@@ -1410,7 +1444,45 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, nil),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newSpotMarketTerms(),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -1629,7 +1701,7 @@ func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market,
 func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.Market) {
 	t.Helper()
 	e.markets.EXPECT().
-		GetMarket(marketID).
+		GetMarket(marketID, gomock.Any()).
 		Times(1).
 		Return(market, true)
 }

@@ -28,7 +28,7 @@ type AdminCreatedWallet struct {
 type AdminFirstPublicKey struct {
 	PublicKey string            `json:"publicKey"`
 	Algorithm wallet.Algorithm  `json:"algorithm"`
-	Meta      []wallet.Metadata `json:"metadata"`
+	Metadata  []wallet.Metadata `json:"metadata"`
 }
 
 type AdminCreateWallet struct {
@@ -74,7 +74,7 @@ func (h *AdminCreateWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 				Name:    kp.AlgorithmName(),
 				Version: kp.AlgorithmVersion(),
 			},
-			Meta: kp.Metadata(),
+			Metadata: kp.Metadata(),
 		},
 	}, nil
 }

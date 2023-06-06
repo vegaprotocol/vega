@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -32,17 +31,9 @@ const serviceStoppingTimeout = 3 * time.Minute
 
 var ErrCannotStartMultipleServiceAtTheSameTime = errors.New("cannot start multiple service at the same time")
 
-// PolicyBuilderFunc return the policy the API v1.
-type PolicyBuilderFunc func(ctx context.Context) servicev1.Policy
-
-// InteractorBuilderFunc returns the interactor to use in the client API.
-type InteractorBuilderFunc func(ctx context.Context) api.Interactor
-
 // LoggerBuilderFunc is used to build a logger. It returns the built logger and a
 // zap.AtomicLevel to allow the caller to dynamically change the log level.
 type LoggerBuilderFunc func(level string) (*zap.Logger, zap.AtomicLevel, error)
-
-type ConnectionsManagerBuilderFunc func(api.Interactor) (*connections.Manager, error)
 
 type ProcessStoppedNotifier func()
 
@@ -52,24 +43,32 @@ type NetworkStore interface {
 }
 
 type Starter struct {
-	walletStore api.WalletStore
-	netStore    NetworkStore
-	svcStore    Store
+	walletStore        api.WalletStore
+	netStore           NetworkStore
+	svcStore           Store
+	policy             servicev1.Policy
+	connectionsManager *connections.Manager
+	interactor         api.Interactor
 
-	connectionsManagerBuilderFunc ConnectionsManagerBuilderFunc
-	policyBuilderFunc             PolicyBuilderFunc
-	interactorBuilderFunc         InteractorBuilderFunc
-	loggerBuilderFunc             LoggerBuilderFunc
+	loggerBuilderFunc LoggerBuilderFunc
 
 	isStarted atomic.Bool
 }
 
 type ResourceContext struct {
-	ServiceURL        string
-	ErrCh             chan error
-	ConnectionManager *connections.Manager
+	ServiceURL string
+	ErrCh      chan error
 }
 
+// Start builds the components the service relies on and start it.
+//
+// # Why build certain components only at start up, and not during the build phase?
+//
+// This is because some components are relying on editable configuration. So, the
+// service must be able to be restarted with an updated configuration. Building
+// these components up front would prevent that. This is particularly true for
+// desktop applications that can edit the configuration and start the service
+// in the same process.
 func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck bool) (_ *ResourceContext, err error) {
 	rc := &ResourceContext{}
 	if s.isStarted.Load() {
@@ -123,7 +122,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 		return nil, err
 	}
 
-	// Check if the port we want to bind is free. It's not fool-proof, but it
+	// Check if the port we want to bind is free. It is not fool-proof, but it
 	// should catch most of the port-binding problems.
 	if err := ensurePortCanBeBound(jobRunner.Ctx(), logger, serviceCfg.Server.String()); err != nil {
 		return nil, err
@@ -138,14 +137,14 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 	proofOfWork := spam.NewHandler()
 
 	// API v1
-	apiV1, err := s.buildAPIV1(jobRunner.Ctx(), apiLogger, networkCfg, serviceCfg, proofOfWork, closer)
+	apiV1, err := s.buildAPIV1(apiLogger, closer, networkCfg, serviceCfg, proofOfWork)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v1", zap.Error(err))
 		return nil, err
 	}
 
 	// API v2
-	apiV2, err := s.buildAPIV2(jobRunner.Ctx(), apiLogger, networkCfg, proofOfWork, closer, rc, serviceCfg.APIV2)
+	apiV2, err := s.buildAPIV2(apiLogger, networkCfg, proofOfWork, closer, serviceCfg.APIV2)
 	if err != nil {
 		logger.Error("Could not build the HTTP API v2", zap.Error(err))
 		return nil, err
@@ -153,8 +152,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 
 	svc := NewService(logger.Named("http-server"), serviceCfg, apiV1, apiV2)
 
-	// This job is responsible for stopping the service when the job context is
-	// set as done.
+	// This job stops the service when the job context is set as done.
 	// This is required because we can't bind the service to a context.
 	jobRunner.Go(func(jobCtx context.Context) {
 		defer s.isStarted.Store(false)
@@ -202,7 +200,7 @@ func (s *Starter) Start(jobRunner *vgjob.Runner, network string, noVersionCheck 
 
 // buildAPIV1
 // This API is deprecated.
-func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg *network.Network, serviceCfg *Config, spam *spam.Handler, closer *vgclose.Closer) (*servicev1.API, error) {
+func (s *Starter) buildAPIV1(logger *zap.Logger, closer *vgclose.Closer, networkCfg *network.Network, serviceCfg *Config, spam *spam.Handler) (*servicev1.API, error) {
 	apiV1Logger := logger.Named("v1")
 
 	forwarder, err := node.NewForwarder(apiV1Logger.Named("forwarder"), networkCfg.API.GRPC)
@@ -221,24 +219,20 @@ func (s *Starter) buildAPIV1(ctx context.Context, logger *zap.Logger, networkCfg
 	// Don't forget to close the sessions.
 	closer.Add(auth.RevokeAllToken)
 
-	// We don't close/stop the policy ourselves, this should be done by the provider
-	// of the builder function. We don't close what we don't own.
-	policy := s.policyBuilderFunc(ctx)
-
 	handler := wallets.NewHandler(s.walletStore)
 
-	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, policy, networkCfg, spam), nil
+	return servicev1.NewAPI(apiV1Logger, handler, auth, forwarder, s.policy, networkCfg, spam), nil
 }
 
-func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer, rc *ResourceContext, apiv2Cfg APIV2Config) (*servicev2.API, error) {
+func (s *Starter) buildAPIV2(logger *zap.Logger, cfg *network.Network, pow api.SpamHandler, closer *vgclose.Closer, apiV2Cfg APIV2Config) (*servicev2.API, error) {
 	apiV2logger := logger.Named("v2")
 	clientAPILogger := apiV2logger.Named("client-api")
 
 	nodeSelector, err := nodeapi.BuildRoundRobinSelectorWithRetryingNodes(
 		clientAPILogger,
 		cfg.API.GRPC.Hosts,
-		apiv2Cfg.Nodes.MaximumRetryPerRequest,
-		apiv2Cfg.Nodes.MaximumRequestDuration.Duration,
+		apiV2Cfg.Nodes.MaximumRetryPerRequest,
+		apiV2Cfg.Nodes.MaximumRequestDuration.Duration,
 	)
 	if err != nil {
 		logger.Error("Could not build the node selector", zap.Error(err))
@@ -246,24 +240,13 @@ func (s *Starter) buildAPIV2(ctx context.Context, logger *zap.Logger, cfg *netwo
 	}
 	closer.Add(nodeSelector.Stop)
 
-	// We don't close the interactor ourselves, this should be done by
-	// the provider of the builder function. We don't close what we don't own.
-	interactor := s.interactorBuilderFunc(ctx)
-
-	clientAPI, err := api.BuildClientAPI(s.walletStore, interactor, nodeSelector, pow)
+	clientAPI, err := api.BuildClientAPI(s.walletStore, s.interactor, nodeSelector, pow)
 	if err != nil {
 		logger.Error("Could not instantiate the client part of the JSON-RPC API", zap.Error(err))
 		return nil, fmt.Errorf("could not instantiate the client part of the JSON-RPC API: %w", err)
 	}
 
-	connectionsManager, err := s.connectionsManagerBuilderFunc(interactor)
-	if err != nil {
-		return nil, fmt.Errorf("could not build the connections manager: %w", err)
-	}
-	closer.Add(connectionsManager.EndAllSessionConnections)
-	rc.ConnectionManager = connectionsManager
-
-	return servicev2.NewAPI(apiV2logger, clientAPI, connectionsManager), nil
+	return servicev2.NewAPI(apiV2logger, clientAPI, s.connectionsManager), nil
 }
 
 func (s *Starter) buildServiceLogger(network string) (*zap.Logger, zap.AtomicLevel, error) {
@@ -356,20 +339,20 @@ func updateLogLevel(logLevel zap.AtomicLevel, serviceCfg *Config) error {
 	return nil
 }
 
-func NewStarter(walletStore api.WalletStore, netStore api.NetworkStore, svcStore Store, connectionsManager ConnectionsManagerBuilderFunc, policyBuilderFunc PolicyBuilderFunc, interactorBuilderFunc InteractorBuilderFunc, loggerBuilderFunc LoggerBuilderFunc) *Starter {
+func NewStarter(walletStore api.WalletStore, netStore api.NetworkStore, svcStore Store, connectionsManager *connections.Manager, policy servicev1.Policy, interactor api.Interactor, loggerBuilderFunc LoggerBuilderFunc) *Starter {
 	return &Starter{
-		walletStore:                   walletStore,
-		netStore:                      netStore,
-		svcStore:                      svcStore,
-		connectionsManagerBuilderFunc: connectionsManager,
-		policyBuilderFunc:             policyBuilderFunc,
-		interactorBuilderFunc:         interactorBuilderFunc,
-		loggerBuilderFunc:             loggerBuilderFunc,
+		walletStore:        walletStore,
+		netStore:           netStore,
+		svcStore:           svcStore,
+		connectionsManager: connectionsManager,
+		policy:             policy,
+		interactor:         interactor,
+		loggerBuilderFunc:  loggerBuilderFunc,
 	}
 }
 
 func ensurePortCanBeBound(ctx context.Context, logger *zap.Logger, url string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, bytes.NewReader([]byte{}))
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
 	if err != nil {
 		logger.Error("Could not build the request verifying the state of the port to bind", zap.Error(err))
 		return fmt.Errorf("could not build the request verifying the state of the port to bind: %w", err)
@@ -381,7 +364,7 @@ func ensurePortCanBeBound(ctx context.Context, logger *zap.Logger, url string) e
 		// connection of some kind, whereas we would have liked it to be unable
 		// to connect to anything, which would have implied this host is free to
 		// use.
-		logger.Error("Could not start the service as an application is already served on that url", zap.String("url", url))
+		logger.Error("Could not start the service as an application is already served on that URL", zap.String("url", url))
 		return fmt.Errorf("could not start the service as an application is already served on %q", url)
 	}
 	defer func() {

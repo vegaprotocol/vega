@@ -6,6 +6,7 @@ import "vega/assets.proto";
 import "vega/chain_events.proto";
 import "vega/events/v1/events.proto";
 import "vega/governance.proto";
+import "vega/markets.proto";
 import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1";
@@ -31,6 +32,7 @@ message Checkpoint {
   bytes staking = 11;
   bytes multisig_control = 12;
   bytes market_tracker = 13;
+  bytes execution = 14;
 }
 
 // AssetEntry is a single (enabled) asset
@@ -223,4 +225,46 @@ message AssetAction {
   vega.ERC20AssetLimitsUpdated erc20_asset_limits_updated = 10;
   bool erc20_bridge_stopped = 11;
   bool erc20_bridge_resumed = 12;
+}
+
+message ELSShare {
+  // Party ID of the liquidity provider.
+  string party_id = 1;
+  // The equity-like share of the liquidity provider, representing their share in the total provided liquidity expressed as a value between 0 and 1.
+  string share = 2;
+  // Amount committed. This is the total commitment made. It does not necessarily match the LP balance.
+  string supplied_stake = 3;
+  // LP stake, weighted according to the time the stake was committed and market growth.
+  string virtual_stake = 4;
+  // Average entry valuation. As time increases the weight of stake, this is the overall valuation of the current stake.
+  string avg = 5;
+}
+
+message MarketState {
+  // Unique ID for the market
+  string id = 1;
+
+  // The current equity-like share data for a market.
+  repeated ELSShare shares = 2;
+
+  // Current balance of the insurance pool.
+  string insurance_balance = 3;
+
+  // Total trade value which last determined the growth rate of the market.
+  string last_trade_value = 4;
+
+  // Total trade volume which last determined the growth rate of the market.
+  string last_trade_volume = 5;
+
+  // Succession window in nanoseconds: the timestamp when this market cannot be succeeded anymore.
+  int64 succession_window = 6;
+
+  // The underlying market should be present in case the successor market is enacted during the succession window.
+  // This field can be omitted if the market is not yet settled.
+  vega.Market market = 7;
+}
+
+message ExecutionState {
+  // Market data that should be preserved, like equity-like shares, and settled markets that have pending successor markets.
+  repeated MarketState data = 1;
 }

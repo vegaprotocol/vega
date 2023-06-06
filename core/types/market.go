@@ -326,8 +326,55 @@ func (t TradableInstrument) DeepClone() *TradableInstrument {
 	}
 }
 
+type InstrumentSpot struct {
+	Spot *Spot
+}
+
+func (InstrumentSpot) Type() ProductType {
+	return ProductTypeSpot
+}
+
+func (i InstrumentSpot) String() string {
+	return fmt.Sprintf(
+		"spot(%s)",
+		reflectPointerToString(i.Spot),
+	)
+}
+
+type Spot struct {
+	Name       string
+	BaseAsset  string
+	QuoteAsset string
+}
+
+func SpotFromProto(s *proto.Spot) *Spot {
+	return &Spot{
+		BaseAsset:  s.BaseAsset,
+		QuoteAsset: s.QuoteAsset,
+	}
+}
+
+func (s Spot) IntoProto() *proto.Spot {
+	return &proto.Spot{
+		BaseAsset:  s.BaseAsset,
+		QuoteAsset: s.QuoteAsset,
+	}
+}
+
+func (s Spot) String() string {
+	return fmt.Sprintf(
+		"baseAsset(%s) quoteAsset(%s)",
+		s.BaseAsset,
+		s.QuoteAsset,
+	)
+}
+
 type InstrumentFuture struct {
 	Future *Future
+}
+
+func (InstrumentFuture) Type() ProductType {
+	return ProductTypeFuture
 }
 
 func (i InstrumentFuture) String() string {
@@ -382,8 +429,35 @@ func iInstrumentFromProto(pi interface{}) iProto {
 		return InstrumentFutureFromProto(&i)
 	case *proto.Instrument_Future:
 		return InstrumentFutureFromProto(i)
+	case proto.Instrument_Spot:
+		return InstrumentSpotFromProto(&i)
+	case *proto.Instrument_Spot:
+		return InstrumentSpotFromProto(i)
 	}
 	return nil
+}
+
+func InstrumentSpotFromProto(f *proto.Instrument_Spot) *InstrumentSpot {
+	return &InstrumentSpot{
+		Spot: SpotFromProto(f.Spot),
+	}
+}
+
+func (i InstrumentSpot) IntoProto() *proto.Instrument_Spot {
+	return &proto.Instrument_Spot{
+		Spot: i.Spot.IntoProto(),
+	}
+}
+
+func (i InstrumentSpot) getAssets() ([]string, error) {
+	if i.Spot == nil {
+		return []string{}, ErrUnknownAsset
+	}
+	return []string{i.Spot.BaseAsset, i.Spot.QuoteAsset}, nil
+}
+
+func (i InstrumentSpot) iIntoProto() interface{} {
+	return i.IntoProto()
 }
 
 func InstrumentFutureFromProto(f *proto.Instrument_Future) *InstrumentFuture {
@@ -398,11 +472,45 @@ func (i InstrumentFuture) IntoProto() *proto.Instrument_Future {
 	}
 }
 
-func (i InstrumentFuture) getAsset() (string, error) {
+func (i InstrumentFuture) getAssets() ([]string, error) {
 	if i.Future == nil {
-		return "", ErrUnknownAsset
+		return []string{}, ErrUnknownAsset
 	}
-	return i.Future.SettlementAsset, nil
+	return []string{i.Future.SettlementAsset}, nil
+}
+
+func (m *Market) GetAssets() ([]string, error) {
+	if m.TradableInstrument == nil {
+		return []string{}, ErrNilTradableInstrument
+	}
+	if m.TradableInstrument.Instrument == nil {
+		return []string{}, ErrNilInstrument
+	}
+	if m.TradableInstrument.Instrument.Product == nil {
+		return []string{}, ErrNilProduct
+	}
+
+	return m.TradableInstrument.Instrument.Product.getAssets()
+}
+
+func (m *Market) ProductType() ProductType {
+	return m.TradableInstrument.Instrument.Product.Type()
+}
+
+func (m *Market) GetFuture() *InstrumentFuture {
+	if m.ProductType() == ProductTypeFuture {
+		f, _ := m.TradableInstrument.Instrument.Product.(*InstrumentFuture)
+		return f
+	}
+	return nil
+}
+
+func (m *Market) GetSpot() *InstrumentSpot {
+	if m.ProductType() == ProductTypeSpot {
+		s, _ := m.TradableInstrument.Instrument.Product.(*InstrumentSpot)
+		return s
+	}
+	return nil
 }
 
 func (i InstrumentFuture) iIntoProto() interface{} {
@@ -411,8 +519,9 @@ func (i InstrumentFuture) iIntoProto() interface{} {
 
 type iProto interface {
 	iIntoProto() interface{}
-	getAsset() (string, error)
+	getAssets() ([]string, error)
 	String() string
+	Type() ProductType
 }
 
 type Instrument struct {
@@ -422,6 +531,7 @@ type Instrument struct {
 	Metadata *InstrumentMetadata
 	// Types that are valid to be assigned to Product:
 	//	*InstrumentFuture
+	//	*InstrumentSpot
 	Product iProto
 }
 
@@ -435,6 +545,15 @@ func InstrumentFromProto(i *proto.Instrument) *Instrument {
 		Name:     i.Name,
 		Metadata: InstrumentMetadataFromProto(i.Metadata),
 		Product:  iInstrumentFromProto(i.Product),
+	}
+}
+
+func (i Instrument) GetSpot() *Spot {
+	switch p := i.Product.(type) {
+	case *InstrumentSpot:
+		return p.Spot
+	default:
+		return nil
 	}
 }
 
@@ -632,20 +751,28 @@ type Market struct {
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
 
-	TradingMode      MarketTradingMode
-	State            MarketState
-	MarketTimestamps *MarketTimestamps
-	asset            string
+	TradingMode           MarketTradingMode
+	State                 MarketState
+	MarketTimestamps      *MarketTimestamps
+	ParentMarketID        string
+	InsurancePoolFraction num.Decimal
 }
 
 func MarketFromProto(mkt *proto.Market) (*Market, error) {
-	asset, _ := mkt.GetAsset()
 	lppr, _ := num.DecimalFromString(mkt.LpPriceRange)
 	linearSlippageFactor, _ := num.DecimalFromString(mkt.LinearSlippageFactor)
 	quadraticSlippageFactor, _ := num.DecimalFromString(mkt.QuadraticSlippageFactor)
 	liquidityParameters, err := LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters)
 	if err != nil {
 		return nil, err
+	}
+	insFraction := num.DecimalZero()
+	if mkt.InsurancePoolFraction != nil && len(*mkt.InsurancePoolFraction) > 0 {
+		insFraction = num.MustDecimalFromString(*mkt.InsurancePoolFraction)
+	}
+	parent := ""
+	if mkt.ParentMarketId != nil {
+		parent = *mkt.ParentMarketId
 	}
 
 	m := &Market{
@@ -660,10 +787,11 @@ func MarketFromProto(mkt *proto.Market) (*Market, error) {
 		TradingMode:                   mkt.TradingMode,
 		State:                         mkt.State,
 		MarketTimestamps:              MarketTimestampsFromProto(mkt.MarketTimestamps),
-		asset:                         asset,
 		LPPriceRange:                  lppr,
 		LinearSlippageFactor:          linearSlippageFactor,
 		QuadraticSlippageFactor:       quadraticSlippageFactor,
+		ParentMarketID:                parent,
+		InsurancePoolFraction:         insFraction,
 	}
 	return m, nil
 }
@@ -695,6 +823,12 @@ func (m Market) IntoProto() *proto.Market {
 	if m.LiquidityMonitoringParameters != nil {
 		lms = m.LiquidityMonitoringParameters.IntoProto()
 	}
+	var parent, insPoolFrac *string
+	if len(m.ParentMarketID) != 0 {
+		pid, insf := m.ParentMarketID, m.InsurancePoolFraction.String()
+		parent = &pid
+		insPoolFrac = &insf
+	}
 	r := &proto.Market{
 		Id:                            m.ID,
 		TradableInstrument:            ti,
@@ -710,41 +844,14 @@ func (m Market) IntoProto() *proto.Market {
 		LpPriceRange:                  m.LPPriceRange.String(),
 		LinearSlippageFactor:          m.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
+		InsurancePoolFraction:         insPoolFrac,
+		ParentMarketId:                parent,
 	}
 	return r
 }
 
 func (m Market) GetID() string {
 	return m.ID
-}
-
-func (m *Market) getAsset() (string, error) {
-	if m.TradableInstrument == nil {
-		return "", ErrNilTradableInstrument
-	}
-	if m.TradableInstrument.Instrument == nil {
-		return "", ErrNilInstrument
-	}
-	if m.TradableInstrument.Instrument.Product == nil {
-		return "", ErrNilProduct
-	}
-
-	return m.TradableInstrument.Instrument.Product.getAsset()
-}
-
-func (m *Market) GetAsset() (string, error) {
-	if m.asset == "" {
-		asset, err := m.getAsset()
-		if err != nil {
-			return asset, err
-		}
-		m.asset = asset
-	}
-	return m.asset, nil
-}
-
-func (m *Market) SetAsset(a string) {
-	m.asset = a
 }
 
 func (m Market) String() string {
@@ -771,7 +878,6 @@ func (m Market) DeepClone() *Market {
 		PositionDecimalPlaces:   m.PositionDecimalPlaces,
 		TradingMode:             m.TradingMode,
 		State:                   m.State,
-		asset:                   m.asset,
 		LPPriceRange:            m.LPPriceRange,
 		LinearSlippageFactor:    m.LinearSlippageFactor,
 		QuadraticSlippageFactor: m.QuadraticSlippageFactor,

@@ -31,6 +31,9 @@ var (
 	ErrNetworkParameterUpdateDisabledFor = func(key string) error {
 		return fmt.Errorf("network parameter update disabled for %v", key)
 	}
+	ErrNetworkParameterDeprecated = func(key string) error {
+		return fmt.Errorf("network parameter has been deprecated: %v", key)
+	}
 	// a list of network parameter which cannot be updated.
 	updateDisallowed = []string{
 		BlockchainsEthereumConfig,
@@ -437,6 +440,10 @@ func (s *Store) IsUpdateAllowed(key string) error {
 	_, ok := s.store[key]
 	if !ok {
 		return ErrUnknownKey
+	}
+
+	if _, ok := Deprecated[key]; ok {
+		return ErrNetworkParameterDeprecated(key)
 	}
 
 	for _, v := range updateDisallowed {

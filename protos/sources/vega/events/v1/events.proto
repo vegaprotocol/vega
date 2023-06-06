@@ -730,6 +730,9 @@ enum BusEventType {
   // Event indicating parties have become, or were, distressed but still have an active position.
   BUS_EVENT_TYPE_DISTRESSED_POSITIONS = 58;
 
+  // Event indicating a spot liquidity provision has been created or updated.
+  BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION = 59;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type

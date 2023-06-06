@@ -25,7 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/execution"
-	"code.vegaprotocol.io/vega/core/execution/mocks"
+	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -34,6 +35,56 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type engineFake struct {
+	*execution.Engine
+	ctrl       *gomock.Controller
+	broker     *bmocks.MockBroker
+	timeSvc    *mocks.MockTimeService
+	collateral *mocks.MockCollateral
+	oracle     *mocks.MockOracleEngine
+	statevar   *mocks.MockStateVarEngine
+	epoch      *mocks.MockEpochEngine
+	asset      *mocks.MockAssets
+}
+
+func getMockedEngine(t *testing.T) *engineFake {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	log := logging.NewTestLogger()
+	execConfig := execution.NewDefaultConfig()
+	broker := bmocks.NewMockBroker(ctrl)
+	// broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	timeService := mocks.NewMockTimeService(ctrl)
+	// timeService.EXPECT().GetTimeNow().AnyTimes()
+
+	collateralService := mocks.NewMockCollateral(ctrl)
+	// collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
+	// collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	oracleService := mocks.NewMockOracleEngine(ctrl)
+	// oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	statevar := mocks.NewMockStateVarEngine(ctrl)
+	// statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	// statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	epochEngine := mocks.NewMockEpochEngine(ctrl)
+	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
+	asset := mocks.NewMockAssets(ctrl)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset)
+	return &engineFake{
+		Engine:     exec,
+		ctrl:       ctrl,
+		broker:     broker,
+		timeSvc:    timeService,
+		collateral: collateralService,
+		oracle:     oracleService,
+		statevar:   statevar,
+		epoch:      epochEngine,
+		asset:      asset,
+	}
+}
 
 func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	t.Helper()
@@ -63,7 +114,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 		as := NewAssetStub(a, 0)
 		return as, nil
 	})
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewMarketActivityTracker(log, epochEngine), asset), ctrl
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

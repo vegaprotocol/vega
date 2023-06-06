@@ -72,6 +72,7 @@ func BuildCmdRoot(w io.Writer) *cobra.Command {
 	// Root commands
 	cmd.AddCommand(NewCmdInit(w, f))
 
+	cmd.AddCommand(NewCmdDisclaimer(w, f))
 	// Sub-commands
 	cmd.AddCommand(NewCmdAPIToken(w, f))
 	cmd.AddCommand(NewCmdKey(w, f))

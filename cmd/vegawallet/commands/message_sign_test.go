@@ -38,7 +38,7 @@ func testSignMessageFlagsValidFlagsSucceeds(t *testing.T) {
 
 	expectedReq := api.AdminSignMessageParams{
 		Wallet:         walletName,
-		PubKey:         pubKey,
+		PublicKey:      pubKey,
 		EncodedMessage: encodedMessage,
 	}
 

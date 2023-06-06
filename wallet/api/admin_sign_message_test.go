@@ -50,8 +50,8 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 		{
 			name: "with empty public key",
 			params: api.AdminSignMessageParams{
-				Wallet: vgrand.RandomStr(5),
-				PubKey: "",
+				Wallet:    vgrand.RandomStr(5),
+				PublicKey: "",
 			},
 			expectedError: api.ErrPublicKeyIsRequired,
 		},
@@ -59,7 +59,7 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 			name: "with empty message",
 			params: api.AdminSignMessageParams{
 				Wallet:         vgrand.RandomStr(5),
-				PubKey:         vgrand.RandomStr(5),
+				PublicKey:      vgrand.RandomStr(5),
 				EncodedMessage: "",
 			},
 			expectedError: api.ErrMessageIsRequired,
@@ -68,7 +68,7 @@ func testSigningMessageWithInvalidParamsFails(t *testing.T) {
 			name: "with non-base64 message",
 			params: api.AdminSignMessageParams{
 				Wallet:         vgrand.RandomStr(5),
-				PubKey:         vgrand.RandomStr(5),
+				PublicKey:      vgrand.RandomStr(5),
 				EncodedMessage: "blahh",
 			},
 			expectedError: api.ErrEncodedMessageIsNotValidBase64String,
@@ -134,7 +134,7 @@ func testSigningMessageFailingToGetWalletFails(t *testing.T) {
 func paramsWithMessage(m string) api.AdminSignMessageParams {
 	return api.AdminSignMessageParams{
 		Wallet:         vgrand.RandomStr(5),
-		PubKey:         vgrand.RandomStr(5),
+		PublicKey:      vgrand.RandomStr(5),
 		EncodedMessage: m,
 	}
 }

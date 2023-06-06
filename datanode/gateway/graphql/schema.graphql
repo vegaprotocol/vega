@@ -677,6 +677,18 @@ type Query {
   "Get statistics about the Vega node"
   statistics: Statistics!
 
+  "List markets in a succession line"
+  successorMarkets(
+    "Market ID of any market in the succession line"
+    marketId: ID!,
+    """
+    Flag indicating whether to include the full succession line or not.
+    If not specified, the default is false.
+    When false, only the requested market and its children are returned.
+    """
+    fullHistory: Boolean,
+  ): [Market]
+
   "Get a list of all trades and apply any given filters to the results"
   trades(
     filter: TradesFilter
@@ -1841,6 +1853,17 @@ type Market {
 
   "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
+
+  """
+  Optional: Parent market ID. A market can be a successor to another market. If this market is a successor to a previous market,
+  this field will be populated with the ID of the previous market.
+  """
+  parentMarketID: ID
+
+  """
+  Optional: When a successor market is created, a fraction of the parent market's insurance pool can be transferred to the successor market
+  """
+  insurancePoolFraction: String
 }
 
 """
@@ -3233,6 +3256,8 @@ enum AccountType {
   ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
   "RewardMarketProposers - an account holding rewards for market proposers"
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
+  "AccountTypeHolding - an account for holding funds covering for active unfilled orders"
+  ACCOUNT_TYPE_HOLDING
 }
 
 "Types that describe why a transfer has been made"
@@ -3285,6 +3310,12 @@ enum TransferType {
   TRANSFER_TYPE_CLEAR_ACCOUNT
   "Balances are being restored to the user's account following a checkpoint restart of the network"
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE
+  "Spot trade delivery"
+  TRANSFER_TYPE_SPOT
+  "An internal instruction to transfer a quantity corresponding to an active spot order from a general account into a party holding account"
+  TRANSFER_TYPE_HOLDING_LOCK
+  "An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account"
+  TRANSFER_TYPE_HOLDING_RELEASE
 
 }
 
@@ -3353,10 +3384,19 @@ type NewMarket {
   positionDecimalPlaces: Int!
   "Liquidity Provision order price range"
   lpPriceRange: String!
-  "Linear slippage factor is used to cap the slippage component of maintainence margin - it is applied to the slippage volume"
+  "Linear slippage factor is used to cap the slippage component of maintenance margin - it is applied to the slippage volume"
   linearSlippageFactor: String!
-  "Quadratic slippage factor is used to cap the slippage component of maintainence margin - it is applied to the square of the slippage volume"
+  "Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume"
   quadraticSlippageFactor: String!
+  "Successor market configuration. If this proposed market is meant to succeed a given market, then this needs to be set."
+  successorConfiguration: SuccessorConfiguration
+}
+
+type SuccessorConfiguration {
+  "ID of the market this proposal will succeed"
+  parentMarketId: String!
+  "Decimal value between 0 and 1, specifying the fraction of the insurance pool balance is carried over from the parent market to the successor."
+  insurancePoolFraction: String!
 }
 
 """
@@ -4134,7 +4174,7 @@ type PartyConnection {
 type MarketEdge {
   "The market"
   node: Market!
-    "The cursor for this market"
+  "The cursor for this market"
   cursor: String!
 }
 

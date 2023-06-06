@@ -20,6 +20,16 @@ message AuctionDuration {
   uint64 volume = 2;
 }
 
+// Spot product definition
+message Spot {
+  // Asset ID of the underlying base asset for the spot product.
+  string base_asset = 1;
+  // Asset ID of the underlying quote asset for the spot product.
+  string quote_asset = 2;
+  // Name of the instrument.
+  string name = 3;
+}
+
 // Future product definition
 message Future {
   // Underlying asset for the future.
@@ -67,6 +77,8 @@ message Instrument {
   oneof product {
     // Future.
     Future future = 100;
+    // Spot.
+    Spot spot = 101;
   }
 }
 
@@ -283,6 +295,12 @@ message Market {
   string linear_slippage_factor = 13;
   // Quadratic slippage factor is used to cap the slippage component of maintenance margin - it is applied to the square of the slippage volume.
   string quadratic_slippage_factor = 14;
+  // ID of the market this market succeeds
+  optional string parent_market_id = 15;
+  // The fraction of the parent market's insurance pool that this market inherits; range 0 through 1.
+  optional string insurance_pool_fraction = 16;
+  // ID of the market that succeeds this market if it exists. This will be populated by the system when the successor market is enabled.
+  optional string successor_market_id = 17;
 }
 
 // Time stamps for important times about creating, enacting etc the market

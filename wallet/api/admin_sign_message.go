@@ -11,12 +11,12 @@ import (
 
 type AdminSignMessageParams struct {
 	Wallet         string `json:"wallet"`
-	PubKey         string `json:"publicKey"`
+	PublicKey      string `json:"publicKey"`
 	EncodedMessage string `json:"encodedMessage"`
 }
 
 type AdminSignMessageResult struct {
-	Base64Signature string `json:"encodedSignature"`
+	EncodedSignature string `json:"encodedSignature"`
 }
 
 type AdminSignMessage struct {
@@ -53,13 +53,13 @@ func (h *AdminSignMessage) Handle(ctx context.Context, rawParams jsonrpc.Params)
 		return nil, InternalError(fmt.Errorf("could not retrieve the wallet: %w", err))
 	}
 
-	signature, err := w.SignAny(params.PubKey, m)
+	signature, err := w.SignAny(params.PublicKey, m)
 	if err != nil {
 		return nil, InternalError(fmt.Errorf("could not sign the message: %w", err))
 	}
 
 	return AdminSignMessageResult{
-		Base64Signature: base64.StdEncoding.EncodeToString(signature),
+		EncodedSignature: base64.StdEncoding.EncodeToString(signature),
 	}, nil
 }
 
@@ -83,7 +83,7 @@ func validateAdminSignMessageParams(rawParams jsonrpc.Params) (AdminSignMessageP
 		return AdminSignMessageParams{}, ErrWalletIsRequired
 	}
 
-	if params.PubKey == "" {
+	if params.PublicKey == "" {
 		return AdminSignMessageParams{}, ErrPublicKeyIsRequired
 	}
 
@@ -93,7 +93,7 @@ func validateAdminSignMessageParams(rawParams jsonrpc.Params) (AdminSignMessageP
 
 	return AdminSignMessageParams{
 		Wallet:         params.Wallet,
-		PubKey:         params.PubKey,
+		PublicKey:      params.PublicKey,
 		EncodedMessage: params.EncodedMessage,
 	}, nil
 }

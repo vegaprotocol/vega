@@ -50,6 +50,7 @@ var (
 	gteI1    = IntGTE(1)
 	lteI500  = IntLTE(500)
 	lteI1000 = IntLTE(1000)
+	lteI1    = IntLTE(1)
 
 	// Durations.
 	gte0s   = DurationGTE(0 * time.Second)
@@ -64,6 +65,9 @@ var (
 
 func defaultNetParams() map[string]value {
 	m := map[string]value{
+		// spots
+		SpotMarketTradingEnabled: NewInt(gteI0, lteI1).Mutable(true).MustUpdate("0"),
+
 		// markets
 		MarketMarginScalingFactors:                      NewJSON(&proto.ScalingFactors{}, checks.MarginScalingFactor(), checks.MarginScalingFactorRange(num.DecimalOne(), num.DecimalFromInt64(100))).Mutable(true).MustUpdate(`{"search_level": 1.1, "initial_margin": 1.2, "collateral_release": 1.4}`),
 		MarketFeeFactorsMakerFee:                        NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00025"),
@@ -222,6 +226,7 @@ func defaultNetParams() map[string]value {
 
 		MarkPriceUpdateMaximumFrequency:   NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		ValidatorPerformanceScalingFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		SuccessorLaunchWindow:             NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
 	}
 
 	// add additional cross net param rules

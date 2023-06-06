@@ -95,6 +95,18 @@ func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
 }
 
+func (r *VegaResolverRoot) DataSourceDefinition() DataSourceDefinitionResolver {
+	return (*myDataSourceDefinitionResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinitionExternal() DataSourceDefinitionExternalResolver {
+	return (*myDataSourceDefinitionExternalResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinitionInternal() DataSourceDefinitionInternalResolver {
+	return (*myDataSourceDefinitionInternalResolver)(r)
+}
+
 func (r *VegaResolverRoot) DataSourceSpecConfiguration() DataSourceSpecConfigurationResolver {
 	return (*myDataSourceSpecConfigurationResolver)(r)
 }
@@ -237,10 +249,6 @@ func (r *VegaResolverRoot) NewAsset() NewAssetResolver {
 
 func (r *VegaResolverRoot) UpdateAsset() UpdateAssetResolver {
 	return (*updateAssetResolver)(r)
-}
-
-func (r *VegaResolverRoot) UpdateFutureProduct() UpdateFutureProductResolver {
-	return (*updateFutureProductResolver)(r)
 }
 
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
@@ -1285,6 +1293,26 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 	return resp.GetSegment(), nil
 }
 
+func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool) ([]*vega.Market, error) {
+	getAll := false
+
+	if fullHistory != nil {
+		getAll = *fullHistory
+	}
+
+	req := &v2.ListSuccessorMarketsRequest{
+		MarketId:           marketID,
+		IncludeFullHistory: getAll,
+	}
+
+	resp, err := r.tradingDataClientV2.ListSuccessorMarkets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetMarkets(), nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot
@@ -2200,7 +2228,6 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 	}
 
 	c := make(chan []*types.Order)
-	var orders []*types.Order
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
@@ -2219,7 +2246,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			orders = orders[:0]
+			orders := []*types.Order{}
 			if snapshot := o.GetSnapshot(); snapshot != nil {
 				orders = append(orders, snapshot.Orders...)
 			}

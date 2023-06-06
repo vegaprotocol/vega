@@ -13,6 +13,7 @@ func TestInit(t *testing.T) {
 }
 
 func testInitialisingSoftwareSucceeds(t *testing.T) {
+	t.Parallel()
 	testDir := t.TempDir()
 
 	// given
@@ -28,6 +29,7 @@ func testInitialisingSoftwareSucceeds(t *testing.T) {
 }
 
 func testForcingSoftwareInitialisationSucceeds(t *testing.T) {
+	t.Parallel()
 	testDir := t.TempDir()
 
 	// given

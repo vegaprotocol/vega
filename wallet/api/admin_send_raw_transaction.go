@@ -32,11 +32,11 @@ type ParsedAdminSendRawTransactionParams struct {
 }
 
 type AdminSendRawTransactionResult struct {
-	ReceivedAt time.Time                         `json:"receivedAt"`
-	SentAt     time.Time                         `json:"sentAt"`
-	TxHash     string                            `json:"transactionHash"`
-	Tx         *commandspb.Transaction           `json:"transaction"`
-	Node       AdminSendRawTransactionNodeResult `json:"node"`
+	ReceivedAt      time.Time                         `json:"receivedAt"`
+	SentAt          time.Time                         `json:"sentAt"`
+	TransactionHash string                            `json:"transactionHash"`
+	Transaction     *commandspb.Transaction           `json:"transaction"`
+	Node            AdminSendRawTransactionNodeResult `json:"node"`
 }
 
 type AdminSendRawTransactionNodeResult struct {
@@ -98,10 +98,10 @@ func (h *AdminSendRawTransaction) Handle(ctx context.Context, rawParams jsonrpc.
 	}
 
 	return AdminSendRawTransactionResult{
-		ReceivedAt: receivedAt,
-		SentAt:     sentAt,
-		TxHash:     txHash,
-		Tx:         tx,
+		ReceivedAt:      receivedAt,
+		SentAt:          sentAt,
+		TransactionHash: txHash,
+		Transaction:     tx,
 		Node: AdminSendRawTransactionNodeResult{
 			Host: currentNode.Host(),
 		},

@@ -31,6 +31,12 @@ type enactmentTime struct {
 	shouldNotVerify bool
 }
 
+type firstSuccessor struct {
+	enactment int64
+	prop      *types.Proposal
+	isEnacted bool
+}
+
 func (e *Engine) Name() types.CheckpointName {
 	return types.GovernanceCheckpoint
 }
@@ -69,6 +75,8 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	latestUpdateMarketProposals := map[string]*types.Proposal{}
 	updatedMarketIDs := []string{}
+	successors := map[string]*firstSuccessor{}
+	parentIDs := []string{}
 	for _, p := range cp.Proposals {
 		prop, err := types.ProposalFromProto(p)
 		if err != nil {
@@ -77,22 +85,49 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 		switch prop.Terms.Change.GetTermType() {
 		case types.ProposalTermsTypeNewMarket:
-			enct := &enactmentTime{}
-			// if the proposal is for a new market we want to restore it such that it will be in opening auction
+			toEnact := false
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
+				toEnact = true
+			}
+			// if this is a successor market
+			if pid, ok := prop.Terms.GetNewMarket().ParentMarketID(); ok {
+				if first, ok := successors[pid]; ok {
+					// check if this proposal was enacted first
+					if first.enactment > prop.Terms.EnactmentTimestamp {
+						first.isEnacted = toEnact
+						first.prop = prop.DeepClone()
+						first.enactment = prop.Terms.EnactmentTimestamp
+					}
+				} else {
+					// first successor market of this parent ID, add to map
+					successors[pid] = &firstSuccessor{
+						enactment: prop.Terms.EnactmentTimestamp,
+						prop:      prop.DeepClone(),
+						isEnacted: toEnact,
+					}
+					// preserve order in which the proposals are submitted/enacted
+					parentIDs = append(parentIDs, pid)
+				}
+				// successors should be enacted after all parent markets, otherwise it is possible
+				// for the successor market not to have a parent in the execution engine
+				continue
+			}
+			enct := &enactmentTime{}
+			// if the proposal is for a new market it should be restored it such that it will be in opening auction
+			if toEnact {
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
 				enct.shouldNotVerify = true
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct)
 			if err != nil {
-				e.log.Panic("Failed to convert proposal into market")
+				e.log.Panic("Failed to convert proposal into market", logging.Error(err))
 			}
 			nm := toSubmit.NewMarket()
 			err = e.markets.RestoreMarket(ctx, nm.Market())
 			if err != nil {
 				if err == execution.ErrMarketDoesNotExist {
-					// market has been settled, we don't care
+					// market has been settled, network doesn't care
 					continue
 				}
 				// any other error, panic
@@ -115,6 +150,39 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		e.enactedProposals = append(e.enactedProposals, &proposal{
 			Proposal: prop,
 		})
+	}
+	minEnactTS := now.Add(duration).Unix()
+	for _, pid := range parentIDs {
+		first := successors[pid]
+		prop := first.prop
+		enct := &enactmentTime{
+			shouldNotVerify: first.isEnacted,
+			current:         prop.Terms.EnactmentTimestamp,
+		}
+		// if the proposal is to be enacted, it should be restored it such that it will be in opening auction
+		// else ensure the opening auction is at least the minimum enactment timestamp
+		if prop.Terms.EnactmentTimestamp < minEnactTS || first.isEnacted {
+			prop.Terms.EnactmentTimestamp = minEnactTS
+			enct.shouldNotVerify = true
+		}
+		toSubmit, err := e.intoToSubmit(ctx, prop, enct)
+		if err != nil {
+			e.log.Panic("Failed to convert proposal into market")
+		}
+		nm := toSubmit.NewMarket()
+		err = e.markets.RestoreMarket(ctx, nm.Market())
+		if err != nil {
+			if err == execution.ErrMarketDoesNotExist {
+				// market has been settled, the network no longer cares
+				continue
+			}
+			// any other error, panic
+			e.log.Panic("failed to restore market from checkpoint", logging.Market(*nm.Market()), logging.Error(err))
+		}
+
+		if err := e.markets.StartOpeningAuction(ctx, prop.ID); err != nil {
+			e.log.Panic("failed to start opening auction for market", logging.String("market-id", prop.ID), logging.Error(err))
+		}
 	}
 
 	for _, v := range updatedMarketIDs {

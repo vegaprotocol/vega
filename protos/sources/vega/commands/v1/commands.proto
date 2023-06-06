@@ -56,6 +56,16 @@ message OrderSubmission {
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 11;
+  // Parameters used to specify an iceberg order.
+  optional IcebergOpts iceberg_opts = 12;
+}
+
+// Iceberg order options
+message IcebergOpts {
+  // Size of the order that is initially made visible and can cause a trade within a single transaction.
+  uint64 initial_peak_size = 1;
+  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
+  uint64 minimum_peak_size = 2;
 }
 
 // Order cancellation is a request to cancel an existing order on Vega
@@ -98,7 +108,7 @@ message OrderAmendment {
 
 // A liquidity provision submitted for a given market
 message LiquidityProvisionSubmission {
-  // Market ID for the order, required field.
+  // Market ID for the order.
   string market_id = 1;
   // Specified as a unitless number that represents the amount of settlement asset of the market.
   // This field is an unsigned integer scaled using the asset's decimal places.
@@ -109,7 +119,7 @@ message LiquidityProvisionSubmission {
   repeated vega.LiquidityOrder sells = 4;
   // Set of liquidity buy orders to meet the liquidity provision obligation.
   repeated vega.LiquidityOrder buys = 5;
-  // Reference to be added to every order created out of this liquidityProvisionSubmission.
+  // Reference to be added to every order created out of this liquidity provision submission.
   string reference = 6;
 }
 

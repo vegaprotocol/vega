@@ -222,14 +222,15 @@ func (a *ClientAPI) SendTransaction(ctx context.Context, rawParams jsonrpc.Param
 }
 
 func BuildClientAPI(walletStore WalletStore, interactor Interactor, nodeSelector node.Selector, spam SpamHandler) (*ClientAPI, error) {
-	clientAPI := &ClientAPI{}
+	requestController := DefaultRequestController()
 
-	clientAPI.checkTransaction = NewClientCheckTransaction(walletStore, interactor, nodeSelector, spam)
+	clientAPI := &ClientAPI{}
 	clientAPI.connectWallet = NewConnectWallet(walletStore, interactor)
 	clientAPI.getChainID = NewGetChainID(nodeSelector)
 	clientAPI.listKeys = NewListKeys(walletStore, interactor)
-	clientAPI.signTransaction = NewClientSignTransaction(walletStore, interactor, nodeSelector, spam)
-	clientAPI.sendTransaction = NewClientSendTransaction(walletStore, interactor, nodeSelector, spam)
+	clientAPI.checkTransaction = NewClientCheckTransaction(walletStore, interactor, nodeSelector, spam, requestController)
+	clientAPI.signTransaction = NewClientSignTransaction(walletStore, interactor, nodeSelector, spam, requestController)
+	clientAPI.sendTransaction = NewClientSendTransaction(walletStore, interactor, nodeSelector, spam, requestController)
 
 	return clientAPI, nil
 }

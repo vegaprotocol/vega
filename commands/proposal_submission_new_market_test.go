@@ -101,7 +101,7 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a simple risk parameters change with simple risk parameters succeeds", testNewSimpleRiskParametersChangeSubmissionWithSimpleRiskParametersSucceeds)
 	t.Run("Submitting a simple risk parameters change with min move down fails", testNewSimpleRiskParametersChangeSubmissionWithPositiveMinMoveDownFails)
 	t.Run("Submitting a simple risk parameters change with min move down succeeds", testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSucceeds)
-	t.Run("Submitting a simple risk parameters change with max move up fails", testNewSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails)
+	t.Run("Submitting a simple risk parameters change with max move up fails", testNewSpotSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails)
 	t.Run("Submitting a simple risk parameters change with max move up succeeds", testNewSimpleRiskParametersChangeSubmissionWithNonNegativeMaxMoveUpSucceeds)
 	t.Run("Submitting a simple risk parameters change with wrong probability of trading fails", testNewSimpleRiskParametersChangeSubmissionWithWrongProbabilityOfTradingFails)
 	t.Run("Submitting a simple risk parameters change with right probability of trading succeeds", testNewSimpleRiskParametersChangeSubmissionWithRightProbabilityOfTradingSucceeds)
@@ -127,6 +127,9 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market with external data source for termination without signers fails", testFutureMarketSubmissionWithExternalTradingTerminationNoSignerFails)
 	t.Run("Submitting a future market with external data source for termination with signers and external settlement data without signers fails", testFutureMarketSubmissionWithExternalSettlementDataNoSignerFails)
 	t.Run("Submitting a future market with internal data for settlement fails", testFutureMarketSubmissionWithInternalSettlementDataFails)
+	t.Run("Submitting a future market with external data sources for settlement and termination with empty signers fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptySignerFails)
+	t.Run("Submitting a future market with external data sources for settlement and termination with empty pubKey signer fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyPubKeySignerFails)
+	t.Run("Submitting a future market with external data sources for settlement and termination with empty eth address signer fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails)
 	t.Run("Submitting a future market with external data sources for settlement and termination with no signers fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails)
 }
 
@@ -2393,7 +2396,7 @@ func testNewSimpleRiskParametersChangeSubmissionWithNonPositiveMinMoveDownSuccee
 	}
 }
 
-func testNewSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t *testing.T) {
+func testNewSpotSimpleRiskParametersChangeSubmissionWithNegativeMaxMoveUpFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
 			Change: &protoTypes.ProposalTerms_NewMarket{
@@ -3835,6 +3838,64 @@ func testFutureMarketSubmissionWithInternalSettlementDataFails(t *testing.T) {
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data"), commands.ErrIsNotValid)
 }
 
+func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptySignerFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "vegaprotocol.builtin.prices.ETH.value",
+														Type: datapb.PropertyKey_TYPE_INTEGER,
+													},
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*datapb.Condition{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+}
+
 func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails(t *testing.T) {
 	err := checkProposalSubmission(&commandspb.ProposalSubmission{
 		Terms: &protoTypes.ProposalTerms{
@@ -3867,7 +3928,6 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerF
 										vegapb.DataSourceDefinitionTypeExt,
 									).SetOracleConfig(
 										&vegapb.DataSourceSpecConfiguration{
-											// Signers: types.SignersIntoProto(pubKey),
 											Filters: []*datapb.Filter{
 												{
 													Key: &datapb.PropertyKey{
@@ -3890,4 +3950,148 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerF
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers"), commands.ErrIsRequired)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers"), commands.ErrIsRequired)
+}
+
+func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyPubKeySignerFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{
+												{
+													Signer: &datapb.Signer_PubKey{
+														PubKey: &datapb.PubKey{
+															Key: "",
+														},
+													},
+												},
+											},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "vegaprotocol.builtin.prices.ETH.value",
+														Type: datapb.PropertyKey_TYPE_INTEGER,
+													},
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{
+												{
+													Signer: &datapb.Signer_PubKey{
+														PubKey: &datapb.PubKey{},
+													},
+												},
+											},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*datapb.Condition{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers.0"), commands.ErrIsNotValid)
+}
+
+func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Future{
+								Future: &protoTypes.FutureProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{
+												{
+													Signer: &datapb.Signer_EthAddress{
+														EthAddress: &datapb.ETHAddress{
+															Address: "",
+														},
+													},
+												},
+											},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "vegaprotocol.builtin.prices.ETH.value",
+														Type: datapb.PropertyKey_TYPE_INTEGER,
+													},
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+														},
+													},
+												},
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{
+												{
+													Signer: &datapb.Signer_EthAddress{
+														EthAddress: &datapb.ETHAddress{},
+													},
+												},
+											},
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*datapb.Condition{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers.0"), commands.ErrIsNotValid)
 }
