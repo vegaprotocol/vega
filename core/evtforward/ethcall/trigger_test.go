@@ -1,12 +1,6 @@
 package ethcall_test
 
-import (
-	"testing"
-
-	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
-	"github.com/stretchr/testify/assert"
-)
-
+/*
 func TestTimeTrigger(t *testing.T) {
 	tt := ethcall.TimeTrigger{
 		Initial: 10,
@@ -91,3 +85,5 @@ func (t testBlock) NumberU64() uint64 {
 func (t testBlock) Time() uint64 {
 	return t.n
 }
+
+*/

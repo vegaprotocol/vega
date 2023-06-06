@@ -25,6 +25,10 @@ func (e *DataSourceDefinitionExternal) IntoProto() *vegapb.DataSourceDefinitionE
 			ds = &vegapb.DataSourceDefinitionExternal{
 				SourceType: dsn,
 			}
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ds = &vegapb.DataSourceDefinitionExternal{
+				SourceType: dsn,
+			}
 		}
 	}
 
@@ -33,7 +37,16 @@ func (e *DataSourceDefinitionExternal) IntoProto() *vegapb.DataSourceDefinitionE
 
 func (e *DataSourceDefinitionExternal) String() string {
 	if e.SourceType != nil {
-		return e.SourceType.String()
+		switch dsn := e.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			if dsn.Oracle != nil {
+				return dsn.Oracle.String()
+			}
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			if dsn.EthOracle != nil {
+				return dsn.EthOracle.String()
+			}
+		}
 	}
 
 	return ""
@@ -52,7 +65,7 @@ func (e *DataSourceDefinitionExternal) DeepClone() dataSourceType {
 // from the given proto object..
 func DataSourceDefinitionExternalFromProto(protoConfig *vegapb.DataSourceDefinitionExternal) *DataSourceDefinitionExternal {
 	ds := &DataSourceDefinitionExternal{
-		SourceType: &DataSourceDefinitionExternalOracle{},
+		//SourceType:
 	}
 
 	if protoConfig != nil {
@@ -60,6 +73,9 @@ func DataSourceDefinitionExternalFromProto(protoConfig *vegapb.DataSourceDefinit
 			switch tp := protoConfig.SourceType.(type) {
 			case *vegapb.DataSourceDefinitionExternal_Oracle:
 				ds.SourceType = DataSourceDefinitionExternalOracleFromProto(tp)
+
+			case *vegapb.DataSourceDefinitionExternal_EthOracle:
+				ds.SourceType = EthCallSpecFromProto(tp)
 			}
 		}
 	}
