@@ -26,6 +26,7 @@
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
 - [8226](https://github.com/vegaprotocol/vega/issues/8226) - Fix auto initialise failure when initialising empty node
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
+- [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 
 ## 0.71.5
 
@@ -48,12 +49,6 @@
 
 ### 🐛 Fixes
 - [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
-
-## 0.71.1
-
-### 🐛 Fixes
-- [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
-- [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
 
 ## 0.71.0
 
