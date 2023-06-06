@@ -266,23 +266,23 @@ func GetTxType(tx Tx) (txt TxType) {
 			}
 			if e20w := e20.GetWithdrawal(); e20w != nil {
 				txt.Type = TxTypeERC20Withdrawal
-				txt.Sender = tx.Party() // TODO: what else to do here?
+				txt.Sender = tx.Party()
 			}
 		}
 		if erc20ms := c.GetErc20Multisig(); erc20ms != nil {
 			if erc20msadd := erc20ms.GetSignerAdded(); erc20msadd != nil {
 				txt.Type = TxTypeERC20MultisigSignerAdded
-				txt.Sender = erc20msadd.GetNewSigner() // TODO: what else to do here?
+				txt.Sender = erc20msadd.GetNewSigner()
 			}
 			if erc20msrem := erc20ms.GetSignerRemoved(); erc20msrem != nil {
 				txt.Type = TxTypeERC20MultisigSignerRemoved
-				txt.Sender = erc20msrem.GetOldSigner() // TODO: what else to do here?
+				txt.Sender = erc20msrem.GetOldSigner()
 			}
 		}
 	case *commandspb.Transfer:
 		txt.Type = TxTypeTransfer
 		txt.Receiver = c.GetTo()
-		txt.Sender = tx.Party() // TODO: ???
+		txt.Sender = tx.Party()
 	case *commandspb.OrderSubmission:
 		txt.Type = TxTypeOrderSubmission
 		txt.Sender = tx.Party()
@@ -310,7 +310,7 @@ func GetTxType(tx Tx) (txt TxType) {
 	case *commandspb.AnnounceNode:
 		txt.Type = TxTypeAnnounceNode
 		txt.Sender = tx.Party()
-	case *commandspb.NodeVote: // TODO: do we need this?
+	case *commandspb.NodeVote:
 		txt.Type = TxTypeNodeVote
 		txt.Sender = tx.Party()
 	case *commandspb.NodeSignature:
@@ -334,8 +334,6 @@ func GetTxType(tx Tx) (txt TxType) {
 	case *commandspb.CancelTransfer:
 		txt.Type = TxTypeCancelTransfer
 		txt.Sender = tx.Party()
-	// case *commandspb.ValidatorHeartbeat: TODO: do we need this?
-	// 	txt.Type = TxTypeValidatorHeartbeat
 	case *commandspb.EthereumKeyRotateSubmission:
 		txt.Type = TxTypeEthereumKeyRotateSubmission
 		txt.Sender = tx.Party()
