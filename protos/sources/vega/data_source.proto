@@ -39,7 +39,8 @@ message DataSourceDefinitionExternal {
   // Types of External data sources
   oneof source_type {
     DataSourceSpecConfiguration oracle = 1;
-    EthCallSpec eth_call = 2;
+    // Contains the data specification that is received from Ethereum sources.
+    EthCallSpec eth_oracle = 2;
   }
 }
 
@@ -101,9 +102,10 @@ message EthFilter {
   repeated vega.data.v1.Filter filters = 1;
 }
 
-message EthNormaliser {
+// Describes the types of normalisers used for different data sources.
+message Normaliser {
   oneof normaliser {
-    EthDecimalsNormaliser decimals_normaliser = 1;
+    EthDecimalsNormaliser eth_decimals_normaliser = 1;
   }
 
   //  This is where decimals for chain link would go? -
