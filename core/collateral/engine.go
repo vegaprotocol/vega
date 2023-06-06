@@ -3048,10 +3048,7 @@ func (e *Engine) GetRewardAccountsByType(rewardAcccountType types.AccountType) [
 }
 
 func (e *Engine) GetSystemAccountBalance(asset, market string, accountType types.AccountType) (*num.Uint, error) {
-	if len(market) == 0 {
-		market = noMarket
-	}
-	account, err := e.GetAccountByID(e.accountID(market, "", asset, accountType))
+	account, err := e.GetAccountByID(e.accountID(market, systemOwner, asset, accountType))
 	if err != nil {
 		return nil, err
 	}

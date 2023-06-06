@@ -254,7 +254,7 @@ func TestGovernancedScheduledTransfer(t *testing.T) {
 		func() time.Time {
 			return time.Unix(12, 0)
 		}).Times(2)
-	e2.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e2.broker.EXPECT().Send(gomock.Any()).Times(2)
 	e2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e2.col.EXPECT().GetSystemAccountBalance(gomock.Any(), gomock.Any(), gomock.Any()).Return(num.NewUint(1000), nil).AnyTimes()
 	e2.OnMaxAmountChanged(context.Background(), num.DecimalFromInt64(100000))

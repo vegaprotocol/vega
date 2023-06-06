@@ -261,7 +261,7 @@ func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 		e.currentEpoch = ep.Seq
 	case proto.EpochAction_EPOCH_ACTION_END:
 		e.distributeRecurringTransfers(ctx, e.currentEpoch)
-		e.distributeRecurringGovernanceTransfers(ctx, e.currentEpoch)
+		e.distributeRecurringGovernanceTransfers(ctx)
 	default:
 		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}

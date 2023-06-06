@@ -2978,7 +2978,7 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID
   "Validation of spot market proposal failed"
   PROPOSAL_ERROR_INVALID_SPOT
-  "Spot trading is not disabled"
+  "Spot trading is disabled"
   PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
   "Validation of successor market has failed"
   PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET

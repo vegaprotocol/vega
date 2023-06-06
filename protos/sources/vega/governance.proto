@@ -487,12 +487,12 @@ message Vote {
 }
 
 message CancelTransfer {
-  // Configuration for cancellation of a governance-initated transfer
+  // Configuration for cancellation of a governance-initiated transfer
   CancelTransferConfiguration changes = 1;
 }
 
 message CancelTransferConfiguration {
-  // This is the identifier of the governance transfer proposal.
+  // ID of the governance transfer proposal.
   string transfer_id = 1;
 }
 
@@ -525,7 +525,7 @@ message NewTransferConfiguration {
   string fraction_of_balance = 6;
   // Specifies the account type to transfer to: reward pool, party, network insurance pool, market insurance pool
   vega.AccountType destination_type = 7;
-  // Specifies the account to transfer, depending on the account type:
+  // Specifies the account to transfer to, depending on the account type:
   // Network treasury: leave empty
   // Party: party's public key
   // Market insurance pool: market ID

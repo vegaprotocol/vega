@@ -28,20 +28,23 @@ func (e *Engine) distributeScheduledGovernanceTransfers(ctx context.Context) {
 			if err != nil {
 				gTransfer.Status = types.TransferStatusStopped
 				e.broker.Send(events.NewGovTransferFundsEventWithReason(ctx, gTransfer, amt, err.Error()))
+			} else {
+				gTransfer.Status = types.TransferStatusDone
+				e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amt))
 			}
 		}
 		delete(e.scheduledGovernanceTransfers, t)
 	}
 }
 
-func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context, newEpoch uint64) {
+func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 	var (
 		transfersDone = []events.Event{}
 		doneIDs       = []string{}
 	)
 
 	for _, gTransfer := range e.recurringGovernanceTransfers {
-		if gTransfer.Config.RecurringTransferConfig.StartEpoch > newEpoch {
+		if gTransfer.Config.RecurringTransferConfig.StartEpoch > e.currentEpoch {
 			continue
 		}
 
@@ -102,7 +105,7 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 		ID:        ID,
 		Reference: reference,
 		Config:    config,
-		Status:    types.TransferStatsUnspecified,
+		Status:    types.TransferStatusPending,
 		Timestamp: now,
 	}
 	if config.Kind == types.TransferKindOneOff {
@@ -151,8 +154,8 @@ func (e *Engine) processGovernanceTransfer(
 	if gTransfer.Config.DestinationType == types.AccountTypeGlobalReward {
 		to = "*"
 	} else if gTransfer.Config.DestinationType == types.AccountTypeInsurance {
-		to = "*"
 		toMarket = to
+		to = "*"
 	}
 
 	fromTransfer, toTransfer := e.makeTransfers(from, to, gTransfer.Config.Asset, fromMarket, toMarket, transferAmount)

@@ -2541,7 +2541,7 @@ type CancelTransfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Configuration for cancellation of a governance-initated transfer
+	// Configuration for cancellation of a governance-initiated transfer
 	Changes *CancelTransferConfiguration `protobuf:"bytes,1,opt,name=changes,proto3" json:"changes,omitempty"`
 }
 
@@ -2589,7 +2589,7 @@ type CancelTransferConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// This is the identifier of the governance transfer proposal.
+	// ID of the governance transfer proposal.
 	TransferId string `protobuf:"bytes,1,opt,name=transfer_id,json=transferId,proto3" json:"transfer_id,omitempty"`
 }
 
@@ -2702,7 +2702,7 @@ type NewTransferConfiguration struct {
 	FractionOfBalance string `protobuf:"bytes,6,opt,name=fraction_of_balance,json=fractionOfBalance,proto3" json:"fraction_of_balance,omitempty"`
 	// Specifies the account type to transfer to: reward pool, party, network insurance pool, market insurance pool
 	DestinationType AccountType `protobuf:"varint,7,opt,name=destination_type,json=destinationType,proto3,enum=vega.AccountType" json:"destination_type,omitempty"`
-	// Specifies the account to transfer, depending on the account type:
+	// Specifies the account to transfer to, depending on the account type:
 	// Network treasury: leave empty
 	// Party: party's public key
 	// Market insurance pool: market ID
