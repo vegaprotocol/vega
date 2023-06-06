@@ -147,7 +147,7 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
-			Timestamp:       time.Unix(p.Timestamp/int64(time.Second), p.Timestamp%int64(time.Second)),
+			Timestamp:       time.Unix(0, p.Timestamp),
 		},
 		DeliverOn: deliverOn,
 	}
@@ -363,7 +363,7 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
-			Timestamp:       time.Unix(p.Timestamp/int64(time.Second), p.Timestamp%int64(time.Second)),
+			Timestamp:       time.Unix(0, p.Timestamp),
 		},
 		StartEpoch:       p.GetRecurring().GetStartEpoch(),
 		EndEpoch:         endEpoch,

@@ -276,6 +276,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheAverageBlockDurationIs(execsetup.block, blockTime)
 	})
 
+	s.Step(`^the parties place the following iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the iceberg orders should have the following states:$`, func(table *godog.Table) error {
+		return steps.TheIcebergOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
+	})
+
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
 		return steps.TheNetworkMovesAheadNBlocks(execsetup.executionEngine, execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
 	})

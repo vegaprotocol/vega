@@ -70,6 +70,68 @@ func (l *PriceLevel) removeOrder(index int) {
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
+// uncrossIcebergs when a large aggressive order consumes the peak of iceberg orders, we trade with the hidden portion of
+// the icebergs such that when they are refreshed the book does not cross.
+func (l *PriceLevel) uncrossIcebergs(agg *types.Order, icebergs []*types.Order, trades []*types.Trade, fake bool) {
+	var totalReserved uint64
+	for _, b := range icebergs {
+		totalReserved += b.IcebergOrder.ReservedRemaining
+	}
+
+	if totalReserved == 0 {
+		// nothing to do
+		return
+	}
+
+	// either the amount left of the aggressive order, or the rest of all the iceberg orders
+	totalCrossed := num.MinV(agg.Remaining, totalReserved)
+
+	// let do it with decimals
+	totalCrossedDec := num.DecimalFromInt64(int64(totalCrossed))
+	totalReservedDec := num.DecimalFromInt64(int64(totalReserved))
+
+	// divide up between icebergs
+	var sum uint64
+	extraTraded := []uint64{}
+	for _, b := range icebergs {
+		rr := num.DecimalFromInt64(int64(b.IcebergOrder.ReservedRemaining))
+		extra := uint64(rr.Mul(totalCrossedDec).Div(totalReservedDec).IntPart())
+		sum += extra
+		extraTraded = append(extraTraded, extra)
+	}
+
+	// if there is some left over due to the rounding when dividing then
+	// it is traded against the iceberg with the highest time priority
+	if rem := totalCrossed - sum; rem > 0 {
+		for i := range icebergs {
+			max := icebergs[i].IcebergOrder.ReservedRemaining - extraTraded[i]
+			dd := num.MinV(max, rem) // can allocate the smallest of the remainder and whats left in the berg
+
+			extraTraded[i] += dd
+			rem -= dd
+
+			if rem == 0 {
+				break
+			}
+		}
+		if rem != 0 {
+			panic("unable to distribute rounding crumbs between iceberg orders")
+		}
+	}
+
+	// increase traded sizes based on consumed hidden iceberg volume
+	for i := range icebergs {
+		extra := extraTraded[i]
+		agg.Remaining -= extra
+		trades[i].Size += extra
+		if !fake {
+			// only change values in passive orders if uncrossing is for real and not just to see potential trades.
+			icebergs[i].IcebergOrder.ReservedRemaining -= extra
+			l.volume -= extra
+		}
+	}
+}
+
 // fakeUncross - this updates a copy of the order passed to it, the copied order is returned.
 func (l *PriceLevel) fakeUncross(o *types.Order, checkWashTrades bool) (agg *types.Order, trades []*types.Trade, err error) {
 	// work on a copy of the order, so we can submit it a second time
@@ -80,6 +142,8 @@ func (l *PriceLevel) fakeUncross(o *types.Order, checkWashTrades bool) (agg *typ
 		return
 	}
 
+	icebergs := []*types.Order{}
+	icebergTrades := []*types.Trade{}
 	for _, order := range l.orders {
 		if checkWashTrades {
 			if order.Party == agg.Party {
@@ -97,16 +161,28 @@ func (l *PriceLevel) fakeUncross(o *types.Order, checkWashTrades bool) (agg *typ
 		// New Trade
 		trade := newTrade(agg, order, size)
 
-		// Update Remaining for both aggressive and passive
+		// Update Remaining for aggressive only
 		agg.Remaining -= size
 
 		// Update trades
 		trades = append(trades, trade)
 
+		// if the passive order is an iceberg with a hidden quantity make a note of it and
+		// its trade incase we need to uncross further
+		if order.IcebergOrder != nil && order.IcebergOrder.ReservedRemaining > 0 {
+			icebergs = append(icebergs, order)
+			icebergTrades = append(icebergTrades, trade)
+		}
+
 		// Exit when done
 		if agg.Remaining == 0 {
 			break
 		}
+	}
+
+	// if the aggressive trade is not filled uncross with iceberg hidden quantity
+	if agg.Remaining != 0 && len(icebergs) > 0 {
+		l.uncrossIcebergs(agg, icebergs, icebergTrades, true)
 	}
 
 	return agg, trades, err
@@ -120,8 +196,10 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 	}
 
 	var (
-		toRemove []int
-		removed  int
+		icebergs      []*types.Order
+		icebergTrades []*types.Trade
+		toRemove      []int
+		removed       int
 	)
 
 	// l.orders is always sorted by timestamps, that is why when iterating we always start from the beginning
@@ -157,10 +235,22 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 		trades = append(trades, trade)
 		impactedOrders = append(impactedOrders, order)
 
+		// if the passive order is an iceberg with a hidden quantity make a note of it and
+		// its trade incase we need to uncross further
+		if order.IcebergOrder != nil && order.IcebergOrder.ReservedRemaining > 0 {
+			icebergs = append(icebergs, order)
+			icebergTrades = append(icebergTrades, trade)
+		}
+
 		// Exit when done
 		if agg.Remaining == 0 {
 			break
 		}
+	}
+
+	// if the aggressive trade is not filled uncross with iceberg hidden quantity
+	if agg.Remaining > 0 && len(icebergs) > 0 {
+		l.uncrossIcebergs(agg, icebergs, icebergTrades, false)
 	}
 
 	// FIXME(jeremy): these need to be optimized, we can make a single copy

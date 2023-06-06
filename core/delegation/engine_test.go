@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/broker/mocks"
 	dmocks "code.vegaprotocol.io/vega/core/delegation/mocks"
+	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
@@ -1755,6 +1756,20 @@ func testCheckPartyEnteringAutoDelegation(t *testing.T) {
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
 	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
 	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+
+	// increase the stake of party1 by 10000
+	testEngine.stakingAccounts.partyToStake["party1"].AddSum(num.NewUint(10000))
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 2})
+
+	evts := testEngine.broker.GetAllByType(events.DelegationBalanceEvent)
+	require.Equal(t, 2, len(evts))
+	require.Equal(t, "node1", evts[0].StreamMessage().GetDelegationBalance().NodeId)
+	require.Equal(t, "node2", evts[1].StreamMessage().GetDelegationBalance().NodeId)
+
+	// party 1 had 6 delegated to node1 and 4 delegated to node2
+	// their stake has been increased by 10k so it is delegated proportionally to these to nodes resulting in the below.
+	require.Equal(t, "6006", evts[0].StreamMessage().GetDelegationBalance().Amount)
+	require.Equal(t, "4004", evts[1].StreamMessage().GetDelegationBalance().Amount)
 }
 
 func testCheckPartyExitingAutoDelegationThroughUndelegateEOE(t *testing.T) {

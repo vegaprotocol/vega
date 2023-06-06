@@ -23,21 +23,20 @@ type OracleSpec struct {
 	ExternalDataSourceSpec *ExternalDataSourceSpec
 }
 
-func OracleSpecFromProto(spec *vegapb.OracleSpec, txHash TxHash, vegaTime time.Time) (*OracleSpec, error) {
-	if spec.ExternalDataSourceSpec != nil {
-		ds, err := ExternalDataSourceSpecFromProto(spec.ExternalDataSourceSpec, txHash, vegaTime)
-		if err != nil {
-			return nil, err
-		}
+func OracleSpecFromProto(spec *vegapb.OracleSpec, txHash TxHash, vegaTime time.Time) *OracleSpec {
+	if spec != nil {
+		if spec.ExternalDataSourceSpec != nil {
+			ds := ExternalDataSourceSpecFromProto(spec.ExternalDataSourceSpec, txHash, vegaTime)
 
-		return &OracleSpec{
-			ExternalDataSourceSpec: ds,
-		}, nil
+			return &OracleSpec{
+				ExternalDataSourceSpec: ds,
+			}
+		}
 	}
 
 	return &OracleSpec{
 		ExternalDataSourceSpec: &ExternalDataSourceSpec{},
-	}, nil
+	}
 }
 
 func (os OracleSpec) ToProto() *vegapb.OracleSpec {

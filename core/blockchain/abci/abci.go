@@ -92,7 +92,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 		}
 	}
 
-	// at this point we consider the Tx as valid, so we add it to
+	// at this point we consider the Transaction as valid, so we add it to
 	// the cache to be consumed by DeliveryTx
 	if resp.IsOK() {
 		app.cacheTx(req.Tx, tx)

@@ -146,8 +146,8 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	assert.Nil(t, errorDetails)
-	assert.NotEmpty(t, result.Tx)
-	assert.Equal(t, txHash, result.TxHash)
+	assert.NotEmpty(t, result.Transaction)
+	assert.Equal(t, txHash, result.TransactionHash)
 	assert.NotEmpty(t, result.ReceivedAt)
 	assert.NotEmpty(t, result.SentAt)
 }

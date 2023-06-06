@@ -511,6 +511,7 @@ const (
 	ProposalErrorTooManyMarketDecimalPlaces       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES)
 	ProposalErrorTooManyPriceMonitoringTriggers   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS)
 	ProposalErrorERC20AddressAlreadyInUse         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE)
+	ProposalErrorInvalidSuccessorMarket           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

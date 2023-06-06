@@ -96,3 +96,7 @@ func (r *newMarketResolver) RiskParameters(_ context.Context, obj *types.NewMark
 func (r *newMarketResolver) Metadata(_ context.Context, obj *types.NewMarket) ([]string, error) {
 	return obj.Changes.Metadata, nil
 }
+
+func (r *newMarketResolver) SuccessorConfiguration(ctx context.Context, obj *types.NewMarket) (*types.SuccessorConfiguration, error) {
+	return obj.Changes.Successor, nil
+}

@@ -1126,6 +1126,26 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 	}, nil
 }
 
+// ListSuccessorMarkets returns the successor chain for a given market.
+func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2.ListSuccessorMarketsRequest) (*v2.ListSuccessorMarketsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListSuccessorMarkets")()
+
+	markets, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetAllPaged, err)
+	}
+
+	protoMarkets := make([]*vega.Market, len(markets))
+
+	for i, v := range markets {
+		protoMarkets[i] = v.ToProto()
+	}
+
+	return &v2.ListSuccessorMarketsResponse{
+		Markets: protoMarkets,
+	}, nil
+}
+
 // List all Positions.
 //
 // Deprecated: Use ListAllPositions instead.

@@ -93,7 +93,7 @@ type NewMarket struct {
 }
 
 func (n NewMarket) ParentMarketID() (string, bool) {
-	if n.Changes.Successor == nil {
+	if n.Changes.Successor == nil || len(n.Changes.Successor.ParentID) == 0 {
 		return "", false
 	}
 	return n.Changes.Successor.ParentID, true
@@ -330,6 +330,10 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 }
 
 func SuccessorConfigFromProto(p *vegapb.SuccessorConfiguration) *SuccessorConfig {
+	// successor config is optional, but make sure that, if provided, it's not set to empty parent market ID
+	if len(p.ParentMarketId) == 0 {
+		return nil
+	}
 	f, _ := num.DecimalFromString(p.InsurancePoolFraction)
 	return &SuccessorConfig{
 		ParentID:              p.ParentMarketId,

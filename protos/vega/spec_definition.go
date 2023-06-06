@@ -32,9 +32,16 @@ func (d DataSourceDefinition) GetSigners() []*datapb.Signer {
 	if d.SourceType != nil {
 		switch tp := d.SourceType.(type) {
 		case *DataSourceDefinition_External:
-			signers = tp.External.GetOracle().Signers
-		case *DataSourceDefinition_Internal:
-
+			if tp.External != nil {
+				if tp.External.SourceType != nil {
+					switch etp := tp.External.SourceType.(type) {
+					case *DataSourceDefinitionExternal_Oracle:
+						if etp.Oracle != nil {
+							signers = etp.Oracle.Signers
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -195,4 +202,42 @@ func (s *DataSourceDefinition) SetTimeTriggerConditionConfig(c []*datapb.Conditi
 	}
 
 	return s
+}
+
+func (s *DataSourceDefinition) Content() interface{} {
+	if s != nil {
+		if s.SourceType != nil {
+			switch tp := s.SourceType.(type) {
+			case *DataSourceDefinition_External:
+				if tp.External != nil {
+					if tp.External.SourceType != nil {
+						switch extTp := tp.External.SourceType.(type) {
+						case *DataSourceDefinitionExternal_Oracle:
+							if extTp.Oracle != nil {
+								return extTp.Oracle
+							}
+
+							// The Ethereum type case will go here later.
+						}
+					}
+				}
+
+			case *DataSourceDefinition_Internal:
+				if tp.Internal != nil {
+					if tp.Internal.SourceType != nil {
+						switch intTp := tp.Internal.SourceType.(type) {
+						case *DataSourceDefinitionInternal_Time:
+							if intTp.Time != nil {
+								return intTp.Time
+							}
+
+							// The rest of the internal type sources will go here.
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }

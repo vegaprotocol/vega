@@ -24,7 +24,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/metrics"
-	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 )
@@ -159,22 +158,102 @@ func (ls *Ledger) Export(
 		return ErrLedgerEntryExportForParty
 	}
 
-	filter := &entities.LedgerEntryFilter{
-		FromAccountFilter: entities.AccountFilter{
-			PartyIDs: []entities.PartyID{entities.PartyID(partyID)},
-		},
+	pid := entities.PartyID(partyID)
+	pidBytes, err := pid.Bytes()
+	if err != nil {
+		return fmt.Errorf("invalid party id: %w", err)
 	}
+
+	args := []any{pidBytes}
+	query := `
+		SELECT 
+			l.vega_time,
+			l.quantity,
+			CASE 
+				WHEN ta.party_id = $1 AND fa.party_id != $1 THEN quantity
+				WHEN fa.party_id = $1 AND ta.party_id != $1 THEN -quantity
+				ELSE 0
+			END AS effect,
+			l.type AS transfer_type,
+			encode(fa.asset_id, 'hex') AS asset_id,
+			encode(fa.market_id, 'hex') AS account_from_market_id,
+			CASE
+				WHEN fa.party_id='\x03' THEN 'network'
+				ELSE encode(fa.party_id, 'hex') 
+				END AS account_from_party_id,
+			CASE
+				WHEN fa.type=0 THEN 'UNSPECIFIED'
+				WHEN fa.type=1 THEN 'INSURANCE'
+				WHEN fa.type=2 THEN 'SETTLEMENT'
+				WHEN fa.type=3 THEN 'MARGIN'
+				WHEN fa.type=4 THEN 'GENERAL'
+				WHEN fa.type=5 THEN 'FEES_INFRASTRUCTURE'
+				WHEN fa.type=6 THEN 'FEES_LIQUIDITY'
+				WHEN fa.type=7 THEN 'FEES_MAKER'
+				WHEN fa.type=9 THEN 'BOND'
+				WHEN fa.type=10 THEN 'EXTERNAL'
+				WHEN fa.type=11 THEN 'GLOBAL_INSURANCE'
+				WHEN fa.type=12 THEN 'GLOBAL_REWARD'
+				WHEN fa.type=13 THEN 'PENDING_TRANSFERS'
+				WHEN fa.type=14 THEN 'REWARD_MAKER_PAID_FEES'
+				WHEN fa.type=15 THEN 'REWARD_MAKER_RECEIVED_FEES'
+				WHEN fa.type=16 THEN 'REWARD_LP_RECEIVED_FEES'
+				WHEN fa.type=17 THEN 'REWARD_MARKET_PROPOSERS'
+				WHEN fa.type=18 THEN 'HOLDING'
+				ELSE 'UNKNOWN' END AS account_from_account_type,
+			l.account_from_balance AS account_from_balance,
+			encode(ta.market_id, 'hex') AS account_to_market_id,
+			CASE
+				WHEN ta.party_id='\x03' THEN 'network'
+				ELSE encode(ta.party_id, 'hex') 
+				END AS account_to_party_id,
+			CASE
+				WHEN ta.type=0 THEN 'UNSPECIFIED'
+				WHEN ta.type=1 THEN 'INSURANCE'
+				WHEN ta.type=2 THEN 'SETTLEMENT'
+				WHEN ta.type=3 THEN 'MARGIN'
+				WHEN ta.type=4 THEN 'GENERAL'
+				WHEN ta.type=5 THEN 'FEES_INFRASTRUCTURE'
+				WHEN ta.type=6 THEN 'FEES_LIQUIDITY'
+				WHEN ta.type=7 THEN 'FEES_MAKER'
+				WHEN ta.type=9 THEN 'BOND'
+				WHEN ta.type=10 THEN 'EXTERNAL'
+				WHEN ta.type=11 THEN 'GLOBAL_INSURANCE'
+				WHEN ta.type=12 THEN 'GLOBAL_REWARD'
+				WHEN ta.type=13 THEN 'PENDING_TRANSFERS'
+				WHEN ta.type=14 THEN 'REWARD_MAKER_PAID_FEES'
+				WHEN ta.type=15 THEN 'REWARD_MAKER_RECEIVED_FEES'
+				WHEN ta.type=16 THEN 'REWARD_LP_RECEIVED_FEES'
+				WHEN ta.type=17 THEN 'REWARD_MARKET_PROPOSERS'
+				WHEN ta.type=18 THEN 'HOLDING'
+				ELSE 'UNKNOWN' END AS account_to_account_type,
+			l.account_to_balance AS account_to_balance
+		FROM 
+			ledger l
+			INNER JOIN accounts AS fa ON l.account_from_id=fa.id
+			INNER JOIN accounts AS ta ON l.account_to_id=ta.id
+
+		WHERE ta.party_id = $1 OR fa.party_id = $1
+		`
 
 	if assetID != nil {
-		filter.FromAccountFilter.AssetID = entities.AssetID(ptr.UnBox(assetID))
+		id := entities.AssetID(*assetID)
+		idBytes, err := id.Bytes()
+		if err != nil {
+			return fmt.Errorf("invalid asset id: %w", err)
+		}
+		query = fmt.Sprintf("%s AND fa.asset_id = %s", query, nextBindVar(&args, idBytes))
 	}
 
-	dynamicQuery, whereQuery, args, err := ls.prepareQuery(filter, dateRange)
-	if err != nil {
-		return err
+	if dateRange.Start != nil {
+		query = fmt.Sprintf("%s AND l.vega_time >= %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
 	}
 
-	query := fmt.Sprintf("copy (%s %s) to STDOUT (FORMAT csv, HEADER)", dynamicQuery, whereQuery)
+	if dateRange.End != nil {
+		query = fmt.Sprintf("%s AND l.vega_time < %s", query, nextBindVar(&args, dateRange.Start.Format(time.RFC3339)))
+	}
+
+	query = fmt.Sprintf("copy (%s ORDER BY l.vega_time) to STDOUT (FORMAT csv, HEADER)", query)
 
 	tag, err := ls.Connection.CopyTo(ctx, writer, query, args...)
 	if err != nil {

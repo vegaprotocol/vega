@@ -13,7 +13,7 @@ type AdminListKeysParams struct {
 }
 
 type AdminListKeysResult struct {
-	PublicKeys []AdminNamedPublicKey `json:"keys"`
+	Keys []AdminNamedPublicKey `json:"keys"`
 }
 
 type AdminNamedPublicKey struct {
@@ -64,7 +64,7 @@ func (h *AdminListKeys) Handle(ctx context.Context, rawParams jsonrpc.Params) (j
 	}
 
 	return AdminListKeysResult{
-		PublicKeys: strPublicKeys,
+		Keys: strPublicKeys,
 	}, nil
 }
 

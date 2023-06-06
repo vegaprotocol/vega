@@ -414,9 +414,16 @@ func NewMarketStateFromProto(ms *checkpoint.MarketState) *CPMarketState {
 	for _, s := range ms.Shares {
 		els = append(els, NewELSShareFromProto(s))
 	}
-	insBal, _ := num.UintFromString(ms.InsuranceBalance, 10)
-	tVal, _ := num.UintFromString(ms.LastTradeValue, 10)
-	tVol, _ := num.UintFromString(ms.LastTradeVolume, 10)
+	var insBal, tVal, tVol *num.Uint
+	if len(ms.InsuranceBalance) > 0 {
+		insBal, _ = num.UintFromString(ms.InsuranceBalance, 10)
+	}
+	if len(ms.LastTradeValue) > 0 {
+		tVal, _ = num.UintFromString(ms.LastTradeValue, 10)
+	}
+	if len(ms.LastTradeVolume) > 0 {
+		tVol, _ = num.UintFromString(ms.LastTradeVolume, 10)
+	}
 	var mkt *Market
 	if ms.Market != nil {
 		mkt, _ = MarketFromProto(ms.Market)
@@ -441,12 +448,22 @@ func (m *CPMarketState) IntoProto() *checkpoint.MarketState {
 	if m.Market != nil {
 		mkt = m.Market.IntoProto()
 	}
+	var insBal, ltVal, ltVol string
+	if m.InsuranceBalance != nil {
+		insBal = m.InsuranceBalance.String()
+	}
+	if m.LastTradeValue != nil {
+		ltVal = m.LastTradeValue.String()
+	}
+	if m.LastTradeVolume != nil {
+		ltVol = m.LastTradeVolume.String()
+	}
 	return &checkpoint.MarketState{
 		Id:               m.ID,
 		Shares:           els,
-		InsuranceBalance: m.InsuranceBalance.String(),
-		LastTradeValue:   m.LastTradeValue.String(),
-		LastTradeVolume:  m.LastTradeVolume.String(),
+		InsuranceBalance: insBal,
+		LastTradeValue:   ltVal,
+		LastTradeVolume:  ltVol,
 		SuccessionWindow: m.TTL.UnixNano(),
 		Market:           mkt,
 	}

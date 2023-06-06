@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
 func Test_MarketCreated_Push(t *testing.T) {
@@ -40,10 +41,44 @@ func shouldCallMarketSQLStoreAdd(t *testing.T) {
 	store.EXPECT().Upsert(context.Background(), gomock.Any()).Times(1)
 	subscriber := sqlsubscribers.NewMarketCreated(store)
 	subscriber.Flush(context.Background())
-	subscriber.Push(context.Background(), events.NewMarketCreatedEvent(context.Background(), getTestMarket()))
+	subscriber.Push(context.Background(), events.NewMarketCreatedEvent(context.Background(), getTestMarket(false)))
 }
 
-func getTestMarket() types.Market {
+func getTestMarket(termInt bool) types.Market {
+	term := &types.DataSourceSpec{
+		ID:        "",
+		CreatedAt: 0,
+		UpdatedAt: 0,
+		Data: types.NewDataSourceDefinition(
+			vegapb.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&types.DataSourceSpecConfiguration{
+				Signers: nil,
+				Filters: nil,
+			},
+		),
+		Status: 0,
+	}
+
+	if termInt {
+		term = &types.DataSourceSpec{
+			ID:        "",
+			CreatedAt: 0,
+			UpdatedAt: 0,
+			Data: types.NewDataSourceDefinition(
+				vegapb.DataSourceDefinitionTypeInt,
+			).SetTimeTriggerConditionConfig(
+				[]*types.DataSourceSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_EQUALS,
+						Value:    "test-value",
+					},
+				},
+			),
+			Status: 0,
+		}
+	}
+
 	return types.Market{
 		ID: "DEADBEEF",
 		TradableInstrument: &types.TradableInstrument{
@@ -72,20 +107,7 @@ func getTestMarket() types.Market {
 							),
 							Status: 0,
 						},
-						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
-							ID:        "",
-							CreatedAt: 0,
-							UpdatedAt: 0,
-							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
-							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: nil,
-									Filters: nil,
-								},
-							),
-							Status: 0,
-						},
+						DataSourceSpecForTradingTermination: term,
 						DataSourceSpecBinding: &types.DataSourceSpecBindingForFuture{
 							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",

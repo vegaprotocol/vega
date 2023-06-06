@@ -25,7 +25,8 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	bmocks "code.vegaprotocol.io/vega/core/broker/mocks"
 	"code.vegaprotocol.io/vega/core/execution"
-	"code.vegaprotocol.io/vega/core/execution/mocks"
+	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -71,7 +72,7 @@ func getMockedEngine(t *testing.T) *engineFake {
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
 	asset := mocks.NewMockAssets(ctrl)
-	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewMarketActivityTracker(log, epochEngine), asset)
+	exec := execution.NewEngine(log, execConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset)
 	return &engineFake{
 		Engine:     exec,
 		ctrl:       ctrl,
@@ -113,7 +114,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 		as := NewAssetStub(a, 0)
 		return as, nil
 	})
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewMarketActivityTracker(log, epochEngine), asset), ctrl
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, common.NewMarketActivityTracker(log, epochEngine), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

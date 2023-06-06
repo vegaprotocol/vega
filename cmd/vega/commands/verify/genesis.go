@@ -177,6 +177,12 @@ func verifyNetworkParameters(r *reporter, nps map[string]string, overwriteParame
 			r.Err("appstate.network_parameters unknown parameter `%v`", k)
 			continue
 		}
+
+		if _, ok := netparams.Deprecated[k]; ok {
+			r.Err("appstate.network_parameters deprecated parameter `%v`", k)
+			continue
+		}
+
 		err := netp.Validate(k, v)
 		if err != nil {
 			r.Err("appstate.network_parameters invalid parameter `%v`, %v", k, err)

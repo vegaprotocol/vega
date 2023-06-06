@@ -208,6 +208,12 @@ type TradingDataServiceClient interface {
 	//
 	// Get a list of markets
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
+	// List successor markets
+	//
+	// Given a market ID, return the full lineage of markets since inception, or all successor markets since and including
+	// the given market ID. The markets will be returned in succession order, i.e. the market at position i will be the parent
+	// of the market at position i+1.
+	ListSuccessorMarkets(ctx context.Context, in *ListSuccessorMarketsRequest, opts ...grpc.CallOption) (*ListSuccessorMarketsResponse, error)
 	// Get party
 	//
 	// Get a single party
@@ -1068,6 +1074,15 @@ func (c *tradingDataServiceClient) ListMarkets(ctx context.Context, in *ListMark
 	return out, nil
 }
 
+func (c *tradingDataServiceClient) ListSuccessorMarkets(ctx context.Context, in *ListSuccessorMarketsRequest, opts ...grpc.CallOption) (*ListSuccessorMarketsResponse, error) {
+	out := new(ListSuccessorMarketsResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListSuccessorMarkets", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *tradingDataServiceClient) GetParty(ctx context.Context, in *GetPartyRequest, opts ...grpc.CallOption) (*GetPartyResponse, error) {
 	out := new(GetPartyResponse)
 	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetParty", in, out, opts...)
@@ -1826,6 +1841,12 @@ type TradingDataServiceServer interface {
 	//
 	// Get a list of markets
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
+	// List successor markets
+	//
+	// Given a market ID, return the full lineage of markets since inception, or all successor markets since and including
+	// the given market ID. The markets will be returned in succession order, i.e. the market at position i will be the parent
+	// of the market at position i+1.
+	ListSuccessorMarkets(context.Context, *ListSuccessorMarketsRequest) (*ListSuccessorMarketsResponse, error)
 	// Get party
 	//
 	// Get a single party
@@ -2211,6 +2232,9 @@ func (UnimplementedTradingDataServiceServer) GetMarket(context.Context, *GetMark
 }
 func (UnimplementedTradingDataServiceServer) ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMarkets not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListSuccessorMarkets(context.Context, *ListSuccessorMarketsRequest) (*ListSuccessorMarketsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListSuccessorMarkets not implemented")
 }
 func (UnimplementedTradingDataServiceServer) GetParty(context.Context, *GetPartyRequest) (*GetPartyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetParty not implemented")
@@ -3115,6 +3139,24 @@ func _TradingDataService_ListMarkets_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingDataServiceServer).ListMarkets(ctx, req.(*ListMarketsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListSuccessorMarkets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSuccessorMarketsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListSuccessorMarkets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListSuccessorMarkets",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListSuccessorMarkets(ctx, req.(*ListSuccessorMarketsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4132,6 +4174,10 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMarkets",
 			Handler:    _TradingDataService_ListMarkets_Handler,
+		},
+		{
+			MethodName: "ListSuccessorMarkets",
+			Handler:    _TradingDataService_ListSuccessorMarkets_Handler,
 		},
 		{
 			MethodName: "GetParty",

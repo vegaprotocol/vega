@@ -56,6 +56,16 @@ message OrderSubmission {
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 11;
+  // Parameters used to specify an iceberg order.
+  optional IcebergOpts iceberg_opts = 12;
+}
+
+// Iceberg order options
+message IcebergOpts {
+  // Size of the order that is initially made visible and can cause a trade within a single transaction.
+  uint64 initial_peak_size = 1;
+  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
+  uint64 minimum_peak_size = 2;
 }
 
 // Order cancellation is a request to cancel an existing order on Vega
@@ -113,28 +123,8 @@ message LiquidityProvisionSubmission {
   string reference = 6;
 }
 
-// A liquidity provision submitted for a given spot market
-message SpotLiquidityProvisionSubmission {
-  // Market ID for the order.
-  string market_id = 1;
-  // Specified as a unitless number that represents the amount of quote asset of the market.
-  // This field is an unsigned integer scaled using the asset's decimal places.
-  string buy_commitment_amount = 2;
-  // Specified as a unitless number that represents the amount of the market's base asset.
-  // This field is an unsigned integer scaled using the asset's decimal places.
-  string sell_commitment_amount = 3;
-  // Nominated liquidity fee factor, which is an input to the calculation of maker fees paid on the market, as per setting fees and rewarding liquidity providers.
-  string fee = 4;
-}
-
 // Cancel a liquidity provision request
 message LiquidityProvisionCancellation {
-  // Unique ID for the market with the liquidity provision to be cancelled.
-  string market_id = 1;
-}
-
-// Cancel a spot liquidity provision request
-message SpotLiquidityProvisionCancellation {
   // Unique ID for the market with the liquidity provision to be cancelled.
   string market_id = 1;
 }
@@ -150,17 +140,6 @@ message LiquidityProvisionAmendment {
   repeated vega.LiquidityOrder sells = 4; // empty slice means no change
   repeated vega.LiquidityOrder buys = 5; // empty slice means no change
   string reference = 6; // empty string means no change
-}
-
-// Amend a spot liquidity provision request
-message SpotLiquidityProvisionAmendment {
-  // Unique ID for the market with the liquidity provision to be amended.
-  string market_id = 1;
-
-  // From here at least one of the following is required to consider the command valid.
-  optional string buy_commitment_amount = 2;
-  optional string sell_commitment_amount = 3;
-  optional string fee = 4;
 }
 
 // Represents the submission request to withdraw funds for a party on Vega

@@ -1,0 +1,79 @@
+{
+	"TestName": "TestOracles_OracleDataConnectionExternal",
+	"Query": "{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }",
+	"Result": {
+		"oracleSpecsConnection": {
+			"edges": [
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2023-03-10T10:24:30.507963Z",
+												"matchedSpecIds": [
+													"36c0d99cee5d8c2b974995818e4bcb095bfa38558c5485b935dc7781ed954ce6"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": [
+								{
+									"node": {
+										"externalData": {
+											"data": {
+												"broadcastAt": "2023-03-10T10:25:01.157162Z",
+												"matchedSpecIds": [
+													"1937e8eceed19c8b5cdb92fe87cb062f2fd80b230d7cc441312d1b1af318481d"
+												]
+											}
+										}
+									}
+								}
+							]
+						}
+					}
+				},
+				{
+					"node": {
+						"dataConnection": {
+							"edges": null
+						}
+					}
+				}
+			]
+		}
+	},
+	"Duration": 12201612
+}

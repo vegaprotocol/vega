@@ -15,7 +15,6 @@ package sqlstore
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -23,12 +22,6 @@ import (
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	"github.com/georgysavva/scany/pgxscan"
 )
-
-var deprecatedKeys = map[string]struct{}{
-	"reward.staking.delegation.payoutFraction":    {},
-	"reward.staking.delegation.payoutDelay":       {},
-	"reward.staking.delegation.maxPayoutPerEpoch": {},
-}
 
 type NetworkParameters struct {
 	*ConnectionSource
@@ -77,11 +70,6 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	defer np.cacheLock.Unlock()
 
 	var parameter entities.NetworkParameter
-	// hide deprecated keys until full removal
-	if _, ok := deprecatedKeys[key]; ok {
-		return parameter, entities.ErrNotFound
-	}
-
 	if value, ok := np.cache[key]; ok {
 		return value, nil
 	}
@@ -127,10 +115,6 @@ func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.Cur
 		err  error
 	)
 	query := `SELECT * FROM network_parameters_current`
-
-	// hide deprecated keys until full removal
-	query = deprecationFilter(query)
-
 	query, args, err = PaginateQuery[entities.NetworkParameterCursor](query, args, networkParameterOrdering, pagination)
 	if err != nil {
 		return nil, pageInfo, err
@@ -142,16 +126,4 @@ func (np *NetworkParameters) GetAll(ctx context.Context, pagination entities.Cur
 
 	nps, pageInfo = entities.PageEntities[*v2.NetworkParameterEdge](nps, pagination)
 	return nps, pageInfo, nil
-}
-
-func deprecationFilter(query string) string {
-	if len(deprecatedKeys) == 0 {
-		return query
-	}
-
-	a := []string{}
-	for k := range deprecatedKeys {
-		a = append(a, "key <> '"+k+"'")
-	}
-	return query + " WHERE " + strings.Join(a, " AND ")
 }

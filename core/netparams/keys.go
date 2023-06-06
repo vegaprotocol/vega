@@ -177,7 +177,7 @@ const (
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
 )
 
-var deprecated = map[string]struct{}{
+var Deprecated = map[string]struct{}{
 	StakingAndDelegationRewardPayoutFraction:    {},
 	StakingAndDelegationRewardPayoutDelay:       {},
 	StakingAndDelegationRewardMaxPayoutPerEpoch: {},
