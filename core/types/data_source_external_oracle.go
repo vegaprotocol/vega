@@ -16,20 +16,9 @@ type DataSourceSpecConfiguration struct {
 func (s *DataSourceSpecConfiguration) isDataSourceType() {}
 
 func (s *DataSourceSpecConfiguration) oneOfProto() interface{} {
-	return s
+	return s.IntoProto()
 }
 
-// /
-// String returns the content of DataSourceSpecConfiguration as a string.
-func (s *DataSourceSpecConfiguration) String() string {
-	return fmt.Sprintf(
-		"signers(%v) filters(%v)",
-		s.Signers,
-		s.Filters,
-	)
-}
-
-// /
 // IntoProto tries to build the proto object from DataSourceSpecConfiguration.
 func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfiguration {
 	signers := []*datapb.Signer{}
@@ -55,6 +44,32 @@ func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigur
 	return dsc
 }
 
+// String returns the content of DataSourceSpecConfiguration as a string.
+func (s *DataSourceSpecConfiguration) String() string {
+	signers := ""
+	for i, signer := range s.Signers {
+		if i == 0 {
+			signers = signer.String()
+		} else {
+			signers = signers + fmt.Sprintf(", %s", signer.String())
+		}
+	}
+
+	filters := ""
+	for i, filter := range s.Filters {
+		if i == 0 {
+			filters = filter.String()
+		} else {
+			filters = filters + fmt.Sprintf(", %s", filter.String())
+		}
+	}
+	return fmt.Sprintf(
+		"signers(%v) filters(%v)",
+		signers,
+		filters,
+	)
+}
+
 func (s *DataSourceSpecConfiguration) DeepClone() dataSourceType {
 	return &DataSourceSpecConfiguration{
 		Signers: s.Signers,
@@ -69,7 +84,7 @@ func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConf
 	if protoConfig != nil {
 		// SignersFromProto returns a list of signers after checking the list length.
 		ds.Signers = SignersFromProto(protoConfig.Signers)
-		ds.Filters = DataSourceSpecFiltersFromProto(protoConfig.Filters)
+		ds.Filters, _ = DataSourceSpecFiltersFromProto(protoConfig.Filters)
 	}
 
 	return ds
@@ -109,9 +124,9 @@ func (e *DataSourceDefinitionExternalOracle) oneOfProto() interface{} {
 }
 
 func (e *DataSourceDefinitionExternalOracle) DeepClone() dataSourceType {
-	if e.Oracle == nil {
+	if e.Oracle != nil {
 		return &DataSourceDefinitionExternalOracle{
-			Oracle: &DataSourceSpecConfiguration{},
+			Oracle: e.Oracle.DeepClone().(*DataSourceSpecConfiguration),
 		}
 	}
 
