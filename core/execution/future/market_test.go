@@ -180,7 +180,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(eventFn)
 	tm.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(eventsFn)
-	tm.oracleEngine = oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker)
+	tm.oracleEngine = oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker, testActivationListener{})
 	tm.builtinOracle = oracles.NewBuiltinOracle(tm.oracleEngine, tm.timeService)
 	return tm
 }
@@ -209,7 +209,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	)
 	positionConfig.StreamPositionVerbose = true
 
-	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker)
+	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.timeService, tm.broker, testActivationListener{})
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
@@ -389,7 +389,7 @@ func getTestMarket2WithDP(
 	// create asset stub to match the test asset:
 	cfgAsset := NewAssetStub("ETH", 0)
 
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker, testActivationListener{})
 	tm.oracleEngine = oracleEngine
 	tm.builtinOracle = oracles.NewBuiltinOracle(tm.oracleEngine, tm.timeService)
 
@@ -8026,3 +8026,11 @@ func Test_7017_UpdatingMarketDuringOpeningAuction(t *testing.T) {
 	tm.market.OnTick(ctx, tm.now)
 	require.Equal(t, types.MarketTradingModeContinuous, tm.market.GetMarketData().MarketTradingMode)
 }
+
+type testActivationListener struct{}
+
+func (t testActivationListener) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
+	return nil
+}
+
+func (t testActivationListener) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {}

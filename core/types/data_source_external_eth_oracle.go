@@ -1,23 +1,42 @@
 package types
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
+
+	"golang.org/x/crypto/sha3"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 )
 
 type EthCallSpec struct {
 	Address               string
-	Abi                   [][]byte // ?
+	AbiJson               string
 	Method                string
-	Args                  [][]byte
-	Trigger               trigger
+	ArgsJson              []string
+	Trigger               *EthCallTrigger
 	RequiredConfirmations uint64
 	Filter                *EthFilter
 	Normaliser            normaliser
 }
 
-func (c *EthCallSpec) isDataSourceType() {}
+// Why not just an id?
+func (s *EthCallSpec) HashHex() string {
+	hashFunc := sha3.New256()
+
+	hashFunc.Write([]byte(s.Address))
+	hashFunc.Write([]byte(s.Method))
+	hashFunc.Write([]byte(strings.Join(s.ArgsJson, ",")))
+	hashFunc.Write([]byte(s.AbiJson))
+	hashFunc.Write(s.Trigger.EthTrigger.Hash())
+	hashFunc.Write(s.Filter.Hash())
+	hashFunc.Write([]byte(fmt.Sprintf("requiredconfirmations: %v", s.RequiredConfirmations)))
+
+	return hex.EncodeToString(hashFunc.Sum(nil))
+}
+
+func (s *EthCallSpec) isDataSourceType() {}
 
 func (s *EthCallSpec) oneOfProto() interface{} {
 	return s.IntoProto()
@@ -25,37 +44,32 @@ func (s *EthCallSpec) oneOfProto() interface{} {
 
 func (s *EthCallSpec) IntoProto() *vegapb.EthCallSpec {
 	ecs := &vegapb.EthCallSpec{}
+	/*
+		if s != nil {
+			ecs.Address = s.Address
+			if s.AbiJson != "" {
+			}
+			ecs.Method = s.Method
 
-	if s != nil {
-		ecs.Address = s.Address
-		if s.Abi != nil {
+			if s.ArgsJson != nil {
+			}
 
-		}
-		ecs.Method = s.Method
+			if s.Trigger != nil {
+			}
 
-		if s.Args != nil {
+			ecs.RequiredConfirmations = s.RequiredConfirmations
+			if s.Filter != nil {
+			}
 
-		}
-
-		if s.Trigger != nil {
-
-		}
-
-		ecs.RequiredConfirmations = s.RequiredConfirmations
-		if s.Filter != nil {
-
-		}
-
-		if s.Normaliser != nil {
-
-		}
-	}
+			if s.Normaliser != nil {
+			}
+		}*/
 	return ecs
 }
 
 func (s *EthCallSpec) String() string {
 	abi := ""
-	for i, apos := range s.Abi {
+	for i, apos := range s.AbiJson {
 		if i == 0 {
 			abi = string(apos)
 		} else {
@@ -64,7 +78,7 @@ func (s *EthCallSpec) String() string {
 	}
 
 	args := ""
-	for i, arg := range s.Abi {
+	for i, arg := range s.AbiJson {
 		if i == 0 {
 			args = string(arg)
 		} else {
@@ -77,7 +91,7 @@ func (s *EthCallSpec) String() string {
 		abi,
 		s.Method,
 		args,
-		s.Trigger.String(),
+		s.Trigger.EthTrigger.String(),
 		s.RequiredConfirmations,
 		s.Filter.String(),
 		s.Normaliser.String(),
@@ -101,32 +115,41 @@ func EthCallSpecFromProto(protoSpec *vegapb.DataSourceDefinitionExternal_EthOrac
 			ethc.Filter = &EthFilter{
 				Filters: filters,
 			}
-			abi := [][]byte{} // TODO: Handle ABI
+
 			ethc.Address = protoSpec.EthOracle.Address
-			ethc.Abi = abi
+			abiBytes, err := protoSpec.EthOracle.Abi.MarshalJSON()
+			if err != nil {
+				// TODO: Handle error - pass this up the stack?
+				panic(err)
+			}
+			ethc.AbiJson = string(abiBytes)
+
 			ethc.Method = protoSpec.EthOracle.Method
-			args := [][]byte{} // TODO: handle Args
-			ethc.Args = args
-			ethc.Trigger = EthCallTriggerFromProto(protoSpec.EthOracle.Trigger)
+			jsonArgs := []string{}
+			for _, protoArg := range protoSpec.EthOracle.Args {
+				jsonArg, err := protoArg.MarshalJSON()
+				if err != nil {
+					// TODO: Handle error - pass this up the stack?
+					panic(err)
+				}
+				jsonArgs = append(jsonArgs, string(jsonArg))
+			}
+
+			ethc.ArgsJson = jsonArgs
+			ethc.Trigger = EthCallTriggerFromSpec(protoSpec.EthOracle.Trigger)
 			ethc.RequiredConfirmations = protoSpec.EthOracle.RequiredConfirmations
 			ethc.Filter, _ = EthFilterFromProto(protoSpec.EthOracle.Filter)
-			norm, err := NormaliserFromProto(protoSpec.EthOracle.Normaliser)
-			if err != nil {
-				// What we do here? Return err across the whole path above?
-			}
+			norm := NormaliserFromProto(protoSpec.EthOracle.Normaliser)
 			ethc.Normaliser = norm
-
 		}
 	}
 
-	return &EthCallSpec{} // TODO: Finish
+	return ethc
 }
 
 type DataSourceDefinitionExternalEthOracle struct {
 	EthOracle *EthCallSpec
 }
-
-func (e *DataSourceDefinitionExternalEthOracle) isDataSourceType() {}
 
 func (e *DataSourceDefinitionExternalEthOracle) String() string {
 	if e.EthOracle == nil {
@@ -146,8 +169,4 @@ func (e *DataSourceDefinitionExternalEthOracle) IntoProto() *vegapb.DataSourceDe
 	return &vegapb.DataSourceDefinitionExternal_EthOracle{
 		EthOracle: eo,
 	}
-}
-
-func (e *DataSourceDefinitionExternalEthOracle) oneOfProto() interface{} {
-	return e.IntoProto()
 }

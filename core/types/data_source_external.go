@@ -65,7 +65,7 @@ func (e *DataSourceDefinitionExternal) DeepClone() dataSourceType {
 // from the given proto object..
 func DataSourceDefinitionExternalFromProto(protoConfig *vegapb.DataSourceDefinitionExternal) *DataSourceDefinitionExternal {
 	ds := &DataSourceDefinitionExternal{
-		//SourceType:
+		// SourceType:
 	}
 
 	if protoConfig != nil {

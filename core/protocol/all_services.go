@@ -178,7 +178,14 @@ func newServices(
 
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+
+	ethCallEngine, err := ethcall.NewEngine(svcs.log, ethcall.Config{}, nil, svcs.eventForwarder)
+	if err != nil {
+		svcs.log.Error("unable to initialise eth call engine", logging.Error(err))
+		return nil, err
+	}
+
+	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, ethCallEngine)
 
 	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
 	svcs.oracleAdaptors = oracleAdaptors.New()
@@ -201,14 +208,8 @@ func newServices(
 	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology, version.Get())
 	svcs.witness = validators.NewWitness(svcs.ctx, svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
-	specEngine, err := ethcall.NewEngine(svcs.log, ethcall.Config{}, nil, svcs.eventForwarder)
-	if err != nil {
-		svcs.log.Error("unable to initialise eth call engine", logging.Error(err))
-		return nil, err
-	}
-
 	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.oracle,
-		&oracles.EthCallSpecSourceAdapter{Engine: specEngine}, svcs.ethClient, svcs.ethConfirmations)
+		&oracles.EthCallSpecSourceAdapter{Engine: ethCallEngine}, svcs.ethClient, svcs.ethConfirmations)
 
 	// this is done to go around circular deps...
 	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)

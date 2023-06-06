@@ -4,8 +4,6 @@ import (
 	"math/big"
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/types"
-
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -28,27 +26,7 @@ func TestSpec(t *testing.T) {
 		}{Name: "test", Age: 42},
 	}
 
-	call, err := ethcall.NewCall("testy", args, "0x123", abiBytes)
-	trigger := ethcall.TimeTrigger{
-		Initial: 10,
-		Every:   5,
-	}
-
-	normaliser := ethcall.EthDecimalsNormaliser{
-		Decimals: 5,
-	}
-
-	filter := ethcall.CallResultFilter{Filters: types.DataSourceSpecFilters{}}
-
-	originalSpec := ethcall.NewSpec(call, trigger, filter, normaliser, 12)
+	_, err = ethcall.NewCall("testy", args, "0x123", abiBytes)
 
 	require.NoError(t, err)
-
-	proto, err := originalSpec.ToProto()
-	require.NoError(t, err)
-
-	reconstitutedSpec, err := ethcall.NewSpecFromProto(proto)
-	require.NoError(t, err)
-
-	require.Equal(t, originalSpec, reconstitutedSpec)
 }

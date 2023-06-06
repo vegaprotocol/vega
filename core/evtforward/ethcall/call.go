@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
-	"golang.org/x/crypto/sha3"
 )
 
 type Call struct {
@@ -44,15 +43,6 @@ func NewCall(method string, args []any, address string, abiJSON []byte) (Call, e
 		abi:     abi,
 		abiJSON: abiJSON,
 	}, nil
-}
-
-func (c Call) Hash() []byte {
-	hashFunc := sha3.New256()
-	hashFunc.Write(c.address.Bytes())
-	hashFunc.Write([]byte(c.method))
-	hashFunc.Write(c.args)
-	hashFunc.Write(c.abiJSON)
-	return hashFunc.Sum(nil)
 }
 
 func (c Call) Args() ([]any, error) {

@@ -39,7 +39,7 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 
 	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetSpec("testspec").Times(1).Return(callspec, nil)
+	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
 
 	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
 	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)

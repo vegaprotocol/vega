@@ -107,7 +107,7 @@ func TestFutureSettlement(t *testing.T) {
 		Times(2).
 		Return(sid1, func(ctx context.Context, sid oracles.SubscriptionID) {
 			oe.Unsubscribe(ctx, sid)
-		})
+		}, nil)
 
 	proto := getValidInstrumentProto()
 

@@ -78,7 +78,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 
 	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetSpec("testspec").Times(2).Return(callspec, nil)
+	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(2).Return(callspec, nil)
 
 	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
 	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
@@ -132,7 +132,7 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 
 	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetSpec("testspec").Times(1).Return(callspec, nil)
+	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
 
 	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("someothertestbytes"), nil)
 
@@ -166,7 +166,7 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 
 	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetSpec("testspec").Times(1).Return(callspec, nil)
+	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
 
 	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
 	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(false)
@@ -201,7 +201,7 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 
 	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetSpec("testspec").Times(1).Return(callspec, nil)
+	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
 
 	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
 	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
@@ -240,7 +240,7 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 
 	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetSpec("testspec").Times(1).Return(callspec, nil)
+	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
 
 	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
 	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
