@@ -252,6 +252,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
+  SuccessorConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.SuccessorConfiguration
   FutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.FutureProduct
   Asset:
@@ -270,8 +272,16 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.PeggedOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
+  DataSourceDefinition:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinition
+  DataSourceDefinitionExternal:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionExternal
+  DataSourceDefinitionInternal:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionInternal
   DataSourceSpecConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
+  DataSourceSpecConfigurationTime:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
   OracleSpec:
     model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
   Filter:

@@ -25,6 +25,7 @@ type MarketStore interface {
 	GetByID(ctx context.Context, marketID string) (entities.Market, error)
 	GetByTxHash(ctx context.Context, txHash entities.TxHash) ([]entities.Market, error)
 	GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error)
+	ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool) ([]entities.Market, error)
 }
 
 type Markets struct {
@@ -86,4 +87,8 @@ func (m *Markets) GetMarketScalingFactor(ctx context.Context, marketID string) (
 
 func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination entities.CursorPagination, includeSettled bool) ([]entities.Market, entities.PageInfo, error) {
 	return m.store.GetAllPaged(ctx, marketID, pagination, includeSettled)
+}
+
+func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, childrenOnly bool) ([]entities.Market, error) {
+	return m.store.ListSuccessorMarkets(ctx, marketID, childrenOnly)
 }

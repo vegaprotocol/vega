@@ -68,6 +68,61 @@ func (o *Order) ClearUpExtraRemaining() {
 	o.extraRemaining = 0
 }
 
+// TrueRemaining is the full remaining size of an order. If this is an iceberg order
+// it will return the visible peak + the hidden volume.
+func (o *Order) TrueRemaining() uint64 {
+	rem := o.Remaining
+	if o.IcebergOrder != nil {
+		rem += o.IcebergOrder.ReservedRemaining
+	}
+	return rem
+}
+
+// IcebergNeedsRefresh returns whether the given iceberg order's visible peak has
+// dropped below the minimum peak value, and there is hidden volume available to
+// restore it.
+func (o *Order) IcebergNeedsRefresh() bool {
+	if o.IcebergOrder == nil {
+		// not an iceberg
+		return false
+	}
+
+	if o.IcebergOrder.ReservedRemaining == 0 {
+		// nothing to refresh with
+		return false
+	}
+
+	if o.Remaining >= o.IcebergOrder.MinimumPeakSize {
+		// not under the minimum
+		return false
+	}
+
+	return true
+}
+
+// SetIcebergPeaks will restore the given iceberg orders visible size with
+// some of its hidden volume.
+func (o *Order) SetIcebergPeaks() {
+	if o.IcebergOrder == nil {
+		return
+	}
+
+	if o.Remaining > o.IcebergOrder.InitialPeakSize && o.IcebergOrder.ReservedRemaining == 0 {
+		// iceberg is at full volume and we need to set the initial peaks
+		peak := num.MinV(o.Remaining, o.IcebergOrder.InitialPeakSize)
+		o.IcebergOrder.ReservedRemaining = o.Remaining - peak
+		o.Remaining = peak
+		return
+	}
+
+	// calculate the refill amount
+	refill := o.IcebergOrder.InitialPeakSize - o.Remaining
+	refill = num.MinV(refill, o.IcebergOrder.ReservedRemaining)
+
+	o.Remaining += refill
+	o.IcebergOrder.ReservedRemaining -= refill
+}
+
 func (o Order) IntoSubmission() *OrderSubmission {
 	sub := &OrderSubmission{
 		MarketID:    o.MarketID,

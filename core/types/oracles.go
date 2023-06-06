@@ -21,47 +21,10 @@ type OracleSpecConfiguration struct {
 	ExternalDataSourceSpec *ExternalDataSourceSpecConfiguration
 }
 
-func OracleSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) *OracleSpecConfiguration {
-	return &OracleSpecConfiguration{
-		ExternalDataSourceSpec: &ExternalDataSourceSpecConfiguration{
-			DataSourceSpec: &DataSourceSpecConfiguration{
-				Signers: SignersFromProto(protoConfig.Signers),
-				Filters: DataSourceSpecFiltersFromProto(protoConfig.Filters),
-			},
-		},
-	}
-}
-
 type OracleSpecFilters []*OracleSpecFilter
 
 type OracleSpecFilter struct {
 	DataSourceSpec *DataSourceSpecFilter
-}
-
-func OracleSpecFilterFromProto(protoFilter *datapb.Filter) *OracleSpecFilter {
-	return &OracleSpecFilter{
-		DataSourceSpec: &DataSourceSpecFilter{
-			Key:        OracleSpecPropertyKeyFromProto(protoFilter.Key),
-			Conditions: OracleSpecConditionsFromProto(protoFilter.Conditions),
-		},
-	}
-}
-
-func OracleSpecFiltersFromProto(protoFilters []*datapb.Filter) []*OracleSpecFilter {
-	osf := make([]*OracleSpecFilter, len(protoFilters))
-	for i, pf := range protoFilters {
-		osf[i].DataSourceSpec = DataSourceSpecFilterFromProto(pf)
-	}
-	return osf
-}
-
-func DeepCloneOracleSpecFilters(filters []*OracleSpecFilter) []*OracleSpecFilter {
-	clonedFilters := make([]*OracleSpecFilter, len(filters))
-	for i, f := range filters {
-		clonedFilters[i] = &OracleSpecFilter{DataSourceSpec: f.DataSourceSpec.DeepClone()}
-	}
-
-	return clonedFilters
 }
 
 type OracleSpecConditions DataSourceSpecConditions

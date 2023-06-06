@@ -3,6 +3,7 @@ package databasetest
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"math/rand"
@@ -50,6 +51,7 @@ func TestMain(m *testing.M, onSetupComplete func(sqlstore.Config, *sqlstore.Conn
 			panic(err)
 		}
 
+		log.Infof("Test DB Socket Directory: %s", testDBSocketDir)
 		log.Infof("Test DB Port: %d", testDBPort)
 
 		// Make sure the database has started before we run the tests.
@@ -109,7 +111,7 @@ func GetNextFreePort() int {
 		port := rand.Intn(maxPort-minPort+1) + minPort
 		timeout := time.Millisecond * 100
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", fmt.Sprintf("%d", port)), timeout)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.DeadlineExceeded) && !errors.Is(err, context.Canceled) {
 			return port
 		}
 

@@ -60,7 +60,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"sourceType":{"sourceType":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}},"status":"STATUS_ACTIVE"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"External":{"SourceType":{"Oracle":{"signers":[{"Signer":{"PubKey":{"key":"key"}}},{"Signer":{"EthAddress":{"address":"address"}}}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		}, {
 			name: "success: DataSourceDefinition_Internal",
@@ -89,7 +89,7 @@ func Test_oracleSpecResolver_DataSourceSpec(t *testing.T) {
 					},
 				},
 			},
-			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"sourceType":{"sourceType":{"conditions":[{"operator":12,"value":"blah"}]}}},"status":"STATUS_ACTIVE"}}`,
+			wantJsn: `{"spec":{"id":"","createdAt":0,"updatedAt":null,"data":{"SourceType":{"Internal":{"SourceType":{"Time":{"conditions":[{"operator":12,"value":"blah"}]}}}}},"status":"STATUS_ACTIVE"}}`,
 			wantErr: assert.NoError,
 		},
 	}

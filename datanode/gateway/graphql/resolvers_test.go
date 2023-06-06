@@ -77,8 +77,41 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	assert.NotNil(t, queryResolver)
 }
 
-func getTestMarket() *protoTypes.Market {
+func getTestMarket(termInt bool) *protoTypes.Market {
 	pk := types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)
+	term := &protoTypes.DataSourceSpec{
+		Data: protoTypes.NewDataSourceDefinition(
+			protoTypes.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&protoTypes.DataSourceSpecConfiguration{
+				Signers: []*datav1.Signer{pk.IntoProto()},
+				Filters: []*datav1.Filter{
+					{
+						Key: &datav1.PropertyKey{
+							Name: "trading.terminated",
+							Type: datav1.PropertyKey_TYPE_BOOLEAN,
+						},
+						Conditions: []*datav1.Condition{},
+					},
+				},
+			},
+		),
+	}
+
+	if termInt {
+		term = &protoTypes.DataSourceSpec{
+			Data: protoTypes.NewDataSourceDefinition(
+				protoTypes.DataSourceDefinitionTypeInt,
+			).SetTimeTriggerConditionConfig(
+				[]*datav1.Condition{
+					{
+						Operator: datav1.Condition_OPERATOR_GREATER_THAN,
+						Value:    "test-value",
+					},
+				},
+			),
+		}
+	}
 
 	return &protoTypes.Market{
 		Id: "BTC/DEC19",
@@ -114,24 +147,7 @@ func getTestMarket() *protoTypes.Market {
 								},
 							),
 						},
-						DataSourceSpecForTradingTermination: &protoTypes.DataSourceSpec{
-							Data: protoTypes.NewDataSourceDefinition(
-								protoTypes.DataSourceDefinitionTypeExt,
-							).SetOracleConfig(
-								&protoTypes.DataSourceSpecConfiguration{
-									Signers: []*datav1.Signer{pk.IntoProto()},
-									Filters: []*datav1.Filter{
-										{
-											Key: &datav1.PropertyKey{
-												Name: "trading.terminated",
-												Type: datav1.PropertyKey_TYPE_BOOLEAN,
-											},
-											Conditions: []*datav1.Condition{},
-										},
-									},
-								},
-							),
-						},
+						DataSourceSpecForTradingTermination: term,
 						DataSourceSpecBinding: &protoTypes.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "prices.ETH.value",
 							TradingTerminationProperty: "trading.terminated",
@@ -171,7 +187,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	marketNotExistsErr := errors.New("market does not exist")
 	markets := map[string]*protoTypes.Market{
-		"BTC/DEC19": getTestMarket(),
+		"BTC/DEC19": getTestMarket(false),
 		"ETH/USD18": nil,
 	}
 

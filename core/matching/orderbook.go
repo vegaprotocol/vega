@@ -211,6 +211,9 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	for _, uo := range uncrossedOrders {
+		// refresh if its an iceberg, noop if not
+		b.icebergRefresh(uo.Order)
+
 		if uo.Order.Remaining == 0 {
 			uo.Order.Status = types.OrderStatusFilled
 			b.remove(uo.Order)
@@ -219,6 +222,10 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 		uo.Order.UpdatedAt = ts
 		for idx, po := range uo.PassiveOrdersAffected {
 			po.UpdatedAt = ts
+
+			// refresh if its an iceberg, noop if not
+			b.icebergRefresh(po)
+
 			// also remove the orders from lookup tables
 			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
 				uo.PassiveOrdersAffected[idx].Status = types.OrderStatusFilled
@@ -846,6 +853,12 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
+	if order.IcebergOrder != nil && order.Status == types.OrderStatusActive {
+		// now trades have been generated for the aggressive iceberg based on the
+		// full size, set the peak limits ready for it to be added to the book.
+		order.SetIcebergPeaks()
+	}
+
 	// if order is persistent type add to order book to the correct side
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
@@ -885,6 +898,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	for idx := range impactedOrders {
+		// refresh if its an iceberg, noop if not
+		b.icebergRefresh(impactedOrders[idx])
+
 		if impactedOrders[idx].Remaining == 0 {
 			impactedOrders[idx].Status = types.OrderStatusFilled
 
@@ -1106,6 +1122,27 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	}
 	sort.Strings(pegged)
 	return pegged
+}
+
+// icebergRefresh will restore the peaks of an iceberg order if they have drifted below the minimum value
+// if not the order remains unchanged.
+func (b *OrderBook) icebergRefresh(o *types.Order) {
+	if !o.IcebergNeedsRefresh() {
+		return
+	}
+
+	// remove it if there is some left
+	if o.Remaining > 0 {
+		if _, err := b.DeleteOrder(o); err != nil {
+			b.log.Panic("could not delete iceberg order during refresh", logging.Error(err), logging.Order(o))
+		}
+	}
+
+	// refresh peaks
+	o.SetIcebergPeaks()
+
+	// put it to the back of the line
+	b.getSide(o.Side).addOrder(o)
 }
 
 // remove removes the given order from all the lookup map.

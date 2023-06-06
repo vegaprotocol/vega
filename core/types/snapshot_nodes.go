@@ -342,6 +342,7 @@ type ExecMarket struct {
 	NextMTM                    int64
 	Parties                    []string
 	Closed                     bool
+	IsSucceeded                bool
 }
 
 type ExecSpotMarket struct {
@@ -3090,6 +3091,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LastTradedPrice:            lastTradedPrice,
 		Parties:                    em.Parties,
 		Closed:                     em.Closed,
+		IsSucceeded:                em.Succeeded,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -3122,6 +3124,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		LastTradedPrice:            e.LastTradedPrice.String(),
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
+		Succeeded:                  e.IsSucceeded,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())

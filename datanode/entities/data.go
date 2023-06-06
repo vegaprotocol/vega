@@ -24,9 +24,51 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
+type (
+	_Spec  struct{}
+	SpecID = ID[_Spec]
+)
+
+type (
+	Signer  []byte
+	Signers = []Signer
+)
+
 type Property struct {
 	Name  string
 	Value string
+}
+
+func SerializeSigners(signers []*types.Signer) (Signers, error) {
+	if len(signers) > 0 {
+		sigList := Signers{}
+
+		for _, signer := range signers {
+			data, err := signer.Serialize()
+			if err != nil {
+				return nil, err
+			}
+			sigList = append(sigList, data)
+		}
+
+		return sigList, nil
+	}
+
+	return Signers{}, nil
+}
+
+func DeserializeSigners(data Signers) []*types.Signer {
+	if len(data) > 0 {
+		signers := []*types.Signer{}
+		for _, s := range data {
+			signer := types.DeserializeSigner(s)
+			signers = append(signers, signer)
+		}
+
+		return signers
+	}
+
+	return nil
 }
 
 type Data struct {
@@ -166,4 +208,90 @@ func (c *ExternalDataCursor) Parse(cursorString string) error {
 	}
 
 	return json.Unmarshal([]byte(cursorString), c)
+}
+
+type Condition struct {
+	Operator datapb.Condition_Operator
+	Value    string
+}
+
+func (c Condition) ToProto() *datapb.Condition {
+	return &datapb.Condition{
+		Operator: c.Operator,
+		Value:    c.Value,
+	}
+}
+
+func ConditionFromProto(protoCondition *datapb.Condition) Condition {
+	return Condition{
+		Operator: protoCondition.Operator,
+		Value:    protoCondition.Value,
+	}
+}
+
+type PropertyKey struct {
+	Name          string `json:"name"`
+	Type          datapb.PropertyKey_Type
+	DecimalPlaces *uint64 `json:"number_decimal_places,omitempty"`
+}
+
+type Filter struct {
+	Key        PropertyKey `json:"key"`
+	Conditions []Condition `json:"conditions"`
+}
+
+func (f Filter) ToProto() *datapb.Filter {
+	conditions := make([]*datapb.Condition, 0, len(f.Conditions))
+	for _, condition := range f.Conditions {
+		conditions = append(conditions, condition.ToProto())
+	}
+
+	var ndp *uint64
+	if f.Key.DecimalPlaces != nil {
+		v := *f.Key.DecimalPlaces
+		ndp = &v
+	}
+
+	return &datapb.Filter{
+		Key: &datapb.PropertyKey{
+			Name:                f.Key.Name,
+			Type:                f.Key.Type,
+			NumberDecimalPlaces: ndp,
+		},
+		Conditions: conditions,
+	}
+}
+
+func FiltersFromProto(filters []*datapb.Filter) []Filter {
+	if len(filters) == 0 {
+		return nil
+	}
+
+	results := make([]Filter, 0, len(filters))
+	for _, filter := range filters {
+		conditions := make([]Condition, 0, len(filter.Conditions))
+
+		for _, condition := range filter.Conditions {
+			conditions = append(conditions, Condition{
+				Operator: condition.Operator,
+				Value:    condition.Value,
+			})
+		}
+
+		var ndp *uint64
+		if filter.Key.NumberDecimalPlaces != nil {
+			v := *filter.Key.NumberDecimalPlaces
+			ndp = &v
+		}
+		results = append(results, Filter{
+			Key: PropertyKey{
+				Name:          filter.Key.Name,
+				Type:          filter.Key.Type,
+				DecimalPlaces: ndp,
+			},
+			Conditions: conditions,
+		})
+	}
+
+	return results
 }

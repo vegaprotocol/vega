@@ -1,5 +1,5 @@
 {
-	"TestName": "TestOracles_OracleDataSource",
+	"TestName": "TestOracles_OracleDataSourceExternal",
 	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } } } } } } } } } } } }",
 	"Result": {
 		"oracleSpecsConnection": {
@@ -157,5 +157,5 @@
 			]
 		}
 	},
-	"Duration": 2089168
+	"Duration": 6563821
 }

@@ -376,3 +376,126 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 		assert.Equal(t, "int-test-value-3", filters[0].Conditions[0].Value)
 	})
 }
+
+func TestContent(t *testing.T) {
+	t.Run("testContent", func(t *testing.T) {
+		t.Run("empty content", func(t *testing.T) {
+			d := &vegapb.DataSourceDefinition{}
+			assert.Nil(t, d.Content())
+
+			d = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: nil,
+						},
+					},
+				},
+			}
+
+			assert.Nil(t, d.Content())
+
+			d = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{},
+						},
+					},
+				},
+			}
+
+			c := d.Content()
+			assert.NotNil(t, c)
+			tp, ok := c.(*vegapb.DataSourceSpecConfiguration)
+			assert.True(t, ok)
+			assert.Equal(t, 0, len(tp.Filters))
+			assert.Equal(t, 0, len(tp.Signers))
+
+			d = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_Time{
+							Time: nil,
+						},
+					},
+				},
+			}
+
+			assert.Nil(t, d.Content())
+
+			d = &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_Time{
+							Time: &vegapb.DataSourceSpecConfigurationTime{},
+						},
+					},
+				},
+			}
+
+			ct := d.Content()
+			assert.NotNil(t, ct)
+			tpt, ok := ct.(*vegapb.DataSourceSpecConfigurationTime)
+			assert.True(t, ok)
+			assert.Equal(t, 0, len(tpt.Conditions))
+		})
+
+		t.Run("non-empty content with time termiation source", func(t *testing.T) {
+			d := &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_Internal{
+					Internal: &vegapb.DataSourceDefinitionInternal{
+						SourceType: &vegapb.DataSourceDefinitionInternal_Time{
+							Time: &vegapb.DataSourceSpecConfigurationTime{
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "ext-test-value-0",
+									},
+									{
+										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+										Value:    "ext-test-value-1",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			c := d.Content()
+			assert.NotNil(t, c)
+			assert.IsType(t, &vegapb.DataSourceSpecConfigurationTime{}, c)
+			tp, ok := c.(*vegapb.DataSourceSpecConfigurationTime)
+			assert.True(t, ok)
+			assert.Equal(t, 2, len(tp.Conditions))
+			assert.Equal(t, "ext-test-value-0", tp.Conditions[0].Value)
+			assert.Equal(t, "ext-test-value-1", tp.Conditions[1].Value)
+		})
+
+		t.Run("non-empty content with oracle", func(t *testing.T) {
+			d := &vegapb.DataSourceDefinition{
+				SourceType: &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: types.SignersIntoProto(
+									[]*types.Signer{
+										types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
+										types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
+									}),
+							},
+						},
+					},
+				},
+			}
+			c := d.Content()
+			assert.NotNil(t, c)
+			assert.IsType(t, &vegapb.DataSourceSpecConfiguration{}, c)
+			tp, ok := c.(*vegapb.DataSourceSpecConfiguration)
+			assert.True(t, ok)
+			assert.Equal(t, 2, len(tp.Signers))
+			assert.Equal(t, "0xSOMEKEYX", tp.Signers[0].GetPubKey().GetKey())
+		})
+	})
+}

@@ -58,8 +58,7 @@ func testInsertIntoNewBlock(t *testing.T) {
 	specProtos := getTestSpecs()
 
 	proto := specProtos[0]
-	data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
-	require.NoError(t, err)
+	data := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 	assert.NoError(t, os.Upsert(ctx, data))
 
 	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_specs").Scan(&rowCount))
@@ -79,8 +78,7 @@ func testUpdateExistingInBlock(t *testing.T) {
 	specProtos := getTestSpecs()
 
 	proto := specProtos[0]
-	data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
-	require.NoError(t, err)
+	data := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 	assert.NoError(t, os.Upsert(ctx, data))
 
 	data.ExternalDataSourceSpec.Spec.Status = entities.OracleSpecDeactivated
@@ -103,8 +101,7 @@ func testGetSpecByID(t *testing.T) {
 	specProtos := getTestSpecs()
 
 	for _, proto := range specProtos {
-		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
-		require.NoError(t, err)
+		data := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 		assert.NoError(t, os.Upsert(ctx, data))
 	}
 
@@ -114,9 +111,8 @@ func testGetSpecByID(t *testing.T) {
 	got, err := os.GetSpecByID(ctx, "DEADBEEF")
 	require.NoError(t, err)
 
-	want, err := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+	want := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
 
-	assert.NoError(t, err)
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
@@ -138,8 +134,7 @@ func testGetSpecByTxHash(t *testing.T) {
 
 	specs := make([]entities.OracleSpec, 0, len(specProtos))
 	for _, proto := range specProtos {
-		data, err := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
-		require.NoError(t, err)
+		data := entities.OracleSpecFromProto(proto, generateTxHash(), block.VegaTime)
 		assert.NoError(t, os.Upsert(ctx, data))
 
 		specs = append(specs, *data)
@@ -152,9 +147,8 @@ func testGetSpecByTxHash(t *testing.T) {
 	require.NoError(t, err)
 
 	got := foundSpecs[0]
-	want, err := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
+	want := entities.DataSourceSpecFromProto(specProtos[0].ExternalDataSourceSpec.Spec, got.ExternalDataSourceSpec.Spec.TxHash, block.VegaTime)
 
-	assert.NoError(t, err)
 	// truncate the time to microseconds as postgres doesn't support nanosecond granularity.
 	want.UpdatedAt = want.UpdatedAt.Truncate(time.Microsecond)
 	want.CreatedAt = want.CreatedAt.Truncate(time.Microsecond)
@@ -260,6 +254,26 @@ func getTestSpecs() []*vegapb.OracleSpec {
 				},
 			},
 		},
+		{
+			ExternalDataSourceSpec: &vegapb.ExternalDataSourceSpec{
+				Spec: &vegapb.DataSourceSpec{
+					Id:        "deadbaad",
+					CreatedAt: time.Now().UnixNano(),
+					UpdatedAt: time.Now().UnixNano(),
+					Data: vegapb.NewDataSourceDefinition(
+						vegapb.DataSourceDefinitionTypeInt,
+					).SetTimeTriggerConditionConfig(
+						[]*datapb.Condition{
+							{
+								Operator: datapb.Condition_OPERATOR_EQUALS,
+								Value:    fmt.Sprintf("%v", time.Now().UnixNano()),
+							},
+						},
+					),
+					Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
+				},
+			},
+		},
 	}
 }
 
@@ -286,8 +300,6 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 
 	for i := 0; i < 10; i++ {
 		pubKey := types.CreateSignerFromString(helpers.GenerateID(), types.DataSignerTypePubKey)
-		serializedKey, err := entities.SerializeSigners([]*types.Signer{pubKey})
-		require.NoError(t, err)
 
 		spec := entities.OracleSpec{
 			ExternalDataSourceSpec: &entities.ExternalDataSourceSpec{
@@ -295,10 +307,24 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 					ID:        entities.SpecID(fmt.Sprintf("deadbeef%02d", i+1)),
 					CreatedAt: time.Now().Truncate(time.Microsecond),
 					UpdatedAt: time.Now().Truncate(time.Microsecond),
-					Data: &entities.DataSourceDefinition{
-						External: &entities.DataSourceDefinitionExternal{
-							Signers: serializedKey,
-							Filters: nil,
+					Data: entities.DataSourceDefinition{
+						DataSourceDefinition: &vegapb.DataSourceDefinition{
+							SourceType: &vegapb.DataSourceDefinition_External{
+								External: &vegapb.DataSourceDefinitionExternal{
+									SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+										Oracle: &vegapb.DataSourceSpecConfiguration{
+											Signers: []*datapb.Signer{
+												{
+													Signer: &datapb.Signer_PubKey{
+														PubKey: pubKey.IntoProto().GetPubKey(),
+													},
+												},
+											},
+											Filters: nil,
+										},
+									},
+								},
+							},
 						},
 					},
 					Status:   entities.OracleSpecActive,
@@ -307,7 +333,7 @@ func createOracleSpecPaginationTestData(t *testing.T, ctx context.Context, bs *s
 			},
 		}
 
-		err = os.Upsert(ctx, &spec)
+		err := os.Upsert(ctx, &spec)
 		require.NoError(t, err)
 		specs = append(specs, spec)
 	}

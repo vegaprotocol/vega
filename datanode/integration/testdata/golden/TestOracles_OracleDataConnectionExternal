@@ -1,5 +1,5 @@
 {
-	"TestName": "TestOracles_OracleDataConnection",
+	"TestName": "TestOracles_OracleDataConnectionExternal",
 	"Query": "{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }",
 	"Result": {
 		"oracleSpecsConnection": {
@@ -75,5 +75,5 @@
 			]
 		}
 	},
-	"Duration": 2761216
+	"Duration": 12201612
 }
