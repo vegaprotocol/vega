@@ -58,6 +58,7 @@
 - [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
 - [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
+- [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 
 ## 0.71.0
 
