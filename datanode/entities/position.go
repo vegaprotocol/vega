@@ -252,8 +252,13 @@ func (p *Position) pendingMTM(price, sf num.Decimal) {
 
 func CalculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
 	if currentOpenVolume != 0 && ((currentOpenVolume > 0) != (tradedVolume > 0)) {
+		atv, acv := absUint64(tradedVolume), absUint64(currentOpenVolume)
+		if atv == acv {
+			// no volume opened, just closed the current open volume
+			return 0, -tradedVolume
+		}
 		var closedVolume int64
-		if absUint64(tradedVolume) > absUint64(currentOpenVolume) {
+		if atv > acv {
 			closedVolume = currentOpenVolume
 		} else {
 			closedVolume = -tradedVolume
