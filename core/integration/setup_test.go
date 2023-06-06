@@ -173,7 +173,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, marketActivityTracker, execsetup.topology)
 
 	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), execsetup.timeService, execsetup.broker,
+		execsetup.log, oracles.NewDefaultConfig(), execsetup.timeService, execsetup.broker, testActivationListener{},
 	)
 
 	execsetup.builtinOracle = oracles.NewBuiltinOracle(execsetup.oracleEngine, execsetup.timeService)
@@ -342,3 +342,11 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		},
 	)
 }
+
+type testActivationListener struct{}
+
+func (t testActivationListener) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
+	return nil
+}
+
+func (t testActivationListener) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {}

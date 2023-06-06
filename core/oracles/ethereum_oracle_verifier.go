@@ -33,7 +33,7 @@ type OracleDataBroadcaster interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_spec_source_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallSpecSource
 type EthCallSpecSource interface {
-	GetSpec(id string) (EthCallSpec, error)
+	GetCall(id string) (EthCall, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_contract_caller.go -package mocks code.vegaprotocol.io/vega/core/oracles ContractCaller
@@ -46,8 +46,8 @@ type EthereumConfirmations interface {
 	Check(uint64) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_spec_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallSpec
-type EthCallSpec interface {
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCall
+type EthCall interface {
 	Normalise(callResult []byte) (map[string]string, error)
 	Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) ([]byte, error)
 	PassesFilters(result []byte, blockHeight uint64, blockTime uint64) bool
@@ -153,7 +153,7 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 }
 
 func (s *EthereumOracleVerifier) checkCallEventResult(contractCall types.EthContractCallEvent) error {
-	spec, err := s.ethCallSpecSource.GetSpec(contractCall.SpecId)
+	spec, err := s.ethCallSpecSource.GetCall(contractCall.SpecId)
 	if err != nil {
 		return fmt.Errorf("failed to get call specification for id %s: %w", contractCall.SpecId, err)
 	}
@@ -210,7 +210,7 @@ func (s *EthereumOracleVerifier) onCallEventVerified(event interface{}, ok bool)
 
 func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, callResult := range s.finalizedCallResults {
-		spec, err := s.ethCallSpecSource.GetSpec(callResult.SpecId)
+		spec, err := s.ethCallSpecSource.GetCall(callResult.SpecId)
 		if err != nil {
 			s.log.Error("failed to get spec for call result", logging.Error(err))
 			continue
@@ -236,16 +236,16 @@ type EthCallSpecSourceAdapter struct {
 	Engine *ethcall.Engine
 }
 
-func (e *EthCallSpecSourceAdapter) GetSpec(id string) (EthCallSpec, error) {
-	spec, ok := e.Engine.GetSpec(id)
+func (e *EthCallSpecSourceAdapter) GetCall(id string) (EthCall, error) {
+	source, ok := e.Engine.GetDataSource(id)
 	if !ok {
 		return nil, fmt.Errorf("failed to get spec for id: %s", id)
 	}
-	return &EthCallSpecAdapter{spec: spec}, nil
+	return &EthCallSpecAdapter{spec: source}, nil
 }
 
 type EthCallSpecAdapter struct {
-	spec ethcall.Spec
+	spec *ethcall.DataSource
 }
 
 func (e *EthCallSpecAdapter) Normalise(callResult []byte) (map[string]string, error) {
@@ -261,7 +261,7 @@ func (e *EthCallSpecAdapter) Call(ctx context.Context, caller ethereum.ContractC
 }
 
 func (e *EthCallSpecAdapter) PassesFilters(result []byte, blockHeight uint64, blockTime uint64) bool {
-	return e.spec.PassesFilters(result, blockHeight, blockTime)
+	return e.spec.Pass(result, blockHeight, blockTime)
 }
 
 func (e *EthCallSpecAdapter) RequiredConfirmations() uint64 {

@@ -130,12 +130,16 @@ func (s *specSubscriptions) filterSubscribers(predicate OracleSpecPredicate) (*f
 	return result, nil
 }
 
-func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, tm time.Time) updatedSubscription {
+// getSubscription returns the subscription associated to the given OracleSpecID.  Returns the updates subscription and
+// true if this is the first subscription to the spec.
+func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleData, tm time.Time) (updatedSubscription, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	firstSubscription := false
 	_, subscription := s.getSubscription(spec.id)
 	if subscription == nil {
+		firstSubscription = true
 		subscription = s.createSubscription(spec, tm)
 	}
 
@@ -148,7 +152,7 @@ func (s *specSubscriptions) addSubscriber(spec OracleSpec, cb OnMatchedOracleDat
 		subscriptionID:  subscriptionID,
 		specActivatedAt: subscription.specActivatedAt,
 		spec:            *spec.OriginalSpec,
-	}
+	}, firstSubscription
 }
 
 func (s *specSubscriptions) removeSubscriber(subscriptionID SubscriptionID) (updatedSubscription, bool) {

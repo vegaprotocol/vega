@@ -1,7 +1,6 @@
 package types
 
 import (
-	"errors"
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
@@ -12,7 +11,6 @@ type normaliser interface {
 	isNormaliser()
 	oneOfProto() interface{}
 	String() string
-	Normalise(callResult []byte) (map[string]string, error)
 	Hash() []byte
 }
 
@@ -34,12 +32,6 @@ func (e *EthDecimalsNormaliser) IntoProto() *vegapb.EthDecimalsNormaliser {
 
 func (e *EthDecimalsNormaliser) String() string {
 	return fmt.Sprintf("decimals(%d)", e.Decimals)
-}
-
-func (e *EthDecimalsNormaliser) Normalise(callResult []byte) (map[string]string, error) {
-	// TODO - will need access to the abi fragment to interpret the bytes.  Spec should have access to this (its on the call object)
-	// Also the spec will contain the property name (e.g. 'price')
-	return map[string]string{}, nil
 }
 
 func (e *EthDecimalsNormaliser) Hash() []byte {
@@ -86,14 +78,6 @@ func (n *NormaliserEthDecimalsNormaliser) String() string {
 	}
 
 	return fmt.Sprintf("normaliserethdecimalsnormaliser(%s)", dn)
-}
-
-func (n *NormaliserEthDecimalsNormaliser) Normalise(callResult []byte) (map[string]string, error) {
-	if n.EthDecimalsNormaliser != nil {
-		return n.EthDecimalsNormaliser.Normalise(callResult)
-	}
-
-	return nil, errors.New("")
 }
 
 func (n *NormaliserEthDecimalsNormaliser) Hash() []byte {
@@ -152,14 +136,6 @@ func (n *Normaliser) String() string {
 	return fmt.Sprintf("normaliser(%s)", ns)
 }
 
-func (n *Normaliser) Normalise(callResult []byte) (map[string]string, error) {
-	if n.Normaliser != nil {
-		return n.Normaliser.Normalise(callResult)
-	}
-
-	return nil, errors.New("")
-}
-
 func (n *Normaliser) Hash() []byte {
 	if n.Normaliser != nil {
 		return n.Normaliser.Hash()
@@ -168,17 +144,17 @@ func (n *Normaliser) Hash() []byte {
 	return nil
 }
 
-func NormaliserFromProto(protoNormaliser *vegapb.Normaliser) (*Normaliser, error) {
+func NormaliserFromProto(protoNormaliser *vegapb.Normaliser) *Normaliser {
 	if protoNormaliser != nil {
 		if protoNormaliser.Normaliser != nil {
 			switch tp := protoNormaliser.Normaliser.(type) {
 			case *vegapb.Normaliser_EthDecimalsNormaliser:
 				return &Normaliser{
 					Normaliser: EthDecimalsNormaliserFromProto(tp.EthDecimalsNormaliser),
-				}, nil
+				}
 			}
 		}
 	}
 
-	return &Normaliser{}, nil
+	return &Normaliser{}
 }

@@ -2,9 +2,11 @@ package ethcall
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
+
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -12,7 +14,6 @@ import (
 )
 
 // Still TODO
-//   - listen for new data sources and add specs
 //   - on tick check every block since last tick not just current
 //   - submit some sort of error event if call fails
 //   - know when datasources stop being active and remove them
@@ -30,33 +31,55 @@ type Forwarder interface {
 }
 
 type Engine struct {
-	log       *logging.Logger
-	cfg       Config
-	client    EthReaderCaller
-	specs     map[string]Spec
-	forwarder Forwarder
-	prevBlock types.Blockish
+	log         *logging.Logger
+	cfg         Config
+	client      EthReaderCaller
+	dataSources map[string]*DataSource
+	forwarder   Forwarder
+	prevBlock   types.Blockish
 }
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) (*Engine, error) {
 	return &Engine{
-		log:       log,
-		cfg:       cfg,
-		client:    client,
-		forwarder: forwarder,
-		specs:     make(map[string]Spec),
+		log:         log,
+		cfg:         cfg,
+		client:      client,
+		forwarder:   forwarder,
+		dataSources: make(map[string]*DataSource),
 	}, nil
 }
 
-func (e *Engine) AddSpec(s Spec) (string, error) {
-	id := s.HashHex()
-	e.specs[id] = s
-	return id, nil
+func (e *Engine) GetDataSource(id string) (*DataSource, bool) {
+	if source, ok := e.dataSources[id]; ok {
+		return source, true
+	}
+
+	return nil, false
 }
 
-func (e *Engine) GetSpec(id string) (Spec, bool) {
-	spec, ok := e.specs[id]
-	return spec, ok
+func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
+	switch d := spec.ExternalDataSourceSpec.Spec.Data.SourceType.(type) {
+	case *types.EthCallSpec:
+		if e.dataSources[d.HashHex()] != nil {
+			return fmt.Errorf("duplicate spec: %s", d.HashHex())
+		}
+
+		dataSource, err := NewDataSource(d)
+		if err != nil {
+			return fmt.Errorf("failed to create data source: %w", err)
+		}
+
+		e.dataSources[d.HashHex()] = dataSource
+	}
+
+	return nil
+}
+
+func (e *Engine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {
+	switch d := spec.ExternalDataSourceSpec.Spec.Data.SourceType.(type) {
+	case *types.EthCallSpec:
+		delete(e.dataSources, d.HashHex())
+	}
 }
 
 func (e *Engine) OnTick(ctx context.Context, vegaTime time.Time) {
@@ -76,9 +99,9 @@ func (e *Engine) OnTick(ctx context.Context, vegaTime time.Time) {
 		return
 	}
 
-	for specID, spec := range e.specs {
-		if spec.EthTrigger.Trigger(e.prevBlock, block) {
-			res, err := spec.Call.Call(ctx, e.client, block.Number())
+	for specID, datasource := range e.dataSources {
+		if datasource.Trigger(e.prevBlock, block) {
+			res, err := datasource.Call.Call(ctx, e.client, block.Number())
 			if err != nil {
 				e.log.Errorf("failed to call contract: %w", err)
 				continue
@@ -92,8 +115,8 @@ func (e *Engine) OnTick(ctx context.Context, vegaTime time.Time) {
 
 func makeChainEvent(res Result, specID string, block types.Blockish) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
-		TxId:  "", // todo? Are we in a transcation
-		Nonce: 0,  // TODO
+		TxId:  "", // NA
+		Nonce: 0,  // NA
 		Event: &commandspb.ChainEvent_ContractCall{
 			ContractCall: &vega.EthContractCallEvent{
 				SpecId:      specID,
