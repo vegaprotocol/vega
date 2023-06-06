@@ -1361,6 +1361,8 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		order.Reason = types.OrderErrorUnspecified
 
 		if m.as.InAuction() {
+			order.SetIcebergPeaks()
+
 			m.peggedOrders.Park(order)
 			// If we are in an auction, we don't insert this order into the book
 			// Maybe should return an orderConfirmation with order state PARKED
@@ -1370,6 +1372,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 		// Reprice
 		err := m.repricePeggedOrder(order)
 		if err != nil {
+			order.SetIcebergPeaks()
 			m.peggedOrders.Park(order)
 			m.broker.Send(events.NewOrderEvent(ctx, order))
 			return &types.OrderConfirmation{Order: order}, nil, nil // nolint
@@ -2960,6 +2963,14 @@ func (m *Market) orderCancelReplace(
 
 		return conf, nil, nil
 	}
+
+	// if its an iceberg order with a price change and it is being submitted aggressively
+	// set the visible remaining to the full size
+	if newOrder.IcebergOrder != nil {
+		newOrder.Remaining += newOrder.IcebergOrder.ReservedRemaining
+		newOrder.IcebergOrder.ReservedRemaining = 0
+	}
+
 	// first we call the order book to evaluate auction triggers and get the list of trades
 	trades, err := m.checkPriceAndGetTrades(ctx, newOrder)
 	if err != nil {

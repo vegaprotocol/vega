@@ -21,7 +21,8 @@
 - [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
 - [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
-- [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement iceberg orders in data node
+- [8398](https://github.com/vegaprotocol/vega/issues/8398) - Implement iceberg orders in data node
+- [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
@@ -38,6 +39,7 @@
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 
 ### 🐛 Fixes
+- [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
 - [8251](https://github.com/vegaprotocol/vega/issues/8251) - Fix bug in expired orders optimisation resulting in non deterministic order sequence numbers
