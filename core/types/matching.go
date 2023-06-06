@@ -107,6 +107,14 @@ func (o *Order) SetIcebergPeaks() {
 		return
 	}
 
+	if o.Remaining > o.IcebergOrder.InitialPeakSize && o.IcebergOrder.ReservedRemaining == 0 {
+		// iceberg is at full volume and we need to set the initial peaks
+		peak := num.MinV(o.Remaining, o.IcebergOrder.InitialPeakSize)
+		o.IcebergOrder.ReservedRemaining = o.Remaining - peak
+		o.Remaining = peak
+		return
+	}
+
 	// calculate the refill amount
 	refill := o.IcebergOrder.InitialPeakSize - o.Remaining
 	refill = num.MinV(refill, o.IcebergOrder.ReservedRemaining)
