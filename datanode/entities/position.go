@@ -279,10 +279,16 @@ func updateVWAP(vwap num.Decimal, volume int64, addVolume int64, addPrice *num.U
 	if volume+addVolume == 0 {
 		return num.DecimalZero()
 	}
+	if addVolume == 0 && volume != 0 {
+		return vwap
+	}
+	addPriceDec := num.DecimalFromUint(addPrice)
+	if volume == 0 && addVolume != 0 {
+		return addPriceDec
+	}
 
 	volumeDec := num.DecimalFromInt64(volume)
 	addVolumeDec := num.DecimalFromInt64(addVolume)
-	addPriceDec := num.DecimalFromUint(addPrice)
 
 	return vwap.Mul(volumeDec).Add(addPriceDec.Mul(addVolumeDec)).Div(volumeDec.Add(addVolumeDec))
 }
