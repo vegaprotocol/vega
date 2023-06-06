@@ -44,6 +44,7 @@ func New() *Adaptors {
 		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]Adaptor{
 			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: NewOpenOracleAdaptor(),
 			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        NewJSONAdaptor(),
+			//commandspb.OracleDataSubmission_ORACLE_SOURCE_ETHEREUM_ORACLE:
 		},
 	}
 }

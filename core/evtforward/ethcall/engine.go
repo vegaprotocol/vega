@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -34,7 +35,7 @@ type Engine struct {
 	client    EthReaderCaller
 	specs     map[string]Spec
 	forwarder Forwarder
-	prevBlock blockish
+	prevBlock types.Blockish
 }
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) (*Engine, error) {
@@ -76,7 +77,7 @@ func (e *Engine) OnTick(ctx context.Context, vegaTime time.Time) {
 	}
 
 	for specID, spec := range e.specs {
-		if spec.Trigger.Trigger(e.prevBlock, block) {
+		if spec.EthTrigger.Trigger(e.prevBlock, block) {
 			res, err := spec.Call.Call(ctx, e.client, block.Number())
 			if err != nil {
 				e.log.Errorf("failed to call contract: %w", err)
@@ -89,7 +90,7 @@ func (e *Engine) OnTick(ctx context.Context, vegaTime time.Time) {
 	e.prevBlock = block
 }
 
-func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
+func makeChainEvent(res Result, specID string, block types.Blockish) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
 		TxId:  "", // todo? Are we in a transcation
 		Nonce: 0,  // TODO

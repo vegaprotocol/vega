@@ -14,6 +14,9 @@ message OracleDataSubmission {
     ORACLE_SOURCE_OPEN_ORACLE = 1;
     // Specifies that the payload will be base64 encoded JSON, but does not specify the shape of the data
     ORACLE_SOURCE_JSON = 2;
+
+    // Specifies that the payload will be base64 encoded JSON conforming to the ETH standard
+    ORACLE_SOURCE_ETHEREUM = 3;
   }
   // Source from which the data is coming from. Must be base64 encoded.
   // Oracle data is a type of external data source data.

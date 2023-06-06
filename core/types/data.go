@@ -108,7 +108,7 @@ func (df DataSourceSpecFilters) String() string {
 	return "[" + strings.Join(strs, ", ") + "]"
 }
 
-func DataSourceSpecFiltersFromProto(protoFilters []*datapb.Filter) []*DataSourceSpecFilter {
+func DataSourceSpecFiltersFromProto(protoFilters []*datapb.Filter) ([]*DataSourceSpecFilter, error) {
 	if len(protoFilters) > 0 {
 		dsf := make([]*DataSourceSpecFilter, len(protoFilters))
 		if len(protoFilters) > 0 {
@@ -117,9 +117,9 @@ func DataSourceSpecFiltersFromProto(protoFilters []*datapb.Filter) []*DataSource
 			}
 		}
 
-		return dsf
+		return dsf, nil
 	}
-	return []*DataSourceSpecFilter{}
+	return nil, fmt.Errorf("no spec filters") // TODO: Is this a proper error here?
 }
 
 func DeepCloneDataSourceSpecFilters(filters []*DataSourceSpecFilter) []*DataSourceSpecFilter {
