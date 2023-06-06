@@ -318,7 +318,10 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 
 	// Subscribe registers a callback for a given OracleSpec that is called when an
 	// OracleData matches the spec.
-	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe = oe.Subscribe(ctx, *oracleSpecForSettlementData, future.updateSettlementData)
+	future.oracle.settlementDataSubscriptionID, future.oracle.unsubscribe, err = oe.Subscribe(ctx, *oracleSpecForSettlementData, future.updateSettlementData)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for settlement data: %w", err)
+	}
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for settlement data",
@@ -349,7 +352,10 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 	}
 
-	future.oracle.tradingTerminatedSubscriptionID, _ = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+	future.oracle.tradingTerminatedSubscriptionID, _, err = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+	if err != nil {
+		return nil, fmt.Errorf("could not subscribe to oracle engine for trading termination: %w", err)
+	}
 
 	if log.IsDebug() {
 		log.Debug("future subscribed to oracle engine for market termination event",

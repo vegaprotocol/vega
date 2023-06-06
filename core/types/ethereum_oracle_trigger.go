@@ -12,7 +12,6 @@ type trigger interface {
 	oneOfProto() interface{} // Calls IntoProto
 	GetEthTrigger() *EthCallTrigger
 	Hash() []byte
-	Trigger(Blockish, Blockish) bool
 	String() string
 }
 
@@ -25,31 +24,6 @@ type EthTimeTrigger struct {
 type Blockish interface {
 	NumberU64() uint64
 	Time() uint64
-}
-
-func (e EthTimeTrigger) Trigger(prev Blockish, current Blockish) bool {
-	// Before initial?
-	if current.Time() < e.Initial {
-		return false
-	}
-
-	// Crossing initial boundary?
-	if prev.Time() < e.Initial && current.Time() >= e.Initial {
-		return true
-	}
-
-	// After until?
-	if e.Until != 0 && current.Time() > e.Until {
-		return false
-	}
-
-	if e.Every == 0 {
-		return false
-	}
-	// Somewhere in the middle..
-	prevTriggerCount := (prev.Time() - e.Initial) / e.Every
-	currentTriggerCount := (current.Time() - e.Initial) / e.Every
-	return currentTriggerCount > prevTriggerCount
 }
 
 func (e *EthTimeTrigger) isTrigger() {}
@@ -98,7 +72,6 @@ func (e *EthTimeTrigger) String() string {
 }
 
 func EthTimeTriggerFromProto(protoTrigger *vegapb.EthTimeTrigger) *EthTimeTrigger {
-
 	trigger := &EthTimeTrigger{}
 	if protoTrigger != nil {
 		trigger.Initial = *protoTrigger.Initial
@@ -184,22 +157,12 @@ func (e *EthCallTriggerTime) Hash() []byte {
 	return nil
 }
 
-func (e *EthCallTriggerTime) Trigger(prev, current Blockish) bool {
-	if e.TimeTrigger != nil {
-		return e.TimeTrigger.Trigger(prev, current)
-	}
-
-	return false
-}
-
 type EthCallTrigger struct {
 	EthTrigger trigger
 }
 
-func (e *EthCallTrigger) isTrigger() {}
-
 func (e *EthCallTrigger) IntoProto() *vegapb.EthCallTrigger {
-	if e.Trigger != nil {
+	if e.EthTrigger != nil {
 		switch tp := e.EthTrigger.(type) {
 		case *EthTimeTrigger:
 			return &vegapb.EthCallTrigger{
@@ -219,32 +182,15 @@ func (e *EthCallTrigger) IntoProto() *vegapb.EthCallTrigger {
 	return &vegapb.EthCallTrigger{}
 }
 
-func (e *EthCallTrigger) oneOfProto() interface{} {
-	return e.IntoProto()
-}
-
 func (e *EthCallTrigger) GetEthTrigger() *EthCallTrigger {
 	return e
 }
 
-func (e *EthCallTrigger) String() string {
-	tt := ""
-	if e.Trigger != nil {
-		switch tp := e.EthTrigger.(type) {
-		case *EthCallTriggerTime:
-			if tp.TimeTrigger != nil {
-				tt = tp.String()
-			}
-		}
-	}
-	return fmt.Sprintf("ethcalltrigger(%s)", tt)
-}
-
-func EthCallTriggerFromProto(protoTrigger *vegapb.EthCallTrigger) *EthCallTrigger {
+func EthCallTriggerFromSpec(specTrigger *vegapb.EthCallTrigger) *EthCallTrigger {
 	tr := &EthCallTrigger{}
-	if protoTrigger != nil {
-		if protoTrigger.EthTrigger != nil {
-			switch tp := protoTrigger.EthTrigger.(type) {
+	if specTrigger != nil {
+		if specTrigger.EthTrigger != nil {
+			switch tp := specTrigger.EthTrigger.(type) {
 			case *vegapb.EthCallTrigger_TimeTrigger:
 				tr.EthTrigger = EthCallTriggerTimeFromProto(tp)
 			}
@@ -252,21 +198,4 @@ func EthCallTriggerFromProto(protoTrigger *vegapb.EthCallTrigger) *EthCallTrigge
 	}
 
 	return tr
-}
-
-func (e EthCallTrigger) Hash() []byte {
-	if e.Trigger != nil {
-		return e.EthTrigger.Hash()
-	}
-
-	// TODO: Error for empty trigger
-	return nil
-}
-
-func (e *EthCallTrigger) Trigger(prev, current Blockish) bool {
-	if e.EthTrigger != nil {
-		return e.EthTrigger.Trigger(prev, current)
-	}
-
-	return false
 }

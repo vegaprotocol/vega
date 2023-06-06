@@ -44,11 +44,6 @@ func EthFilterFromProto(protoFilter *vegapb.EthFilter) (*EthFilter, error) {
 	}, nil
 }
 
-func (f *EthFilter) Pass(result []byte, blockHeight uint64, blockTime uint64) bool {
-	// Will need the normaliser
-	return true
-}
-
 func (f *EthFilter) Hash() []byte {
 	hashFunc := sha3.New256()
 	ident := fmt.Sprintf("ethfilter: %s", f.Filters.String())

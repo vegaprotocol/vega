@@ -34,17 +34,17 @@ func (m *MockEthCallSpecSource) EXPECT() *MockEthCallSpecSourceMockRecorder {
 	return m.recorder
 }
 
-// GetSpec mocks base method.
-func (m *MockEthCallSpecSource) GetSpec(arg0 string) (oracles.EthCallSpec, error) {
+// GetCall mocks base method.
+func (m *MockEthCallSpecSource) GetCall(arg0 string) (oracles.EthCall, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSpec", arg0)
-	ret0, _ := ret[0].(oracles.EthCallSpec)
+	ret := m.ctrl.Call(m, "GetCall", arg0)
+	ret0, _ := ret[0].(oracles.EthCall)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSpec indicates an expected call of GetSpec.
-func (mr *MockEthCallSpecSourceMockRecorder) GetSpec(arg0 interface{}) *gomock.Call {
+// GetCall indicates an expected call of GetCall.
+func (mr *MockEthCallSpecSourceMockRecorder) GetCall(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSpec", reflect.TypeOf((*MockEthCallSpecSource)(nil).GetSpec), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCall", reflect.TypeOf((*MockEthCallSpecSource)(nil).GetCall), arg0)
 }

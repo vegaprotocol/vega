@@ -25,7 +25,7 @@ const InitialOrderVersion = 1
 // OracleEngine ...
 type OracleEngine interface {
 	ListensToSigners(oracles.OracleData) bool
-	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber)
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error)
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
