@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"strings"
 	"sync"
@@ -50,6 +51,7 @@ type ETHClient interface { //revive:disable:exported
 	bind.ContractBackend
 	ChainID(context.Context) (*big.Int, error)
 	NetworkID(context.Context) (*big.Int, error)
+	BlockByNumber(ctx context.Context, number *big.Int) (*ethtypes.Block, error)
 }
 
 type Client struct {

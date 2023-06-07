@@ -12,6 +12,8 @@ import (
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	"github.com/ethereum/go-ethereum"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // Still TODO
@@ -23,7 +25,7 @@ import (
 //   - what to do about catching up e.g. if node is restarted
 type EthReaderCaller interface {
 	ethereum.ContractCaller
-	ethereum.ChainReader
+	BlockByNumber(ctx context.Context, number *big.Int) (*ethtypes.Block, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/forwarder_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethcall Forwarder
@@ -46,22 +48,6 @@ type Engine struct {
 }
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) (*Engine, error) {
-
-	// Get the latest block number
-	blockNumber, err := client.BlockNumber(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Get the header of the latest block
-	header, err := client.HeaderByNumber(context.Background(), big.NewInt(int64(blockNumber)))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create a ChainReader instance using the client and header
-	chainReader := ethereum.NewBlockChain(client, header)
-
 	return &Engine{
 		log:         log,
 		cfg:         cfg,
