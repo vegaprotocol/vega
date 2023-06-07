@@ -10,21 +10,21 @@ Feature: Iceberg orders
       | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @iceberg
-  Scenario: Iceberg order submission with valid TIF's
+  Scenario: Iceberg order submission with valid TIF's (0014-ORDT-007)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | BTC   | 10000  |
-      | party2 | BTC   | 10000  |
-      | aux    | BTC   | 100000 |
-      | aux2   | BTC   | 100000 |
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
-      
+
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -33,7 +33,7 @@ Feature: Iceberg orders
       | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"     
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     When the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | only |
@@ -52,7 +52,7 @@ Feature: Iceberg orders
       | party2 | ETH/DEC19 | buy  | 8              | 10    | STATUS_ACTIVE | 92              |
 
   @iceberg
-  Scenario: Iceberg order margin calculation
+  Scenario: Iceberg order margin calculation (0014-ORDT-011)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
@@ -120,14 +120,14 @@ Feature: Iceberg orders
 
 
   @iceberg
-  Scenario: iceberg basic refresh
+  Scenario: iceberg basic refresh (0014-ORDT-012)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | BTC   | 10000  |
-      | party2 | BTC   | 10000  |
-      | aux    | BTC   | 100000 |
-      | aux2   | BTC   | 100000 |
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
@@ -162,14 +162,14 @@ Feature: Iceberg orders
       | party1 | ETH/DEC19 | buy  | 10             | 10    | STATUS_ACTIVE | 84              |
 
   @iceberg
-  Scenario: iceberg refrehes leaving auction
+  Scenario: iceberg refreshes leaving auction
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | BTC   | 10000  |
-      | party2 | BTC   | 10000  |
-      | aux    | BTC   | 100000 |
-      | aux2   | BTC   | 100000 |
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
@@ -198,15 +198,15 @@ Feature: Iceberg orders
 
 
   @iceberg
-  Scenario: Iceberg increase size success and not losing position in order book
+  Scenario: Iceberg increase size success and not losing position in order book (0014-ORDT-023)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | BTC   | 10000  |
-      | party2 | BTC   | 10000  |
-      | party3 | BTC   | 10000  |
-      | aux    | BTC   | 100000 |
-      | aux2   | BTC   | 100000 |
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
@@ -229,7 +229,7 @@ Feature: Iceberg orders
       | party1 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
       | party2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
 
-    # reducing size
+    # increasing size
     Then the parties amend the following orders:
       | party  | reference    | price | size delta | tif     |
       | party1 | this-order-1 | 2     | 5          | TIF_GTC |
@@ -240,7 +240,7 @@ Feature: Iceberg orders
       | party1 | ETH/DEC19 | sell | 2              | 2     | STATUS_ACTIVE | 8               |
 
     # matching the order now
-    # this should match with the size 3 order of party1
+    # this should match with the size 2 order of party1
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party3 | ETH/DEC19 | buy  | 2      | 2     | 1                | TYPE_LIMIT | TIF_GTC | party3    |
@@ -249,16 +249,76 @@ Feature: Iceberg orders
       | buyer  | seller | price | size |
       | party3 | party1 | 2     | 2    |
 
+  @iceberg
+  @margin-not-releasing
+  Scenario: Iceberg decrease size success and not losing position in order book (0014-ORDT-023) (0014-ORDT-025)
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    And the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party1 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
+      | party2 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 24     | 9976    |
+
+    # decreasing size
+    Then the parties amend the following orders:
+      | party  | reference    | price | size delta | tif     |
+      | party1 | this-order-1 | 2     | -50        | TIF_GTC |
+
+    # the visible is the same and only the reserve amount has decreased
+    Then the iceberg orders should have the following states:
+      | party  | market id | side | visible volume | price | status        | reserved volume |
+      | party1 | ETH/DEC19 | sell | 2              | 2     | STATUS_ACTIVE | 48              |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 12     | 9988    |
+
+    # matching the order now
+    # this should match with the size 2 order of party1
+    Then the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party3 | ETH/DEC19 | buy  | 2      | 2     | 1                | TYPE_LIMIT | TIF_GTC | party3    |
+
+    Then the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party3 | party1 | 2     | 2    |
 
   @iceberg
   Scenario: Iceberg amend price reenters aggressively
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount |
-      | party1 | BTC   | 10000  |
-      | party2 | BTC   | 10000  |
-      | aux    | BTC   | 100000 |
-      | aux2   | BTC   | 100000 |
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
 
     When the parties submit the following liquidity provision:
