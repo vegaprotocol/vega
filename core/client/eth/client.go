@@ -17,11 +17,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"strings"
 	"sync"
 	"time"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	"code.vegaprotocol.io/vega/core/types"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
