@@ -241,7 +241,7 @@ func (e *EthCallSpecSourceAdapter) GetCall(id string) (EthCall, error) {
 	if !ok {
 		return nil, fmt.Errorf("failed to get spec for id: %s", id)
 	}
-	return &EthCallSpecAdapter{spec: source}, nil
+	return &EthCallSpecAdapter{spec: &source}, nil
 }
 
 type EthCallSpecAdapter struct {

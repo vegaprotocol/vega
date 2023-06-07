@@ -9,6 +9,7 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDataSourceDefinitionIntoProto(t *testing.T) {
@@ -20,45 +21,12 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 	})
 
 	t.Run("external dataSourceDefinition", func(t *testing.T) {
-		t.Run("non-empty but no oracle", func(t *testing.T) {
-			ds := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{},
-				},
-			}
-			protoDs := ds.IntoProto()
-			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
-			assert.Nil(t, protoDs.SourceType)
-		})
-
 		t.Run("non-empty oracle with empty lists", func(t *testing.T) {
-			ds := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{},
-					},
-				},
-			}
+			ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{})
 			protoDs := ds.IntoProto()
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 			assert.NotNil(t, protoDs.SourceType)
 			ext := protoDs.GetExternal()
-			assert.IsType(t, &vegapb.DataSourceDefinitionExternal{}, ext)
-
-			ds = &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{
-							Oracle: &types.DataSourceSpecConfiguration{},
-						},
-					},
-				},
-			}
-
-			protoDs = ds.IntoProto()
-			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
-			assert.NotNil(t, protoDs.SourceType)
-			ext = protoDs.GetExternal()
 			assert.NotNil(t, ext)
 			o := ext.GetOracle()
 			assert.Equal(t, 0, len(o.Signers))
@@ -66,27 +34,19 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 		})
 
 		t.Run("non-empty oracle with data", func(t *testing.T) {
-			ds := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{
-							Oracle: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{
-									{},
-								},
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "test-name",
-											Type: types.DataSourceSpecPropertyKeyType(0),
-										},
-									},
-								},
-							},
+			ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					{},
+				},
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "test-name",
+							Type: types.DataSourceSpecPropertyKeyType(0),
 						},
 					},
 				},
-			}
+			})
 
 			protoDs := ds.IntoProto()
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
@@ -103,72 +63,31 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 	})
 
 	t.Run("internal dataSourceDefinition", func(t *testing.T) {
-		t.Run("non-empty but no time source", func(t *testing.T) {
-			ds := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{},
-				},
-			}
-			protoDs := ds.IntoProto()
-			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
-			assert.Nil(t, protoDs.SourceType)
-		})
-
 		t.Run("non-empty time source with empty lists", func(t *testing.T) {
-			ds := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{},
-					},
-				},
-			}
+			ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfigurationTime{})
 			protoDs := ds.IntoProto()
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
 			assert.NotNil(t, protoDs.SourceType)
 			ext := protoDs.GetInternal()
-			assert.IsType(t, &vegapb.DataSourceDefinitionInternal{}, ext)
-
-			ds = &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{
-							Time: &types.DataSourceSpecConfigurationTime{},
-						},
-					},
-				},
-			}
-
-			protoDs = ds.IntoProto()
-			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
-			assert.NotNil(t, protoDs.SourceType)
-			ext = protoDs.GetInternal()
 			assert.NotNil(t, ext)
 			o := ext.GetTime()
 			assert.Equal(t, 0, len(o.Conditions))
 		})
 
 		t.Run("non-empty time source with data", func(t *testing.T) {
-			ds := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{
-							Time: &types.DataSourceSpecConfigurationTime{
-								Conditions: []*types.DataSourceSpecCondition{
-									{},
-									{
-										Operator: datapb.Condition_OPERATOR_EQUALS,
-										Value:    "14",
-									},
-									{
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-										Value:    "9",
-									},
-								},
-							},
-						},
+			ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfigurationTime{
+				Conditions: []*types.DataSourceSpecCondition{
+					{},
+					{
+						Operator: datapb.Condition_OPERATOR_EQUALS,
+						Value:    "14",
+					},
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "9",
 					},
 				},
-			}
+			})
 
 			protoDs := ds.IntoProto()
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
@@ -189,61 +108,23 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 
 func TestContent(t *testing.T) {
 	t.Run("testContent", func(t *testing.T) {
-		t.Run("empty content", func(t *testing.T) {
-			d := &types.DataSourceDefinition{}
-			c := d.Content()
-			assert.Nil(t, c)
-
-			d = &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{
-							Oracle: nil,
-						},
+		t.Run("non-empty content with time termination source", func(t *testing.T) {
+			d := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfigurationTime{
+				Conditions: []*types.DataSourceSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_EQUALS,
+						Value:    "ext-test-value-0",
+					},
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "ext-test-value-1",
 					},
 				},
-			}
+			})
 
-			c = d.Content()
-			assert.Nil(t, c)
-
-			d = &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{
-							Time: nil,
-						},
-					},
-				},
-			}
-			c = d.Content()
-			assert.Nil(t, c)
-		})
-
-		t.Run("non-empty content with time termiation source", func(t *testing.T) {
-			d := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{
-							Time: &types.DataSourceSpecConfigurationTime{
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Operator: datapb.Condition_OPERATOR_EQUALS,
-										Value:    "ext-test-value-0",
-									},
-									{
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-										Value:    "ext-test-value-1",
-									},
-								},
-							},
-						},
-					},
-				},
-			}
 			c := d.Content()
 			assert.NotNil(t, c)
-			tp, ok := c.(*types.DataSourceSpecConfigurationTime)
+			tp, ok := c.(types.DataSourceSpecConfigurationTime)
 			assert.True(t, ok)
 			assert.Equal(t, 2, len(tp.Conditions))
 			assert.Equal(t, "ext-test-value-0", tp.Conditions[0].Value)
@@ -251,23 +132,16 @@ func TestContent(t *testing.T) {
 		})
 
 		t.Run("non-empty content with oracle", func(t *testing.T) {
-			d := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{
-							Oracle: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{
-									types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
-									types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
-								},
-							},
-						},
-					},
+			d := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
 				},
-			}
+			})
+
 			c := d.Content()
 			assert.NotNil(t, c)
-			tp, ok := c.(*types.DataSourceSpecConfiguration)
+			tp, ok := c.(types.DataSourceSpecConfiguration)
 			assert.True(t, ok)
 			assert.Equal(t, 0, len(tp.Filters))
 			assert.Equal(t, 2, len(tp.Signers))
@@ -280,54 +154,46 @@ func TestContent(t *testing.T) {
 func TestGetFilters(t *testing.T) {
 	t.Run("testGetFiltersExternal", func(t *testing.T) {
 		t.Run("NotEmpty", func(t *testing.T) {
-			dsd := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{
-							Oracle: &types.DataSourceSpecConfiguration{
-								Signers: []*types.Signer{
-									types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
-									types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
-								},
-								Filters: []*types.DataSourceSpecFilter{
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "prices.ETH.value",
-											Type: datapb.PropertyKey_TYPE_INTEGER,
-										},
-										Conditions: []*types.DataSourceSpecCondition{
-											{
-												Operator: datapb.Condition_OPERATOR_EQUALS,
-												Value:    "ext-test-value-1",
-											},
-											{
-												Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-												Value:    "ext-test-value-2",
-											},
-										},
-									},
-									{
-										Key: &types.DataSourceSpecPropertyKey{
-											Name: "key-name-string",
-											Type: datapb.PropertyKey_TYPE_STRING,
-										},
-										Conditions: []*types.DataSourceSpecCondition{
-											{
-												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-												Value:    "ext-test-value-3",
-											},
-											{
-												Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-												Value:    "ext-test-value-4",
-											},
-										},
-									},
-								},
+			dsd := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{
+				Signers: []*types.Signer{
+					types.CreateSignerFromString("0xSOMEKEYX", types.DataSignerTypePubKey),
+					types.CreateSignerFromString("0xSOMEKEYY", types.DataSignerTypePubKey),
+				},
+				Filters: []*types.DataSourceSpecFilter{
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "prices.ETH.value",
+							Type: datapb.PropertyKey_TYPE_INTEGER,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Operator: datapb.Condition_OPERATOR_EQUALS,
+								Value:    "ext-test-value-1",
+							},
+							{
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+								Value:    "ext-test-value-2",
+							},
+						},
+					},
+					{
+						Key: &types.DataSourceSpecPropertyKey{
+							Name: "key-name-string",
+							Type: datapb.PropertyKey_TYPE_STRING,
+						},
+						Conditions: []*types.DataSourceSpecCondition{
+							{
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+								Value:    "ext-test-value-3",
+							},
+							{
+								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+								Value:    "ext-test-value-4",
 							},
 						},
 					},
 				},
-			}
+			})
 
 			filters := dsd.GetFilters()
 			assert.Equal(t, 2, len(filters))
@@ -346,52 +212,23 @@ func TestGetFilters(t *testing.T) {
 			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, filters[1].Conditions[1].Operator)
 			assert.Equal(t, "ext-test-value-4", filters[1].Conditions[1].Value)
 		})
-
-		t.Run("Empty", func(t *testing.T) {
-			dsd := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternal{},
-			}
-
-			filters := dsd.GetFilters()
-			assert.Equal(t, 0, len(filters))
-
-			dsd = &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionExternalx{
-					External: &types.DataSourceDefinitionExternal{
-						SourceType: &types.DataSourceDefinitionExternalOracle{
-							Oracle: nil,
-						},
-					},
-				},
-			}
-
-			filters = dsd.GetFilters()
-			assert.Equal(t, 0, len(filters))
-		})
 	})
 
 	t.Run("testGetFiltersInternal", func(t *testing.T) {
 		t.Run("NotEmpty", func(t *testing.T) {
-			dsd := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{
-							Time: &types.DataSourceSpecConfigurationTime{
-								Conditions: []*types.DataSourceSpecCondition{
-									{
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-										Value:    "int-test-value-1",
-									},
-									{
-										Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-										Value:    "int-test-value-2",
-									},
-								},
-							},
+			dsd := types.NewDataSourceDefinitionWith(
+				types.DataSourceSpecConfigurationTime{
+					Conditions: []*types.DataSourceSpecCondition{
+						{
+							Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+							Value:    "int-test-value-1",
+						},
+						{
+							Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+							Value:    "int-test-value-2",
 						},
 					},
-				},
-			}
+				})
 
 			filters := dsd.GetFilters()
 			// Ensure only a single filter has been created, that holds all given conditions
@@ -402,28 +239,6 @@ func TestGetFilters(t *testing.T) {
 
 			assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, filters[0].Conditions[0].Operator)
 			assert.Equal(t, "int-test-value-1", filters[0].Conditions[0].Value)
-		})
-
-		t.Run("Empty", func(t *testing.T) {
-			dsd := &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{},
-			}
-
-			filters := dsd.GetFilters()
-			assert.Equal(t, 0, len(filters))
-
-			dsd = &types.DataSourceDefinition{
-				SourceType: &types.DataSourceDefinitionInternalx{
-					Internal: &types.DataSourceDefinitionInternal{
-						SourceType: &types.DataSourceDefinitionInternalTime{
-							Time: &types.DataSourceSpecConfigurationTime{},
-						},
-					},
-				},
-			}
-
-			filters = dsd.GetFilters()
-			assert.Equal(t, 0, len(filters))
 		})
 	})
 }
@@ -487,7 +302,7 @@ func TestUpdateFilters(t *testing.T) {
 			assert.NoError(t, err)
 
 			filters := dsdt.GetFilters()
-			assert.Equal(t, 2, len(filters))
+			require.Equal(t, 2, len(filters))
 			assert.Equal(t, "prices.ETH.value", filters[0].Key.Name)
 			assert.Equal(t, datapb.PropertyKey_TYPE_INTEGER, filters[0].Key.Type)
 			assert.Equal(t, datapb.Condition_OPERATOR_EQUALS, filters[0].Conditions[0].Operator)
@@ -608,56 +423,32 @@ func TestUpdateFilters(t *testing.T) {
 
 func TestGetSigners(t *testing.T) {
 	t.Run("empty signers", func(t *testing.T) {
-		ds := &types.DataSourceDefinition{
-			SourceType: &types.DataSourceDefinitionExternalx{
-				External: &types.DataSourceDefinitionExternal{
-					SourceType: &types.DataSourceDefinitionExternalOracle{
-						Oracle: &types.DataSourceSpecConfiguration{},
-					},
-				},
-			},
-		}
+		ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{})
 
 		signers := ds.GetSigners()
 		assert.Equal(t, 0, len(signers))
 	})
 
 	t.Run("non-empty list but empty signers", func(t *testing.T) {
-		ds := &types.DataSourceDefinition{
-			SourceType: &types.DataSourceDefinitionExternalx{
-				External: &types.DataSourceDefinitionExternal{
-					SourceType: &types.DataSourceDefinitionExternalOracle{
-						Oracle: &types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{
-								{},
-								{},
-							},
-						},
-					},
-				},
+		ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{
+			Signers: []*types.Signer{
+				{},
+				{},
 			},
-		}
+		})
 
 		signers := ds.GetSigners()
 		assert.Equal(t, 2, len(signers))
 	})
 
 	t.Run("non-empty signers", func(t *testing.T) {
-		ds := &types.DataSourceDefinition{
-			SourceType: &types.DataSourceDefinitionExternalx{
-				External: &types.DataSourceDefinitionExternal{
-					SourceType: &types.DataSourceDefinitionExternalOracle{
-						Oracle: &types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{
-								{
-									types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey).Signer,
-								},
-							},
-						},
-					},
+		ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{
+			Signers: []*types.Signer{
+				{
+					types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey).Signer,
 				},
 			},
-		}
+		})
 
 		signers := ds.GetSigners()
 		assert.Equal(t, 1, len(signers))
@@ -668,153 +459,56 @@ func TestGetSigners(t *testing.T) {
 }
 
 func TestGetDataSourceSpecConfiguration(t *testing.T) {
-	ds := &types.DataSourceDefinition{}
-	spec := ds.GetDataSourceSpecConfiguration()
-	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfiguration{}, spec)
-	assert.Nil(t, spec.Signers)
-	assert.Nil(t, spec.Filters)
-
-	ds = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionExternalx{
-			External: &types.DataSourceDefinitionExternal{},
-		},
-	}
-	spec = ds.GetDataSourceSpecConfiguration()
-	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfiguration{}, spec)
-	assert.Nil(t, spec.Signers)
-	assert.Nil(t, spec.Filters)
-
-	ds = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionExternalx{
-			External: &types.DataSourceDefinitionExternal{
-				SourceType: &types.DataSourceDefinitionExternalOracle{
-					Oracle: &types.DataSourceSpecConfiguration{
-						Signers: []*types.Signer{
-							{
-								types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey).Signer,
-							},
-						},
-					},
+	ds := types.NewDataSourceDefinitionWith(
+		types.DataSourceSpecConfiguration{
+			Signers: []*types.Signer{
+				{
+					types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey).Signer,
 				},
 			},
-		},
-	}
-	spec = ds.GetDataSourceSpecConfiguration()
+		})
+
+	spec := ds.GetDataSourceSpecConfiguration()
 	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfiguration{}, spec)
+	assert.IsType(t, types.DataSourceSpecConfiguration{}, spec)
 	assert.Equal(t, 1, len(spec.Signers))
 	assert.Equal(t, "0xTESTSIGN", spec.Signers[0].GetSignerPubKey().Key)
-
-	ds = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionInternalx{
-			Internal: &types.DataSourceDefinitionInternal{},
-		},
-	}
-
-	spec = ds.GetDataSourceSpecConfiguration()
-	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfiguration{}, spec)
-	assert.Nil(t, spec.Signers)
-	assert.Nil(t, spec.Filters)
 }
 
 func TestGetDataSourceSpecConfigurationTime(t *testing.T) {
-	ds := &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionInternalx{
-			Internal: &types.DataSourceDefinitionInternal{},
+	ds := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfigurationTime{
+		Conditions: []*types.DataSourceSpecCondition{
+			{
+				Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+				Value:    "1",
+			},
 		},
-	}
+	})
+
 	spec := ds.GetDataSourceSpecConfigurationTime()
 	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfigurationTime{}, spec)
-	assert.Nil(t, spec.Conditions)
-
-	ds = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionInternalx{
-			Internal: &types.DataSourceDefinitionInternal{
-				SourceType: &types.DataSourceDefinitionInternalTime{
-					Time: nil,
-				},
-			},
-		},
-	}
-	spec = ds.GetDataSourceSpecConfigurationTime()
-	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfigurationTime{}, spec)
-	assert.Nil(t, spec.Conditions)
-
-	ds = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionInternalx{
-			Internal: &types.DataSourceDefinitionInternal{
-				SourceType: &types.DataSourceDefinitionInternalTime{
-					Time: &types.DataSourceSpecConfigurationTime{
-						Conditions: []*types.DataSourceSpecCondition{
-							{
-								Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-								Value:    "1",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	spec = ds.GetDataSourceSpecConfigurationTime()
-	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfigurationTime{}, spec)
+	assert.IsType(t, types.DataSourceSpecConfigurationTime{}, spec)
 	assert.NotNil(t, spec.Conditions)
 	assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, spec.Conditions[0].Operator)
 	assert.Equal(t, "1", spec.Conditions[0].Value)
-
-	ds = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionExternalx{
-			External: &types.DataSourceDefinitionExternal{},
-		},
-	}
-
-	spec = ds.GetDataSourceSpecConfigurationTime()
-	assert.NotNil(t, spec)
-	assert.IsType(t, &types.DataSourceSpecConfigurationTime{}, spec)
-	assert.Nil(t, spec.Conditions)
 }
 
 func TestIsExternal(t *testing.T) {
-	dsDef := &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionExternalx{
-			External: &types.DataSourceDefinitionExternal{
-				SourceType: &types.DataSourceDefinitionExternalOracle{
-					Oracle: &types.DataSourceSpecConfiguration{},
-				},
-			},
-		},
-	}
+	dsDef := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{})
 
 	res, err := dsDef.IsExternal()
 	assert.NoError(t, err)
 	assert.True(t, res)
 
-	dsDef = &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionInternalx{
-			Internal: &types.DataSourceDefinitionInternal{
-				SourceType: &types.DataSourceDefinitionInternalTime{
-					Time: &types.DataSourceSpecConfigurationTime{
-						Conditions: []*types.DataSourceSpecCondition{},
-					},
-				},
-			},
-		},
-	}
+	dsDef = types.NewDataSourceDefinitionWith(types.DataSourceSpecConfigurationTime{
+		Conditions: []*types.DataSourceSpecCondition{},
+	})
 
 	res, err = dsDef.IsExternal()
 	assert.NoError(t, err)
 	assert.False(t, res)
 
-	dsDef = &types.DataSourceDefinition{
-		SourceType: nil,
-	}
-
+	dsDef = types.NewDataSourceDefinitionWith(nil)
 	res, _ = dsDef.IsExternal()
 
 	assert.Error(t, errors.New("unknown type of data source provided"))
@@ -822,15 +516,7 @@ func TestIsExternal(t *testing.T) {
 }
 
 func TestSetOracleConfig(t *testing.T) {
-	dsd := &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionExternalx{
-			External: &types.DataSourceDefinitionExternal{
-				SourceType: &types.DataSourceDefinitionExternalOracle{
-					Oracle: &types.DataSourceSpecConfiguration{},
-				},
-			},
-		},
-	}
+	dsd := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{})
 
 	udsd := dsd.SetOracleConfig(
 		&types.DataSourceSpecConfiguration{
@@ -893,26 +579,19 @@ func TestSetOracleConfig(t *testing.T) {
 	assert.Equal(t, "ext-test-value-4", filters[1].Conditions[1].Value)
 
 	t.Run("try to set oracle config to internal data source", func(t *testing.T) {
-		dsd := &types.DataSourceDefinition{
-			SourceType: &types.DataSourceDefinitionInternalx{
-				Internal: &types.DataSourceDefinitionInternal{
-					SourceType: &types.DataSourceDefinitionInternalTime{
-						Time: &types.DataSourceSpecConfigurationTime{
-							Conditions: []*types.DataSourceSpecCondition{
-								{
-									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-									Value:    "int-test-value-1",
-								},
-								{
-									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-									Value:    "int-test-value-2",
-								},
-							},
-						},
+		dsd := types.NewDataSourceDefinitionWith(
+			types.DataSourceSpecConfigurationTime{
+				Conditions: []*types.DataSourceSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+						Value:    "int-test-value-1",
+					},
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "int-test-value-2",
 					},
 				},
-			},
-		}
+			})
 
 		iudsd := dsd.SetOracleConfig(
 			&types.DataSourceSpecConfiguration{
@@ -965,15 +644,7 @@ func TestSetOracleConfig(t *testing.T) {
 }
 
 func TestSetTimeTriggerConditionConfig(t *testing.T) {
-	dsd := &types.DataSourceDefinition{
-		SourceType: &types.DataSourceDefinitionExternalx{
-			External: &types.DataSourceDefinitionExternal{
-				SourceType: &types.DataSourceDefinitionExternalOracle{
-					Oracle: &types.DataSourceSpecConfiguration{},
-				},
-			},
-		},
-	}
+	dsd := types.NewDataSourceDefinitionWith(types.DataSourceSpecConfiguration{})
 
 	udsd := dsd.SetTimeTriggerConditionConfig(
 		[]*types.DataSourceSpecCondition{
@@ -992,26 +663,19 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 	assert.Equal(t, 0, len(filters))
 
 	t.Run("try to set time trigger config to internal data source", func(t *testing.T) {
-		dsd := &types.DataSourceDefinition{
-			SourceType: &types.DataSourceDefinitionInternalx{
-				Internal: &types.DataSourceDefinitionInternal{
-					SourceType: &types.DataSourceDefinitionInternalTime{
-						Time: &types.DataSourceSpecConfigurationTime{
-							Conditions: []*types.DataSourceSpecCondition{
-								{
-									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-									Value:    "int-test-value-1",
-								},
-								{
-									Operator: datapb.Condition_OPERATOR_GREATER_THAN,
-									Value:    "int-test-value-2",
-								},
-							},
-						},
+		dsd := types.NewDataSourceDefinitionWith(
+			types.DataSourceSpecConfigurationTime{
+				Conditions: []*types.DataSourceSpecCondition{
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+						Value:    "int-test-value-1",
+					},
+					{
+						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
+						Value:    "int-test-value-2",
 					},
 				},
-			},
-		}
+			})
 
 		iudsd := dsd.SetTimeTriggerConditionConfig(
 			[]*types.DataSourceSpecCondition{

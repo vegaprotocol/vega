@@ -1,10 +1,10 @@
 package ethcall
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
@@ -12,8 +12,8 @@ import (
 // JsonArgsToAny takes a list of arguments marshalled as JSON strings.
 // It then uses the ethereum ABI to convert each JSON argument into the go type
 // which corresponds to the ethereum type defined in the ABI for that argument.
-func JsonArgsToAny(methodName string, jsonArgs []string, abiJSON string) ([]any, error) {
-	abi, err := abi.JSON(strings.NewReader(abiJSON))
+func JsonArgsToAny(methodName string, jsonArgs []string, abiJSON []byte) ([]any, error) {
+	abi, err := abi.JSON(bytes.NewReader(abiJSON))
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse abi json: %w", err)
 	}

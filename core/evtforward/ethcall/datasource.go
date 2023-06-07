@@ -8,54 +8,48 @@ import (
 
 type DataSource struct {
 	Call
-	spec *types.EthCallSpec
+	spec types.EthCallSpec
 }
 
-func NewDataSource(spec *types.EthCallSpec) (*DataSource, error) {
+func NewDataSource(spec types.EthCallSpec) (DataSource, error) {
 	// Convert JSON args to go types using ABI
 	args, err := JsonArgsToAny(spec.Method, spec.ArgsJson, spec.AbiJson)
 	if err != nil {
-		return nil, fmt.Errorf("unable to deserialize args: %w", err)
+		return DataSource{}, fmt.Errorf("unable to deserialize args: %w", err)
 	}
 
-	call, err := NewCall(spec.Method, args, spec.Address, []byte(spec.AbiJson))
+	call, err := NewCall(spec.Method, args, spec.Address, spec.AbiJson)
 	if err != nil {
-		return nil, fmt.Errorf("unable to create call: %w", err)
+		return DataSource{}, fmt.Errorf("unable to create call: %w", err)
 	}
 
-	return &DataSource{
+	return DataSource{
 		Call: call,
 		spec: spec,
 	}, nil
 }
 
-func (c *DataSource) RequiredConfirmations() uint64 {
+func (c DataSource) RequiredConfirmations() uint64 {
 	return c.spec.RequiredConfirmations
 }
 
-func (c *DataSource) Pass(result []byte, blockHeight uint64, blockTime uint64) bool {
+func (c DataSource) Pass(result []byte, blockHeight uint64, blockTime uint64) bool {
 	return true
 }
 
-func (c *DataSource) Normalise(callResult []byte) (map[string]string, error) {
-	switch c.spec.Normaliser.(type) {
-	case *types.EthDecimalsNormaliser:
-		result, err := c.Call.UnpackResult(callResult)
-		if err != nil {
-			return nil, fmt.Errorf("unable to unpack result: %w", err)
-		}
-
-		// Todo pull this mapping from config
-		return map[string]string{"price": fmt.Sprintf("%s", result)}, nil
-	default:
-		return nil, fmt.Errorf("unknown normaliser type")
+func (c DataSource) Normalise(callResult []byte) (map[string]string, error) {
+	// TODO
+	result, err := c.Call.UnpackResult(callResult)
+	if err != nil {
+		return nil, fmt.Errorf("unable to unpack result: %w", err)
 	}
+
+	return map[string]string{"price": fmt.Sprintf("%s", result)}, nil
 }
 
-func (c *DataSource) Trigger(prev types.Blockish, current types.Blockish) bool {
+func (c DataSource) Trigger(prev blockish, current blockish) bool {
 	// Before initial?
-
-	switch trigger := c.spec.Trigger.EthTrigger.(type) {
+	switch trigger := c.spec.Trigger.(type) {
 	case *types.EthTimeTrigger:
 		if current.Time() < trigger.Initial {
 			return false

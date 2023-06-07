@@ -41,25 +41,26 @@ func TestEngine(t *testing.T) {
 
 	ethCallSpec := &types.EthCallSpec{
 		Address:  tc.contractAddr.Hex(),
-		AbiJson:  string(tc.abiBytes),
+		AbiJson:  tc.abiBytes,
 		Method:   "get_uint256",
 		ArgsJson: argsAsJson,
-		Trigger: &types.EthCallTrigger{
-			EthTrigger: &types.EthTimeTrigger{
-				Initial: currentEthTime,
-				Every:   20,
-				Until:   0,
-			},
+		Trigger: &types.EthTimeTrigger{
+			Initial: currentEthTime,
+			Every:   20,
+			Until:   0,
 		},
+
 		RequiredConfirmations: 0,
-		Filter:                &types.EthFilter{Filters: nil},
-		Normaliser:            &types.EthDecimalsNormaliser{Decimals: 0},
+		Filters:               types.DataSourceSpecFilters{},
+		// Normaliser:            &types.EthDecimalsNormaliser{Decimals: 0},
 	}
 
+	def := types.NewDataSourceDefinitionWith(ethCallSpec)
 	oracleSpec := types.OracleSpec{
 		ExternalDataSourceSpec: &types.ExternalDataSourceSpec{
 			Spec: &types.DataSourceSpec{
-				Data: &types.DataSourceDefinition{SourceType: ethCallSpec},
+				ID:   "testid",
+				Data: def,
 			},
 		},
 	}
@@ -68,7 +69,7 @@ func TestEngine(t *testing.T) {
 
 	require.NoError(t, err)
 
-	datasource, ok := e.GetDataSource(ethCallSpec.HashHex())
+	datasource, ok := e.GetDataSource("testid")
 	assert.True(t, ok)
 
 	// Make sure engine has a previous block to compare to
@@ -89,7 +90,7 @@ func TestEngine(t *testing.T) {
 
 		assert.Equal(t, cc.BlockHeight, uint64(3))
 		assert.Equal(t, cc.BlockTime, uint64(30))
-		assert.Equal(t, cc.SpecId, ethCallSpec.HashHex())
+		assert.Equal(t, cc.SpecId, "testid")
 		require.Equal(t, res["price"], "[66]")
 	})
 	tc.client.Commit()
