@@ -29,6 +29,7 @@ import (
 type enactmentTime struct {
 	current         int64
 	shouldNotVerify bool
+	cpLoad          bool
 }
 
 type firstSuccessor struct {
@@ -112,7 +113,9 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 				// for the successor market not to have a parent in the execution engine
 				continue
 			}
-			enct := &enactmentTime{}
+			enct := &enactmentTime{
+				cpLoad: true,
+			}
 			// if the proposal is for a new market it should be restored it such that it will be in opening auction
 			if toEnact {
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()

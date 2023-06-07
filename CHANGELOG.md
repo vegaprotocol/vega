@@ -62,6 +62,7 @@
 - [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
+- [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
 
 ## 0.71.0
 

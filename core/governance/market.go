@@ -581,7 +581,7 @@ func validateNewMarketChange(
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); !etu.cpLoad && err != nil {
 		return perr, err
 	}
 	// if this is a successor market, check if that's set up fine:

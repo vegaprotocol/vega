@@ -599,13 +599,15 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			}
 			parent = &pm
 		}
-		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		auctionDuration := enactTime.Sub(closeTime)
 		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
+		// closeTime = e.timeService.GetTimeNow().Round(time.Second)
+		// auctionDuration = enactTime.Sub(closeTime)
 		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
 		if err != nil {
 			e.rejectProposal(ctx, p, perr, err)
