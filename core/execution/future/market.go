@@ -568,7 +568,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.MarketStatePending
-		m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
+		// this should no longer be needed
+		// m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
 		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
 		m.enterAuction(ctx)
 	} else {
