@@ -30,13 +30,18 @@ type Forwarder interface {
 	ForwardFromSelf(*commandspb.ChainEvent)
 }
 
+type blockish interface {
+	NumberU64() uint64
+	Time() uint64
+}
+
 type Engine struct {
 	log         *logging.Logger
 	cfg         Config
 	client      EthReaderCaller
-	dataSources map[string]*DataSource
+	dataSources map[string]DataSource
 	forwarder   Forwarder
-	prevBlock   types.Blockish
+	prevBlock   blockish
 }
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) (*Engine, error) {
@@ -45,23 +50,24 @@ func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarde
 		cfg:         cfg,
 		client:      client,
 		forwarder:   forwarder,
-		dataSources: make(map[string]*DataSource),
+		dataSources: make(map[string]DataSource),
 	}, nil
 }
 
-func (e *Engine) GetDataSource(id string) (*DataSource, bool) {
+func (e *Engine) GetDataSource(id string) (DataSource, bool) {
 	if source, ok := e.dataSources[id]; ok {
 		return source, true
 	}
 
-	return nil, false
+	return DataSource{}, false
 }
 
 func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
-	switch d := spec.ExternalDataSourceSpec.Spec.Data.SourceType.(type) {
-	case *types.EthCallSpec:
-		if e.dataSources[d.HashHex()] != nil {
-			return fmt.Errorf("duplicate spec: %s", d.HashHex())
+	switch d := spec.ExternalDataSourceSpec.Spec.Data.Content().(type) {
+	case types.EthCallSpec:
+		id := spec.ExternalDataSourceSpec.Spec.ID
+		if _, ok := e.dataSources[id]; ok {
+			return fmt.Errorf("duplicate spec: %s", id)
 		}
 
 		dataSource, err := NewDataSource(d)
@@ -69,16 +75,17 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) err
 			return fmt.Errorf("failed to create data source: %w", err)
 		}
 
-		e.dataSources[d.HashHex()] = dataSource
+		e.dataSources[id] = dataSource
 	}
 
 	return nil
 }
 
 func (e *Engine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {
-	switch d := spec.ExternalDataSourceSpec.Spec.Data.SourceType.(type) {
+	switch spec.ExternalDataSourceSpec.Spec.Data.Content().(type) {
 	case *types.EthCallSpec:
-		delete(e.dataSources, d.HashHex())
+		id := spec.ExternalDataSourceSpec.Spec.ID
+		delete(e.dataSources, id)
 	}
 }
 
@@ -113,7 +120,7 @@ func (e *Engine) OnTick(ctx context.Context, vegaTime time.Time) {
 	e.prevBlock = block
 }
 
-func makeChainEvent(res Result, specID string, block types.Blockish) *commandspb.ChainEvent {
+func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
 		TxId:  "", // NA
 		Nonce: 0,  // NA
