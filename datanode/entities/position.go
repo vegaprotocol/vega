@@ -252,13 +252,8 @@ func (p *Position) pendingMTM(price, sf num.Decimal) {
 
 func CalculateOpenClosedVolume(currentOpenVolume, tradedVolume int64) (int64, int64) {
 	if currentOpenVolume != 0 && ((currentOpenVolume > 0) != (tradedVolume > 0)) {
-		atv, acv := absUint64(tradedVolume), absUint64(currentOpenVolume)
-		if atv == acv {
-			// no volume opened, just closed the current open volume
-			return 0, -tradedVolume
-		}
 		var closedVolume int64
-		if atv > acv {
+		if absUint64(tradedVolume) > absUint64(currentOpenVolume) {
 			closedVolume = currentOpenVolume
 		} else {
 			closedVolume = -tradedVolume
@@ -279,16 +274,10 @@ func updateVWAP(vwap num.Decimal, volume int64, addVolume int64, addPrice *num.U
 	if volume+addVolume == 0 {
 		return num.DecimalZero()
 	}
-	if addVolume == 0 && volume != 0 {
-		return vwap
-	}
-	addPriceDec := num.DecimalFromUint(addPrice)
-	if volume == 0 && addVolume != 0 {
-		return addPriceDec
-	}
 
 	volumeDec := num.DecimalFromInt64(volume)
 	addVolumeDec := num.DecimalFromInt64(addVolume)
+	addPriceDec := num.DecimalFromUint(addPrice)
 
 	return vwap.Mul(volumeDec).Add(addPriceDec.Mul(addVolumeDec)).Div(volumeDec.Add(addVolumeDec))
 }
