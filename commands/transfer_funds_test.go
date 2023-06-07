@@ -434,7 +434,7 @@ func TestTransferFunds(t *testing.T) {
 	for _, c := range cases {
 		err := commands.CheckTransfer(&c.transfer)
 		if len(c.errString) <= 0 {
-			assert.NoError(t, err)
+			assert.NoError(t, err, c.transfer.String())
 			continue
 		}
 		assert.Contains(t, err.Error(), c.errString)

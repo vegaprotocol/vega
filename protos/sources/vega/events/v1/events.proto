@@ -86,7 +86,13 @@ message Transfer {
   oneof kind {
     OneOffTransfer one_off = 101;
     RecurringTransfer recurring = 102;
+    OneOffGovernanceTransfer one_off_governance = 103;
+    RecurringGovernanceTransfer recurring_governance = 104;
   }
+}
+
+message OneOffGovernanceTransfer {
+  int64 deliver_on = 1;
 }
 
 message OneOffTransfer {
@@ -98,6 +104,11 @@ message RecurringTransfer {
   optional uint64 end_epoch = 2;
   string factor = 3;
   DispatchStrategy dispatch_strategy = 4;
+}
+
+message RecurringGovernanceTransfer {
+  uint64 start_epoch = 1;
+  optional uint64 end_epoch = 2;
 }
 
 // StakeLinking - an event notifying of stake being deposited or removed for a given party

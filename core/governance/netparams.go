@@ -152,6 +152,22 @@ func (e *Engine) getNewFreeformProposalParameters() *ProposalParameters {
 	)
 }
 
+func (e *Engine) getNewTransferProposalParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalTransferMinClose,
+		netparams.GovernanceProposalTransferMaxClose,
+		netparams.GovernanceProposalAssetMinEnact,
+		netparams.GovernanceProposalAssetMaxEnact,
+		netparams.GovernanceProposalTransferRequiredParticipation,
+		netparams.GovernanceProposalTransferRequiredMajority,
+		netparams.GovernanceProposalTransferMinProposerBalance,
+		netparams.GovernanceProposalTransferMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
 func (e *Engine) getProposalParametersFromNetParams(
 	minCloseKey, maxCloseKey, minEnactKey, maxEnactKey, requiredParticipationKey,
 	requiredMajorityKey, minProposerBalanceKey, minVoterBalanceKey,

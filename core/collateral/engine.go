@@ -1342,6 +1342,68 @@ func (e *Engine) TransferFunds(
 	return resps, nil
 }
 
+func (e *Engine) GovernanceTransferFunds(
+	ctx context.Context,
+	transfers []*types.Transfer,
+	accountTypes []types.AccountType,
+	references []string,
+) ([]*types.LedgerMovement, error) {
+	if len(transfers) != len(accountTypes) || len(transfers) != len(references) {
+		e.log.Panic("not the same amount of transfers, accounts types and references to process",
+			logging.Int("transfers", len(transfers)),
+			logging.Int("accounts-types", len(accountTypes)),
+			logging.Int("reference", len(references)),
+		)
+	}
+
+	var (
+		resps = make([]*types.LedgerMovement, 0, len(transfers))
+		err   error
+		req   *types.TransferRequest
+	)
+
+	for i := range transfers {
+		transfer, accType := transfers[i], accountTypes[i]
+		switch transfers[i].Type {
+		case types.TransferTypeTransferFundsDistribute,
+			types.TransferTypeTransferFundsSend:
+			req, err = e.getGovernanceTransferFundsTransferRequest(ctx, transfer, accType)
+
+		default:
+			e.log.Panic("unsupported transfer type",
+				logging.String("types", accType.String()))
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range res.Entries {
+			// increment the to account
+			if err := e.IncrementBalance(ctx, e.ADtoID(v.ToAccount), v.Amount); err != nil {
+				e.log.Error(
+					"Failed to increment balance for account",
+					logging.String("asset", v.ToAccount.AssetID),
+					logging.String("market", v.ToAccount.MarketID),
+					logging.String("owner", v.ToAccount.Owner),
+					logging.String("type", v.ToAccount.Type.String()),
+					logging.BigUint("amount", v.Amount),
+					logging.Error(err),
+				)
+			}
+		}
+
+		resps = append(resps, res)
+	}
+
+	return resps, nil
+}
+
 // BondUpdate is to be used for any bond account transfers.
 // Update on new orders, updates on commitment changes, or on slashing.
 func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error) {
@@ -1601,6 +1663,114 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 	default:
 		return nil, errors.New("unsupported transfer type for bond account")
 	}
+}
+
+func (e *Engine) getGovernanceTransferFundsTransferRequest(ctx context.Context, t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
+	var (
+		fromAcc, toAcc *types.Account
+		err            error
+	)
+	switch t.Type {
+	case types.TransferTypeTransferFundsSend:
+		// as of now only general account are supported.
+		// soon we'll have some kind of staking account lock as well.
+		switch accountType {
+		case types.AccountTypeGeneral:
+			fromAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		case types.AccountTypeGlobalReward:
+			fromAcc, err = e.GetGlobalRewardAccount(t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		case types.AccountTypeInsurance:
+			fromAcc, err = e.GetMarketInsurancePoolAccount(t.Market, t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Owner, t.Amount.Asset,
+				)
+			}
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+		default:
+			return nil, fmt.Errorf("unsupported from account for TransferFunds: %v", accountType.String())
+		}
+
+	case types.TransferTypeTransferFundsDistribute:
+		// as of now we support only another general account or a reward
+		// pool
+		switch accountType {
+		// this account could not exists, we would need to create it then
+		case types.AccountTypeGeneral:
+			toAcc, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			if err != nil {
+				// account does not exists, let's just create it
+				id, err := e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
+				if err != nil {
+					return nil, err
+				}
+				toAcc, err = e.GetAccountByID(id)
+				if err != nil {
+					// shouldn't happen, we just created it...
+					return nil, err
+				}
+			}
+
+		// this could not exists as well, let's just create in this case
+		case types.AccountTypeGlobalReward:
+			market := noMarket
+			if len(t.Market) > 0 {
+				market = t.Market
+			}
+			toAcc, err = e.GetOrCreateRewardAccount(ctx, t.Amount.Asset, market, accountType)
+			if err != nil {
+				return nil, err
+			}
+
+		case types.AccountTypeInsurance:
+			toAcc, err = e.GetMarketInsurancePoolAccount(t.Market, t.Amount.Asset)
+			if err != nil {
+				return nil, fmt.Errorf("account does not exists: %v, %v, %v",
+					accountType, t.Amount.Asset, t.Market,
+				)
+			}
+
+		default:
+			return nil, fmt.Errorf("unsupported to account for TransferFunds: %v", accountType.String())
+		}
+
+		// from account will always be the pending for transfers
+		fromAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
+	default:
+		return nil, fmt.Errorf("unsupported transfer type for TransferFund: %v", t.Type.String())
+	}
+
+	// now we got all relevant accounts, we can build our request
+
+	return &types.TransferRequest{
+		FromAccount: []*types.Account{fromAcc},
+		ToAccount:   []*types.Account{toAcc},
+		Amount:      t.Amount.Amount.Clone(),
+		MinAmount:   t.Amount.Amount.Clone(),
+		Asset:       t.Amount.Asset,
+		Type:        t.Type,
+	}, nil
 }
 
 func (e *Engine) getTransferFundsTransferRequest(ctx context.Context, t *types.Transfer, accountType types.AccountType) (*types.TransferRequest, error) {
@@ -2877,7 +3047,15 @@ func (e *Engine) GetRewardAccountsByType(rewardAcccountType types.AccountType) [
 	return accounts
 }
 
-// TransferToHoldingAccount locks funds from general account into holding account of the party.
+func (e *Engine) GetSystemAccountBalance(asset, market string, accountType types.AccountType) (*num.Uint, error) {
+	account, err := e.GetAccountByID(e.accountID(market, systemOwner, asset, accountType))
+	if err != nil {
+		return nil, err
+	}
+	return account.Balance.Clone(), nil
+}
+
+// TransferToHoldingAccount locks funds from general account into holding account account of the party.
 func (e *Engine) TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error) {
 	generalAccountID := e.accountID(transfer.Market, transfer.Owner, transfer.Amount.Asset, types.AccountTypeGeneral)
 	generalAccount, err := e.GetAccountByID(generalAccountID)

@@ -125,6 +125,14 @@ type PayloadBankingScheduledTransfers struct {
 	BankingScheduledTransfers []*checkpointpb.ScheduledTransferAtTime
 }
 
+type PayloadBankingRecurringGovernanceTransfers struct {
+	BankingRecurringGovernanceTransfers []*checkpointpb.GovernanceTransfer
+}
+
+type PayloadBankingScheduledGovernanceTransfers struct {
+	BankingScheduledGovernanceTransfers []*checkpointpb.ScheduledGovernanceTransferAtTime
+}
+
 type PayloadCheckpoint struct {
 	Checkpoint *CPState
 }
@@ -807,6 +815,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledTransfers:
 		ret.Data = PayloadBankingScheduledTransfersFromProto(dt)
+	case *snapshot.Payload_BankingRecurringGovernanceTransfers:
+		ret.Data = PayloadBankingRecurringGovernanceTransfersFromProto(dt)
+	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
+		ret.Data = PayloadBankingScheduledGovernanceTransfersFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
@@ -945,6 +957,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_BankingRecurringTransfers:
 		ret.Data = dt
 	case *snapshot.Payload_BankingScheduledTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingRecurringGovernanceTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
 		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = dt
@@ -1318,6 +1334,34 @@ func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
+func PayloadBankingRecurringGovernanceTransfersFromProto(pbd *snapshot.Payload_BankingRecurringGovernanceTransfers) *PayloadBankingRecurringGovernanceTransfers {
+	return &PayloadBankingRecurringGovernanceTransfers{
+		BankingRecurringGovernanceTransfers: pbd.BankingRecurringGovernanceTransfers.RecurringTransfers,
+	}
+}
+
+func (p PayloadBankingRecurringGovernanceTransfers) IntoProto() *snapshot.Payload_BankingRecurringGovernanceTransfers {
+	return &snapshot.Payload_BankingRecurringGovernanceTransfers{
+		BankingRecurringGovernanceTransfers: &snapshot.BankingRecurringGovernanceTransfers{
+			RecurringTransfers: p.BankingRecurringGovernanceTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingRecurringGovernanceTransfers) isPayload() {}
+
+func (p *PayloadBankingRecurringGovernanceTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingRecurringGovernanceTransfers) Key() string {
+	return "recurringGovernanceTransfers"
+}
+
+func (*PayloadBankingRecurringGovernanceTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
 func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
 	return &PayloadBankingRecurringTransfers{
 		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTransfers,
@@ -1371,6 +1415,34 @@ func (*PayloadBankingScheduledTransfers) Key() string {
 }
 
 func (*PayloadBankingScheduledTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingScheduledGovernanceTransfersFromProto(pbd *snapshot.Payload_BankingScheduledGovernanceTransfers) *PayloadBankingScheduledGovernanceTransfers {
+	return &PayloadBankingScheduledGovernanceTransfers{
+		BankingScheduledGovernanceTransfers: pbd.BankingScheduledGovernanceTransfers.TransfersAtTime,
+	}
+}
+
+func (p PayloadBankingScheduledGovernanceTransfers) IntoProto() *snapshot.Payload_BankingScheduledGovernanceTransfers {
+	return &snapshot.Payload_BankingScheduledGovernanceTransfers{
+		BankingScheduledGovernanceTransfers: &snapshot.BankingScheduledGovernanceTransfers{
+			TransfersAtTime: p.BankingScheduledGovernanceTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingScheduledGovernanceTransfers) isPayload() {}
+
+func (p *PayloadBankingScheduledGovernanceTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingScheduledGovernanceTransfers) Key() string {
+	return "scheduledGovernanceTransfers"
+}
+
+func (*PayloadBankingScheduledGovernanceTransfers) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 

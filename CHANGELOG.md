@@ -25,6 +25,7 @@
 - [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders in `graphQL`
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
 - [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
@@ -34,6 +35,7 @@
 - [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
 - [8347](https://github.com/vegaprotocol/vega/issues/8347) - Market state (`ELS`) to be included in checkpoint data.
 - [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
+- [7416](https://github.com/vegaprotocol/vega/issues/7416) - Support for governance transfers
 - [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 

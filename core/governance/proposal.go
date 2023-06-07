@@ -47,7 +47,13 @@ type ToEnact struct {
 	updatedMarket     *types.Market
 	updatedSpotMarket *types.Market
 	f                 *ToEnactFreeform
+	t                 *ToEnactTransfer
+	c                 *ToEnactCancelTransfer
 }
+
+type ToEnactTransfer struct{}
+
+type ToEnactCancelTransfer struct{}
 
 // ToEnactNewMarket is just a empty struct, to signal
 // an enacted market. nothing to be done with it
@@ -59,6 +65,14 @@ type ToEnactNewSpotMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
+
+func (t ToEnact) IsCancelTransfer() bool {
+	return t.c != nil
+}
+
+func (t ToEnact) IsNewTransfer() bool {
+	return t.t != nil
+}
 
 func (t ToEnact) IsNewMarket() bool {
 	return t.m != nil
@@ -91,6 +105,14 @@ func (t ToEnact) IsNewAssetDetails() bool {
 
 func (t ToEnact) IsFreeform() bool {
 	return t.f != nil
+}
+
+func (t *ToEnact) NewTransfer() *ToEnactTransfer {
+	return t.t
+}
+
+func (t *ToEnact) CancelTransfer() *ToEnactCancelTransfer {
+	return t.c
 }
 
 func (t *ToEnact) NewMarket() *ToEnactNewMarket {
