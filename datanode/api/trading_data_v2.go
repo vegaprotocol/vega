@@ -2361,8 +2361,7 @@ func (t *TradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 	if req.EpochSeq == nil || *req.EpochSeq > math.MaxInt64 {
 		epoch, err = t.epochService.GetCurrent(ctx)
 	} else {
-		epochSeq := int64(*req.EpochSeq)
-		epoch, err = t.epochService.Get(ctx, epochSeq)
+		epoch, err = t.epochService.Get(ctx, *req.EpochSeq)
 	}
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
@@ -2434,10 +2433,12 @@ func (t *TradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 		epoch entities.Epoch
 		err   error
 	)
-	if req.GetId() == 0 {
-		epoch, err = t.epochService.GetCurrent(ctx)
+	if req.GetId() > 0 {
+		epoch, err = t.epochService.Get(ctx, req.GetId())
+	} else if req.GetBlock() > 0 {
+		epoch, err = t.epochService.GetByBlock(ctx, req.GetBlock())
 	} else {
-		epoch, err = t.epochService.Get(ctx, int64(req.GetId()))
+		epoch, err = t.epochService.GetCurrent(ctx)
 	}
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)

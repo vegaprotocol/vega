@@ -15,7 +15,9 @@ package gql_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -66,6 +68,9 @@ func TestNewResolverRoot_ConstructAndResolve(t *testing.T) {
 
 	subsResolver := root.Subscription()
 	assert.NotNil(t, subsResolver)
+
+	epochResolver := root.Epoch()
+	assert.NotNil(t, epochResolver)
 }
 
 func TestNewResolverRoot_QueryResolver(t *testing.T) {
@@ -279,7 +284,7 @@ func TestNewResolverRoot_MarketResolver(t *testing.T) {
 	assert.Len(t, orders.Edges, 2)
 }
 
-func TestRewardsRresolver(t *testing.T) {
+func TestRewardsResolver(t *testing.T) {
 	root := buildTestResolverRoot(t)
 	defer root.Finish()
 	ctx := context.Background()
@@ -289,6 +294,38 @@ func TestRewardsRresolver(t *testing.T) {
 	r, e := partyResolver.RewardSummaries(ctx, &protoTypes.Party{Id: "some"}, &assetID)
 	require.Nil(t, r)
 	require.NotNil(t, e)
+}
+
+func TestNewResolverRoot_EpochResolver(t *testing.T) {
+	root := buildTestResolverRoot(t)
+	defer root.Finish()
+	ctx := context.Background()
+
+	now := time.Now()
+	epochResp := &v2.GetEpochResponse{Epoch: &protoTypes.Epoch{
+		Seq: 10,
+		Timestamps: &protoTypes.EpochTimestamps{
+			StartTime:  now.Unix(),
+			ExpiryTime: now.Add(time.Hour).Unix(),
+			EndTime:    now.Add(time.Hour * 2).Unix(),
+			FirstBlock: 100,
+			LastBlock:  110,
+		},
+	}}
+	root.tradingDataClient.EXPECT().GetEpoch(gomock.Any(), gomock.Any()).Times(1).Return(epochResp, nil)
+
+	epochResolver := root.Epoch()
+	assert.NotNil(t, epochResolver)
+
+	block := uint64(100)
+	got, err := root.tradingDataClient.GetEpoch(ctx, &v2.GetEpochRequest{Block: &block})
+	assert.Nil(t, err)
+	assert.NotNil(t, got)
+	assert.Equal(t, got.Epoch, epochResp.Epoch)
+
+	id, err := epochResolver.ID(ctx, got.Epoch)
+	assert.Nil(t, err)
+	assert.Equal(t, id, fmt.Sprint(got.Epoch.Seq))
 }
 
 //nolint:interfacebloat
@@ -304,6 +341,7 @@ type resolverRoot interface {
 	Position() gql.PositionResolver
 	Party() gql.PartyResolver
 	Subscription() gql.SubscriptionResolver
+	Epoch() gql.EpochResolver
 }
 
 type testResolver struct {

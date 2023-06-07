@@ -1462,7 +1462,7 @@ type ComplexityRoot struct {
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Entities                           func(childComplexity int, txHash string) int
-		Epoch                              func(childComplexity int, id *string) int
+		Epoch                              func(childComplexity int, id *string, block *string) int
 		EpochRewardSummaries               func(childComplexity int, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
 		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
@@ -2285,7 +2285,7 @@ type QueryResolver interface {
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
 	Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error)
-	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
+	Epoch(ctx context.Context, id *string, block *string) (*vega.Epoch, error)
 	EpochRewardSummaries(ctx context.Context, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
 	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
 	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
@@ -8141,7 +8141,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string)), true
+		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string), args["block"].(*string)), true
 
 	case "Query.epochRewardSummaries":
 		if e.complexity.Query.EpochRewardSummaries == nil {
@@ -11304,6 +11304,15 @@ func (ec *executionContext) field_Query_epoch_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["block"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("block"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["block"] = arg1
 	return args, nil
 }
 
@@ -50546,7 +50555,7 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Epoch(rctx, fc.Args["id"].(*string))
+		return ec.resolvers.Query().Epoch(rctx, fc.Args["id"].(*string), fc.Args["block"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

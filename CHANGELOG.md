@@ -9,6 +9,7 @@
 - [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
 
 ### 🛠 Improvements
+- [7592](https://github.com/vegaprotocol/vega/issues/7592) - Add `block` parameter to `epoch` query.
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
