@@ -75,9 +75,9 @@ message EthCallSpec {
 
   // Below - is this common across all sources? so should be on DataSourceDefinitionExternal?
   // Filters describes which source data are considered of interest
-  EthFilter filter = 7;
+  repeated vega.data.v1.Filter filters = 7;
 
-  EthNormaliser normaliser = 8;
+  // EthNormaliser normaliser = 8;
 }
 
 // Determines when the contract method should be called.
@@ -97,10 +97,10 @@ message EthTimeTrigger {
   optional uint64 until = 3;
 }
 
-message EthFilter {
-  // Filters describes which source data are considered of interest
-  repeated vega.data.v1.Filter filters = 1;
-}
+// message EthFilter {
+//   // Filters describes which source data are considered of interest
+//   repeated vega.data.v1.Filter filters = 1;
+// }
 
 // Describes the types of normalisers used for different data sources.
 message Normaliser {

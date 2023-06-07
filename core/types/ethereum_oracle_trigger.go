@@ -4,15 +4,25 @@ import (
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
-	"golang.org/x/crypto/sha3"
 )
 
-type trigger interface {
-	isTrigger()
-	oneOfProto() interface{} // Calls IntoProto
-	GetEthTrigger() *EthCallTrigger
-	Hash() []byte
+type EthCallTrigger interface {
+	IntoEthCallTriggerProto() *vegapb.EthCallTrigger
+	DeepClone() EthCallTrigger
 	String() string
+}
+
+func EthCallTriggerFromProto(proto *vegapb.EthCallTrigger) (EthCallTrigger, error) {
+	if proto == nil {
+		return nil, fmt.Errorf("trigger proto is nil")
+	}
+
+	switch t := proto.Trigger.(type) {
+	case *vegapb.EthCallTrigger_TimeTrigger:
+		return EthTimeTriggerFromProto(t.TimeTrigger), nil
+	default:
+		return nil, fmt.Errorf("unknown trigger type: %T", proto.Trigger)
+	}
 }
 
 type EthTimeTrigger struct {
@@ -21,18 +31,7 @@ type EthTimeTrigger struct {
 	Until   uint64 // 0 = forever
 }
 
-type Blockish interface {
-	NumberU64() uint64
-	Time() uint64
-}
-
-func (e *EthTimeTrigger) isTrigger() {}
-
-func (e *EthTimeTrigger) oneOfProto() interface{} {
-	return e.IntoProto()
-}
-
-func (e *EthTimeTrigger) IntoProto() *vegapb.EthTimeTrigger {
+func (e EthTimeTrigger) IntoProto() *vegapb.EthTimeTrigger {
 	var initial, every, until *uint64
 
 	if e.Initial != 0 {
@@ -54,15 +53,19 @@ func (e *EthTimeTrigger) IntoProto() *vegapb.EthTimeTrigger {
 	}
 }
 
-func (e *EthTimeTrigger) GetEthTrigger() *EthCallTrigger {
-	return &EthCallTrigger{
-		EthTrigger: &EthCallTriggerTime{
-			TimeTrigger: e,
+func (e EthTimeTrigger) DeepClone() EthCallTrigger {
+	return e
+}
+
+func (e EthTimeTrigger) IntoEthCallTriggerProto() *vegapb.EthCallTrigger {
+	return &vegapb.EthCallTrigger{
+		Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+			TimeTrigger: e.IntoProto(),
 		},
 	}
 }
 
-func (e *EthTimeTrigger) String() string {
+func (e EthTimeTrigger) String() string {
 	return fmt.Sprintf(
 		"initial(%d) every(%d) until(%d)",
 		e.Initial,
@@ -71,131 +74,20 @@ func (e *EthTimeTrigger) String() string {
 	)
 }
 
-func EthTimeTriggerFromProto(protoTrigger *vegapb.EthTimeTrigger) *EthTimeTrigger {
-	trigger := &EthTimeTrigger{}
-	if protoTrigger != nil {
+func EthTimeTriggerFromProto(protoTrigger *vegapb.EthTimeTrigger) EthTimeTrigger {
+	trigger := EthTimeTrigger{}
+	if protoTrigger == nil {
+		return trigger
+	}
+
+	if protoTrigger.Initial != nil {
 		trigger.Initial = *protoTrigger.Initial
+	}
+	if protoTrigger.Every != nil {
 		trigger.Every = *protoTrigger.Every
+	}
+	if protoTrigger.Until != nil {
 		trigger.Until = *protoTrigger.Until
 	}
-
 	return trigger
-}
-
-func (e *EthTimeTrigger) Hash() []byte {
-	hashFunc := sha3.New256()
-	ident := fmt.Sprintf("timetrigger: %v/%v/%v", e.Initial, e.Every, e.Until)
-	hashFunc.Write([]byte(ident))
-	return hashFunc.Sum(nil)
-}
-
-type EthCallTriggerTime struct {
-	TimeTrigger trigger
-}
-
-func (e *EthCallTriggerTime) isTrigger() {}
-
-func (e *EthCallTriggerTime) oneOfProto() interface{} {
-	return e.IntoProto()
-}
-
-func (e *EthCallTriggerTime) IntoProto() *vegapb.EthCallTrigger_TimeTrigger {
-	if e.TimeTrigger != nil {
-		switch tp := e.TimeTrigger.(type) {
-		case *EthTimeTrigger:
-			return &vegapb.EthCallTrigger_TimeTrigger{
-				TimeTrigger: tp.IntoProto(),
-			}
-		}
-	}
-
-	return &vegapb.EthCallTrigger_TimeTrigger{}
-}
-
-func (e *EthCallTriggerTime) GetEthTrigger() *EthCallTrigger {
-	tt := &EthCallTrigger{}
-	if e.TimeTrigger != nil {
-		switch tp := e.TimeTrigger.(type) {
-		case *EthTimeTrigger:
-			tt.EthTrigger = &EthCallTriggerTime{
-				TimeTrigger: tp,
-			}
-		}
-	}
-	return tt
-}
-
-func (e *EthCallTriggerTime) String() string {
-	ethct := ""
-	if e.TimeTrigger != nil {
-		switch tp := e.TimeTrigger.(type) {
-		case *EthTimeTrigger:
-			ethct = tp.String()
-		}
-	}
-
-	return fmt.Sprintf("ethcalltriggertime(%s)", ethct)
-}
-
-func EthCallTriggerTimeFromProto(ett *vegapb.EthCallTrigger_TimeTrigger) *EthCallTriggerTime {
-	if ett != nil {
-		if ett.TimeTrigger != nil {
-			return &EthCallTriggerTime{
-				TimeTrigger: EthTimeTriggerFromProto(ett.TimeTrigger),
-			}
-		}
-	}
-	return &EthCallTriggerTime{}
-}
-
-func (e *EthCallTriggerTime) Hash() []byte {
-	if e.TimeTrigger != nil {
-		return e.TimeTrigger.Hash()
-	}
-
-	// TODO: Error for empty trigger
-	return nil
-}
-
-type EthCallTrigger struct {
-	EthTrigger trigger
-}
-
-func (e *EthCallTrigger) IntoProto() *vegapb.EthCallTrigger {
-	if e.EthTrigger != nil {
-		switch tp := e.EthTrigger.(type) {
-		case *EthTimeTrigger:
-			return &vegapb.EthCallTrigger{
-				EthTrigger: &vegapb.EthCallTrigger_TimeTrigger{
-					TimeTrigger: tp.IntoProto(),
-				},
-			}
-		}
-	}
-
-	// TODO: Return some error?
-	/*
-		if proto == nil {
-			return nil, fmt.Errorf("trigger proto is nil")
-		}
-	*/
-	return &vegapb.EthCallTrigger{}
-}
-
-func (e *EthCallTrigger) GetEthTrigger() *EthCallTrigger {
-	return e
-}
-
-func EthCallTriggerFromSpec(specTrigger *vegapb.EthCallTrigger) *EthCallTrigger {
-	tr := &EthCallTrigger{}
-	if specTrigger != nil {
-		if specTrigger.EthTrigger != nil {
-			switch tp := specTrigger.EthTrigger.(type) {
-			case *vegapb.EthCallTrigger_TimeTrigger:
-				tr.EthTrigger = EthCallTriggerTimeFromProto(tp)
-			}
-		}
-	}
-
-	return tr
 }

@@ -109,17 +109,11 @@ func (df DataSourceSpecFilters) String() string {
 }
 
 func DataSourceSpecFiltersFromProto(protoFilters []*datapb.Filter) ([]*DataSourceSpecFilter, error) {
-	if len(protoFilters) > 0 {
-		dsf := make([]*DataSourceSpecFilter, len(protoFilters))
-		if len(protoFilters) > 0 {
-			for i, protoFilter := range protoFilters {
-				dsf[i] = DataSourceSpecFilterFromProto(protoFilter)
-			}
-		}
-
-		return dsf, nil
+	dsf := make([]*DataSourceSpecFilter, len(protoFilters))
+	for i, protoFilter := range protoFilters {
+		dsf[i] = DataSourceSpecFilterFromProto(protoFilter)
 	}
-	return nil, fmt.Errorf("no spec filters") // TODO: Is this a proper error here?
+	return dsf, nil
 }
 
 func DeepCloneDataSourceSpecFilters(filters []*DataSourceSpecFilter) []*DataSourceSpecFilter {

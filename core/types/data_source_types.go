@@ -36,12 +36,6 @@ type DataSourceSpecCondition struct {
 	Value    string
 }
 
-func (c DataSourceSpecCondition) isDataSourceType() {}
-
-func (c DataSourceSpecCondition) oneOfProto() interface{} {
-	return c
-}
-
 func (c DataSourceSpecCondition) String() string {
 	return fmt.Sprintf(
 		"value(%s) operator(%s)",
@@ -57,7 +51,7 @@ func (c DataSourceSpecCondition) IntoProto() *datapb.Condition {
 	}
 }
 
-func (c *DataSourceSpecCondition) DeepClone() dataSourceType {
+func (c *DataSourceSpecCondition) DeepClone() *DataSourceSpecCondition {
 	return &DataSourceSpecCondition{
 		Operator: c.Operator,
 		Value:    c.Value,
@@ -82,7 +76,7 @@ func DataSourceSpecConditionsFromProto(protoConditions []*datapb.Condition) []*D
 func DeepCloneDataSourceSpecConditions(conditions []*DataSourceSpecCondition) []*DataSourceSpecCondition {
 	othConditions := make([]*DataSourceSpecCondition, 0, len(conditions))
 	for _, condition := range conditions {
-		othConditions = append(othConditions, condition.DeepClone().(*DataSourceSpecCondition))
+		othConditions = append(othConditions, condition.DeepClone())
 	}
 	return othConditions
 }
