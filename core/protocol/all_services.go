@@ -101,6 +101,7 @@ type allServices struct {
 	pow                     processor.PoWEngine
 	builtinOracle           *oracles.Builtin
 	codec                   abci.Codec
+	ethCall                 *ethcall.Engine
 	ethereumOraclesVerifier *oracles.EthereumOracleVerifier
 
 	assets                *assets.Service
@@ -179,11 +180,12 @@ func newServices(
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 
-	ethCallEngine, err := ethcall.NewEngine(svcs.log, ethcall.Config{}, nil, svcs.eventForwarder)
+	ethCallEngine, err := ethcall.NewEngine(svcs.log, ethcall.Config{}, svcs.ethClient, svcs.eventForwarder)
 	if err != nil {
 		svcs.log.Error("unable to initialise eth call engine", logging.Error(err))
 		return nil, err
 	}
+	svcs.ethCall = ethCallEngine
 
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, ethCallEngine)
 
@@ -383,6 +385,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 		svcs.limits.OnTick,
 
 		svcs.ethereumOraclesVerifier.OnTick,
+		svcs.ethCall.OnTick,
 	)
 }
 

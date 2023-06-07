@@ -3,6 +3,7 @@ package ethcall
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -45,6 +46,22 @@ type Engine struct {
 }
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) (*Engine, error) {
+
+	// Get the latest block number
+	blockNumber, err := client.BlockNumber(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get the header of the latest block
+	header, err := client.HeaderByNumber(context.Background(), big.NewInt(int64(blockNumber)))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create a ChainReader instance using the client and header
+	chainReader := ethereum.NewBlockChain(client, header)
+
 	return &Engine{
 		log:         log,
 		cfg:         cfg,
