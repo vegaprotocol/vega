@@ -220,17 +220,25 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
 					proto.DataSourceDefinitionTypeExt,
 				).SetOracleConfig(
-					&types.DataSourceSpecConfiguration{
-						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: filters,
+					&types.DataSourceDefinitionExternal{
+						SourceType: &types.DataSourceDefinitionExternalOracle{
+							Oracle: &types.DataSourceSpecConfiguration{
+								Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+								Filters: filters,
+							},
+						},
 					},
 				),
 				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
 					proto.DataSourceDefinitionTypeExt,
 				).SetOracleConfig(
-					&types.DataSourceSpecConfiguration{
-						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
-						Filters: filters,
+					&types.DataSourceDefinitionExternal{
+						SourceType: &types.DataSourceDefinitionExternalOracle{
+							Oracle: &types.DataSourceSpecConfiguration{
+								Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
+								Filters: filters,
+							},
+						},
 					},
 				),
 				DataSourceSpecBinding: types.DataSourceSpecBindingForFutureFromProto(&proto.DataSourceSpecToFutureBinding{

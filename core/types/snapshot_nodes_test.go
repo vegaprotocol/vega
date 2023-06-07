@@ -402,9 +402,13 @@ func getDummyData() *types.Chunk {
 												Data: types.NewDataSourceDefinition(
 													vegapb.DataSourceDefinitionTypeExt,
 												).SetOracleConfig(
-													&types.DataSourceSpecConfiguration{
-														Signers: []*types.Signer{},
-														Filters: []*types.DataSourceSpecFilter{},
+													&types.DataSourceDefinitionExternal{
+														SourceType: &types.DataSourceDefinitionExternalOracle{
+															Oracle: &types.DataSourceSpecConfiguration{
+																Signers: []*types.Signer{},
+																Filters: []*types.DataSourceSpecFilter{},
+															},
+														},
 													},
 												),
 											},
@@ -413,9 +417,13 @@ func getDummyData() *types.Chunk {
 												Data: types.NewDataSourceDefinition(
 													vegapb.DataSourceDefinitionTypeExt,
 												).SetOracleConfig(
-													&types.DataSourceSpecConfiguration{
-														Signers: []*types.Signer{},
-														Filters: []*types.DataSourceSpecFilter{},
+													&types.DataSourceDefinitionExternal{
+														SourceType: &types.DataSourceDefinitionExternalOracle{
+															Oracle: &types.DataSourceSpecConfiguration{
+																Signers: []*types.Signer{},
+																Filters: []*types.DataSourceSpecFilter{},
+															},
+														},
 													},
 												),
 											},

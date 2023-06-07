@@ -19,6 +19,22 @@ var (
 	ErrDataSourceSpecHasInvalidTimeCondition = errors.New("data source spec time value is used with 'less than' or 'less than equal' condition")
 )
 
+type DataSourceType = vegapb.DataSourceDefinition_Type
+
+const (
+	// DataSourceDefinitionInvalid represents invalid data source definition type
+	DataSourceDefinitionInvalid DataSourceType = vegapb.DataSourceDefinition_TYPE_DATA_SOURCE_INVALID
+
+	// DataSourceDefinitionExtOracle is the default oracle data type
+	DataSourceDefinitionExtOracle DataSourceType = vegapb.DataSourceDefinition_TYPE_DATA_SOURCE_EXT_ORACLE
+
+	// DataSourceDefinitionExtEthOracle is the Ethereum oracle data type
+	DataSourceDefinitionExtEthOracle DataSourceType = vegapb.DataSourceDefinition_TYPE_DATA_SOURCE_EXT_ETHEREUM_ORACLE
+
+	// DataSourceDefinitionIntTimeTrigger is the internal time trigger data source finition type
+	DataSourceDefinitionIntTimeTrigger DataSourceType = vegapb.DataSourceDefinition_TYPE_DATA_SOURCE_INT_TIME_TRIGGER
+)
+
 type DataSourceDefinitionInternalx struct {
 	Internal *DataSourceDefinitionInternal
 }
@@ -100,6 +116,12 @@ func (s *DataSourceDefinitionExternalx) IntoProto() *vegapb.DataSourceDefinition
 						SourceType: dsn,
 					},
 				}
+			case *vegapb.DataSourceDefinitionExternal_EthOracle:
+				ds = &vegapb.DataSourceDefinition_External{
+					External: &vegapb.DataSourceDefinitionExternal{
+						SourceType: dsn,
+					},
+				}
 			}
 		}
 	}
@@ -152,7 +174,7 @@ func (s DataSourceDefinition) IntoProto() *vegapb.DataSourceDefinition {
 			if dsn.External != nil {
 				if dsn.External.SourceType != nil {
 					switch dsn.External.SourceType.(type) {
-					case *vegapb.DataSourceDefinitionExternal_Oracle:
+					case *vegapb.DataSourceDefinitionExternal_Oracle, *vegapb.DataSourceDefinitionExternal_EthOracle:
 						ds = &vegapb.DataSourceDefinition{
 							SourceType: &vegapb.DataSourceDefinition_External{
 								External: &vegapb.DataSourceDefinitionExternal{
@@ -228,6 +250,24 @@ func (s DataSourceDefinition) DeepClone() DataSourceDefinition {
 				},
 			},
 		}
+
+	case *EthCallSpec:
+		cpy = &DataSourceDefinition{
+			SourceType: &DataSourceDefinitionExternalx{
+				External: &DataSourceDefinitionExternal{
+					SourceType: &EthCallSpec{
+						Address:               tp.Address,
+						AbiJson:               tp.AbiJson,
+						Method:                tp.Method,
+						ArgsJson:              tp.ArgsJson,
+						Trigger:               tp.Trigger,
+						RequiredConfirmations: tp.RequiredConfirmations,
+						Filter:                tp.Filter,
+						Normaliser:            tp.Normaliser,
+					},
+				},
+			},
+		}
 	case *DataSourceSpecConfigurationTime:
 		cpy = &DataSourceDefinition{
 			SourceType: &DataSourceDefinitionInternalx{
@@ -256,7 +296,10 @@ func (s *DataSourceDefinition) Content() interface{} {
 								return extTp.Oracle
 							}
 
-							// The Ethereum type case will go here later.
+						case *DataSourceDefinitionExternalEthOracle:
+							if extTp.EthOracle != nil {
+								return extTp.EthOracle
+							}
 						}
 					}
 				}
@@ -334,6 +377,11 @@ func (s DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 		case *DataSourceSpecConfiguration:
 			filters = tp.Filters
 
+		case *EthCallSpec:
+			if tp.Filter != nil {
+				filters = tp.Filter.Filters
+			}
+
 		case *DataSourceSpecConfigurationTime:
 			// For the case the internal data source is time based
 			// (as of OT https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
@@ -374,30 +422,40 @@ func (s DataSourceDefinition) GetDataSourceSpecConfiguration() *DataSourceSpecCo
 }
 
 // NewDataSourceDefinition creates a new EMPTY DataSourceDefinition object.
-func NewDataSourceDefinition(tp int) *DataSourceDefinition {
+func NewDataSourceDefinition(tp DataSourceType) *DataSourceDefinition {
 	ds := &DataSourceDefinition{}
 	switch tp {
-	case vegapb.DataSourceDefinitionTypeInt:
+	case DataSourceDefinitionExtOracle:
+		ds.SourceType = &DataSourceDefinitionExternalx{
+			External: &DataSourceDefinitionExternal{
+				SourceType: &DataSourceDefinitionExternalOracle{
+					Oracle: &DataSourceSpecConfiguration{
+						Signers: []*Signer{},
+						Filters: []*DataSourceSpecFilter{},
+					},
+				},
+			},
+		}
+
+	case DataSourceDefinitionExtEthOracle:
+		ds.SourceType = &DataSourceDefinitionExternalx{
+			External: &DataSourceDefinitionExternal{
+				SourceType: &DataSourceDefinitionExternalEthOracle{
+					EthOracle: &EthCallSpec{
+						Filter:     &EthFilter{},
+						Normaliser: &Normaliser{},
+					},
+				},
+			},
+		}
+
+	case DataSourceDefinitionIntTimeTrigger:
 		ds.SourceType = &DataSourceDefinitionInternalx{
 			Internal: &DataSourceDefinitionInternal{
 				// Create internal type definition with time for now.
 				SourceType: &DataSourceDefinitionInternalTime{
 					Time: &DataSourceSpecConfigurationTime{
 						Conditions: []*DataSourceSpecCondition{},
-					},
-				},
-			},
-		}
-
-	case vegapb.DataSourceDefinitionTypeExt:
-		ds.SourceType = &DataSourceDefinitionExternalx{
-			External: &DataSourceDefinitionExternal{
-				// Create external definition for oracles for now.
-				// Extened when needed.
-				SourceType: &DataSourceDefinitionExternalOracle{
-					Oracle: &DataSourceSpecConfiguration{
-						Signers: []*Signer{},
-						Filters: []*DataSourceSpecFilter{},
 					},
 				},
 			},
@@ -455,6 +513,27 @@ func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) er
 						if dsd.SourceType != nil {
 							*s = *dsd
 						}
+
+					case *vegapb.DataSourceDefinitionExternal_EthOracle:
+						o := dsn.External.GetEthOracle()
+						o.Filter = &vegapb.EthFilter{
+							Filters: DataSourceSpecFilters(filters).IntoProto(),
+						}
+
+						ds := &vegapb.DataSourceDefinition{
+							SourceType: &vegapb.DataSourceDefinition_External{
+								External: &vegapb.DataSourceDefinitionExternal{
+									SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
+										EthOracle: o,
+									},
+								},
+							},
+						}
+
+						dsd := DataSourceDefinitionFromProto(ds)
+						if dsd.SourceType != nil {
+							*s = *dsd
+						}
 					}
 				}
 			}
@@ -502,27 +581,34 @@ func (s *DataSourceDefinition) SetFilterDecimals(d uint64) *DataSourceDefinition
 	if s.SourceType != nil {
 		switch dsn := s.SourceType.oneOfProto().(type) {
 		case *vegapb.DataSourceDefinition_External:
-			filters := dsn.External.GetOracle().Filters
-			for i := range filters {
-				filters[i].Key.NumberDecimalPlaces = &d
-			}
+			if dsn.External != nil {
+				if dsn.External.SourceType != nil {
+					switch dsn.External.SourceType.(type) {
+					case *vegapb.DataSourceDefinitionExternal_Oracle:
+						filters := dsn.External.GetOracle().Filters
+						for i := range filters {
+							filters[i].Key.NumberDecimalPlaces = &d
+						}
 
-			ds := &vegapb.DataSourceDefinition{
-				SourceType: &vegapb.DataSourceDefinition_External{
-					External: &vegapb.DataSourceDefinitionExternal{
-						SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
-							Oracle: &vegapb.DataSourceSpecConfiguration{
-								Filters: filters,
-								Signers: dsn.External.GetOracle().Signers,
+						ds := &vegapb.DataSourceDefinition{
+							SourceType: &vegapb.DataSourceDefinition_External{
+								External: &vegapb.DataSourceDefinitionExternal{
+									SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+										Oracle: &vegapb.DataSourceSpecConfiguration{
+											Filters: filters,
+											Signers: dsn.External.GetOracle().Signers,
+										},
+									},
+								},
 							},
-						},
-					},
-				},
-			}
+						}
 
-			dsd := DataSourceDefinitionFromProto(ds)
-			if dsd.SourceType != nil {
-				*s = *dsd
+						dsd := DataSourceDefinitionFromProto(ds)
+						if dsd.SourceType != nil {
+							*s = *dsd
+						}
+					}
+				}
 			}
 		}
 	}
@@ -548,7 +634,7 @@ func (s *DataSourceDefinition) ToExternalDataSourceSpec() *ExternalDataSourceSpe
 // SetOracleConfig sets a given oracle config in the receiver.
 // If the receiver is not external oracle type data source - it is not changed.
 // This method does not care about object previous contents.
-func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) *DataSourceDefinition {
+func (s *DataSourceDefinition) SetOracleConfig(ds *DataSourceDefinitionExternal) *DataSourceDefinition {
 	if s.SourceType != nil {
 		switch def := s.SourceType.oneOfProto().(type) {
 		// For the case the definition source type is vegapb.DataSourceDefinition_External
@@ -559,20 +645,48 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 					// For the case the vegapb.DataSourceDefinitionExternal is not nill
 					// and its embedded object is of type vegapb.DataSourceDefinitionExternal_Oracle
 					case *vegapb.DataSourceDefinitionExternal_Oracle:
-						// Set the new config only in this case
-						ds := &vegapb.DataSourceDefinition{
-							SourceType: &vegapb.DataSourceDefinition_External{
-								External: &vegapb.DataSourceDefinitionExternal{
-									SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
-										Oracle: oc.IntoProto(),
-									},
-								},
-							},
+						if ds != nil {
+							if ds.SourceType != nil {
+								switch et := ds.SourceType.(type) {
+								case *DataSourceDefinitionExternalOracle:
+									newDs := &vegapb.DataSourceDefinition{
+										SourceType: &vegapb.DataSourceDefinition_External{
+											External: &vegapb.DataSourceDefinitionExternal{
+												SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+													Oracle: et.IntoProto().Oracle,
+												},
+											},
+										},
+									}
+
+									dsd := DataSourceDefinitionFromProto(newDs)
+									if dsd.SourceType != nil {
+										*s = *dsd
+									}
+								}
+							}
 						}
 
-						dsd := DataSourceDefinitionFromProto(ds)
-						if dsd.SourceType != nil {
-							*s = *dsd
+					case *vegapb.DataSourceDefinitionExternal_EthOracle:
+						if ds != nil {
+							if ds.SourceType != nil {
+								switch et := ds.SourceType.(type) {
+								case *DataSourceDefinitionExternalEthOracle:
+									newDs := &vegapb.DataSourceDefinition{
+										SourceType: &vegapb.DataSourceDefinition_External{
+											External: &vegapb.DataSourceDefinitionExternal{
+												SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
+													EthOracle: et.IntoProto().EthOracle,
+												},
+											},
+										},
+									}
+									dsd := DataSourceDefinitionFromProto(newDs)
+									if dsd.SourceType != nil {
+										*s = *dsd
+									}
+								}
+							}
 						}
 					}
 				}
@@ -640,6 +754,32 @@ func (s *DataSourceDefinition) IsExternal() (bool, error) {
 	}
 
 	return false, errors.New("unknown type of data source provided")
+}
+
+func (s *DataSourceDefinition) Type() (DataSourceType, bool) {
+	if s.SourceType != nil {
+		switch tp := s.SourceType.oneOfProto().(type) {
+		case *vegapb.DataSourceDefinition_External:
+			if tp.External != nil {
+				switch tp.External.SourceType.(type) {
+				case *vegapb.DataSourceDefinitionExternal_Oracle:
+					return DataSourceDefinitionExtOracle, true
+				case *vegapb.DataSourceDefinitionExternal_EthOracle:
+					return DataSourceDefinitionExtEthOracle, true
+				}
+			}
+
+		case *vegapb.DataSourceDefinition_Internal:
+			if tp.Internal != nil {
+				switch tp.Internal.SourceType.(type) {
+				case *vegapb.DataSourceDefinitionInternal_Time:
+					return DataSourceDefinitionIntTimeTrigger, false
+				}
+			}
+		}
+	}
+
+	return DataSourceDefinitionInvalid, false
 }
 
 func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() *DataSourceSpecConfigurationTime {

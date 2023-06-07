@@ -40,6 +40,8 @@ var (
 	ErrMissingPropertyName = errors.New("a property name is required")
 	// ErrInvalidPropertyKey is returned if validation finds a reserved Vega property key.
 	ErrInvalidPropertyKey = errors.New("property key is reserved")
+
+	ErrInvalidDataSourceType = errors.New("provided spec contains an invalid data source type")
 )
 
 type OracleSpecID string
@@ -199,6 +201,140 @@ func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, erro
 
 	return os, nil
 }
+
+/*
+func NewOracleSpec(originalSpec types.ExternalDataSourceSpec) (*OracleSpec, error) {
+	filtersFromSpec := []*types.DataSourceSpecFilter{}
+	signersFromSpec := []*types.Signer{}
+
+	isExtType := false
+	var dsType types.DataSourceType
+	//var err error
+	if originalSpec.Spec != nil {
+		if originalSpec.Spec.Data != nil {
+			filtersFromSpec = originalSpec.Spec.Data.GetFilters()
+			dsType, isExtType = originalSpec.Spec.Data.Type()
+		}
+	}
+
+	// We check if the filters list is empty in the proposal submission step.
+	// We do not need to double that logic here.
+
+	builtInKey := false
+	typedFilters := map[string]*filter{}
+	signers := map[string]struct{}{}
+	fmt.Println("filters from Spec")
+	fmt.Println(filtersFromSpec)
+	fmt.Println("----------------------------------")
+	for _, f := range filtersFromSpec {
+		if isExtType {
+			if types.DataSourceSpecPropertyKeyIsEmpty(f.Key) {
+				return nil, ErrMissingPropertyKey
+			}
+
+			_, exist := typedFilters[f.Key.Name]
+			if exist {
+				return nil, types.ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList
+			}
+
+			if strings.HasPrefix(f.Key.Name, "vegaprotocol.builtin") && f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+				builtInKey = true
+			}
+
+			for _, condition := range f.Conditions {
+				if f.Key.Type == datapb.PropertyKey_TYPE_TIMESTAMP {
+					if condition.Operator == datapb.Condition_OPERATOR_LESS_THAN || condition.Operator == datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL {
+						return nil, types.ErrDataSourceSpecHasInvalidTimeCondition
+					}
+				}
+			}
+
+			conditions, err := toConditions(f.Key.Type, f.Conditions)
+			if err != nil {
+				return nil, err
+			}
+
+			var dp uint64
+			if f.Key.NumberDecimalPlaces != nil {
+				dp = *f.Key.NumberDecimalPlaces
+			}
+			typedFilter, ok := typedFilters[f.Key.Name]
+			if !ok {
+				typedFilters[f.Key.Name] = &filter{
+					propertyName:     f.Key.Name,
+					propertyType:     f.Key.Type,
+					numberOfDecimals: dp,
+					conditions:       conditions,
+				}
+				continue
+			}
+
+			if typedFilter.propertyType != f.Key.Type {
+				return nil, errMismatchPropertyType(typedFilter.propertyName, typedFilter.propertyType, f.Key.Type)
+			}
+
+			typedFilter.conditions = append(typedFilter.conditions, conditions...)
+
+			// We want to get signers only for the cases of a non-Eth oracle with key name that
+			// does not contain "vegaprotocol.builtin" prefix.
+			if dsType == types.DataSourceDefinitionExtOracle && !builtInKey {
+				if originalSpec.Spec != nil {
+					if originalSpec.Spec.Data != nil {
+						src := *originalSpec.Spec.Data
+
+						signersFromSpec = src.GetSigners()
+					}
+				}
+
+				// We check if the signers list is empty h in the proposal submission step.
+				// We do not need to duble that logic here.
+				for _, pk := range signersFromSpec {
+					signers[pk.String()] = struct{}{}
+				}
+			}
+
+		} else {
+			if dsType == types.DataSourceDefinitionIntTimeTrigger {
+				if len(f.Conditions) < 1 {
+					return nil, types.ErrInternalTimeDataSourceMissingConditions
+				}
+
+				if (f.Conditions[0].Operator == datapb.Condition_OPERATOR_LESS_THAN) || (f.Conditions[0].Operator == datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL) {
+					return nil, types.ErrDataSourceSpecHasInvalidTimeCondition
+				}
+
+				// Currently VEGA network uses only one type of internal data source - time triggered
+				// that uses the property name "vegaprotocol.builtin.timestamp"
+				// https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed
+				conditions, err := toConditions(datapb.PropertyKey_TYPE_TIMESTAMP, f.Conditions)
+				if err != nil {
+					return nil, err
+				}
+				typedFilters[f.Key.Name] = &filter{
+					propertyName: "vegaprotocol.builtin.timestamp",
+					propertyType: datapb.PropertyKey_TYPE_TIMESTAMP,
+					conditions:   []condition{conditions[0]},
+				}
+			} else {
+				// Type() method returns `false` value for external type of definition for the cases
+				// when the definition is also invalid, so we need to check whis case.
+				return nil, ErrInvalidDataSourceType
+			}
+		}
+	}
+
+	os := &OracleSpec{
+		id:      OracleSpecID(originalSpec.Spec.ID),
+		signers: signers,
+		filters: typedFilters,
+		OriginalSpec: &types.OracleSpec{
+			ExternalDataSourceSpec: &originalSpec,
+		},
+	}
+
+	return os, nil
+}
+*/
 
 func (s OracleSpec) EnsureBoundableProperty(property string, propType datapb.PropertyKey_Type) error {
 	filter, ok := s.filters[property]

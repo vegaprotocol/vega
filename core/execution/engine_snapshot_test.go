@@ -193,15 +193,19 @@ func getMarketConfig() *types.Market {
 							Data: types.NewDataSourceDefinition(
 								vegapb.DataSourceDefinitionTypeExt,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
-										{
-											Key: &types.DataSourceSpecPropertyKey{
-												Name: "prices.ETH.value",
-												Type: datapb.PropertyKey_TYPE_INTEGER,
+								&types.DataSourceDefinitionExternal{
+									SourceType: &types.DataSourceDefinitionExternalOracle{
+										Oracle: &types.DataSourceSpecConfiguration{
+											Signers: pubKeys,
+											Filters: []*types.DataSourceSpecFilter{
+												{
+													Key: &types.DataSourceSpecPropertyKey{
+														Name: "prices.ETH.value",
+														Type: datapb.PropertyKey_TYPE_INTEGER,
+													},
+													Conditions: []*types.DataSourceSpecCondition{},
+												},
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
 										},
 									},
 								},
@@ -212,15 +216,19 @@ func getMarketConfig() *types.Market {
 							Data: types.NewDataSourceDefinition(
 								vegapb.DataSourceDefinitionTypeExt,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: pubKeys,
-									Filters: []*types.DataSourceSpecFilter{
-										{
-											Key: &types.DataSourceSpecPropertyKey{
-												Name: "trading.terminated",
-												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								&types.DataSourceDefinitionExternal{
+									SourceType: &types.DataSourceDefinitionExternalOracle{
+										Oracle: &types.DataSourceSpecConfiguration{
+											Signers: pubKeys,
+											Filters: []*types.DataSourceSpecFilter{
+												{
+													Key: &types.DataSourceSpecPropertyKey{
+														Name: "trading.terminated",
+														Type: datapb.PropertyKey_TYPE_BOOLEAN,
+													},
+													Conditions: []*types.DataSourceSpecCondition{},
+												},
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
 										},
 									},
 								},

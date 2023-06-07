@@ -35,13 +35,16 @@ func (f *EthFilter) IntoProto() (*vegapb.EthFilter, error) {
 }
 
 func EthFilterFromProto(protoFilter *vegapb.EthFilter) (*EthFilter, error) {
-	f, err := DataSourceSpecFiltersFromProto(protoFilter.Filters)
-	if err != nil {
-		return nil, err
+	if protoFilter != nil {
+		f, err := DataSourceSpecFiltersFromProto(protoFilter.Filters)
+		if err != nil {
+			return nil, err
+		}
+		return &EthFilter{
+			Filters: f,
+		}, nil
 	}
-	return &EthFilter{
-		Filters: f,
-	}, nil
+	return nil, fmt.Errorf("provided proto filter is empty")
 }
 
 func (f *EthFilter) Hash() []byte {

@@ -1187,10 +1187,14 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 		}
 
 		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-				Filters: []*types.DataSourceSpecFilter{
-					termFilter,
+			&types.DataSourceDefinitionExternal{
+				SourceType: &types.DataSourceDefinitionExternalOracle{
+					Oracle: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+						Filters: []*types.DataSourceSpecFilter{
+							termFilter,
+						},
+					},
 				},
 			},
 		)
@@ -1223,18 +1227,22 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
 								vegapb.DataSourceDefinitionTypeExt,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
-										{
-											Key: &types.DataSourceSpecPropertyKey{
-												Name: "prices.ETH.value",
-												Type: datapb.PropertyKey_TYPE_INTEGER,
-											},
-											Conditions: []*types.DataSourceSpecCondition{
+								&types.DataSourceDefinitionExternal{
+									SourceType: &types.DataSourceDefinitionExternalOracle{
+										Oracle: &types.DataSourceSpecConfiguration{
+											Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+											Filters: []*types.DataSourceSpecFilter{
 												{
-													Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-													Value:    "0",
+													Key: &types.DataSourceSpecPropertyKey{
+														Name: "prices.ETH.value",
+														Type: datapb.PropertyKey_TYPE_INTEGER,
+													},
+													Conditions: []*types.DataSourceSpecCondition{
+														{
+															Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+															Value:    "0",
+														},
+													},
 												},
 											},
 										},
@@ -1319,10 +1327,14 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 			}
 		}
 		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-				Filters: []*types.DataSourceSpecFilter{
-					termFilter,
+			&types.DataSourceDefinitionExternal{
+				SourceType: &types.DataSourceDefinitionExternalOracle{
+					Oracle: &types.DataSourceSpecConfiguration{
+						Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+						Filters: []*types.DataSourceSpecFilter{
+							termFilter,
+						},
+					},
 				},
 			},
 		)
@@ -1354,15 +1366,19 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
 								vegapb.DataSourceDefinitionTypeExt,
 							).SetOracleConfig(
-								&types.DataSourceSpecConfiguration{
-									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-									Filters: []*types.DataSourceSpecFilter{
-										{
-											Key: &types.DataSourceSpecPropertyKey{
-												Name: "prices.ETH.value",
-												Type: datapb.PropertyKey_TYPE_INTEGER,
+								&types.DataSourceDefinitionExternal{
+									SourceType: &types.DataSourceDefinitionExternalOracle{
+										Oracle: &types.DataSourceSpecConfiguration{
+											Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+											Filters: []*types.DataSourceSpecFilter{
+												{
+													Key: &types.DataSourceSpecPropertyKey{
+														Name: "prices.ETH.value",
+														Type: datapb.PropertyKey_TYPE_INTEGER,
+													},
+													Conditions: []*types.DataSourceSpecCondition{},
+												},
 											},
-											Conditions: []*types.DataSourceSpecCondition{},
 										},
 									},
 								},

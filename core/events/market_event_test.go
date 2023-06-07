@@ -46,9 +46,13 @@ func changeOracleSpec(spec *types.DataSourceSpec) {
 	}
 
 	spec.Data.SetOracleConfig(
-		&types.DataSourceSpecConfiguration{
-			Signers: []*types.Signer{types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)},
-			Filters: filters,
+		&types.DataSourceDefinitionExternal{
+			SourceType: &types.DataSourceDefinitionExternalOracle{
+				Oracle: &types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{types.CreateSignerFromString("Changed", types.DataSignerTypePubKey)},
+					Filters: filters,
+				},
+			},
 		},
 	)
 

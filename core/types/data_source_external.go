@@ -18,7 +18,6 @@ func (e *DataSourceDefinitionExternal) oneOfProto() interface{} {
 // IntoProto tries to return the base proto object from DataSourceDefinitionExternal.
 func (e *DataSourceDefinitionExternal) IntoProto() *vegapb.DataSourceDefinitionExternal {
 	ds := &vegapb.DataSourceDefinitionExternal{}
-
 	if e.SourceType != nil {
 		switch dsn := e.SourceType.oneOfProto().(type) {
 		case *vegapb.DataSourceDefinitionExternal_Oracle:

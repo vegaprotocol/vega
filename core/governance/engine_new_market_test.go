@@ -450,18 +450,22 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 	settl := types.NewDataSourceDefinition(
 		vegapb.DataSourceDefinitionTypeExt,
 	).SetOracleConfig(
-		&types.DataSourceSpecConfiguration{
-			Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-			Filters: []*types.DataSourceSpecFilter{
-				{
-					Key: &types.DataSourceSpecPropertyKey{
-						Name: "prices.ETH.value",
-						Type: datapb.PropertyKey_TYPE_INTEGER,
-					},
-					Conditions: []*types.DataSourceSpecCondition{
+		&types.DataSourceDefinitionExternal{
+			SourceType: &types.DataSourceDefinitionExternalOracle{
+				Oracle: &types.DataSourceSpecConfiguration{
+					Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+					Filters: []*types.DataSourceSpecFilter{
 						{
-							Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-							Value:    "0",
+							Key: &types.DataSourceSpecPropertyKey{
+								Name: "prices.ETH.value",
+								Type: datapb.PropertyKey_TYPE_INTEGER,
+							},
+							Conditions: []*types.DataSourceSpecCondition{
+								{
+									Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+									Value:    "0",
+								},
+							},
 						},
 					},
 				},

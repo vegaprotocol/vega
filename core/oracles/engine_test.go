@@ -438,18 +438,22 @@ func spec(t *testing.T, currency string, op datapb.Condition_Operator, price str
 		vegapb.NewDataSourceDefinition(
 			vegapb.DataSourceDefinitionTypeExt,
 		).SetOracleConfig(
-			&vegapb.DataSourceSpecConfiguration{
-				Signers: signers,
-				Filters: []*datapb.Filter{
-					{
-						Key: &datapb.PropertyKey{
-							Name: fmt.Sprintf("prices.%s.value", currency),
-							Type: datapb.PropertyKey_TYPE_INTEGER,
-						},
-						Conditions: []*datapb.Condition{
+			&vegapb.DataSourceDefinitionExternal{
+				SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
+					&vegapb.DataSourceSpecConfiguration{
+						Signers: signers,
+						Filters: []*datapb.Filter{
 							{
-								Value:    price,
-								Operator: op,
+								Key: &datapb.PropertyKey{
+									Name: fmt.Sprintf("prices.%s.value", currency),
+									Type: datapb.PropertyKey_TYPE_INTEGER,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Value:    price,
+										Operator: op,
+									},
+								},
 							},
 						},
 					},

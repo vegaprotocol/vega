@@ -167,15 +167,19 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 			Data: types.NewDataSourceDefinition(
 				vegapb.DataSourceDefinitionTypeExt,
 			).SetOracleConfig(
-				&types.DataSourceSpecConfiguration{
-					Signers: pubKeys,
-					Filters: []*types.DataSourceSpecFilter{
-						{
-							Key: &types.DataSourceSpecPropertyKey{
-								Name: "trading.termination",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
+				&types.DataSourceDefinitionExternal{
+					SourceType: &types.DataSourceDefinitionExternalOracle{
+						Oracle: &types.DataSourceSpecConfiguration{
+							Signers: pubKeys,
+							Filters: []*types.DataSourceSpecFilter{
+								{
+									Key: &types.DataSourceSpecPropertyKey{
+										Name: "trading.termination",
+										Type: datapb.PropertyKey_TYPE_BOOLEAN,
+									},
+									Conditions: nil,
+								},
 							},
-							Conditions: nil,
 						},
 					},
 				},
@@ -191,16 +195,20 @@ func testFuture(t *testing.T, propertyTpe datapb.PropertyKey_Type) *tstFuture {
 		Data: types.NewDataSourceDefinition(
 			vegapb.DataSourceDefinitionTypeExt,
 		).SetOracleConfig(
-			&types.DataSourceSpecConfiguration{
-				Signers: pubKeys,
-				Filters: []*types.DataSourceSpecFilter{
-					{
-						Key: &types.DataSourceSpecPropertyKey{
-							Name:                "price.ETH.value",
-							Type:                propertyTpe,
-							NumberDecimalPlaces: &dp,
+			&types.DataSourceDefinitionExternal{
+				SourceType: &types.DataSourceDefinitionExternalOracle{
+					Oracle: &types.DataSourceSpecConfiguration{
+						Signers: pubKeys,
+						Filters: []*types.DataSourceSpecFilter{
+							{
+								Key: &types.DataSourceSpecPropertyKey{
+									Name:                "price.ETH.value",
+									Type:                propertyTpe,
+									NumberDecimalPlaces: &dp,
+								},
+								Conditions: nil,
+							},
 						},
-						Conditions: nil,
 					},
 				},
 			},

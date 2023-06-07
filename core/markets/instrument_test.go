@@ -77,15 +77,19 @@ func TestInstrument(t *testing.T) {
 					Data: types.NewDataSourceDefinition(
 						vegapb.DataSourceDefinitionTypeExt,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
-								{
-									Key: &types.DataSourceSpecPropertyKey{
-										Name: "prices.ETH.value",
-										Type: datapb.PropertyKey_TYPE_INTEGER,
+						&types.DataSourceDefinitionExternal{
+							SourceType: &types.DataSourceDefinitionExternalOracle{
+								Oracle: &types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
+										},
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
 								},
 							},
 						},
@@ -95,15 +99,19 @@ func TestInstrument(t *testing.T) {
 					Data: types.NewDataSourceDefinition(
 						vegapb.DataSourceDefinitionTypeExt,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
-								{
-									Key: &types.DataSourceSpecPropertyKey{
-										Name: "trading.terminated",
-										Type: datapb.PropertyKey_TYPE_BOOLEAN,
+						&types.DataSourceDefinitionExternal{
+							SourceType: &types.DataSourceDefinitionExternalOracle{
+								Oracle: &types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "trading.terminated",
+												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
+										},
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
 								},
 							},
 						},
@@ -164,15 +172,19 @@ func getValidInstrumentProto() *types.Instrument {
 					Data: types.NewDataSourceDefinition(
 						vegapb.DataSourceDefinitionTypeExt,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
-								{
-									Key: &types.DataSourceSpecPropertyKey{
-										Name: "prices.ETH.value",
-										Type: datapb.PropertyKey_TYPE_INTEGER,
+						&types.DataSourceDefinitionExternal{
+							SourceType: &types.DataSourceDefinitionExternalOracle{
+								Oracle: &types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "prices.ETH.value",
+												Type: datapb.PropertyKey_TYPE_INTEGER,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
+										},
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
 								},
 							},
 						},
@@ -182,15 +194,19 @@ func getValidInstrumentProto() *types.Instrument {
 					Data: types.NewDataSourceDefinition(
 						vegapb.DataSourceDefinitionTypeExt,
 					).SetOracleConfig(
-						&types.DataSourceSpecConfiguration{
-							Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
-							Filters: []*types.DataSourceSpecFilter{
-								{
-									Key: &types.DataSourceSpecPropertyKey{
-										Name: "trading.terminated",
-										Type: datapb.PropertyKey_TYPE_BOOLEAN,
+						&types.DataSourceDefinitionExternal{
+							SourceType: &types.DataSourceDefinitionExternalOracle{
+								Oracle: &types.DataSourceSpecConfiguration{
+									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
+									Filters: []*types.DataSourceSpecFilter{
+										{
+											Key: &types.DataSourceSpecPropertyKey{
+												Name: "trading.terminated",
+												Type: datapb.PropertyKey_TYPE_BOOLEAN,
+											},
+											Conditions: []*types.DataSourceSpecCondition{},
+										},
 									},
-									Conditions: []*types.DataSourceSpecCondition{},
 								},
 							},
 						},

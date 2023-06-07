@@ -151,6 +151,8 @@ type DataSourceDefinitionExternalEthOracle struct {
 	EthOracle *EthCallSpec
 }
 
+func (e *DataSourceDefinitionExternalEthOracle) isDataSourceType() {}
+
 func (e *DataSourceDefinitionExternalEthOracle) String() string {
 	if e.EthOracle == nil {
 		return ""
@@ -169,4 +171,12 @@ func (e *DataSourceDefinitionExternalEthOracle) IntoProto() *vegapb.DataSourceDe
 	return &vegapb.DataSourceDefinitionExternal_EthOracle{
 		EthOracle: eo,
 	}
+}
+
+func (e *DataSourceDefinitionExternalEthOracle) oneOfProto() interface{} {
+	return e.IntoProto()
+}
+
+func (e *DataSourceDefinitionExternalEthOracle) DeepClone() dataSourceType {
+	return e
 }

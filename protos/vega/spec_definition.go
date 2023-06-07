@@ -61,6 +61,12 @@ func (d DataSourceDefinition) GetFilters() []*datapb.Filter {
 						if etp.Oracle != nil {
 							filters = etp.Oracle.Filters
 						}
+					case *DataSourceDefinitionExternal_EthOracle:
+						if etp.EthOracle != nil {
+							if etp.EthOracle.Filter != nil {
+								return etp.EthOracle.Filter.Filters
+							}
+						}
 					}
 				}
 			}
@@ -130,7 +136,7 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 // SetOracleConfig sets a given oracle config in the receiver.
 // If the receiver is not external oracle type of data source - it is not changed.
 // This method does not care about object previous contents - use with caution (currenty needed only for testing purposes).
-func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) *DataSourceDefinition {
+func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceDefinitionExternal) *DataSourceDefinition {
 	if s.SourceType != nil {
 		switch def := s.SourceType.(type) {
 		// For the case the definition source type is vegapb.DataSourceDefinition_External
@@ -141,18 +147,44 @@ func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) 
 					// For the case the vegapb.DataSourceDefinitionExternal is not nill
 					// and its embedded object is of type vegapb.DataSourceDefinitionExternal_Oracle
 					case *DataSourceDefinitionExternal_Oracle:
-						// Set the new config only in this case
-						ds := &DataSourceDefinition{
-							SourceType: &DataSourceDefinition_External{
-								External: &DataSourceDefinitionExternal{
-									SourceType: &DataSourceDefinitionExternal_Oracle{
-										Oracle: oc,
-									},
-								},
-							},
+						if oc != nil {
+							if oc.SourceType != nil {
+								switch et := oc.SourceType.(type) {
+								case *DataSourceDefinitionExternal_Oracle:
+									newDs := &DataSourceDefinition{
+										SourceType: &DataSourceDefinition_External{
+											External: &DataSourceDefinitionExternal{
+												SourceType: &DataSourceDefinitionExternal_Oracle{
+													Oracle: et.Oracle,
+												},
+											},
+										},
+									}
+									*s = *newDs
+								}
+							}
 						}
 
-						*s = *ds
+					// For the case the vegapb.DataSourceDefinitionExternal is not nill
+					// and its embedded object is of type vegapb.DataSourceDefinitionExternal_EthOracle
+					case *DataSourceDefinitionExternal_EthOracle:
+						if oc != nil {
+							if oc.SourceType != nil {
+								switch et := oc.SourceType.(type) {
+								case *DataSourceDefinitionExternal_EthOracle:
+									newDs := &DataSourceDefinition{
+										SourceType: &DataSourceDefinition_External{
+											External: &DataSourceDefinitionExternal{
+												SourceType: &DataSourceDefinitionExternal_EthOracle{
+													EthOracle: et.EthOracle,
+												},
+											},
+										},
+									}
+									*s = *newDs
+								}
+							}
+						}
 					}
 				}
 			}

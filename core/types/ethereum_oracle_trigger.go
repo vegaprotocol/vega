@@ -166,7 +166,7 @@ func (e *EthCallTrigger) IntoProto() *vegapb.EthCallTrigger {
 		switch tp := e.EthTrigger.(type) {
 		case *EthTimeTrigger:
 			return &vegapb.EthCallTrigger{
-				EthTrigger: &vegapb.EthCallTrigger_TimeTrigger{
+				Trigger: &vegapb.EthCallTrigger_TimeTrigger{
 					TimeTrigger: tp.IntoProto(),
 				},
 			}
@@ -189,8 +189,8 @@ func (e *EthCallTrigger) GetEthTrigger() *EthCallTrigger {
 func EthCallTriggerFromSpec(specTrigger *vegapb.EthCallTrigger) *EthCallTrigger {
 	tr := &EthCallTrigger{}
 	if specTrigger != nil {
-		if specTrigger.EthTrigger != nil {
-			switch tp := specTrigger.EthTrigger.(type) {
+		if specTrigger.Trigger != nil {
+			switch tp := specTrigger.Trigger.(type) {
 			case *vegapb.EthCallTrigger_TimeTrigger:
 				tr.EthTrigger = EthCallTriggerTimeFromProto(tp)
 			}

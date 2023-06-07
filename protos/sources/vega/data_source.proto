@@ -12,6 +12,16 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega";
 // DataSourceDefinition can be external or internal, with whatever number of data sources are defined
 // for each type in the child objects below.
 message DataSourceDefinition {
+  enum Type {
+    TYPE_DATA_SOURCE_INVALID = 0;
+    // Default type
+    TYPE_DATA_SOURCE_EXT_ORACLE = 1;
+    // Ethereum oracle type
+    TYPE_DATA_SOURCE_EXT_ETHEREUM_ORACLE = 2;
+    // Internal time trigger type
+    TYPE_DATA_SOURCE_INT_TIME_TRIGGER = 3;
+  }
+
   oneof source_type {
     DataSourceDefinitionInternal internal = 1;
     DataSourceDefinitionExternal external = 2;
@@ -77,7 +87,7 @@ message EthCallSpec {
   // Filters describes which source data are considered of interest
   EthFilter filter = 7;
 
-  EthNormaliser normaliser = 8;
+  Normaliser normaliser = 8;
 }
 
 // Determines when the contract method should be called.
