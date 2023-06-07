@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -139,6 +140,120 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
 	assert.Equal(t, "-600", pp.UnrealisedPnl)
+}
+
+func TestPnLWithPositionDecimals(t *testing.T) {
+	ctx := context.Background()
+	market := "market-id"
+	party := "party1"
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	dp := num.DecimalFromFloat(3)
+
+	// first update with trades
+	trade := vega.Trade{
+		Id:       "t1",
+		MarketId: market,
+		Price:    "1000",
+		Size:     2,
+		Buyer:    party,
+		Seller:   "seller",
+	}
+	position.UpdateWithTrade(trade, false, dp)
+	trade.Id = "t2"
+	trade.Size = 3
+	trade.Price = "1200"
+	position.UpdateWithTrade(trade, false, dp)
+	pp := position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "133", pp.UnrealisedPnl)
+	// now MTM settlement event, contains the same trades, mark price is 1k
+	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
+		tradeStub{
+			size:  2,
+			price: num.NewUint(1000),
+		},
+		tradeStub{
+			size:  3,
+			price: num.NewUint(1200),
+		},
+	}, 1, dp)
+	position.UpdateWithPositionSettlement(ps)
+	pp = position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "-200", pp.UnrealisedPnl)
+	assert.EqualValues(t, 5, pp.OpenVolume)
+
+	// let's make it look like this party is trading, buyer in this case
+	trade = vega.Trade{
+		Id:       "t3",
+		MarketId: market,
+		Price:    "1150",
+		Size:     1,
+		Buyer:    party,
+		Seller:   "seller",
+	}
+	// position.UpdateWithTrade(trade, false, num.DecimalFromFloat(1))
+	position.UpdateWithTrade(trade, false, dp)
+	pp = position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "50", pp.UnrealisedPnl)
+	assert.EqualValues(t, 6, pp.OpenVolume)
+	// now assume this last trade was the only trade that occurred before MTM
+	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1150), []events.TradeSettlement{
+		tradeStub{
+			size:  1,
+			price: num.NewUint(1150),
+		},
+	}, 1, dp)
+	position.UpdateWithPositionSettlement(ps)
+	pp = position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "50", pp.UnrealisedPnl)
+	assert.EqualValues(t, 6, pp.OpenVolume)
+}
+
+func TestPnLWithTradeDecimals(t *testing.T) {
+	ctx := context.Background()
+	market := "market-id"
+	party := "party1"
+	position := entities.NewEmptyPosition(entities.MarketID(market), entities.PartyID(party))
+	dp := num.DecimalFromFloat(3)
+
+	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
+		tradeStub{
+			size:  2,
+			price: num.NewUint(1000),
+		},
+		tradeStub{
+			size:  3,
+			price: num.NewUint(1200),
+		},
+	}, 1, dp)
+	position.UpdateWithPositionSettlement(ps)
+	pp := position.ToProto()
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "-200", pp.UnrealisedPnl)
+
+	// then we process the event for LossSocialization
+	lsevt := events.NewLossSocializationEvent(ctx, party, market, num.NewUint(300), true, 1)
+	position.UpdateWithLossSocialization(lsevt)
+	pp = position.ToProto()
+	assert.Equal(t, "-300", pp.RealisedPnl)
+	assert.Equal(t, "-200", pp.UnrealisedPnl)
+	// let's make it look like this party is trading, buyer in this case
+	trade := vega.Trade{
+		Id:       "t1",
+		MarketId: market,
+		Price:    "1150",
+		Size:     1,
+		Buyer:    party,
+		Seller:   "seller",
+	}
+	// position.UpdateWithTrade(trade, false, num.DecimalFromFloat(1))
+	position.UpdateWithTrade(trade, false, dp)
+	pp = position.ToProto()
+	assert.Equal(t, "-300", pp.RealisedPnl)
+	assert.Equal(t, "50", pp.UnrealisedPnl)
 }
 
 type tradeStub struct {
