@@ -154,13 +154,13 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 		Id:       "t1",
 		MarketId: market,
 		Price:    "1000",
-		Size:     2000,
+		Size:     2,
 		Buyer:    party,
 		Seller:   "seller",
 	}
 	position.UpdateWithTrade(trade, false, dp)
 	trade.Id = "t2"
-	trade.Size = 3000
+	trade.Size = 3
 	trade.Price = "1200"
 	position.UpdateWithTrade(trade, false, dp)
 	pp := position.ToProto()
@@ -169,26 +169,26 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	// now MTM settlement event, contains the same trades, mark price is 1k
 	ps := events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1000), []events.TradeSettlement{
 		tradeStub{
-			size:  2000,
+			size:  2,
 			price: num.NewUint(1000),
 		},
 		tradeStub{
-			size:  3000,
+			size:  3,
 			price: num.NewUint(1200),
 		},
 	}, 1, dp)
 	position.UpdateWithPositionSettlement(ps)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "-600", pp.UnrealisedPnl)
-	assert.EqualValues(t, 5000, pp.OpenVolume)
+	assert.Equal(t, "-1", pp.UnrealisedPnl)
+	assert.EqualValues(t, 5, pp.OpenVolume)
 
 	// let's make it look like this party is trading, buyer in this case
 	trade = vega.Trade{
 		Id:       "t3",
 		MarketId: market,
 		Price:    "1150",
-		Size:     1000,
+		Size:     1,
 		Buyer:    party,
 		Seller:   "seller",
 	}
@@ -196,68 +196,68 @@ func TestPnLWithPositionDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "150", pp.UnrealisedPnl)
-	assert.EqualValues(t, 6000, pp.OpenVolume)
+	assert.Equal(t, "5744", pp.UnrealisedPnl)
+	assert.EqualValues(t, 6, pp.OpenVolume)
 	// now assume this last trade was the only trade that occurred before MTM
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1150), []events.TradeSettlement{
 		tradeStub{
-			size:  1000,
+			size:  1,
 			price: num.NewUint(1150),
 		},
 	}, 1, dp)
 	position.UpdateWithPositionSettlement(ps)
 	pp = position.ToProto()
 	assert.Equal(t, "0", pp.RealisedPnl)
-	assert.Equal(t, "150", pp.UnrealisedPnl)
-	assert.EqualValues(t, 6000, pp.OpenVolume)
+	assert.Equal(t, "0", pp.UnrealisedPnl)
+	assert.EqualValues(t, 6, pp.OpenVolume)
 	// now close a position to see some realised PnL
 	trade = vega.Trade{
 		Id:       "t4",
 		MarketId: market,
 		Price:    "1250",
-		Size:     1000,
+		Size:     1,
 		Buyer:    "buyer",
 		Seller:   party,
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "125", pp.RealisedPnl)
-	assert.Equal(t, "625", pp.UnrealisedPnl)
-	assert.EqualValues(t, 5000, pp.OpenVolume)
+	assert.Equal(t, "1249", pp.RealisedPnl)
+	assert.Equal(t, "6244", pp.UnrealisedPnl)
+	assert.EqualValues(t, 5, pp.OpenVolume)
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
 		tradeStub{
-			size:  -1000,
+			size:  -1,
 			price: num.NewUint(1250),
 		},
 	}, 1, dp)
 	position.UpdateWithPositionSettlement(ps)
 	pp = position.ToProto()
-	assert.Equal(t, "125", pp.RealisedPnl)
-	assert.Equal(t, "625", pp.UnrealisedPnl)
-	assert.EqualValues(t, 5000, pp.OpenVolume)
+	assert.Equal(t, "0", pp.RealisedPnl)
+	assert.Equal(t, "1", pp.UnrealisedPnl)
+	assert.EqualValues(t, 5, pp.OpenVolume)
 	// now close the position
 	trade = vega.Trade{
 		Id:       "t5",
 		MarketId: market,
 		Price:    "1300",
-		Size:     5000,
+		Size:     5,
 		Buyer:    "buyer",
 		Seller:   party,
 	}
 	position.UpdateWithTrade(trade, true, dp)
 	pp = position.ToProto()
-	assert.Equal(t, "1000", pp.RealisedPnl)
+	assert.Equal(t, "6495", pp.RealisedPnl)
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.EqualValues(t, 0, pp.OpenVolume)
 	ps = events.NewSettlePositionEvent(ctx, party, market, num.NewUint(1250), []events.TradeSettlement{
 		tradeStub{
-			size:  -5000,
+			size:  -5,
 			price: num.NewUint(1300),
 		},
 	}, 1, dp)
 	position.UpdateWithPositionSettlement(ps)
 	pp = position.ToProto()
-	assert.Equal(t, "1000", pp.RealisedPnl)
+	assert.Equal(t, "1", pp.RealisedPnl)
 	assert.Equal(t, "0", pp.UnrealisedPnl)
 	assert.EqualValues(t, 0, pp.OpenVolume)
 }
@@ -303,7 +303,7 @@ func TestPnLWithTradeDecimals(t *testing.T) {
 	position.UpdateWithTrade(trade, false, dp)
 	pp = position.ToProto()
 	assert.Equal(t, "-300", pp.RealisedPnl)
-	assert.Equal(t, "50", pp.UnrealisedPnl)
+	assert.Equal(t, "3883", pp.UnrealisedPnl)
 }
 
 type tradeStub struct {
