@@ -74,7 +74,7 @@ func (a *AuctionState) GetAuctionEnd() *time.Time {
 		return nil
 	}
 	cpy := *a.begin
-	cpy = cpy.Add(time.Duration(a.end.Duration))
+	cpy = cpy.Add(time.Duration(a.end.Duration * time.Second))
 	return &cpy
 }
 
