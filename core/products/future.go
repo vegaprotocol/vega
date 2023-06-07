@@ -275,16 +275,15 @@ func NewFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	dSrcSpec := f.DataSourceSpecForSettlementData.Data.GetDataSourceSpecConfiguration()
-	if dSrcSpec != nil {
-		for _, f := range dSrcSpec.Filters {
-			// Oracle specs with more than one unique filter names are not allowed to exists, so we do not have to make that check here.
-			// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
-			// into consideration only in those cases.
-			if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
-				oracleBinding.settlementDataPropertyType = f.Key.Type
-				oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
-				break
-			}
+
+	for _, f := range dSrcSpec.Filters {
+		// Oracle specs with more than one unique filter names are not allowed to exists, so we do not have to make that check here.
+		// We are good to only check if the type is `PropertyKey_TYPE_DECIMAL` or `PropertyKey_TYPE_INTEGER`, because we take decimals
+		// into consideration only in those cases.
+		if f.Key.Type == datapb.PropertyKey_TYPE_INTEGER && f.Key.NumberDecimalPlaces != nil {
+			oracleBinding.settlementDataPropertyType = f.Key.Type
+			oracleBinding.settlementDataDecimals = *f.Key.NumberDecimalPlaces
+			break
 		}
 	}
 

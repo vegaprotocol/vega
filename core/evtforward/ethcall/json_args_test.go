@@ -53,7 +53,7 @@ func TestJsonArgsToAny(t *testing.T) {
 	jsonArgs, err := ethcall.AnyArgsToJson(goArgs)
 	require.NoError(t, err)
 
-	anyArgs, err := ethcall.JsonArgsToAny("testy", jsonArgs, TEST_ABI)
+	anyArgs, err := ethcall.JsonArgsToAny("testy", jsonArgs, []byte(TEST_ABI))
 	require.NoError(t, err)
 	assert.Equal(t, goArgs, anyArgs)
 }
