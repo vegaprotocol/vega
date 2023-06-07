@@ -252,7 +252,9 @@ func (p *TrailingStopOrders) Remove(id string) error {
 
 	switch o.direction {
 	case types.StopOrderTriggerDirectionFallsBelow:
+		p.remove(p.fallsBelow, id, o.offset)
 	case types.StopOrderTriggerDirectionRisesAbove:
+		p.remove(p.risesAbove, id, o.offset)
 	}
 
 	return nil
