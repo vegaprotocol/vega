@@ -108,6 +108,7 @@ type allServices struct {
 	notary                *notary.SnapshotNotary
 	eventForwarder        *evtforward.Forwarder
 	eventForwarderEngine  EventForwarderEngine
+	ethCallEngine         *ethcall.Engine
 	witness               *validators.Witness
 	banking               *banking.Engine
 	genesisHandler        *genesis.Handler
@@ -184,6 +185,7 @@ func newServices(
 		svcs.log.Error("unable to initialise eth call engine", logging.Error(err))
 		return nil, err
 	}
+	svcs.ethCallEngine = ethCallEngine
 
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, ethCallEngine)
 
@@ -281,6 +283,7 @@ func newServices(
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
 		svcs.eventForwarderEngine.Start()
+		svcs.ethCallEngine.Start()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
