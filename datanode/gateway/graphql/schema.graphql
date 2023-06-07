@@ -25,6 +25,16 @@ type PeggedOrder {
   offset: String!
 }
 
+"Details of the iceberg order"
+type IcebergOrder {
+  "Size of the order that will be made visible if the iceberg order is refreshed at the end of a transaction"
+  initialPeakSize: String!
+  "Threshold at which the order's visible remaining size will be refreshed back to its initial peak size"
+  minimumPeakSize: String!
+  "Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed"
+  reservedRemaining: String!
+}
+
 "Subscriptions allow a caller to receive new information as it is available from the Vega network."
 type Subscription {
   "Subscribe to the accounts updates"
@@ -2357,6 +2367,9 @@ type Order {
 
   "Is this a reduce only order"
   reduceOnly: Boolean
+
+  "Details of an iceberg order"
+  IcebergOrder: IcebergOrder
 }
 
 "An order update in Vega, if active it will be on the order book for the market"

@@ -399,6 +399,10 @@ func (r *VegaResolverRoot) ERC20MultiSigSignerRemovedBundle() ERC20MultiSigSigne
 	return (*erc20MultiSigSignerRemovedBundleResolver)(r)
 }
 
+func (r *VegaResolverRoot) IcebergOrder() IcebergOrderResolver {
+	return (*icebergOrderResolver)(r)
+}
+
 // RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
 func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
 	return (*rewardSummaryFilterResolver)(r)
@@ -1845,6 +1849,10 @@ func (r *myOrderResolver) Party(_ context.Context, order *types.Order) (*types.P
 
 func (r *myOrderResolver) PeggedOrder(_ context.Context, order *types.Order) (*types.PeggedOrder, error) {
 	return order.PeggedOrder, nil
+}
+
+func (r *myOrderResolver) IcebergOrder(_ context.Context, order *types.Order) IcebergOrderResolver {
+	return (*icebergOrderResolver)(r)
 }
 
 func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Order) (*types.LiquidityProvision, error) {
