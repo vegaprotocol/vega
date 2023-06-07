@@ -2970,6 +2970,18 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_FREEFORM
   "The ERC-20 address specified by this proposal is already in use by another asset"
   PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
+  "The governance transfer proposal is invalid"
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID
+  "The governance transfer proposal has failed"
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED
+  "The proposal for cancellation of an active governance transfer has failed"
+  PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID
+  "Validation of spot market proposal failed"
+  PROPOSAL_ERROR_INVALID_SPOT
+  "Spot trading is disabled"
+  PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
+  "Validation of successor market has failed"
+  PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
 }
 
 "Why the order was rejected by the core node"

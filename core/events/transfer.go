@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
@@ -23,6 +24,29 @@ import (
 type TransferFunds struct {
 	*Base
 	transfer *eventspb.Transfer
+}
+
+func NewGovTransferFundsEvent(
+	ctx context.Context,
+	t *types.GovernanceTransfer,
+	amount *num.Uint,
+) *TransferFunds {
+	return &TransferFunds{
+		Base:     newBase(ctx, TransferEvent),
+		transfer: t.IntoEvent(amount, nil),
+	}
+}
+
+func NewGovTransferFundsEventWithReason(
+	ctx context.Context,
+	t *types.GovernanceTransfer,
+	amount *num.Uint,
+	reason string,
+) *TransferFunds {
+	return &TransferFunds{
+		Base:     newBase(ctx, TransferEvent),
+		transfer: t.IntoEvent(amount, &reason),
+	}
 }
 
 func NewOneOffTransferFundsEvent(

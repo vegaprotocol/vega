@@ -213,6 +213,36 @@ func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
 
+// GetSystemAccountBalance mocks base method.
+func (m *MockCollateral) GetSystemAccountBalance(arg0, arg1 string, arg2 vega.AccountType) (*num.Uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSystemAccountBalance", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSystemAccountBalance indicates an expected call of GetSystemAccountBalance.
+func (mr *MockCollateralMockRecorder) GetSystemAccountBalance(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSystemAccountBalance", reflect.TypeOf((*MockCollateral)(nil).GetSystemAccountBalance), arg0, arg1, arg2)
+}
+
+// GovernanceTransferFunds mocks base method.
+func (m *MockCollateral) GovernanceTransferFunds(arg0 context.Context, arg1 []*types.Transfer, arg2 []vega.AccountType, arg3 []string) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GovernanceTransferFunds", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GovernanceTransferFunds indicates an expected call of GovernanceTransferFunds.
+func (mr *MockCollateralMockRecorder) GovernanceTransferFunds(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GovernanceTransferFunds", reflect.TypeOf((*MockCollateral)(nil).GovernanceTransferFunds), arg0, arg1, arg2, arg3)
+}
+
 // PropagateAssetUpdate mocks base method.
 func (m *MockCollateral) PropagateAssetUpdate(arg0 context.Context, arg1 types.Asset) error {
 	m.ctrl.T.Helper()

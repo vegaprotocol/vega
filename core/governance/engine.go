@@ -50,7 +50,7 @@ var (
 	ErrParentMarketAlreadySucceeded              = errors.New("the market was already succeeded by a prior proposal")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
 
 // Broker - event bus.
 type Broker interface {
@@ -87,6 +87,11 @@ type Assets interface {
 	ExistsForEthereumAddress(address string) bool
 }
 
+type Banking interface {
+	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
+	VerifyCancelGovernanceTransfer(transferID string) error
+}
+
 // TimeService ...
 type TimeService interface {
 	GetTimeNow() time.Time
@@ -121,6 +126,7 @@ type Engine struct {
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
+	banking                Banking
 
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
@@ -142,6 +148,7 @@ func NewEngine(
 	witness Witness,
 	markets Markets,
 	netp NetParams,
+	banking Banking,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
@@ -159,6 +166,7 @@ func NewEngine(
 		markets:                markets,
 		netp:                   netp,
 		gss:                    &governanceSnapshotState{},
+		banking:                banking,
 	}
 	return e
 }
@@ -268,6 +276,10 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.updatedAsset = asset
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
+	case types.ProposalTermsTypeNewTransfer:
+		te.t = &ToEnactTransfer{}
+	case types.ProposalTermsTypeCancelTransfer:
+		te.c = &ToEnactCancelTransfer{}
 	}
 	return //nolint:nakedret
 }
@@ -673,6 +685,11 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getUpdateNetworkParameterProposalParameters(), nil
 	case types.ProposalTermsTypeNewFreeform:
 		return e.getNewFreeformProposalParameters(), nil
+	case types.ProposalTermsTypeNewTransfer:
+		return e.getNewTransferProposalParameters(), nil
+	case types.ProposalTermsTypeCancelTransfer:
+		// for governance transfer cancellation reuse the governance transfer proposal params
+		return e.getNewTransferProposalParameters(), nil
 	case types.ProposalTermsTypeNewSpotMarket:
 		return e.getNewSpotMarketProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateSpotMarket:
@@ -973,6 +990,10 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return terms.GetUpdateAsset().Validate()
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
+	case types.ProposalTermsTypeNewTransfer:
+		return e.validateGovernanceTransfer(terms.GetNewTransfer())
+	case types.ProposalTermsTypeCancelTransfer:
+		return e.validateCancelGovernanceTransfer(terms.GetCancelTransfer().Changes.TransferID)
 	case types.ProposalTermsTypeNewSpotMarket:
 		if !e.markets.SpotsMarketsEnabled() {
 			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
@@ -985,6 +1006,20 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
+}
+
+func (e *Engine) validateGovernanceTransfer(newTransfer *types.NewTransfer) (types.ProposalError, error) {
+	if err := e.banking.VerifyGovernanceTransfer(newTransfer.Changes); err != nil {
+		return types.ProporsalErrorInvalidGovernanceTransfer, err
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func (e *Engine) validateCancelGovernanceTransfer(transferID string) (types.ProposalError, error) {
+	if err := e.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
+		return types.ProporsalErrorFailedGovernanceTransferCancel, err
+	}
+	return types.ProposalErrorUnspecified, nil
 }
 
 func (e *Engine) validateNewAssetProposal(newAsset *types.NewAsset) (types.ProposalError, error) {

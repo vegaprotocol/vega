@@ -98,6 +98,18 @@ const (
 	GovernanceProposalFreeformMinProposerBalance    = "governance.proposal.freeform.minProposerBalance"
 	GovernanceProposalFreeformMinVoterBalance       = "governance.proposal.freeform.minVoterBalance"
 
+	// governance transfer proposal parameters.
+	GovernanceProposalTransferMinClose              = "governance.proposal.transfer.minClose"
+	GovernanceProposalTransferMaxClose              = "governance.proposal.transfer.maxClose"
+	GovernanceProposalTransferMinEnact              = "governance.proposal.transfer.minEnact"
+	GovernanceProposalTransferMaxEnact              = "governance.proposal.transfer.maxEnact"
+	GovernanceProposalTransferRequiredParticipation = "governance.proposal.transfer.requiredParticipation"
+	GovernanceProposalTransferRequiredMajority      = "governance.proposal.transfer.requiredMajority"
+	GovernanceProposalTransferMinProposerBalance    = "governance.proposal.transfer.minProposerBalance"
+	GovernanceProposalTransferMinVoterBalance       = "governance.proposal.transfer.minVoterBalance"
+	GovernanceTransferMaxAmount                     = "governance.proposal.transfer.maxAmount"
+	GovernanceTransferMaxFraction                   = "governance.proposal.transfer.maxFraction"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -246,6 +258,16 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalFreeformRequiredMajority:               {},
 	GovernanceProposalFreeformMinProposerBalance:             {},
 	GovernanceProposalFreeformMinVoterBalance:                {},
+	GovernanceProposalTransferMinClose:                       {},
+	GovernanceProposalTransferMaxClose:                       {},
+	GovernanceProposalTransferMinEnact:                       {},
+	GovernanceProposalTransferMaxEnact:                       {},
+	GovernanceProposalTransferRequiredParticipation:          {},
+	GovernanceProposalTransferRequiredMajority:               {},
+	GovernanceProposalTransferMinProposerBalance:             {},
+	GovernanceProposalTransferMinVoterBalance:                {},
+	GovernanceTransferMaxAmount:                              {},
+	GovernanceTransferMaxFraction:                            {},
 	BlockchainsEthereumConfig:                                {},
 	MarketLiquidityProvisionShapesMaxSize:                    {},
 	MarketProbabilityOfTradingTauScaling:                     {},

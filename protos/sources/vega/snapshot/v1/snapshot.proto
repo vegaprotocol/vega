@@ -117,6 +117,8 @@ message Payload {
     SettlementState settlement_state = 57;
     LiquidityScores liquidity_scores = 58;
     SpotLiquidityTarget spot_liquidity_target = 59;
+    BankingRecurringGovernanceTransfers banking_recurring_governance_transfers = 60;
+    BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
   }
 }
 
@@ -249,6 +251,14 @@ message BankingRecurringTransfers {
 
 message BankingScheduledTransfers {
   repeated vega.checkpoint.v1.ScheduledTransferAtTime transfers_at_time = 1;
+}
+
+message BankingRecurringGovernanceTransfers {
+  repeated vega.checkpoint.v1.GovernanceTransfer recurring_transfers = 1;
+}
+
+message BankingScheduledGovernanceTransfers {
+  repeated vega.checkpoint.v1.ScheduledGovernanceTransferAtTime transfers_at_time = 1;
 }
 
 message BankingBridgeState {

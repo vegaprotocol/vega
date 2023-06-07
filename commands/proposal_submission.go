@@ -133,6 +133,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(checkUpdateAssetChanges(c))
 	case *protoTypes.ProposalTerms_NewFreeform:
 		errs.Merge(CheckNewFreeformChanges(c))
+	case *protoTypes.ProposalTerms_NewTransfer:
+		errs.Merge((checkNewTransferChanges(c)))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -212,6 +214,92 @@ func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Error
 	if change.NewFreeform == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_freeform", ErrIsRequired)
 	}
+	return errs
+}
+
+func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Errors {
+	errs := NewErrors()
+	if change.NewTransfer == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer", ErrIsRequired)
+	}
+
+	if change.NewTransfer.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes", ErrIsRequired)
+	}
+
+	changes := change.NewTransfer.Changes
+	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsRequired)
+	}
+
+	// source account type may be one of the following:
+	if changes.SourceType != protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE &&
+		changes.SourceType != protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source_type", ErrIsNotValid)
+	}
+
+	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_UNSPECIFIED {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsRequired)
+	}
+
+	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+	}
+
+	// destination account type may be one of the following:
+	if changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_GENERAL &&
+		changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD &&
+		changes.DestinationType != protoTypes.AccountType_ACCOUNT_TYPE_INSURANCE {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination_type", ErrIsNotValid)
+	}
+
+	if changes.SourceType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Source) > 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.source", ErrIsNotValid)
+	}
+
+	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Destination) > 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+	}
+
+	if changes.TransferType == protoTypes.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.transfer_type", ErrIsRequired)
+	}
+
+	if len(changes.Amount) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.amount", ErrIsRequired)
+	}
+
+	n, overflow := num.UintFromString(changes.Amount, 10)
+	if overflow || n.IsNegative() {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.amount", ErrIsNotValid)
+	}
+
+	if len(changes.Asset) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.asset", ErrIsRequired)
+	}
+
+	if len(changes.FractionOfBalance) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrIsRequired)
+	}
+
+	fraction, err := num.DecimalFromString(changes.FractionOfBalance)
+	if err != nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrIsNotValid)
+	}
+	if !fraction.IsPositive() {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBePositive)
+	}
+
+	if recurring := changes.GetRecurring(); recurring != nil {
+		if recurring.EndEpoch != nil && *recurring.EndEpoch < recurring.StartEpoch {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.end_epoch", ErrIsNotValid)
+		}
+	}
+
+	if changes.GetRecurring() == nil && changes.GetOneOff() == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.kind", ErrIsRequired)
+	}
+
 	return errs
 }
 

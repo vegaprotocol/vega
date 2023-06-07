@@ -1537,6 +1537,20 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// NewGovernanceTransfer mocks base method.
+func (m *MockBanking) NewGovernanceTransfer(arg0 context.Context, arg1, arg2 string, arg3 *types.NewTransferConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewGovernanceTransfer", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NewGovernanceTransfer indicates an expected call of NewGovernanceTransfer.
+func (mr *MockBankingMockRecorder) NewGovernanceTransfer(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).NewGovernanceTransfer), arg0, arg1, arg2, arg3)
+}
+
 // TransferFunds mocks base method.
 func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferFunds) error {
 	m.ctrl.T.Helper()
@@ -1563,6 +1577,34 @@ func (m *MockBanking) UpdateERC20(arg0 context.Context, arg1 *types.ERC20AssetLi
 func (mr *MockBankingMockRecorder) UpdateERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateERC20", reflect.TypeOf((*MockBanking)(nil).UpdateERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// VerifyCancelGovernanceTransfer mocks base method.
+func (m *MockBanking) VerifyCancelGovernanceTransfer(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyCancelGovernanceTransfer", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyCancelGovernanceTransfer indicates an expected call of VerifyCancelGovernanceTransfer.
+func (mr *MockBankingMockRecorder) VerifyCancelGovernanceTransfer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyCancelGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).VerifyCancelGovernanceTransfer), arg0)
+}
+
+// VerifyGovernanceTransfer mocks base method.
+func (m *MockBanking) VerifyGovernanceTransfer(arg0 *types.NewTransferConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyGovernanceTransfer", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyGovernanceTransfer indicates an expected call of VerifyGovernanceTransfer.
+func (mr *MockBankingMockRecorder) VerifyGovernanceTransfer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).VerifyGovernanceTransfer), arg0)
 }
 
 // WithdrawBuiltinAsset mocks base method.
