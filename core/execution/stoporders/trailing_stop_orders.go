@@ -69,11 +69,14 @@ func (p *TrailingStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 	// for fallsBelow and executed triggers for risesAbove
 	if p.lastSeenPrice.LT(newPrice) {
 		p.adjustBuckets(p.fallsBelow, p.fallsBelow.AscendLessThan, newPrice)
-		out = p.trigger(p.risesAbove,
+		out = p.trigger(
+			p.risesAbove,
 			p.risesAbove.Ascend,
 			func(a *num.Uint, b *num.Uint) bool { return a.GT(b) },
 			func(a num.Decimal, b num.Decimal) bool { return a.GreaterThan(b) },
-			newPrice)
+			func(a num.Decimal, offset num.Decimal) num.Decimal { return a.Add(a.Mul(offset)) },
+			newPrice,
+		)
 	} else if p.lastSeenPrice.GT(newPrice) {
 		p.adjustBuckets(p.risesAbove, p.risesAbove.DescendGreaterThan, newPrice)
 		out = p.trigger(
@@ -81,7 +84,9 @@ func (p *TrailingStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 			p.fallsBelow.Descend,
 			func(a *num.Uint, b *num.Uint) bool { return a.LT(b) },
 			func(a num.Decimal, b num.Decimal) bool { return a.LessThan(b) },
-			newPrice)
+			func(a num.Decimal, offset num.Decimal) num.Decimal { return a.Sub(a.Mul(offset)) },
+			newPrice,
+		)
 	} else {
 		// nothing happened
 		return nil
@@ -106,7 +111,6 @@ func (p *TrailingStopOrders) adjustBuckets(
 	item := &offsetsAtPrice{price: newPrice}
 	pricesToAdjust := []*num.Uint{}
 	findFn(item, func(oap *offsetsAtPrice) bool {
-		fmt.Printf("NEW PRICE:%v IN:%s\n", newPrice.String(), oap)
 		pricesToAdjust = append(pricesToAdjust, oap.price.Clone())
 		return true
 	})
@@ -121,6 +125,10 @@ func (p *TrailingStopOrders) adjustBuckets(
 		// now for each orders of every leaf we can add at the new price
 		oap.offsets.Ascend(func(oao *ordersAtOffset) bool {
 			for _, order := range oao.orders {
+				// update the mapping
+				prevOrderAtOffsetStat := p.orders[order]
+				p.orders[order] = orderAtOffsetStat{oao.offset, prevOrderAtOffsetStat.direction}
+				// insert
 				p.insertOrUpdateOffsetAtPrice(
 					tree, order, newPrice, oao.offset,
 				)
@@ -138,24 +146,23 @@ func (p *TrailingStopOrders) trigger(
 	iterateFn func(btree.ItemIteratorG[*offsetsAtPrice]),
 	cmpPriceFn func(*num.Uint, *num.Uint) bool,
 	cmpOffsetFn func(num.Decimal, num.Decimal) bool,
+	applyOffsetFn func(num.Decimal, num.Decimal) num.Decimal,
 	price *num.Uint,
 ) (orders []string) {
 	priceDec := price.ToDecimal()
 	toRemovePrices := []*num.Uint{}
 	iterateFn(func(item *offsetsAtPrice) bool {
 		if cmpPriceFn(item.price, price) {
-			return false
+			// continue but nothing to do here
+			return true
 		}
-		leafPriceDec := item.price.ToDecimal()
-		_ = priceDec
-		_ = leafPriceDec
 
-		fmt.Printf("CURRENT PRICE: %v\n", item.price.String())
+		leafPriceDec := item.price.ToDecimal()
+
 		toRemoveOffsets := []num.Decimal{}
 		// now in here, we iterate all the
 		item.offsets.Ascend(func(item *ordersAtOffset) bool {
-			offsetedPrice := leafPriceDec.Add(leafPriceDec.Mul(item.offset))
-			fmt.Printf("%v -> %v\n", item.offset.String(), offsetedPrice.String())
+			offsetedPrice := applyOffsetFn(leafPriceDec, item.offset)
 			if cmpOffsetFn(offsetedPrice, priceDec) {
 				// we have still margin, no need to process the others
 				return false
@@ -239,6 +246,7 @@ func (p *TrailingStopOrders) insertOrUpdateOrderAtOffset(
 
 	// finally insert or whatever
 	tree.ReplaceOrInsert(oap)
+
 }
 
 func (p *TrailingStopOrders) Remove(id string) error {

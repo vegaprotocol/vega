@@ -1312,6 +1312,10 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderID(
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
+	// TODO(): reject if no position for the party
+
+	// TODO(): check that the party haven't breach the max amount of stop orders
+
 	var risesAboveID, fallsBelowID string
 	if submission.RisesAbove != nil {
 		risesAboveID = m.idgen.NextID()
