@@ -89,6 +89,7 @@ func testSubmittingProposalForFullSuccessorMarketSucceeds(t *testing.T) {
 		ParentID:              "parentID",
 		InsurancePoolFraction: num.DecimalFromFloat(.5),
 	}
+	eng.markets.EXPECT().IsSucceeded(suc.ParentID).Times(1).Return(false)
 	filter, binding := produceTimeTriggeredDataSourceSpec(time.Now())
 	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), filter, binding, true, &suc)
 	// returns a pointer directly to the change, but reassign just in case it doesn't
@@ -284,6 +285,7 @@ func testSubmittingSparseSuccessorProposal(t *testing.T) {
 
 	// now for the successor proposal: return this market from execution engine as though it was enacted:
 	eng.markets.EXPECT().GetMarket(parent.ID, true).Times(2).Return(*parent, true)
+	eng.markets.EXPECT().IsSucceeded(parent.ID).Times(1).Return(false)
 	suc := types.SuccessorConfig{
 		ParentID:              parent.ID,
 		InsurancePoolFraction: num.DecimalFromFloat(1),

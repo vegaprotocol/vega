@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // the interface for execution engine. The execution engine itself will be wrapped
@@ -37,5 +36,5 @@ type Execution interface {
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	BlockEnd(ctx context.Context)
 	GetMarket(parentID string, settled bool) (types.Market, bool)
-	SucceedMarket(ctx context.Context, successor, parent string, fraction num.Decimal) error
+	SucceedMarket(ctx context.Context, successor, parent string) error
 }

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/cucumber/godog"
-	"github.com/pkg/errors"
 
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/integration/steps/market"
@@ -92,35 +91,11 @@ func TheMarkets(
 	return markets, nil
 }
 
-func TheSuccessorMarkets(
-	config *market.SuccessorConfig,
-	exec Execution,
-	netparams *netparams.Store,
-	table *godog.Table,
-) ([]types.Market, error) {
-	rows := parseSuccessorMarketTable(table)
-	markets := make([]types.Market, 0, len(rows))
-
-	for _, row := range rows {
-		mkt, err := newSuccessorMarket(config, exec, netparams, successorRow{row: row})
-		if err != nil {
-			return nil, err
-		}
-		markets = append(markets, mkt)
-	}
-
-	// submit the successor markets and start opening auction as we tend to do
-	if err := submitMarkets(markets, exec, time.Now()); err != nil {
-		return nil, err
-	}
-	return markets, nil
-}
-
 func TheSuccesorMarketIsEnacted(sID string, markets []types.Market, exec Execution) error {
 	for _, mkt := range markets {
 		if mkt.ID == sID {
 			parent := mkt.ParentMarketID
-			if err := exec.SucceedMarket(context.Background(), sID, parent, mkt.InsurancePoolFraction); err != nil {
+			if err := exec.SucceedMarket(context.Background(), sID, parent); err != nil {
 				return fmt.Errorf("couldn't enact the successor market %s (parent: %s): %v", sID, parent, err)
 			}
 			return nil
@@ -164,7 +139,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 				Symbol:  assetToEnable,
 			},
 		})
-		if err != nil {
+		if err != nil && err != collateral.ErrAssetAlreadyEnabled {
 			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
 		}
 	}
@@ -321,52 +296,6 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 	return update
 }
 
-func newSuccessorMarket(config *market.SuccessorConfig, exec Execution, netparams *netparams.Store, row successorRow) (types.Market, error) {
-	parent, ok := exec.GetMarket(config.ParentID, true)
-	if !ok {
-		return types.Market{}, errors.Errorf("parent market %s does not exist", config.ParentID)
-	}
-	cfg := parent.DeepClone()
-	cfg.ParentMarketID = config.ParentID
-	cfg.InsurancePoolFraction = config.InsuranceFraction
-	// @TODO create a marketRow type for successors
-	cfg.ID = row.id()
-	if ls, ok := row.tryLinearSlippageFactor(); ok {
-		cfg.LinearSlippageFactor = num.DecimalFromFloat(ls)
-	}
-	if qs, ok := row.tryQuadraticSlippageFactor(); ok {
-		cfg.QuadraticSlippageFactor = num.DecimalFromFloat(qs)
-	}
-	if pr, ok := row.tryLpPriceRange(); ok {
-		cfg.LPPriceRange = num.DecimalFromFloat(pr)
-	}
-	if pd, ok := row.positionDecimals(); ok {
-		cfg.PositionDecimalPlaces = pd
-	}
-	if dp, ok := row.decimals(); ok {
-		cfg.DecimalPlaces = dp
-	}
-	if pm, ok := row.priceMonitoring(); ok {
-		priceMon, err := config.PriceMonitoring.Get(pm)
-		if err != nil {
-			return types.Market{}, err
-		}
-		cfg.PriceMonitoringSettings = types.PriceMonitoringSettingsFromProto(priceMon)
-	}
-	if lm, ok := row.liquidityMonitoring(); ok {
-		liqM, err := config.LiquidityMonitoring.GetType(lm)
-		if err != nil {
-			return types.Market{}, err
-		}
-		setLiquidityMonitoringNetParams(liqM, netparams)
-		// these ought to get applied as they are specified, perhaps this is where netparams still need to be applied, though
-		cfg.LiquidityMonitoringParameters = liqM
-	}
-	// ensure market is active
-	cfg.State = types.MarketStateActive
-	return *cfg, nil
-}
-
 func newMarket(config *market.Config, netparams *netparams.Store, row marketRow) types.Market {
 	fees, err := config.FeesConfig.Get(row.fees())
 	if err != nil {
@@ -448,6 +377,13 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 	}
 
+	if row.isSuccessor() {
+		m.ParentMarketID = row.parentID()
+		m.InsurancePoolFraction = row.insuranceFraction()
+		// increase opening auction duration by a given amount
+		m.OpeningAuction.Duration += row.successorAuction()
+	}
+
 	tip := m.TradableInstrument.IntoProto()
 	err = config.RiskModels.LoadModel(row.riskModel(), tip)
 	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
@@ -503,6 +439,9 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"position decimal places",
 		"liquidity monitoring",
 		"lp price range",
+		"parent market id",
+		"insurance pool fraction",
+		"successor auction",
 	})
 }
 
@@ -520,32 +459,11 @@ func parseMarketsUpdateTable(table *godog.Table) []RowWrapper {
 	})
 }
 
-func parseSuccessorMarketTable(table *godog.Table) []RowWrapper {
-	return StrictParseTable(table, []string{
-		"id",
-		"parent id",
-		"linear slippage factor",
-		"quadratic slippage factor",
-		"insurance pool fraction",
-		"risk model",
-	}, []string{
-		"lp price range", // we will default to parent values
-		"decimal places",
-		"position decimal places",
-		"liquidity monitoring",
-		"price monitoring",
-	})
-}
-
 type marketRow struct {
 	row RowWrapper
 }
 
 type marketUpdateRow struct {
-	row RowWrapper
-}
-
-type successorRow struct {
 	row RowWrapper
 }
 
@@ -666,6 +584,31 @@ func (r marketRow) quadraticSlippageFactor() float64 {
 	return r.row.MustF64("quadratic slippage factor")
 }
 
+func (r marketRow) isSuccessor() bool {
+	if pid, ok := r.row.StrB("parent market id"); !ok || len(pid) == 0 {
+		return false
+	}
+	return true
+}
+
+func (r marketRow) parentID() string {
+	return r.row.MustStr("parent market id")
+}
+
+func (r marketRow) insuranceFraction() num.Decimal {
+	if !r.row.HasColumn("insurance pool fraction") {
+		return num.DecimalZero()
+	}
+	return r.row.Decimal("insurance pool fraction")
+}
+
+func (r marketRow) successorAuction() int64 {
+	if !r.row.HasColumn("successor auction") {
+		return 5 * r.auctionDuration() // five times auction duration
+	}
+	return r.row.MustI64("successor auction")
+}
+
 func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {
 	if r.row.HasColumn("lp price range") {
 		return r.row.MustF64("lp price range"), true
@@ -685,57 +628,4 @@ func (r marketUpdateRow) tryQuadraticSlippageFactor() (float64, bool) {
 		return r.row.MustF64("quadratic slippage factor"), true
 	}
 	return -1, false
-}
-
-func (s successorRow) id() string {
-	return s.row.MustStr("id")
-}
-
-func (s successorRow) tryLinearSlippageFactor() (float64, bool) {
-	if s.row.HasColumn("linear slippage factor") {
-		return s.row.MustF64("linear slippage factor"), true
-	}
-	return 0, false
-}
-
-func (s successorRow) tryQuadraticSlippageFactor() (float64, bool) {
-	if s.row.HasColumn("quadratic slippage factor") {
-		return s.row.MustF64("quadratic slippage factor"), true
-	}
-	return 0, false
-}
-
-func (s successorRow) tryLpPriceRange() (float64, bool) {
-	if s.row.HasColumn("lp price range") {
-		return s.row.MustF64("lp price range"), true
-	}
-	return 0, false
-}
-
-func (s successorRow) positionDecimals() (int64, bool) {
-	if s.row.HasColumn("position decimal places") {
-		return s.row.MustI64("position decimal places"), true
-	}
-	return 0, false
-}
-
-func (s successorRow) decimals() (uint64, bool) {
-	if s.row.HasColumn("decimal places") {
-		return s.row.MustU64("decimal places"), true
-	}
-	return 0, false
-}
-
-func (s successorRow) priceMonitoring() (string, bool) {
-	if s.row.HasColumn("price monitoring") {
-		return s.row.MustStr("price monitoring"), true
-	}
-	return "", false
-}
-
-func (s successorRow) liquidityMonitoring() (string, bool) {
-	if s.row.HasColumn("liquidity monitoring") {
-		return s.row.MustStr("liquidity monitoring"), true
-	}
-	return "", false
 }

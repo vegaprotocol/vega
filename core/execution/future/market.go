@@ -522,7 +522,7 @@ func (m *Market) ReloadConf(
 }
 
 func (m *Market) Reject(ctx context.Context) error {
-	if m.mkt.State != types.MarketStateProposed {
+	if !m.canReject() {
 		return common.ErrCannotRejectMarketNotInProposedState
 	}
 
@@ -533,6 +533,17 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
+}
+
+func (m *Market) canReject() bool {
+	if m.mkt.State == types.MarketStateProposed {
+		return true
+	}
+	if len(m.mkt.ParentMarketID) == 0 {
+		return false
+	}
+	// parent market is set, market can be in pending state when it is rejected.
+	return m.mkt.State == types.MarketStatePending
 }
 
 func (m *Market) onTxProcessed() {
