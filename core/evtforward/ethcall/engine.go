@@ -48,15 +48,18 @@ type Engine struct {
 	mu                    sync.Mutex
 }
 
-func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) (*Engine, error) {
-	return &Engine{
+func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) *Engine {
+	e := &Engine{
 		log:         log,
 		cfg:         cfg,
 		client:      client,
 		forwarder:   forwarder,
 		dataSources: make(map[string]DataSource),
 		poller:      newPoller(cfg.PollEvery.Get()),
-	}, nil
+	}
+
+	go e.Start()
+	return e
 }
 
 // Start starts the polling of the Ethereum bridges, listens to the events
