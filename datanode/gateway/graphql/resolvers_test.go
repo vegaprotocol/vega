@@ -31,6 +31,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
+	vega "code.vegaprotocol.io/vega/protos/vega"
 	datav1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
@@ -86,17 +87,19 @@ func getTestMarket(termInt bool) *protoTypes.Market {
 	pk := types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)
 	term := &protoTypes.DataSourceSpec{
 		Data: protoTypes.NewDataSourceDefinition(
-			protoTypes.DataSourceDefinitionTypeExt,
+			protoTypes.DataSourceContentTypeOracle,
 		).SetOracleConfig(
-			&protoTypes.DataSourceSpecConfiguration{
-				Signers: []*datav1.Signer{pk.IntoProto()},
-				Filters: []*datav1.Filter{
-					{
-						Key: &datav1.PropertyKey{
-							Name: "trading.terminated",
-							Type: datav1.PropertyKey_TYPE_BOOLEAN,
+			&vega.DataSourceDefinitionExternal_Oracle{
+				Oracle: &protoTypes.DataSourceSpecConfiguration{
+					Signers: []*datav1.Signer{pk.IntoProto()},
+					Filters: []*datav1.Filter{
+						{
+							Key: &datav1.PropertyKey{
+								Name: "trading.terminated",
+								Type: datav1.PropertyKey_TYPE_BOOLEAN,
+							},
+							Conditions: []*datav1.Condition{},
 						},
-						Conditions: []*datav1.Condition{},
 					},
 				},
 			},
@@ -106,7 +109,7 @@ func getTestMarket(termInt bool) *protoTypes.Market {
 	if termInt {
 		term = &protoTypes.DataSourceSpec{
 			Data: protoTypes.NewDataSourceDefinition(
-				protoTypes.DataSourceDefinitionTypeInt,
+				protoTypes.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datav1.Condition{
 					{
@@ -136,17 +139,19 @@ func getTestMarket(termInt bool) *protoTypes.Market {
 						SettlementAsset: "Ethereum/Ether",
 						DataSourceSpecForSettlementData: &protoTypes.DataSourceSpec{
 							Data: protoTypes.NewDataSourceDefinition(
-								protoTypes.DataSourceDefinitionTypeExt,
+								protoTypes.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&protoTypes.DataSourceSpecConfiguration{
-									Signers: []*datav1.Signer{pk.IntoProto()},
-									Filters: []*datav1.Filter{
-										{
-											Key: &datav1.PropertyKey{
-												Name: "prices.ETH.value",
-												Type: datav1.PropertyKey_TYPE_INTEGER,
+								&vega.DataSourceDefinitionExternal_Oracle{
+									Oracle: &protoTypes.DataSourceSpecConfiguration{
+										Signers: []*datav1.Signer{pk.IntoProto()},
+										Filters: []*datav1.Filter{
+											{
+												Key: &datav1.PropertyKey{
+													Name: "prices.ETH.value",
+													Type: datav1.PropertyKey_TYPE_INTEGER,
+												},
+												Conditions: []*datav1.Condition{},
 											},
-											Conditions: []*datav1.Condition{},
 										},
 									},
 								},

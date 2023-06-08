@@ -19,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -199,7 +198,7 @@ func getMarketConfig() *types.Market {
 						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID: "1",
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: pubKeys,
@@ -218,7 +217,7 @@ func getMarketConfig() *types.Market {
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID: "2",
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: pubKeys,

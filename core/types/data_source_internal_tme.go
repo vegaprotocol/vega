@@ -37,14 +37,13 @@ func (s DataSourceSpecConfigurationTime) DeepClone() dataSourceType {
 }
 
 func DataSourceSpecConfigurationTimeFromProto(protoConfig *vegapb.DataSourceSpecConfigurationTime) DataSourceSpecConfigurationTime {
-	dst := DataSourceSpecConfigurationTime{
-		Conditions: []*DataSourceSpecCondition{},
-	}
-	if protoConfig != nil {
-		dst.Conditions = DataSourceSpecConditionsFromProto(protoConfig.Conditions)
+	if protoConfig == nil {
+		return DataSourceSpecConfigurationTime{}
 	}
 
-	return dst
+	return DataSourceSpecConfigurationTime{
+		Conditions: DataSourceSpecConditionsFromProto(protoConfig.Conditions),
+	}
 }
 
 func (s DataSourceSpecConfigurationTime) ToDataSourceDefinitionProto() (*vegapb.DataSourceDefinition, error) {

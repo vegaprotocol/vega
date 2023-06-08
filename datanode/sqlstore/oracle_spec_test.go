@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
 
+	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -168,20 +169,22 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						vegapb.DataSourceContentTypeOracle,
 					).SetOracleConfig(
-						&vegapb.DataSourceSpecConfiguration{
-							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-							Filters: []*datapb.Filter{
-								{
-									Key: &datapb.PropertyKey{
-										Name: "Ticker",
-										Type: datapb.PropertyKey_TYPE_STRING,
-									},
-									Conditions: []*datapb.Condition{
-										{
-											Operator: datapb.Condition_OPERATOR_EQUALS,
-											Value:    "USDETH",
+						&vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Ticker",
+											Type: datapb.PropertyKey_TYPE_STRING,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "USDETH",
+											},
 										},
 									},
 								},
@@ -199,20 +202,22 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						vegapb.DataSourceContentTypeOracle,
 					).SetOracleConfig(
-						&vegapb.DataSourceSpecConfiguration{
-							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-							Filters: []*datapb.Filter{
-								{
-									Key: &datapb.PropertyKey{
-										Name: "Ticker",
-										Type: datapb.PropertyKey_TYPE_STRING,
-									},
-									Conditions: []*datapb.Condition{
-										{
-											Operator: datapb.Condition_OPERATOR_EQUALS,
-											Value:    "USDBTC",
+						&vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Ticker",
+											Type: datapb.PropertyKey_TYPE_STRING,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "USDBTC",
+											},
 										},
 									},
 								},
@@ -230,20 +235,22 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						vegapb.DataSourceContentTypeOracle,
 					).SetOracleConfig(
-						&vegapb.DataSourceSpecConfiguration{
-							Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-							Filters: []*datapb.Filter{
-								{
-									Key: &datapb.PropertyKey{
-										Name: "Ticker",
-										Type: datapb.PropertyKey_TYPE_STRING,
-									},
-									Conditions: []*datapb.Condition{
-										{
-											Operator: datapb.Condition_OPERATOR_EQUALS,
-											Value:    "USDSOL",
+						&vega.DataSourceDefinitionExternal_Oracle{
+							Oracle: &vegapb.DataSourceSpecConfiguration{
+								Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
+								Filters: []*datapb.Filter{
+									{
+										Key: &datapb.PropertyKey{
+											Name: "Ticker",
+											Type: datapb.PropertyKey_TYPE_STRING,
+										},
+										Conditions: []*datapb.Condition{
+											{
+												Operator: datapb.Condition_OPERATOR_EQUALS,
+												Value:    "USDSOL",
+											},
 										},
 									},
 								},
@@ -261,7 +268,7 @@ func getTestSpecs() []*vegapb.OracleSpec {
 					CreatedAt: time.Now().UnixNano(),
 					UpdatedAt: time.Now().UnixNano(),
 					Data: vegapb.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeInt,
+						vegapb.DataSourceContentTypeInternalTimeTermination,
 					).SetTimeTriggerConditionConfig(
 						[]*datapb.Condition{
 							{

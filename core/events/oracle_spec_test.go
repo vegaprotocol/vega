@@ -98,9 +98,11 @@ func TestOracleSpecDeepClone(t *testing.T) {
 	}
 
 	os.ExternalDataSourceSpec.Spec.Data.SetOracleConfig(
-		&vegapb.DataSourceSpecConfiguration{
-			Signers: signers,
-			Filters: filters,
+		&vegapb.DataSourceDefinitionExternal_Oracle{
+			Oracle: &vegapb.DataSourceSpecConfiguration{
+				Signers: signers,
+				Filters: filters,
+			},
 		},
 	)
 

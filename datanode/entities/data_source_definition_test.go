@@ -37,22 +37,24 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 	t.Run("non-empty external data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(
+							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -81,7 +83,7 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 	t.Run("non-empty internal data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{
@@ -123,22 +125,24 @@ func TestDataSourceDefinitionGetInternalTimeTrigger(t *testing.T) {
 	t.Run("non-empty external data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(
+							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -157,7 +161,7 @@ func TestDataSourceDefinitionGetInternalTimeTrigger(t *testing.T) {
 	t.Run("non-empry internal data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{
@@ -202,22 +206,24 @@ func TestDataSourceDefinitionGetSigners(t *testing.T) {
 	t.Run("non-empty external data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(
+							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -238,7 +244,7 @@ func TestDataSourceDefinitionGetSigners(t *testing.T) {
 	t.Run("non-empry internal data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{
@@ -279,22 +285,24 @@ func TestDataSourceDefinitionGetFilters(t *testing.T) {
 	t.Run("non-empty external data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(
+							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -318,7 +326,7 @@ func TestDataSourceDefinitionGetFilters(t *testing.T) {
 	t.Run("non-empry internal data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{
@@ -358,22 +366,24 @@ func TestDataSourceDefinitionGetConditions(t *testing.T) {
 	t.Run("non-empty external data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(
+							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -392,7 +402,7 @@ func TestDataSourceDefinitionGetConditions(t *testing.T) {
 	t.Run("non-empry internal data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{
@@ -435,22 +445,24 @@ func TestDataSourceDefinitionFromProto(t *testing.T) {
 	t.Run("non-empty external data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				vegapb.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&vegapb.DataSourceSpecConfiguration{
-					Signers: types.SignersIntoProto(
-						[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
-					),
-					Filters: []*datapb.Filter{
-						{
-							Key: &datapb.PropertyKey{
-								Name: "trading.terminated",
-								Type: datapb.PropertyKey_TYPE_BOOLEAN,
-							},
-							Conditions: []*datapb.Condition{
-								{
-									Operator: datapb.Condition_OPERATOR_EQUALS,
-									Value:    "12",
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &vegapb.DataSourceSpecConfiguration{
+						Signers: types.SignersIntoProto(
+							[]*types.Signer{types.CreateSignerFromString("0xTESTSIGN", types.DataSignerTypePubKey)},
+						),
+						Filters: []*datapb.Filter{
+							{
+								Key: &datapb.PropertyKey{
+									Name: "trading.terminated",
+									Type: datapb.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datapb.Condition{
+									{
+										Operator: datapb.Condition_OPERATOR_EQUALS,
+										Value:    "12",
+									},
 								},
 							},
 						},
@@ -484,7 +496,7 @@ func TestDataSourceDefinitionFromProto(t *testing.T) {
 	t.Run("non-empry internal data source definition", func(t *testing.T) {
 		ds := &entities.DataSourceDefinition{
 			vega.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeInt,
+				vegapb.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*datapb.Condition{
 					{

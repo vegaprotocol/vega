@@ -337,11 +337,19 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 
 	switch pr := p.Product.(type) {
 	case *vegapb.UpdateInstrumentConfiguration_Future:
+		settl, _ := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
+		//if err != nil {
+		//
+		//}
+		term, _ := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
+		//if err != nil {
+		//
+		//}
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                           pr.Future.QuoteName,
-				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
-				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
+				DataSourceSpecForSettlementData:     *NewDataSourceDefinitionWith(settl),
+				DataSourceSpecForTradingTermination: *NewDataSourceDefinitionWith(term),
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
 			},
 		}
@@ -368,8 +376,8 @@ func (f UpdateFutureProduct) IntoProto() *vegapb.UpdateFutureProduct {
 func (f UpdateFutureProduct) DeepClone() *UpdateFutureProduct {
 	return &UpdateFutureProduct{
 		QuoteName:                           f.QuoteName,
-		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone(),
-		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone(),
+		DataSourceSpecForSettlementData:     f.DataSourceSpecForSettlementData.DeepClone().(DataSourceDefinition),
+		DataSourceSpecForTradingTermination: f.DataSourceSpecForTradingTermination.DeepClone().(DataSourceDefinition),
 		DataSourceSpecBinding:               f.DataSourceSpecBinding.DeepClone(),
 	}
 }
