@@ -86,7 +86,7 @@ func TestMarketSuccession(t *testing.T) {
 	// exec.collateral.EXPECT().SuccessorInsuranceFraction(ctx, child1.ID, child1.ParentMarketID, gomock.Any(), child1.InsurancePoolFraction).Times(1).Return(&types.LedgerMovement{})
 	// which in turn emits an event with ledger movements
 	// we get the parent market state to pass in the ELS and stuff:
-	exec.collateral.EXPECT().GetInsurancePoolBalance(child1.ParentMarketID, gomock.Any()).Times(1).Return(num.NewUint(100), true) // the balance doesn't matter for this test
+	exec.collateral.EXPECT().GetInsurancePoolBalance(child1.ParentMarketID, gomock.Any()).Times(2).Return(num.NewUint(100), true) // the balance doesn't matter for this test
 	exec.collateral.EXPECT().GetInsurancePoolBalance(child1.ID, gomock.Any()).Times(1).Return(num.NewUint(50), true)              // the balance doesn't matter for this test
 	exec.collateral.EXPECT().GetInsurancePoolBalance(child2.ID, gomock.Any()).Times(1).Return(num.NewUint(50), true)              // the balance doesn't matter for this test
 	// Any accounts associated with the now rejected successor market will be removed
