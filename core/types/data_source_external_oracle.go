@@ -38,7 +38,7 @@ func (s *DataSourceSpecConfiguration) IntoProto() *vegapb.DataSourceSpecConfigur
 	return dsc
 }
 
-func (s DataSourceSpecConfiguration) ToDataSourceDefinitionProto() *vegapb.DataSourceDefinition {
+func (s DataSourceSpecConfiguration) ToDataSourceDefinitionProto() (*vegapb.DataSourceDefinition, error) {
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_External{
 			External: &vegapb.DataSourceDefinitionExternal{
@@ -47,7 +47,7 @@ func (s DataSourceSpecConfiguration) ToDataSourceDefinitionProto() *vegapb.DataS
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 // String returns the content of DataSourceSpecConfiguration as a string.

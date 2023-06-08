@@ -31,8 +31,7 @@ func TestEngine(t *testing.T) {
 	forwarder := mocks.NewMockForwarder(ctrl)
 
 	log := logging.NewTestLogger()
-	e, err := ethcall.NewEngine(log, TEST_CONFIG, tc.client, forwarder)
-	require.NoError(t, err)
+	e := ethcall.NewEngine(log, TEST_CONFIG, tc.client, forwarder)
 
 	currentEthTime := tc.client.Blockchain().CurrentBlock().Time
 

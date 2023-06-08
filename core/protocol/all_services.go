@@ -108,6 +108,7 @@ type allServices struct {
 	notary                *notary.SnapshotNotary
 	eventForwarder        *evtforward.Forwarder
 	eventForwarderEngine  EventForwarderEngine
+	ethCallEngine         *ethcall.Engine
 	witness               *validators.Witness
 	banking               *banking.Engine
 	genesisHandler        *genesis.Handler
@@ -179,17 +180,6 @@ func newServices(
 	svcs.eventService = subscribers.NewService(svcs.log, svcs.broker, svcs.conf.Broker.EventBusClientBufferSize)
 	svcs.collateral = collateral.New(svcs.log, svcs.conf.Collateral, svcs.timeService, svcs.broker)
 
-	ethCallEngine, err := ethcall.NewEngine(svcs.log, ethcall.Config{}, nil, svcs.eventForwarder)
-	if err != nil {
-		svcs.log.Error("unable to initialise eth call engine", logging.Error(err))
-		return nil, err
-	}
-
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, ethCallEngine)
-
-	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
-	svcs.oracleAdaptors = oracleAdaptors.New()
-
 	svcs.limits = limits.New(svcs.log, svcs.conf.Limits, svcs.timeService, svcs.broker)
 
 	svcs.netParams = netparams.New(svcs.log, svcs.conf.NetworkParameters, svcs.broker)
@@ -208,9 +198,6 @@ func newServices(
 	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology, version.Get())
 	svcs.witness = validators.NewWitness(svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
-	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.oracle,
-		&oracles.EthCallSpecSourceAdapter{Engine: ethCallEngine}, svcs.ethClient, svcs.ethConfirmations)
-
 	// this is done to go around circular deps...
 	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)
 	svcs.eventForwarder = evtforward.New(svcs.log, svcs.conf.EvtForward, svcs.commander, svcs.timeService, svcs.topology)
@@ -221,7 +208,18 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
-	// this is done to go around circular deps again...
+	// todo: maybe inside haveethclient?
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
+	go svcs.ethCallEngine.Start()
+	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.oracle,
+		&oracles.EthCallSpecSourceAdapter{Engine: svcs.ethCallEngine}, svcs.ethClient, svcs.ethConfirmations)
+
+	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, svcs.ethCallEngine)
+
+	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
+	svcs.oracleAdaptors = oracleAdaptors.New()
+
+	// this is done to go around circular deps again..s
 	svcs.erc20MultiSigTopology.SetEthereumEventSource(svcs.eventForwarderEngine)
 
 	svcs.stakingAccounts, svcs.stakeVerifier, svcs.stakeCheckpoint = staking.New(
@@ -280,7 +278,8 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
-		svcs.eventForwarderEngine.Start()
+		// TODO - not convined the eef needs starting
+		svcs.ethCallEngine.Start()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
@@ -390,6 +389,7 @@ func (svcs *allServices) Stop() {
 	svcs.confWatcher.Unregister(svcs.confListenerIDs)
 	svcs.eventForwarderEngine.Stop()
 	svcs.snapshot.Close()
+	svcs.ethCallEngine.Stop()
 }
 
 func (svcs *allServices) registerConfigWatchers() {

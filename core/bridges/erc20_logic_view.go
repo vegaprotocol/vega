@@ -18,6 +18,7 @@ import (
 	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/libs/num"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -36,6 +37,7 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/core/bridges ETHClient
 type ETHClient interface {
 	bind.ContractBackend
+	ethereum.ChainReader
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
