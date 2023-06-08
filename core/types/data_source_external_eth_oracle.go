@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 type EthCallSpec struct {
@@ -59,45 +60,54 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 	}, nil
 }
 
-func (s EthCallSpec) IntoProto() *vegapb.EthCallSpec {
-	ecs := &vegapb.EthCallSpec{}
-	/*
-		if s != nil {
-			ecs.Address = s.Address
-			if s.AbiJson != "" {
-			}
-			ecs.Method = s.Method
+func (s EthCallSpec) IntoProto() (*vegapb.EthCallSpec, error) {
+	argsPBValue := []*structpb.Value{}
+	for _, arg := range s.ArgsJson {
+		v := structpb.Value{}
+		err := v.UnmarshalJSON([]byte(arg))
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal arg json '%s': %w", arg, err)
+		}
+		argsPBValue = append(argsPBValue, &v)
+	}
 
-			if s.ArgsJson != nil {
-			}
+	abiPBList := structpb.ListValue{}
+	err := abiPBList.UnmarshalJSON(s.AbiJson)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal abi json: %w", err)
+	}
 
-			if s.Trigger != nil {
-			}
-
-			ecs.RequiredConfirmations = s.RequiredConfirmations
-			if s.Filter != nil {
-			}
-
-			if s.Normaliser != nil {
-			}
-		}*/
-	return ecs
+	return &vegapb.EthCallSpec{
+		Address:               s.Address,
+		Abi:                   &abiPBList,
+		Method:                s.Method,
+		Args:                  argsPBValue,
+		Trigger:               s.Trigger.IntoEthCallTriggerProto(),
+		RequiredConfirmations: s.RequiredConfirmations,
+		Filters:               s.Filters.IntoProto(),
+	}, nil
 }
 
-func (s EthCallSpec) ToDataSourceDefinitionProto() *vegapb.DataSourceDefinition {
+func (s EthCallSpec) ToDataSourceDefinitionProto() (*vegapb.DataSourceDefinition, error) {
+	eth, err := s.IntoProto()
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert to eth oracle proto: %w", err)
+	}
+
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_External{
 			External: &vegapb.DataSourceDefinitionExternal{
 				SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
-					EthOracle: s.IntoProto(),
+					EthOracle: eth,
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (s EthCallSpec) String() string {
-	return "todo"
+	return fmt.Sprintf("ethcallspec(%v, %v, %v, %v, %v, %v, %v)",
+		s.Address, s.AbiJson, s.Method, s.ArgsJson, s.Trigger, s.RequiredConfirmations, s.Filters)
 }
 
 func (s EthCallSpec) DeepClone() dataSourceType {

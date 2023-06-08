@@ -22,7 +22,7 @@ var (
 type dataSourceType interface {
 	String() string
 	DeepClone() dataSourceType
-	ToDataSourceDefinitionProto() *vegapb.DataSourceDefinition
+	ToDataSourceDefinitionProto() (*vegapb.DataSourceDefinition, error)
 }
 
 type DataSourceDefinition struct {
@@ -65,7 +65,13 @@ func (s *DataSourceDefinition) IntoProto() *vegapb.DataSourceDefinition {
 	if s.dataSourceType == nil {
 		return &vegapb.DataSourceDefinition{}
 	}
-	return s.ToDataSourceDefinitionProto()
+	proto, err := s.ToDataSourceDefinitionProto()
+	if err != nil {
+		// TODO: bubble error
+		return &vegapb.DataSourceDefinition{}
+	}
+
+	return proto
 }
 
 // DeepClone returns a clone of the DataSourceDefinition object.

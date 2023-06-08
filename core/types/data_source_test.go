@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
@@ -86,8 +85,7 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
 						Value:    "9",
 					},
-				},
-			})
+				}})
 
 			protoDs := ds.IntoProto()
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
@@ -353,7 +351,7 @@ func TestUpdateFilters(t *testing.T) {
 				SourceType: &vegapb.DataSourceDefinition_Internal{
 					Internal: &vegapb.DataSourceDefinitionInternal{
 						SourceType: &vegapb.DataSourceDefinitionInternal_Time{
-							Time: &vega.DataSourceSpecConfigurationTime{},
+							Time: &vegapb.DataSourceSpecConfigurationTime{},
 						},
 					},
 				},
@@ -402,7 +400,7 @@ func TestUpdateFilters(t *testing.T) {
 				SourceType: &vegapb.DataSourceDefinition_Internal{
 					Internal: &vegapb.DataSourceDefinitionInternal{
 						SourceType: &vegapb.DataSourceDefinitionInternal_Time{
-							Time: &vega.DataSourceSpecConfigurationTime{
+							Time: &vegapb.DataSourceSpecConfigurationTime{
 								Conditions: []*datapb.Condition{},
 							},
 						},
@@ -674,8 +672,7 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
 						Value:    "int-test-value-2",
 					},
-				},
-			})
+				}})
 
 		iudsd := dsd.SetTimeTriggerConditionConfig(
 			[]*types.DataSourceSpecCondition{
