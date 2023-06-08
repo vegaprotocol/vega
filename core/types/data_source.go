@@ -11,6 +11,8 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
+// Some stuff to be tested with this message
+
 var (
 	// ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList is returned when filters with same key names exists inside a single list.
 	ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList = errors.New("multiple keys with same name found in filter list")
