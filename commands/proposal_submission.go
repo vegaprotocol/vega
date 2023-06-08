@@ -535,6 +535,17 @@ func checkNewMarketChanges(change *protoTypes.ProposalTerms_NewMarket) Errors {
 			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.quadratic_slippage_factor", ErrMustBeAtMost1M)
 		}
 	}
+	if successor := changes.Successor; successor != nil {
+		if len(successor.InsurancePoolFraction) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrIsRequired)
+		} else {
+			if ipf, err := num.DecimalFromString(successor.InsurancePoolFraction); err != nil {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrIsNotValidNumber)
+			} else if ipf.IsNegative() || ipf.GreaterThan(num.DecimalFromInt64(1)) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.successor.insurance_pool_fraction", ErrMustBeWithinRange01)
+			}
+		}
+	}
 
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
 	errs.Merge(checkLiquidityMonitoring(changes.LiquidityMonitoringParameters, "proposal_submission.terms.change.new_market.changes"))
