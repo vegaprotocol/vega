@@ -110,7 +110,7 @@ message PeggedOrder {
 
 // Details of an iceberg order
 message IcebergOrder {
-  // Size of the order that will be made visible if the iceberg order is refreshed at the end of a transaction.
+  // Size of the order that will be made visible if the iceberg order is refreshed after a trade has occurred.
   uint64 initial_peak_size = 1;
   // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
   uint64 minimum_peak_size = 2;
