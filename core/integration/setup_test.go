@@ -227,7 +227,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
 		netparams.WatchParam{
-			Param:   netparams.SuccessorLaunchWindow,
+			Param:   netparams.MarketSuccessorLaunchWindow,
 			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)

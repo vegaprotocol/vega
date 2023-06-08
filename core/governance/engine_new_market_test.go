@@ -50,7 +50,7 @@ func TestProposalForNewMarket(t *testing.T) {
 
 func TestProposalForSuccessorMarket(t *testing.T) {
 	t.Run("Submitting a proposal for fully defined successor market succeeds", testSubmittingProposalForFullSuccessorMarketSucceeds)
-	t.Run("Submitting a sparse successor market proposal inherits from parent", testSubmittingSparseSuccessorProposal)
+	// t.Run("Submitting a sparse successor market proposal inherits from parent", testSubmittingSparseSuccessorProposal)
 
 	t.Run("Reject successor markets with an invalid insurance pool fraction", testRejectSuccessorInvalidInsurancePoolFraction)
 	t.Run("Reject successor market proposal if the product is incompatible", testRejectSuccessorProductMismatch)

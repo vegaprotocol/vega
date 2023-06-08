@@ -937,6 +937,40 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	timer.EngineTimeCounterAdd()
 }
 
+func (e *Engine) findReadySuccessor(ctx context.Context, parent string, successors []string) ([]string, bool) {
+	cps, pok := e.marketCPStates[parent]
+	rm := make([]string, 0, len(successors))
+	for i, id := range successors {
+		mkt, ok := e.markets[id]
+		if !ok {
+			rm = append(rm, id)
+			continue
+		}
+		if !pok {
+			// successor time window has expired
+			mkt.ResetParentIDAndInsurancePoolFraction()
+			rm = append(rm, id)
+			continue
+		}
+		// successor market leaving opening auction
+		if mdef := mkt.Mkt(); mdef.State != types.MarketStatePending && mdef.State != types.MarketStateProposed {
+			// transfer insurance pool balance if needed
+			if !mdef.InsurancePoolFraction.IsZero() {
+				lm := e.collateral.SuccessorInsuranceFraction(ctx, id, parent, mkt.GetSettlementAsset(), mdef.InsurancePoolFraction)
+				if lm != nil {
+					e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
+				}
+			}
+			mkt.InheritParent(ctx, cps)
+			// parent state has done its job
+			delete(e.marketCPStates, parent)
+			// successor market inherited parent state, reject all others
+			return append(successors[:i], successors[i+1:]...), true
+		}
+	}
+	return rm, false
+}
+
 func (e *Engine) BlockEnd(ctx context.Context) {
 	for _, mkt := range e.marketsCpy {
 		mkt.BlockEnd(ctx)
