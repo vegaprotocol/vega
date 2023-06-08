@@ -28,10 +28,7 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 		return EthCallSpec{}, fmt.Errorf("error unmarshalling trigger: %w", err)
 	}
 
-	filters, err := DataSourceSpecFiltersFromProto(proto.Filters)
-	if err != nil {
-		return EthCallSpec{}, fmt.Errorf("error unmarshalling filters: %w", err)
-	}
+	filters := DataSourceSpecFiltersFromProto(proto.Filters)
 
 	abiBytes, err := proto.Abi.MarshalJSON()
 	if err != nil {

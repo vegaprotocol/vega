@@ -85,18 +85,13 @@ func (s DataSourceSpecConfiguration) DeepClone() dataSourceType {
 
 // DataSourceSpecConfigurationFromProto tries to build the DataSourceSpecConfiguration object
 // from the given proto object.
-func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) (DataSourceSpecConfiguration, error) {
+func DataSourceSpecConfigurationFromProto(protoConfig *vegapb.DataSourceSpecConfiguration) DataSourceSpecConfiguration {
 	if protoConfig == nil {
-		return DataSourceSpecConfiguration{}, nil
-	}
-
-	filters, err := DataSourceSpecFiltersFromProto(protoConfig.Filters)
-	if err != nil {
-		return DataSourceSpecConfiguration{}, fmt.Errorf("unable to unmarshal filters: %w", err)
+		return DataSourceSpecConfiguration{}
 	}
 
 	return DataSourceSpecConfiguration{
-		Filters: filters,
+		Filters: DataSourceSpecFiltersFromProto(protoConfig.Filters),
 		Signers: SignersFromProto(protoConfig.Signers),
-	}, nil
+	}
 }

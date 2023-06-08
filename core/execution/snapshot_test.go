@@ -35,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/stretchr/testify/require"
@@ -463,7 +462,7 @@ func newMarket(ID string, pubKey *types.SignerPubKey) *types.Market {
 						DataSourceSpecForSettlementData: &types.DataSourceSpec{
 							ID: hex.EncodeToString(crypto.Hash([]byte(ID + "price"))),
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},
@@ -482,7 +481,7 @@ func newMarket(ID string, pubKey *types.SignerPubKey) *types.Market {
 						DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 							ID: hex.EncodeToString(crypto.Hash([]byte(ID + "tt"))),
 							Data: types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: []*types.Signer{types.CreateSignerFromString(pubKey.PubKey.Key, types.DataSignerTypePubKey)},

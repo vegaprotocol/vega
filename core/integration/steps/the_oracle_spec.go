@@ -87,11 +87,13 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		&protoTypes.DataSourceSpec{
 			Id: vgrand.RandomStr(10),
 			Data: protoTypes.NewDataSourceDefinition(
-				protoTypes.DataSourceDefinitionTypeExt,
+				protoTypes.DataSourceContentTypeOracle,
 			).SetOracleConfig(
-				&protoTypes.DataSourceSpecConfiguration{
-					Signers: pubKeysSigners,
-					Filters: filters,
+				&protoTypes.DataSourceDefinitionExternal_Oracle{
+					Oracle: &protoTypes.DataSourceSpecConfiguration{
+						Signers: pubKeysSigners,
+						Filters: filters,
+					},
 				},
 			),
 		},

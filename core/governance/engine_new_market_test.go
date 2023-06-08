@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -34,6 +33,8 @@ func TestProposalForNewMarket(t *testing.T) {
 	t.Run("Submitting a proposal with internal time termination for new market succeeds", testSubmittingProposalWithInternalTimeTerminationForNewMarketSucceeds)
 	t.Run("Submitting a proposal with internal time termination with `less than equal` condition fails", testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualConditionForNewMarketFails)
 	t.Run("Submitting a proposal with internal time settling for new market fails", testSubmittingProposalWithInternalTimeSettlingForNewMarketFails)
+	t.Run("Submitting a proposal with empty settling data for marker market fails", testSubmittingProposalWithEmptySettlingDataForNewMarketFails)
+	t.Run("Submitting a proposal with empty termination data for marker market fails", testSubmittingProposalWithEmptyTerminationDataForNewMarketFails)
 	t.Run("Submitting a proposal with external source using internal time termination key for new market succeeds", testSubmittingProposalWithExternalWithInternalTimeTerminationKeyForNewMarketSucceeds)
 	t.Run("Submitting a duplicated proposal for new market fails", testSubmittingDuplicatedProposalForNewMarketFails)
 	t.Run("Submitting a duplicated proposal with internal time termination for new market fails", testSubmittingDuplicatedProposalWithInternalTimeTerminationForNewMarketFails)
@@ -377,7 +378,7 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 									SettlementAsset: "VUSD",
 									QuoteName:       "VUSD",
 									DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-										vegapb.DataSourceDefinitionTypeInt,
+										types.DataSourceContentTypeOracle,
 									).SetTimeTriggerConditionConfig(
 										[]*types.DataSourceSpecCondition{
 											{
@@ -387,7 +388,7 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 										},
 									),
 									DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
-										vegapb.DataSourceDefinitionTypeInt,
+										types.DataSourceContentTypeOracle,
 									).SetTimeTriggerConditionConfig(
 										[]*types.DataSourceSpecCondition{
 											{
@@ -436,6 +437,161 @@ func testSubmittingProposalWithInternalTimeSettlingForNewMarketFails(t *testing.
 	require.Nil(t, toSubmit)
 }
 
+func testSubmittingProposalWithEmptySettlingDataForNewMarketFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	now := eng.tsvc.GetTimeNow()
+	id := eng.newProposalID()
+	tm := time.Now().Add(time.Hour * 24 * 365)
+	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
+
+	proposal := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     party.Id,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsNewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						Instrument: &types.InstrumentConfiguration{
+							Name: "June 2020 GBP vs VUSD future",
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.InstrumentConfigurationFuture{
+								Future: &types.FutureProduct{
+									SettlementAsset:                     "VUSD",
+									QuoteName:                           "VUSD",
+									DataSourceSpecForSettlementData:     types.DataSourceDefinition{},
+									DataSourceSpecForTradingTermination: types.DataSourceDefinition{},
+									DataSourceSpecBinding:               termBinding,
+								},
+							},
+						},
+						RiskParameters: &types.NewMarketConfigurationLogNormal{
+							LogNormal: &types.LogNormalRiskModel{
+								RiskAversionParameter: num.DecimalFromFloat(0.01),
+								Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+								Params: &types.LogNormalModelParams{
+									Mu:    num.DecimalZero(),
+									R:     num.DecimalFromFloat(0.016),
+									Sigma: num.DecimalFromFloat(0.09),
+								},
+							},
+						},
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces:           0,
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrMissingDataSourceSpecForSettlementData)
+	require.Nil(t, toSubmit)
+}
+
+func testSubmittingProposalWithEmptyTerminationDataForNewMarketFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	now := eng.tsvc.GetTimeNow()
+	id := eng.newProposalID()
+	tm := time.Now().Add(time.Hour * 24 * 365)
+	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
+
+	proposal := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     party.Id,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTermsNewMarket{
+				NewMarket: &types.NewMarket{
+					Changes: &types.NewMarketConfiguration{
+						Instrument: &types.InstrumentConfiguration{
+							Name: "June 2020 GBP vs VUSD future",
+							Code: "CRYPTO:GBPVUSD/JUN20",
+							Product: &types.InstrumentConfigurationFuture{
+								Future: &types.FutureProduct{
+									SettlementAsset: "VUSD",
+									QuoteName:       "VUSD",
+									DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
+										types.DataSourceContentTypeOracle,
+									).SetTimeTriggerConditionConfig(
+										[]*types.DataSourceSpecCondition{
+											{
+												Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+												Value:    "0",
+											},
+										},
+									),
+									DataSourceSpecForTradingTermination: types.DataSourceDefinition{},
+									DataSourceSpecBinding:               termBinding,
+								},
+							},
+						},
+						RiskParameters: &types.NewMarketConfigurationLogNormal{
+							LogNormal: &types.LogNormalRiskModel{
+								RiskAversionParameter: num.DecimalFromFloat(0.01),
+								Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+								Params: &types.LogNormalModelParams{
+									Mu:    num.DecimalZero(),
+									R:     num.DecimalFromFloat(0.016),
+									Sigma: num.DecimalFromFloat(0.09),
+								},
+							},
+						},
+						Metadata:                []string{"asset_class:fx/crypto", "product:futures"},
+						DecimalPlaces:           0,
+						LpPriceRange:            num.DecimalFromFloat(0.95),
+						LinearSlippageFactor:    num.DecimalFromFloat(0.1),
+						QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+					},
+				},
+			},
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+
+	// setup
+	eng.ensureAllAssetEnabled(t)
+	eng.expectRejectedProposalEvent(t, party.Id, proposal.ID, types.ProposalErrorInvalidFutureProduct)
+
+	// when
+	toSubmit, err := eng.submitProposal(t, proposal)
+
+	// then
+	assert.Error(t, err, governance.ErrMissingDataSourceSpecForTradingTermination)
+	require.Nil(t, toSubmit)
+}
+
 func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualConditionForNewMarketFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -448,7 +604,7 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 	_, termBinding := produceTimeTriggeredDataSourceSpec(tm)
 
 	settl := types.NewDataSourceDefinition(
-		vegapb.DataSourceDefinitionTypeExt,
+		types.DataSourceContentTypeOracle,
 	).SetOracleConfig(
 		&types.DataSourceSpecConfiguration{
 			Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
@@ -470,7 +626,7 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 	)
 
 	term := types.NewDataSourceDefinition(
-		vegapb.DataSourceDefinitionTypeInt,
+		types.DataSourceContentTypeOracle,
 	).SetTimeTriggerConditionConfig(
 		[]*types.DataSourceSpecCondition{
 			{
@@ -543,7 +699,7 @@ func testSubmittingProposalWithInternalTimeTerminationWithLessThanEqualCondition
 	require.Nil(t, toSubmit)
 
 	term = types.NewDataSourceDefinition(
-		vegapb.DataSourceDefinitionTypeInt,
+		types.DataSourceContentTypeOracle,
 	).SetTimeTriggerConditionConfig(
 		[]*types.DataSourceSpecCondition{
 			{
