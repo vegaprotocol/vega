@@ -212,7 +212,7 @@ func newServices(
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
 	go svcs.ethCallEngine.Start()
 	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.oracle,
-		&oracles.EthCallSpecSourceAdapter{Engine: svcs.ethCallEngine}, svcs.ethClient, svcs.ethConfirmations)
+		svcs.ethCallEngine, svcs.ethClient, svcs.ethConfirmations)
 
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, svcs.ethCallEngine)
 
