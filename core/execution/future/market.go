@@ -2731,15 +2731,14 @@ func (m *Market) amendOrder(
 		return nil, nil, common.ErrMarginCheckFailed
 	}
 
-	icebergSizeChange := false
-	if amendedOrder.IcebergOrder != nil {
+	icebergSizeIncrease := false
+	if amendedOrder.IcebergOrder != nil && sizeIncrease {
 		// iceberg orders size changes can always be done in-place because they either:
 		// 1) decrease the size, which is already done in-place for all orders
 		// 2) increase the size, which only increases the reserved remaining and not the "active" remaining of the iceberg
-		// so set a flag to indicate this special case
+		// so we set an icebergSizeIncrease to skip the cancel-replace flow.
 		sizeIncrease = false
-		sizeDecrease = false
-		icebergSizeChange = true
+		icebergSizeIncrease = true
 	}
 
 	// if increase in size or change in price
@@ -2750,7 +2749,7 @@ func (m *Market) amendOrder(
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
-	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeChange {
+	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeIncrease {
 		ret := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if sizeDecrease {
 			// ensure we release excess if party reduced the size of their order
