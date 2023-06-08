@@ -47,7 +47,7 @@ func DataSourceSpecConfigurationTimeFromProto(protoConfig *vegapb.DataSourceSpec
 	return dst
 }
 
-func (s DataSourceSpecConfigurationTime) ToDataSourceDefinitionProto() *vegapb.DataSourceDefinition {
+func (s DataSourceSpecConfigurationTime) ToDataSourceDefinitionProto() (*vegapb.DataSourceDefinition, error) {
 	return &vegapb.DataSourceDefinition{
 		SourceType: &vegapb.DataSourceDefinition_Internal{
 			Internal: &vegapb.DataSourceDefinitionInternal{
@@ -56,5 +56,5 @@ func (s DataSourceSpecConfigurationTime) ToDataSourceDefinitionProto() *vegapb.D
 				},
 			},
 		},
-	}
+	}, nil
 }
