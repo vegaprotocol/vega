@@ -59,7 +59,7 @@ func (c Call) Args() ([]any, error) {
 	return args, nil
 }
 
-func (c Call) Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) (Result, error) {
+func (c Call) Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) ([]byte, error) {
 	// TODO: timeout?
 	msg := ethereum.CallMsg{
 		To:   &c.address,
@@ -68,13 +68,10 @@ func (c Call) Call(ctx context.Context, caller ethereum.ContractCaller, blockNum
 
 	output, err := caller.CallContract(ctx, msg, blockNumber)
 	if err != nil {
-		return Result{}, fmt.Errorf("failed to call contract: %w", err)
+		return nil, fmt.Errorf("failed to call contract: %w", err)
 	}
 
-	return Result{
-		Call:  &c,
-		Bytes: output,
-	}, nil
+	return output, nil
 }
 
 func (c Call) UnpackResult(bytes []byte) ([]any, error) {

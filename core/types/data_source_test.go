@@ -85,7 +85,8 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
 						Value:    "9",
 					},
-				}})
+				},
+			})
 
 			protoDs := ds.IntoProto()
 			assert.IsType(t, &vegapb.DataSourceDefinition{}, protoDs)
@@ -672,7 +673,8 @@ func TestSetTimeTriggerConditionConfig(t *testing.T) {
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN,
 						Value:    "int-test-value-2",
 					},
-				}})
+				},
+			})
 
 		iudsd := dsd.SetTimeTriggerConditionConfig(
 			[]*types.DataSourceSpecCondition{
