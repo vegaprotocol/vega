@@ -69,6 +69,7 @@ type Markets interface {
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	SpotsMarketsEnabled() bool
+	IsSucceeded(mktID string) bool
 }
 
 // StakingAccounts ...
@@ -596,6 +597,11 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			if !ok {
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
+			}
+			// proposal to succeed a market that was already succeeded
+			if e.markets.IsSucceeded(suc.ParentID) {
+				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
+				return nil, fmt.Errorf("%w, %v", ErrParentMarketAlreadySucceeded, types.ProposalErrorInvalidSuccessorMarket)
 			}
 			parent = &pm
 		}

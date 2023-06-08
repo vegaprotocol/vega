@@ -34,6 +34,7 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
 
 	RewardAsset = "reward.asset"
 
@@ -163,7 +164,6 @@ const (
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
-	SuccessorLaunchWindow              = "network.liquidity.successorLaunchWindowLength"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -323,5 +323,5 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                        {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
 	SpamProtectionMinMultisigUpdates:                         {},
-	SuccessorLaunchWindow:                                    {},
+	MarketSuccessorLaunchWindow:                              {},
 }
