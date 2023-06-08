@@ -20,9 +20,9 @@ func TestContractCall(t *testing.T) {
 
 	res, err := call.Call(ctx, tc.client, nil)
 	require.NoError(t, err)
-	assert.NotEmpty(t, res.Bytes)
+	assert.NotEmpty(t, res)
 
-	values, err := res.Values()
+	values, err := call.UnpackResult(res)
 	require.NoError(t, err)
 	assert.Equal(t, []any{big.NewInt(42)}, values)
 }
