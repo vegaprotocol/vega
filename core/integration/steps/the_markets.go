@@ -15,6 +15,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cucumber/godog"
 
@@ -64,6 +65,7 @@ func TheMarkets(
 	executionEngine Execution,
 	collateralEngine *collateral.Engine,
 	netparams *netparams.Store,
+	now time.Time,
 	table *godog.Table,
 ) ([]types.Market, error) {
 	rows := parseMarketsTable(table)
@@ -82,16 +84,16 @@ func TheMarkets(
 		return nil, err
 	}
 
-	if err := submitMarkets(markets, executionEngine); err != nil {
+	if err := submitMarkets(markets, executionEngine, now); err != nil {
 		return nil, err
 	}
 
 	return markets, nil
 }
 
-func submitMarkets(markets []types.Market, executionEngine Execution) error {
+func submitMarkets(markets []types.Market, executionEngine Execution, now time.Time) error {
 	for i := range markets {
-		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID"); err != nil {
+		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
 			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
 		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {

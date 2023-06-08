@@ -1484,8 +1484,9 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 
 	if toSubmit.IsNewMarket() {
 		nm := toSubmit.NewMarket()
+		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
 
-		if err := app.exec.SubmitMarket(ctx, nm.Market(), party); err != nil {
+		if err := app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))

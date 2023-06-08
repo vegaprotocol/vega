@@ -524,7 +524,7 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 		// FIXME(): normally we should use the closetime
 		// but this would not play well with the MarketAuctionState stuff
 		// for now we start the auction as of now.
-		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewMarket()
 		auctionDuration := enactTime.Sub(closeTime)

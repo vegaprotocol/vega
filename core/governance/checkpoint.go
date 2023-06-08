@@ -29,6 +29,7 @@ import (
 type enactmentTime struct {
 	current         int64
 	shouldNotVerify bool
+	cpLoad          bool
 }
 
 func (e *Engine) Name() types.CheckpointName {
@@ -77,7 +78,9 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 		switch prop.Terms.Change.GetTermType() {
 		case types.ProposalTermsTypeNewMarket:
-			enct := &enactmentTime{}
+			enct := &enactmentTime{
+				cpLoad: true,
+			}
 			// if the proposal is for a new market we want to restore it such that it will be in opening auction
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()

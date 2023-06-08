@@ -411,7 +411,7 @@ func validateNewMarketChange(
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); !etu.cpLoad && err != nil {
 		return perr, err
 	}
 	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {

@@ -61,7 +61,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 		},
 	}
 	mkt := newMarket("MarketID", pubKey)
-	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
 	state, _, _ := exec.engine.GetState("")
@@ -136,7 +136,7 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 		},
 	}
 	mkt := newMarket("MarketID", pubKey)
-	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
 	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
@@ -264,7 +264,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	now := time.Now()
 	exec := getEngine(t, now)
 	mkt := newMarket("MarketID", pubKeys[0].Signer.(*types.SignerPubKey))
-	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
 	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
@@ -331,7 +331,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
 		mkt := newMarket(marketIDs[i], pubKeys[i].Signer.(*types.SignerPubKey))
-		err := exec.engine.SubmitMarket(ctx, mkt, "")
+		err := exec.engine.SubmitMarket(ctx, mkt, "", time.Now())
 		require.NoError(t, err)
 
 		// verify markets are terminated

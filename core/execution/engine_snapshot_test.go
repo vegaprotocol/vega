@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
@@ -272,7 +273,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 			_, err = toRestore.LoadState(ctx, types.PayloadFromProto(snap))
 			require.NoError(t, err)
 			b2, _, err := toRestore.GetState(k)
-			require.NoError(t, err)
+			require.NoError(t, err, time.Now())
 			assert.True(t, bytes.Equal(b, b2))
 		}
 	}
