@@ -235,16 +235,17 @@ func NewMarket(
 	mkt.State = types.MarketStateProposed
 	mkt.TradingMode = types.MarketTradingModeNoTrading
 
+	pending, open := as.GetAuctionBegin(), as.GetAuctionEnd()
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
 		Pending:  now.UnixNano(),
 	}
-
-	if mkt.OpeningAuction != nil {
-		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
-	} else {
-		ts.Open = now.UnixNano()
+	if pending != nil {
+		ts.Pending = pending.UnixNano()
+	}
+	if open != nil {
+		ts.Open = open.UnixNano()
 	}
 
 	mkt.MarketTimestamps = ts
@@ -567,7 +568,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.MarketStatePending
-		m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
+		// this should no longer be needed
+		// m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
 		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
 		m.enterAuction(ctx)
 	} else {
@@ -2729,15 +2731,14 @@ func (m *Market) amendOrder(
 		return nil, nil, common.ErrMarginCheckFailed
 	}
 
-	icebergSizeChange := false
-	if amendedOrder.IcebergOrder != nil {
+	icebergSizeIncrease := false
+	if amendedOrder.IcebergOrder != nil && sizeIncrease {
 		// iceberg orders size changes can always be done in-place because they either:
 		// 1) decrease the size, which is already done in-place for all orders
 		// 2) increase the size, which only increases the reserved remaining and not the "active" remaining of the iceberg
-		// so set a flag to indicate this special case
+		// so we set an icebergSizeIncrease to skip the cancel-replace flow.
 		sizeIncrease = false
-		sizeDecrease = false
-		icebergSizeChange = true
+		icebergSizeIncrease = true
 	}
 
 	// if increase in size or change in price
@@ -2748,7 +2749,7 @@ func (m *Market) amendOrder(
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
-	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeChange {
+	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeIncrease {
 		ret := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if sizeDecrease {
 			// ensure we release excess if party reduced the size of their order

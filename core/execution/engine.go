@@ -369,8 +369,8 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 }
 
 // SubmitMarket submits a new market configuration to the network.
-func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error {
-	return e.submitOrRestoreMarket(ctx, marketConfig, proposer, true)
+func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error {
+	return e.submitOrRestoreMarket(ctx, marketConfig, proposer, true, oos)
 }
 
 // RestoreMarket restores a new market from proposal checkpoint.
@@ -379,7 +379,8 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	if len(proposer) == 0 {
 		return ErrMarketDoesNotExist
 	}
-	if err := e.submitOrRestoreMarket(ctx, marketConfig, "", false); err != nil {
+	// restoring a market means starting it as though the proposal was accepted now.
+	if err := e.submitOrRestoreMarket(ctx, marketConfig, "", false, e.timeService.GetTimeNow()); err != nil {
 		return err
 	}
 	// attempt to restore market state. The restoreOwnState call handles both parent and successor markets
@@ -394,7 +395,7 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	return nil
 }
 
-func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.Market, proposer string, isNewMarket bool) error {
+func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.Market, proposer string, isNewMarket bool, oos time.Time) error {
 	if e.log.IsDebug() {
 		msg := "submit market"
 		if !isNewMarket {
@@ -403,7 +404,7 @@ func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.
 		e.log.Debug(msg, logging.Market(*marketConfig))
 	}
 
-	if err := e.submitMarket(ctx, marketConfig); err != nil {
+	if err := e.submitMarket(ctx, marketConfig, oos); err != nil {
 		return err
 	}
 	if pid := marketConfig.ParentMarketID; len(pid) > 0 {
@@ -462,12 +463,10 @@ func (e *Engine) publishUpdateMarketInfos(ctx context.Context, mkt *future.Marke
 }
 
 // submitMarket will submit a new market configuration to the network.
-func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) error {
+func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, oos time.Time) error {
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID
 	}
-
-	now := e.timeService.GetTimeNow()
 
 	// ensure the asset for this new market exists
 	assets, err := marketConfig.GetAssets()
@@ -483,7 +482,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 	}
 
 	// create market auction state
-	mas := monitor.NewAuctionState(marketConfig, now)
+	mas := monitor.NewAuctionState(marketConfig, oos)
 	ad, err := e.assets.Get(asset)
 	if err != nil {
 		e.log.Error("Failed to create a new market, unknown asset",

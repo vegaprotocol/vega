@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
@@ -58,7 +59,7 @@ func TestMarketSuccession(t *testing.T) {
 	exec.timeSvc.EXPECT().GetTimeNow().AnyTimes()
 
 	// create parent market
-	err := exec.SubmitMarket(ctx, mkt, "")
+	err := exec.SubmitMarket(ctx, mkt, "", time.Now())
 	require.NoError(t, err)
 
 	// create successors
@@ -74,9 +75,9 @@ func TestMarketSuccession(t *testing.T) {
 	child2.InsurancePoolFraction = num.DecimalFromFloat(.33)
 	child2.State = types.MarketStateProposed
 	// submit successor markets
-	err = exec.SubmitMarket(ctx, child1, "")
+	err = exec.SubmitMarket(ctx, child1, "", time.Now())
 	require.NoError(t, err)
-	err = exec.SubmitMarket(ctx, child2, "")
+	err = exec.SubmitMarket(ctx, child2, "", time.Now())
 	require.NoError(t, err)
 
 	// when enacting a successor market, a lot of stuff happens:
