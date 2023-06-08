@@ -3,6 +3,7 @@ package ethcall
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -31,6 +32,14 @@ type Forwarder interface {
 	ForwardFromSelf(*commandspb.ChainEvent)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/datasource_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethcall DataSource
+type DataSource interface {
+	CallContract(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) ([]byte, error)
+	RequiredConfirmations() uint64
+	PassesFilters(result []byte, blockHeight uint64, blockTime uint64) bool
+	Normalise(callResult []byte) (map[string]string, error)
+}
+
 type blockish interface {
 	NumberU64() uint64
 	Time() uint64
@@ -40,9 +49,9 @@ type Engine struct {
 	log                   *logging.Logger
 	cfg                   Config
 	client                EthReaderCaller
-	dataSources           map[string]DataSource
+	dataSources           map[string]dataSource
 	forwarder             Forwarder
-	prevBlock             blockish
+	prevEthBlock          blockish
 	cancelEthereumQueries context.CancelFunc
 	poller                *poller
 	mu                    sync.Mutex
@@ -54,7 +63,7 @@ func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarde
 		cfg:         cfg,
 		client:      client,
 		forwarder:   forwarder,
-		dataSources: make(map[string]DataSource),
+		dataSources: make(map[string]dataSource),
 		poller:      newPoller(cfg.PollEvery.Get()),
 	}
 
@@ -95,7 +104,7 @@ func (e *Engine) GetDataSource(id string) (DataSource, bool) {
 		return source, true
 	}
 
-	return DataSource{}, false
+	return nil, false
 }
 
 func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
@@ -108,7 +117,7 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) err
 			return fmt.Errorf("duplicate spec: %s", id)
 		}
 
-		dataSource, err := NewDataSource(d)
+		dataSource, err := newDataSource(d)
 		if err != nil {
 			return fmt.Errorf("failed to create data source: %w", err)
 		}
@@ -130,10 +139,10 @@ func (e *Engine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {
 }
 
 func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
-	//TODO: maybe don't want to hold this lock all the time as eth call could be slow
+	// TODO: maybe don't want to hold this lock all the time as eth call could be slow
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	block, err := e.client.BlockByNumber(ctx, nil)
+	ethBlock, err := e.client.BlockByNumber(ctx, nil)
 	if err != nil {
 		e.log.Errorf("failed to get current block header: %w", err)
 		return
@@ -141,29 +150,59 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 
 	e.log.Info("tick",
 		logging.Time("vegaTime", wallTime),
-		logging.BigInt("ethBlock", block.Number()),
-		logging.Time("ethTime", time.Unix(int64(block.Time()), 0)))
+		logging.BigInt("ethBlock", ethBlock.Number()),
+		logging.Time("ethTime", time.Unix(int64(ethBlock.Time()), 0)))
 
-	if e.prevBlock == nil {
-		e.prevBlock = block
+	if e.prevEthBlock == nil {
+		e.prevEthBlock = ethBlock
 		return
 	}
 
 	for specID, datasource := range e.dataSources {
-		if datasource.Trigger(e.prevBlock, block) {
-			res, err := datasource.Call.Call(ctx, e.client, block.Number())
+		if queryDataSource(datasource, e.prevEthBlock, ethBlock) {
+			res, err := datasource.CallContract(ctx, e.client, ethBlock.Number())
 			if err != nil {
 				e.log.Errorf("failed to call contract: %w", err)
 				continue
 			}
-			event := makeChainEvent(res, specID, block)
+			event := makeChainEvent(res, specID, ethBlock)
 			e.forwarder.ForwardFromSelf(event)
 		}
 	}
-	e.prevBlock = block
+	e.prevEthBlock = ethBlock
 }
 
-func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
+func queryDataSource(d dataSource, prevEthBlock blockish, currentEthBlock blockish) bool {
+	// Before initial?
+	switch trigger := d.spec.Trigger.(type) {
+	case *types.EthTimeTrigger:
+		if currentEthBlock.Time() < trigger.Initial {
+			return false
+		}
+
+		// Crossing initial boundary?
+		if prevEthBlock.Time() < trigger.Initial && currentEthBlock.Time() >= trigger.Initial {
+			return true
+		}
+
+		// After until?
+		if trigger.Until != 0 && currentEthBlock.Time() > trigger.Until {
+			return false
+		}
+
+		if trigger.Every == 0 {
+			return false
+		}
+		// Somewhere in the middle..
+		prevTriggerCount := (prevEthBlock.Time() - trigger.Initial) / trigger.Every
+		currentTriggerCount := (currentEthBlock.Time() - trigger.Initial) / trigger.Every
+		return currentTriggerCount > prevTriggerCount
+	}
+
+	return false
+}
+
+func makeChainEvent(res []byte, specID string, block blockish) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
 		TxId:  "", // NA
 		Nonce: 0,  // NA
@@ -172,7 +211,7 @@ func makeChainEvent(res Result, specID string, block blockish) *commandspb.Chain
 				SpecId:      specID,
 				BlockHeight: block.NumberU64(),
 				BlockTime:   block.Time(),
-				Result:      res.Bytes,
+				Result:      res,
 			},
 		},
 	}

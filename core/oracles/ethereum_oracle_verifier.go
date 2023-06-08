@@ -31,9 +31,9 @@ type OracleDataBroadcaster interface {
 	BroadcastData(context.Context, OracleData) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_spec_source_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallSpecSource
-type EthCallSpecSource interface {
-	GetCall(id string) (EthCall, error)
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCall
+type EthCall interface {
+	GetDataSource(id string) (ethcall.DataSource, bool)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_contract_caller.go -package mocks code.vegaprotocol.io/vega/core/oracles ContractCaller
@@ -46,21 +46,13 @@ type EthereumConfirmations interface {
 	Check(uint64) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCall
-type EthCall interface {
-	Normalise(callResult []byte) (map[string]string, error)
-	Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) ([]byte, error)
-	PassesFilters(result []byte, blockHeight uint64, blockTime uint64) bool
-	RequiredConfirmations() uint64
-}
-
 type EthereumOracleVerifier struct {
 	log *logging.Logger
 
 	witness           Witness
 	timeService       TimeService
 	oracleEngine      OracleDataBroadcaster
-	ethCallSpecSource EthCallSpecSource
+	ethCall           EthCall
 	ethContractCaller ethereum.ContractCaller
 	ethConfirmations  EthereumConfirmations
 
@@ -91,7 +83,7 @@ func NewEthereumOracleVerifier(
 	witness Witness,
 	ts TimeService,
 	oracleBroadcaster OracleDataBroadcaster,
-	ethCallSpecSource EthCallSpecSource,
+	ethCallSpecSource EthCall,
 	ethContractCaller ethereum.ContractCaller,
 	ethConfirmations EthereumConfirmations,
 ) (sv *EthereumOracleVerifier) {
@@ -101,7 +93,7 @@ func NewEthereumOracleVerifier(
 		witness:           witness,
 		timeService:       ts,
 		oracleEngine:      oracleBroadcaster,
-		ethCallSpecSource: ethCallSpecSource,
+		ethCall:           ethCallSpecSource,
 		ethContractCaller: ethContractCaller,
 		ethConfirmations:  ethConfirmations,
 		hashes:            map[string]struct{}{},
@@ -153,27 +145,29 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 }
 
 func (s *EthereumOracleVerifier) checkCallEventResult(contractCall types.EthContractCallEvent) error {
-	spec, err := s.ethCallSpecSource.GetCall(contractCall.SpecId)
-	if err != nil {
-		return fmt.Errorf("failed to get call specification for id %s: %w", contractCall.SpecId, err)
+	dataSource, exists := s.ethCall.GetDataSource(contractCall.SpecId)
+	if !exists {
+		// It is possible though unlikely that this could happen if a spec is deactivated after the chain event is sent
+		// but it would probably indicate incorrect behaviour.
+		return fmt.Errorf("datasource for spec id %s does not exist", contractCall.SpecId)
 	}
 
 	blockHeight := &big.Int{}
 	blockHeight.SetUint64(contractCall.BlockHeight)
-	value, err := spec.Call(context.Background(), s.ethContractCaller, blockHeight)
+	value, err := dataSource.CallContract(context.Background(), s.ethContractCaller, blockHeight)
 	if err != nil {
-		return fmt.Errorf("failed to execute call event spec: %w", err)
+		return fmt.Errorf("failed to execute call event dataSource: %w", err)
 	}
 
 	if !bytes.Equal(contractCall.Result, value) {
 		return fmt.Errorf("mismatched results for block %d", contractCall.BlockHeight)
 	}
 
-	if !spec.PassesFilters(contractCall.Result, contractCall.BlockHeight, contractCall.BlockTime) {
+	if !dataSource.PassesFilters(contractCall.Result, contractCall.BlockHeight, contractCall.BlockTime) {
 		return fmt.Errorf("failed to pass filter check")
 	}
 
-	if err = s.ethConfirmations.Check(spec.RequiredConfirmations()); err != nil {
+	if err = s.ethConfirmations.Check(dataSource.RequiredConfirmations()); err != nil {
 		return fmt.Errorf("failed confirmations check: %w", err)
 	}
 
@@ -210,13 +204,15 @@ func (s *EthereumOracleVerifier) onCallEventVerified(event interface{}, ok bool)
 
 func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, callResult := range s.finalizedCallResults {
-		spec, err := s.ethCallSpecSource.GetCall(callResult.SpecId)
-		if err != nil {
-			s.log.Error("failed to get spec for call result", logging.Error(err))
+		dataSource, exists := s.ethCall.GetDataSource(callResult.SpecId)
+		if !exists {
+			// It is possible this could happen if a spec is deactivated after the chain event is sent
+			// but it would probably indicate incorrect behaviour.
+			s.log.Errorf("datasource for spec id %s does not exist", callResult.SpecId)
 			continue
 		}
 
-		normalisedData, err := spec.Normalise(callResult.Result)
+		normalisedData, err := dataSource.Normalise(callResult.Result)
 		if err != nil {
 			s.log.Error("failed to normalise oracle data", logging.Error(err))
 			continue
@@ -229,41 +225,4 @@ func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 	}
 
 	s.finalizedCallResults = nil
-}
-
-// TODO review and figure out the refactor to remove need for this.
-type EthCallSpecSourceAdapter struct {
-	Engine *ethcall.Engine
-}
-
-func (e *EthCallSpecSourceAdapter) GetCall(id string) (EthCall, error) {
-	source, ok := e.Engine.GetDataSource(id)
-	if !ok {
-		return nil, fmt.Errorf("failed to get spec for id: %s", id)
-	}
-	return &EthCallSpecAdapter{spec: &source}, nil
-}
-
-type EthCallSpecAdapter struct {
-	spec *ethcall.DataSource
-}
-
-func (e *EthCallSpecAdapter) Normalise(callResult []byte) (map[string]string, error) {
-	return e.spec.Normalise(callResult)
-}
-
-func (e *EthCallSpecAdapter) Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) ([]byte, error) {
-	result, err := e.spec.Call.Call(ctx, caller, blockNumber)
-	if err != nil {
-		return nil, err
-	}
-	return result.Bytes, nil
-}
-
-func (e *EthCallSpecAdapter) PassesFilters(result []byte, blockHeight uint64, blockTime uint64) bool {
-	return e.spec.Pass(result, blockHeight, blockTime)
-}
-
-func (e *EthCallSpecAdapter) RequiredConfirmations() uint64 {
-	return e.spec.RequiredConfirmations()
 }
