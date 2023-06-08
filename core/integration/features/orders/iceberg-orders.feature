@@ -198,6 +198,7 @@ Feature: Iceberg orders
 
 
   @iceberg
+  @margin
   Scenario: Iceberg increase size success and not losing position in order book (0014-ORDT-023)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -226,18 +227,26 @@ Feature: Iceberg orders
 
     And the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
-      | party1 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
+      | party1 | ETH/DEC19 | sell | 50     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
       | party2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 12     | 9988    |
 
     # increasing size
     Then the parties amend the following orders:
       | party  | reference    | price | size delta | tif     |
-      | party1 | this-order-1 | 2     | 5          | TIF_GTC |
+      | party1 | this-order-1 | 2     | 50         | TIF_GTC |
 
     # the visible is the same and only the reserve amount has increased
     Then the iceberg orders should have the following states:
       | party  | market id | side | visible volume | price | status        | reserved volume |
-      | party1 | ETH/DEC19 | sell | 2              | 2     | STATUS_ACTIVE | 8               |
+      | party1 | ETH/DEC19 | sell | 2              | 2     | STATUS_ACTIVE | 98              |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 24     | 9976    |
 
     # matching the order now
     # this should match with the size 2 order of party1
@@ -250,8 +259,7 @@ Feature: Iceberg orders
       | party3 | party1 | 2     | 2    |
 
   @iceberg
-  @margin-not-releasing
-  Scenario: Iceberg decrease size success and not losing position in order book (0014-ORDT-023) (0014-ORDT-025)
+  Scenario: Iceberg decrease size success and not losing position in order book (0014-ORDT-024) (0014-ORDT-025)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
