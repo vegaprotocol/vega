@@ -11,6 +11,15 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 )
 
+type DataSourceContentType int32
+
+const (
+	DataSourceContentTypeInvalid DataSourceContentType = iota
+	DataSourceContentTypeOracle
+	DataSourceContentTypeEthOracle
+	DataSourceContentTypeInternalTimeTermination
+)
+
 var (
 	// ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList is returned when filters with same key names exists inside a single list.
 	ErrDataSourceSpecHasMultipleSameKeyNamesInFilterList = errors.New("multiple keys with same name found in filter list")
@@ -40,19 +49,27 @@ func NewDataSourceDefinitionWith(dst dataSourceType) *DataSourceDefinition {
 
 // NewDataSourceDefinition creates a new EMPTY DataSourceDefinition object.
 // TODO: eth oracle type too.
-func NewDataSourceDefinition(tp int) *DataSourceDefinition {
+func NewDataSourceDefinition(tp DataSourceContentType) *DataSourceDefinition {
 	ds := &DataSourceDefinition{}
 	switch tp {
-	case vegapb.DataSourceDefinitionTypeInt:
-		return NewDataSourceDefinitionWith(
-			DataSourceSpecConfigurationTime{
-				Conditions: []*DataSourceSpecCondition{},
-			})
-	case vegapb.DataSourceDefinitionTypeExt:
+	case DataSourceContentTypeOracle:
 		return NewDataSourceDefinitionWith(
 			DataSourceSpecConfiguration{
 				Signers: []*Signer{},
 				Filters: []*DataSourceSpecFilter{},
+			})
+	case DataSourceContentTypeEthOracle:
+		return NewDataSourceDefinitionWith(
+			EthCallSpec{
+				AbiJson:  []byte{},
+				ArgsJson: []string{},
+				Trigger:  &EthTimeTrigger{},
+				Filters:  DataSourceSpecFilters{},
+			})
+	case DataSourceContentTypeInternalTimeTermination:
+		return NewDataSourceDefinitionWith(
+			DataSourceSpecConfigurationTime{
+				Conditions: []*DataSourceSpecCondition{},
 			})
 	}
 	return ds
@@ -75,10 +92,20 @@ func (s *DataSourceDefinition) IntoProto() *vegapb.DataSourceDefinition {
 }
 
 // DeepClone returns a clone of the DataSourceDefinition object.
-func (s *DataSourceDefinition) DeepClone() DataSourceDefinition {
-	return DataSourceDefinition{
-		dataSourceType: s.dataSourceType.DeepClone(),
+func (s DataSourceDefinition) DeepClone() dataSourceType {
+	if s.dataSourceType != nil {
+		return DataSourceDefinition{
+			dataSourceType: s.dataSourceType.DeepClone(),
+		}
 	}
+	return nil // ?
+}
+
+func (s DataSourceDefinition) String() string {
+	if s.dataSourceType != nil {
+		return s.dataSourceType.String()
+	}
+	return ""
 }
 
 func (s *DataSourceDefinition) Content() interface{} {
@@ -87,29 +114,22 @@ func (s *DataSourceDefinition) Content() interface{} {
 
 // DataSourceDefinitionFromProto tries to build the DataSourceDfiniition object
 // from the given proto object.
-func DataSourceDefinitionFromProto(protoConfig *vegapb.DataSourceDefinition) *DataSourceDefinition {
+func DataSourceDefinitionFromProto(protoConfig *vegapb.DataSourceDefinition) (dataSourceType, error) {
 	if protoConfig != nil {
-		if protoConfig.SourceType != nil {
-			switch tp := protoConfig.SourceType.(type) {
-			case *vegapb.DataSourceDefinition_External:
-				dst, err := dataSourceDefinitionExternalFromProto(tp.External)
-				if err != nil {
-					// todo: bubble error
-					return &DataSourceDefinition{}
-				}
-				return &DataSourceDefinition{dataSourceType: dst}
-			case *vegapb.DataSourceDefinition_Internal:
-				dst, err := dataSourceDefinitionInternalFromProto(tp.Internal)
-				if err != nil {
-					// todo: bubble error
-					return &DataSourceDefinition{}
-				}
-				return NewDataSourceDefinitionWith(dst)
-			}
+		data := protoConfig.Content()
+		switch dtp := data.(type) {
+		case *vegapb.DataSourceSpecConfiguration:
+			return DataSourceSpecConfigurationFromProto(dtp), nil
+
+		case *vegapb.EthCallSpec:
+			return EthCallSpecFromProto(dtp)
+
+		case *vegapb.DataSourceSpecConfigurationTime:
+			return DataSourceSpecConfigurationTimeFromProto(dtp), nil
 		}
 	}
 
-	return &DataSourceDefinition{}
+	return &DataSourceDefinition{}, nil
 }
 
 // GetSigners tries to get the signers from the DataSourceDefinition if they exist.
@@ -135,6 +155,9 @@ func (s *DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 	if data != nil {
 		switch tp := data.(type) {
 		case DataSourceSpecConfiguration:
+			filters = tp.Filters
+
+		case EthCallSpec:
 			filters = tp.Filters
 
 		case DataSourceSpecConfigurationTime:
@@ -176,6 +199,20 @@ func (s *DataSourceDefinition) GetDataSourceSpecConfiguration() DataSourceSpecCo
 	return DataSourceSpecConfiguration{}
 }
 
+// GetEthCallSpec returns the base object - EthCallSpec
+// from the DataSourceDefinition.
+func (s *DataSourceDefinition) GetEthCallSpec() EthCallSpec {
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case EthCallSpec:
+			return tp
+		}
+	}
+
+	return EthCallSpec{}
+}
+
 // UpdateFilters updates the DataSourceDefinition Filters.
 func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) error {
 	fTypeCheck := map[*DataSourceSpecFilter]struct{}{}
@@ -202,6 +239,11 @@ func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) er
 	case DataSourceSpecConfiguration:
 		content.Filters = filters
 		s.dataSourceType = content
+
+	case EthCallSpec:
+		content.Filters = filters
+		s.dataSourceType = content
+
 	case DataSourceSpecConfigurationTime:
 		// The data source definition is an internal time based source
 		// For this case we take only the first item from the list of filters
@@ -227,6 +269,12 @@ func (s *DataSourceDefinition) SetFilterDecimals(d uint64) *DataSourceDefinition
 			content.Filters[i].Key.NumberDecimalPlaces = &d
 		}
 		s.dataSourceType = content
+	case EthCallSpec:
+		for i := range content.Filters {
+			content.Filters[i].Key.NumberDecimalPlaces = &d
+		}
+		s.dataSourceType = content
+
 	default:
 		// we should really be returning an error here but this method is only used in the integration tests
 		panic(fmt.Sprintf("unable to set filter decimals on data source type: %T", content))
@@ -252,8 +300,12 @@ func (s *DataSourceDefinition) ToExternalDataSourceSpec() *ExternalDataSourceSpe
 // SetOracleConfig sets a given oracle config in the receiver.
 // If the receiver is not external oracle type data source - it is not changed.
 // This method does not care about object previous contents.
-func (s *DataSourceDefinition) SetOracleConfig(oc *DataSourceSpecConfiguration) *DataSourceDefinition {
+func (s *DataSourceDefinition) SetOracleConfig(oc dataSourceType) *DataSourceDefinition {
 	if _, ok := s.dataSourceType.(DataSourceSpecConfiguration); ok {
+		s.dataSourceType = oc.DeepClone()
+	}
+
+	if _, ok := s.dataSourceType.(EthCallSpec); ok {
 		s.dataSourceType = oc.DeepClone()
 	}
 
@@ -272,6 +324,16 @@ func (s *DataSourceDefinition) SetTimeTriggerConditionConfig(c []*DataSourceSpec
 	return s
 }
 
+func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() DataSourceSpecConfigurationTime {
+	data := s.Content()
+	switch tp := data.(type) {
+	case DataSourceSpecConfigurationTime:
+		return tp
+	}
+
+	return DataSourceSpecConfigurationTime{}
+}
+
 func (s *DataSourceDefinition) IsExternal() (bool, error) {
 	switch s.dataSourceType.(type) {
 	case DataSourceSpecConfiguration:
@@ -284,12 +346,14 @@ func (s *DataSourceDefinition) IsExternal() (bool, error) {
 	return false, errors.New("unknown type of data source provided")
 }
 
-func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() DataSourceSpecConfigurationTime {
-	data := s.Content()
-	switch tp := data.(type) {
+func (s *DataSourceDefinition) Type() (DataSourceContentType, bool) {
+	switch s.dataSourceType.(type) {
+	case DataSourceSpecConfiguration:
+		return DataSourceContentTypeOracle, true
+	case EthCallSpec:
+		return DataSourceContentTypeEthOracle, true
 	case DataSourceSpecConfigurationTime:
-		return tp
+		return DataSourceContentTypeInternalTimeTermination, false
 	}
-
-	return DataSourceSpecConfigurationTime{}
+	return DataSourceContentTypeInvalid, false
 }

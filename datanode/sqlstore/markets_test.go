@@ -273,11 +273,13 @@ func getTestMarket(termInt bool) *vega.Market {
 		CreatedAt: 0,
 		UpdatedAt: 0,
 		Data: vega.NewDataSourceDefinition(
-			vega.DataSourceDefinitionTypeExt,
+			vega.DataSourceContentTypeOracle,
 		).SetOracleConfig(
-			&vega.DataSourceSpecConfiguration{
-				Signers: nil,
-				Filters: nil,
+			&vega.DataSourceDefinitionExternal_Oracle{
+				Oracle: &vega.DataSourceSpecConfiguration{
+					Signers: nil,
+					Filters: nil,
+				},
 			},
 		),
 		Status: 0,
@@ -289,7 +291,7 @@ func getTestMarket(termInt bool) *vega.Market {
 			CreatedAt: 0,
 			UpdatedAt: 0,
 			Data: vega.NewDataSourceDefinition(
-				vega.DataSourceDefinitionTypeInt,
+				vega.DataSourceContentTypeInternalTimeTermination,
 			).SetTimeTriggerConditionConfig(
 				[]*v1.Condition{
 					{
@@ -321,11 +323,13 @@ func getTestMarket(termInt bool) *vega.Market {
 							CreatedAt: 0,
 							UpdatedAt: 0,
 							Data: vega.NewDataSourceDefinition(
-								vega.DataSourceDefinitionTypeExt,
+								vega.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&vega.DataSourceSpecConfiguration{
-									Signers: nil,
-									Filters: nil,
+								&vega.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vega.DataSourceSpecConfiguration{
+										Signers: nil,
+										Filters: nil,
+									},
 								},
 							),
 							Status: 0,
