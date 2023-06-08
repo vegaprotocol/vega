@@ -19,7 +19,8 @@ import (
 )
 
 var TEST_CONFIG = ethcall.Config{
-	Level: encoding.LogLevel{Level: logging.DebugLevel},
+	Level:     encoding.LogLevel{Level: logging.DebugLevel},
+	PollEvery: encoding.Duration{Duration: 100 * time.Second},
 }
 
 func TestEngine(t *testing.T) {
@@ -51,7 +52,6 @@ func TestEngine(t *testing.T) {
 
 		RequiredConfirmations: 0,
 		Filters:               types.DataSourceSpecFilters{},
-		// Normaliser:            &types.EthDecimalsNormaliser{Decimals: 0},
 	}
 
 	def := types.NewDataSourceDefinitionWith(ethCallSpec)

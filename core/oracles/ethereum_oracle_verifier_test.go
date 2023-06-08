@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	ethcallmocks "code.vegaprotocol.io/vega/core/evtforward/ethcall/mocks"
+
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/mocks"
 
@@ -25,7 +27,7 @@ type etheriumOracleVerifierTest struct {
 	witness           *mocks.MockWitness
 	ts                *mocks.MockTimeService
 	oracleBroadcaster *mocks.MockOracleDataBroadcaster
-	ethCallSpecSource *mocks.MockEthCallSpecSource
+	ethCall           *mocks.MockEthCall
 	ethContractCaller *mocks.MockContractCaller
 	ethConfirmations  *mocks.MockEthereumConfirmations
 
@@ -40,7 +42,7 @@ func getTestEthereumOracleVerifier(t *testing.T) *etheriumOracleVerifierTest {
 	ts := mocks.NewMockTimeService(ctrl)
 	broadcaster := mocks.NewMockOracleDataBroadcaster(ctrl)
 
-	ethCallSpecSource := mocks.NewMockEthCallSpecSource(ctrl)
+	ethCallSpecSource := mocks.NewMockEthCall(ctrl)
 	ethContractCaller := mocks.NewMockContractCaller(ctrl)
 
 	confirmations := mocks.NewMockEthereumConfirmations(ctrl)
@@ -54,7 +56,7 @@ func getTestEthereumOracleVerifier(t *testing.T) *etheriumOracleVerifierTest {
 		witness:           witness,
 		ts:                ts,
 		oracleBroadcaster: broadcaster,
-		ethCallSpecSource: ethCallSpecSource,
+		ethCall:           ethCallSpecSource,
 		ethContractCaller: ethContractCaller,
 		ethConfirmations:  confirmations,
 	}
@@ -76,13 +78,13 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
+	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(2).Return(callspec, nil)
+	eov.ethCall.EXPECT().GetDataSource("testspec").Times(2).Return(dataSource, true)
 
-	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
-	callspec.EXPECT().RequiredConfirmations().Return(uint64(5))
+	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
+	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
+	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
 
 	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
@@ -119,7 +121,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 		Data:    normalisedData,
 	}
 
-	callspec.EXPECT().Normalise([]byte("testbytes")).Return(normalisedData, nil)
+	dataSource.EXPECT().Normalise([]byte("testbytes")).Return(normalisedData, nil)
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)
 
 	eov.onTick(context.Background(), time.Unix(10, 0))
@@ -130,11 +132,11 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
+	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
+	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
 
-	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("someothertestbytes"), nil)
+	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("someothertestbytes"), nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
@@ -164,12 +166,12 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
+	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
+	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
 
-	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(false)
+	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
+	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(false)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
@@ -199,14 +201,14 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
+	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
+	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
 
-	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
+	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
+	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
 
-	callspec.EXPECT().RequiredConfirmations().Return(uint64(5))
+	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
 
 	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(errors.New("insufficient confirmations"))
 
@@ -238,13 +240,13 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	callspec := mocks.NewMockEthCallSpec(eov.ctrl)
+	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
 
-	eov.ethCallSpecSource.EXPECT().GetCall("testspec").Times(1).Return(callspec, nil)
+	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
 
-	callspec.EXPECT().Call(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	callspec.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
-	callspec.EXPECT().RequiredConfirmations().Return(uint64(5))
+	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
+	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
+	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
 
 	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
