@@ -181,7 +181,7 @@ func testRejectSuccessorProductMismatch(t *testing.T) {
 		ParentID:              "parentID",
 		InsurancePoolFraction: num.DecimalFromFloat(0),
 	}
-	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, true, &suc)
+	proposal := eng.newProposalForSuccessorMarket(party.Id, eng.tsvc.GetTimeNow(), nil, nil, false, &suc)
 
 	// setup
 	eng.ensureAllAssetEnabled(t)

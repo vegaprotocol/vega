@@ -859,10 +859,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		id := mkt.GetID()
 		mdef := mkt.Mkt()
 		pstate, isSuccessor := parentStates[id]
-		inOO := isSuccessor && mdef.State == types.MarketStatePending
+		inOA := isSuccessor && mdef.State == types.MarketStatePending
 		// this market was a successor, but has no parent state (parent state likely expired
 		// although this currently is not possible, better check here.
-		if isSuccessor && inOO {
+		if isSuccessor && inOA {
 			if pstate == nil {
 				delete(e.isSuccessor, id)
 				delete(e.successors, mdef.ParentMarketID)
@@ -875,14 +875,14 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		}
 		closing := mkt.OnTick(ctx, t)
 		// successor market has left opening auction
-		leftOO := inOO && mdef.State == types.MarketStateActive
+		leftOA := inOA && mdef.State == types.MarketStateActive
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(id))
 			toDelete = append(toDelete, id)
 		}
 		// this can only be true if mkt was a successor, and the successor market has left the opening auction
-		if leftOO {
+		if leftOA {
 			pid := mdef.ParentMarketID
 			if pmkt, ok := e.markets[pid]; ok {
 				pmkt.SetSucceeded()
