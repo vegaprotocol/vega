@@ -133,7 +133,7 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	return num.UintZero(), 0, errors.New("no non pegged orders found on the book")
 }
 
-func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *types.Order, priceLevelIndex int, orderIndex int) (uint64, error) {
+func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *types.Order, priceLevelIndex int, orderIndex int) (int64, error) {
 	if amendOrder.Remaining > oldOrder.Remaining {
 		// iceberg amend should never increase the visible remaining
 		return 0, types.ErrOrderAmendFailure
@@ -147,20 +147,23 @@ func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *typ
 	oldReserved := oldOrder.IcebergOrder.ReservedRemaining
 	amendReserved := amendOrder.IcebergOrder.ReservedRemaining
 	if amendReserved > oldReserved {
-		// only increased the reserve so the book volume is not changed
-		return 0, nil
+		// only increased volume diff is easy
+		inc := amendReserved - oldReserved
+		s.levels[priceLevelIndex].volume += inc
+		return int64(inc), nil
 	}
 
 	if amendReserved < oldReserved {
-		reduceBy := oldOrder.Remaining - amendOrder.Remaining
-		s.levels[priceLevelIndex].reduceVolume(reduceBy)
-		return reduceBy, nil
+		dec := oldOrder.Remaining - amendOrder.Remaining
+		dec += oldReserved - amendReserved
+		s.levels[priceLevelIndex].reduceVolume(dec)
+		return -int64(dec), nil
 	}
 
 	return 0, nil
 }
 
-func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
+func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (int64, error) {
 	priceLevelIndex := -1
 	orderIndex := -1
 	var oldOrder *types.Order
@@ -203,7 +206,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	reduceBy := oldOrder.Remaining - orderAmend.Remaining
 	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
-	return reduceBy, nil
+	return -int64(reduceBy), nil
 }
 
 // ExtractOrders extracts the orders from the top of the book until the volume amount is hit,

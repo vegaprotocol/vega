@@ -105,7 +105,7 @@ func (md *MarketDepth) AddOrderUpdate(order *types.Order) {
 			md.updateOrder(originalOrder, order)
 		}
 	} else {
-		if order.Remaining > 0 && order.Status == types.OrderStatusActive {
+		if order.TrueRemaining() > 0 && order.Status == types.OrderStatusActive {
 			md.addOrder(order)
 		}
 	}
@@ -127,7 +127,7 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 		pl = md.createNewPriceLevel(order)
 	} else {
 		pl.TotalOrders++
-		pl.TotalVolume += order.Remaining
+		pl.TotalVolume += order.TrueRemaining()
 	}
 	md.Changes = append(md.Changes, pl)
 }
@@ -141,7 +141,7 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 	}
 	// Update the values
 	pl.TotalOrders--
-	pl.TotalVolume -= order.Remaining
+	pl.TotalVolume -= order.TrueRemaining()
 
 	// See if we can remove this price level
 	if pl.TotalOrders == 0 {
@@ -158,19 +158,22 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price.EQ(newOrder.Price) {
-		if newOrder.Remaining == 0 {
+		if newOrder.TrueRemaining() == 0 {
 			md.removeOrder(newOrder)
 		} else {
 			// Update
 			pl := md.GetPriceLevel(originalOrder.Side, originalOrder.Price)
-			pl.TotalVolume += newOrder.Remaining - originalOrder.Remaining
+			pl.TotalVolume += newOrder.TrueRemaining() - originalOrder.TrueRemaining()
 			originalOrder.Remaining = newOrder.Remaining
+			if originalOrder.IcebergOrder != nil {
+				originalOrder.IcebergOrder = newOrder.IcebergOrder.Clone()
+			}
 			originalOrder.Size = newOrder.Size
 			md.Changes = append(md.Changes, pl)
 		}
 	} else {
 		md.removeOrder(originalOrder)
-		if newOrder.Remaining > 0 {
+		if newOrder.TrueRemaining() > 0 {
 			md.addOrder(newOrder)
 		}
 	}
@@ -180,7 +183,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *PriceLevel {
 	pl := &PriceLevel{
 		Price:       order.Price.Clone(),
 		TotalOrders: 1,
-		TotalVolume: order.Remaining,
+		TotalVolume: order.TrueRemaining(),
 		Side:        order.Side,
 	}
 

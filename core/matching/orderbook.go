@@ -721,15 +721,15 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	var (
-		reduceBy uint64
-		side     = b.sell
-		err      error
+		volumeChange int64
+		side         = b.sell
+		err          error
 	)
 	if amendedOrder.Side == types.SideBuy {
 		side = b.buy
 	}
 
-	if reduceBy, err = side.amendOrder(amendedOrder); err != nil {
+	if volumeChange, err = side.amendOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Failed to amend",
 				logging.String("side", amendedOrder.Side.String()),
@@ -743,11 +743,18 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 
 	// update the order by ids mapping
 	b.ordersByID[amendedOrder.ID] = amendedOrder
+	if !b.auction {
+		return nil
+	}
 
-	if b.auction && reduceBy != 0 {
-		// reduce volume at price level
+	if volumeChange < 0 {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			amendedOrder.Price, reduceBy, amendedOrder.Side)
+			amendedOrder.Price, uint64(-volumeChange), amendedOrder.Side)
+	}
+
+	if volumeChange > 0 {
+		b.indicativePriceAndVolume.AddVolumeAtPrice(
+			amendedOrder.Price, uint64(volumeChange), amendedOrder.Side)
 	}
 
 	return nil

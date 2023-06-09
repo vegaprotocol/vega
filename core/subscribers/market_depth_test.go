@@ -72,9 +72,15 @@ func TestBuyPriceLevels(t *testing.T) {
 	event4 := events.NewOrderEvent(ctx, order4)
 	mdb.Push(event4)
 
-	assert.Equal(t, 4, mdb.GetBuyPriceLevels("M"))
+	// add some icebergs too
+	order5 := buildOrder("Order5", types.SideBuy, types.OrderTypeLimit, 98, 10, 10)
+	order5.IcebergOrder = &types.IcebergOrder{ReservedRemaining: 50}
+	event5 := events.NewOrderEvent(ctx, order5)
+	mdb.Push(event5)
+
+	assert.Equal(t, 5, mdb.GetBuyPriceLevels("M"))
 	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(4), mdb.GetOrderCount("M"))
+	assert.Equal(t, int64(5), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(7), mdb.GetVolumeAtPrice("M", types.SideBuy, 102))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideBuy, 102))
@@ -87,6 +93,9 @@ func TestBuyPriceLevels(t *testing.T) {
 
 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice("M", types.SideBuy, 99))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideBuy, 99))
+
+	assert.Equal(t, uint64(60), mdb.GetVolumeAtPrice("M", types.SideBuy, 98))
+	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideBuy, 98))
 }
 
 func TestSellPriceLevels(t *testing.T) {
@@ -109,9 +118,15 @@ func TestSellPriceLevels(t *testing.T) {
 	event4 := events.NewOrderEvent(ctx, order4)
 	mdb.Push(event4)
 
+	// add some icebergs too
+	order5 := buildOrder("Order5", types.SideSell, types.OrderTypeLimit, 98, 10, 10)
+	order5.IcebergOrder = &types.IcebergOrder{ReservedRemaining: 50}
+	event5 := events.NewOrderEvent(ctx, order5)
+	mdb.Push(event5)
+
 	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
-	assert.Equal(t, 4, mdb.GetSellPriceLevels("M"))
-	assert.Equal(t, int64(4), mdb.GetOrderCount("M"))
+	assert.Equal(t, 5, mdb.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(5), mdb.GetOrderCount("M"))
 
 	assert.Equal(t, uint64(7), mdb.GetVolumeAtPrice("M", types.SideSell, 102))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideSell, 102))
@@ -124,6 +139,9 @@ func TestSellPriceLevels(t *testing.T) {
 
 	assert.Equal(t, uint64(10), mdb.GetVolumeAtPrice("M", types.SideSell, 99))
 	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideSell, 99))
+
+	assert.Equal(t, uint64(60), mdb.GetVolumeAtPrice("M", types.SideSell, 98))
+	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideSell, 98))
 }
 
 func TestAddOrderToEmptyBook(t *testing.T) {
@@ -147,6 +165,28 @@ func TestCancelOrder(t *testing.T) {
 	mdb := getTestMDB(t, ctx)
 
 	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
+	event := events.NewOrderEvent(ctx, order)
+	mdb.Push(event)
+
+	cancelorder := *order
+	cancelorder.Status = types.OrderStatusCancelled
+	event2 := events.NewOrderEvent(ctx, &cancelorder)
+	mdb.Push(event2)
+
+	assert.Equal(t, 0, mdb.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(0), mdb.GetOrderCount("M"))
+
+	assert.Equal(t, uint64(0), mdb.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(0), mdb.GetOrderCountAtPrice("M", types.SideBuy, 100))
+}
+
+func TestCancelIcebergOrder(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx)
+
+	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
+	order.IcebergOrder = &types.IcebergOrder{ReservedRemaining: 50}
 	event := events.NewOrderEvent(ctx, order)
 	mdb.Push(event)
 
@@ -688,4 +728,29 @@ func TestParkedOrder2(t *testing.T) {
 	assert.Equal(t, "M", md.MarketId)
 	assert.Equal(t, 0, len(md.GetBuy()))
 	assert.Equal(t, 0, len(md.GetSell()))
+}
+
+func TestIcebergRefresh(t *testing.T) {
+	ctx := context.Background()
+	mdb := getTestMDB(t, ctx)
+
+	order := buildOrder("Order1", types.SideBuy, types.OrderTypeLimit, 100, 10, 10)
+	order.IcebergOrder = &types.IcebergOrder{ReservedRemaining: 50}
+	event := events.NewOrderEvent(ctx, order)
+	mdb.Push(event)
+
+	// pretend the iceberg refreshed, so its remaining increased and reserve went down
+	amendorder := *order
+	amendorder.Size = 60
+	amendorder.Remaining = 15
+	amendorder.IcebergOrder.ReservedRemaining = 40
+	event2 := events.NewOrderEvent(ctx, &amendorder)
+	mdb.Push(event2)
+
+	assert.Equal(t, 1, mdb.GetBuyPriceLevels("M"))
+	assert.Equal(t, 0, mdb.GetSellPriceLevels("M"))
+	assert.Equal(t, int64(1), mdb.GetOrderCount("M"))
+
+	assert.Equal(t, uint64(55), mdb.GetVolumeAtPrice("M", types.SideBuy, 100))
+	assert.Equal(t, uint64(1), mdb.GetOrderCountAtPrice("M", types.SideBuy, 100))
 }
