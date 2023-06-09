@@ -179,7 +179,8 @@ Feature: Simple example of successor markets
       | party   | equity like share  | average entry valuation |
       | lpprov1 | 0.2727272727272727 | 9666.6666666666666      |
       | lpprov2 | 0.7272727272727273 | 10000                   |
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    When the network moves ahead "10" blocks
+    Then the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "4061" for the market "ETH/DEC20"
     And the network treasury balance should be "1016" for the asset "USD"
  
