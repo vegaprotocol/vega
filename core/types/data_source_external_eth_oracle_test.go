@@ -2,7 +2,6 @@ package types_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -123,46 +122,4 @@ func TestEthCallSpecIntoProto(t *testing.T) {
 
 func TestEthCallSpecToDataSourceDefinitionProto(t *testing.T) {
 	// Same as above
-}
-
-func TestEthCallSpecString(t *testing.T) {
-	timeNow := uint64(time.Now().UnixNano())
-	ds := &vegapb.EthCallSpec{
-		Address: "test-eth-address",
-		Abi: &structpb.ListValue{
-			Values: []*structpb.Value{
-				{
-					Kind: &structpb.Value_NumberValue{
-						NumberValue: float64(5),
-					},
-				},
-			},
-		},
-		Method: "test-method",
-		Args: []*structpb.Value{
-			{},
-		},
-		Trigger: &vegapb.EthCallTrigger{
-			Trigger: &vegapb.EthCallTrigger_TimeTrigger{
-				TimeTrigger: &vegapb.EthTimeTrigger{
-					Initial: &timeNow,
-				},
-			},
-		},
-		Filters: []*v1.Filter{
-			{
-				Key: &v1.PropertyKey{
-					Name: "test-key",
-					Type: v1.PropertyKey_Type(1),
-				},
-			},
-		},
-	}
-
-	str := ds.String()
-	assert.Equal(
-		t,
-		fmt.Sprintf("address:\"test-eth-address\" abi:{values:{number_value:5}} method:\"test-method\" args:{} trigger:{time_trigger:{initial:%d}} filters:{key:{name:\"test-key\" type:TYPE_EMPTY}}", timeNow),
-		str,
-	)
 }

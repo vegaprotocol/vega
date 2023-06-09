@@ -2,12 +2,10 @@ package oracles_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
-
-	ethcallmocks "code.vegaprotocol.io/vega/core/evtforward/ethcall/mocks"
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/mocks"
@@ -27,9 +25,7 @@ type etheriumOracleVerifierTest struct {
 	witness           *mocks.MockWitness
 	ts                *mocks.MockTimeService
 	oracleBroadcaster *mocks.MockOracleDataBroadcaster
-	ethCall           *mocks.MockEthCall
-	ethContractCaller *mocks.MockContractCaller
-	ethConfirmations  *mocks.MockEthereumConfirmations
+	ethCallEngine     *mocks.MockEthCallEngine
 
 	onTick func(context.Context, time.Time)
 }
@@ -42,23 +38,15 @@ func getTestEthereumOracleVerifier(t *testing.T) *etheriumOracleVerifierTest {
 	ts := mocks.NewMockTimeService(ctrl)
 	broadcaster := mocks.NewMockOracleDataBroadcaster(ctrl)
 
-	ethCallSpecSource := mocks.NewMockEthCall(ctrl)
-	ethContractCaller := mocks.NewMockContractCaller(ctrl)
-
-	confirmations := mocks.NewMockEthereumConfirmations(ctrl)
+	ethCallEngine := mocks.NewMockEthCallEngine(ctrl)
 
 	evt := &etheriumOracleVerifierTest{
-		EthereumOracleVerifier: oracles.NewEthereumOracleVerifier(log, witness, ts, broadcaster, ethCallSpecSource,
-			ethContractCaller,
-			confirmations),
-		ctrl: ctrl,
-
-		witness:           witness,
-		ts:                ts,
-		oracleBroadcaster: broadcaster,
-		ethCall:           ethCallSpecSource,
-		ethContractCaller: ethContractCaller,
-		ethConfirmations:  confirmations,
+		EthereumOracleVerifier: oracles.NewEthereumOracleVerifier(log, witness, ts, broadcaster, ethCallEngine),
+		ctrl:                   ctrl,
+		witness:                witness,
+		ts:                     ts,
+		oracleBroadcaster:      broadcaster,
+		ethCallEngine:          ethCallEngine,
 	}
 	evt.onTick = evt.EthereumOracleVerifier.OnTick
 
@@ -78,15 +66,10 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
+	result := okResult()
+	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
+	eov.ethCallEngine.EXPECT().MakeResult("testspec", []byte("testbytes")).Return(result, nil)
 
-	eov.ethCall.EXPECT().GetDataSource("testspec").Times(2).Return(dataSource, true)
-
-	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
-	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
-
-	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var onQueryResultVerified func(interface{}, bool)
@@ -101,27 +84,18 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 			return nil
 		})
 
-	callEvent := types.EthContractCallEvent{
-		BlockHeight: 1,
-		BlockTime:   100,
-		SpecId:      "testspec",
-		Result:      []byte("testbytes"),
-	}
-
-	err := eov.ProcessEthereumContractCallResult(callEvent)
+	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 
 	// result verified
 	onQueryResultVerified(resourceToCheck, true)
 
-	normalisedData := map[string]string{"price": "12"}
 	oracleData := oracles.OracleData{
 		Signers: nil,
-		Data:    normalisedData,
+		Data:    okResult().normalised,
 	}
 
-	dataSource.EXPECT().Normalise([]byte("testbytes")).Return(normalisedData, nil)
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)
 
 	eov.onTick(context.Background(), time.Unix(10, 0))
@@ -132,12 +106,9 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
+	result := okResult()
 
-	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
-
-	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("someothertestbytes"), nil)
-
+	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
@@ -148,17 +119,9 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 			return nil
 		})
 
-	callEvent := types.EthContractCallEvent{
-		BlockHeight: 1,
-		BlockTime:   100,
-		SpecId:      "testspec",
-		Result:      []byte("testbytes"),
-	}
-
-	err := eov.ProcessEthereumContractCallResult(callEvent)
-
+	err := eov.ProcessEthereumContractCallResult(result.generateIncorrectDummyCallEvent())
 	assert.NoError(t, err)
-	assert.NotNil(t, checkResult)
+	assert.ErrorContains(t, checkResult, "mismatched")
 }
 
 func testProcessEthereumOracleFilterMismatch(t *testing.T) {
@@ -166,13 +129,8 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
-
-	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
-
-	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(false)
-
+	result := filterMismatchResult()
+	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
@@ -183,17 +141,9 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 			return nil
 		})
 
-	callEvent := types.EthContractCallEvent{
-		BlockHeight: 1,
-		BlockTime:   100,
-		SpecId:      "testspec",
-		Result:      []byte("testbytes"),
-	}
-
-	err := eov.ProcessEthereumContractCallResult(callEvent)
-
+	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
 	assert.NoError(t, err)
-	assert.NotNil(t, checkResult)
+	assert.ErrorContains(t, checkResult, "failed filter")
 }
 
 func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
@@ -201,17 +151,8 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
-
-	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
-
-	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
-
-	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
-
-	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(errors.New("insufficient confirmations"))
-
+	result := insufficentConfirmationsResult()
+	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
@@ -222,17 +163,10 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 			return nil
 		})
 
-	callEvent := types.EthContractCallEvent{
-		BlockHeight: 1,
-		BlockTime:   100,
-		SpecId:      "testspec",
-		Result:      []byte("testbytes"),
-	}
+	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
 
-	err := eov.ProcessEthereumContractCallResult(callEvent)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, checkResult)
+	assert.ErrorContains(t, checkResult, "confirmations")
+	assert.Nil(t, err)
 }
 
 func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
@@ -240,19 +174,12 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
+	result := okResult()
+	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 
-	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
-
-	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
-	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
-
-	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
-
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
@@ -260,17 +187,61 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 			return nil
 		})
 
-	callEvent := types.EthContractCallEvent{
+	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	assert.NoError(t, checkResult)
+	assert.NoError(t, err)
+
+	err = eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	assert.ErrorContains(t, err, "duplicated")
+}
+
+type fakeResult struct {
+	bytes                    []byte
+	values                   []any
+	normalised               map[string]string
+	passesFilters            bool
+	hasRequiredConfirmations bool
+}
+
+func (r fakeResult) Bytes() []byte                          { return r.bytes }
+func (r fakeResult) Values() ([]any, error)                 { return r.values, nil }
+func (r fakeResult) Normalised() (map[string]string, error) { return r.normalised, nil }
+func (r fakeResult) PassesFilters() (bool, error)           { return r.passesFilters, nil }
+func (r fakeResult) HasRequiredConfirmations() bool         { return r.hasRequiredConfirmations }
+
+func (r fakeResult) generateDummyCallEvent() types.EthContractCallEvent {
+	return types.EthContractCallEvent{
 		BlockHeight: 1,
 		BlockTime:   100,
 		SpecId:      "testspec",
 		Result:      []byte("testbytes"),
 	}
+}
 
-	err := eov.ProcessEthereumContractCallResult(callEvent)
-	assert.NoError(t, err)
-	assert.NoError(t, checkResult)
+func (r fakeResult) generateIncorrectDummyCallEvent() types.EthContractCallEvent {
+	res := r.generateDummyCallEvent()
+	res.Result = []byte("otherbytes")
+	return res
+}
 
-	err = eov.ProcessEthereumContractCallResult(callEvent)
-	assert.NotNil(t, err)
+func okResult() fakeResult {
+	return fakeResult{
+		bytes:                    []byte("testbytes"),
+		values:                   []any{big.NewInt(42)},
+		normalised:               map[string]string{"price": fmt.Sprintf("%s", big.NewInt(42))},
+		passesFilters:            true,
+		hasRequiredConfirmations: true,
+	}
+}
+
+func filterMismatchResult() fakeResult {
+	r := okResult()
+	r.passesFilters = false
+	return r
+}
+
+func insufficentConfirmationsResult() fakeResult {
+	r := okResult()
+	r.hasRequiredConfirmations = false
+	return r
 }
