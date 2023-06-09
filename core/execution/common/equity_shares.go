@@ -86,6 +86,20 @@ func (es *EquityShares) InheritELS(shares []*types.ELSShare) {
 	}
 }
 
+func (es *EquityShares) RollbackParentELS() {
+	es.parentLPs = map[string]*lp{}
+	// get all current stakes
+	current := es.lps
+	// clear current state:
+	es.lps = make(map[string]*lp, len(current))
+	es.totalPStake, es.totalVStake = num.DecimalZero(), num.DecimalZero()
+	// now add the commitments one by one as if they were just made
+	for pid, els := range current {
+		update, _ := num.UintFromDecimal(els.stake)
+		es.SetPartyStake(pid, update)
+	}
+}
+
 func (es *EquityShares) LpsToLiquidityProviderFeeShare(ls map[string]num.Decimal) []*types.LiquidityProviderFeeShare {
 	out := make([]*types.LiquidityProviderFeeShare, 0, len(es.lps))
 	for k, v := range es.lps {

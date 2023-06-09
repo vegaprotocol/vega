@@ -619,23 +619,6 @@ func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (type
 	if perr, err := validateParentProduct(terms, parent); err != nil {
 		return perr, err
 	}
-	// ensure price monitoring parameters are either set, or inherited:
-	if terms.Changes.PriceMonitoringParameters == nil && parent.PriceMonitoringSettings != nil && parent.PriceMonitoringSettings.Parameters != nil {
-		terms.Changes.PriceMonitoringParameters = parent.PriceMonitoringSettings.Parameters.DeepClone()
-	}
-	// same, but ensure the risk parameters are not nil
-	if terms.Changes.RiskParameters == nil && parent.TradableInstrument.RiskModel != nil {
-		switch rm := parent.TradableInstrument.RiskModel.(type) {
-		case *types.TradableInstrumentSimpleRiskModel:
-			terms.Changes.RiskParameters = &types.NewMarketConfigurationSimple{
-				Simple: rm.SimpleRiskModel.Params.DeepClone(),
-			}
-		case *types.TradableInstrumentLogNormalRiskModel:
-			terms.Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
-				LogNormal: rm.LogNormalRiskModel.DeepClone(),
-			}
-		}
-	}
 	return types.ProposalErrorUnspecified, nil
 }
 

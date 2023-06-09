@@ -140,13 +140,13 @@ func GovernanceTransferFromProto(g *checkpointpb.GovernanceTransfer) *Governance
 
 func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason *string) *eventspb.Transfer {
 	// Not sure if this symbology gonna work for datanode
-	from := "*"
+	from := "0000000000000000000000000000000000000000000000000000000000000000"
 	if len(g.Config.Source) > 0 {
 		from = g.Config.Source
 	}
 	to := g.Config.Destination
 	if g.Config.DestinationType == AccountTypeGlobalReward {
-		to = "*"
+		to = "0000000000000000000000000000000000000000000000000000000000000000"
 	}
 
 	out := &eventspb.Transfer{

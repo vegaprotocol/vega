@@ -38,6 +38,7 @@ var (
 	ErrEmptyBatchMarketInstructions = errors.New("empty batch market instructions")
 	ErrIsNotValidVegaPubkey         = errors.New("is not a valid vega public key")
 	ErrIsNotValidEthereumAddress    = errors.New("is not a valid ethereum address")
+	ErrMustBeWithinRange01          = errors.New("must be between 0 and 1")
 )
 
 type Errors map[string][]error

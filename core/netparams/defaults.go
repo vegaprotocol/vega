@@ -238,7 +238,7 @@ func defaultNetParams() map[string]value {
 
 		MarkPriceUpdateMaximumFrequency:   NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
 		ValidatorPerformanceScalingFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		SuccessorLaunchWindow:             NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
+		MarketSuccessorLaunchWindow:       NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
 	}
 
 	// add additional cross net param rules
