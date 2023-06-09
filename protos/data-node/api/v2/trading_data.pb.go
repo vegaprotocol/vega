@@ -12814,14 +12814,16 @@ func (x *NodeSignaturesConnection) GetPageInfo() *PageInfo {
 }
 
 // Request to fetch epoch data
+// Provide either the epoch ID or the block height to get the epoch for. If both are provided, the epoch ID will be used.
+// If both are omitted, the current epoch will be returned.
 type GetEpochRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Epoch ID to get, if provided. If omitted, data for the current epoch is returned.
+	// Epoch ID. If provided, returns the epoch with the given ID.
 	Id *uint64 `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
-	// Block Height that is within the range of the epoch to get, if provided. If omitted, data for the current epoch is returned.
+	// Block height. If provided, returns the epoch that the given block is in.
 	Block *uint64 `protobuf:"varint,2,opt,name=block,proto3,oneof" json:"block,omitempty"`
 }
 

@@ -2639,10 +2639,12 @@ message NodeSignaturesConnection {
 // -- Epochs --
 
 // Request to fetch epoch data
+// Provide either the epoch ID or the block height to get the epoch for. If both are provided, the epoch ID will be used.
+// If both are omitted, the current epoch will be returned.
 message GetEpochRequest {
-  // Epoch ID to get, if provided. If omitted, data for the current epoch is returned.
+  // Epoch ID. If provided, returns the epoch with the given ID.
   optional uint64 id = 1;
-  // Block Height that is within the range of the epoch to get, if provided. If omitted, data for the current epoch is returned.
+  // Block height. If provided, returns the epoch that the given block is in.
   optional uint64 block = 2;
 }
 
