@@ -38,6 +38,7 @@
 - [7416](https://github.com/vegaprotocol/vega/issues/7416) - Support for governance transfers
 - [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
+- [8445](https://github.com/vegaprotocol/vega/issues/8445) - Additional feature tests for iceberg orders.
 - [8349](https://github.com/vegaprotocol/vega/issues/8349) - Add successor market integration test coverage.
 
 ### 🐛 Fixes
