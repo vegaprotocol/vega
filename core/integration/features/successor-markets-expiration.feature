@@ -83,6 +83,9 @@ Feature: Simple example of successor markets
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search       | initial      | release      |
       | trader1 | ETH/DEC19 | 94501904587 | 103952095045 | 113402285504 | 132302666421 |
+    And the liquidity provider fee shares for the market "ETH/DEC19" should be:
+      | party  | equity like share | average entry valuation |
+      | lpprov | 1                 | 3905000000000000        |
     # provide liquidity for successor market
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -121,3 +124,7 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
+    # Average entry valuation, though the stake is less/different is not carried over
+    And the liquidity provider fee shares for the market "ETH/DEC20" should be:
+      | party  | equity like share | average entry valuation |
+      | lpprov | 1                 | 1905000000000000        |
