@@ -884,14 +884,21 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// this can only be true if mkt was a successor, and the successor market has left the opening auction
 		if leftOA {
 			pid := mdef.ParentMarketID
-			if pmkt, ok := e.markets[pid]; ok {
-				pmkt.SetSucceeded()
-			}
 			// transfer insurance pool balance
 			if !mdef.InsurancePoolFraction.IsZero() {
 				lm := e.collateral.SuccessorInsuranceFraction(ctx, id, pid, mkt.GetSettlementAsset(), mdef.InsurancePoolFraction)
 				if lm != nil {
 					e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
+				}
+			}
+			// set parent market as succeeded, clear insurance pool account if needed
+			if pmkt, ok := e.markets[pid]; ok {
+				pmkt.SetSucceeded()
+			} else {
+				asset := mkt.GetSettlementAsset()
+				// clear parent market insurance pool
+				if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, pid, asset); len(clearTransfers) > 0 {
+					e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 				}
 			}
 			// reject other pending successors
@@ -935,6 +942,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	for id, cpm := range e.marketCPStates {
 		if !cpm.TTL.After(t) {
 			toDelete = append(toDelete, id)
+			assets, _ := cpm.Market.GetAssets()
+			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0]); len(clearTransfers) > 0 {
+				e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
+			}
 		}
 	}
 	for _, id := range toDelete {

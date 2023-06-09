@@ -769,8 +769,10 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 		parties = append(parties, k)
 	}
 
+	// insurance pool has to be preserved in case a successor market leaves opening auction
+	keepInsurance := mktState == types.MarketStateSettled && !m.succeeded
 	sort.Strings(parties)
-	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties)
+	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, keepInsurance)
 	if err != nil {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
@@ -3386,7 +3388,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 	}
 
-	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties)
+	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, false)
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",
 			logging.String("market-id", m.GetID()),
