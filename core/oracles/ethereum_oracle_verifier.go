@@ -10,9 +10,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
-
-	"github.com/ethereum/go-ethereum"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
@@ -31,30 +28,41 @@ type OracleDataBroadcaster interface {
 	BroadcastData(context.Context, OracleData) error
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_call_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCall
-type EthCall interface {
-	GetDataSource(id string) (ethcall.DataSource, bool)
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallEngine
+type EthCallEngine interface {
+	CallContract(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error)
+	MakeResult(specID string, bytes []byte) (EthCallResult, error)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_contract_caller.go -package mocks code.vegaprotocol.io/vega/core/oracles ContractCaller
-type ContractCaller interface {
-	CallContract(ctx context.Context, call ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcall_result.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallResult
+type EthCallResult interface {
+	Bytes() []byte
+	Values() ([]any, error)
+	Normalised() (map[string]string, error)
+	PassesFilters() (bool, error)
+	HasRequiredConfirmations() bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthereumConfirmations
-type EthereumConfirmations interface {
-	Check(uint64) error
+// Needed because the engine CallContract method returns a concrete ethcall.Result type, but for mocking in tests we want an interface.
+type ethCallEngineWrapper struct {
+	wrapped *ethcall.Engine
+}
+
+func (e ethCallEngineWrapper) CallContract(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error) {
+	return e.wrapped.CallSpec(ctx, id, atBlock)
+}
+
+func (e ethCallEngineWrapper) MakeResult(specID string, bytes []byte) (EthCallResult, error) {
+	return e.wrapped.MakeResult(specID, bytes)
 }
 
 type EthereumOracleVerifier struct {
 	log *logging.Logger
 
-	witness           Witness
-	timeService       TimeService
-	oracleEngine      OracleDataBroadcaster
-	ethCall           EthCall
-	ethContractCaller ethereum.ContractCaller
-	ethConfirmations  EthereumConfirmations
+	witness      Witness
+	timeService  TimeService
+	oracleEngine OracleDataBroadcaster
+	ethEngine    EthCallEngine
 
 	pendingCallEvents    []*pendingCallEvent
 	finalizedCallResults []*types.EthContractCallEvent
@@ -83,23 +91,29 @@ func NewEthereumOracleVerifier(
 	witness Witness,
 	ts TimeService,
 	oracleBroadcaster OracleDataBroadcaster,
-	ethCallSpecSource EthCall,
-	ethContractCaller ethereum.ContractCaller,
-	ethConfirmations EthereumConfirmations,
+	ethCallEngine EthCallEngine,
 ) (sv *EthereumOracleVerifier) {
 	log = log.Named("ethereum-oracle-verifier")
 	s := &EthereumOracleVerifier{
-		log:               log,
-		witness:           witness,
-		timeService:       ts,
-		oracleEngine:      oracleBroadcaster,
-		ethCall:           ethCallSpecSource,
-		ethContractCaller: ethContractCaller,
-		ethConfirmations:  ethConfirmations,
-		hashes:            map[string]struct{}{},
-		snapshotState:     &ethereumOracleVerifierSnapshotState{},
+		log:           log,
+		witness:       witness,
+		timeService:   ts,
+		oracleEngine:  oracleBroadcaster,
+		ethEngine:     ethCallEngine,
+		hashes:        map[string]struct{}{},
+		snapshotState: &ethereumOracleVerifierSnapshotState{},
 	}
 	return s
+}
+
+func NewEthereumOracleVerifierFromEngine(
+	log *logging.Logger,
+	witness Witness,
+	ts TimeService,
+	oracleBroadcaster OracleDataBroadcaster,
+	specCaller *ethcall.Engine,
+) (sv *EthereumOracleVerifier) {
+	return NewEthereumOracleVerifier(log, witness, ts, oracleBroadcaster, ethCallEngineWrapper{wrapped: specCaller})
 }
 
 func (s *EthereumOracleVerifier) ensureNotDuplicate(hash string) bool {
@@ -144,31 +158,28 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 		pending, s.onCallEventVerified, s.timeService.GetTimeNow().Add(24*time.Hour))
 }
 
-func (s *EthereumOracleVerifier) checkCallEventResult(contractCall types.EthContractCallEvent) error {
-	dataSource, exists := s.ethCall.GetDataSource(contractCall.SpecId)
-	if !exists {
-		// It is possible though unlikely that this could happen if a spec is deactivated after the chain event is sent
-		// but it would probably indicate incorrect behaviour.
-		return fmt.Errorf("datasource for spec id %s does not exist", contractCall.SpecId)
-	}
-
+func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContractCallEvent) error {
 	blockHeight := &big.Int{}
-	blockHeight.SetUint64(contractCall.BlockHeight)
-	value, err := dataSource.CallContract(context.Background(), s.ethContractCaller, blockHeight)
+	blockHeight.SetUint64(callEvent.BlockHeight)
+
+	// Maybe TODO; can we do better than this? Might want to cancel on shutdown or something..
+	ctx := context.Background()
+	checkResult, err := s.ethEngine.CallContract(ctx, callEvent.SpecId, blockHeight)
 	if err != nil {
-		return fmt.Errorf("failed to execute call event dataSource: %w", err)
+		return fmt.Errorf("failed to execute call event spec: %w", err)
 	}
 
-	if !bytes.Equal(contractCall.Result, value) {
-		return fmt.Errorf("mismatched results for block %d", contractCall.BlockHeight)
+	if !bytes.Equal(callEvent.Result, checkResult.Bytes()) {
+		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
 	}
 
-	if !dataSource.PassesFilters(contractCall.Result, contractCall.BlockHeight, contractCall.BlockTime) {
-		return fmt.Errorf("failed to pass filter check")
+	if !checkResult.HasRequiredConfirmations() {
+		return fmt.Errorf("failed confirmations check")
 	}
 
-	if err = s.ethConfirmations.Check(dataSource.RequiredConfirmations()); err != nil {
-		return fmt.Errorf("failed confirmations check: %w", err)
+	filtersOk, err := checkResult.PassesFilters()
+	if !filtersOk {
+		return fmt.Errorf("failed filter check: %w", err)
 	}
 
 	return nil
@@ -204,15 +215,12 @@ func (s *EthereumOracleVerifier) onCallEventVerified(event interface{}, ok bool)
 
 func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, callResult := range s.finalizedCallResults {
-		dataSource, exists := s.ethCall.GetDataSource(callResult.SpecId)
-		if !exists {
-			// It is possible this could happen if a spec is deactivated after the chain event is sent
-			// but it would probably indicate incorrect behaviour.
-			s.log.Errorf("datasource for spec id %s does not exist", callResult.SpecId)
-			continue
+		result, err := s.ethEngine.MakeResult(callResult.SpecId, callResult.Result)
+		if err != nil {
+			s.log.Error("failed to create ethcall result", logging.Error(err))
 		}
 
-		normalisedData, err := dataSource.Normalise(callResult.Result)
+		normalisedData, err := result.Normalised()
 		if err != nil {
 			s.log.Error("failed to normalise oracle data", logging.Error(err))
 			continue
