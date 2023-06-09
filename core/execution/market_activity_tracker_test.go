@@ -427,7 +427,7 @@ func TestMarketTrackerStateChange(t *testing.T) {
 
 func TestFeesTrackerWith0(t *testing.T) {
 	epochEngine := &TestEpochEngine{}
-	tracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	tracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 	epochEngine.target(context.Background(), types.Epoch{Seq: 1})
 
 	tracker.MarketProposed("asset1", "market1", "me")

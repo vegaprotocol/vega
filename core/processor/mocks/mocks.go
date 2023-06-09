@@ -391,17 +391,17 @@ func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, 
 }
 
 // SubmitMarket mocks base method.
-func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *types.Market, arg2 string) error {
+func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *types.Market, arg2 string, arg3 time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitMarket indicates an expected call of SubmitMarket.
-func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1, arg2, arg3)
 }
 
 // SubmitOrder mocks base method.

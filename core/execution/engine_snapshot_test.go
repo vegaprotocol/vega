@@ -221,7 +221,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NotNil(t, engine)
 
 	marketConfig := getMarketConfig()
-	err := engine.SubmitMarket(ctx, marketConfig, "")
+	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
 
 	keys := engine.Keys()
