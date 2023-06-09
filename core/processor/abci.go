@@ -1808,8 +1808,7 @@ func (app *App) enactSuccessorMarket(ctx context.Context, prop *types.Proposal) 
 	successor := prop.ID
 	nm := prop.NewMarket()
 	parent := nm.Changes.Successor.ParentID
-	ins := nm.Changes.Successor.InsurancePoolFraction
-	if err := app.exec.SucceedMarket(ctx, successor, parent, ins); err != nil {
+	if err := app.exec.SucceedMarket(ctx, successor, parent); err != nil {
 		prop.State = types.ProposalStateFailed
 		prop.ErrorDetails = err.Error()
 		return

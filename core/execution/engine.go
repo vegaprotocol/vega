@@ -42,6 +42,9 @@ var (
 
 	// ErrSuccessorMarketDoesNotExists is returned when SucceedMarket call is made with an invalid successor market ID.
 	ErrSuccessorMarketDoesNotExist = errors.New("successor market does not exist")
+
+	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
+	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
 )
 
 // Engine is the execution engine.
@@ -260,8 +263,8 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 	return nil
 }
 
-func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string, insuranceFraction num.Decimal) error {
-	return e.succeedOrRestore(ctx, successor, parent, insuranceFraction, false)
+func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string) error {
+	return e.succeedOrRestore(ctx, successor, parent, false)
 }
 
 func (e *Engine) restoreOwnState(ctx context.Context, mID string) (bool, error) {
@@ -292,7 +295,7 @@ func (e *Engine) restoreOwnState(ctx context.Context, mID string) (bool, error) 
 	return false, nil
 }
 
-func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string, insuranceFraction num.Decimal, restore bool) error {
+func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string, restore bool) error {
 	mkt, ok := e.markets[successor]
 	if !ok {
 		// this can happen if a proposal vote closed, but the proposal had an enactment time in the future.
@@ -302,7 +305,7 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 		return ErrMarketDoesNotExist
 	}
 	// if this is a market restore, first check to see if there is some state already
-	pm, ok := e.GetMarket(parent, true)
+	_, ok = e.GetMarket(parent, true)
 	if !ok && !restore {
 		// a successor market that has passed the vote, but the parent market either already was succeeded
 		// or the proposal vote closed when the parent market was still around, but it wasn't enacted until now
@@ -311,11 +314,7 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 		mkt.ResetParentIDAndInsurancePoolFraction()
 		return nil
 	}
-	var parentM *types.Market
-	if ok {
-		parentM = &pm
-	}
-	parentState, sok := e.marketCPStates[parent]
+	_, sok := e.marketCPStates[parent]
 	// restoring a market, but no state of the market nor parent market exists. Treat market as parent.
 	if restore && !sok && !ok {
 		// restoring a market, but the market state and parent market both are missing
@@ -324,35 +323,14 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 	}
 	// if parent market is active, mark as succeeded
 	if pmo, ok := e.markets[parent]; ok {
-		// mark as succeeded so the state is excluded from checkpoint data
-		pmo.SetSucceeded()
-		parentM = pmo.Mkt()
-		// it may be possible that there is no CP state for this market yet
-		if !sok {
-			// no cp state (yet), get the state from the parent market directly
-			parentState = pmo.GetCPState()
+		// succeeding a parent market before it was enacted is not allowed
+		if pmo.Mkt().State == types.MarketStateProposed {
+			e.RejectMarket(ctx, successor)
+			return ErrParentMarketNotEnactedYet
 		}
-	}
-	if !insuranceFraction.IsZero() {
-		lm := e.collateral.SuccessorInsuranceFraction(ctx, successor, parent, mkt.GetSettlementAsset(), insuranceFraction)
-		e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
-	}
-	// pass in the ELS and the like
-	mkt.InheritParent(ctx, parentState)
-	// if the parent market is in trading terminated state, then just remove it from the CP states
-	if !restore && parentM != nil && parentM.State == types.MarketStateSettled {
-		delete(e.marketCPStates, parent)
 	}
 	// successor market set up accordingly, clean up the state
 	// first reject all pending successors proposed for the same parent
-	for _, pending := range e.successors[parent] {
-		if pending == successor {
-			continue
-		}
-		e.RejectMarket(ctx, pending)
-	}
-	delete(e.successors, parent)
-	delete(e.isSuccessor, successor)
 	return nil
 }
 
@@ -390,7 +368,7 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	}
 	// this is a successor market, handle accordingly
 	if pid := marketConfig.ParentMarketID; len(pid) > 0 {
-		return e.succeedOrRestore(ctx, marketConfig.ID, pid, marketConfig.InsurancePoolFraction, true)
+		return e.succeedOrRestore(ctx, marketConfig.ID, pid, true)
 	}
 	return nil
 }
@@ -874,17 +852,65 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 
 	// notify markets of the time expiration
 	toDelete := []string{}
+	parentStates := e.getParentStates()
 	evts := make([]events.Event, 0, len(e.marketsCpy))
 	for _, mkt := range e.marketsCpy {
 		mkt := mkt
 		id := mkt.GetID()
+		mdef := mkt.Mkt()
+		pstate, isSuccessor := parentStates[id]
+		inOA := isSuccessor && mdef.State == types.MarketStatePending
+		// this market was a successor, but has no parent state (parent state likely expired
+		// although this currently is not possible, better check here.
+		if isSuccessor && inOA {
+			if pstate == nil {
+				delete(e.isSuccessor, id)
+				delete(e.successors, mdef.ParentMarketID)
+				mkt.ResetParentIDAndInsurancePoolFraction()
+				isSuccessor = false
+			} else {
+				// update parent state in market prior to potentially leaving opening auction
+				mkt.InheritParent(ctx, pstate)
+			}
+		}
 		closing := mkt.OnTick(ctx, t)
+		// successor market has left opening auction
+		leftOA := inOA && mdef.State == types.MarketStateActive
 		if closing {
 			e.log.Info("market is closed, removing from execution engine",
 				logging.MarketID(id))
 			toDelete = append(toDelete, id)
 		}
-		if !mkt.IsSucceeded() {
+		// this can only be true if mkt was a successor, and the successor market has left the opening auction
+		if leftOA {
+			pid := mdef.ParentMarketID
+			if pmkt, ok := e.markets[pid]; ok {
+				pmkt.SetSucceeded()
+			}
+			// transfer insurance pool balance
+			if !mdef.InsurancePoolFraction.IsZero() {
+				lm := e.collateral.SuccessorInsuranceFraction(ctx, id, pid, mkt.GetSettlementAsset(), mdef.InsurancePoolFraction)
+				if lm != nil {
+					e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
+				}
+			}
+			// reject other pending successors
+			for _, sid := range e.successors[pid] {
+				delete(e.isSuccessor, sid)
+				if id == sid {
+					continue
+				}
+				e.RejectMarket(ctx, sid)
+			}
+			// remove data used to indicate that the parent market has pending successors
+			delete(e.successors, pid)
+			delete(e.marketCPStates, pid)
+		} else if isSuccessor {
+			// this call can be made even if the market has left opening auction, but checking this here, too, is better than
+			// relying on how this is implemented
+			mkt.RollbackInherit(ctx)
+		}
+		if _, ok := e.successors[id]; ok || !mkt.IsSucceeded() {
 			// update the market state used to set the successor market accordingly
 			// if the market was closed, the checkpoint data will include the full market definition
 			cps := mkt.GetCPState()
@@ -892,7 +918,8 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			cps.TTL = t.Add(e.successorWindow)
 			e.marketCPStates[id] = cps
 		} else {
-			// just in case it's still around -> remove the state
+			// just in case it's still around -> remove the state, this would mean there is no pending successor, and the market is
+			// marked as succeeded, this state should not be here
 			delete(e.marketCPStates, id)
 		}
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
@@ -904,6 +931,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 	// clear slice
 	toDelete = toDelete[:]
+	// find state that should expire
 	for id, cpm := range e.marketCPStates {
 		if !cpm.TTL.After(t) {
 			toDelete = append(toDelete, id)
@@ -911,9 +939,39 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 	for _, id := range toDelete {
 		delete(e.marketCPStates, id)
+		if ss, ok := e.successors[id]; ok {
+			// parent market expired, remove parent ID
+			for _, s := range ss {
+				delete(e.isSuccessor, s)
+				if mkt, ok := e.markets[s]; ok {
+					mkt.ResetParentIDAndInsurancePoolFraction()
+				}
+			}
+		}
+		delete(e.successors, id)
 	}
 
 	timer.EngineTimeCounterAdd()
+}
+
+func (e *Engine) getParentStates() map[string]*types.CPMarketState {
+	// all successor markets need to have a reference to the parent state
+	states := make(map[string]*types.CPMarketState, len(e.isSuccessor))
+	// for each parent market, get the successors
+	for pid, successors := range e.successors {
+		state, sok := e.marketCPStates[pid]
+		if !sok {
+			if pmkt, ok := e.markets[pid]; ok {
+				state = pmkt.GetCPState()
+			}
+		}
+		// if the state does not exist, then there is nothing to inherit. This is handled elsewhere
+		// include nil states in the map
+		for _, sid := range successors {
+			states[sid] = state
+		}
+	}
+	return states
 }
 
 func (e *Engine) BlockEnd(ctx context.Context) {
@@ -928,6 +986,15 @@ func (e *Engine) GetMarketState(mktID string) (types.MarketState, error) {
 		return types.MarketStateUnspecified, types.ErrInvalidMarketID
 	}
 	return mkt.GetMarketState(), nil
+}
+
+func (e *Engine) IsSucceeded(mktID string) bool {
+	if mkt, ok := e.markets[mktID]; ok {
+		return mkt.IsSucceeded()
+	}
+	// checking marketCPStates is pointless. The parent market could not be found to validate the proposal, so it will be rejected outright
+	// if the market is no longer in e.markets, it will be set in marketCPStates, and therefore the successor proposal must be accepted.
+	return false
 }
 
 func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {

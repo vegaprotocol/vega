@@ -60,10 +60,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-var (
-	marketConfig    = market.NewMarketConfig()
-	successorConfig = market.NewSuccessorConfig()
-)
+var marketConfig = market.NewMarketConfig()
 
 type executionTestSetup struct {
 	cfg              execution.Config
@@ -228,6 +225,10 @@ func newExecutionTestSetup() *executionTestSetup {
 		netparams.WatchParam{
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketSuccessorLaunchWindow,
+			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)
 	return execsetup

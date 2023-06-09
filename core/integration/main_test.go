@@ -155,14 +155,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.markets = markets
 		return nil
 	})
-	s.Step(`the successor markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheSuccessorMarkets(successorConfig, execsetup.executionEngine, execsetup.netParams, table)
-		if err != nil {
-			return err
-		}
-		execsetup.markets = append(execsetup.markets, markets...)
-		return nil
-	})
 
 	s.Step(`the successor market "([^"]+)" is enacted$`, func(successor string) error {
 		if err := steps.TheSuccesorMarketIsEnacted(successor, execsetup.markets, execsetup.executionEngine); err != nil {
@@ -190,6 +182,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`^the last market state should be "([^"]+)" for the market "([^"]+)"$`, func(mState, marketID string) error {
+		return steps.TheLastStateUpdateShouldBeForMarket(execsetup.broker, marketID, mState)
+	})
 	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
 		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
 	})
@@ -481,7 +476,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	// Decimal places steps
 	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
-		return steps.RegisterAsset(table, execsetup.assetsEngine)
+		return steps.RegisterAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
 	})
 	s.Step(`^set assets to strict$`, func() error {
 		execsetup.assetsEngine.SetStrict()

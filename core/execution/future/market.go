@@ -522,7 +522,7 @@ func (m *Market) ReloadConf(
 }
 
 func (m *Market) Reject(ctx context.Context) error {
-	if m.mkt.State != types.MarketStateProposed {
+	if !m.canReject() {
 		return common.ErrCannotRejectMarketNotInProposedState
 	}
 
@@ -533,6 +533,17 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
+}
+
+func (m *Market) canReject() bool {
+	if m.mkt.State == types.MarketStateProposed {
+		return true
+	}
+	if len(m.mkt.ParentMarketID) == 0 {
+		return false
+	}
+	// parent market is set, market can be in pending state when it is rejected.
+	return m.mkt.State == types.MarketStatePending
 }
 
 func (m *Market) onTxProcessed() {
@@ -555,6 +566,18 @@ func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState)
 	// add the trade value from the parent
 	m.feeSplitter.SetTradeValue(pstate.LastTradeValue)
 	m.equityShares.InheritELS(pstate.Shares)
+}
+
+func (m *Market) RollbackInherit(ctx context.Context) {
+	// the InheritParent call has to be made before checking if the market can leave opening auction
+	// if the market did not leave opening auction, market state needs to be resored to what it was
+	// before the call to InheritParent was made. Market is still in opening auction, therefore
+	// feeSplitter trade value is zero, and equity shares are linear stake/vstake/ELS
+	// do make sure this call is not made when the market is active
+	if m.mkt.State == types.MarketStatePending {
+		m.feeSplitter.SetTradeValue(num.UintZero())
+		m.equityShares.RollbackParentELS()
+	}
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {
