@@ -699,7 +699,7 @@ type Query {
     fullHistory: Boolean,
     "Optional pagination information"
     pagination: Pagination
-  ): MarketConnection
+  ): SuccessorMarketConnection
 
   "Get a list of all trades and apply any given filters to the results"
   trades(
@@ -1975,7 +1975,6 @@ type ObservableMarketDepthUpdate {
   "Sequence number of the last update sent; useful for checking that no updates were missed."
   previousSequenceNumber: String!
 }
-
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
@@ -4200,7 +4199,7 @@ type PartyConnection {
   pageInfo: PageInfo!
 }
 
-"Edge type containing the order and cursor information returned by a OrderConnection"
+"Edge type containing the market and cursor information returned by a MarketConnection"
 type MarketEdge {
   "The market"
   node: Market!
@@ -4212,6 +4211,29 @@ type MarketEdge {
 type MarketConnection {
   "The markets in this connection"
   edges: [MarketEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+type SuccessorMarket {
+  "The market"
+  market: Market!
+  "Proposals for child markets"
+  proposals: [Proposal]
+}
+
+"Edge type containing the market and cursor information returned by a MarketConnection"
+type SuccessorMarketEdge {
+  "The market"
+  node: SuccessorMarket!
+  "The cursor for this market"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated market information"
+type SuccessorMarketConnection {
+  "The markets in this connection"
+  edges: [SuccessorMarketEdge!]!
   "The pagination information"
   pageInfo: PageInfo!
 }

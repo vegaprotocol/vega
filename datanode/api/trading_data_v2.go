@@ -1109,12 +1109,23 @@ func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2
 		return nil, formatE(ErrMarketServiceGetAllPaged, err)
 	}
 
-	edges, err := makeEdges[*v2.MarketEdge](markets)
+	edges, err := makeEdges[*v2.SuccessorMarketEdge](markets)
 	if err != nil {
 		return nil, formatE(err)
 	}
 
-	marketsConnection := &v2.MarketConnection{
+	for i := range edges {
+		for j := range edges[i].Node.Proposals {
+			proposalID := edges[i].Node.Proposals[j].Proposal.Id
+			node := edges[i].Node.Proposals[j]
+			node.Yes, node.No, err = t.getVotesByProposal(ctx, proposalID)
+			if err != nil {
+				return nil, formatE(ErrGovernanceServiceGetVotes, errors.Wrapf(err, "proposalID: %s", proposalID))
+			}
+		}
+	}
+
+	marketsConnection := &v2.SuccessorMarketConnection{
 		Edges:    edges,
 		PageInfo: pageInfo.ToProto(),
 	}

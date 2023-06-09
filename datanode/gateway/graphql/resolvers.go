@@ -1297,7 +1297,7 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 	return resp.GetSegment(), nil
 }
 
-func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.MarketConnection, error) {
+func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.SuccessorMarketConnection, error) {
 	getAll := false
 
 	if fullHistory != nil {
