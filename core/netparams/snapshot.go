@@ -161,7 +161,9 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 	}
 
 	for _, kv := range np.NetParams.Params {
-		s.Update(ctx, kv.Key, kv.Value)
+		if err := s.UpdateOptionalValidation(ctx, kv.Key, kv.Value, false); err != nil {
+			return nil, err
+		}
 	}
 
 	// Now they have been loaded, dispatch the changes so that the other engines pick them up
