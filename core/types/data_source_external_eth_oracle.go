@@ -14,8 +14,8 @@ type EthCallSpec struct {
 	ArgsJson              []string
 	Trigger               EthCallTrigger
 	RequiredConfirmations uint64
-	// Normaliser            normaliser
-	Filters DataSourceSpecFilters
+	Normaliser            map[string]string
+	Filters               DataSourceSpecFilters
 }
 
 func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
@@ -54,6 +54,7 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 		Trigger:               trigger,
 		RequiredConfirmations: proto.RequiredConfirmations,
 		Filters:               filters,
+		// todo: normaliser
 	}, nil
 }
 
@@ -82,6 +83,7 @@ func (s EthCallSpec) IntoProto() (*vegapb.EthCallSpec, error) {
 		Trigger:               s.Trigger.IntoEthCallTriggerProto(),
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               s.Filters.IntoProto(),
+		// todo: normaliser
 	}, nil
 }
 
@@ -116,5 +118,6 @@ func (s EthCallSpec) DeepClone() dataSourceType {
 		Trigger:               s.Trigger,
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               append(DataSourceSpecFilters(nil), s.Filters...),
+		// todo: normaliser
 	}
 }

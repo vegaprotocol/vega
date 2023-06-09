@@ -210,9 +210,7 @@ func newServices(
 
 	// todo: maybe inside haveethclient?
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
-	go svcs.ethCallEngine.Start()
-	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.oracle,
-		svcs.ethCallEngine, svcs.ethClient, svcs.ethConfirmations)
+	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifierFromEngine(svcs.log, svcs.witness, svcs.timeService, svcs.oracle, svcs.ethCallEngine)
 
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, svcs.ethCallEngine)
 

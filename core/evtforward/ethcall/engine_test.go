@@ -68,9 +68,6 @@ func TestEngine(t *testing.T) {
 
 	require.NoError(t, err)
 
-	datasource, ok := e.GetDataSource("testid")
-	assert.True(t, ok)
-
 	// Make sure engine has a previous block to compare to
 	e.OnTick(ctx, time.Now())
 
@@ -84,13 +81,9 @@ func TestEngine(t *testing.T) {
 		cc := ce.GetContractCall()
 		require.NotNil(t, cc)
 
-		res, err := datasource.Normalise(cc.Result)
-		require.NoError(t, err)
-
 		assert.Equal(t, cc.BlockHeight, uint64(3))
 		assert.Equal(t, cc.BlockTime, uint64(30))
 		assert.Equal(t, cc.SpecId, "testid")
-		require.Equal(t, res["price"], "[66]")
 	})
 	tc.client.Commit()
 	e.OnTick(ctx, time.Now())

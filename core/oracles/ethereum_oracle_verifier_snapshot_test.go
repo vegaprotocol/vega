@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	ethcallmocks "code.vegaprotocol.io/vega/core/evtforward/ethcall/mocks"
-
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
@@ -38,15 +36,10 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	dataSource := ethcallmocks.NewMockDataSource(eov.ctrl)
+	result := okResult()
 
-	eov.ethCall.EXPECT().GetDataSource("testspec").Times(1).Return(dataSource, true)
+	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 
-	dataSource.EXPECT().CallContract(gomock.Any(), eov.ethContractCaller, big.NewInt(1)).Return([]byte("testbytes"), nil)
-	dataSource.EXPECT().PassesFilters([]byte("testbytes"), uint64(1), uint64(100)).Return(true)
-	dataSource.EXPECT().RequiredConfirmations().Return(uint64(5))
-
-	eov.ethConfirmations.EXPECT().Check(uint64(5)).Return(nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
