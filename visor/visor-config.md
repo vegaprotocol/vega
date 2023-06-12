@@ -68,7 +68,7 @@ Default value: <code>5</code>
 
 Number of seconds that Visor waits before it sends termination signal (SIGTERM) to running processes
 that are ready for upgrade.
-After the time has elapsed Visor stop the running binaries (SIGTERM).
+After the time has elapsed Visor stops the running binaries (SIGTERM).
 
 
 
@@ -137,7 +137,7 @@ restartsDelaySeconds = 5
 
 
 ## *AutoInstallConfig*
-Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
+Allows you to define if assets should be automatically downloaded and installed. If enabled the GitHub details for the asset are given for a specific release.
 
 
 ### Fields
@@ -212,7 +212,7 @@ Definitions of the asset that should be downloaded from the GitHub repository.
 
 
 ## *AssetsConfig*
-Allows you to define the name of the asset to be downloaded.
+Allows you to define the name of the file asset to be downloaded as well as the executable asset to be run by Visor. 
 
 
 ### Fields
