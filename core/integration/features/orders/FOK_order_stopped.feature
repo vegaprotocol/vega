@@ -13,7 +13,7 @@ Feature: check when FOK market order unable to trade
     And the markets:
       | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
       | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | WETH/DEC20 | WETH       | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+     
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -26,14 +26,14 @@ Scenario: 001 FOK market order unable to trade
       | auxiliary1  | USD   | 1000000000000 |
       | auxiliary2  | USD   | 1000000000000 |
       | trader2     | USD   | 90000         |
-      | trader20     | USD  | 10000         |
+      | trader20    | USD   | 10000         |
       | trader3     | USD   | 90000         |
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp0 | lprov | ETH/DEC20 | 5000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC20 | 5000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
+      | lp0 | lprov | ETH/DEC20 | 5000              | 0.001 | sell | ASK              | 100        | 55     | submission |
+      | lp0 | lprov | ETH/DEC20 | 5000              | 0.001 | buy  | BID              | 100        | 55     | submission  |
 
     Then the parties place the following orders:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -44,10 +44,13 @@ Scenario: 001 FOK market order unable to trade
 
     When the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "10" for the market "ETH/DEC20"
+    Then debug orders
     And the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
       | buy  | 1     | 5000   |
       | buy  | 5     | 5      |
+      | sell | 1000  | 10     |
+      | sell | 1005  | 5      |
 
     # setup trader2 position for an order which is partially filled and leading to a reduced position
     When the parties place the following orders with ticks:
@@ -58,6 +61,8 @@ Scenario: 001 FOK market order unable to trade
       | side | price | volume |
       | buy  | 1     | 5000   |
       | buy  | 5     | 5      |
+      | sell | 1000  | 10     |
+      | sell | 1005  | 5      |
 
     # check the order status, it should be stopped
     And the orders should have the following status:
