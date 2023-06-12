@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +47,7 @@ func getValidInstrumentProto() *types.Instrument {
 				SettlementAsset: SettlementAssetStr,
 				DataSourceSpecForSettlementData: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -68,7 +67,7 @@ func getValidInstrumentProto() *types.Instrument {
 				},
 				DataSourceSpecForTradingTermination: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{

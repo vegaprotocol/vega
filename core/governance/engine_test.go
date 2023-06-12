@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
 	"code.vegaprotocol.io/vega/logging"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -1186,7 +1185,7 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 			termFilter, termBinding = produceNonTimeTriggeredDataSourceSpec()
 		}
 
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
+		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeOracle).SetOracleConfig(
 			&types.DataSourceSpecConfiguration{
 				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
 				Filters: []*types.DataSourceSpecFilter{
@@ -1200,7 +1199,7 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeInt).SetTimeTriggerConditionConfig(
+		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
 			[]*types.DataSourceSpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
@@ -1221,7 +1220,7 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
 							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
@@ -1318,7 +1317,7 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 				TradingTerminationProperty: "trading.terminated",
 			}
 		}
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeExt).SetOracleConfig(
+		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeOracle).SetOracleConfig(
 			&types.DataSourceSpecConfiguration{
 				Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},
 				Filters: []*types.DataSourceSpecFilter{
@@ -1332,7 +1331,7 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 			_, termBinding = produceTimeTriggeredDataSourceSpec(tm)
 		}
 
-		dt = types.NewDataSourceDefinition(vegapb.DataSourceDefinitionTypeInt).SetTimeTriggerConditionConfig(
+		dt = types.NewDataSourceDefinition(types.DataSourceContentTypeInternalTimeTermination).SetTimeTriggerConditionConfig(
 			[]*types.DataSourceSpecCondition{
 				{
 					Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
@@ -1352,7 +1351,7 @@ func updateMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *type
 						Future: &types.UpdateFutureProduct{
 							QuoteName: "VUSD",
 							DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								types.DataSourceContentTypeOracle,
 							).SetOracleConfig(
 								&types.DataSourceSpecConfiguration{
 									Signers: []*types.Signer{types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)},

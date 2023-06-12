@@ -218,7 +218,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 			futureUp := &types.UpdateFutureProduct{
 				QuoteName: ti.Future.QuoteName,
 				DataSourceSpecForSettlementData: *types.NewDataSourceDefinition(
-					proto.DataSourceDefinitionTypeExt,
+					types.DataSourceContentTypeOracle,
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),
@@ -226,7 +226,7 @@ func marketUpdate(config *market.Config, existing *types.Market, row marketUpdat
 					},
 				),
 				DataSourceSpecForTradingTermination: *types.NewDataSourceDefinition(
-					proto.DataSourceDefinitionTypeExt,
+					types.DataSourceContentTypeOracle,
 				).SetOracleConfig(
 					&types.DataSourceSpecConfiguration{
 						Signers: settleSpec.ExternalDataSourceSpec.Spec.Data.GetSigners(),

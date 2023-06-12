@@ -18,7 +18,6 @@ import (
 
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
-	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +47,7 @@ func testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds(t *testing.T) {
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				types.DataSourceContentTypeOracle,
 			).SetOracleConfig(
 				&types.DataSourceSpecConfiguration{
 					Signers: []*types.Signer{},
@@ -79,7 +78,7 @@ func testOracleSpecCreatingWithFiltersWithoutKeyFails(t *testing.T) {
 	spec := types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				types.DataSourceContentTypeOracle,
 			).SetOracleConfig(
 				&types.DataSourceSpecConfiguration{
 					Signers: []*types.Signer{
@@ -110,7 +109,7 @@ func testOracleSpecCreatingWithSplitFiltersWithSameTypeFails(t *testing.T) {
 	spec, err := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				types.DataSourceContentTypeOracle,
 			).SetOracleConfig(
 				&types.DataSourceSpecConfiguration{
 					Signers: []*types.Signer{
@@ -182,7 +181,7 @@ func testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails(t *testing.T) {
 			originalSpec := types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -222,7 +221,7 @@ func testOracleSpecMatchingUnauthorizedPubKeysFails(t *testing.T) {
 	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				types.DataSourceContentTypeOracle,
 			).SetOracleConfig(
 				&types.DataSourceSpecConfiguration{
 					Signers: []*types.Signer{
@@ -271,7 +270,7 @@ func testOracleSpecMatchingAuthorizedPubKeysSucceeds(t *testing.T) {
 	spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 		Spec: &types.DataSourceSpec{
 			Data: types.NewDataSourceDefinition(
-				vegapb.DataSourceDefinitionTypeExt,
+				types.DataSourceContentTypeOracle,
 			).SetOracleConfig(
 				&types.DataSourceSpecConfiguration{
 					Signers: []*types.Signer{
@@ -393,7 +392,7 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -502,7 +501,7 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -629,7 +628,7 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -738,7 +737,7 @@ func testOracleSpecMatchingLessThanPropertiesSucceedsOnlyForNonTimestamp(t *test
 			spec, err := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -871,7 +870,7 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesSucceedsOnlyForNonTimestamp(
 			spec, err := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -962,7 +961,7 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -1038,7 +1037,7 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -1120,7 +1119,7 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{
@@ -1265,7 +1264,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 			spec, _ := oracles.NewOracleSpec(types.ExternalDataSourceSpec{
 				Spec: &types.DataSourceSpec{
 					Data: types.NewDataSourceDefinition(
-						vegapb.DataSourceDefinitionTypeExt,
+						types.DataSourceContentTypeOracle,
 					).SetOracleConfig(
 						&types.DataSourceSpecConfiguration{
 							Signers: []*types.Signer{

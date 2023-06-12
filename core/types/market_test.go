@@ -56,11 +56,13 @@ func TestMarketFromIntoProto(t *testing.T) {
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							Data: vegapb.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								vegapb.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&vegapb.DataSourceSpecConfiguration{
-									Signers: []*datapb.Signer{pk.IntoProto()},
-									Filters: []*datapb.Filter{testFilter1},
+								&vegapb.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vegapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{pk.IntoProto()},
+										Filters: []*datapb.Filter{testFilter1},
+									},
 								},
 							),
 							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
@@ -70,11 +72,13 @@ func TestMarketFromIntoProto(t *testing.T) {
 							CreatedAt: 0,
 							UpdatedAt: 1,
 							Data: vegapb.NewDataSourceDefinition(
-								vegapb.DataSourceDefinitionTypeExt,
+								vegapb.DataSourceContentTypeOracle,
 							).SetOracleConfig(
-								&vegapb.DataSourceSpecConfiguration{
-									Signers: []*datapb.Signer{pk.IntoProto()},
-									Filters: []*datapb.Filter{},
+								&vegapb.DataSourceDefinitionExternal_Oracle{
+									Oracle: &vegapb.DataSourceSpecConfiguration{
+										Signers: []*datapb.Signer{pk.IntoProto()},
+										Filters: []*datapb.Filter{},
+									},
 								},
 							),
 							Status: vegapb.DataSourceSpec_STATUS_ACTIVE,
