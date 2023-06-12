@@ -897,7 +897,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			} else {
 				asset := mkt.GetSettlementAsset()
 				// clear parent market insurance pool
-				if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, pid, asset); len(clearTransfers) > 0 {
+				if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, pid, asset, true); len(clearTransfers) > 0 {
 					e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 				}
 			}
@@ -943,7 +943,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		if !cpm.TTL.After(t) {
 			toDelete = append(toDelete, id)
 			assets, _ := cpm.Market.GetAssets()
-			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0]); len(clearTransfers) > 0 {
+			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
 				e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 			}
 		}

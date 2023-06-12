@@ -2317,27 +2317,14 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		// add entries to the response
 		resps = append(resps, ledgerEntries)
 	}
-	// we need a market insurance pool regardless
-	marketInsuranceAcc := e.GetOrCreateMarketInsurancePoolAccount(ctx, mktID, asset)
-	// any remaining balance in the fee account gets transferred over to the insurance account
-	lpFeeAccID := e.accountID(mktID, "", asset, types.AccountTypeFeesLiquidity)
-	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
-		req.FromAccount[0] = lpFeeAcc
-		req.ToAccount[0] = marketInsuranceAcc
-		req.Amount = lpFeeAcc.Balance.Clone()
-		lpFeeLE, err := e.getLedgerEntries(ctx, req)
-		if err != nil {
-			e.log.Panic("unable to redistribute remainder of LP fee account funds", logging.Error(err))
-		}
+	if lpFeeLE := e.clearRemainingLPFees(ctx, mktID, asset, keepInsurance); lpFeeLE != nil {
 		resps = append(resps, lpFeeLE)
-		// remove the account once it's drained
-		e.removeAccount(lpFeeAccID)
 	}
 
 	if keepInsurance {
 		return resps, nil
 	}
-	insLM, err := e.ClearInsurancepool(ctx, mktID, asset)
+	insLM, err := e.ClearInsurancepool(ctx, mktID, asset, false)
 	if err != nil {
 		return nil, err
 	}
@@ -2347,7 +2334,41 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	return append(resps, insLM...), nil
 }
 
-func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string) ([]*types.LedgerMovement, error) {
+func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, keepFeeAcc bool) *types.LedgerMovement {
+	// we need a market insurance pool regardless
+	marketInsuranceAcc := e.GetOrCreateMarketInsurancePoolAccount(ctx, mktID, asset)
+	// any remaining balance in the fee account gets transferred over to the insurance account
+	lpFeeAccID := e.accountID(mktID, "", asset, types.AccountTypeFeesLiquidity)
+	req := &types.TransferRequest{
+		FromAccount: make([]*types.Account, 1),
+		ToAccount:   make([]*types.Account, 1),
+		Asset:       asset,
+		Type:        types.TransferTypeClearAccount,
+	}
+	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
+		req.FromAccount[0] = lpFeeAcc
+		req.ToAccount[0] = marketInsuranceAcc
+		req.Amount = lpFeeAcc.Balance.Clone()
+		lpFeeLE, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute remainder of LP fee account funds", logging.Error(err))
+		}
+		// only remove this account when the market is ready to be fully cleared
+		if !keepFeeAcc {
+			e.removeAccount(lpFeeAccID)
+		}
+		return lpFeeLE
+	}
+	return nil
+}
+
+func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, clearFees bool) ([]*types.LedgerMovement, error) {
+	resp := make([]*types.LedgerMovement, 0, 2)
+	if clearFees {
+		if r := e.clearRemainingLPFees(ctx, mktID, asset, false); r != nil {
+			resp = append(resp, r)
+		}
+	}
 	req := &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
 		ToAccount:   make([]*types.Account, 1),
@@ -2398,26 +2419,9 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string) ([
 			return nil, err
 		}
 	}
-	resp := []*types.LedgerMovement{insuranceLedgerEntries}
+	resp = append(resp, insuranceLedgerEntries)
 	// getLedgerEntries subtracted the amount, but not everything was distributed correctly
 	// the remainder goes to the global reards pool
-	if !marketInsuranceAcc.Balance.IsZero() {
-		req.ToAccount = []*types.Account{globalRewardPool}
-		req.Amount = marketInsuranceAcc.Balance.Clone()
-		remainder, err := e.getLedgerEntries(ctx, req)
-		if err != nil {
-			e.log.Panic("unable to move remainder to global reards", logging.Error(err))
-		}
-		for _, bal := range remainder.Balances {
-			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
-				e.log.Error("Could not update the target account in transfer",
-					logging.String("account-id", bal.Account.ID),
-					logging.Error(err))
-				return nil, err
-			}
-		}
-		resp = append(resp, remainder)
-	}
 
 	// remove the insurance account for the market
 	e.removeAccount(marketInsuranceID)

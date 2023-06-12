@@ -146,5 +146,5 @@ type Collateral interface {
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
 	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
-	ClearInsurancepool(ctx context.Context, marketID string, asset string) ([]*types.LedgerMovement, error)
+	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
 }
