@@ -59,12 +59,12 @@ func (l *PriceLevel) getOrdersByParty(partyID string) []*types.Order {
 func (l *PriceLevel) addOrder(o *types.Order) {
 	// add orders to slice of orders on this price level
 	l.orders = append(l.orders, o)
-	l.volume += o.Remaining
+	l.volume += o.TrueRemaining()
 }
 
 func (l *PriceLevel) removeOrder(index int) {
 	// decrease total volume
-	l.volume -= l.orders[index].Remaining
+	l.volume -= l.orders[index].TrueRemaining()
 	// remove the orders at index
 	copy(l.orders[index:], l.orders[index+1:])
 	l.orders = l.orders[:len(l.orders)-1]

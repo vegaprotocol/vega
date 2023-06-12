@@ -66,7 +66,7 @@ func TestMarketSubmitCancelIceberg(t *testing.T) {
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	// check that its on the book and the volume is only the visible peak
-	assert.Equal(t, int64(10), tm.market.GetVolumeOnBook())
+	assert.Equal(t, int64(100), tm.market.GetVolumeOnBook())
 
 	// and that the position represents the whole iceberg size
 	tm.market.BlockEnd(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()))
