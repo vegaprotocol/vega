@@ -209,6 +209,43 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
 
+    # it seems like a bug since trader3's margin level is higher than margin account, now trader3 is placing another order 
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
+      | trader3 | ETH/DEC20 | buy  | 10     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |   3       |
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC20 | 401         | 481    | 601     | 802    |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC20 | 601    | 89399   |
+
+    Then the network moves ahead "7" blocks
+    #GTT order expires
+     And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC20 | 401         | 481    | 601     | 802     |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
+
+    When the parties place the following orders with ticks:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
+      | trader2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+   
+    #reset mark price
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC20 | 401         | 481    | 601     | 802     |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
+
 
   Scenario: 003 check margin for GFN order type 0011-MARA-009
     Given the parties deposit on asset's general account the following amount:
