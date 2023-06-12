@@ -44,7 +44,7 @@ Scenario: 001 FOK market order unable to trade
 
     When the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "10" for the market "ETH/DEC20"
-    Then debug orders
+    
     And the order book should have the following volumes for market "ETH/DEC20":
       | side | price | volume |
       | buy  | 1     | 5000   |
@@ -52,7 +52,6 @@ Scenario: 001 FOK market order unable to trade
       | sell | 1000  | 10     |
       | sell | 1005  | 5      |
 
-    # setup trader2 position for an order which is partially filled and leading to a reduced position
     When the parties place the following orders with ticks:
       | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | auxiliary1 | ETH/DEC20 | buy  | 1000   | 0     | 0                | TYPE_MARKET | TIF_FOK| FOK-order-market |
