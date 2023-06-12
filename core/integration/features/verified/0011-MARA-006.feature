@@ -102,8 +102,9 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | auxiliary1  | USD   | 1000000000000 |
       | auxiliary2  | USD   | 1000000000000 |
       | trader2     | USD   | 90000         |
-      | trader20    | USD  | 10000         |
+      | trader20    | USD   | 10000         |
       | trader3     | USD   | 90000         |
+      | trader4     | USD   | 90000         |
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
@@ -172,7 +173,7 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
-
+    # trader3 places a new order
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
       | trader3 | ETH/DEC20 | buy  | 20     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |   3       |
@@ -223,7 +224,7 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader3 | USD   | ETH/DEC20 | 601    | 89399   |
 
     Then the network moves ahead "7" blocks
-    #GTT order expires
+    #GTT order expires, 
      And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader3 | ETH/DEC20 | 401         | 481    | 601     | 802     |
@@ -232,20 +233,29 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
 
+    # now we create a case when trader 4 place a GTC order first and then GTT order
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
-      | trader2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
-      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
-   
-    #reset mark price
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
+      | trader4 | ETH/DEC20 | buy  | 5      | 45    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-5 |           |
+      | trader4 | ETH/DEC20 | buy  | 10      | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |     3     |
+
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader3 | ETH/DEC20 | 401         | 481    | 601     | 802     |
+      | trader4 | ETH/DEC20 | 601         | 721    | 901     | 1202    |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
+      | trader4 | USD   | ETH/DEC20 | 901    | 89099   |
 
+    Then the network moves ahead "7" blocks
+    #GTT order expires but margin levels and margin account are not reflecting it
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader4 | ETH/DEC20 | 601         | 721    | 901     | 1202    |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader4 | USD   | ETH/DEC20 | 901    | 89099   |
 
   Scenario: 003 check margin for GFN order type 0011-MARA-009
     Given the parties deposit on asset's general account the following amount:
