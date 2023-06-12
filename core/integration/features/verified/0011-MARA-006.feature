@@ -17,6 +17,7 @@ Feature: check margin account with partially filled order
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+  And the average block duration is "1"
 
   Scenario: 001 If an order is partially filled and if this leads to a reduced position and reduced riskiest long / short then the margin requirements are seen to be reduced and if margin balance is above release level then the excess amount is transferred to the general account.0011-MARA-006. 0011-MARA-008
     Given the parties deposit on asset's general account the following amount:
@@ -101,7 +102,7 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | auxiliary1  | USD   | 1000000000000 |
       | auxiliary2  | USD   | 1000000000000 |
       | trader2     | USD   | 90000         |
-      | trader20     | USD  | 10000         |
+      | trader20    | USD  | 10000         |
       | trader3     | USD   | 90000         |
       | lprov       | USD   | 1000000000000 |
 
@@ -171,6 +172,43 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
+      | trader3 | ETH/DEC20 | buy  | 20     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |   3       |
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC20 | 801         | 961    | 1201    | 1602    |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC20 | 1201   | 88799   |
+
+    Then the network moves ahead "7" blocks
+    #GTT order expires
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC20 | 801         | 961    | 1201    | 1602    |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
+
+    When the parties place the following orders with ticks:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
+      | trader2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+   
+    #reset mark price
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC20 | 801         | 961    | 1201    | 1602    |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
+
 
   Scenario: 003 check margin for GFN order type 0011-MARA-009
     Given the parties deposit on asset's general account the following amount:
