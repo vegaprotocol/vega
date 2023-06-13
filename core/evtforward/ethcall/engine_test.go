@@ -44,7 +44,7 @@ func TestEngine(t *testing.T) {
 		AbiJson:  tc.abiBytes,
 		Method:   "get_uint256",
 		ArgsJson: argsAsJson,
-		Trigger: &types.EthTimeTrigger{
+		Trigger: types.EthTimeTrigger{
 			Initial: currentEthTime,
 			Every:   20,
 			Until:   0,

@@ -50,11 +50,11 @@ type SpecActivationsListener interface {
 // Engine is responsible for broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
-	log                    *logging.Logger
-	timeService            TimeService
-	broker                 Broker
-	subscriptions          *specSubscriptions
-	specActivationListener SpecActivationsListener
+	log                     *logging.Logger
+	timeService             TimeService
+	broker                  Broker
+	subscriptions           *specSubscriptions
+	specActivationListeners []SpecActivationsListener
 }
 
 // NewEngine creates a new oracle Engine.
@@ -63,17 +63,15 @@ func NewEngine(
 	conf Config,
 	ts TimeService,
 	broker Broker,
-	specActivationListeners SpecActivationsListener,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
 
 	e := &Engine{
-		log:                    log,
-		timeService:            ts,
-		broker:                 broker,
-		subscriptions:          newSpecSubscriptions(),
-		specActivationListener: specActivationListeners,
+		log:           log,
+		timeService:   ts,
+		broker:        broker,
+		subscriptions: newSpecSubscriptions(),
 	}
 
 	return e
@@ -85,6 +83,10 @@ func (e *Engine) ListensToSigners(data OracleData) bool {
 	return e.subscriptions.hasAnySubscribers(func(spec OracleSpec) bool {
 		return spec.MatchSigners(data)
 	})
+}
+
+func (e *Engine) AddSpecActivationListener(listener SpecActivationsListener) {
+	e.specActivationListeners = append(e.specActivationListeners, listener)
 }
 
 func (e *Engine) HasMatch(data OracleData) (bool, error) {
@@ -147,9 +149,11 @@ func (e *Engine) Subscribe(ctx context.Context, spec OracleSpec, cb OnMatchedOra
 	}
 	updatedSubscription, firstSubscription := e.subscriptions.addSubscriber(spec, cb, e.timeService.GetTimeNow())
 	if firstSubscription {
-		err := e.specActivationListener.OnSpecActivated(ctx, *spec.OriginalSpec)
-		if err != nil {
-			return 0, nil, fmt.Errorf("failed to activate spec: %w", err)
+		for _, listener := range e.specActivationListeners {
+			err := listener.OnSpecActivated(ctx, *spec.OriginalSpec)
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed to activate spec: %w", err)
+			}
 		}
 	}
 
@@ -165,7 +169,9 @@ func (e *Engine) Unsubscribe(ctx context.Context, id SubscriptionID) {
 	updatedSubscription, hasNoMoreSubscriber := e.subscriptions.removeSubscriber(id)
 	if hasNoMoreSubscriber {
 		e.sendOracleSpecDeactivation(ctx, updatedSubscription)
-		e.specActivationListener.OnSpecDeactivated(ctx, updatedSubscription.spec)
+		for _, listener := range e.specActivationListeners {
+			listener.OnSpecDeactivated(ctx, updatedSubscription.spec)
+		}
 	}
 }
 
