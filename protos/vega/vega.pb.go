@@ -1759,7 +1759,7 @@ type IcebergOrder struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Size of the order that will be made visible if the iceberg order is refreshed at the end of a transaction.
+	// Size of the order that will be made visible if the iceberg order is refreshed after a trade has occurred.
 	InitialPeakSize uint64 `protobuf:"varint,1,opt,name=initial_peak_size,json=initialPeakSize,proto3" json:"initial_peak_size,omitempty"`
 	// Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
 	MinimumPeakSize uint64 `protobuf:"varint,2,opt,name=minimum_peak_size,json=minimumPeakSize,proto3" json:"minimum_peak_size,omitempty"`
