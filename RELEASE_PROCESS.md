@@ -6,7 +6,7 @@ This document outlines the steps required in order to create a core protocol rel
 
 1. The default branch is: `develop`.
 1. Create a `release/vX.Y.Z` branch off the head of **`develop`**.
-1. Update readmes, changelog, and set version strings where needed:
+1. Update all readme files, changelog, and set version strings as required:
   - remove `Unreleased` from the changelog for the version to be released
   - ensure that the readme is up-to-date for the version being released
   - update the version number in `version/version.go`
@@ -28,7 +28,7 @@ This document outlines the steps required in order to create a core protocol rel
 1. Cherry pick the fixes into the `release/vX.Y.Z` branch
   - use the merge commit hash of a PR for the cherry picks
   - run `git cherry-pick -m 1 <merge commit hash>`
-1. Update readmes, changelog, and set version strings where needed.
+1. Update all readme files, changelog, and set version strings as required:
   - ensure the changelog is correct for the patch version to be released
   - ensure that the readme is up-to-date for the patch version being released
   - update the version number in `version/version.go`
