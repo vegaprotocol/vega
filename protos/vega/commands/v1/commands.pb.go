@@ -305,7 +305,7 @@ type IcebergOpts struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Size of the order that is initially made visible and can cause a trade within a single transaction.
+	// Size of the order that is initially made visible and can cause a trade during the execution of a single order.
 	InitialPeakSize uint64 `protobuf:"varint,1,opt,name=initial_peak_size,json=initialPeakSize,proto3" json:"initial_peak_size,omitempty"`
 	// Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
 	MinimumPeakSize uint64 `protobuf:"varint,2,opt,name=minimum_peak_size,json=minimumPeakSize,proto3" json:"minimum_peak_size,omitempty"`
