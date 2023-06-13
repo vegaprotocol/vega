@@ -14,7 +14,7 @@ type EthCallSpec struct {
 	ArgsJson              []string
 	Trigger               EthCallTrigger
 	RequiredConfirmations uint64
-	Normaliser            map[string]string
+	Normalisers           map[string]string
 	Filters               DataSourceSpecFilters
 }
 
@@ -44,8 +44,6 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 		jsonArgs = append(jsonArgs, string(jsonArg))
 	}
 
-	// norm := NormaliserFromProto(proto.EthOracle.Normaliser)
-
 	return EthCallSpec{
 		Address:               proto.Address,
 		AbiJson:               abiBytes,
@@ -54,7 +52,7 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 		Trigger:               trigger,
 		RequiredConfirmations: proto.RequiredConfirmations,
 		Filters:               filters,
-		// todo: normaliser
+		Normalisers:           proto.Normalisers,
 	}, nil
 }
 
@@ -83,7 +81,7 @@ func (s EthCallSpec) IntoProto() (*vegapb.EthCallSpec, error) {
 		Trigger:               s.Trigger.IntoEthCallTriggerProto(),
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               s.Filters.IntoProto(),
-		// todo: normaliser
+		Normalisers:           s.Normalisers,
 	}, nil
 }
 
@@ -109,7 +107,13 @@ func (s EthCallSpec) String() string {
 		s.Address, s.AbiJson, s.Method, s.ArgsJson, s.Trigger, s.RequiredConfirmations, s.Filters)
 }
 
+// Whats the need for this deep clone?
 func (s EthCallSpec) DeepClone() dataSourceType {
+	clonedNormalisers := make(map[string]string)
+	for key, value := range s.Normalisers {
+		clonedNormalisers[key] = value
+	}
+
 	return EthCallSpec{
 		Address:               s.Address,
 		AbiJson:               s.AbiJson,
@@ -118,6 +122,6 @@ func (s EthCallSpec) DeepClone() dataSourceType {
 		Trigger:               s.Trigger,
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               append(DataSourceSpecFilters(nil), s.Filters...),
-		// todo: normaliser
+		Normalisers:           clonedNormalisers,
 	}
 }

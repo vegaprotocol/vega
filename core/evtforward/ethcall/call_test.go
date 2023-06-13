@@ -29,11 +29,11 @@ func TestContractCall(t *testing.T) {
 	require.NoError(t, err)
 
 	spec := types.EthCallSpec{
-		ArgsJson:   argsJson,
-		Address:    tc.contractAddr.Hex(),
-		AbiJson:    tc.abiBytes,
-		Method:     "testy1",
-		Normaliser: map[string]string{"badger": `$[0]`, "static": "66"},
+		ArgsJson:    argsJson,
+		Address:     tc.contractAddr.Hex(),
+		AbiJson:     tc.abiBytes,
+		Method:      "testy1",
+		Normalisers: map[string]string{"badger": `$[0]`, "static": "66"},
 	}
 
 	call, err := ethcall.NewCall(spec)
@@ -68,7 +68,7 @@ func TestContractCall2(t *testing.T) {
 		Address:  tc.contractAddr.Hex(),
 		AbiJson:  tc.abiBytes,
 		Method:   "testy2",
-		Normaliser: map[string]string{
+		Normalisers: map[string]string{
 			// "inside_bigint_list": `$[0][1]`, // doesn't work
 			// "inside_struct":   `$[1].Name`, // doesn't work - wants  map[string]interface{} not custom struct; work to be done
 			"static": "66",

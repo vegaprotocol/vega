@@ -132,17 +132,8 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 		oracles.NewDefaultConfig(),
 		ts,
 		broker,
-		testActivationListener{},
 	)
 }
-
-type testActivationListener struct{}
-
-func (t testActivationListener) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
-	return nil
-}
-
-func (t testActivationListener) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {}
 
 func getValidInstrumentProto() *types.Instrument {
 	return &types.Instrument{
