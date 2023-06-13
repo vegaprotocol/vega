@@ -838,6 +838,7 @@ type ComplexityRoot struct {
 		QuadraticSlippageFactor       func(childComplexity int) int
 		RiskFactors                   func(childComplexity int) int
 		State                         func(childComplexity int) int
+		SuccessorMarketId             func(childComplexity int) int
 		TradableInstrument            func(childComplexity int) int
 		TradesConnection              func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		TradingMode                   func(childComplexity int) int
@@ -1502,7 +1503,7 @@ type ComplexityRoot struct {
 		ProtocolUpgradeProposals           func(childComplexity int, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) int
 		ProtocolUpgradeStatus              func(childComplexity int) int
 		Statistics                         func(childComplexity int) int
-		SuccessorMarkets                   func(childComplexity int, marketID string, fullHistory *bool) int
+		SuccessorMarkets                   func(childComplexity int, marketID string, fullHistory *bool, pagination *v2.Pagination) int
 		Trades                             func(childComplexity int, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) int
 		TransfersConnection                func(childComplexity int, partyID *string, direction *TransferDirection, pagination *v2.Pagination) int
 		Withdrawal                         func(childComplexity int, id string) int
@@ -1687,6 +1688,21 @@ type ComplexityRoot struct {
 	SuccessorConfiguration struct {
 		InsurancePoolFraction func(childComplexity int) int
 		ParentMarketId        func(childComplexity int) int
+	}
+
+	SuccessorMarket struct {
+		Market    func(childComplexity int) int
+		Proposals func(childComplexity int) int
+	}
+
+	SuccessorMarketConnection struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	SuccessorMarketEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	TargetStakeParameters struct {
@@ -2326,7 +2342,7 @@ type QueryResolver interface {
 	ProtocolUpgradeStatus(ctx context.Context) (*ProtocolUpgradeStatus, error)
 	ProtocolUpgradeProposals(ctx context.Context, inState *v1.ProtocolUpgradeProposalStatus, approvedBy *string, pagination *v2.Pagination) (*v2.ProtocolUpgradeProposalConnection, error)
 	Statistics(ctx context.Context) (*v13.Statistics, error)
-	SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool) ([]*vega.Market, error)
+	SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.SuccessorMarketConnection, error)
 	Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error)
 	TransfersConnection(ctx context.Context, partyID *string, direction *TransferDirection, pagination *v2.Pagination) (*v2.TransferConnection, error)
 	Withdrawal(ctx context.Context, id string) (*vega.Withdrawal, error)
@@ -5307,6 +5323,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Market.State(childComplexity), true
+
+	case "Market.successorMarketID":
+		if e.complexity.Market.SuccessorMarketId == nil {
+			break
+		}
+
+		return e.complexity.Market.SuccessorMarketId(childComplexity), true
 
 	case "Market.tradableInstrument":
 		if e.complexity.Market.TradableInstrument == nil {
@@ -8591,7 +8614,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.SuccessorMarkets(childComplexity, args["marketId"].(string), args["fullHistory"].(*bool)), true
+		return e.complexity.Query.SuccessorMarkets(childComplexity, args["marketId"].(string), args["fullHistory"].(*bool), args["pagination"].(*v2.Pagination)), true
 
 	case "Query.trades":
 		if e.complexity.Query.Trades == nil {
@@ -9497,6 +9520,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SuccessorConfiguration.ParentMarketId(childComplexity), true
+
+	case "SuccessorMarket.market":
+		if e.complexity.SuccessorMarket.Market == nil {
+			break
+		}
+
+		return e.complexity.SuccessorMarket.Market(childComplexity), true
+
+	case "SuccessorMarket.proposals":
+		if e.complexity.SuccessorMarket.Proposals == nil {
+			break
+		}
+
+		return e.complexity.SuccessorMarket.Proposals(childComplexity), true
+
+	case "SuccessorMarketConnection.edges":
+		if e.complexity.SuccessorMarketConnection.Edges == nil {
+			break
+		}
+
+		return e.complexity.SuccessorMarketConnection.Edges(childComplexity), true
+
+	case "SuccessorMarketConnection.pageInfo":
+		if e.complexity.SuccessorMarketConnection.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.SuccessorMarketConnection.PageInfo(childComplexity), true
+
+	case "SuccessorMarketEdge.cursor":
+		if e.complexity.SuccessorMarketEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.SuccessorMarketEdge.Cursor(childComplexity), true
+
+	case "SuccessorMarketEdge.node":
+		if e.complexity.SuccessorMarketEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.SuccessorMarketEdge.Node(childComplexity), true
 
 	case "TargetStakeParameters.scalingFactor":
 		if e.complexity.TargetStakeParameters.ScalingFactor == nil {
@@ -12186,6 +12251,15 @@ func (ec *executionContext) field_Query_successorMarkets_args(ctx context.Contex
 		}
 	}
 	args["fullHistory"] = arg1
+	var arg2 *v2.Pagination
+	if tmp, ok := rawArgs["pagination"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+		arg2, err = ec.unmarshalOPagination2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPagination(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pagination"] = arg2
 	return args, nil
 }
 
@@ -12935,6 +13009,8 @@ func (ec *executionContext) fieldContext_AccountBalance_market(ctx context.Conte
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -13533,6 +13609,8 @@ func (ec *executionContext) fieldContext_AccountEvent_market(ctx context.Context
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -21728,6 +21806,8 @@ func (ec *executionContext) fieldContext_Entities_markets(ctx context.Context, f
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -28255,6 +28335,8 @@ func (ec *executionContext) fieldContext_LiquidityProvision_market(ctx context.C
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -30195,6 +30277,8 @@ func (ec *executionContext) fieldContext_MarginLevels_market(ctx context.Context
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -32240,6 +32324,47 @@ func (ec *executionContext) fieldContext_Market_insurancePoolFraction(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Market_successorMarketID(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Market_successorMarketID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SuccessorMarketId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOID2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Market_successorMarketID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Market",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.MarketConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_MarketConnection_edges(ctx, field)
 	if err != nil {
@@ -32433,6 +32558,8 @@ func (ec *executionContext) fieldContext_MarketData_market(ctx context.Context, 
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -34106,6 +34233,8 @@ func (ec *executionContext) fieldContext_MarketDepth_market(ctx context.Context,
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -34549,6 +34678,8 @@ func (ec *executionContext) fieldContext_MarketDepthUpdate_market(ctx context.Co
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -34831,6 +34962,8 @@ func (ec *executionContext) fieldContext_MarketEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -41598,6 +41731,8 @@ func (ec *executionContext) fieldContext_Order_market(ctx context.Context, field
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -45184,6 +45319,8 @@ func (ec *executionContext) fieldContext_Position_market(ctx context.Context, fi
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -51588,6 +51725,8 @@ func (ec *executionContext) fieldContext_Query_market(ctx context.Context, field
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -53207,7 +53346,7 @@ func (ec *executionContext) _Query_successorMarkets(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().SuccessorMarkets(rctx, fc.Args["marketId"].(string), fc.Args["fullHistory"].(*bool))
+		return ec.resolvers.Query().SuccessorMarkets(rctx, fc.Args["marketId"].(string), fc.Args["fullHistory"].(*bool), fc.Args["pagination"].(*v2.Pagination))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -53216,9 +53355,9 @@ func (ec *executionContext) _Query_successorMarkets(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*vega.Market)
+	res := resTmp.(*v2.SuccessorMarketConnection)
 	fc.Result = res
-	return ec.marshalOMarket2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+	return ec.marshalOSuccessorMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarketConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_successorMarkets(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -53229,58 +53368,12 @@ func (ec *executionContext) fieldContext_Query_successorMarkets(ctx context.Cont
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_Market_id(ctx, field)
-			case "fees":
-				return ec.fieldContext_Market_fees(ctx, field)
-			case "tradableInstrument":
-				return ec.fieldContext_Market_tradableInstrument(ctx, field)
-			case "decimalPlaces":
-				return ec.fieldContext_Market_decimalPlaces(ctx, field)
-			case "positionDecimalPlaces":
-				return ec.fieldContext_Market_positionDecimalPlaces(ctx, field)
-			case "openingAuction":
-				return ec.fieldContext_Market_openingAuction(ctx, field)
-			case "priceMonitoringSettings":
-				return ec.fieldContext_Market_priceMonitoringSettings(ctx, field)
-			case "liquidityMonitoringParameters":
-				return ec.fieldContext_Market_liquidityMonitoringParameters(ctx, field)
-			case "tradingMode":
-				return ec.fieldContext_Market_tradingMode(ctx, field)
-			case "state":
-				return ec.fieldContext_Market_state(ctx, field)
-			case "proposal":
-				return ec.fieldContext_Market_proposal(ctx, field)
-			case "ordersConnection":
-				return ec.fieldContext_Market_ordersConnection(ctx, field)
-			case "accountsConnection":
-				return ec.fieldContext_Market_accountsConnection(ctx, field)
-			case "tradesConnection":
-				return ec.fieldContext_Market_tradesConnection(ctx, field)
-			case "depth":
-				return ec.fieldContext_Market_depth(ctx, field)
-			case "candlesConnection":
-				return ec.fieldContext_Market_candlesConnection(ctx, field)
-			case "data":
-				return ec.fieldContext_Market_data(ctx, field)
-			case "liquidityProvisionsConnection":
-				return ec.fieldContext_Market_liquidityProvisionsConnection(ctx, field)
-			case "marketTimestamps":
-				return ec.fieldContext_Market_marketTimestamps(ctx, field)
-			case "riskFactors":
-				return ec.fieldContext_Market_riskFactors(ctx, field)
-			case "lpPriceRange":
-				return ec.fieldContext_Market_lpPriceRange(ctx, field)
-			case "linearSlippageFactor":
-				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
-			case "quadraticSlippageFactor":
-				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
-			case "parentMarketID":
-				return ec.fieldContext_Market_parentMarketID(ctx, field)
-			case "insurancePoolFraction":
-				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "edges":
+				return ec.fieldContext_SuccessorMarketConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_SuccessorMarketConnection_pageInfo(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type SuccessorMarketConnection", field.Name)
 		},
 	}
 	defer func() {
@@ -59470,6 +59563,373 @@ func (ec *executionContext) fieldContext_SuccessorConfiguration_insurancePoolFra
 	return fc, nil
 }
 
+func (ec *executionContext) _SuccessorMarket_market(ctx context.Context, field graphql.CollectedField, obj *v2.SuccessorMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SuccessorMarket_market(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Market, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Market)
+	fc.Result = res
+	return ec.marshalNMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SuccessorMarket_market(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SuccessorMarket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Market_id(ctx, field)
+			case "fees":
+				return ec.fieldContext_Market_fees(ctx, field)
+			case "tradableInstrument":
+				return ec.fieldContext_Market_tradableInstrument(ctx, field)
+			case "decimalPlaces":
+				return ec.fieldContext_Market_decimalPlaces(ctx, field)
+			case "positionDecimalPlaces":
+				return ec.fieldContext_Market_positionDecimalPlaces(ctx, field)
+			case "openingAuction":
+				return ec.fieldContext_Market_openingAuction(ctx, field)
+			case "priceMonitoringSettings":
+				return ec.fieldContext_Market_priceMonitoringSettings(ctx, field)
+			case "liquidityMonitoringParameters":
+				return ec.fieldContext_Market_liquidityMonitoringParameters(ctx, field)
+			case "tradingMode":
+				return ec.fieldContext_Market_tradingMode(ctx, field)
+			case "state":
+				return ec.fieldContext_Market_state(ctx, field)
+			case "proposal":
+				return ec.fieldContext_Market_proposal(ctx, field)
+			case "ordersConnection":
+				return ec.fieldContext_Market_ordersConnection(ctx, field)
+			case "accountsConnection":
+				return ec.fieldContext_Market_accountsConnection(ctx, field)
+			case "tradesConnection":
+				return ec.fieldContext_Market_tradesConnection(ctx, field)
+			case "depth":
+				return ec.fieldContext_Market_depth(ctx, field)
+			case "candlesConnection":
+				return ec.fieldContext_Market_candlesConnection(ctx, field)
+			case "data":
+				return ec.fieldContext_Market_data(ctx, field)
+			case "liquidityProvisionsConnection":
+				return ec.fieldContext_Market_liquidityProvisionsConnection(ctx, field)
+			case "marketTimestamps":
+				return ec.fieldContext_Market_marketTimestamps(ctx, field)
+			case "riskFactors":
+				return ec.fieldContext_Market_riskFactors(ctx, field)
+			case "lpPriceRange":
+				return ec.fieldContext_Market_lpPriceRange(ctx, field)
+			case "linearSlippageFactor":
+				return ec.fieldContext_Market_linearSlippageFactor(ctx, field)
+			case "quadraticSlippageFactor":
+				return ec.fieldContext_Market_quadraticSlippageFactor(ctx, field)
+			case "parentMarketID":
+				return ec.fieldContext_Market_parentMarketID(ctx, field)
+			case "insurancePoolFraction":
+				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SuccessorMarket_proposals(ctx context.Context, field graphql.CollectedField, obj *v2.SuccessorMarket) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SuccessorMarket_proposals(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Proposals, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.GovernanceData)
+	fc.Result = res
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SuccessorMarket_proposals(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SuccessorMarket",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Proposal_id(ctx, field)
+			case "reference":
+				return ec.fieldContext_Proposal_reference(ctx, field)
+			case "party":
+				return ec.fieldContext_Proposal_party(ctx, field)
+			case "state":
+				return ec.fieldContext_Proposal_state(ctx, field)
+			case "datetime":
+				return ec.fieldContext_Proposal_datetime(ctx, field)
+			case "rationale":
+				return ec.fieldContext_Proposal_rationale(ctx, field)
+			case "terms":
+				return ec.fieldContext_Proposal_terms(ctx, field)
+			case "votes":
+				return ec.fieldContext_Proposal_votes(ctx, field)
+			case "rejectionReason":
+				return ec.fieldContext_Proposal_rejectionReason(ctx, field)
+			case "errorDetails":
+				return ec.fieldContext_Proposal_errorDetails(ctx, field)
+			case "requiredMajority":
+				return ec.fieldContext_Proposal_requiredMajority(ctx, field)
+			case "requiredParticipation":
+				return ec.fieldContext_Proposal_requiredParticipation(ctx, field)
+			case "requiredLpMajority":
+				return ec.fieldContext_Proposal_requiredLpMajority(ctx, field)
+			case "requiredLpParticipation":
+				return ec.fieldContext_Proposal_requiredLpParticipation(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Proposal", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SuccessorMarketConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.SuccessorMarketConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SuccessorMarketConnection_edges(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*v2.SuccessorMarketEdge)
+	fc.Result = res
+	return ec.marshalNSuccessorMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarketEdgeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SuccessorMarketConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SuccessorMarketConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "node":
+				return ec.fieldContext_SuccessorMarketEdge_node(ctx, field)
+			case "cursor":
+				return ec.fieldContext_SuccessorMarketEdge_cursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SuccessorMarketEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SuccessorMarketConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *v2.SuccessorMarketConnection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SuccessorMarketConnection_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SuccessorMarketConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SuccessorMarketConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SuccessorMarketEdge_node(ctx context.Context, field graphql.CollectedField, obj *v2.SuccessorMarketEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SuccessorMarketEdge_node(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*v2.SuccessorMarket)
+	fc.Result = res
+	return ec.marshalNSuccessorMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarket(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SuccessorMarketEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SuccessorMarketEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "market":
+				return ec.fieldContext_SuccessorMarket_market(ctx, field)
+			case "proposals":
+				return ec.fieldContext_SuccessorMarket_proposals(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SuccessorMarket", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SuccessorMarketEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *v2.SuccessorMarketEdge) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SuccessorMarketEdge_cursor(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SuccessorMarketEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SuccessorMarketEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _TargetStakeParameters_timeWindow(ctx context.Context, field graphql.CollectedField, obj *TargetStakeParameters) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_TargetStakeParameters_timeWindow(ctx, field)
 	if err != nil {
@@ -59880,6 +60340,8 @@ func (ec *executionContext) fieldContext_Trade_market(ctx context.Context, field
 				return ec.fieldContext_Market_parentMarketID(ctx, field)
 			case "insurancePoolFraction":
 				return ec.fieldContext_Market_insurancePoolFraction(ctx, field)
+			case "successorMarketID":
+				return ec.fieldContext_Market_successorMarketID(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Market", field.Name)
 		},
@@ -73567,6 +74029,10 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Values[i] = ec._Market_insurancePoolFraction(ctx, field, obj)
 
+		case "successorMarketID":
+
+			out.Values[i] = ec._Market_successorMarketID(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -81856,6 +82322,108 @@ func (ec *executionContext) _SuccessorConfiguration(ctx context.Context, sel ast
 	return out
 }
 
+var successorMarketImplementors = []string{"SuccessorMarket"}
+
+func (ec *executionContext) _SuccessorMarket(ctx context.Context, sel ast.SelectionSet, obj *v2.SuccessorMarket) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, successorMarketImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SuccessorMarket")
+		case "market":
+
+			out.Values[i] = ec._SuccessorMarket_market(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "proposals":
+
+			out.Values[i] = ec._SuccessorMarket_proposals(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var successorMarketConnectionImplementors = []string{"SuccessorMarketConnection"}
+
+func (ec *executionContext) _SuccessorMarketConnection(ctx context.Context, sel ast.SelectionSet, obj *v2.SuccessorMarketConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, successorMarketConnectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SuccessorMarketConnection")
+		case "edges":
+
+			out.Values[i] = ec._SuccessorMarketConnection_edges(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+
+			out.Values[i] = ec._SuccessorMarketConnection_pageInfo(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var successorMarketEdgeImplementors = []string{"SuccessorMarketEdge"}
+
+func (ec *executionContext) _SuccessorMarketEdge(ctx context.Context, sel ast.SelectionSet, obj *v2.SuccessorMarketEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, successorMarketEdgeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SuccessorMarketEdge")
+		case "node":
+
+			out.Values[i] = ec._SuccessorMarketEdge_node(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cursor":
+
+			out.Values[i] = ec._SuccessorMarketEdge_cursor(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var targetStakeParametersImplementors = []string{"TargetStakeParameters"}
 
 func (ec *executionContext) _TargetStakeParameters(ctx context.Context, sel ast.SelectionSet, obj *TargetStakeParameters) graphql.Marshaler {
@@ -86643,6 +87211,70 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
+func (ec *executionContext) marshalNSuccessorMarket2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarket(ctx context.Context, sel ast.SelectionSet, v *v2.SuccessorMarket) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SuccessorMarket(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSuccessorMarketEdge2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarketEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*v2.SuccessorMarketEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSuccessorMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarketEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSuccessorMarketEdge2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarketEdge(ctx context.Context, sel ast.SelectionSet, v *v2.SuccessorMarketEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SuccessorMarketEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNTargetStakeParameters2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTargetStakeParameters(ctx context.Context, sel ast.SelectionSet, v *TargetStakeParameters) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -90629,6 +91261,47 @@ func (ec *executionContext) marshalOProperty2ᚕᚖcodeᚗvegaprotocolᚗioᚋve
 	return ret
 }
 
+func (ec *executionContext) marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v []*vega.GovernanceData) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
 func (ec *executionContext) marshalOProposal2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐGovernanceData(ctx context.Context, sel ast.SelectionSet, v *vega.GovernanceData) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -91437,6 +92110,13 @@ func (ec *executionContext) marshalOSuccessorConfiguration2ᚖcodeᚗvegaprotoco
 		return graphql.Null
 	}
 	return ec._SuccessorConfiguration(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSuccessorMarketConnection2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋdataᚑnodeᚋapiᚋv2ᚐSuccessorMarketConnection(ctx context.Context, sel ast.SelectionSet, v *v2.SuccessorMarketConnection) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SuccessorMarketConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimestamp2int64(ctx context.Context, v interface{}) (int64, error) {

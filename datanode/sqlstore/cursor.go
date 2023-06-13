@@ -43,6 +43,9 @@ type ColumnOrdering struct {
 	Name string
 	// Sorting is the sorting order to use for the column
 	Sorting Sorting
+	// Prefix is the prefix to add to the column name in order to resolve duplicate
+	// column names that might be in the query
+	Prefix string
 }
 
 func NewColumnOrdering(name string, sorting Sorting) ColumnOrdering {
@@ -58,7 +61,11 @@ func (t *TableOrdering) OrderByClause() string {
 
 	fragments := make([]string, len(*t))
 	for i, column := range *t {
-		fragments[i] = fmt.Sprintf("%s %s", column.Name, column.Sorting)
+		prefix := column.Prefix
+		if column.Prefix != "" && !strings.HasSuffix(column.Prefix, ".") {
+			prefix += "."
+		}
+		fragments[i] = fmt.Sprintf("%s%s %s", prefix, column.Name, column.Sorting)
 	}
 	return fmt.Sprintf("ORDER BY %s", strings.Join(fragments, ","))
 }
@@ -119,15 +126,20 @@ func CursorPredicate(args []interface{}, cursor interface{}, ordering TableOrder
 			return "", nil, err
 		}
 
+		prefix := column.Prefix
+		if column.Prefix != "" && !strings.HasSuffix(column.Prefix, ".") {
+			prefix += "."
+		}
+
 		bindVar := nextBindVar(&args, value)
-		inequalityPredicate := fmt.Sprintf("%s %s %s", column.Name, operator, bindVar)
+		inequalityPredicate := fmt.Sprintf("%s%s %s %s", prefix, column.Name, operator, bindVar)
 
 		colPredicates := append(equalPredicates, inequalityPredicate)
 		colPredicateString := strings.Join(colPredicates, " AND ")
 		colPredicateString = fmt.Sprintf("(%s)", colPredicateString)
 		cursorPredicates = append(cursorPredicates, colPredicateString)
 
-		equalityPredicate := fmt.Sprintf("%s = %s", column.Name, bindVar)
+		equalityPredicate := fmt.Sprintf("%s%s = %s", prefix, column.Name, bindVar)
 		equalPredicates = append(equalPredicates, equalityPredicate)
 	}
 
