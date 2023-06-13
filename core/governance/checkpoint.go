@@ -33,12 +33,6 @@ type enactmentTime struct {
 	cpLoad          bool
 }
 
-type firstSuccessor struct {
-	enactment int64
-	prop      *types.Proposal
-	isEnacted bool
-}
-
 func (e *Engine) Name() types.CheckpointName {
 	return types.GovernanceCheckpoint
 }
