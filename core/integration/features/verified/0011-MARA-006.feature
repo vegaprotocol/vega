@@ -359,7 +359,6 @@ Scenario: 004 check margin for GTT order type.0011-MARA-007
     When the opening auction period ends for market "ETH/DEC21"
     And the mark price should be "10" for the market "ETH/DEC21"
 
-    # setup trader2 position for an order which is partially filled and leading to a reduced position
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
       | trader2  | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-1 |           |
