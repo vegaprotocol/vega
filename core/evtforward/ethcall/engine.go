@@ -32,14 +32,6 @@ type Forwarder interface {
 	ForwardFromSelf(*commandspb.ChainEvent)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/datasource_mock.go -package mocks code.vegaprotocol.io/vega/core/evtforward/ethcall DataSource
-type DataSource interface {
-	CallContract(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) ([]byte, error)
-	RequiredConfirmations() uint64
-	PassesFilters(result []byte, blockHeight uint64, blockTime uint64) bool
-	Normalise(callResult []byte) (map[string]string, error)
-}
-
 type blockish interface {
 	NumberU64() uint64
 	Time() uint64
@@ -49,7 +41,7 @@ type Engine struct {
 	log                   *logging.Logger
 	cfg                   Config
 	client                EthReaderCaller
-	dataSources           map[string]dataSource
+	calls                 map[string]Call
 	forwarder             Forwarder
 	prevEthBlock          blockish
 	cancelEthereumQueries context.CancelFunc
@@ -59,12 +51,12 @@ type Engine struct {
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) *Engine {
 	e := &Engine{
-		log:         log,
-		cfg:         cfg,
-		client:      client,
-		forwarder:   forwarder,
-		dataSources: make(map[string]dataSource),
-		poller:      newPoller(cfg.PollEvery.Get()),
+		log:       log,
+		cfg:       cfg,
+		client:    client,
+		forwarder: forwarder,
+		calls:     make(map[string]Call),
+		poller:    newPoller(cfg.PollEvery.Get()),
 	}
 
 	go e.Start()
@@ -97,14 +89,37 @@ func (e *Engine) Stop() {
 	}
 }
 
-func (e *Engine) GetDataSource(id string) (DataSource, bool) {
+func (e *Engine) GetSpec(id string) (types.EthCallSpec, bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if source, ok := e.dataSources[id]; ok {
-		return source, true
+	if source, ok := e.calls[id]; ok {
+		return source.spec, true
 	}
 
-	return nil, false
+	return types.EthCallSpec{}, false
+}
+
+func (e *Engine) MakeResult(specID string, bytes []byte) (Result, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	call, ok := e.calls[specID]
+	if !ok {
+		return Result{}, fmt.Errorf("no such specification: %v", specID)
+	}
+	return Result{bytes: bytes, call: call}, nil
+}
+
+func (e *Engine) CallSpec(ctx context.Context, id string, atBlock *big.Int) (Result, error) {
+	e.mu.Lock()
+	call, ok := e.calls[id]
+	if !ok {
+		e.mu.Unlock()
+		return Result{}, fmt.Errorf("no such specification: %v", id)
+	}
+	e.mu.Unlock()
+
+	// TODO: check if it's safe to share an eth client between threads
+	return call.Call(ctx, e.client, atBlock)
 }
 
 func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
@@ -113,16 +128,16 @@ func (e *Engine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) err
 	switch d := spec.ExternalDataSourceSpec.Spec.Data.Content().(type) {
 	case types.EthCallSpec:
 		id := spec.ExternalDataSourceSpec.Spec.ID
-		if _, ok := e.dataSources[id]; ok {
+		if _, ok := e.calls[id]; ok {
 			return fmt.Errorf("duplicate spec: %s", id)
 		}
 
-		dataSource, err := newDataSource(d)
+		ethCall, err := NewCall(d)
 		if err != nil {
 			return fmt.Errorf("failed to create data source: %w", err)
 		}
 
-		e.dataSources[id] = dataSource
+		e.calls[id] = ethCall
 	}
 
 	return nil
@@ -134,7 +149,7 @@ func (e *Engine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {
 	switch spec.ExternalDataSourceSpec.Spec.Data.Content().(type) {
 	case *types.EthCallSpec:
 		id := spec.ExternalDataSourceSpec.Spec.ID
-		delete(e.dataSources, id)
+		delete(e.calls, id)
 	}
 }
 
@@ -158,9 +173,9 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 		return
 	}
 
-	for specID, datasource := range e.dataSources {
-		if triggered(datasource, e.prevEthBlock, ethBlock) {
-			res, err := datasource.CallContract(ctx, e.client, ethBlock.Number())
+	for specID, call := range e.calls {
+		if call.triggered(e.prevEthBlock, ethBlock) {
+			res, err := call.Call(ctx, e.client, ethBlock.Number())
 			if err != nil {
 				e.log.Errorf("failed to call contract: %w", err)
 				continue
@@ -172,37 +187,7 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 	e.prevEthBlock = ethBlock
 }
 
-func triggered(d dataSource, prevEthBlock blockish, currentEthBlock blockish) bool {
-	// Before initial?
-	switch trigger := d.spec.Trigger.(type) {
-	case *types.EthTimeTrigger:
-		if currentEthBlock.Time() < trigger.Initial {
-			return false
-		}
-
-		// Crossing initial boundary?
-		if prevEthBlock.Time() < trigger.Initial && currentEthBlock.Time() >= trigger.Initial {
-			return true
-		}
-
-		// After until?
-		if trigger.Until != 0 && currentEthBlock.Time() > trigger.Until {
-			return false
-		}
-
-		if trigger.Every == 0 {
-			return false
-		}
-		// Somewhere in the middle..
-		prevTriggerCount := (prevEthBlock.Time() - trigger.Initial) / trigger.Every
-		currentTriggerCount := (currentEthBlock.Time() - trigger.Initial) / trigger.Every
-		return currentTriggerCount > prevTriggerCount
-	}
-
-	return false
-}
-
-func makeChainEvent(res []byte, specID string, block blockish) *commandspb.ChainEvent {
+func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
 		TxId:  "", // NA
 		Nonce: 0,  // NA
@@ -211,7 +196,7 @@ func makeChainEvent(res []byte, specID string, block blockish) *commandspb.Chain
 				SpecId:      specID,
 				BlockHeight: block.NumberU64(),
 				BlockTime:   block.Time(),
-				Result:      res,
+				Result:      res.Bytes(),
 			},
 		},
 	}
