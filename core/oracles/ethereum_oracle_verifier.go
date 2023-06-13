@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
@@ -30,8 +31,13 @@ type OracleDataBroadcaster interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallEngine
 type EthCallEngine interface {
-	CallContract(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error)
+	CallSpec(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error)
 	MakeResult(specID string, bytes []byte) (EthCallResult, error)
+}
+
+type CallEngine interface {
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock *big.Int) (ethcall.Result, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcall_result.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallResult
@@ -45,10 +51,10 @@ type EthCallResult interface {
 
 // Needed because the engine CallContract method returns a concrete ethcall.Result type, but for mocking in tests we want an interface.
 type ethCallEngineWrapper struct {
-	wrapped *ethcall.Engine
+	wrapped CallEngine
 }
 
-func (e ethCallEngineWrapper) CallContract(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error) {
+func (e ethCallEngineWrapper) CallSpec(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error) {
 	return e.wrapped.CallSpec(ctx, id, atBlock)
 }
 
@@ -111,7 +117,7 @@ func NewEthereumOracleVerifierFromEngine(
 	witness Witness,
 	ts TimeService,
 	oracleBroadcaster OracleDataBroadcaster,
-	specCaller *ethcall.Engine,
+	specCaller CallEngine,
 ) (sv *EthereumOracleVerifier) {
 	return NewEthereumOracleVerifier(log, witness, ts, oracleBroadcaster, ethCallEngineWrapper{wrapped: specCaller})
 }
@@ -164,7 +170,7 @@ func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContrac
 
 	// Maybe TODO; can we do better than this? Might want to cancel on shutdown or something..
 	ctx := context.Background()
-	checkResult, err := s.ethEngine.CallContract(ctx, callEvent.SpecId, blockHeight)
+	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, blockHeight)
 	if err != nil {
 		return fmt.Errorf("failed to execute call event spec: %w", err)
 	}
