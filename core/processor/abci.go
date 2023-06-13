@@ -1685,7 +1685,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+				if _, err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to reject market",
 						logging.String("market-id", prop.ID),
 						logging.Error(err))
