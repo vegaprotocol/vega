@@ -41,6 +41,8 @@
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 - [8445](https://github.com/vegaprotocol/vega/issues/8445) - Additional feature tests for iceberg orders.
 - [8349](https://github.com/vegaprotocol/vega/issues/8349) - Add successor market integration test coverage.
+- [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
+- [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
 
 ### 🐛 Fixes
 - [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
