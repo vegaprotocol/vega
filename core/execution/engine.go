@@ -219,11 +219,11 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 
 	mkt, ok := e.markets[marketID]
 	if !ok {
-		return []int{-1}, ErrMarketDoesNotExist
+		return nil, ErrMarketDoesNotExist
 	}
 
 	if err := mkt.Reject(ctx); err != nil {
-		return []int{-1}, err
+		return nil, err
 	}
 
 	idx := e.removeMarket(marketID)

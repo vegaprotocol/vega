@@ -353,7 +353,6 @@ func (e *Engine) SuccessorInsuranceFraction(ctx context.Context, successor, pare
 	if le == nil {
 		return nil
 	}
-	// @TODO send events for account updates
 	for _, bal := range le.Balances {
 		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
 			e.log.Error("Could not update the target account in transfer",
