@@ -23,7 +23,7 @@ This document outlines the steps required in order to create a core protocol rel
 
 ## Patch release process
 
-1. Get hotfix PRs merged into `develop`
+1. Get the patch fix pull requests merged into `develop`
 1. Create a `release/vX.Y.Z` branch off **`master`** or previous release branch
 1. Cherry pick the fixes into the `release/vX.Y.Z` branch
   - use the merge commit hash of a PR for the cherry picks
