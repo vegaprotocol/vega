@@ -908,27 +908,49 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		}
 
 	case *vegapb.DataSourceDefinition_External:
-		// If data source type is external - check if the signers are present first.
-		o := tp.External.GetOracle()
 
-		signers := o.Signers
-		if len(signers) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
-		}
+		switch tp.External.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			// If data source type is external - check if the signers are present first.
+			o := tp.External.GetOracle()
 
-		for i, key := range signers {
-			signer := types.SignerFromProto(key)
-			if signer.IsEmpty() {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
-			} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
-			} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+			signers := o.Signers
+			if len(signers) == 0 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
+			}
+
+			for i, key := range signers {
+				signer := types.SignerFromProto(key)
+				if signer.IsEmpty() {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+				} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
+				} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+				}
+			}
+
+			filters := o.Filters
+			errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ethOracle := tp.External.GetEthOracle()
+
+			if !crypto.EthereumIsValidAddress(ethOracle.Address) {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
+			}
+
+			if len(ethOracle.Abi.Values) == 0 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsNotValidEthereumAbi)
+			}
+
+			if len(strings.TrimSpace(ethOracle.Method)) == 0 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsNotValidEthereumMethodName)
+			}
+
+			if len(ethOracle.Normalisers) == 0 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrNoEthereumOracleNormalisers)
 			}
 		}
-
-		filters := o.Filters
-		errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
 	}
 
 	return errs
@@ -975,6 +997,38 @@ func checkDataSourceSpecFilters(filters []*datapb.Filter, name string, parentPro
 }
 
 func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
+	if spec == nil {
+		return false
+	}
+
+	switch specType := spec.SourceType.(type) {
+	case *vegapb.DataSourceDefinition_External:
+		switch specType.External.SourceType.(type) {
+		case *vegapb.DataSourceDefinitionExternal_Oracle:
+			return isBindingMatchingSpecFilters(spec, bindingProperty)
+		case *vegapb.DataSourceDefinitionExternal_EthOracle:
+			ethOracle := specType.External.GetEthOracle()
+
+			for propertyName := range ethOracle.Normalisers {
+				if propertyName == bindingProperty {
+					return true
+				}
+			}
+
+			return false
+		}
+
+	case *vegapb.DataSourceDefinition_Internal:
+		return isBindingMatchingSpecFilters(spec, bindingProperty)
+	}
+
+	return isBindingMatchingSpecFilters(spec, bindingProperty)
+}
+
+// This is the legacy oracles way of checking that the spec has a property matching the binding property by iterating
+// over the filters, but is it not possible to not have filters, or a filter that does not match the oracle property so
+// this would break?
+func isBindingMatchingSpecFilters(spec *vegapb.DataSourceDefinition, bindingProperty string) bool {
 	bindingPropertyFound := false
 	filters := []*datapb.Filter{}
 	if spec != nil {

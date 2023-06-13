@@ -529,7 +529,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker, testActivationListener{})
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
@@ -579,7 +579,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	collateralEngine := collateral.New(log, collateral.NewDefaultConfig(), timeService, broker)
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker, testActivationListener{})
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
 	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
@@ -635,11 +635,3 @@ func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportio
 		Offset:     num.NewUint(offset),
 	}
 }
-
-type testActivationListener struct{}
-
-func (t testActivationListener) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
-	return nil
-}
-
-func (t testActivationListener) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {}

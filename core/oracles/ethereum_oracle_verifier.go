@@ -35,8 +35,22 @@ type EthereumConfirmations interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallEngine
 type EthCallEngine interface {
-	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+}
+
+type CallEngine interface {
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcall_result.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallResult
+type EthCallResult interface {
+	Bytes() []byte
+	Values() ([]any, error)
+	Normalised() (map[string]string, error)
+	PassesFilters() (bool, error)
+	HasRequiredConfirmations() bool
 }
 
 type EthereumOracleVerifier struct {
@@ -109,7 +123,7 @@ func (s *EthereumOracleVerifier) ensureNotDuplicate(hash string) bool {
 // duplicates but not result in a memory leak, agreed to postpone for now  (other verifiers have the same issue)
 
 func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error {
-	// Possible that a single oracle trigger, where trigger is base off of vegatime, could result in chain events with
+	// Possible that a single oracle trigger, where trigger is based off of vegatime, could result in chain events with
 	// different contents (and therefore different hashes) due to difference in the time when the validators query
 	// ethereum, it is assumed that the consumer of the oracle events will handle this.  Alternatively we could restrict
 	// triggers to use ethereum time and not allow vega time triggers, then no such issue.
@@ -146,13 +160,11 @@ func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContrac
 		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
 	}
 
-	// TODO: A mechanism for retrying this check a bit later if this fails?
 	if err = s.ethConfirmations.Check(callEvent.BlockHeight); err != nil {
 		return fmt.Errorf("failed confirmations check: %w", err)
 	}
 
-	filtersOk := checkResult.PassesFilters
-	if !filtersOk {
+	if !checkResult.PassesFilters {
 		return fmt.Errorf("failed filter check")
 	}
 
@@ -177,7 +189,7 @@ func (s *EthereumOracleVerifier) onCallEventVerified(event interface{}, ok bool)
 	}
 
 	if err := s.removePendingCallEvent(pv.GetID()); err != nil {
-		s.log.Error("could not remove pending stake deposited event", logging.Error(err))
+		s.log.Error("could not remove pending call event", logging.Error(err))
 	}
 
 	if ok {
@@ -194,11 +206,9 @@ func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 			s.log.Error("failed to create ethcall result", logging.Error(err))
 		}
 
-		normalisedData := result.Normalised
-
 		s.oracleEngine.BroadcastData(ctx, OracleData{
 			Signers: nil,
-			Data:    normalisedData,
+			Data:    result.Normalised,
 		})
 	}
 
