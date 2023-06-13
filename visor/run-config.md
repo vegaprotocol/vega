@@ -39,7 +39,7 @@ Configuration of a Vega node.
 
 <dd>
 
-Configuration of a Data node.
+Configuration of a data node.
 
 </dd>
 
@@ -91,7 +91,7 @@ Configuration of Vega binary and arguments required to run it.
 <dd>
 
 Visor communicates with the core node via RPC API that runs over a UNIX socket.
-This parameter configures the UNIX socket to match the core node configuration. This value can be found in the config.toml file used by the Core node under the heading [Admin.Server]
+This parameter configures the UNIX socket to match the core node configuration. This value can be found in the config.toml file used by the core node under the heading [Admin.Server]
 
 
 </dd>
@@ -119,7 +119,7 @@ This parameter configures the UNIX socket to match the core node configuration. 
 
 
 ## *DataNodeConfig*
-Configures the Data node binary and its arguments.
+Configures the data node binary and its arguments.
 
 
 ### Fields
@@ -206,7 +206,7 @@ args = ["--arg1", "val1", "--arg2"]
 
 
 ## *RPCConfig*
-Configures the connection to the Core node exposed UNIX socket RPC API. These values can be found in the `config.toml` file used by the Core node under the heading `[Admin.Server]`
+Configures the connection to the core node exposed UNIX socket RPC API. These values can be found in the `config.toml` file used by the core node under the heading `[Admin.Server]`
 
 
 ### Fields
