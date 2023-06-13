@@ -157,7 +157,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 34826       | 41791  | 52239   | 69652   |
 
-    # margin is under above  level, then the excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
@@ -169,8 +168,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 33636       | 40363  | 50454   | 67272   |
-
-    # margin is under release level, then no excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
@@ -196,13 +193,12 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
-
+    #reset mark price
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
       | trader2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
       | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
-   
-    #reset mark price
+  
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader3 | ETH/DEC20 | 801         | 961    | 1201    | 1602    |
@@ -211,7 +207,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party   | asset | market id | margin | general |
       | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
 
-    # it seems like a bug since trader3's margin level is higher than margin account, now trader3 is placing another order 
     When the parties place the following orders with ticks:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
       | trader3 | ETH/DEC20 | buy  | 10     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |   3       |
@@ -225,7 +220,7 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader3 | USD   | ETH/DEC20 | 601    | 89399   |
 
     Then the network moves ahead "7" blocks
-    #GTT order expires, 
+    #GTT order expires
      And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader3 | ETH/DEC20 | 401         | 481    | 601     | 802     |
@@ -249,7 +244,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader4 | USD   | ETH/DEC20 | 901    | 89099   |
 
     Then the network moves ahead "7" blocks
-    #GTT order expires but margin levels and margin account are not reflecting it
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC20 | 601         | 721    | 901     | 1202    |
@@ -282,8 +276,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
 
     When the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "10" for the market "ETH/DEC20"
-
-    # setup trader2 position for an order which is partially filled and leading to a reduced position
     When the parties place the following orders with ticks:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |
       | trader2  | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GFN | buy-order-3 |
@@ -317,7 +309,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 34826       | 41791  | 52239   | 69652   |
 
-    # margin is under above  level, then the excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
@@ -330,7 +321,6 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 33636       | 40363  | 50454   | 67272   |
 
-    # margin is under release level, then no excess amount is transferred to the general account
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
@@ -383,14 +373,6 @@ Scenario: 004 check margin for GTT order type.0011-MARA-007
       | trader2 | ETH/DEC21 | 142348      | 170817 | 213522  | 284696  |
 
     Then the network moves ahead "4" blocks
-   # if we reset the mark price, then trade2 will not be closed out in ETH/DEC20 market 
-    # When the parties place the following orders with ticks:
-    #   | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-    #   | auxiliary1 | ETH/DEC20 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-4 |        |
-    #   | auxiliary2 | ETH/DEC20 | buy  | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-1 |        |
-    #   | auxiliary1 | ETH/DEC21 | sell | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-4 |        |
-    #   | auxiliary2 | ETH/DEC21 | buy  | 1      | 10    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-1 |        |
-
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC20 | 1423        | 1707   | 2134    | 2846    |
