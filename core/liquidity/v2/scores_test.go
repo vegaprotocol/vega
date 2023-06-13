@@ -34,7 +34,7 @@ func TestLiquidityScoresMechanics(t *testing.T) {
 		party4     = "party-4"
 		ctx        = context.Background()
 		now        = time.Now()
-		tng        = newTestEngine(t, now)
+		tng        = newTestEngine(t)
 		bestBid    = num.NewDecimalFromFloat(95)
 		bestAsk    = num.NewDecimalFromFloat(105)
 		minLpPrice = num.NewUint(90)

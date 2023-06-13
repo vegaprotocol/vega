@@ -15,7 +15,6 @@ package liquidity_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -38,8 +37,7 @@ func TestAmendments(t *testing.T) {
 	var (
 		party = "party-1"
 		ctx   = context.Background()
-		now   = time.Now()
-		tng   = newTestEngine(t, now)
+		tng   = newTestEngine(t)
 	)
 	defer tng.ctrl.Finish()
 

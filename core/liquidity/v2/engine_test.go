@@ -15,7 +15,6 @@ package liquidity_test
 import (
 	"context"
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/idgeneration"
@@ -36,7 +35,7 @@ func testSubmissionCreateAndCancel(t *testing.T) {
 	var (
 		party = "party-1"
 		ctx   = context.Background()
-		te    = newTestEngine(t, time.Now())
+		te    = newTestEngine(t)
 	)
 	defer te.ctrl.Finish()
 
@@ -93,8 +92,7 @@ func testCancelNonExistingSubmission(t *testing.T) {
 	var (
 		party = "party-1"
 		ctx   = context.Background()
-		now   = time.Now()
-		tng   = newTestEngine(t, now)
+		tng   = newTestEngine(t)
 	)
 	defer tng.ctrl.Finish()
 
@@ -108,8 +106,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 		party2 = "party-2"
 		party3 = "party-3"
 		ctx    = context.Background()
-		now    = time.Now()
-		tng    = newTestEngine(t, now)
+		tng    = newTestEngine(t)
 	)
 	defer tng.ctrl.Finish()
 

@@ -20,6 +20,8 @@ import (
 	mmocks "code.vegaprotocol.io/vega/core/execution/common/mocks"
 )
 
+const partyID = "lp-party-1"
+
 type testEngine struct {
 	ctrl         *gomock.Controller
 	marketID     string
@@ -33,7 +35,7 @@ type testEngine struct {
 	stateVar     *stubs.StateVarStub
 }
 
-func newTestEngine(t *testing.T, now time.Time) *testEngine {
+func newTestEngine(t *testing.T) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -96,12 +98,12 @@ func toPoint[T any](v T) *T {
 	return &v
 }
 
-func generateOrders(idGen stubIDGen, marketID, party string, buys, sells []uint64) []*types.Order {
+func generateOrders(idGen stubIDGen, marketID string, buys, sells []uint64) []*types.Order {
 	newOrder := func(price uint64, side types.Side) *types.Order {
 		return &types.Order{
 			ID:        idGen.NextID(),
 			MarketID:  marketID,
-			Party:     party,
+			Party:     partyID,
 			Side:      side,
 			Price:     num.NewUint(price),
 			Remaining: price,
@@ -199,7 +201,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				desc = fmt.Sprintf("%s in auction", tC.desc)
 			}
 			t.Run(desc, func(t *testing.T) {
-				te := newTestEngine(t, time.Now())
+				te := newTestEngine(t)
 
 				// set the net params
 				if tC.slaCompetitionFactor != nil {
@@ -247,7 +249,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				epochStart := time.Now().Add(-epochLength)
 				epochEnd := epochStart.Add(epochLength)
 
-				orders = generateOrders(*idGen, te.marketID, party, tC.buyOrdersPerBlock[0], tC.sellsOrdersPerBlock[0])
+				orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[0], tC.sellsOrdersPerBlock[0])
 
 				te.engine.ResetSLAEpoch(epochStart)
 				txs := []liquidity.TX{{ID: "1"}, {ID: "2"}, {ID: "3"}}
@@ -255,7 +257,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				k := te.engine.GenerateKSla(txs)
 
 				for i := 0; i < tC.epochLength; i++ {
-					orders = generateOrders(*idGen, te.marketID, party, tC.buyOrdersPerBlock[i], tC.sellsOrdersPerBlock[i])
+					orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[i], tC.sellsOrdersPerBlock[i])
 
 					te.tsvc.SetTime(epochStart.Add(time.Duration(i) * time.Second))
 					te.engine.BeginBlock(txs)
@@ -303,14 +305,13 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			te := newTestEngine(t, time.Now())
+			te := newTestEngine(t)
 
 			// set the net params
 			te.engine.OnPerformanceHysteresisEpochsUpdate(4)
 
 			idGen := &stubIDGen{}
 			ctx := context.Background()
-			party := "lp-party-1"
 
 			te.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -318,10 +319,10 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 				MarketID:         te.marketID,
 				CommitmentAmount: num.NewUint(100),
 				Fee:              num.NewDecimalFromFloat(0.5),
-				Reference:        fmt.Sprintf("provision-by-%s", party),
+				Reference:        fmt.Sprintf("provision-by-%s", partyID),
 			}
 
-			err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
+			err := te.engine.SubmitLiquidityProvision(ctx, lps, partyID, idGen)
 			require.NoError(t, err)
 
 			te.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
@@ -332,7 +333,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			te.orderbook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(20), nil).AnyTimes()
 			te.orderbook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(10), nil).AnyTimes()
 			orders := []*types.Order{}
-			te.orderbook.EXPECT().GetOrdersPerParty(party).DoAndReturn(func(party string) []*types.Order {
+			te.orderbook.EXPECT().GetOrdersPerParty(partyID).DoAndReturn(func(party string) []*types.Order {
 				return orders
 			}).AnyTimes()
 
@@ -347,7 +348,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			secondEpochIters := tC.epochsOnBook
 
 			if tC.startWithOnBook {
-				orders = generateOrders(*idGen, te.marketID, party, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
+				orders = generateOrders(*idGen, te.marketID, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
 				firstEpochIters = tC.epochsOnBook
 				secondEpochIters = tC.epochsOffBook
 			}
@@ -367,7 +368,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			if tC.startWithOnBook {
 				orders = []*types.Order{}
 			} else {
-				orders = generateOrders(*idGen, te.marketID, party, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
+				orders = generateOrders(*idGen, te.marketID, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
 			}
 
 			for i := 0; i < secondEpochIters; i++ {
@@ -382,19 +383,8 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 				te.engine.CalculateSLAPenalties(epochEnd)
 			}
 
-			// if tC.lastEpochMeetsCommitment {
-			// 	orders = generateOrders(*idGen, te.marketID, party, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
-			// }
-
-			// te.engine.ResetSLAEpoch(epochStart)
-			// for j := 0; j < int(epochLength.Seconds()); j++ {
-			// 	te.tsvc.SetTime(epochStart.Add(time.Duration(j) * time.Second))
-			// 	te.engine.BeginBlock(txs)
-			// 	te.engine.TxProcessed(k)
-			// }
-
 			te.engine.CalculateSLAPenalties(epochEnd)
-			sla := te.engine.GetSLAPenalties()[party]
+			sla := te.engine.GetSLAPenalties()[partyID]
 
 			fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
 			require.True(t, sla.Fee.Equal(tC.expectedPenalty))
@@ -466,7 +456,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			te := newTestEngine(t, time.Now())
+			te := newTestEngine(t)
 
 			// set the net params
 			if tC.commitmentMinTimeFraction != nil {
@@ -511,7 +501,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			epochStart := time.Now().Add(-epochLength)
 			epochEnd := epochStart.Add(epochLength)
 
-			orders = generateOrders(*idGen, te.marketID, party, tC.buyOrdersPerBlock[0], tC.sellsOrdersPerBlock[0])
+			orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[0], tC.sellsOrdersPerBlock[0])
 
 			te.engine.ResetSLAEpoch(epochStart)
 			txs := []liquidity.TX{{ID: "1"}, {ID: "2"}, {ID: "3"}}
@@ -519,7 +509,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			k := te.engine.GenerateKSla(txs)
 
 			for i := 0; i < tC.epochLength; i++ {
-				orders = generateOrders(*idGen, te.marketID, party, tC.buyOrdersPerBlock[i], tC.sellsOrdersPerBlock[i])
+				orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[i], tC.sellsOrdersPerBlock[i])
 
 				te.tsvc.SetTime(epochStart.Add(time.Duration(i) * time.Second))
 				te.engine.BeginBlock(txs)
