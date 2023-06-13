@@ -30,9 +30,8 @@ var ErrPriceNotFound = errors.New("price-volume pair not found")
 
 // OrderBookSide represent a side of the book, either Sell or Buy.
 type OrderBookSide struct {
-	side types.Side
-	log  *logging.Logger
-	// Config
+	side   types.Side
+	log    *logging.Logger
 	levels []*PriceLevel
 }
 
@@ -231,7 +230,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
 				// Remove this order
 				extractedOrders = append(extractedOrders, order.Clone())
-				totalVolume += order.Remaining
+				totalVolume += order.TrueRemaining()
 				// Remove the order from the price level
 				toRemove++
 			} else {
@@ -479,6 +478,13 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 
 	fake := orders[iOrder].Clone()
 	for idx := len(s.levels) - 1; idx >= 0; idx-- {
+		// since all of uncrossOrders will be traded away and at the same uncrossing price
+		// iceberg orders are sent in as their full value instead of refreshing at each step
+		if fake.IcebergOrder != nil {
+			fake.Remaining += fake.IcebergOrder.ReservedRemaining
+			fake.IcebergOrder.ReservedRemaining = 0
+		}
+
 		// clone price level
 		lvl = clonePriceLevel(s.levels[idx])
 		for lvl.volume > 0 {
