@@ -9,11 +9,14 @@ Feature: check margin account with partially filled order
     And the margin calculator named "margin-calculator-0":
       | search factor | initial factor | release factor |
       | 1.2           | 1.5            | 2              |
+    And the price monitoring named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 3600    | 0.99        | 300               |
 
     And the markets:
-      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model              | margin calculator   | auction duration | fees         | price monitoring  | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC20 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | default-none      | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC21 | BTC        | USD   | log-normal-risk-model-1 | margin-calculator-0 | 1                | default-none | price-monitoring-1| default-eth-for-future | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -114,20 +117,20 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
 
     Then the parties place the following orders:
-      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   | expires in |
-      | auxiliary2 | ETH/DEC20 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-50    |   6        |
-      | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10000 |   6        |
-      | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |   6        |
-      | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |   6        |
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | expires in |
+      | auxiliary2 | ETH/DEC20 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |   6        |
+      | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |   6        |
+      | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC |   6        |
+      | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC |   6        |
 
     When the opening auction period ends for market "ETH/DEC20"
     And the mark price should be "10" for the market "ETH/DEC20"
 
     # setup trader2 position for an order which is partially filled and leading to a reduced position
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-      | trader2  | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-3 |6        |
-      | trader20 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTT | buy-order-3 |6        |
+      | party    | market id | side | volume | price | resulting trades | type       | tif      |expires in |
+      | trader2  | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTT  |6        |
+      | trader20 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTT  |6        |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -138,8 +141,8 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
 
     When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-      | trader2 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-4 |   6       |
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |expires in |
+      | trader2 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTT |   6       |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -150,8 +153,8 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
 
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
-      | trader20 | ETH/DEC20 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |expires in |
+      | trader20 | ETH/DEC20 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTT |   6       |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -162,8 +165,8 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
 
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
-      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |expires in |
+      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT |   6       |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -173,8 +176,8 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
     # trader3 places a new order
     When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-      | trader3 | ETH/DEC20 | buy  | 20     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |   3       |
+      | party   | market id | side | volume | price | resulting trades | type       | tif      |expires in |
+      | trader3 | ETH/DEC20 | buy  | 20     | 45    | 0                | TYPE_LIMIT | TIF_GTT  |   3       |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -195,9 +198,9 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
     #reset mark price
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |expires in |
-      | trader2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
-      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT | sell-order-4 |   6       |
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |expires in |
+      | trader2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTT |   6       |
+      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GTT |   6       |
   
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -208,8 +211,8 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | trader3 | USD   | ETH/DEC20 | 0      | 90000   |
 
     When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-      | trader3 | ETH/DEC20 | buy  | 10     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |   3       |
+      | party   | market id | side | volume | price | resulting trades | type       | tif      |expires in |
+      | trader3 | ETH/DEC20 | buy  | 10     | 45    | 0                | TYPE_LIMIT | TIF_GTT  |   3       |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -231,9 +234,9 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
 
     # now we create a case when trader 4 place a GTC order first and then GTT order
     When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-      | trader4 | ETH/DEC20 | buy  | 5      | 45    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-5 |           |
-      | trader4 | ETH/DEC20 | buy  | 10     | 45    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-5 |     3     |
+      | party   | market id | side | volume | price | resulting trades | type       | tif      |expires in |
+      | trader4 | ETH/DEC20 | buy  | 5      | 45    | 0                | TYPE_LIMIT | TIF_GTC  |           |
+      | trader4 | ETH/DEC20 | buy  | 10     | 45    | 0                | TYPE_LIMIT | TIF_GTT  |     3     |
 
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
@@ -258,137 +261,76 @@ Scenario: 002 check margin for GTT order type.0011-MARA-007
       | auxiliary1  | USD   | 1000000000000 |
       | auxiliary2  | USD   | 1000000000000 |
       | trader2     | USD   | 90000         |
-      | trader20     | USD  | 10000         |
+      | trader20    | USD  | 10000         |
       | trader3     | USD   | 90000         |
       | lprov       | USD   | 1000000000000 |
 
     When the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
+      | lp0 | lprov | ETH/DEC21 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
+      | lp0 | lprov | ETH/DEC21 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
 
     Then the parties place the following orders:
-      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | auxiliary2 | ETH/DEC20 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-50    |
-      | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10000 |
-      | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |
-      | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | 
+      | auxiliary2 | ETH/DEC21 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | 
+      | auxiliary1 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | 
+      | auxiliary2 | ETH/DEC21 | buy  | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | 
+      | auxiliary1 | ETH/DEC21 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC | 
 
-    When the opening auction period ends for market "ETH/DEC20"
-    And the mark price should be "10" for the market "ETH/DEC20"
-    When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | trader2  | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GFN | buy-order-3 |
-      | trader20 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GFN | buy-order-3 |
-
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 45234       | 54280  | 67851   | 90468   |
-
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
-
-    When the parties place the following orders with ticks:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference   |
-      | trader2 | ETH/DEC20 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GFN | buy-order-4 |
-
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 45234       | 54280  | 67851   | 90468   |
-
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
-
-    When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader20 | ETH/DEC20 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GFN | sell-order-4 |
-
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 34826       | 41791  | 52239   | 69652   |
-
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 67851  | 22149   |
-
-    When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader20 | ETH/DEC20 | sell | 1      | 50    | 1                | TYPE_LIMIT | TIF_GFN | sell-order-4 |
-
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 33636       | 40363  | 50454   | 67272   |
-
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 50454  | 39546   |
-
-Scenario: 004 check margin for GTT order type.0011-MARA-007
-    Given the parties deposit on asset's general account the following amount:
-      | party       | asset | amount        |
-      | auxiliary1  | USD   | 1000000000000 |
-      | auxiliary2  | USD   | 1000000000000 |
-      | trader2     | USD   | 215656        |
-      | trader20    | USD   | 10000         |
-      | trader3     | USD   | 90000         |
-      | trader4     | USD   | 90000         |
-      | lprov       | USD   | 1000000000000 |
-
-    When the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp0 | lprov | ETH/DEC20 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
-      | lp1 | lprov | ETH/DEC21 | 100000            | 0.001 | sell | ASK              | 100        | 55     | submission |
-      | lp1 | lprov | ETH/DEC21 | 100000            | 0.001 | buy  | BID              | 100        | 55     | amendment  |
-
-    Then the parties place the following orders:
-      | party      | market id | side | volume | price | resulting trades | type       | tif     | reference   | expires in |
-      | auxiliary2 | ETH/DEC20 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-50    |   6        |
-      | auxiliary1 | ETH/DEC20 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10000 |   6        |
-      | auxiliary2 | ETH/DEC20 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |   6        |
-      | auxiliary1 | ETH/DEC20 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |   6        |
-      | auxiliary2 | ETH/DEC21 | buy  | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-50    |   6        |
-      | auxiliary1 | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10000 |   6        |
-      | auxiliary2 | ETH/DEC21 | buy  | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-b-10    |   6        |
-      | auxiliary1 | ETH/DEC21 | sell | 10     | 10    | 0                | TYPE_LIMIT | TIF_GTC | aux-s-10    |   6        |
-
-    When the opening auction period ends for market "ETH/DEC20"
-    And the mark price should be "10" for the market "ETH/DEC20"
     When the opening auction period ends for market "ETH/DEC21"
-    And the mark price should be "10" for the market "ETH/DEC21"
-
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 50         | TRADING_MODE_CONTINUOUS | 3600    | 49        | 51        | 17784        | 100000         | 10            |
     When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |expires in |
-      | trader2  | ETH/DEC20 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-1 |           |
-      | trader2  | ETH/DEC21 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-2 |           |
-      | trader2  | ETH/DEC21 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-order-3 |           |
-      | trader2  | ETH/DEC21 | sell | 4000   | 50    | 0                | TYPE_LIMIT | TIF_GTT | buy-order-4 |3          |
-     
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | 
+      | trader2  | ETH/DEC21 | sell | 40     | 50    | 0                | TYPE_LIMIT | TIF_GFN |  
+      | trader20 | ETH/DEC21 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GFN | 
+
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 1423        | 1707   | 2134    | 2846    |
-      | trader2 | ETH/DEC21 | 142348      | 170817 | 213522  | 284696  |
-
-    Then the network moves ahead "4" blocks
-    And the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
-      | trader2 | ETH/DEC20 | 1423        | 1707   | 2134    | 2846    |
-      | trader2 | ETH/DEC21 | 142348      | 170817 | 213522  | 284696  |
-
-    And the mark price should be "10" for the market "ETH/DEC20"
-    And the mark price should be "10" for the market "ETH/DEC21"
-  
-    Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 2134   | 0       |
-       | trader2 | USD  | ETH/DEC21 | 213522 | 0       |
-    When the parties place the following orders with ticks:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference    |
-      | trader20 | ETH/DEC20 | buy  | 40     | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-order-10 |           
+      | trader2 | ETH/DEC21 | 45234       | 54280  | 67851   | 90468   |
 
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
-      | trader2 | USD   | ETH/DEC20 | 0      | 0       |
-      | trader2 | USD   | ETH/DEC21 | 213522 | 0       |
+      | trader2 | USD   | ETH/DEC21 | 67851  | 22149   |
+
+    When the parties place the following orders with ticks:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |reference    |
+      | trader2 | ETH/DEC21 | buy  | 40     | 50    | 0                | TYPE_LIMIT | TIF_GFN | GFN-order-1 |
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC21 | 45234       | 54280  | 67851   | 90468   |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader2 | USD   | ETH/DEC21 | 67851  | 22149   |
+
+    When the parties place the following orders with ticks:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | 
+      | trader20 | ETH/DEC21 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GFN | 
+
+    And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC21 | 34826       | 41791  | 52239   | 69652   |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader2 | USD   | ETH/DEC21 | 67851  | 22149   |
+
+    And the orders should have the following status:
+      | party   | reference   | status        |
+      | trader2 | GFN-order-1 | STATUS_ACTIVE |
+
+    # trigger auction
+    When the parties place the following orders with ticks:
+      | party      | market id | side | volume | price | resulting trades | type       | tif     | 
+      | auxiliary1 | ETH/DEC21 | sell | 1      | 52    | 0                | TYPE_LIMIT | TIF_GTC |  
+      | auxiliary2 | ETH/DEC21 | buy  | 1      | 52    | 0                | TYPE_LIMIT | TIF_GTC |  
+
+    And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
+
+    #GFN order is canceled during auction
+    And the orders should have the following status:
+      | party   | reference   | status           |
+      | trader2 | GFN-order-1 | STATUS_CANCELLED |
