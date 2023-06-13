@@ -36,19 +36,19 @@ func (m *MockEthCallEngine) EXPECT() *MockEthCallEngineMockRecorder {
 	return m.recorder
 }
 
-// CallContract mocks base method.
-func (m *MockEthCallEngine) CallContract(arg0 context.Context, arg1 string, arg2 *big.Int) (oracles.EthCallResult, error) {
+// CallSpec mocks base method.
+func (m *MockEthCallEngine) CallSpec(arg0 context.Context, arg1 string, arg2 *big.Int) (oracles.EthCallResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CallContract", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CallSpec", arg0, arg1, arg2)
 	ret0, _ := ret[0].(oracles.EthCallResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CallContract indicates an expected call of CallContract.
-func (mr *MockEthCallEngineMockRecorder) CallContract(arg0, arg1, arg2 interface{}) *gomock.Call {
+// CallSpec indicates an expected call of CallSpec.
+func (mr *MockEthCallEngineMockRecorder) CallSpec(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallContract", reflect.TypeOf((*MockEthCallEngine)(nil).CallContract), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CallSpec", reflect.TypeOf((*MockEthCallEngine)(nil).CallSpec), arg0, arg1, arg2)
 }
 
 // MakeResult mocks base method.

@@ -15,6 +15,8 @@ package protocol
 import (
 	"context"
 	"fmt"
+	"math/big"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 
@@ -65,6 +67,20 @@ import (
 	"code.vegaprotocol.io/vega/version"
 )
 
+type EthCallEngine interface {
+	Start()
+	Stop()
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock *big.Int) (ethcall.Result, error)
+	OnSpecActivated(ctx context.Context, spec types.OracleSpec) error
+	OnSpecDeactivated(ctx context.Context, spec types.OracleSpec)
+}
+
+type EthOracleVerifier interface {
+	ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error
+	OnTick(ctx context.Context, t time.Time)
+}
+
 type allServices struct {
 	ctx             context.Context
 	log             *logging.Logger
@@ -101,14 +117,14 @@ type allServices struct {
 	pow                     processor.PoWEngine
 	builtinOracle           *oracles.Builtin
 	codec                   abci.Codec
-	ethereumOraclesVerifier *oracles.EthereumOracleVerifier
+	ethereumOraclesVerifier EthOracleVerifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
 	notary                *notary.SnapshotNotary
 	eventForwarder        *evtforward.Forwarder
 	eventForwarderEngine  EventForwarderEngine
-	ethCallEngine         *ethcall.Engine
+	ethCallEngine         EthCallEngine
 	witness               *validators.Witness
 	banking               *banking.Engine
 	genesisHandler        *genesis.Handler
@@ -208,9 +224,14 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
-	// todo: maybe inside haveethclient?
-	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
-	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifierFromEngine(svcs.log, svcs.witness, svcs.timeService, svcs.oracle, svcs.ethCallEngine)
+	if svcs.conf.IsValidator() {
+		svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
+		svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifierFromEngine(svcs.log, svcs.witness, svcs.timeService,
+			svcs.oracle, svcs.ethCallEngine)
+	} else {
+		svcs.ethCallEngine = NullEthCallEngine{}
+		svcs.ethereumOraclesVerifier = NullEthOracleVerifier{}
+	}
 
 	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, svcs.ethCallEngine)
 
@@ -748,3 +769,31 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(watchers...)
 }
+
+type NullEthCallEngine struct{}
+
+func (n NullEthCallEngine) Start() {}
+
+func (n NullEthCallEngine) Stop() {}
+
+func (n NullEthCallEngine) MakeResult(specID string, bytes []byte) (ethcall.Result, error) {
+	return ethcall.Result{}, nil
+}
+
+func (n NullEthCallEngine) CallSpec(ctx context.Context, id string, atBlock *big.Int) (ethcall.Result, error) {
+	return ethcall.Result{}, nil
+}
+
+func (n NullEthCallEngine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
+	return nil
+}
+
+func (n NullEthCallEngine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {}
+
+type NullEthOracleVerifier struct{}
+
+func (n NullEthOracleVerifier) ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error {
+	return nil
+}
+
+func (n NullEthOracleVerifier) OnTick(ctx context.Context, t time.Time) {}

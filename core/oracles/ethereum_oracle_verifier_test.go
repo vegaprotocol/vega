@@ -67,7 +67,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	assert.NotNil(t, eov)
 
 	result := okResult()
-	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ethCallEngine.EXPECT().MakeResult("testspec", []byte("testbytes")).Return(result, nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
@@ -108,7 +108,7 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 
 	result := okResult()
 
-	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
@@ -130,7 +130,7 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 	assert.NotNil(t, eov)
 
 	result := filterMismatchResult()
-	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
@@ -152,7 +152,7 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 	assert.NotNil(t, eov)
 
 	result := insufficentConfirmationsResult()
-	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
 	var checkResult error
@@ -175,7 +175,7 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 	assert.NotNil(t, eov)
 
 	result := okResult()
-	eov.ethCallEngine.EXPECT().CallContract(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
 
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 
