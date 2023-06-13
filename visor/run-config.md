@@ -80,7 +80,7 @@ Configuration options for the Vega binary and its arguments.
 
 <dd>
 
-Configuration of Vega binary and arguements required to run it.
+Configuration of Vega binary and arguments required to run it.
 
 </dd>
 
@@ -184,7 +184,7 @@ Relative path is relative to a parent folder of this config file.
 Arguments that will be applied to the binary.
 
 
-<blockquote>Each element the list represents one space seperated argument. An argument and its value should be in separate elements.
+<blockquote>Each element the list represents one space separated argument. An argument and its value should be in separate elements.
 </blockquote>
 </dd>
 
