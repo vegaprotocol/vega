@@ -105,7 +105,7 @@ Feature: Simple example of successor markets
       | TRADING_MODE_OPENING_AUCTION |
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     # now ensure the succession time window has elapsed
-    When the network moves ahead "10" blocks
+    When the network moves ahead "11" blocks
     Then the market data for the market "ETH/DEC20" should be:
       | trading mode                 |
       | TRADING_MODE_OPENING_AUCTION |

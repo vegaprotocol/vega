@@ -255,13 +255,12 @@ Feature: Simple example of successor markets
       | trading.terminated | true  |
       | prices.ETH.value   | 975   |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2539" for the market "ETH/DEC20"
-    And the network treasury balance should be "2539" for the asset "USD"
+    # pass succession window
+    When the network moves ahead "1" blocks
 
-    When the successor market "ETH/DEC20" is enacted
+    Then the successor market "ETH/DEC20" is enacted
    
-    Then the parties place the following orders:
+    And the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader1 | ETH/DEC20 | buy  | 10     | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | trader1 | ETH/DEC20 | sell | 10     | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
@@ -272,6 +271,9 @@ Feature: Simple example of successor markets
       | mark price | trading mode            | auction trigger             | target stake | supplied stake | open interest |
       | 150        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 82           | 10000          | 1             |
 
+    And the insurance pool balance should be "0" for the market "ETH/DEC19"
+    And the insurance pool balance should be "4062" for the market "ETH/DEC20"
+    And the network treasury balance should be "1016" for the asset "USD"
     # this is from ETH/DEC19 market
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party   | equity like share | average entry valuation |
