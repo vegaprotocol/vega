@@ -19,6 +19,7 @@ func (m *Market) GetCPState() *types.CPMarketState {
 		Shares:           shares,
 		InsuranceBalance: ipb,
 		LastTradeValue:   m.feeSplitter.TradeValue(),
+		// Market:           m.mkt.DeepClone(),
 	}
 	// if the market was closed/settled, include the last valid market definition in the checkpoint
 	if m.mkt.State == types.MarketStateSettled || m.mkt.State == types.MarketStateClosed {

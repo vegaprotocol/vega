@@ -940,7 +940,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	toDelete = toDelete[:]
 	// find state that should expire
 	for id, cpm := range e.marketCPStates {
-		if !cpm.TTL.After(t) {
+		if cpm.TTL.Before(t) {
 			toDelete = append(toDelete, id)
 			assets, _ := cpm.Market.GetAssets()
 			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
