@@ -130,7 +130,7 @@ type Collateral interface {
 	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
 	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
 	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.LedgerMovement, error)
-	ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.LedgerMovement, error)
+	ClearMarket(ctx context.Context, mktID, asset string, parties []string, keepInsurance bool) ([]*types.LedgerMovement, error)
 	HasGeneralAccount(party, asset string) bool
 	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.LedgerMovement, error)
 	CanCoverBond(market, party, asset string, amount *num.Uint) bool
@@ -146,4 +146,5 @@ type Collateral interface {
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
 	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
+	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
 }

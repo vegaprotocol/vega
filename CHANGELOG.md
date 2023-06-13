@@ -43,6 +43,7 @@
 - [8349](https://github.com/vegaprotocol/vega/issues/8349) - Add successor market integration test coverage.
 - [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
 - [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
+- [8476](https://github.com/vegaprotocol/vega/issues/8476) - Add successor market per `AC`
 
 ### 🐛 Fixes
 - [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
