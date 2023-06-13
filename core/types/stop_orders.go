@@ -73,6 +73,25 @@ type StopOrderTrigger struct {
 	trailingPercentOffset num.Decimal
 }
 
+func NewPriceStopOrderTrigger(
+	direction StopOrderTriggerDirection,
+	price *num.Uint,
+) *StopOrderTrigger {
+	return &StopOrderTrigger{
+		Direction: direction,
+		price:     price,
+	}
+}
+func NewTrailingStopOrderTrigger(
+	direction StopOrderTriggerDirection,
+	trailingPercentOffset num.Decimal,
+) *StopOrderTrigger {
+	return &StopOrderTrigger{
+		Direction:             direction,
+		trailingPercentOffset: trailingPercentOffset,
+	}
+}
+
 func (s StopOrderTrigger) String() string {
 	return fmt.Sprintf(
 		"price(%v) trailingPercentOffset(%v)",
@@ -97,7 +116,7 @@ func (s *StopOrderTrigger) Price() *num.Uint {
 }
 
 func (s *StopOrderTrigger) TrailingPercentOffset() num.Decimal {
-	if s.price == nil {
+	if s.price != nil {
 		panic("invalid use of trailing percent offset trigger")
 	}
 	return s.trailingPercentOffset

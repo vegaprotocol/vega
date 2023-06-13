@@ -80,3 +80,15 @@ func (p *TrailingStopOrders) Exists(id string) (atPrice *num.Uint, offset num.De
 
 	return
 }
+
+func (p *Pool) Len() int {
+	return len(p.orderToParty)
+}
+
+func (p *Pool) Trailing() *TrailingStopOrders {
+	return p.trailing
+}
+
+func (p *Pool) Priced() *PricedStopOrders {
+	return p.priced
+}

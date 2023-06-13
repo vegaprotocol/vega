@@ -25,19 +25,17 @@ func New(log *logging.Logger) *Pool {
 		log:          log,
 		orders:       map[string]map[string]*types.StopOrder{},
 		orderToParty: map[string]string{},
-		priced:       &PricedStopOrders{},
-		trailing:     &TrailingStopOrders{},
+		priced:       NewPricedStopOrders(),
+		trailing:     NewTrailingStopOrders(),
 	}
 }
 
-func (p *Pool) PriceUpdated(newPrice *num.Uint) []*types.StopOrder {
+func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(
 		p.priced.PriceUpdated(newPrice),
 		p.trailing.PriceUpdated(newPrice)...,
 	)
-
-	stopOrders := []*types.StopOrder{}
 
 	// first get all the orders which got triggered
 	for _, v := range ids {
@@ -62,7 +60,8 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) []*types.StopOrder {
 				logging.String("party-id", pid), logging.String("order-id", v))
 		}
 
-		stopOrders = append(stopOrders, sorder)
+		sorder.Status = types.StopOrderStatusTiggered
+		triggered = append(triggered, sorder)
 
 		// now we can cleanup
 		delete(orders, v)
@@ -72,11 +71,15 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) []*types.StopOrder {
 		}
 	}
 
-	// now we get all the OCO oposited to them as they shall
-	// be cancelled now
-	for _, v := range stopOrders[:] {
-		res, err := p.Remove(v.Party, v.OCOLinkID)
-		if err != nil {
+	// now we get all the OCO oposit to them as they shall
+	// be cancelled as well
+	for _, v := range triggered[:] {
+		if len(v.OCOLinkID) <= 0 {
+			continue
+		}
+
+		res, err := p.removeWithOCO(v.Party, v.OCOLinkID, false)
+		if err != nil || len(res) <= 0 {
 			// that should never happen, this mean for some
 			// reason that the other side of the OCO has been
 			// remove and left the pool in a bad state
@@ -87,11 +90,11 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) []*types.StopOrder {
 		}
 
 		// only one order returned here
-		stopOrders = append(stopOrders, res[0])
-
+		res[0].Status = types.StopOrderStatusStopped
+		cancelled = append(cancelled, res[0])
 	}
 
-	return stopOrders
+	return triggered, cancelled
 }
 
 func (p *Pool) Insert(order *types.StopOrder) {
@@ -113,9 +116,24 @@ func (p *Pool) Insert(order *types.StopOrder) {
 	}
 }
 
-func (p *Pool) Remove(
+func (p *Pool) Cancel(
 	partyID string,
 	orderID string, // if empty remove all
+) ([]*types.StopOrder, error) {
+	orders, err := p.removeWithOCO(partyID, orderID, true)
+	if err == nil {
+		for _, v := range orders {
+			v.Status = types.StopOrderStatusCancelled
+		}
+	}
+
+	return orders, err
+}
+
+func (p *Pool) removeWithOCO(
+	partyID string,
+	orderID string,
+	withOCO bool, // not always necessary in case we are
 ) ([]*types.StopOrder, error) {
 	partyOrders, ok := p.orders[partyID]
 	if !ok {
@@ -131,7 +149,7 @@ func (p *Pool) Remove(
 		}
 
 		orders := []*types.StopOrder{order}
-		if len(order.OCOLinkID) > 0 {
+		if withOCO && len(order.OCOLinkID) > 0 {
 			orders = append(orders, partyOrders[order.OCOLinkID])
 		}
 
@@ -145,6 +163,7 @@ func (p *Pool) Remove(
 	p.remove(orders)
 
 	return orders, nil
+
 }
 
 func (p *Pool) remove(orders []*types.StopOrder) {
@@ -172,13 +191,18 @@ func (p *Pool) RemoveExpired(orderIDs []string) []*types.StopOrder {
 	// first find all orders and add them to the map
 	for _, id := range orderIDs {
 		order := p.orders[p.orderToParty[id]][id]
+		order.Status = types.StopOrderStatusExpired
 		ordersM[id] = order
 
 		// once an order is removed, we also remove it's OCO link
 		if len(order.OCOLinkID) > 0 {
-			// is the OCO link already mapped
-			if _, ok := ordersM[order.OCOLinkID]; !ok {
-				ordersM[order.OCOLinkID] = p.orders[p.orderToParty[id]][order.OCOLinkID]
+			// first check if it's not been removed already
+			if _, ok := p.orderToParty[order.OCOLinkID]; ok {
+				// is the OCO link already mapped
+				if _, ok := ordersM[order.OCOLinkID]; !ok {
+					ordersM[order.OCOLinkID] = p.orders[p.orderToParty[id]][order.OCOLinkID]
+					ordersM[order.OCOLinkID].Status = types.StopOrderStatusExpired
+				}
 			}
 		}
 	}

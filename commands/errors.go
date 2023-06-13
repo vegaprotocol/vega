@@ -38,6 +38,7 @@ var (
 	ErrEmptyBatchMarketInstructions                = errors.New("empty batch market instructions")
 	ErrIsNotValidVegaPubkey                        = errors.New("is not a valid vega public key")
 	ErrIsNotValidEthereumAddress                   = errors.New("is not a valid ethereum address")
+	ErrMustBeWithinRange01                         = errors.New("must be between 0 and 1")
 	ErrMustBeReduceOnly                            = errors.New("must be reduce only")
 	ErrExpiryStrategyRequiredWhenExpiresAtSet      = errors.New("expiry strategy required when expires_at set")
 	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow  = errors.New("must have at least one of rises above or falls bellow")
