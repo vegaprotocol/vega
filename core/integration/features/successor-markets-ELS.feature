@@ -167,7 +167,7 @@ Feature: Simple example of successor markets
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
-      | prices.ETH.value   | 975   |
+      | prices.ETH.value   | 976   |
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
 
     And the parties submit the following liquidity provision:
@@ -179,9 +179,9 @@ Feature: Simple example of successor markets
       | party   | equity like share  | average entry valuation |
       | lpprov1 | 0.2727272727272727 | 9666.6666666666666      |
       | lpprov2 | 0.7272727272727273 | 10000                   |
-    When the network moves ahead "10" blocks
+    When the network moves ahead "1" blocks
     Then the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "4061" for the market "ETH/DEC20"
+    And the insurance pool balance should be "4062" for the market "ETH/DEC20"
     And the network treasury balance should be "1016" for the asset "USD"
  
   @SuccessorMarketSimple

@@ -1278,7 +1278,9 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// we can delete the party from the map here
-		delete(m.parties, pos.Party())
+		if !m.liquidity.IsLiquidityProvider(pos.Party()) {
+			delete(m.parties, pos.Party())
+		}
 	}
 	m.broker.SendBatch(evts)
 }
