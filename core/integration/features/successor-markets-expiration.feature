@@ -128,3 +128,4 @@ Feature: Simple example of successor markets
     And the liquidity provider fee shares for the market "ETH/DEC20" should be:
       | party  | equity like share | average entry valuation |
       | lpprov | 1                 | 1905000000000000        |
+    And the insurance pool balance should be "0" for the market "ETH/DEC20"

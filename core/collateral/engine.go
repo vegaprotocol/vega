@@ -2409,30 +2409,7 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 			return nil
 		}
 	}
-	ret = append(ret, scLE)
-	infraID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeFeesInfrastructure)
-	infra, err := e.GetAccountByID(infraID)
-	if err == nil {
-		req.FromAccount[0] = infra
-		req.Amount = infra.Balance.Clone()
-		iLE, err := e.getLedgerEntries(ctx, req)
-		if err != nil {
-			e.log.Panic("unable to redistribute remainder of infrastructure fee account funds", logging.Error(err))
-		}
-		if !keepFeeAcc {
-			e.removeAccount(infraID)
-			for _, bal := range iLE.Balances {
-				if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
-					e.log.Error("Could not update the target account in transfer",
-						logging.String("account-id", bal.Account.ID),
-						logging.Error(err))
-					return nil
-				}
-			}
-		}
-		ret = append(ret, iLE)
-	}
-	return ret
+	return append(ret, scLE)
 }
 
 func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, clearFees bool) ([]*types.LedgerMovement, error) {
@@ -2469,13 +2446,6 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 	globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
 	insuranceAccounts = append(insuranceAccounts, globalRewardPool)
 
-	// there's a chance we end up with a remainder that does not get distributed (
-	/*
-		nToAccounts := num.NewUint(uint64(len(req.ToAccount)))
-		parts := num.UintZero().Div(amount, nToAccounts)
-		// add remaining pennies to last ledger movement
-		remainder := num.UintZero().Mod(amount, nToAccounts)
-	*/
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
@@ -2493,10 +2463,6 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 		}
 	}
 	resp = append(resp, insuranceLedgerEntries)
-	// getLedgerEntries subtracted the amount, but not everything was distributed correctly
-	// the remainder goes to the global reards pool
-
-	// remove the insurance account for the market
 	e.removeAccount(marketInsuranceID)
 
 	return resp, nil

@@ -933,16 +933,14 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			// relying on how this is implemented
 			mkt.RollbackInherit(ctx)
 		}
-		if _, ok := e.successors[id]; ok || !mkt.IsSucceeded() {
-			// update the market state used to set the successor market accordingly
-			// if the market was closed, the checkpoint data will include the full market definition
+		if !mkt.IsSucceeded() {
+			// the market was not yet succeeded -> capture state
 			cps := mkt.GetCPState()
 			// set until what time this state is considered valid.
 			cps.TTL = t.Add(e.successorWindow)
 			e.marketCPStates[id] = cps
 		} else {
-			// just in case it's still around -> remove the state, this would mean there is no pending successor, and the market is
-			// marked as succeeded, this state should not be here
+			// market was succeeded
 			delete(e.marketCPStates, id)
 		}
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
@@ -953,10 +951,11 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		e.removeMarket(id)
 	}
 	// clear slice
-	toDelete = toDelete[:]
+	toDelete = make([]string, 0, len(toDelete))
 	// find state that should expire
 	for id, cpm := range e.marketCPStates {
-		if cpm.TTL.Before(t) {
+		// market field will be nil if the market is still current (ie not closed/settled)
+		if cpm.TTL.Before(t) && cpm.Market != nil {
 			toDelete = append(toDelete, id)
 			assets, _ := cpm.Market.GetAssets()
 			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
@@ -1329,17 +1328,8 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 	// change in succession window length
 	delta := window - e.successorWindow
 	if delta != 0 {
-		torm := []string{}
-		now := e.timeService.GetTimeNow()
-		for id, cpm := range e.marketCPStates {
+		for _, cpm := range e.marketCPStates {
 			cpm.TTL = cpm.TTL.Add(delta)
-			if cpm.TTL.After(now) {
-				continue
-			}
-			torm = append(torm, id)
-		}
-		for _, id := range torm {
-			delete(e.marketCPStates, id)
 		}
 	}
 	e.successorWindow = window
