@@ -2432,7 +2432,7 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 		}
 		ret = append(ret, iLE)
 	}
-	return nil
+	return ret
 }
 
 func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, clearFees bool) ([]*types.LedgerMovement, error) {
