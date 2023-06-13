@@ -99,12 +99,13 @@ func toPoint[T any](v T) *T {
 func generateOrders(idGen stubIDGen, marketID, party string, buys, sells []uint64) []*types.Order {
 	newOrder := func(price uint64, side types.Side) *types.Order {
 		return &types.Order{
-			ID:       idGen.NextID(),
-			MarketID: marketID,
-			Party:    party,
-			Side:     side,
-			Price:    num.NewUint(price),
-			Status:   types.OrderStatusActive,
+			ID:        idGen.NextID(),
+			MarketID:  marketID,
+			Party:     party,
+			Side:      side,
+			Price:     num.NewUint(price),
+			Remaining: price,
+			Status:    types.OrderStatusActive,
 		}
 	}
 
@@ -274,28 +275,30 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 
 func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 	testCases := []struct {
-		desc                     string
-		prepareEpochs            int
-		lastEpochMeetsCommitment bool
-		expectedPenalty          num.Decimal
+		desc            string
+		epochsOffBook   int
+		epochsOnBook    int
+		startWithOnBook bool
+		expectedPenalty num.Decimal
 	}{
 		{
-			desc:                     "Selects average hysteresis period penalty (3 epochs) over lower current penalty, 0042-LIQF-039",
-			prepareEpochs:            3,
-			lastEpochMeetsCommitment: true,
-			expectedPenalty:          num.DecimalFromFloat(0.75),
+			desc:            "Selects average hysteresis period penalty (3 epochs) over lower current penalty, 0042-LIQF-039",
+			epochsOffBook:   3,
+			epochsOnBook:    1,
+			expectedPenalty: num.DecimalFromFloat(0.75),
 		},
 		{
-			desc:                     "Selects average hysteresis period penalty (2 epochs) of 0.5 over 2 epochs, 0042-LIQF-039",
-			prepareEpochs:            2,
-			lastEpochMeetsCommitment: true,
-			expectedPenalty:          num.DecimalFromFloat(0.5),
+			desc:            "Selects average hysteresis period penalty (2 epochs) of 0.5 over 2 epochs, 0042-LIQF-039",
+			epochsOffBook:   2,
+			epochsOnBook:    2,
+			expectedPenalty: num.DecimalFromFloat(0.5),
 		},
 		{
-			desc:                     "Selects current higher penalty over hysteresis average period, 0042-LIQF-040",
-			prepareEpochs:            2,
-			lastEpochMeetsCommitment: false,
-			expectedPenalty:          num.DecimalFromFloat(1),
+			desc:            "Selects current higher penalty over hysteresis average period, 0042-LIQF-040",
+			epochsOnBook:    4,
+			startWithOnBook: true,
+			epochsOffBook:   1,
+			expectedPenalty: num.DecimalFromFloat(1),
 		},
 	}
 	for _, tC := range testCases {
@@ -340,8 +343,16 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			txs := []liquidity.TX{{ID: "1"}, {ID: "2"}, {ID: "3"}}
 			k := te.engine.GenerateKSla(txs)
 
-			// getting a full penalty for 2 epochs
-			for i := 0; i < tC.prepareEpochs; i++ {
+			firstEpochIters := tC.epochsOffBook
+			secondEpochIters := tC.epochsOnBook
+
+			if tC.startWithOnBook {
+				orders = generateOrders(*idGen, te.marketID, party, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
+				firstEpochIters = tC.epochsOnBook
+				secondEpochIters = tC.epochsOffBook
+			}
+
+			for i := 0; i < firstEpochIters; i++ {
 				te.engine.ResetSLAEpoch(epochStart)
 
 				for j := 0; j < int(epochLength.Seconds()); j++ {
@@ -353,16 +364,34 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 				te.engine.CalculateSLAPenalties(epochEnd)
 			}
 
-			if tC.lastEpochMeetsCommitment {
+			if tC.startWithOnBook {
+				orders = []*types.Order{}
+			} else {
 				orders = generateOrders(*idGen, te.marketID, party, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
 			}
 
-			te.engine.ResetSLAEpoch(epochStart)
-			for j := 0; j < int(epochLength.Seconds()); j++ {
-				te.tsvc.SetTime(epochStart.Add(time.Duration(j) * time.Second))
-				te.engine.BeginBlock(txs)
-				te.engine.TxProcessed(k)
+			for i := 0; i < secondEpochIters; i++ {
+				te.engine.ResetSLAEpoch(epochStart)
+
+				for j := 0; j < int(epochLength.Seconds()); j++ {
+					te.tsvc.SetTime(epochStart.Add(time.Duration(j) * time.Second))
+					te.engine.BeginBlock(txs)
+					te.engine.TxProcessed(k)
+				}
+
+				te.engine.CalculateSLAPenalties(epochEnd)
 			}
+
+			// if tC.lastEpochMeetsCommitment {
+			// 	orders = generateOrders(*idGen, te.marketID, party, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
+			// }
+
+			// te.engine.ResetSLAEpoch(epochStart)
+			// for j := 0; j < int(epochLength.Seconds()); j++ {
+			// 	te.tsvc.SetTime(epochStart.Add(time.Duration(j) * time.Second))
+			// 	te.engine.BeginBlock(txs)
+			// 	te.engine.TxProcessed(k)
+			// }
 
 			te.engine.CalculateSLAPenalties(epochEnd)
 			sla := te.engine.GetSLAPenalties()[party]

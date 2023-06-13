@@ -161,7 +161,9 @@ func (e *Engine) doesLPMeetsCommitment(party string) bool {
 		price := o.Price.ToDecimal()
 		// this order is in range and does contribute to the volume on notional
 		if price.GreaterThanOrEqual(minPrice) && price.LessThanOrEqual(maxPrice) {
-			notionalVolume = notionalVolume.Add(price)
+			orderVolume := num.NewUint(o.TrueRemaining()).ToDecimal()
+
+			notionalVolume = notionalVolume.Add(orderVolume)
 		}
 	}
 
@@ -206,9 +208,11 @@ func (e *Engine) calculateHysteresisFeePenalty(currentPenalty num.Decimal, previ
 		periodAveragePenalty = periodAveragePenalty.Add(p)
 	}
 
-	performanceHysteresisEpochsD := num.NewDecimalFromFloat(float64(e.performanceHysteresisEpochs))
+	// Window length <= performanceHysteresisEpochs - we want to get arithmetic average.
+	windowLen := num.DecimalFromFloat(float64(len(previousPenalties[windowStart:])))
 
-	periodAveragePenalty = periodAveragePenalty.Div(performanceHysteresisEpochsD)
+	periodAveragePenalty = periodAveragePenalty.Div(windowLen)
+
 	return num.MaxD(currentPenalty, periodAveragePenalty)
 }
 
