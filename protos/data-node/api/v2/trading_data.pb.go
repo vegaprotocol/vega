@@ -8273,7 +8273,7 @@ type ListSuccessorMarketsRequest struct {
 	// Flag to indicate whether or not to include the full succession line, or only list
 	// the children of the given market ID. If true, the full succession line is included.
 	IncludeFullHistory bool `protobuf:"varint,2,opt,name=include_full_history,json=includeFullHistory,proto3" json:"include_full_history,omitempty"`
-	// Pagination control
+	// Pagination control.
 	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
@@ -8338,9 +8338,9 @@ type SuccessorMarket struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The market that is a member of the succession line
+	// The market that is a member of the succession line.
 	Market *vega.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
-	// All proposals for child markets that has the market as a parent.
+	// All proposals for child markets that have the market as a parent.
 	Proposals []*vega.GovernanceData `protobuf:"bytes,2,rep,name=proposals,proto3" json:"proposals,omitempty"`
 }
 
@@ -8396,9 +8396,9 @@ type SuccessorMarketEdge struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Successor market record
+	// Successor market record.
 	Node *SuccessorMarket `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
-	// Cursor identifying the record for pagination control
+	// Cursor identifying the record for pagination control.
 	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 }
 
@@ -8448,7 +8448,7 @@ func (x *SuccessorMarketEdge) GetCursor() string {
 	return ""
 }
 
-// Page of Successor market records and corresponding page information.
+// Page of successor market records and corresponding page information.
 type SuccessorMarketConnection struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
