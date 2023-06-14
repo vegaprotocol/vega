@@ -129,14 +129,9 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 		return nil
 	}
 	// recurring governance transfer
-	if config.RecurringTransferConfig.StartEpoch < e.currentEpoch {
-		gTransfer.Status = types.TransferStatusRejected
-		return ErrStartEpochInThePast
-	}
-
+	amount = num.UintZero()
 	e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, gTransfer)
 	e.recurringGovernanceTransfersMap[ID] = gTransfer
-	amount = num.UintZero()
 	return nil
 }
 
@@ -266,6 +261,11 @@ func (e *Engine) VerifyGovernanceTransfer(transfer *types.NewTransferConfigurati
 	// check fraction of balance is positive
 	if !transfer.FractionOfBalance.IsPositive() {
 		return errors.New("invalid fraction of balance for governance transfer")
+	}
+
+	// verify recurring transfer starting epoch is not in the past
+	if transfer.RecurringTransferConfig != nil && transfer.RecurringTransferConfig.StartEpoch < e.currentEpoch {
+		return ErrStartEpochInThePast
 	}
 
 	return nil
