@@ -29,12 +29,12 @@ const (
 )
 
 type Config struct {
-	Level       encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning" choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)"`
-	KeepRecent  int               `long:"snapshot-keep-recent" description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"`
-	RetryLimit  int               `long:"max-retries" description:"Maximum number of times to try and apply snapshot chunk"`
-	Storage     string            `long:"storage" choice:"GOLevelDB" choice:"memory" description:"Storage type to use"`
-	DBPath      string            `long:"db-path" description:"Path to database"`
-	StartHeight int64             `long:"load-from-block-height" description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync"`
+	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                    choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
+	KeepRecent  int               `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
+	RetryLimit  int               `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
+	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                choice:"memory"               description:"Storage type to use" long:"storage"`
+	DBPath      string            `description:"Path to database"                                                                                                                                                    long:"db-path"`
+	StartHeight int64             `description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync" long:"load-from-block-height"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

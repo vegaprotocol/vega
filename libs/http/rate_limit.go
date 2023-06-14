@@ -23,9 +23,9 @@ import (
 )
 
 type RateLimitConfig struct {
-	CoolDown encoding.Duration `long:"coolDown" description:"rate-limit duration, e.g. 10s, 1m30s, 24h0m0s"`
+	CoolDown encoding.Duration `description:"rate-limit duration, e.g. 10s, 1m30s, 24h0m0s" long:"coolDown"`
 
-	AllowList []string `long:"allowList" description:"a list of ip/subnets, e.g. 10.0.0.0/8, 192.168.0.0/16"`
+	AllowList []string `description:"a list of ip/subnets, e.g. 10.0.0.0/8, 192.168.0.0/16" long:"allowList"`
 
 	allowList []net.IPNet
 }

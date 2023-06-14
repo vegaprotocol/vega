@@ -21,7 +21,7 @@ import (
 )
 
 type MarketsCmd struct {
-	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
+	NodeAddress string `default:"0.0.0.0:3002" description:"The address of the vega node to use" long:"node-address"`
 }
 
 func (opts *MarketsCmd) Execute(_ []string) error {

@@ -30,9 +30,9 @@ type loadCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	Force             bool   `short:"f" long:"force" description:"do not prompt for confirmation"`
-	WipeExistingData  bool   `short:"w" long:"wipe-existing-data" description:"Erase all data from the node before loading from network history"`
-	OptimiseForAppend string `short:"a" long:"optimise-for-append" required:"false" description:"if true the load will be optimised for appending new segments onto existing datanode data, this is the default if the node already contains data" choice:"default" choice:"true" choice:"false" default:"default"`
+	Force             bool   `description:"do not prompt for confirmation"                                   long:"force"              short:"f"`
+	WipeExistingData  bool   `description:"Erase all data from the node before loading from network history" long:"wipe-existing-data" short:"w"`
+	OptimiseForAppend string `choice:"default"                                                               choice:"true"             choice:"false" default:"default" description:"if true the load will be optimised for appending new segments onto existing datanode data, this is the default if the node already contains data" long:"optimise-for-append" required:"false" short:"a"`
 }
 
 func (cmd *loadCmd) Execute(args []string) error {

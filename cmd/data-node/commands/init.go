@@ -30,9 +30,9 @@ import (
 type InitCmd struct {
 	config.VegaHomeFlag
 
-	Force   bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
-	Archive bool `short:"a" long:"archive" description:"Disable database retention policies. Keeps data and network history indefinitely"`
-	Lite    bool `short:"l" long:"lite" description:"Set all database retention policies to one day only"`
+	Force   bool `description:"Erase exiting vega configuration at the specified path"                           long:"force"   short:"f"`
+	Archive bool `description:"Disable database retention policies. Keeps data and network history indefinitely" long:"archive" short:"a"`
+	Lite    bool `description:"Set all database retention policies to one day only"                              long:"lite"    short:"l"`
 }
 
 var initCmd InitCmd

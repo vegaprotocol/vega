@@ -21,7 +21,7 @@ type LastBlockCmd struct {
 	coreConfig.OutputFlag
 	*config.Config
 
-	Timeout time.Duration `long:"timeout" description:"Database connection timeout" default:"10s"`
+	Timeout time.Duration `default:"10s" description:"Database connection timeout" long:"timeout"`
 }
 
 var lastBlockCmd LastBlockCmd

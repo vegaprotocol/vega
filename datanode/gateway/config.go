@@ -25,40 +25,40 @@ import (
 
 // ServerConfig represent the configuration of a server in vega.
 type ServerConfig struct {
-	Port int    `long:"port" description:"Listen for connection on port <port>"`
-	IP   string `long:"ip" description:"Bind to address <ip>"`
+	Port int    `description:"Listen for connection on port <port>" long:"port"`
+	IP   string `description:"Bind to address <ip>"                 long:"ip"`
 }
 
 // GraphqlServiceConfig represents the configuration of the gateway.
 type GraphqlServiceConfig struct {
-	Enabled         encoding.Bool `long:"enabled" description:"Start the GraphQl gateway"`
+	Enabled         encoding.Bool `description:"Start the GraphQl gateway"             long:"enabled"`
 	ComplexityLimit int           `long:"complexity-limit"`
-	Endpoint        string        `long:"endpoint" description:"Endpoint to expose the graphql API at"`
+	Endpoint        string        `description:"Endpoint to expose the graphql API at" long:"endpoint"`
 }
 
 // RESTGatewayServiceConfig represent the configuration of the rest service.
 type RESTGatewayServiceConfig struct {
-	Enabled    encoding.Bool `long:"enabled" choice:"true" choice:"false" description:"Start the REST gateway"`
-	APMEnabled encoding.Bool `long:"apm-enabled" choice:"true" choice:"false" description:" "`
+	Enabled    encoding.Bool `choice:"true" choice:"false" description:"Start the REST gateway" long:"enabled"`
+	APMEnabled encoding.Bool `choice:"true" choice:"false" description:" "                      long:"apm-enabled"`
 }
 
 // Config represents the general configuration for the gateway.
 type Config struct {
 	ServerConfig
-	Level                    encoding.LogLevel        `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
+	Level                    encoding.LogLevel        `choice:"debug"                                                                  choice:"info"                      choice:"warning" long:"log-level"`
 	Timeout                  encoding.Duration        `long:"timeout"`
-	Node                     ServerConfig             `group:"Node" namespace:"node"`
-	GraphQL                  GraphqlServiceConfig     `group:"GraphQL" namespace:"graphql"`
-	REST                     RESTGatewayServiceConfig `group:"REST" namespace:"rest"`
-	SubscriptionRetries      int                      `long:"subscription-retries" description:" "`
-	GraphQLPlaygroundEnabled encoding.Bool            `long:"graphql-playground" description:"Enables the GraphQL playground"`
-	MaxSubscriptionPerClient uint32                   `long:"max-subscription-per-client" description:"Maximum graphql subscriptions allowed per client"`
-	CORS                     libhttp.CORSConfig       `group:"CORS" namespace:"cors"`
-	HTTPSEnabled             encoding.Bool            `long:"https-enabled" description:"If true, GraphQL gateway will require an HTTPS connection"`
-	AutoCertDomain           string                   `long:"auto-cert-domain" description:"Automatically generate and sign https certificate via LetsEncrypt"`
-	CertificateFile          string                   `long:"certificate-file" description:"Path to SSL certificate, if using HTTPS but not autocert"`
-	KeyFile                  string                   `long:"key-file" description:"Path to private key, if using HTTPS but not autocert"`
-	RateLimit                ratelimit.Config         `group:"RateLimits" namespace:"rate-limits"`
+	Node                     ServerConfig             `group:"Node"                                                                    namespace:"node"`
+	GraphQL                  GraphqlServiceConfig     `group:"GraphQL"                                                                 namespace:"graphql"`
+	REST                     RESTGatewayServiceConfig `group:"REST"                                                                    namespace:"rest"`
+	SubscriptionRetries      int                      `description:" "                                                                 long:"subscription-retries"`
+	GraphQLPlaygroundEnabled encoding.Bool            `description:"Enables the GraphQL playground"                                    long:"graphql-playground"`
+	MaxSubscriptionPerClient uint32                   `description:"Maximum graphql subscriptions allowed per client"                  long:"max-subscription-per-client"`
+	CORS                     libhttp.CORSConfig       `group:"CORS"                                                                    namespace:"cors"`
+	HTTPSEnabled             encoding.Bool            `description:"If true, GraphQL gateway will require an HTTPS connection"         long:"https-enabled"`
+	AutoCertDomain           string                   `description:"Automatically generate and sign https certificate via LetsEncrypt" long:"auto-cert-domain"`
+	CertificateFile          string                   `description:"Path to SSL certificate, if using HTTPS but not autocert"          long:"certificate-file"`
+	KeyFile                  string                   `description:"Path to private key, if using HTTPS but not autocert"              long:"key-file"`
+	RateLimit                ratelimit.Config         `group:"RateLimits"                                                              namespace:"rate-limits"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
