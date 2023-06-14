@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -29,15 +28,20 @@ type OracleDataBroadcaster interface {
 	BroadcastData(context.Context, OracleData) error
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthereumConfirmations
+type EthereumConfirmations interface {
+	Check(uint64) error
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallEngine
 type EthCallEngine interface {
-	CallSpec(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (EthCallResult, error)
 	MakeResult(specID string, bytes []byte) (EthCallResult, error)
 }
 
 type CallEngine interface {
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
-	CallSpec(ctx context.Context, id string, atBlock *big.Int) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcall_result.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallResult
@@ -46,7 +50,6 @@ type EthCallResult interface {
 	Values() ([]any, error)
 	Normalised() (map[string]string, error)
 	PassesFilters() (bool, error)
-	HasRequiredConfirmations() bool
 }
 
 // Needed because the engine CallContract method returns a concrete ethcall.Result type, but for mocking in tests we want an interface.
@@ -54,7 +57,7 @@ type ethCallEngineWrapper struct {
 	wrapped CallEngine
 }
 
-func (e ethCallEngineWrapper) CallSpec(ctx context.Context, id string, atBlock *big.Int) (EthCallResult, error) {
+func (e ethCallEngineWrapper) CallSpec(ctx context.Context, id string, atBlock uint64) (EthCallResult, error) {
 	return e.wrapped.CallSpec(ctx, id, atBlock)
 }
 
@@ -65,10 +68,11 @@ func (e ethCallEngineWrapper) MakeResult(specID string, bytes []byte) (EthCallRe
 type EthereumOracleVerifier struct {
 	log *logging.Logger
 
-	witness      Witness
-	timeService  TimeService
-	oracleEngine OracleDataBroadcaster
-	ethEngine    EthCallEngine
+	witness          Witness
+	timeService      TimeService
+	oracleEngine     OracleDataBroadcaster
+	ethEngine        EthCallEngine
+	ethConfirmations EthereumConfirmations
 
 	pendingCallEvents    []*pendingCallEvent
 	finalizedCallResults []*types.EthContractCallEvent
@@ -98,16 +102,18 @@ func NewEthereumOracleVerifier(
 	ts TimeService,
 	oracleBroadcaster OracleDataBroadcaster,
 	ethCallEngine EthCallEngine,
+	ethConfirmations EthereumConfirmations,
 ) (sv *EthereumOracleVerifier) {
 	log = log.Named("ethereum-oracle-verifier")
 	s := &EthereumOracleVerifier{
-		log:           log,
-		witness:       witness,
-		timeService:   ts,
-		oracleEngine:  oracleBroadcaster,
-		ethEngine:     ethCallEngine,
-		hashes:        map[string]struct{}{},
-		snapshotState: &ethereumOracleVerifierSnapshotState{},
+		log:              log,
+		witness:          witness,
+		timeService:      ts,
+		oracleEngine:     oracleBroadcaster,
+		ethEngine:        ethCallEngine,
+		ethConfirmations: ethConfirmations,
+		hashes:           map[string]struct{}{},
+		snapshotState:    &ethereumOracleVerifierSnapshotState{},
 	}
 	return s
 }
@@ -118,8 +124,10 @@ func NewEthereumOracleVerifierFromEngine(
 	ts TimeService,
 	oracleBroadcaster OracleDataBroadcaster,
 	specCaller CallEngine,
+	ethConfirmations EthereumConfirmations,
 ) (sv *EthereumOracleVerifier) {
-	return NewEthereumOracleVerifier(log, witness, ts, oracleBroadcaster, ethCallEngineWrapper{wrapped: specCaller})
+	ethCallEngine := ethCallEngineWrapper{wrapped: specCaller}
+	return NewEthereumOracleVerifier(log, witness, ts, oracleBroadcaster, ethCallEngine, ethConfirmations)
 }
 
 func (s *EthereumOracleVerifier) ensureNotDuplicate(hash string) bool {
@@ -165,12 +173,9 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 }
 
 func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContractCallEvent) error {
-	blockHeight := &big.Int{}
-	blockHeight.SetUint64(callEvent.BlockHeight)
-
 	// Maybe TODO; can we do better than this? Might want to cancel on shutdown or something..
 	ctx := context.Background()
-	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, blockHeight)
+	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, callEvent.BlockHeight)
 	if err != nil {
 		return fmt.Errorf("failed to execute call event spec: %w", err)
 	}
@@ -179,8 +184,8 @@ func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContrac
 		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
 	}
 
-	if !checkResult.HasRequiredConfirmations() {
-		return fmt.Errorf("failed confirmations check")
+	if err = s.ethConfirmations.Check(callEvent.BlockHeight); err != nil {
+		return fmt.Errorf("failed confirmations check: %w", err)
 	}
 
 	filtersOk, err := checkResult.PassesFilters()
