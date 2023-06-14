@@ -39,7 +39,7 @@ func TestContractCall(t *testing.T) {
 	call, err := ethcall.NewCall(spec)
 	require.NoError(t, err)
 
-	res, err := call.Call(ctx, tc.client, nil)
+	res, err := call.Call(ctx, tc.client, 1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, res.Bytes)
 
@@ -83,7 +83,7 @@ func TestContractCall2(t *testing.T) {
 	call, err := ethcall.NewCall(spec)
 	require.NoError(t, err)
 
-	res, err := call.Call(ctx, tc.client, nil)
+	res, err := call.Call(ctx, tc.client, 1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, res.Bytes)
 

@@ -6,7 +6,6 @@ package mocks
 
 import (
 	context "context"
-	big "math/big"
 	reflect "reflect"
 
 	oracles "code.vegaprotocol.io/vega/core/oracles"
@@ -37,7 +36,7 @@ func (m *MockEthCallEngine) EXPECT() *MockEthCallEngineMockRecorder {
 }
 
 // CallSpec mocks base method.
-func (m *MockEthCallEngine) CallSpec(arg0 context.Context, arg1 string, arg2 *big.Int) (oracles.EthCallResult, error) {
+func (m *MockEthCallEngine) CallSpec(arg0 context.Context, arg1 string, arg2 uint64) (oracles.EthCallResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CallSpec", arg0, arg1, arg2)
 	ret0, _ := ret[0].(oracles.EthCallResult)

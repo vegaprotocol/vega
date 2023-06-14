@@ -15,7 +15,6 @@ package protocol
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
@@ -71,7 +70,7 @@ type EthCallEngine interface {
 	Start()
 	Stop()
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
-	CallSpec(ctx context.Context, id string, atBlock *big.Int) (ethcall.Result, error)
+	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
 	OnSpecActivated(ctx context.Context, spec types.OracleSpec) error
 	OnSpecDeactivated(ctx context.Context, spec types.OracleSpec)
 }
@@ -227,7 +226,7 @@ func newServices(
 	if svcs.conf.IsValidator() {
 		svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
 		svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifierFromEngine(svcs.log, svcs.witness, svcs.timeService,
-			svcs.oracle, svcs.ethCallEngine)
+			svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 	} else {
 		svcs.ethCallEngine = NullEthCallEngine{}
 		svcs.ethereumOraclesVerifier = NullEthOracleVerifier{}
@@ -743,7 +742,7 @@ func (n NullEthCallEngine) MakeResult(specID string, bytes []byte) (ethcall.Resu
 	return ethcall.Result{}, nil
 }
 
-func (n NullEthCallEngine) CallSpec(ctx context.Context, id string, atBlock *big.Int) (ethcall.Result, error) {
+func (n NullEthCallEngine) CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error) {
 	return ethcall.Result{}, nil
 }
 

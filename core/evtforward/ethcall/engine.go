@@ -3,7 +3,6 @@ package ethcall
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
@@ -109,7 +108,7 @@ func (e *Engine) MakeResult(specID string, bytes []byte) (Result, error) {
 	return Result{bytes: bytes, call: call}, nil
 }
 
-func (e *Engine) CallSpec(ctx context.Context, id string, atBlock *big.Int) (Result, error) {
+func (e *Engine) CallSpec(ctx context.Context, id string, atBlock uint64) (Result, error) {
 	e.mu.Lock()
 	call, ok := e.calls[id]
 	if !ok {
@@ -157,6 +156,7 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 	// TODO: maybe don't want to hold this lock all the time as eth call could be slow
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
 	ethBlock, err := e.client.BlockByNumber(ctx, nil)
 	if err != nil {
 		e.log.Errorf("failed to get current block header: %w", err)
@@ -175,7 +175,7 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 
 	for specID, call := range e.calls {
 		if call.triggered(e.prevEthBlock, ethBlock) {
-			res, err := call.Call(ctx, e.client, ethBlock.Number())
+			res, err := call.Call(ctx, e.client, ethBlock.NumberU64())
 			if err != nil {
 				e.log.Errorf("failed to call contract: %w", err)
 				continue
