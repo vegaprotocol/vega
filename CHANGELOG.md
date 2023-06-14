@@ -3,12 +3,15 @@
 ## Unreleased 0.72.0
 
 ### 🚨 Breaking changes
+
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
+
 - [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
 
 ### 🛠 Improvements
+
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
@@ -44,8 +47,10 @@
 - [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
 - [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
 - [8476](https://github.com/vegaprotocol/vega/issues/8476) - Add successor market per `AC`
+- [8365](https://github.com/vegaprotocol/vega/issues/8365) - Add new liquidity engine with SLA support.
 
 ### 🐛 Fixes
+
 - [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
