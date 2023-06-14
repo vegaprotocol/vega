@@ -49,6 +49,7 @@
 - [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
 - [8476](https://github.com/vegaprotocol/vega/issues/8476) - Add successor market per `AC`
 - [8365](https://github.com/vegaprotocol/vega/issues/8365) - Add new liquidity engine with SLA support.
+- [8476](https://github.com/vegaprotocol/vega/issues/8466) - Add stop orders protobufs and domain types
 
 ### 🐛 Fixes
 
