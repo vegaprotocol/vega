@@ -9,8 +9,10 @@ import (
 )
 
 type Result struct {
-	call  Call
-	bytes []byte
+	Bytes         []byte
+	Values        []any
+	Normalised    map[string]string
+	PassesFilters bool
 }
 
 func NewResult(spec types.EthCallSpec, bytes []byte) (Result, error) {
@@ -19,32 +21,27 @@ func NewResult(spec types.EthCallSpec, bytes []byte) (Result, error) {
 		return Result{}, fmt.Errorf("failed to create result: %w", err)
 	}
 
+	return newResult(call, bytes)
+}
+
+func newResult(call Call, bytes []byte) (Result, error) {
+	values, err := call.abi.Unpack(call.method, bytes)
+	if err != nil {
+		return Result{}, fmt.Errorf("failed to unpack contract call result: %w", err)
+	}
+
+	normalised, err := normaliseValues(values, call.spec.Normaliser)
 	return Result{
-		call:  call,
-		bytes: bytes,
+		Bytes:         bytes,
+		Values:        values,
+		Normalised:    normalised,
+		PassesFilters: true,
 	}, nil
 }
 
-func (r Result) Bytes() []byte {
-	return r.bytes
-}
-
-func (r Result) Values() ([]any, error) {
-	values, err := r.call.abi.Unpack(r.call.method, r.bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unpack contract call result: %w", err)
-	}
-	return values, nil
-}
-
-func (r Result) Normalised() (map[string]string, error) {
-	values, err := r.Values()
-	if err != nil {
-		return nil, err
-	}
-
+func normaliseValues(values []any, rules map[string]string) (map[string]string, error) {
 	res := make(map[string]string)
-	for key, path := range r.call.spec.Normaliser {
+	for key, path := range rules {
 		value, err := jsonpath.Get(path, values)
 		if err != nil {
 			return nil, fmt.Errorf("unable to normalise key %v: %v", key, err)
@@ -58,9 +55,4 @@ func (r Result) Normalised() (map[string]string, error) {
 	}
 
 	return res, nil
-}
-
-func (r Result) PassesFilters() (bool, error) {
-	// TODO
-	return true, nil
 }

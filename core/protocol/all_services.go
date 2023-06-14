@@ -225,7 +225,7 @@ func newServices(
 
 	if svcs.conf.IsValidator() {
 		svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
-		svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifierFromEngine(svcs.log, svcs.witness, svcs.timeService,
+		svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService,
 			svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 	} else {
 		svcs.ethCallEngine = NullEthCallEngine{}

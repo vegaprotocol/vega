@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/core/client/eth"
+	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/oracles/mocks"
-
 	"code.vegaprotocol.io/vega/core/types"
+
 	"code.vegaprotocol.io/vega/core/validators"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -88,7 +89,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
 	assert.NoError(t, err)
 	assert.NoError(t, checkResult)
 
@@ -97,7 +98,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 
 	oracleData := oracles.OracleData{
 		Signers: nil,
-		Data:    okResult().normalised,
+		Data:    okResult().Normalised,
 	}
 
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)
@@ -123,7 +124,7 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(result.generateIncorrectDummyCallEvent())
+	err := eov.ProcessEthereumContractCallResult(generateIncorrectDummyCallEvent())
 	assert.NoError(t, err)
 	assert.ErrorContains(t, checkResult, "mismatched")
 }
@@ -146,7 +147,7 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
 	assert.NoError(t, err)
 	assert.ErrorContains(t, checkResult, "failed filter")
 }
@@ -156,7 +157,7 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	result := insufficentConfirmationsResult()
+	result := okResult()
 	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
 	eov.ethConfirmations.EXPECT().Check(uint64(1)).Return(eth.ErrMissingConfirmations)
@@ -169,7 +170,7 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
 
 	assert.ErrorIs(t, checkResult, eth.ErrMissingConfirmations)
 	assert.Nil(t, err)
@@ -193,28 +194,15 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 			return nil
 		})
 
-	err := eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	err := eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
 	assert.NoError(t, checkResult)
 	assert.NoError(t, err)
 
-	err = eov.ProcessEthereumContractCallResult(result.generateDummyCallEvent())
+	err = eov.ProcessEthereumContractCallResult(generateDummyCallEvent())
 	assert.ErrorContains(t, err, "duplicated")
 }
 
-type fakeResult struct {
-	bytes                    []byte
-	values                   []any
-	normalised               map[string]string
-	passesFilters            bool
-	hasRequiredConfirmations bool
-}
-
-func (r fakeResult) Bytes() []byte                          { return r.bytes }
-func (r fakeResult) Values() ([]any, error)                 { return r.values, nil }
-func (r fakeResult) Normalised() (map[string]string, error) { return r.normalised, nil }
-func (r fakeResult) PassesFilters() (bool, error)           { return r.passesFilters, nil }
-
-func (r fakeResult) generateDummyCallEvent() types.EthContractCallEvent {
+func generateDummyCallEvent() types.EthContractCallEvent {
 	return types.EthContractCallEvent{
 		BlockHeight: 1,
 		BlockTime:   100,
@@ -223,29 +211,23 @@ func (r fakeResult) generateDummyCallEvent() types.EthContractCallEvent {
 	}
 }
 
-func (r fakeResult) generateIncorrectDummyCallEvent() types.EthContractCallEvent {
-	res := r.generateDummyCallEvent()
+func generateIncorrectDummyCallEvent() types.EthContractCallEvent {
+	res := generateDummyCallEvent()
 	res.Result = []byte("otherbytes")
 	return res
 }
 
-func okResult() fakeResult {
-	return fakeResult{
-		bytes:         []byte("testbytes"),
-		values:        []any{big.NewInt(42)},
-		normalised:    map[string]string{"price": fmt.Sprintf("%s", big.NewInt(42))},
-		passesFilters: true,
+func okResult() ethcall.Result {
+	return ethcall.Result{
+		Bytes:         []byte("testbytes"),
+		Values:        []any{big.NewInt(42)},
+		Normalised:    map[string]string{"price": fmt.Sprintf("%s", big.NewInt(42))},
+		PassesFilters: true,
 	}
 }
 
-func filterMismatchResult() fakeResult {
+func filterMismatchResult() ethcall.Result {
 	r := okResult()
-	r.passesFilters = false
-	return r
-}
-
-func insufficentConfirmationsResult() fakeResult {
-	r := okResult()
-	r.hasRequiredConfirmations = false
+	r.PassesFilters = false
 	return r
 }

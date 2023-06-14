@@ -105,7 +105,7 @@ func (e *Engine) MakeResult(specID string, bytes []byte) (Result, error) {
 	if !ok {
 		return Result{}, fmt.Errorf("no such specification: %v", specID)
 	}
-	return Result{bytes: bytes, call: call}, nil
+	return newResult(call, bytes)
 }
 
 func (e *Engine) CallSpec(ctx context.Context, id string, atBlock uint64) (Result, error) {
@@ -180,6 +180,7 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 				e.log.Errorf("failed to call contract: %w", err)
 				continue
 			}
+			// TODO: check filters (and confirmations?) before submitting
 			event := makeChainEvent(res, specID, ethBlock)
 			e.forwarder.ForwardFromSelf(event)
 		}
@@ -196,7 +197,7 @@ func makeChainEvent(res Result, specID string, block blockish) *commandspb.Chain
 				SpecId:      specID,
 				BlockHeight: block.NumberU64(),
 				BlockTime:   block.Time(),
-				Result:      res.Bytes(),
+				Result:      res.Bytes,
 			},
 		},
 	}
