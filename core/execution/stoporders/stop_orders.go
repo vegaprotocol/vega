@@ -60,7 +60,7 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.S
 				logging.String("party-id", pid), logging.String("order-id", v))
 		}
 
-		sorder.Status = types.StopOrderStatusTiggered
+		sorder.Status = types.StopOrderStatusTriggered
 		triggered = append(triggered, sorder)
 
 		// now we can cleanup

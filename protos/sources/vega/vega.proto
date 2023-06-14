@@ -35,7 +35,7 @@ message StopOrder {
     // Stopped by the network, e.g: OCO on the other side has been triggered
     STATUS_STOPPED = 3;
     // Stop order has been triggered and generated an order
-    STATUS_TRIGGERRED = 4;
+    STATUS_TRIGGERED = 4;
     // Stop order has expired
     STATUS_EXPIRED = 5;
   }
