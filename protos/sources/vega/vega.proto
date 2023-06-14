@@ -6,6 +6,73 @@ import "vega/markets.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+message StopOrder {
+  enum ExpiryStrategy {
+    // Never valid
+    EXPIRY_STRATEGY_UNSPECIFIED = 0;
+    // The stop order should be cancelled if the expiry time is reached.
+    EXPIRY_STRATEGY_CANCELS = 1;
+    // The order should be submitted if the expiry time is reached.
+    EXPIRY_STRATEGY_SUBMIT = 2;
+  }
+
+  enum TriggerDirection {
+    // Never valid
+    TRIGGER_DIRECTION_UNSPECIFIED = 0;
+    // The stop order is triggered once the price rises above a certain level
+    TRIGGER_DIRECTION_RISES_ABOVE = 1;
+    // The stop order is triggered once the price falls below a certain level
+    TRIGGER_DIRECTION_FALLS_BELOW = 2;
+  }
+
+  enum Status {
+    // Never valid
+    STATUS_UNSPECIFIED = 0;
+    // Pending to be executed once the trigger is breached
+    STATUS_PENDING = 1;
+    // Cancelled by the user
+    STATUS_CANCELLED = 2;
+    // Stopped by the network, e.g: OCO other side has been triggered
+    STATUS_STOPPED = 3;
+    // Stop order has been triggered and generated an order
+    STATUS_TRIGGERRED = 4;
+    // Stop order has been expired
+    STATUS_EXPIRED = 5;
+  }
+
+  // The ID of order of this stop order
+  // also the ID of the associated order if it is ever trigger
+  string id = 1;
+  // The id of the other part of the OCO if 2 stop orders where submitted at once
+  optional string oco_link_id = 2;
+  // An optional expiry timestamp.
+  optional int64 expires_at = 3;
+  // The strategy to adopt if the expiry time is reached.
+  optional ExpiryStrategy expiry_strategy = 4;
+  // the trigger direction for this stop order
+  optional TriggerDirection trigger_direction = 5;
+  // Status of the stop order
+  Status status = 6;
+  // Creation time of the stop order
+  int64 created_at = 7;
+  // Last update of this stop order
+  optional int64 updated_at = 8;
+  // The ID of the order created once the trigger is hit
+  string order_id = 9;
+  // The order to be submitted once the trigger is hit.
+  // OrderSubmission order_submission = 10;
+
+
+  // The trigger which will need to be breached for the order
+  // to be submitted to the book.
+  oneof trigger {
+    // A fixed price at which the order will be submitted.
+    string price = 100;
+    // A trailing percentage at wich the order will be submitted.
+    string trailing_percent_offset = 101;
+  }
+}
+
 // Side relates to the direction of an order, to Buy, or Sell
 enum Side {
   // Default value, always invalid
