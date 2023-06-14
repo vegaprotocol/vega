@@ -24,31 +24,31 @@ message BatchMarketInstructions {
   repeated OrderAmendment amendments = 2;
   // List of order submissions to be processed sequentially.
   repeated OrderSubmission submissions = 3;
-  // List of stop orders submissions to be processed sequentially.
+  // List of stop order submissions to be processed sequentially.
   repeated StopOrdersSubmission stop_orders_submissions = 4;
 }
 
-// Stop order submission submits stops orders
+// Stop order submission submits stops orders.
 // It is possible to make a single stop order submission by
 // specifying a single direction,
 // or an OCO (One Cancels the Other) stop order submission
-// by specifying a configuration for both direction
+// by specifying a configuration for both directions
 message StopOrdersSubmission {
-  // A stop order which will be trigger
+  // Stop order that will be triggered
   // if the price rises above a given trigger price.
   optional StopOrderSetup rises_above = 1;
-  // A stop order which will be trigger
+  // Stop order that will be triggered
   // if the price falls below a given trigger price.
   optional StopOrderSetup falls_below = 2;
 }
 
-// The price and expiry configuration for a stop order
+// Price and expiry configuration for a stop order
 message StopOrderSetup {
-  // The order to be submitted once the trigger is breached.
+  // Order to be submitted once the trigger is breached.
   OrderSubmission order_submission = 1;
-  // An optional expiry timestamp.
+  // Optional expiry timestamp.
   optional int64 expires_at = 2;
-  // The strategy to adopt if the expiry time is reached.
+  // Strategy to adopt if the expiry time is reached.
   optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
 
   // The trigger which will need to be breached for the order

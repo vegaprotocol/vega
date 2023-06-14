@@ -1129,9 +1129,9 @@ type StopOrder_ExpiryStrategy int32
 const (
 	// Never valid
 	StopOrder_EXPIRY_STRATEGY_UNSPECIFIED StopOrder_ExpiryStrategy = 0
-	// The stop order should be cancelled if the expiry time is reached.
+	// Stop order should be cancelled if the expiry time is reached.
 	StopOrder_EXPIRY_STRATEGY_CANCELS StopOrder_ExpiryStrategy = 1
-	// The order should be submitted if the expiry time is reached.
+	// Order should be submitted if the expiry time is reached.
 	StopOrder_EXPIRY_STRATEGY_SUBMIT StopOrder_ExpiryStrategy = 2
 )
 
@@ -1181,9 +1181,9 @@ type StopOrder_TriggerDirection int32
 const (
 	// Never valid
 	StopOrder_TRIGGER_DIRECTION_UNSPECIFIED StopOrder_TriggerDirection = 0
-	// The stop order is triggered once the price rises above a certain level
+	// Stop order is triggered once the price rises above a certain level
 	StopOrder_TRIGGER_DIRECTION_RISES_ABOVE StopOrder_TriggerDirection = 1
-	// The stop order is triggered once the price falls below a certain level
+	// Stop order is triggered once the price falls below a certain level
 	StopOrder_TRIGGER_DIRECTION_FALLS_BELOW StopOrder_TriggerDirection = 2
 )
 
@@ -1237,11 +1237,11 @@ const (
 	StopOrder_STATUS_PENDING StopOrder_Status = 1
 	// Cancelled by the user
 	StopOrder_STATUS_CANCELLED StopOrder_Status = 2
-	// Stopped by the network, e.g: OCO other side has been triggered
+	// Stopped by the network, e.g: OCO on the other side has been triggered
 	StopOrder_STATUS_STOPPED StopOrder_Status = 3
 	// Stop order has been triggered and generated an order
 	StopOrder_STATUS_TRIGGERRED StopOrder_Status = 4
-	// Stop order has been expired
+	// Stop order has expired
 	StopOrder_STATUS_EXPIRED StopOrder_Status = 5
 )
 
@@ -1751,26 +1751,26 @@ type StopOrder struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of order of this stop order
-	// also the ID of the associated order if it is ever trigger
+	// ID of this stop order
+	// also the ID of the associated order if it is ever triggered
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// The id of the other part of the OCO if 2 stop orders where submitted at once
+	// The ID of the 'other' part of the OCO if 2 stop orders were submitted at once
 	OcoLinkId *string `protobuf:"bytes,2,opt,name=oco_link_id,json=ocoLinkId,proto3,oneof" json:"oco_link_id,omitempty"`
-	// An optional expiry timestamp.
+	// Optional expiry timestamp.
 	ExpiresAt *int64 `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
-	// The strategy to adopt if the expiry time is reached.
+	// Strategy to adopt if the expiry time is reached.
 	ExpiryStrategy *StopOrder_ExpiryStrategy `protobuf:"varint,4,opt,name=expiry_strategy,json=expiryStrategy,proto3,enum=vega.StopOrder_ExpiryStrategy,oneof" json:"expiry_strategy,omitempty"`
-	// the trigger direction for this stop order
+	// Trigger direction for this stop order.
 	TriggerDirection *StopOrder_TriggerDirection `protobuf:"varint,5,opt,name=trigger_direction,json=triggerDirection,proto3,enum=vega.StopOrder_TriggerDirection,oneof" json:"trigger_direction,omitempty"`
-	// Status of the stop order
+	// Status of the stop order.
 	Status StopOrder_Status `protobuf:"varint,6,opt,name=status,proto3,enum=vega.StopOrder_Status" json:"status,omitempty"`
-	// Creation time of the stop order
+	// Creation time of the stop order.
 	CreatedAt int64 `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// Last update of this stop order
+	// Last update of this stop order.
 	UpdatedAt *int64 `protobuf:"varint,8,opt,name=updated_at,json=updatedAt,proto3,oneof" json:"updated_at,omitempty"`
-	// The ID of the order created once the trigger is hit
+	// ID of the order created once the trigger is hit.
 	OrderId string `protobuf:"bytes,9,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	// The trigger which will need to be breached for the order
+	// Trigger that will need to be breached for the order
 	// to be submitted to the book.
 	//
 	// Types that are assignable to Trigger:
@@ -1901,12 +1901,12 @@ type isStopOrder_Trigger interface {
 }
 
 type StopOrder_Price struct {
-	// A fixed price at which the order will be submitted.
+	// Fixed price at which the order will be submitted.
 	Price string `protobuf:"bytes,100,opt,name=price,proto3,oneof"`
 }
 
 type StopOrder_TrailingPercentOffset struct {
-	// A trailing percentage at wich the order will be submitted.
+	// Trailing percentage at which the order will be submitted.
 	TrailingPercentOffset string `protobuf:"bytes,101,opt,name=trailing_percent_offset,json=trailingPercentOffset,proto3,oneof"`
 }
 

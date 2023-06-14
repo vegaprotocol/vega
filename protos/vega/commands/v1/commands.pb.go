@@ -90,7 +90,7 @@ type BatchMarketInstructions struct {
 	Amendments []*OrderAmendment `protobuf:"bytes,2,rep,name=amendments,proto3" json:"amendments,omitempty"`
 	// List of order submissions to be processed sequentially.
 	Submissions []*OrderSubmission `protobuf:"bytes,3,rep,name=submissions,proto3" json:"submissions,omitempty"`
-	// List of stop orders submissions to be processed sequentially.
+	// List of stop order submissions to be processed sequentially.
 	StopOrdersSubmissions []*StopOrdersSubmission `protobuf:"bytes,4,rep,name=stop_orders_submissions,json=stopOrdersSubmissions,proto3" json:"stop_orders_submissions,omitempty"`
 }
 
@@ -154,20 +154,20 @@ func (x *BatchMarketInstructions) GetStopOrdersSubmissions() []*StopOrdersSubmis
 	return nil
 }
 
-// Stop order submission submits stops orders
+// Stop order submission submits stops orders.
 // It is possible to make a single stop order submission by
 // specifying a single direction,
 // or an OCO (One Cancels the Other) stop order submission
-// by specifying a configuration for both direction
+// by specifying a configuration for both directions
 type StopOrdersSubmission struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A stop order which will be trigger
+	// Stop order that will be triggered
 	// if the price rises above a given trigger price.
 	RisesAbove *StopOrderSetup `protobuf:"bytes,1,opt,name=rises_above,json=risesAbove,proto3,oneof" json:"rises_above,omitempty"`
-	// A stop order which will be trigger
+	// Stop order that will be triggered
 	// if the price falls below a given trigger price.
 	FallsBelow *StopOrderSetup `protobuf:"bytes,2,opt,name=falls_below,json=fallsBelow,proto3,oneof" json:"falls_below,omitempty"`
 }
@@ -218,17 +218,17 @@ func (x *StopOrdersSubmission) GetFallsBelow() *StopOrderSetup {
 	return nil
 }
 
-// The price and expiry configuration for a stop order
+// Price and expiry configuration for a stop order
 type StopOrderSetup struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The order to be submitted once the trigger is breached.
+	// Order to be submitted once the trigger is breached.
 	OrderSubmission *OrderSubmission `protobuf:"bytes,1,opt,name=order_submission,json=orderSubmission,proto3" json:"order_submission,omitempty"`
-	// An optional expiry timestamp.
+	// Optional expiry timestamp.
 	ExpiresAt *int64 `protobuf:"varint,2,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
-	// The strategy to adopt if the expiry time is reached.
+	// Strategy to adopt if the expiry time is reached.
 	ExpiryStrategy *vega.StopOrder_ExpiryStrategy `protobuf:"varint,3,opt,name=expiry_strategy,json=expiryStrategy,proto3,enum=vega.StopOrder_ExpiryStrategy,oneof" json:"expiry_strategy,omitempty"`
 	// The trigger which will need to be breached for the order
 	// to be submitted to the book.

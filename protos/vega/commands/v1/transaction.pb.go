@@ -453,12 +453,12 @@ type InputData_BatchMarketInstructions struct {
 }
 
 type InputData_StopOrdersSubmission struct {
-	// Command to submit a pair of stop orders
+	// Command to submit a pair of stop orders.
 	StopOrdersSubmission *StopOrdersSubmission `protobuf:"bytes,1016,opt,name=stop_orders_submission,json=stopOrdersSubmission,proto3,oneof"`
 }
 
 type InputData_StopOrdersCancellation struct {
-	// Command to cancel stop orders
+	// Command to cancel stop orders.
 	StopOrdersCancellation *StopOrdersCancellation `protobuf:"bytes,1017,opt,name=stop_orders_cancellation,json=stopOrdersCancellation,proto3,oneof"`
 }
 
