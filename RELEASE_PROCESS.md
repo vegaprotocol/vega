@@ -37,7 +37,7 @@ This document outlines the steps required in order to create a core protocol rel
     - update the version number in `protos/sources/datanode/api/v2/trading_data.proto`
     - update the version number in `protos/sources/blockexplorer/api/v1/blockexplorer.proto`
     - run `make proto`
-    - run `git commit -asm "chore: release verison vX.Y.Z`
+    - run `git commit -asm "chore: release version vX.Y.Z`
 1. Create a tag on the patch `release/vX.Y.Z` branch
 1. The CI will see the tag and create all the release artefacts
 1. Follow the [common release process](./#common-release-process) steps
