@@ -18,7 +18,7 @@ This document outlines the steps required in order to create a core protocol rel
     - run `git commit -asm "chore: release version vX.Y.Z`
 1. Create a pull request to merge `release/vX.Y.Z` into `master` and have it reviewed and merged
 1. Once the pull request has been merged, create a tag on the `master` branch
-1. The CI will see the tag and create all the release artefacts
+1. The CI will see the tag and create all the release artifacts
 1. Follow the [common release process](./#common-release-process) steps
 
 ## Patch release process
@@ -39,7 +39,7 @@ This document outlines the steps required in order to create a core protocol rel
     - run `make proto`
     - run `git commit -asm "chore: release version vX.Y.Z`
 1. Create a tag on the patch `release/vX.Y.Z` branch
-1. The CI will see the tag and create all the release artefacts
+1. The CI will see the tag and create all the release artifacts
 1. Follow the [common release process](./#common-release-process) steps
 
 
