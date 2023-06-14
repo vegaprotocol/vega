@@ -556,6 +556,13 @@ func (b *OrderBook) uncrossBookSide(
 	mPrice.Div(price, mPrice)
 	// Uncross each one
 	for _, order := range uncrossOrders {
+		// since all of uncrossOrders will be traded away and at the same uncrossing price
+		// iceberg orders are sent in as their full value instead of refreshing at each step
+		if order.IcebergOrder != nil {
+			order.Remaining += order.IcebergOrder.ReservedRemaining
+			order.IcebergOrder.ReservedRemaining = 0
+		}
+
 		// try to get the market price value from the order
 		trades, affectedOrders, _, err := opSide.uncross(order, false)
 		if err != nil {
@@ -873,7 +880,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
-				order.Price, order.Remaining, order.Side)
+				order.Price, order.TrueRemaining(), order.Side)
 		}
 	}
 
@@ -960,7 +967,7 @@ func (b *OrderBook) DeleteOrder(
 	// cancel the order if it expires it
 	if b.auction {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			dorder.Price, dorder.Remaining, dorder.Side)
+			dorder.Price, dorder.TrueRemaining(), dorder.Side)
 	}
 	return dorder, err
 }
@@ -1142,15 +1149,15 @@ func (b *OrderBook) icebergRefresh(o *types.Order) {
 		return
 	}
 
-	// remove it if there is some left
-	if o.Remaining > 0 {
-		if _, err := b.DeleteOrder(o); err != nil {
-			b.log.Panic("could not delete iceberg order during refresh", logging.Error(err), logging.Order(o))
-		}
+	if _, err := b.DeleteOrder(o); err != nil {
+		b.log.Panic("could not delete iceberg order during refresh", logging.Error(err), logging.Order(o))
 	}
 
 	// refresh peaks
 	o.SetIcebergPeaks()
+
+	// make sure its active again
+	o.Status = types.OrderStatusActive
 
 	// put it to the back of the line
 	b.getSide(o.Side).addOrder(o)
