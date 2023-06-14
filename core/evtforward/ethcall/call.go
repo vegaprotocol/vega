@@ -53,14 +53,15 @@ func NewCall(spec types.EthCallSpec) (Call, error) {
 	}, nil
 }
 
-func (c Call) Call(ctx context.Context, caller ethereum.ContractCaller, blockNumber *big.Int) (Result, error) {
+func (c Call) Call(ctx context.Context, ethClient EthReaderCaller, blockNumber uint64) (Result, error) {
 	// TODO: timeout?
 	msg := ethereum.CallMsg{
 		To:   &c.address,
 		Data: c.args,
 	}
 
-	bytes, err := caller.CallContract(ctx, msg, blockNumber)
+	n := big.NewInt(0).SetUint64(blockNumber)
+	bytes, err := ethClient.CallContract(ctx, msg, n)
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to call contract: %w", err)
 	}

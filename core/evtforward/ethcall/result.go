@@ -64,8 +64,3 @@ func (r Result) PassesFilters() (bool, error) {
 	// TODO
 	return true, nil
 }
-
-func (r Result) HasRequiredConfirmations() bool {
-	// TODO
-	return true
-}
