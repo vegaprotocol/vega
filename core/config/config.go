@@ -62,45 +62,45 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	Admin             admin.Config           `group:"Admin" namespace:"admin"`
-	API               api.Config             `group:"API" namespace:"api"`
-	Blockchain        blockchain.Config      `group:"Blockchain" namespace:"blockchain"`
-	Collateral        collateral.Config      `group:"Collateral" namespace:"collateral"`
-	CoreAPI           coreapi.Config         `group:"CoreAPI" namespace:"coreapi"`
-	Execution         execution.Config       `group:"Execution" namespace:"execution"`
-	Ethereum          eth.Config             `group:"Ethereum" namespace:"ethereum"`
-	Processor         processor.Config       `group:"Processor" namespace:"processor"`
-	Logging           logging.Config         `group:"Logging" namespace:"logging"`
-	Oracles           oracles.Config         `group:"Oracles" namespace:"oracles"`
-	Time              vegatime.Config        `group:"Time" namespace:"time"`
-	Epoch             epochtime.Config       `group:"Epoch" namespace:"epochtime"`
-	Metrics           metrics.Config         `group:"Metrics" namespace:"metrics"`
-	Governance        governance.Config      `group:"Governance" namespace:"governance"`
-	NodeWallet        nodewallets.Config     `group:"NodeWallet" namespace:"nodewallet"`
-	Assets            assets.Config          `group:"Assets" namespace:"assets"`
-	Notary            notary.Config          `group:"Notary" namespace:"notary"`
-	EvtForward        evtforward.Config      `group:"EvtForward" namespace:"evtForward"`
-	Genesis           genesis.Config         `group:"Genesis" namespace:"genesis"`
-	Validators        validators.Config      `group:"Validators" namespace:"validators"`
-	Banking           banking.Config         `group:"Banking" namespace:"banking"`
-	Stats             stats.Config           `group:"Stats" namespace:"stats"`
+	Admin             admin.Config           `group:"Admin"             namespace:"admin"`
+	API               api.Config             `group:"API"               namespace:"api"`
+	Blockchain        blockchain.Config      `group:"Blockchain"        namespace:"blockchain"`
+	Collateral        collateral.Config      `group:"Collateral"        namespace:"collateral"`
+	CoreAPI           coreapi.Config         `group:"CoreAPI"           namespace:"coreapi"`
+	Execution         execution.Config       `group:"Execution"         namespace:"execution"`
+	Ethereum          eth.Config             `group:"Ethereum"          namespace:"ethereum"`
+	Processor         processor.Config       `group:"Processor"         namespace:"processor"`
+	Logging           logging.Config         `group:"Logging"           namespace:"logging"`
+	Oracles           oracles.Config         `group:"Oracles"           namespace:"oracles"`
+	Time              vegatime.Config        `group:"Time"              namespace:"time"`
+	Epoch             epochtime.Config       `group:"Epoch"             namespace:"epochtime"`
+	Metrics           metrics.Config         `group:"Metrics"           namespace:"metrics"`
+	Governance        governance.Config      `group:"Governance"        namespace:"governance"`
+	NodeWallet        nodewallets.Config     `group:"NodeWallet"        namespace:"nodewallet"`
+	Assets            assets.Config          `group:"Assets"            namespace:"assets"`
+	Notary            notary.Config          `group:"Notary"            namespace:"notary"`
+	EvtForward        evtforward.Config      `group:"EvtForward"        namespace:"evtForward"`
+	Genesis           genesis.Config         `group:"Genesis"           namespace:"genesis"`
+	Validators        validators.Config      `group:"Validators"        namespace:"validators"`
+	Banking           banking.Config         `group:"Banking"           namespace:"banking"`
+	Stats             stats.Config           `group:"Stats"             namespace:"stats"`
 	NetworkParameters netparams.Config       `group:"NetworkParameters" namespace:"netparams"`
-	Limits            limits.Config          `group:"Limits" namespace:"limits"`
-	Checkpoint        checkpoint.Config      `group:"Checkpoint" namespace:"checkpoint"`
-	Staking           staking.Config         `group:"Staking" namespace:"staking"`
-	Broker            broker.Config          `group:"Broker" namespace:"broker"`
-	Rewards           rewards.Config         `group:"Rewards" namespace:"rewards"`
-	Delegation        delegation.Config      `group:"Delegation" namespace:"delegation"`
-	Spam              spam.Config            `group:"Spam" namespace:"spam"`
-	PoW               pow.Config             `group:"ProofOfWork" namespace:"pow"`
-	Snapshot          snapshot.Config        `group:"Snapshot" namespace:"snapshot"`
-	StateVar          statevar.Config        `group:"StateVar" namespace:"statevar"`
-	ERC20MultiSig     erc20multisig.Config   `group:"ERC20MultiSig" namespace:"erc20multisig"`
-	ProtocolUpgrade   protocolupgrade.Config `group:"ProtocolUpgrade" namespace:"protocolupgrade"`
-	Pprof             pprof.Config           `group:"Pprof" namespace:"pprof"`
+	Limits            limits.Config          `group:"Limits"            namespace:"limits"`
+	Checkpoint        checkpoint.Config      `group:"Checkpoint"        namespace:"checkpoint"`
+	Staking           staking.Config         `group:"Staking"           namespace:"staking"`
+	Broker            broker.Config          `group:"Broker"            namespace:"broker"`
+	Rewards           rewards.Config         `group:"Rewards"           namespace:"rewards"`
+	Delegation        delegation.Config      `group:"Delegation"        namespace:"delegation"`
+	Spam              spam.Config            `group:"Spam"              namespace:"spam"`
+	PoW               pow.Config             `group:"ProofOfWork"       namespace:"pow"`
+	Snapshot          snapshot.Config        `group:"Snapshot"          namespace:"snapshot"`
+	StateVar          statevar.Config        `group:"StateVar"          namespace:"statevar"`
+	ERC20MultiSig     erc20multisig.Config   `group:"ERC20MultiSig"     namespace:"erc20multisig"`
+	ProtocolUpgrade   protocolupgrade.Config `group:"ProtocolUpgrade"   namespace:"protocolupgrade"`
+	Pprof             pprof.Config           `group:"Pprof"             namespace:"pprof"`
 
-	NodeMode         cfgencoding.NodeMode `long:"mode" description:"The mode of the vega node [validator, full]"`
-	MaxMemoryPercent uint8                `long:"max-memory-percent" description:"The maximum amount of memory reserved for the vega node (default: 33%)"`
+	NodeMode         cfgencoding.NodeMode `description:"The mode of the vega node [validator, full]"                            long:"mode"`
+	MaxMemoryPercent uint8                `description:"The maximum amount of memory reserved for the vega node (default: 33%)" long:"max-memory-percent"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package

@@ -28,7 +28,7 @@ type Config struct {
 	LogOrderSubmitDebug encoding.Bool     `long:"log-order-submit-debug"`
 	LogOrderAmendDebug  encoding.Bool     `long:"log-order-amend-debug"`
 	LogOrderCancelDebug encoding.Bool     `long:"log-order-cancel-debug"`
-	Ratelimit           ratelimit.Config  `group:"Ratelimit" namespace:"ratelimit"`
+	Ratelimit           ratelimit.Config  `group:"Ratelimit"             namespace:"ratelimit"`
 	KeepCheckpointsMax  uint              `long:"keep-checkpoints-max"`
 }
 

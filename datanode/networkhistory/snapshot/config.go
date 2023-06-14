@@ -7,7 +7,7 @@ import (
 )
 
 type Config struct {
-	WaitForCreationLockTimeout encoding.Duration `long:"wait-for-creation-lock-timeout" description:"the maximum a caller to create snapshot should have to wait to acquire the creation lock"`
+	WaitForCreationLockTimeout encoding.Duration `description:"the maximum a caller to create snapshot should have to wait to acquire the creation lock" long:"wait-for-creation-lock-timeout"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
