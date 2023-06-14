@@ -234,19 +234,34 @@ func (mr *MockCollateralMockRecorder) CanCoverBond(arg0, arg1, arg2, arg3 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanCoverBond", reflect.TypeOf((*MockCollateral)(nil).CanCoverBond), arg0, arg1, arg2, arg3)
 }
 
-// ClearMarket mocks base method.
-func (m *MockCollateral) ClearMarket(arg0 context.Context, arg1, arg2 string, arg3 []string) ([]*types.LedgerMovement, error) {
+// ClearInsurancepool mocks base method.
+func (m *MockCollateral) ClearInsurancepool(arg0 context.Context, arg1, arg2 string, arg3 bool) ([]*types.LedgerMovement, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ClearMarket", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "ClearInsurancepool", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClearInsurancepool indicates an expected call of ClearInsurancepool.
+func (mr *MockCollateralMockRecorder) ClearInsurancepool(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearInsurancepool", reflect.TypeOf((*MockCollateral)(nil).ClearInsurancepool), arg0, arg1, arg2, arg3)
+}
+
+// ClearMarket mocks base method.
+func (m *MockCollateral) ClearMarket(arg0 context.Context, arg1, arg2 string, arg3 []string, arg4 bool) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearMarket", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].([]*types.LedgerMovement)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ClearMarket indicates an expected call of ClearMarket.
-func (mr *MockCollateralMockRecorder) ClearMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockCollateralMockRecorder) ClearMarket(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearMarket", reflect.TypeOf((*MockCollateral)(nil).ClearMarket), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearMarket", reflect.TypeOf((*MockCollateral)(nil).ClearMarket), arg0, arg1, arg2, arg3, arg4)
 }
 
 // ClearPartyMarginAccount mocks base method.

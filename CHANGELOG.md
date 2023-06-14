@@ -46,6 +46,7 @@
 - [8349](https://github.com/vegaprotocol/vega/issues/8349) - Add successor market integration test coverage.
 - [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
 - [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
+- [8476](https://github.com/vegaprotocol/vega/issues/8476) - Add successor market per `AC`
 - [8365](https://github.com/vegaprotocol/vega/issues/8365) - Add new liquidity engine with SLA support.
 
 ### 🐛 Fixes
@@ -75,6 +76,7 @@
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
+- [8500](https://github.com/vegaprotocol/vega/issues/8500) - Fix liquidity provision `ID` is nullable in `GraphQL API`.
 
 ## 0.71.0
 

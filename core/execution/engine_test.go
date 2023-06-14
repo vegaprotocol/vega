@@ -20,6 +20,8 @@ import (
 
 func TestMarketSuccession(t *testing.T) {
 	exec := getMockedEngine(t)
+	exec.timeSvc.EXPECT().GetTimeNow().AnyTimes().Return(time.Now())
+	exec.OnSuccessorMarketTimeWindowUpdate(context.Background(), 100*time.Second)
 	defer exec.ctrl.Finish()
 	knownAssets := map[string]*assets.Asset{}
 	mkt := getMarketConfig()
@@ -52,7 +54,6 @@ func TestMarketSuccession(t *testing.T) {
 	exec.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {})
 	exec.statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	exec.statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	exec.timeSvc.EXPECT().GetTimeNow().AnyTimes()
 
 	// create parent market
 	err := exec.SubmitMarket(ctx, mkt, "", time.Now())

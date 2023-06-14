@@ -3941,7 +3941,7 @@ type LiquidityOrderReference {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -3969,7 +3969,7 @@ type LiquidityProvision {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvisionUpdate {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   partyID: ID!
   "When the liquidity provision was initially created (formatted RFC3339)"

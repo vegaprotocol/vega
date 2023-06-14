@@ -226,10 +226,6 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
-		netparams.WatchParam{
-			Param:   netparams.MarketSuccessorLaunchWindow,
-			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
-		},
 	)
 	return execsetup
 }
@@ -340,6 +336,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: e.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketSuccessorLaunchWindow,
+			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)
 }

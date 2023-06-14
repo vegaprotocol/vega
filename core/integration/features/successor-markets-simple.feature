@@ -39,7 +39,7 @@ Feature: Simple example of successor markets
       | market.liquidityProvision.shapes.maxSize      | 10    |
       | validators.epoch.length                       | 5s    |
       | market.liquidity.stakeToCcyVolume             | 0.2   |
-	  | market.liquidity.successorLaunchWindowLength | 1h    |
+	  | market.liquidity.successorLaunchWindowLength  | 1h    |
     And the average block duration is "1"
 
 

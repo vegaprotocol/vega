@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -76,6 +77,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.accountsBefore = execsetup.broker.GetAccounts()
 		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
 		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
+		// set default netparams
+		execsetup.netParams.Update(ctx, netparams.MarketSuccessorLaunchWindow, "1h")
 
 		// don't record events before step if it's the step that's meant to assess number of events over a regular step
 		if b, _ := regexp.MatchString(expectingEventsOverStepText, st.Text); !b {
