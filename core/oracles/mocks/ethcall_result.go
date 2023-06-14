@@ -47,20 +47,6 @@ func (mr *MockEthCallResultMockRecorder) Bytes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockEthCallResult)(nil).Bytes))
 }
 
-// HasRequiredConfirmations mocks base method.
-func (m *MockEthCallResult) HasRequiredConfirmations() bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasRequiredConfirmations")
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasRequiredConfirmations indicates an expected call of HasRequiredConfirmations.
-func (mr *MockEthCallResultMockRecorder) HasRequiredConfirmations() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasRequiredConfirmations", reflect.TypeOf((*MockEthCallResult)(nil).HasRequiredConfirmations))
-}
-
 // Normalised mocks base method.
 func (m *MockEthCallResult) Normalised() (map[string]string, error) {
 	m.ctrl.T.Helper()

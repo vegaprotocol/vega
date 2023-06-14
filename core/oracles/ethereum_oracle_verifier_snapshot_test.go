@@ -3,7 +3,6 @@ package oracles_test
 import (
 	"bytes"
 	"context"
-	"math/big"
 	"testing"
 	"time"
 
@@ -38,9 +37,9 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 
 	result := okResult()
 
-	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", big.NewInt(1)).Return(result, nil)
-
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(result, nil)
 	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.ethConfirmations.EXPECT().Check(uint64(1)).Return(nil)
 
 	var checkResult error
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
