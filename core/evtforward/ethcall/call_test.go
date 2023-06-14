@@ -43,13 +43,8 @@ func TestContractCall(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, res.Bytes)
 
-	values, err := res.Values()
-	require.NoError(t, err)
-	assert.Equal(t, []any{int64(42), big.NewInt(42), "hello", true, common.HexToAddress("0xb794f5ea0ba39494ce839613fffba74279579268")}, values)
-
-	normalised, err := res.Normalised()
-	require.NoError(t, err)
-	assert.Equal(t, map[string]string{"badger": "42", "static": "66"}, normalised)
+	assert.Equal(t, []any{int64(42), big.NewInt(42), "hello", true, common.HexToAddress("0xb794f5ea0ba39494ce839613fffba74279579268")}, res.Values)
+	assert.Equal(t, map[string]string{"badger": "42", "static": "66"}, res.Normalised)
 }
 
 func TestContractCall2(t *testing.T) {
@@ -87,11 +82,7 @@ func TestContractCall2(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, res.Bytes)
 
-	values, err := res.Values()
-	require.NoError(t, err)
-	assert.Equal(t, args, values)
+	assert.Equal(t, args, res.Values)
 
-	normalised, err := res.Normalised()
-	require.NoError(t, err)
-	assert.Equal(t, map[string]string{"static": "66"}, normalised)
+	assert.Equal(t, map[string]string{"static": "66"}, res.Normalised)
 }

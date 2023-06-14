@@ -35,34 +35,8 @@ type EthereumConfirmations interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcallengine_mock.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallEngine
 type EthCallEngine interface {
-	CallSpec(ctx context.Context, id string, atBlock uint64) (EthCallResult, error)
-	MakeResult(specID string, bytes []byte) (EthCallResult, error)
-}
-
-type CallEngine interface {
-	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/ethcall_result.go -package mocks code.vegaprotocol.io/vega/core/oracles EthCallResult
-type EthCallResult interface {
-	Bytes() []byte
-	Values() ([]any, error)
-	Normalised() (map[string]string, error)
-	PassesFilters() (bool, error)
-}
-
-// Needed because the engine CallContract method returns a concrete ethcall.Result type, but for mocking in tests we want an interface.
-type ethCallEngineWrapper struct {
-	wrapped CallEngine
-}
-
-func (e ethCallEngineWrapper) CallSpec(ctx context.Context, id string, atBlock uint64) (EthCallResult, error) {
-	return e.wrapped.CallSpec(ctx, id, atBlock)
-}
-
-func (e ethCallEngineWrapper) MakeResult(specID string, bytes []byte) (EthCallResult, error) {
-	return e.wrapped.MakeResult(specID, bytes)
+	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 }
 
 type EthereumOracleVerifier struct {
@@ -118,18 +92,6 @@ func NewEthereumOracleVerifier(
 	return s
 }
 
-func NewEthereumOracleVerifierFromEngine(
-	log *logging.Logger,
-	witness Witness,
-	ts TimeService,
-	oracleBroadcaster OracleDataBroadcaster,
-	specCaller CallEngine,
-	ethConfirmations EthereumConfirmations,
-) (sv *EthereumOracleVerifier) {
-	ethCallEngine := ethCallEngineWrapper{wrapped: specCaller}
-	return NewEthereumOracleVerifier(log, witness, ts, oracleBroadcaster, ethCallEngine, ethConfirmations)
-}
-
 func (s *EthereumOracleVerifier) ensureNotDuplicate(hash string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -180,17 +142,18 @@ func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContrac
 		return fmt.Errorf("failed to execute call event spec: %w", err)
 	}
 
-	if !bytes.Equal(callEvent.Result, checkResult.Bytes()) {
+	if !bytes.Equal(callEvent.Result, checkResult.Bytes) {
 		return fmt.Errorf("mismatched results for block %d", callEvent.BlockHeight)
 	}
 
+	// TODO: A mechanism for retrying this check a bit later if this fails?
 	if err = s.ethConfirmations.Check(callEvent.BlockHeight); err != nil {
 		return fmt.Errorf("failed confirmations check: %w", err)
 	}
 
-	filtersOk, err := checkResult.PassesFilters()
+	filtersOk := checkResult.PassesFilters
 	if !filtersOk {
-		return fmt.Errorf("failed filter check: %w", err)
+		return fmt.Errorf("failed filter check")
 	}
 
 	return nil
@@ -231,11 +194,7 @@ func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 			s.log.Error("failed to create ethcall result", logging.Error(err))
 		}
 
-		normalisedData, err := result.Normalised()
-		if err != nil {
-			s.log.Error("failed to normalise oracle data", logging.Error(err))
-			continue
-		}
+		normalisedData := result.Normalised
 
 		s.oracleEngine.BroadcastData(ctx, OracleData{
 			Signers: nil,

@@ -66,10 +66,7 @@ func (c Call) Call(ctx context.Context, ethClient EthReaderCaller, blockNumber u
 		return Result{}, fmt.Errorf("failed to call contract: %w", err)
 	}
 
-	return Result{
-		bytes: bytes,
-		call:  c,
-	}, nil
+	return newResult(c, bytes)
 }
 
 func (c Call) triggered(prevEthBlock blockish, currentEthBlock blockish) bool {
