@@ -129,6 +129,11 @@ func (e *Engine) NewGovernanceTransfer(ctx context.Context, ID, reference string
 		return nil
 	}
 	// recurring governance transfer
+	if config.RecurringTransferConfig.StartEpoch < e.currentEpoch {
+		gTransfer.Status = types.TransferStatusRejected
+		return ErrStartEpochInThePast
+	}
+
 	e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, gTransfer)
 	e.recurringGovernanceTransfersMap[ID] = gTransfer
 	amount = num.UintZero()
