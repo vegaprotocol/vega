@@ -51,26 +51,26 @@ message StopOrderSetup {
   // Strategy to adopt if the expiry time is reached.
   optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
 
-  // The trigger which will need to be breached for the order
+  // Trigger that will need to be breached for the order
   // to be submitted to the book.
   oneof trigger {
-    // A fixed price at which the order will be submitted.
+    // Fixed price at which the order will be submitted.
     string price = 100;
-    // A trailing percentage at wich the order will be submitted.
+    // Trailing percentage at which the order will be submitted.
     string trailing_percent_offset = 101;
   }
 }
 
 // Cancel a stop order.
-// the following combination are available:
-// an empty object will cancel all stop orders for the party
-// a market id alone, will cancel all stop orders in a market
-// a market id and order id will cancel a specific stop order in a market
-// If the stop order is part of an OCO, both stop order will be cancelled.
+// The following combinations are available:
+// Empty object will cancel all stop orders for the party
+// Market ID alone will cancel all stop orders in a market
+// Market ID and order ID will cancel a specific stop order in a market
+// If the stop order is part of an OCO, both stop orders will be cancelled
 message StopOrdersCancellation {
-  // An optional market id.
+  // Optional market ID.
   optional string market_id = 1;
-  // An optional stop_order_id.
+  // Optional order ID.
   optional string stop_order_id = 2;
 }
 

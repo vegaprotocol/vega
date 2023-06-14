@@ -62,7 +62,6 @@ message StopOrder {
   // Order to be submitted once the trigger is hit.
   // OrderSubmission order_submission = 10;
 
-
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
   oneof trigger {

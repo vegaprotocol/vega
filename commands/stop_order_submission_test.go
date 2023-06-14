@@ -83,7 +83,7 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 					},
 				},
 			},
-			errStr: "order_submission (is required), stop_orders_submission.rises_below.trigger.trailing_percent_offset (must be > 0 and < 1)",
+			errStr: "order_submission (is required), stop_orders_submission.rises_below.trigger.trailing_percent_offset (must be between 0 and 1)",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{
@@ -93,7 +93,7 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 					},
 				},
 			},
-			errStr: "order_submission (is required), stop_orders_submission.rises_below.trigger.trailing_percent_offset (must be > 0 and < 1)",
+			errStr: "order_submission (is required), stop_orders_submission.rises_below.trigger.trailing_percent_offset (must be between 0 and 1)",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{

@@ -230,7 +230,7 @@ type StopOrderSetup struct {
 	ExpiresAt *int64 `protobuf:"varint,2,opt,name=expires_at,json=expiresAt,proto3,oneof" json:"expires_at,omitempty"`
 	// Strategy to adopt if the expiry time is reached.
 	ExpiryStrategy *vega.StopOrder_ExpiryStrategy `protobuf:"varint,3,opt,name=expiry_strategy,json=expiryStrategy,proto3,enum=vega.StopOrder_ExpiryStrategy,oneof" json:"expiry_strategy,omitempty"`
-	// The trigger which will need to be breached for the order
+	// Trigger that will need to be breached for the order
 	// to be submitted to the book.
 	//
 	// Types that are assignable to Trigger:
@@ -319,12 +319,12 @@ type isStopOrderSetup_Trigger interface {
 }
 
 type StopOrderSetup_Price struct {
-	// A fixed price at which the order will be submitted.
+	// Fixed price at which the order will be submitted.
 	Price string `protobuf:"bytes,100,opt,name=price,proto3,oneof"`
 }
 
 type StopOrderSetup_TrailingPercentOffset struct {
-	// A trailing percentage at wich the order will be submitted.
+	// Trailing percentage at which the order will be submitted.
 	TrailingPercentOffset string `protobuf:"bytes,101,opt,name=trailing_percent_offset,json=trailingPercentOffset,proto3,oneof"`
 }
 
@@ -333,19 +333,19 @@ func (*StopOrderSetup_Price) isStopOrderSetup_Trigger() {}
 func (*StopOrderSetup_TrailingPercentOffset) isStopOrderSetup_Trigger() {}
 
 // Cancel a stop order.
-// the following combination are available:
-// an empty object will cancel all stop orders for the party
-// a market id alone, will cancel all stop orders in a market
-// a market id and order id will cancel a specific stop order in a market
-// If the stop order is part of an OCO, both stop order will be cancelled.
+// The following combinations are available:
+// Empty object will cancel all stop orders for the party
+// Market ID alone will cancel all stop orders in a market
+// Market ID and order ID will cancel a specific stop order in a market
+// If the stop order is part of an OCO, both stop orders will be cancelled
 type StopOrdersCancellation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// An optional market id.
+	// Optional market ID.
 	MarketId *string `protobuf:"bytes,1,opt,name=market_id,json=marketId,proto3,oneof" json:"market_id,omitempty"`
-	// An optional stop_order_id.
+	// Optional order ID.
 	StopOrderId *string `protobuf:"bytes,2,opt,name=stop_order_id,json=stopOrderId,proto3,oneof" json:"stop_order_id,omitempty"`
 }
 

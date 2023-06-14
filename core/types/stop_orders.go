@@ -39,7 +39,7 @@ const (
 	// Never valid.
 	StopOrderStatusUnspecified StopOrderStatus = vega.StopOrder_STATUS_UNSPECIFIED
 	// Pending to be executed once the trigger is breached.
-	StopOrderStatusPending = vega.StopOrder_STATUS_CANCELLED
+	StopOrderStatusPending = vega.StopOrder_STATUS_PENDING
 	// Cancelled by the user.
 	StopOrderStatusCancelled = vega.StopOrder_STATUS_CANCELLED
 	// Stopped by the network, e.g: OCO other side has been triggered.
@@ -82,6 +82,7 @@ func NewPriceStopOrderTrigger(
 		price:     price,
 	}
 }
+
 func NewTrailingStopOrderTrigger(
 	direction StopOrderTriggerDirection,
 	trailingPercentOffset num.Decimal,

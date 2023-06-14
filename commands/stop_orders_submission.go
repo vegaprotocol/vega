@@ -51,7 +51,8 @@ func checkStopOrdersSubmission(cmd *commandspb.StopOrdersSubmission) Errors {
 func checkStopOrderSetup(
 	fieldName string,
 	errs Errors,
-	setup *commandspb.StopOrderSetup) Errors {
+	setup *commandspb.StopOrderSetup,
+) {
 	if err := checkOrderSubmission(setup.OrderSubmission); !err.Empty() {
 		errs.Merge(err)
 	} else {
@@ -104,6 +105,4 @@ func checkStopOrderSetup(
 	} else {
 		errs.AddForProperty(fmt.Sprintf("%s.trigger", fieldName), ErrMustHaveAStopOrderTrigger)
 	}
-
-	return errs
 }
