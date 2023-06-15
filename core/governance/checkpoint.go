@@ -75,6 +75,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			}
 			// if the proposal is for a new market we want to restore it such that it will be in opening auction
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
+				prop.Terms.ClosingTimestamp = now.Unix()
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
 				enct.shouldNotVerify = true
 			}
