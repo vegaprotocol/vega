@@ -54,18 +54,10 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	evts := make([]events.Event, 0, len(cp.Proposals))
 	now := e.timeService.GetTimeNow()
-	minEnact, err := e.netp.GetDuration(netparams.GovernanceProposalMarketMinEnact)
-	if err != nil {
-		e.log.Panic("failed to get proposal market min enactment duration from network parameter")
-	}
-	minAuctionDuration, err := e.netp.GetDuration(netparams.MarketAuctionMinimumDuration)
+
+	duration, err := e.netp.GetDuration(netparams.MarketAuctionMinimumDuration)
 	if err != nil {
 		e.log.Panic("failed to get proposal market min auction duration from network parameter")
-	}
-	duration := minEnact
-	// we have to choose the max between minEnact and minAuctionDuration otherwise we won't be able to submit the market successfully
-	if int64(minEnact) < int64(minAuctionDuration) {
-		duration = minAuctionDuration
 	}
 
 	latestUpdateMarketProposals := map[string]*types.Proposal{}
@@ -83,6 +75,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			}
 			// if the proposal is for a new market we want to restore it such that it will be in opening auction
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
+				prop.Terms.ClosingTimestamp = now.Unix()
 				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
 				enct.shouldNotVerify = true
 			}
