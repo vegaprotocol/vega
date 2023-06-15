@@ -19,12 +19,12 @@ import (
 )
 
 type PostgresConnection struct {
-	Host            string `long:"host" description:"hostname of postgres server"`
-	Port            int    `long:"port" description:"port postgres is running on"`
-	Username        string `long:"username" description:"username to connect with"`
-	Password        string `long:"password" description:"password for user"`
-	Database        string `long:"database" description:"database name"`
-	ApplicationName string `long:"application-name" description:"identify the application to the database using this name"`
+	Host            string `description:"hostname of postgres server"                              long:"host"`
+	Port            int    `description:"port postgres is running on"                              long:"port"`
+	Username        string `description:"username to connect with"                                 long:"username"`
+	Password        string `description:"password for user"                                        long:"password"`
+	Database        string `description:"database name"                                            long:"database"`
+	ApplicationName string `description:"identify the application to the database using this name" long:"application-name"`
 }
 
 func (conf PostgresConnection) ToConnectionString() string {

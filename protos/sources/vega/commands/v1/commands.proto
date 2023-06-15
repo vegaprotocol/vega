@@ -24,6 +24,54 @@ message BatchMarketInstructions {
   repeated OrderAmendment amendments = 2;
   // List of order submissions to be processed sequentially.
   repeated OrderSubmission submissions = 3;
+  // List of stop order submissions to be processed sequentially.
+  repeated StopOrdersSubmission stop_orders_submissions = 4;
+}
+
+// Stop order submission submits stops orders.
+// It is possible to make a single stop order submission by
+// specifying a single direction,
+// or an OCO (One Cancels the Other) stop order submission
+// by specifying a configuration for both directions
+message StopOrdersSubmission {
+  // Stop order that will be triggered
+  // if the price rises above a given trigger price.
+  optional StopOrderSetup rises_above = 1;
+  // Stop order that will be triggered
+  // if the price falls below a given trigger price.
+  optional StopOrderSetup falls_below = 2;
+}
+
+// Price and expiry configuration for a stop order
+message StopOrderSetup {
+  // Order to be submitted once the trigger is breached.
+  OrderSubmission order_submission = 1;
+  // Optional expiry timestamp.
+  optional int64 expires_at = 2;
+  // Strategy to adopt if the expiry time is reached.
+  optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
+
+  // Trigger that will need to be breached for the order
+  // to be submitted to the book.
+  oneof trigger {
+    // Fixed price at which the order will be submitted.
+    string price = 100;
+    // Trailing percentage at which the order will be submitted.
+    string trailing_percent_offset = 101;
+  }
+}
+
+// Cancel a stop order.
+// The following combinations are available:
+// Empty object will cancel all stop orders for the party
+// Market ID alone will cancel all stop orders in a market
+// Market ID and order ID will cancel a specific stop order in a market
+// If the stop order is part of an OCO, both stop orders will be cancelled
+message StopOrdersCancellation {
+  // Optional market ID.
+  optional string market_id = 1;
+  // Optional order ID.
+  optional string stop_order_id = 2;
 }
 
 // Order submission is a request to submit or create a new order on Vega

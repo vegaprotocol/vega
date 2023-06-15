@@ -34,11 +34,11 @@ type RootCmd struct {
 	config.PassphraseFlag
 
 	// Subcommands
-	Show     showCmd     `command:"show" description:"List the wallets registers into the nodewallet"`
+	Show     showCmd     `command:"show"     description:"List the wallets registers into the nodewallet"`
 	Generate generateCmd `command:"generate" description:"Generate and register a wallet into the nodewallet"`
-	Import   importCmd   `command:"import" description:"Import the configuration of a wallet required by the vega node"`
-	Verify   verifyCmd   `command:"verify" description:"Verify the configuration imported in the nodewallet"`
-	Reload   reloadCmd   `command:"reload" description:"Reload node wallet of a running node instance"`
+	Import   importCmd   `command:"import"   description:"Import the configuration of a wallet required by the vega node"`
+	Verify   verifyCmd   `command:"verify"   description:"Verify the configuration imported in the nodewallet"`
+	Reload   reloadCmd   `command:"reload"   description:"Reload node wallet of a running node instance"`
 }
 
 var rootCmd RootCmd

@@ -602,6 +602,24 @@ func (e *Engine) canSubmitPeggedOrder() bool {
 	return uint64(e.totalPeggedOrdersCount) < e.maxPeggedOrders
 }
 
+func (e *Engine) SubmitStopOrders(
+	ctx context.Context,
+	submission *types.StopOrdersSubmission,
+	party string,
+	idgen common.IDGenerator,
+) error {
+	return errors.New("stop order submission not supported yet")
+}
+
+func (e *Engine) CancelStopOrders(
+	ctx context.Context,
+	cancellation *types.StopOrdersCancellation,
+	party string,
+	idgen common.IDGenerator,
+) error {
+	return errors.New("stop order cancellation not supported yet")
+}
+
 // SubmitOrder checks the incoming order and submits it to a Vega market.
 func (e *Engine) SubmitOrder(
 	ctx context.Context,

@@ -33,10 +33,10 @@ import (
 )
 
 type loadCheckpointCmd struct {
-	DryRun         bool   `long:"dry-run" description:"Display the genesis file without writing it"`
-	TmHome         string `short:"t" long:"tm-home" description:"The home path of tendermint"`
-	GenesisFile    string `short:"g" long:"genesis-file" description:"A genesis file to be updated"`
-	CheckpointPath string `long:"checkpoint-path" required:"true" description:"The path to the checkpoint file to load"`
+	DryRun         bool   `description:"Display the genesis file without writing it" long:"dry-run"`
+	TmHome         string `description:"The home path of tendermint"                 long:"tm-home"         short:"t"`
+	GenesisFile    string `description:"A genesis file to be updated"                long:"genesis-file"    short:"g"`
+	CheckpointPath string `description:"The path to the checkpoint file to load"     long:"checkpoint-path" required:"true"`
 }
 
 func (opts *loadCheckpointCmd) Execute(_ []string) error {

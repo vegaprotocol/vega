@@ -9,8 +9,8 @@ import (
 
 // CORSConfig represents the configuration for CORS.
 type CORSConfig struct {
-	AllowedOrigins []string `long:"allowed-origins" description:"Allowed origins for CORS"`
-	MaxAge         int      `long:"max-age" description:"Max age (in seconds) for preflight cache"`
+	AllowedOrigins []string `description:"Allowed origins for CORS"                 long:"allowed-origins"`
+	MaxAge         int      `description:"Max age (in seconds) for preflight cache" long:"max-age"`
 }
 
 func CORSOptions(config CORSConfig) cors.Options {

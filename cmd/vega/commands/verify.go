@@ -21,7 +21,7 @@ import (
 )
 
 type VerifyCmd struct {
-	Asset   verify.AssetCmd   `command:"passet" description:"verify the payload of an asset proposal"`
+	Asset   verify.AssetCmd   `command:"passet"  description:"verify the payload of an asset proposal"`
 	Genesis verify.GenesisCmd `command:"genesis" description:"verify the appstate of a genesis file"`
 }
 

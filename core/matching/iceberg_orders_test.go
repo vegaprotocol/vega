@@ -76,6 +76,26 @@ func submitCrossedOrder(t *testing.T, book *tstOB, size uint64) (*types.Order, *
 	return o, confirm
 }
 
+func submitCrossedWashOrder(t *testing.T, book *tstOB, size uint64) (*types.Order, *types.OrderConfirmation) {
+	t.Helper()
+	o := &types.Order{
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      book.marketID,
+		Party:         "A",
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          size,
+		Remaining:     size,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+	confirm, err := book.SubmitOrder(o)
+	require.NoError(t, err)
+	return o, confirm
+}
+
 func getTradesCrossedOrder(t *testing.T, book *tstOB, size uint64) []*types.Trade {
 	t.Helper()
 	o := &types.Order{
@@ -495,4 +515,57 @@ func TestAmendIceberg(t *testing.T) {
 	err = book.AmendOrder(iceberg, amend)
 	require.NoError(t, err)
 	assert.Equal(t, uint64(5), book.getTotalBuyVolume())
+}
+
+func TestIcebergWashTradePassiveIceberg(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// submit an iceberg order that sits on the book
+	_, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(100), book.getTotalBuyVolume())
+
+	// same party submits and order which trades with themselves
+	o, confirm := submitCrossedWashOrder(t, book, 10)
+	assert.Equal(t, types.OrderStatusStopped, o.Status)
+	assert.Equal(t, 0, len(confirm.Trades))
+}
+
+func TestIcebergWashTradeAggressiveIceberg(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// party submits an order that sits on the book
+	_, confirm := submitCrossedWashOrder(t, book, 10)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(10), book.getTotalSellVolume())
+
+	// same party submit an aggressive iceberg order that trades with themselves
+	iceberg, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
+	assert.Equal(t, types.OrderStatusStopped, iceberg.Status)
+	assert.Equal(t, 0, len(confirm.Trades))
+}
+
+func TestIcebergWashTradeAggressiveIcebergPartialFill(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	_, confirm := submitCrossedOrder(t, book, 5)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(5), book.getTotalSellVolume())
+
+	_, confirm = submitCrossedWashOrder(t, book, 10)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(15), book.getTotalSellVolume())
+
+	// submit an iceberg order that partially trades, then causes a wash trade and so
+	// is not put on the book
+	iceberg, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
+	assert.Equal(t, types.OrderStatusPartiallyFilled, iceberg.Status)
+	assert.Equal(t, 1, len(confirm.Trades))
+	assert.Equal(t, uint64(10), book.getTotalSellVolume())
 }
