@@ -80,7 +80,7 @@ Configuration options for the Vega binary and its arguments.
 
 <dd>
 
-Configuration of Vega binary and arguments required to run it.
+Configuration of Vega binary and the arguments to run it.
 
 </dd>
 
@@ -91,7 +91,8 @@ Configuration of Vega binary and arguments required to run it.
 <dd>
 
 Visor communicates with the core node via RPC API that runs over a UNIX socket.
-This parameter configures the UNIX socket to match the core node configuration. This value can be found in the config.toml file used by the core node under the heading [Admin.Server]
+This parameter configures the UNIX socket to match the core node configuration.
+This value can be found in the config.toml file used by the core node under the heading [Admin.Server]
 
 
 </dd>
@@ -119,7 +120,7 @@ This parameter configures the UNIX socket to match the core node configuration. 
 
 
 ## *DataNodeConfig*
-Configures the data node binary and its arguments.
+Configures a data node binary and its arguments.
 
 
 ### Fields
@@ -155,7 +156,7 @@ Configures the data node binary and its arguments.
 
 
 ## *BinaryConfig*
-Configures the data node binary and its arguments.
+Configuration options for the Vega binary and its arguments.
 
 
 ### Fields
@@ -167,10 +168,10 @@ Configures the data node binary and its arguments.
 
 <dd>
 
-Path to the data node binary.
+Path to the Vega binary.
 
 
-<blockquote>Both absolute or relative path can be used.
+<blockquote>The absolute or relative path can be used.
 Relative path is relative to a parent folder of this config file.
 </blockquote>
 </dd>
@@ -184,7 +185,7 @@ Relative path is relative to a parent folder of this config file.
 Arguments that will be applied to the binary.
 
 
-<blockquote>Each element the list represents one space separated argument. An argument and its value should be in separate elements.
+<blockquote>Each element the list represents one space separated argument.
 </blockquote>
 </dd>
 
@@ -206,7 +207,7 @@ args = ["--arg1", "val1", "--arg2"]
 
 
 ## *RPCConfig*
-Configures the connection to the core node exposed UNIX socket RPC API. These values can be found in the `config.toml` file used by the core node under the heading `[Admin.Server]`
+Configures a connection to a core nodes exposed UNIX socket RPC API.
 
 
 ### Fields
@@ -217,7 +218,11 @@ Configures the connection to the core node exposed UNIX socket RPC API. These va
 </dt>
 
 <dd>
+
 Path of the mounted socket.
+
+
+<blockquote>This path can be configured in the Vega core node configuration and can be found in the [Admin.Server] section.</blockquote>
 </dd>
 
 <dt>
@@ -225,7 +230,11 @@ Path of the mounted socket.
 </dt>
 
 <dd>
+
 HTTP path of the socket path.
+
+
+<blockquote>This path can be configured in the Vega core node configuration and can be found in the [Admin.Server] section.</blockquote>
 </dd>
 
 
