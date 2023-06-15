@@ -867,15 +867,15 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		}
 	}
 
-	if order.IcebergOrder != nil && order.Status == types.OrderStatusActive {
-		// now trades have been generated for the aggressive iceberg based on the
-		// full size, set the peak limits ready for it to be added to the book.
-		order.SetIcebergPeaks()
-	}
-
 	// if order is persistent type add to order book to the correct side
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
+		if order.IcebergOrder != nil && order.Status == types.OrderStatusActive {
+			// now trades have been generated for the aggressive iceberg based on the
+			// full size, set the peak limits ready for it to be added to the book.
+			order.SetIcebergPeaks()
+		}
+
 		b.getSide(order.Side).addOrder(order)
 		// also add it to the indicative price and volume if in auction
 		if b.auction {

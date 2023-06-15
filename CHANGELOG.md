@@ -71,6 +71,7 @@
 - [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
 - [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate
 - [8429](https://github.com/vegaprotocol/vega/issues/8429) - Release margin when decreasing iceberg size like normal orders do
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Set order status to stopped if an iceberg order instantly causes a wash trade
 - [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
 - [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
