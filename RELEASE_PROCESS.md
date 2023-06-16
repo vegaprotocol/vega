@@ -85,5 +85,9 @@ Once the above steps have been taken for the required type of release, the follo
    git merge master
    git push origin develop
    ```
+1. The GitHub release notes can be auto-generated when creating/editing the release in the GitHub UI using the `Generate release notes` button:
+    - the [`release.yml`](https://github.com/vegaprotocol/vega/blob/develop/.github/release.yml) details the headings and associated labels used to generate the release notes
+    - check that all pull requests in the release have the correct labels paying special attention to those related to the labels `vulnerability`, `breaking-change` and `deprecation`
+    - when all pull requests have been checked run the `Generate release notes` action
 1. Notify devops that the release version needs to be deployed onto the `stagnet1` environment for verification
 1. Notify the `@release` group on Slack in the `#engineering` channel
