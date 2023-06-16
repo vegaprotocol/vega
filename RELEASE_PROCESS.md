@@ -61,11 +61,20 @@ Once the above steps have been taken for the required type of release, the follo
 
    *20YY-MM-DD*
 
-   Features: <-- no hashes here
-   - #123 Add a thing
+   Security vulnerabilities: <-- no hashes here
+   - #123 Fix a vulnerability
+
+   Breaking changes: <-- no hashes here
+   - #124 Rename a thing
+
+   Deprecation: <-- no hashes here
+   - #125 Deprecate a thing
 
    Improvements: <-- no hashes here
-   - #124 Fix a bug
+   - #126 Add a thing
+
+   Fixes: <-- no hashes here
+   - #126 Fix a bug
    EOF
    git tag "v$NEWVER" -F /tmp/tagcommitmsg.txt "$(git log -n1 | awk '/^commit / {print $2}')"
    git show "v$NEWVER" # Check the tag message
