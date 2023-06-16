@@ -581,7 +581,7 @@ func validateNewMarketChange(
 		return perr, err
 	}
 	// verify opening auction duration, works the same for successor markets
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); !etu.cpLoad && err != nil {
 		return perr, err
 	}
 	// if this is a successor market, check if that's set up fine:
@@ -618,23 +618,6 @@ func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (type
 	}
 	if perr, err := validateParentProduct(terms, parent); err != nil {
 		return perr, err
-	}
-	// ensure price monitoring parameters are either set, or inherited:
-	if terms.Changes.PriceMonitoringParameters == nil && parent.PriceMonitoringSettings != nil && parent.PriceMonitoringSettings.Parameters != nil {
-		terms.Changes.PriceMonitoringParameters = parent.PriceMonitoringSettings.Parameters.DeepClone()
-	}
-	// same, but ensure the risk parameters are not nil
-	if terms.Changes.RiskParameters == nil && parent.TradableInstrument.RiskModel != nil {
-		switch rm := parent.TradableInstrument.RiskModel.(type) {
-		case *types.TradableInstrumentSimpleRiskModel:
-			terms.Changes.RiskParameters = &types.NewMarketConfigurationSimple{
-				Simple: rm.SimpleRiskModel.Params.DeepClone(),
-			}
-		case *types.TradableInstrumentLogNormalRiskModel:
-			terms.Changes.RiskParameters = &types.NewMarketConfigurationLogNormal{
-				LogNormal: rm.LogNormalRiskModel.DeepClone(),
-			}
-		}
 	}
 	return types.ProposalErrorUnspecified, nil
 }

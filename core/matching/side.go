@@ -30,9 +30,8 @@ var ErrPriceNotFound = errors.New("price-volume pair not found")
 
 // OrderBookSide represent a side of the book, either Sell or Buy.
 type OrderBookSide struct {
-	side types.Side
-	log  *logging.Logger
-	// Config
+	side   types.Side
+	log    *logging.Logger
 	levels []*PriceLevel
 }
 
@@ -133,7 +132,7 @@ func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	return num.UintZero(), 0, errors.New("no non pegged orders found on the book")
 }
 
-func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *types.Order, priceLevelIndex int, orderIndex int) (uint64, error) {
+func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *types.Order, priceLevelIndex int, orderIndex int) (int64, error) {
 	if amendOrder.Remaining > oldOrder.Remaining {
 		// iceberg amend should never increase the visible remaining
 		return 0, types.ErrOrderAmendFailure
@@ -147,20 +146,23 @@ func (s *OrderBookSide) amendIcebergOrder(amendOrder *types.Order, oldOrder *typ
 	oldReserved := oldOrder.IcebergOrder.ReservedRemaining
 	amendReserved := amendOrder.IcebergOrder.ReservedRemaining
 	if amendReserved > oldReserved {
-		// only increased the reserve so the book volume is not changed
-		return 0, nil
+		// only increased volume diff is easy
+		inc := amendReserved - oldReserved
+		s.levels[priceLevelIndex].volume += inc
+		return int64(inc), nil
 	}
 
 	if amendReserved < oldReserved {
-		reduceBy := oldOrder.Remaining - amendOrder.Remaining
-		s.levels[priceLevelIndex].reduceVolume(reduceBy)
-		return reduceBy, nil
+		dec := oldOrder.Remaining - amendOrder.Remaining
+		dec += oldReserved - amendReserved
+		s.levels[priceLevelIndex].reduceVolume(dec)
+		return -int64(dec), nil
 	}
 
 	return 0, nil
 }
 
-func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
+func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (int64, error) {
 	priceLevelIndex := -1
 	orderIndex := -1
 	var oldOrder *types.Order
@@ -203,7 +205,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	reduceBy := oldOrder.Remaining - orderAmend.Remaining
 	s.levels[priceLevelIndex].orders[orderIndex] = orderAmend
 	s.levels[priceLevelIndex].reduceVolume(reduceBy)
-	return reduceBy, nil
+	return -int64(reduceBy), nil
 }
 
 // ExtractOrders extracts the orders from the top of the book until the volume amount is hit,
@@ -228,7 +230,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64, removeOrde
 			if checkPrice(order.Price) && totalVolume+order.Remaining <= volume {
 				// Remove this order
 				extractedOrders = append(extractedOrders, order.Clone())
-				totalVolume += order.Remaining
+				totalVolume += order.TrueRemaining()
 				// Remove the order from the price level
 				toRemove++
 			} else {
@@ -476,6 +478,13 @@ func (s *OrderBookSide) fakeUncrossAuction(orders []*types.Order) ([]*types.Trad
 
 	fake := orders[iOrder].Clone()
 	for idx := len(s.levels) - 1; idx >= 0; idx-- {
+		// since all of uncrossOrders will be traded away and at the same uncrossing price
+		// iceberg orders are sent in as their full value instead of refreshing at each step
+		if fake.IcebergOrder != nil {
+			fake.Remaining += fake.IcebergOrder.ReservedRemaining
+			fake.IcebergOrder.ReservedRemaining = 0
+		}
+
 		// clone price level
 		lvl = clonePriceLevel(s.levels[idx])
 		for lvl.volume > 0 {

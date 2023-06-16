@@ -42,17 +42,17 @@ type importCmd struct {
 
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
-	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum" choice:"tendermint"`
-	WalletPath config.PromptString `long:"wallet-path" description:"The path to the wallet file to import"`
-	Force      bool                `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
+	Chain      string              `choice:"vega"                                                                      choice:"ethereum"  choice:"tendermint" description:"The chain to be imported" long:"chain" required:"true" short:"c"`
+	WalletPath config.PromptString `description:"The path to the wallet file to import"                                long:"wallet-path"`
+	Force      bool                `description:"Should the command re-write an existing nodewallet file if it exists" long:"force"`
 
 	// clef flags
-	EthereumClefAddress string `long:"ethereum-clef-address" description:"The URL to the clef instance that Vega will use."`
-	EthereumClefAccount string `long:"ethereum-clef-account" description:"The Ethereum account to be imported by Vega from Clef. In hex."`
+	EthereumClefAddress string `description:"The URL to the clef instance that Vega will use."               long:"ethereum-clef-address"`
+	EthereumClefAccount string `description:"The Ethereum account to be imported by Vega from Clef. In hex." long:"ethereum-clef-account"`
 
 	// tendermint flags
-	TendermintPubkey string `long:"tendermint-pubkey" description:"The tendermint pubkey of the tendermint validator node"`
-	TendermintHome   string `long:"tendermint-home" description:"The tendermint home from which to look the for the pubkey"`
+	TendermintPubkey string `description:"The tendermint pubkey of the tendermint validator node"    long:"tendermint-pubkey"`
+	TendermintHome   string `description:"The tendermint home from which to look the for the pubkey" long:"tendermint-home"`
 }
 
 func (opts *importCmd) Execute(_ []string) error {

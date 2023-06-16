@@ -87,6 +87,20 @@ func (mr *MockMarketsMockRecorder) GetMarketState(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketState", reflect.TypeOf((*MockMarkets)(nil).GetMarketState), arg0)
 }
 
+// IsSucceeded mocks base method.
+func (m *MockMarkets) IsSucceeded(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSucceeded", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsSucceeded indicates an expected call of IsSucceeded.
+func (mr *MockMarketsMockRecorder) IsSucceeded(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSucceeded", reflect.TypeOf((*MockMarkets)(nil).IsSucceeded), arg0)
+}
+
 // MarketExists mocks base method.
 func (m *MockMarkets) MarketExists(arg0 string) bool {
 	m.ctrl.T.Helper()

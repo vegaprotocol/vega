@@ -23,6 +23,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 
@@ -76,6 +77,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.accountsBefore = execsetup.broker.GetAccounts()
 		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
 		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
+		// set default netparams
+		execsetup.netParams.Update(ctx, netparams.MarketSuccessorLaunchWindow, "1h")
 
 		// don't record events before step if it's the step that's meant to assess number of events over a regular step
 		if b, _ := regexp.MatchString(expectingEventsOverStepText, st.Text); !b {
@@ -143,7 +146,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
 	s.Step(`^the markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, table)
+		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets
 		return err
 	})
@@ -153,14 +156,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			return err
 		}
 		execsetup.markets = markets
-		return nil
-	})
-	s.Step(`the successor markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheSuccessorMarkets(successorConfig, execsetup.executionEngine, execsetup.netParams, table)
-		if err != nil {
-			return err
-		}
-		execsetup.markets = append(execsetup.markets, markets...)
 		return nil
 	})
 
@@ -190,6 +185,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`^the last market state should be "([^"]+)" for the market "([^"]+)"$`, func(mState, marketID string) error {
+		return steps.TheLastStateUpdateShouldBeForMarket(execsetup.broker, marketID, mState)
+	})
 	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
 		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
 	})
@@ -481,7 +479,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	// Decimal places steps
 	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
-		return steps.RegisterAsset(table, execsetup.assetsEngine)
+		return steps.RegisterAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
 	})
 	s.Step(`^set assets to strict$`, func() error {
 		execsetup.assetsEngine.SetStrict()

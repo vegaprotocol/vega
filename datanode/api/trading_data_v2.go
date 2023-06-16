@@ -1099,19 +1099,47 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2.ListSuccessorMarketsRequest) (*v2.ListSuccessorMarketsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListSuccessorMarkets")()
 
-	markets, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory)
+	if len(req.MarketId) == 0 {
+		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	markets, pageInfo, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory, pagination)
 	if err != nil {
 		return nil, formatE(ErrMarketServiceGetAllPaged, err)
 	}
 
-	protoMarkets := make([]*vega.Market, len(markets))
+	edges, err := makeEdges[*v2.SuccessorMarketEdge](markets)
+	if err != nil {
+		return nil, formatE(err)
+	}
 
-	for i, v := range markets {
-		protoMarkets[i] = v.ToProto()
+	for i := range edges {
+		for j := range edges[i].Node.Proposals {
+			proposalID := edges[i].Node.Proposals[j].Proposal.Id
+			node := edges[i].Node.Proposals[j]
+			node.Yes, node.No, err = t.getVotesByProposal(ctx, proposalID)
+			if err != nil {
+				return nil, formatE(ErrGovernanceServiceGetVotes, errors.Wrapf(err, "proposalID: %s", proposalID))
+			}
+		}
+	}
+
+	marketsConnection := &v2.SuccessorMarketConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
 	}
 
 	return &v2.ListSuccessorMarketsResponse{
-		Markets: protoMarkets,
+		Markets: marketsConnection,
 	}, nil
 }
 

@@ -56,6 +56,18 @@ disable = [
     "varnamelen",
     "wrapcheck",
     "wsl",
+
+    ## New linters, disabled until we evaluate if we want them
+    "wastedassign",
+    "nakedret",
+    "rowserrcheck",
+    "musttag",
+    "govet",
+    "gosmopolitan",
+    "dupword",
+    "depguard",
+    "revive",
+
     ## Disabled on-pupose.
     "exhaustruct", # We often make incomplete structs.
     "gci", # Doesn't match our code style.

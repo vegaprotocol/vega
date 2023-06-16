@@ -39,24 +39,24 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	Admin     admin.Config     `group:"Admin" namespace:"admin"`
-	API       api.Config       `group:"API" namespace:"api"`
+	Admin     admin.Config     `group:"Admin"     namespace:"admin"`
+	API       api.Config       `group:"API"       namespace:"api"`
 	CandlesV2 candlesv2.Config `group:"CandlesV2" namespace:"candlesv2"`
-	Logging   logging.Config   `group:"Logging" namespace:"logging"`
-	SQLStore  sqlstore.Config  `group:"Sqlstore" namespace:"sqlstore"`
-	Gateway   gateway.Config   `group:"Gateway" namespace:"gateway"`
-	Metrics   metrics.Config   `group:"Metrics" namespace:"metrics"`
-	Broker    broker.Config    `group:"Broker" namespace:"broker"`
-	Service   service.Config   `group:"Service" namespace:"service"`
+	Logging   logging.Config   `group:"Logging"   namespace:"logging"`
+	SQLStore  sqlstore.Config  `group:"Sqlstore"  namespace:"sqlstore"`
+	Gateway   gateway.Config   `group:"Gateway"   namespace:"gateway"`
+	Metrics   metrics.Config   `group:"Metrics"   namespace:"metrics"`
+	Broker    broker.Config    `group:"Broker"    namespace:"broker"`
+	Service   service.Config   `group:"Service"   namespace:"service"`
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
-	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
+	GatewayEnabled encoding.Bool `choice:"true" choice:"false"    description:" " long:"gateway-enabled"`
 
 	NetworkHistory                   networkhistory.Config `group:"NetworkHistory" namespace:"networkhistory"`
-	AutoInitialiseFromNetworkHistory encoding.Bool         `long:"auto-initialise" choice:"true" choice:"false" description:"if true the node will attempt to load the latest history segment(s) from network history if the node is empty"`
+	AutoInitialiseFromNetworkHistory encoding.Bool         `choice:"true"          choice:"false"             description:"if true the node will attempt to load the latest history segment(s) from network history if the node is empty" long:"auto-initialise"`
 
 	ChainID          string `long:"chainID"`
-	MaxMemoryPercent uint8  `long:"max-memory-percent" description:"The maximum amount of memory reserved for the data node (default: 33%)"`
+	MaxMemoryPercent uint8  `description:"The maximum amount of memory reserved for the data node (default: 33%)" long:"max-memory-percent"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package

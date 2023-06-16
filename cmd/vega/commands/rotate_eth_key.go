@@ -35,9 +35,9 @@ type RotateEthKeyCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"passphrase-file"`
 
-	TargetBlock      uint64 `short:"b" long:"target-block" description:"The future block height at which the rotation will take place" `
-	RotateFrom       string `short:"r" long:"rotate-from" description:"Ethereum address being rotated from" `
-	SubmitterAddress string `short:"s" long:"submitter-address" description:"Ethereum address to use as a submitter to contract changes" `
+	TargetBlock      uint64 `description:"The future block height at which the rotation will take place" long:"target-block"      short:"b"`
+	RotateFrom       string `description:"Ethereum address being rotated from"                           long:"rotate-from"       short:"r"`
+	SubmitterAddress string `description:"Ethereum address to use as a submitter to contract changes"    long:"submitter-address" short:"s"`
 }
 
 var rotateEthKeyCmd RotateEthKeyCmd

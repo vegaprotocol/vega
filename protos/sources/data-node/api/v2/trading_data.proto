@@ -1990,12 +1990,40 @@ message ListSuccessorMarketsRequest {
   // Flag to indicate whether or not to include the full succession line, or only list
   // the children of the given market ID. If true, the full succession line is included.
   bool include_full_history = 2;
+  // Pagination control.
+  Pagination pagination = 3;
+}
+
+// Successor market information includes the market that is a member of the succession line
+// and any governance data that is associated with proposals for child markets
+// whether enacted or not.
+message SuccessorMarket {
+  // The market that is a member of the succession line.
+  vega.Market market = 1;
+  // All proposals for child markets that have the market as a parent.
+  repeated vega.GovernanceData proposals = 2;
+}
+
+// Successor market record with the corresponding cursor for paginated results
+message SuccessorMarketEdge {
+  // Successor market record.
+  SuccessorMarket node = 1;
+  // Cursor identifying the record for pagination control.
+  string cursor = 2;
+}
+
+// Page of successor market records and corresponding page information.
+message SuccessorMarketConnection {
+  // Page of successor markets and their cursors.
+  repeated SuccessorMarketEdge edges = 1;
+  // Page information for pagination control.
+  PageInfo page_info = 2;
 }
 
 // Response from a list successor markets request.
 message ListSuccessorMarketsResponse {
   // List of markets in the succession line.
-  repeated vega.Market markets = 1;
+  SuccessorMarketConnection markets = 1;
 }
 
 // -- Parties --

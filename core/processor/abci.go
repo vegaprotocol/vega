@@ -344,6 +344,11 @@ func NewApp(
 				addDeterministicID(app.DeliverSubmitOrder),
 			),
 		).
+		HandleDeliverTx(txn.StopOrdersSubmissionCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverStopOrdersSubmission),
+			),
+		).
 		HandleDeliverTx(txn.CancelOrderCommand,
 			app.SendTransactionResult(
 				addDeterministicID(app.DeliverCancelOrder),
@@ -1310,6 +1315,49 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
+func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	s := &commandspb.StopOrdersSubmission{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os, err := types.NewStopOrderSubmissionFromProto(s)
+	if err != nil {
+		return err
+	}
+
+	// Submit the create order request to the execution engine
+	idgen := idgeneration.New(deterministicID)
+	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen)
+	if err != nil {
+		app.log.Error("could not submit stop order",
+			logging.StopOrderSubmission(os), logging.Error(err))
+	}
+
+	return nil
+}
+
+func (app *App) DeliverStopOrdersCancellation(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	s := &commandspb.StopOrdersCancellation{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os := types.NewStopOrderCancellationFromProto(s)
+
+	// Submit the create order request to the execution engine
+	idgen := idgeneration.New(deterministicID)
+	err := app.exec.CancelStopOrders(ctx, os, tx.Party(), idgen)
+	if err != nil {
+		app.log.Error("could not submit stop order",
+			logging.StopOrderCancellation(os), logging.Error(err))
+	}
+
+	return nil
+}
+
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
@@ -1483,10 +1531,12 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 	}
 
 	if toSubmit.IsNewMarket() {
+		// opening auction start
+		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
 		nm := toSubmit.NewMarket()
 
 		// @TODO pass in parent and insurance pool share if required
-		if err := app.exec.SubmitMarket(ctx, nm.Market(), party); err != nil {
+		if err := app.exec.SubmitMarket(ctx, nm.Market(), party, oos); err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
@@ -1683,7 +1733,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+				if _, err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to reject market",
 						logging.String("market-id", prop.ID),
 						logging.Error(err))
@@ -1806,8 +1856,7 @@ func (app *App) enactSuccessorMarket(ctx context.Context, prop *types.Proposal) 
 	successor := prop.ID
 	nm := prop.NewMarket()
 	parent := nm.Changes.Successor.ParentID
-	ins := nm.Changes.Successor.InsurancePoolFraction
-	if err := app.exec.SucceedMarket(ctx, successor, parent, ins); err != nil {
+	if err := app.exec.SucceedMarket(ctx, successor, parent); err != nil {
 		prop.State = types.ProposalStateFailed
 		prop.ErrorDetails = err.Error()
 		return

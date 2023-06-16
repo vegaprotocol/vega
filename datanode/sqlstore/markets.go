@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"code.vegaprotocol.io/vega/datanode/entities"
@@ -78,6 +79,12 @@ type Markets struct {
 
 var marketOrdering = TableOrdering{
 	ColumnOrdering{Name: "vega_time", Sorting: ASC},
+}
+
+var lineageOrdering = TableOrdering{
+	ColumnOrdering{Name: "vega_time", Sorting: ASC, Prefix: "m"},
+	// ColumnOrdering{Name: "id", Sorting: ASC, Prefix: "m"},
+	// ColumnOrdering{Name: "id", Sorting: ASC, Prefix: "pc"},
 }
 
 const (
@@ -251,10 +258,12 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 	return markets, pageInfo, nil
 }
 
-func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool) ([]entities.Market, error) {
+func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, fullHistory bool, pagination entities.CursorPagination) ([]entities.SuccessorMarket, entities.PageInfo, error) {
 	if marketID == "" {
-		return nil, errors.New("invalid market ID. Market ID cannot be empty")
+		return nil, entities.PageInfo{}, errors.New("invalid market ID. Market ID cannot be empty")
 	}
+
+	// We paginate by market, so first we have to get all the markets and apply pagination to those first
 
 	args := make([]interface{}, 0)
 
@@ -264,28 +273,72 @@ func (m *Markets) ListSuccessorMarkets(ctx context.Context, marketID string, ful
 		lineageFilter = "and vega_time >= (select vega_time from lineage_root)"
 	}
 
-	query := fmt.Sprintf(`
-		with lineage_root(root_id, vega_time) as (
-            select root_id, vega_time
-            from market_lineage
-            where market_id = %s
-        ), lineage(market_id, parent_id, root_id) as (
-			select market_id, parent_market_id, root_id
-            from market_lineage
-            where root_id = (select root_id from lineage_root)
-			%s
-		) select distinct on (m.id) m.*, s.market_id as successor_market_id
-        from markets m
-        join lineage l on l.market_id = m.id
-		left join lineage s on l.market_id = s.parent_id
-        order by m.id, vega_time desc
-`, nextBindVar(&args, entities.MarketID(marketID)), lineageFilter)
+	preQuery := fmt.Sprintf(`
+with lineage_root(root_id, vega_time) as (
+	select root_id, vega_time
+	from market_lineage
+	where market_id = %s
+), lineage(successor_market_id, parent_id, root_id) as (
+	select market_id, parent_market_id, root_id
+	from market_lineage
+	where root_id = (select root_id from lineage_root)
+  %s
+) `, nextBindVar(&args, entities.MarketID(marketID)), lineageFilter)
 
+	query := `select m.*, s.successor_market_id
+from markets_current m
+join lineage l on l.successor_market_id = m.id
+left join lineage s on l.successor_market_id = s.parent_id
+`
 	var markets []entities.Market
-
-	if err := pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
-		return markets, m.wrapE(err)
+	var pageInfo entities.PageInfo
+	var err error
+	query, args, err = PaginateQuery[entities.SuccessorMarketCursor](query, args, lineageOrdering, pagination)
+	if err != nil {
+		return nil, pageInfo, err
 	}
 
-	return markets, nil
+	query = fmt.Sprintf("%s %s", preQuery, query)
+
+	if err = pgxscan.Select(ctx, m.Connection, &markets, query, args...); err != nil {
+		return nil, entities.PageInfo{}, m.wrapE(err)
+	}
+
+	markets, pageInfo = entities.PageEntities[*v2.MarketEdge](markets, pagination)
+
+	// Now that we have the markets we are going to return, we need to get all the related proposals where the parent market
+	// is one of the markets we are returning. We will do this in one query and process the results in memory
+	// rather than making a separate database query for each market in case the succession line becomes very long.
+
+	parentMarketList := make([]string, 0)
+	for _, m := range markets {
+		parentMarketList = append(parentMarketList, m.ID.String())
+	}
+
+	var proposals []entities.Proposal
+
+	proposalsQuery := fmt.Sprintf(`select * from proposals_current where terms->'newMarket'->'changes'->'successor'->>'parentMarketId' in ('%s') order by vega_time, id`, strings.Join(parentMarketList, "', '"))
+
+	if err = pgxscan.Select(ctx, m.Connection, &proposals, proposalsQuery); err != nil {
+		return nil, entities.PageInfo{}, m.wrapE(err)
+	}
+
+	edges := []entities.SuccessorMarket{}
+
+	// Now we have the proposals, we need to create the successor market edges and add them to the market
+	for _, m := range markets {
+		edge := entities.SuccessorMarket{
+			Market: m,
+		}
+
+		for i, p := range proposals {
+			if p.Terms.ProposalTerms.GetNewMarket().Changes.Successor.ParentMarketId == m.ID.String() {
+				edge.Proposals = append(edge.Proposals, &proposals[i])
+			}
+		}
+
+		edges = append(edges, edge)
+	}
+
+	return edges, pageInfo, nil
 }

@@ -16,5 +16,5 @@ package config
 type Empty struct{}
 
 type VegaHomeFlag struct {
-	VegaHome string `long:"home" description:"Path to the custom home for vega"`
+	VegaHome string `description:"Path to the custom home for vega" long:"home"`
 }

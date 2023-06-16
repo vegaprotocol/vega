@@ -31,18 +31,18 @@ const (
 )
 
 type Config struct {
-	ConnectionConfig                                   ConnectionConfig      `group:"ConnectionConfig" namespace:"ConnectionConfig"`
-	WipeOnStartup                                      encoding.Bool         `long:"wipe-on-startup" description:"deprecated, use data-node unsafe_reset_all command instead"`
+	ConnectionConfig                                   ConnectionConfig      `group:"ConnectionConfig"                                                                          namespace:"ConnectionConfig"`
+	WipeOnStartup                                      encoding.Bool         `description:"deprecated, use data-node unsafe_reset_all command instead"                          long:"wipe-on-startup"`
 	Level                                              encoding.LogLevel     `long:"log-level"`
-	UseEmbedded                                        encoding.Bool         `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
-	FanOutBufferSize                                   int                   `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
-	RetentionPolicies                                  []RetentionPolicy     `group:"RetentionPolicies" namespace:"RetentionPolicies"`
-	ConnectionRetryConfig                              ConnectionRetryConfig `group:"ConnectionRetryConfig" namespace:"ConnectionRetryConfig"`
-	LogRotationConfig                                  LogRotationConfig     `group:"LogRotationConfig" namespace:"LogRotationConfig"`
-	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `long:"disable-min-retention-policy-use-in-sys-test-only" description:"Disables the minimum retention policy interval check - only for use in system tests"`
-	RetentionPeriod                                    RetentionPeriod       `long:"retention-period" description:"Set the retention level for the database. standard, archive, or lite"`
-	VerboseMigration                                   encoding.Bool         `long:"verbose-migration" description:"Enable verbose logging of SQL migrations"`
-	ChunkIntervals                                     []ChunkInterval       `group:"ChunkIntervals" namespace:"ChunkIntervals"`
+	UseEmbedded                                        encoding.Bool         `description:"Use an embedded version of Postgresql for the SQL data store"                        long:"use-embedded"`
+	FanOutBufferSize                                   int                   `description:"buffer size used by the fan out event source"                                        long:"fan-out-buffer-size"`
+	RetentionPolicies                                  []RetentionPolicy     `group:"RetentionPolicies"                                                                         namespace:"RetentionPolicies"`
+	ConnectionRetryConfig                              ConnectionRetryConfig `group:"ConnectionRetryConfig"                                                                     namespace:"ConnectionRetryConfig"`
+	LogRotationConfig                                  LogRotationConfig     `group:"LogRotationConfig"                                                                         namespace:"LogRotationConfig"`
+	DisableMinRetentionPolicyCheckForUseInSysTestsOnly encoding.Bool         `description:"Disables the minimum retention policy interval check - only for use in system tests" long:"disable-min-retention-policy-use-in-sys-test-only"`
+	RetentionPeriod                                    RetentionPeriod       `description:"Set the retention level for the database. standard, archive, or lite"                long:"retention-period"`
+	VerboseMigration                                   encoding.Bool         `description:"Enable verbose logging of SQL migrations"                                            long:"verbose-migration"`
+	ChunkIntervals                                     []ChunkInterval       `group:"ChunkIntervals"                                                                            namespace:"ChunkIntervals"`
 }
 
 type ConnectionConfig struct {
@@ -51,7 +51,7 @@ type ConnectionConfig struct {
 	Username              string            `long:"username"`
 	Password              string            `long:"password"`
 	Database              string            `long:"database"`
-	SocketDir             string            `long:"socket-dir" description:"location of postgres UNIX socket directory (used if host is empty string)"`
+	SocketDir             string            `description:"location of postgres UNIX socket directory (used if host is empty string)" long:"socket-dir"`
 	MaxConnLifetime       encoding.Duration `long:"max-conn-lifetime"`
 	MaxConnLifetimeJitter encoding.Duration `long:"max-conn-lifetime-jitter"`
 	MaxConnPoolSize       int               `long:"max-conn-pool-size"`
@@ -64,8 +64,8 @@ type HypertableOverride interface {
 }
 
 type RetentionPolicy struct {
-	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
-	DataRetentionPeriod  string `string:"interval" description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc. To retain data indefinitely specify 'forever'"`
+	HypertableOrCaggName string `description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"                          string:"hypertable-or-cagg-name"`
+	DataRetentionPeriod  string `description:"the period to retain data, e.g '3 days', '3 months', '1 year' etc. To retain data indefinitely specify 'forever'" string:"interval"`
 }
 
 func (p RetentionPolicy) EntityName() string {
@@ -73,8 +73,8 @@ func (p RetentionPolicy) EntityName() string {
 }
 
 type ChunkInterval struct {
-	HypertableOrCaggName string `string:"hypertable-or-cagg-name" description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies"`
-	ChunkInterval        string `string:"chunk-interval" description:"the interval at which to create new chunks, e.g '1 day', '1 month', '1 year' etc."`
+	HypertableOrCaggName string `description:"the name of the hyper table of continuous aggregate (cagg) to which this policy applies" string:"hypertable-or-cagg-name"`
+	ChunkInterval        string `description:"the interval at which to create new chunks, e.g '1 day', '1 month', '1 year' etc."       string:"chunk-interval"`
 }
 
 func (p ChunkInterval) EntityName() string {
@@ -82,15 +82,15 @@ func (p ChunkInterval) EntityName() string {
 }
 
 type ConnectionRetryConfig struct {
-	MaxRetries      uint64        `long:"max-retries" description:"the maximum number of times to retry connecting to the database"`
-	InitialInterval time.Duration `long:"initial-interval" description:"the initial interval to wait before retrying"`
-	MaxInterval     time.Duration `long:"max-interval" description:"the maximum interval to wait before retrying"`
-	MaxElapsedTime  time.Duration `long:"max-elapsed-time" description:"the maximum elapsed time to wait before giving up"`
+	MaxRetries      uint64        `description:"the maximum number of times to retry connecting to the database" long:"max-retries"`
+	InitialInterval time.Duration `description:"the initial interval to wait before retrying"                    long:"initial-interval"`
+	MaxInterval     time.Duration `description:"the maximum interval to wait before retrying"                    long:"max-interval"`
+	MaxElapsedTime  time.Duration `description:"the maximum elapsed time to wait before giving up"               long:"max-elapsed-time"`
 }
 
 type LogRotationConfig struct {
-	MaxSize int `long:"max-size" description:"the maximum size of the log file in bytes"`
-	MaxAge  int `long:"max-age" description:"the maximum number of days to keep the log file"`
+	MaxSize int `description:"the maximum size of the log file in bytes"       long:"max-size"`
+	MaxAge  int `description:"the maximum number of days to keep the log file" long:"max-age"`
 }
 
 func (conf ConnectionConfig) GetConnectionString() string {

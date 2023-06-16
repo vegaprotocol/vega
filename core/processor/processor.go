@@ -72,12 +72,16 @@ type ExecutionEngine interface {
 	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
 	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)
 
+	// stop orders stuff
+	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator) error
+	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
+
 	// market stuff
-	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	RejectMarket(ctx context.Context, marketid string) error
+	RejectMarket(ctx context.Context, marketid string) ([]int, error)
 	StartOpeningAuction(ctx context.Context, marketid string) error
-	SucceedMarket(ctx context.Context, successor, parent string, insuranceFraction num.Decimal) error
+	SucceedMarket(ctx context.Context, successor, parent string) error
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error

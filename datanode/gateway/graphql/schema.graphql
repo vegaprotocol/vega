@@ -27,7 +27,7 @@ type PeggedOrder {
 
 "Details of the iceberg order"
 type IcebergOrder {
-  "Size of the order that will be made visible if the iceberg order is refreshed at the end of a transaction"
+  "Size of the order that will be made visible if the iceberg order is refreshed after a trade has occurred"
   initialPeakSize: String!
   "Threshold at which the order's visible remaining size will be refreshed back to its initial peak size"
   minimumPeakSize: String!
@@ -697,7 +697,9 @@ type Query {
     When false, only the requested market and its children are returned.
     """
     fullHistory: Boolean,
-  ): [Market]
+    "Optional pagination information"
+    pagination: Pagination
+  ): SuccessorMarketConnection
 
   "Get a list of all trades and apply any given filters to the results"
   trades(
@@ -1874,6 +1876,9 @@ type Market {
   Optional: When a successor market is created, a fraction of the parent market's insurance pool can be transferred to the successor market
   """
   insurancePoolFraction: String
+
+  "Optional: Market ID of the successor to this market if one exists"
+  successorMarketID: ID
 }
 
 """
@@ -1970,7 +1975,6 @@ type ObservableMarketDepthUpdate {
   "Sequence number of the last update sent; useful for checking that no updates were missed."
   previousSequenceNumber: String!
 }
-
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
@@ -3937,7 +3941,7 @@ type LiquidityOrderReference {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -3965,7 +3969,7 @@ type LiquidityProvision {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvisionUpdate {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   partyID: ID!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -4195,7 +4199,7 @@ type PartyConnection {
   pageInfo: PageInfo!
 }
 
-"Edge type containing the order and cursor information returned by a OrderConnection"
+"Edge type containing the market and cursor information returned by a MarketConnection"
 type MarketEdge {
   "The market"
   node: Market!
@@ -4207,6 +4211,29 @@ type MarketEdge {
 type MarketConnection {
   "The markets in this connection"
   edges: [MarketEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+type SuccessorMarket {
+  "The market"
+  market: Market!
+  "Proposals for child markets"
+  proposals: [Proposal]
+}
+
+"Edge type containing the market and cursor information returned by a MarketConnection"
+type SuccessorMarketEdge {
+  "The market"
+  node: SuccessorMarket!
+  "The cursor for this market"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated market information"
+type SuccessorMarketConnection {
+  "The markets in this connection"
+  edges: [SuccessorMarketEdge!]!
   "The pagination information"
   pageInfo: PageInfo!
 }

@@ -60,10 +60,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-var (
-	marketConfig    = market.NewMarketConfig()
-	successorConfig = market.NewSuccessorConfig()
-)
+var marketConfig = market.NewMarketConfig()
 
 type executionTestSetup struct {
 	cfg              execution.Config
@@ -339,6 +336,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: e.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketSuccessorLaunchWindow,
+			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)
 }
