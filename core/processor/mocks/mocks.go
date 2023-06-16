@@ -334,6 +334,20 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1, arg2, arg3 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1, arg2, arg3)
 }
 
+// CancelStopOrders mocks base method.
+func (m *MockExecutionEngine) CancelStopOrders(arg0 context.Context, arg1 *types.StopOrdersCancellation, arg2 string, arg3 common.IDGenerator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelStopOrders", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelStopOrders indicates an expected call of CancelStopOrders.
+func (mr *MockExecutionEngineMockRecorder) CancelStopOrders(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).CancelStopOrders), arg0, arg1, arg2, arg3)
+}
+
 // Hash mocks base method.
 func (m *MockExecutionEngine) Hash() []byte {
 	m.ctrl.T.Helper()
@@ -349,11 +363,12 @@ func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 }
 
 // RejectMarket mocks base method.
-func (m *MockExecutionEngine) RejectMarket(arg0 context.Context, arg1 string) error {
+func (m *MockExecutionEngine) RejectMarket(arg0 context.Context, arg1 string) ([]int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RejectMarket", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // RejectMarket indicates an expected call of RejectMarket.
@@ -417,6 +432,20 @@ func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.Orde
 func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
+}
+
+// SubmitStopOrders mocks base method.
+func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common.IDGenerator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitStopOrders", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitStopOrders indicates an expected call of SubmitStopOrders.
+func (mr *MockExecutionEngineMockRecorder) SubmitStopOrders(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitStopOrders), arg0, arg1, arg2, arg3)
 }
 
 // SucceedMarket mocks base method.

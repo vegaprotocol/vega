@@ -19,7 +19,7 @@ import (
 )
 
 type Cmd struct {
-	List    ListCmd    `command:"list" description:"List the location where files used by the Vega applications are stored"`
+	List    ListCmd    `command:"list"    description:"List the location where files used by the Vega applications are stored"`
 	Explain ExplainCmd `command:"explain" description:"Explain what a path is about"`
 }
 

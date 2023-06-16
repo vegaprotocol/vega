@@ -38,11 +38,11 @@ type Config struct {
 
 // RESTGatewayServiceConfig represent the configuration of the rest service.
 type RESTServiceConfig struct {
-	Port       int                `long:"port" description:"Listen for connection on port <port>"`
-	IP         string             `long:"ip" description:"Bind to address <ip>"`
-	Enabled    encoding.Bool      `long:"enabled" choice:"true"  description:"Start the REST gateway"`
-	APMEnabled encoding.Bool      `long:"apm-enabled" choice:"true"  description:" "`
-	CORS       libhttp.CORSConfig `group:"CORS" namespace:"cors"`
+	Port       int                `description:"Listen for connection on port <port>" long:"port"`
+	IP         string             `description:"Bind to address <ip>"                 long:"ip"`
+	Enabled    encoding.Bool      `choice:"true"                                      description:"Start the REST gateway" long:"enabled"`
+	APMEnabled encoding.Bool      `choice:"true"                                      description:" "                      long:"apm-enabled"`
+	CORS       libhttp.CORSConfig `group:"CORS"                                       namespace:"cors"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

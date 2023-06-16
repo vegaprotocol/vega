@@ -211,27 +211,33 @@ func (e *Engine) Hash() []byte {
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
-func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
+func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, error) {
+	ret := []int{}
 	if e.log.IsDebug() {
 		e.log.Debug("reject market", logging.MarketID(marketID))
 	}
 
 	mkt, ok := e.markets[marketID]
 	if !ok {
-		return ErrMarketDoesNotExist
+		return nil, ErrMarketDoesNotExist
 	}
 
 	if err := mkt.Reject(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	e.removeMarket(marketID)
+	idx := e.removeMarket(marketID)
+	if idx > -1 {
+		ret = append(ret, idx)
+	}
 	// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
 	// they should be purged here, and @TODO handle any errors
 	if successors, ok := e.successors[marketID]; ok {
 		delete(e.successors, marketID)
 		for _, sID := range successors {
-			_ = e.RejectMarket(ctx, sID)
+			if i, _ := e.RejectMarket(ctx, sID); len(i) > 0 {
+				ret = append(ret, i...)
+			}
 			delete(e.isSuccessor, sID)
 		}
 	}
@@ -239,7 +245,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 	delete(e.isSuccessor, marketID)
 	// and clear out any state that may exist
 	delete(e.marketCPStates, marketID)
-	return nil
+	return ret, nil
 }
 
 // StartOpeningAuction will start the opening auction of the given market.
@@ -569,7 +575,7 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Mark
 	return nil
 }
 
-func (e *Engine) removeMarket(mktID string) {
+func (e *Engine) removeMarket(mktID string) int {
 	e.log.Debug("removing market", logging.String("id", mktID))
 
 	delete(e.markets, mktID)
@@ -582,9 +588,10 @@ func (e *Engine) removeMarket(mktID string) {
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
-			return
+			return i
 		}
 	}
+	return -1
 }
 
 func (e *Engine) peggedOrderCountUpdated(added int64) {
@@ -593,6 +600,24 @@ func (e *Engine) peggedOrderCountUpdated(added int64) {
 
 func (e *Engine) canSubmitPeggedOrder() bool {
 	return uint64(e.totalPeggedOrdersCount) < e.maxPeggedOrders
+}
+
+func (e *Engine) SubmitStopOrders(
+	ctx context.Context,
+	submission *types.StopOrdersSubmission,
+	party string,
+	idgen common.IDGenerator,
+) error {
+	return errors.New("stop order submission not supported yet")
+}
+
+func (e *Engine) CancelStopOrders(
+	ctx context.Context,
+	cancellation *types.StopOrdersCancellation,
+	party string,
+	idgen common.IDGenerator,
+) error {
+	return errors.New("stop order cancellation not supported yet")
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
@@ -854,7 +879,13 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	toDelete := []string{}
 	parentStates := e.getParentStates()
 	evts := make([]events.Event, 0, len(e.marketsCpy))
-	for _, mkt := range e.marketsCpy {
+	rejected := map[int]struct{}{}
+	for i, mkt := range e.marketsCpy {
+		if _, ok := rejected[i]; ok {
+			// successor markets were rejected, because of how golang iterates over slices, this loop
+			// will still iterate over rejected markets, these markets must be skipped
+			continue
+		}
 		mkt := mkt
 		id := mkt.GetID()
 		mdef := mkt.Mkt()
@@ -884,14 +915,21 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// this can only be true if mkt was a successor, and the successor market has left the opening auction
 		if leftOA {
 			pid := mdef.ParentMarketID
-			if pmkt, ok := e.markets[pid]; ok {
-				pmkt.SetSucceeded()
-			}
 			// transfer insurance pool balance
 			if !mdef.InsurancePoolFraction.IsZero() {
 				lm := e.collateral.SuccessorInsuranceFraction(ctx, id, pid, mkt.GetSettlementAsset(), mdef.InsurancePoolFraction)
 				if lm != nil {
 					e.broker.Send(events.NewLedgerMovements(ctx, []*types.LedgerMovement{lm}))
+				}
+			}
+			// set parent market as succeeded, clear insurance pool account if needed
+			if pmkt, ok := e.markets[pid]; ok {
+				pmkt.SetSucceeded()
+			} else {
+				asset := mkt.GetSettlementAsset()
+				// clear parent market insurance pool
+				if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, pid, asset, true); len(clearTransfers) > 0 {
+					e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 				}
 			}
 			// reject other pending successors
@@ -900,7 +938,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 				if id == sid {
 					continue
 				}
-				e.RejectMarket(ctx, sid)
+				skip, _ := e.RejectMarket(ctx, sid)
+				for _, sk := range skip {
+					rejected[sk] = struct{}{}
+				}
 			}
 			// remove data used to indicate that the parent market has pending successors
 			delete(e.successors, pid)
@@ -910,16 +951,14 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 			// relying on how this is implemented
 			mkt.RollbackInherit(ctx)
 		}
-		if _, ok := e.successors[id]; ok || !mkt.IsSucceeded() {
-			// update the market state used to set the successor market accordingly
-			// if the market was closed, the checkpoint data will include the full market definition
+		if !mkt.IsSucceeded() {
+			// the market was not yet succeeded -> capture state
 			cps := mkt.GetCPState()
 			// set until what time this state is considered valid.
 			cps.TTL = t.Add(e.successorWindow)
 			e.marketCPStates[id] = cps
 		} else {
-			// just in case it's still around -> remove the state, this would mean there is no pending successor, and the market is
-			// marked as succeeded, this state should not be here
+			// market was succeeded
 			delete(e.marketCPStates, id)
 		}
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
@@ -930,11 +969,16 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		e.removeMarket(id)
 	}
 	// clear slice
-	toDelete = toDelete[:]
+	toDelete = make([]string, 0, len(toDelete))
 	// find state that should expire
 	for id, cpm := range e.marketCPStates {
-		if !cpm.TTL.After(t) {
+		// market field will be nil if the market is still current (ie not closed/settled)
+		if cpm.TTL.Before(t) && cpm.Market != nil {
 			toDelete = append(toDelete, id)
+			assets, _ := cpm.Market.GetAssets()
+			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
+				e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
+			}
 		}
 	}
 	for _, id := range toDelete {
@@ -1302,17 +1346,8 @@ func (e *Engine) OnSuccessorMarketTimeWindowUpdate(ctx context.Context, window t
 	// change in succession window length
 	delta := window - e.successorWindow
 	if delta != 0 {
-		torm := []string{}
-		now := e.timeService.GetTimeNow()
-		for id, cpm := range e.marketCPStates {
+		for _, cpm := range e.marketCPStates {
 			cpm.TTL = cpm.TTL.Add(delta)
-			if cpm.TTL.After(now) {
-				continue
-			}
-			torm = append(torm, id)
-		}
-		for _, id := range torm {
-			delete(e.marketCPStates, id)
 		}
 	}
 	e.successorWindow = window

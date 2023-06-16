@@ -48,9 +48,10 @@ Feature: check the insurance pool getting shared equally between all markets wit
 
 
     And the following network parameters are set:
-      | name                                    | value |
-      | market.auction.minimumDuration          | 1     |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | name                                         | value |
+      | market.auction.minimumDuration               | 1     |
+      | network.markPriceUpdateMaximumFrequency      | 0s    |
+      | market.liquidity.successorLaunchWindowLength | 1s    |
 
   Scenario: using lognormal risk model, set "designatedLooser" closeout while the position of "designatedLooser" is not fully covered by orders on the order book; and check the funding of treasury. 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
@@ -209,6 +210,7 @@ Feature: check the insurance pool getting shared equally between all markets wit
       | prices.ETH.value | 80    |
 
     # When a market ETH/DEC19 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
+    When the network moves ahead "3" blocks
     And the network treasury balance should be "1824" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "1823" for the market "ETH/DEC20"
@@ -217,12 +219,13 @@ Feature: check the insurance pool getting shared equally between all markets wit
     When the oracles broadcast data signed with "0xCAFECAFE20":
       | name               | value |
       | trading.terminated | true  |
-    And time is updated to "2020-01-01T01:01:01Z"
+    #And time is updated to "2020-01-01T01:01:01Z"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC20"
     Then the oracles broadcast data signed with "0xCAFECAFE20":
       | name             | value |
       | prices.ETH.value | 80    |
 
+    And the network moves ahead "3" blocks
     # When a market ETH/DEC20 is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
     And the network treasury balance should be "2736" for the asset "USD"
 

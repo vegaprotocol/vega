@@ -147,7 +147,7 @@ func writePayloads(payloads []*snapshot.Payload, outputPath string) error {
 	m := jsonpb.Marshaler{Indent: "    "}
 
 	payloadData := struct {
-		Data []*snapshot.Payload `protobuf:"bytes,1,rep,name=data" json:"data,omitempty"`
+		Data []*snapshot.Payload `json:"data,omitempty" protobuf:"bytes,1,rep,name=data"`
 		pb.Message
 	}{
 		Data: payloads,

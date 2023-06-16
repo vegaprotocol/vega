@@ -28,9 +28,10 @@ Feature: Position resolution case 5 lognormal risk model
       | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-fish | margin-calculator-1 | 1                | default-none | default-none     | ethDec20Oracle     | 0.74667                | 0                       |
 
     And the following network parameters are set:
-      | name                                    | value |
-      | market.auction.minimumDuration          | 1     |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | name                                         | value |
+      | market.auction.minimumDuration               | 1     |
+      | network.markPriceUpdateMaximumFrequency      | 0s    |
+      | market.liquidity.successorLaunchWindowLength | 1s    |
 
   Scenario: 001 using lognormal risk model, setup a scenario where designatedLoser gets closed out; 0012-POSR-002, 0012-POSR-005, 0013-ACCT-001, 0013-ACCT-022
 
@@ -235,11 +236,12 @@ Feature: Position resolution case 5 lognormal risk model
       | name             | value |
       | prices.ETH.value | 80    |
 
+    When the network moves ahead "3" blocks
     # When a market is closed, the insurance pool account has its outstanding funds transferred to the [network treasury]
-    And the network treasury balance should be "5470" for the asset "USD"
+    Then the network treasury balance should be "5470" for the asset "USD"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
-Scenario: 002 create a suicidal trade from "designatedLoser" to get closeout immediately after trade 
+  Scenario: 002 create a suicidal trade from "designatedLoser" to get closeout immediately after trade 
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:

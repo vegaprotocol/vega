@@ -344,6 +344,11 @@ func NewApp(
 				addDeterministicID(app.DeliverSubmitOrder),
 			),
 		).
+		HandleDeliverTx(txn.StopOrdersSubmissionCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverStopOrdersSubmission),
+			),
+		).
 		HandleDeliverTx(txn.CancelOrderCommand,
 			app.SendTransactionResult(
 				addDeterministicID(app.DeliverCancelOrder),
@@ -1310,6 +1315,49 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
+func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	s := &commandspb.StopOrdersSubmission{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os, err := types.NewStopOrderSubmissionFromProto(s)
+	if err != nil {
+		return err
+	}
+
+	// Submit the create order request to the execution engine
+	idgen := idgeneration.New(deterministicID)
+	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen)
+	if err != nil {
+		app.log.Error("could not submit stop order",
+			logging.StopOrderSubmission(os), logging.Error(err))
+	}
+
+	return nil
+}
+
+func (app *App) DeliverStopOrdersCancellation(ctx context.Context, tx abci.Tx, deterministicID string) error {
+	s := &commandspb.StopOrdersCancellation{}
+	if err := tx.Unmarshal(s); err != nil {
+		return err
+	}
+
+	// Convert from proto to domain type
+	os := types.NewStopOrderCancellationFromProto(s)
+
+	// Submit the create order request to the execution engine
+	idgen := idgeneration.New(deterministicID)
+	err := app.exec.CancelStopOrders(ctx, os, tx.Party(), idgen)
+	if err != nil {
+		app.log.Error("could not submit stop order",
+			logging.StopOrderCancellation(os), logging.Error(err))
+	}
+
+	return nil
+}
+
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicID string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
@@ -1685,7 +1733,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+				if _, err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to reject market",
 						logging.String("market-id", prop.ID),
 						logging.Error(err))

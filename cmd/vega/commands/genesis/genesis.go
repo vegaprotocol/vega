@@ -25,8 +25,8 @@ type Cmd struct {
 	config.PassphraseFlag
 
 	// Subcommands
-	Generate       generateCmd       `command:"generate" description:"Generates the genesis file"`
-	Update         updateCmd         `command:"update" description:"Update the genesis file with the app_state, useful if the genesis generation is not done using \"vega genesis generate\""`
+	Generate       generateCmd       `command:"generate"        description:"Generates the genesis file"`
+	Update         updateCmd         `command:"update"          description:"Update the genesis file with the app_state, useful if the genesis generation is not done using \"vega genesis generate\""`
 	LoadCheckpoint loadCheckpointCmd `command:"load_checkpoint" description:"Load the given checkpoint file in the genesis file"`
 }
 

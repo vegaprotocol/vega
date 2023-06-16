@@ -3,12 +3,15 @@
 ## Unreleased 0.72.0
 
 ### 🚨 Breaking changes
+
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 ### 🗑️ Deprecation
+
 - [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
 
 ### 🛠 Improvements
+
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
@@ -26,6 +29,7 @@
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
 - [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders in `graphQL`
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders during auction uncrossing
 - [8459](https://github.com/vegaprotocol/vega/issues/8459) - Market depth and book volume include iceberg reserves
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
@@ -41,8 +45,15 @@
 - [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
 - [8445](https://github.com/vegaprotocol/vega/issues/8445) - Additional feature tests for iceberg orders.
 - [8349](https://github.com/vegaprotocol/vega/issues/8349) - Add successor market integration test coverage.
+- [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
+- [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
+- [8476](https://github.com/vegaprotocol/vega/issues/8476) - Add successor market per `AC`
+- [8365](https://github.com/vegaprotocol/vega/issues/8365) - Add new liquidity engine with SLA support.
+- [8466](https://github.com/vegaprotocol/vega/issues/8466) - Add stop orders protobufs and domain types
+- [8467](https://github.com/vegaprotocol/vega/issues/8467) - Add stop orders data structures
 
 ### 🐛 Fixes
+
 - [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
 - [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
 - [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
@@ -60,6 +71,7 @@
 - [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
 - [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate
 - [8429](https://github.com/vegaprotocol/vega/issues/8429) - Release margin when decreasing iceberg size like normal orders do
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Set order status to stopped if an iceberg order instantly causes a wash trade
 - [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
 - [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
@@ -68,6 +80,7 @@
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
+- [8500](https://github.com/vegaprotocol/vega/issues/8500) - Fix liquidity provision `ID` is nullable in `GraphQL API`.
 
 ## 0.71.0
 

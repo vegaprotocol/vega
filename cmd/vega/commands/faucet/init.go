@@ -27,8 +27,8 @@ type faucetInit struct {
 	config.PassphraseFlag
 	config.OutputFlag
 
-	Force         bool `short:"f" long:"force" description:"Erase existing configuration at specified path"`
-	UpdateInPlace bool `long:"update-in-place" description:"Update the Vega node configuration with the faucet public key"`
+	Force         bool `description:"Erase existing configuration at specified path"                long:"force"           short:"f"`
+	UpdateInPlace bool `description:"Update the Vega node configuration with the faucet public key" long:"update-in-place"`
 }
 
 func (opts *faucetInit) Execute(_ []string) error {

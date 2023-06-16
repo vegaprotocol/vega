@@ -2332,7 +2332,7 @@ func TestClearMarket(t *testing.T) {
 	party := "okparty"
 
 	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(10)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(11)
 
 	eng.IncrementBalance(context.Background(), eng.marketInsuranceID, num.NewUint(1000))
 
@@ -2343,7 +2343,7 @@ func TestClearMarket(t *testing.T) {
 
 	parties := []string{party}
 
-	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
+	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties, false)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(responses))
@@ -2363,13 +2363,13 @@ func TestClearMarketNoMargin(t *testing.T) {
 	party := "okparty"
 
 	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(5)
 	acc, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
 
 	parties := []string{party}
 
-	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
+	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties, false)
 
 	assert.NoError(t, err)
 	assert.Equal(t, len(responses), 1)
