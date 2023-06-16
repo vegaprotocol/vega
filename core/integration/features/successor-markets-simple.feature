@@ -297,15 +297,13 @@ Feature: Simple example of successor markets
       | trader2 | ETH/DEC20 | sell | 10     | 1000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
       | trader2 | ETH/DEC20 | sell | 10     | 2000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-3    |
 
-   
-
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 276450000000 | 1905000000000000 | 10            |
     Then the successor market "ETH/DEC20" is enacted
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC21"
-    
+
     #When a successor market is enacted (i.e. leaves the opening auction), all other related successor market proposals, in the state "pending" or "proposed", are automatically rejected. Any LP submissions associated with these proposals are cancelled, and the funds are released
     And the parties should have the following account balances:
       | party   | asset | market id | margin           | general                   | bond             |

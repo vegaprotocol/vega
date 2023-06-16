@@ -381,7 +381,6 @@ Feature: Simple example of successor markets
     And the insurance pool balance should be "5077" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC20"
     And the network treasury balance should be "0" for the asset "USD"
-
     When the successor market "ETH/DEC20" is enacted
    
     Then the parties place the following orders:
