@@ -261,7 +261,7 @@ Feature: Simple example of successor markets
       | 976        | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 134907600000 | 1905000000000000 | 5             |
 
     @SuccessorMarketSimple
-    Scenario: 004 Enact a successor market while the parent market is still in pending state, 0081-SUCM-010, 0081-SUCM-011
+    Scenario: 004 Enact a successor market while the parent market is still in pending state, 0081-SUCM-009, 0081-SUCM-010, 0081-SUCM-011
     Given the markets:
       | id        | quote name | asset | risk model            | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor | decimal places | position decimal places | parent market id | insurance pool fraction | successor auction |
       | ETH/DEC19 | ETH        | ETH   | default-st-risk-model | default-margin-calculator | 1                | default-none | default-none     | ethDec19Oracle         | 0.1                    | 0                         | 5              | 5                       |                  |                         |                   |
@@ -287,6 +287,8 @@ Feature: Simple example of successor markets
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | buy  | BID              | 2          | 1      | submission |
       | lp1 | lpprov | ETH/DEC20 | 1905000000000000  | 0.1 | sell | ASK              | 13         | 1      | submission |
+      | lp2 | lpprov | ETH/DEC21 | 1905000000000000  | 0.1 | buy  | BID              | 2          | 1      | submission |
+      | lp2 | lpprov | ETH/DEC21 | 1905000000000000  | 0.1 | sell | ASK              | 13         | 1      | submission |
 
     And the parties place the following orders:
       | party   | market id | side | volume | price| resulting trades | type       | tif     | reference |
@@ -295,9 +297,18 @@ Feature: Simple example of successor markets
       | trader2 | ETH/DEC20 | sell | 10     | 1000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-2    |
       | trader2 | ETH/DEC20 | sell | 10     | 2000 | 0                | TYPE_LIMIT | TIF_GTC | t2-s-3    |
 
+   
+
     When the opening auction period ends for market "ETH/DEC20"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | target stake | supplied stake   | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 276450000000 | 1905000000000000 | 10            |
     Then the successor market "ETH/DEC20" is enacted
     And the last market state should be "STATE_REJECTED" for the market "ETH/DEC21"
+    
+    #When a successor market is enacted (i.e. leaves the opening auction), all other related successor market proposals, in the state "pending" or "proposed", are automatically rejected. Any LP submissions associated with these proposals are cancelled, and the funds are released
+    And the parties should have the following account balances:
+      | party   | asset | market id | margin           | general                   | bond             |
+      | lpprov  | ETH   | ETH/DEC20 | 2673529501825832 | 9999999991516470498174168 | 1905000000000000 |
+      | lpprov  | ETH   | ETH/DEC21 | 0                | 9999999991516470498174168 | 0                |
+
