@@ -141,7 +141,10 @@ example:
 type RunConfig struct {
 	/*
 		description: Name of the upgrade.
-		note: It is recommended to use the Vega version you wish to upgrade to as the name. These can be found in the releases list of the Vega Github repository.
+		note: |
+			It is recommended to use the Vega version you wish to upgrade to as the name. These can be found in the releases list of the Vega Github repository
+			(https://github.com/vegaprotocol/vega/releases).
+
 	*/
 	Name string `toml:"name"`
 	// description: Configuration of a Vega node.

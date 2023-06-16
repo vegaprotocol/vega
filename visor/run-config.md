@@ -20,7 +20,9 @@ Root of the config file
 Name of the upgrade.
 
 
-<blockquote>It is recommended to use the Vega version you wish to upgrade to as the name. These can be found in the releases list of the Vega Github repository.</blockquote>
+<blockquote>It is recommended to use the Vega version you wish to upgrade to as the name. These can be found in the releases list of the Vega Github repository
+(https://github.com/vegaprotocol/vega/releases).
+</blockquote>
 </dd>
 
 <dt>
