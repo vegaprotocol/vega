@@ -31,6 +31,8 @@ func TestOracleData(t *testing.T) {
 	t.Run("ListOracleData should return all data where matched spec ids contains the provided id", testGetOracleDataBySpecID)
 	t.Run("ListOracleData should return all data if the spec id is not provided", testGetOracleDataWithoutSpecID)
 	t.Run("GetByTxHash", testGetOracleDataByTxHash)
+	t.Run("Add should insert and retrieve oracle data with error", testAddAndRetrieveOracleDataWithError)
+	t.Run("Add should insert and retrieve oracle data with meta data", testAddAndRetrieveOracleDataWithMetaData)
 }
 
 func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, sqlstore.Connection) {
@@ -38,6 +40,62 @@ func setupOracleDataTest(t *testing.T) (*sqlstore.Blocks, *sqlstore.OracleData, 
 	bs := sqlstore.NewBlocks(connectionSource)
 	od := sqlstore.NewOracleData(connectionSource)
 	return bs, od, connectionSource.Connection
+}
+
+func testAddAndRetrieveOracleDataWithError(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, od, conn := setupOracleDataTest(t)
+
+	var rowCount int
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	dataProtos := getTestOracleData()
+
+	for i, proto := range dataProtos {
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
+		require.NoError(t, err)
+		assert.NoError(t, od.Add(ctx, data))
+	}
+
+	dataForSpec, _, err := od.GetOracleDataBySpecID(ctx, "deadbeef01", entities.CursorPagination{})
+	assert.NoError(t, err)
+	assert.Equal(t, len(dataForSpec), 1)
+
+	data := dataForSpec[0]
+
+	assert.Equal(t, dataProtos[0].ExternalData.Data.Error, data.ExternalData.Data.Error)
+}
+
+func testAddAndRetrieveOracleDataWithMetaData(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, od, conn := setupOracleDataTest(t)
+
+	var rowCount int
+	assert.NoError(t, conn.QueryRow(ctx, "select count(*) from oracle_data").Scan(&rowCount))
+	assert.Equal(t, 0, rowCount)
+
+	block := addTestBlock(t, ctx, bs)
+	dataProtos := getTestOracleData()
+
+	for i, proto := range dataProtos {
+		data, err := entities.OracleDataFromProto(proto, generateTxHash(), block.VegaTime, uint64(i))
+		require.NoError(t, err)
+		assert.NoError(t, od.Add(ctx, data))
+	}
+
+	dataForSpec, _, err := od.GetOracleDataBySpecID(ctx, "deadbeef01", entities.CursorPagination{})
+	assert.NoError(t, err)
+	assert.Equal(t, len(dataForSpec), 1)
+
+	data := dataForSpec[0]
+
+	assert.Equal(t, dataProtos[0].ExternalData.Data.MetaData[0].Value, data.ExternalData.Data.MetaData[0].Value)
 }
 
 func testAddOracleData(t *testing.T) {
@@ -171,21 +229,22 @@ func testGetOracleDataByTxHash(t *testing.T) {
 func getTestOracleData() []*vegapb.OracleData {
 	pk1 := types.CreateSignerFromString("b105f00d", types.DataSignerTypePubKey)
 	pk2 := types.CreateSignerFromString("baddcafe", types.DataSignerTypePubKey)
+	testError := "testError"
 
 	return []*vegapb.OracleData{
 		{ // 0
 			ExternalData: &datapb.ExternalData{
 				Data: &datapb.Data{
 					Signers: []*datapb.Signer{pk1.IntoProto(), pk2.IntoProto()},
-					Data: []*datapb.Property{
+					MetaData: []*datapb.Property{
 						{
-							Name:  "Ticker",
-							Value: "USDBTC",
+							Name:  "metaKey",
+							Value: "metaValue",
 						},
 					},
-					MetaData:       []*datapb.Property{},
 					MatchedSpecIds: []string{"deadbeef01"},
 					BroadcastAt:    0,
+					Error:          &testError,
 				},
 			},
 		},
