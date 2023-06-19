@@ -252,6 +252,49 @@ Feature: Iceberg orders
       | party1 | ETH/DEC19 | buy  | 10             | 2     | STATUS_ACTIVE | 89              |
 
 
+@iceberg
+  Scenario: Iceberg order trading during auction uncrossing (0014-ORDT-020)
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+    
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Given the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party1 | ETH/DEC19 | buy  | 10     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
+    And the parties place the following orders:
+      | party | market id  | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC19 | buy  | 8      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party3 | ETH/DEC19 | sell | 10     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
+    And the opening auction period ends for market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    # Check only the display volume of party1 is filled and is refreshed at the back of the que
+    And the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party1 | party3 | 2     | 2    |
+    # Check the remaining volume of party3s iceberg is filled in a single trade with party2
+    And the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party2 | party3 | 2     | 8    |
+
+
   @iceberg
   @margin
   Scenario: Iceberg increase size success and not losing position in order book (0014-ORDT-023)
