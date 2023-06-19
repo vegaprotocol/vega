@@ -8,6 +8,9 @@ changelog:
       - renovate
       - dependabot
   categories:
+    - title: Vulnerabilities 🔐
+      labels:
+        - vulnerability
     - title: Breaking Changes 🛠
       labels:
         - breaking-change
