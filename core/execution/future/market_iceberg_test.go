@@ -52,8 +52,8 @@ func TestMarketSubmitCancelIceberg(t *testing.T) {
 		Reference:   "party1-buy-order",
 		Version:     common.InitialOrderVersion,
 		IcebergOrder: &types.IcebergOrder{
-			InitialPeakSize: 10,
-			MinimumPeakSize: 5,
+			PeakSize:           10,
+			MinimumVisibleSize: 5,
 		},
 	}
 
@@ -105,8 +105,8 @@ func TestMarketAmendIceberg(t *testing.T) {
 		Reference:   "party1-buy-order",
 		Version:     common.InitialOrderVersion,
 		IcebergOrder: &types.IcebergOrder{
-			InitialPeakSize: 10,
-			MinimumPeakSize: 5,
+			PeakSize:           10,
+			MinimumVisibleSize: 5,
 		},
 	}
 

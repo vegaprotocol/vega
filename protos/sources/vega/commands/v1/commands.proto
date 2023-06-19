@@ -110,10 +110,10 @@ message OrderSubmission {
 
 // Iceberg order options
 message IcebergOpts {
-  // Size of the order that is initially made visible and can cause a trade during the execution of a single order.
-  uint64 initial_peak_size = 1;
-  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
-  uint64 minimum_peak_size = 2;
+  // Size of the order that is made visible and can be traded with during the execution of a single order.
+  uint64 peak_size = 1;
+  // Minimum allowed remaining size of the order before it is replenished back to its peak size.
+  uint64 minimum_visible_size = 2;
 }
 
 // Order cancellation is a request to cancel an existing order on Vega

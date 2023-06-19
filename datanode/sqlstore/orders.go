@@ -33,7 +33,7 @@ const (
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
                        tx_hash, vega_time, seq_num, post_only, reduce_only, reserved_remaining, 
-                       initial_peak_size, minimum_peak_size`
+                       peak_size, minimum_visible_size`
 
 	ordersFilterDateColumn = "vega_time"
 
