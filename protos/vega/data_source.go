@@ -19,10 +19,20 @@ func NewDataSourceSpec(sc *DataSourceDefinition) *DataSourceSpec {
 		case *DataSourceDefinition_External:
 			ext := sc.GetExternal()
 			if ext != nil {
-				o := ext.GetOracle()
-				if o != nil {
-					ds.Id = datapb.NewID(o.Signers, o.Filters)
+				switch ext.SourceType.(type) {
+				case *DataSourceDefinitionExternal_Oracle:
+					o := ext.GetOracle()
+					if o != nil {
+						ds.Id = datapb.NewID(o.Signers, o.Filters)
+					}
+
+				case *DataSourceDefinitionExternal_EthOracle:
+					o := ext.GetEthOracle()
+					if o != nil {
+						ds.Id = datapb.NewID(nil, o.Filters)
+					}
 				}
+
 			}
 		case *DataSourceDefinition_Internal:
 			in := sc.GetInternal()

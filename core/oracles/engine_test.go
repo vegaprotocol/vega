@@ -110,6 +110,7 @@ func testOracleEngineListensToSignersFails(t *testing.T) {
 		Data: map[string]string{
 			"my_key": "not an integer",
 		},
+		MetaData: map[string]string{},
 	}
 
 	result := engine.ListensToSigners(data)
@@ -395,7 +396,8 @@ func dataWithPrice(currency, price string) dataBundle {
 							Value: price,
 						},
 					},
-					Signers: types.SignersIntoProto(signers),
+					MetaData: []*datapb.Property{},
+					Signers:  types.SignersIntoProto(signers),
 				},
 			},
 		},

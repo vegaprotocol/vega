@@ -173,6 +173,7 @@ message OracleDataBatch { repeated OracleData oracle_data = 1; }
 message OracleData {
   repeated vega.data.v1.Signer signers = 1;
   repeated OracleDataPair data = 2;
+  repeated vega.data.v1.Property meta_data = 3;
 }
 
 message OracleDataPair {

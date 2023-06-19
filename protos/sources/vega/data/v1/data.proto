@@ -45,6 +45,8 @@ message Data {
   // Timestamp in Unix nanoseconds for when the data was broadcast to the markets
   // with a matching spec. It has no value when the data did not match any spec.
   int64 broadcast_at = 4;
+  // Holds all metadata properties
+  repeated Property meta_data = 5;
 }
 
 message ExternalData {

@@ -70,6 +70,24 @@ func (o *oracleDataResolver) ExternalData(_ context.Context, obj *vegapb.OracleD
 	return
 }
 
+func resolveTrigger(obj any) (trigger TriggerKind) {
+	switch trig := obj.(type) {
+	case *vegapb.EthCallTrigger_TimeTrigger:
+		if trig.TimeTrigger != nil {
+			init := int64(*trig.TimeTrigger.Initial)
+			every := int64(*trig.TimeTrigger.Every)
+			until := int64(*trig.TimeTrigger.Until)
+			trigger = &EthTimeTrigger{
+				Initial: &init,
+				Every:   &every,
+				Until:   &until,
+			}
+		}
+	}
+
+	return
+}
+
 func resolveSigners(obj []*v1.Signer) (signers []*Signer) {
 	for i := range obj {
 		signers = append(signers, &Signer{Signer: resolveSigner(obj[i].Signer)})
@@ -90,17 +108,25 @@ func resolveSigner(obj any) (signer SignerKind) {
 func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *vegapb.DataSourceDefinition) {
 	ds = &vegapb.DataSourceDefinition{}
 	if d == nil || d.SourceType == nil {
-		return
+		return ds
 	}
 	data := d.Content()
 	if data != nil {
 		switch tp := data.(type) {
 		case *vegapb.DataSourceSpecConfiguration:
-
 			ds.SourceType = &vegapb.DataSourceDefinition_External{
 				External: &vegapb.DataSourceDefinitionExternal{
 					SourceType: &vegapb.DataSourceDefinitionExternal_Oracle{
 						Oracle: tp,
+					},
+				},
+			}
+
+		case *vegapb.EthCallSpec:
+			ds.SourceType = &vegapb.DataSourceDefinition_External{
+				External: &vegapb.DataSourceDefinitionExternal{
+					SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
+						EthOracle: tp,
 					},
 				},
 			}
@@ -116,7 +142,7 @@ func resolveDataSourceDefinition(d *vegapb.DataSourceDefinition) (ds *vegapb.Dat
 		}
 	}
 
-	return
+	return ds
 }
 
 func resolveDataSourceSpec(d *vegapb.DataSourceSpec) (ds *DataSourceSpec) {

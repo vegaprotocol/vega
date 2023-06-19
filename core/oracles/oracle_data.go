@@ -24,8 +24,9 @@ import (
 
 // OracleData holds normalized data coming from an oracle.
 type OracleData struct {
-	Signers []*types.Signer
-	Data    map[string]string
+	Signers  []*types.Signer
+	Data     map[string]string
+	MetaData map[string]string
 }
 
 func (d OracleData) GetUint(name string) (*num.Uint, error) {

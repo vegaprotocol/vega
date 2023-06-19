@@ -35,6 +35,7 @@ func (UpdateMarketConfiguration_LogNormal) IsUpdateMarketRiskParameters() {}
 func (DataSourceDefinitionInternal) IsDataSourceKind()                    {}
 func (DataSourceDefinitionExternal) IsDataSourceKind()                    {}
 func (DataSourceSpecConfiguration) IsExternalDataSourceKind()             {}
+func (EthCallSpec) IsExternalDataSourceKind()                             {}
 func (DataSourceSpecConfigurationTime) IsInternalDataSourceKind()         {}
 func (OneOffTransfer) IsGovernanceTransferKind()                          {}
 func (RecurringTransfer) IsGovernanceTransferKind()                       {}

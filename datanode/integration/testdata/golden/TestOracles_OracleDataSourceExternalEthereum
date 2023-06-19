@@ -1,6 +1,6 @@
 {
-	"TestName": "TestOracles_OracleDataSourceExternal",
-	"Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on DataSourceSpecConfiguration { signers { signer { ... on ETHAddress { address } ... on PubKey { key } } } } } } } } } } } } } }",
+	"TestName": "TestOracles_OracleDataSourceExternalEthereum",
+    "Query": "{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { address method requiredConfirmations } } } } } } } } } } }",
 	"Result": {
 		"oracleSpecsConnection": {
 			"edges": [
@@ -12,13 +12,7 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
-											"signers": [
-												{
-													"signer": {
-														"key": "abbb79deea6dc6bb5b532d0641730d2366864bf349744663e750f64422ca5ebb"
-													}
-												}
-											]
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
 										}
 									}
 								},
@@ -37,13 +31,7 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
-											"signers": [
-												{
-													"signer": {
-														"key": "c2071f9874933829eb432b1af0d776b5d49d5d4a7feefffa7d1e9642d9d5ed19"
-													}
-												}
-											]
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
 										}
 									}
 								},
@@ -62,13 +50,7 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
-											"signers": [
-												{
-													"signer": {
-														"key": "c2071f9874933829eb432b1af0d776b5d49d5d4a7feefffa7d1e9642d9d5ed19"
-													}
-												}
-											]
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
 										}
 									}
 								},
@@ -87,13 +69,7 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
-											"signers": [
-												{
-													"signer": {
-														"key": "abbb79deea6dc6bb5b532d0641730d2366864bf349744663e750f64422ca5ebb"
-													}
-												}
-											]
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
 										}
 									}
 								},
@@ -112,13 +88,7 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
-											"signers": [
-												{
-													"signer": {
-														"key": "c2071f9874933829eb432b1af0d776b5d49d5d4a7feefffa7d1e9642d9d5ed19"
-													}
-												}
-											]
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
 										}
 									}
 								},
@@ -137,13 +107,7 @@
 								"data": {
 									"sourceType": {
 										"sourceType": {
-											"signers": [
-												{
-													"signer": {
-														"key": "c2071f9874933829eb432b1af0d776b5d49d5d4a7feefffa7d1e9642d9d5ed19"
-													}
-												}
-											]
+											"address": "0xf4a2b939592564feb35ab10a8e04f6f2fe0943579fb3c9c33505298978b74893"
 										}
 									}
 								},
@@ -157,5 +121,5 @@
 			]
 		}
 	},
-	"Duration": 4470709
+	"Duration": 4581455
 }
