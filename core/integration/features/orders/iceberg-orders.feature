@@ -8,6 +8,7 @@ Feature: Iceberg orders
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
+      | limits.markets.maxPeggedOrders          | 1500  |
 
   @iceberg
   Scenario: Iceberg order submission with valid TIF's (0014-ORDT-007)
@@ -50,6 +51,60 @@ Feature: Iceberg orders
     Then the iceberg orders should have the following states:
       | party  | market id | side | visible volume | price | status        | reserved volume |
       | party2 | ETH/DEC19 | buy  | 8              | 10    | STATUS_ACTIVE | 92              |
+
+
+  @iceberg
+  Scenario: An iceberg order with either an ordinary or pegged limit price can be submitted (0014-ORDT-008)
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | party2 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
+      | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | best-ask  |
+    When the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference        |
+      | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 3           | 1            | ordinary-iceberg |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | side | volume | resulting trades | type       | tif     | initial peak | minimum peak | pegged reference | offset | reference      |
+      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | BID              | 1      | pegged-iceberg |
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 3      |
+      | buy  | 9     | 2      |
+      | buy  | 10    | 1      |
+
+    # Move best-bid and check pegged iceberg order is re-priced
+    When the parties amend the following orders:
+      | party  | reference | price | size delta | tif     |
+      | party2 | best-bid  | 9     | 0          | TIF_GTC |
+    Then the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 3      |
+      | buy  | 8     | 2      |
+      | buy  | 9     | 1      |
+
 
   @iceberg
   Scenario: Iceberg order margin calculation (0014-ORDT-011)
