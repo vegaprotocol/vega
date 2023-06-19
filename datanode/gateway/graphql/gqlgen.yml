@@ -280,6 +280,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionInternal
   DataSourceSpecConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
+  EthCallSpec:
+    model: code.vegaprotocol.io/vega/protos/vega.EthCallSpec
   DataSourceSpecConfigurationTime:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
   OracleSpec:

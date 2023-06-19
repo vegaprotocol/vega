@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -209,6 +210,8 @@ func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 		s.oracleEngine.BroadcastData(ctx, OracleData{
 			Signers: nil,
 			Data:    result.Normalised,
+			// TODO: Fix the map creation; for now we add only the Ethereum height
+			MetaData: map[string]string{"eth-block-height": strconv.FormatUint(callResult.BlockHeight, 10)},
 		})
 	}
 

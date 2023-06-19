@@ -1556,6 +1556,8 @@ type Data {
   "properties contains all the properties sent by a data source"
   data: [Property!]
 
+  metaData: [Property]
+
   """
   List of all the data specs that matched this source data.
   When the array is empty, it means no data spec matched this source data.
@@ -3358,6 +3360,31 @@ type DataSourceSpecConfiguration {
   filters: [Filter!]
 }
 
+"""
+EthCallTrigger is the type of trigger used to make calls to Ethereum network.
+"""
+type EthCallTrigger {
+  trigger: TriggerKind!
+}
+
+union TriggerKind = EthTimeTrigger
+
+type EthTimeTrigger {
+  Initial: Timestamp
+  Every: Timestamp
+  Until: Timestamp
+}
+
+type EthCallSpec {
+  Address: String!
+  Abi: [String!]
+  Method: String!
+  Args: [String!]
+  Trigger: EthCallTrigger!
+  RequiredConfirmations: Int!
+  Filters: [Filter!]
+}
+
 type InstrumentConfiguration {
   "Full and fairly descriptive name for the instrument"
   name: String!
@@ -4718,7 +4745,7 @@ type DataSourceDefinitionInternal {
   sourceType: InternalDataSourceKind!
 }
 
-union ExternalDataSourceKind = DataSourceSpecConfiguration
+union ExternalDataSourceKind = DataSourceSpecConfiguration | EthCallSpec
 
 """
 DataSourceDefinitionExternal is the top level object used for all external data sources.

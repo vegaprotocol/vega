@@ -64,6 +64,7 @@ type ResolverRoot interface {
 	Epoch() EpochResolver
 	EpochRewardSummary() EpochRewardSummaryResolver
 	EpochTimestamps() EpochTimestampsResolver
+	EthCallSpec() EthCallSpecResolver
 	EthereumKeyRotation() EthereumKeyRotationResolver
 	Future() FutureResolver
 	FutureProduct() FutureProductResolver
@@ -314,10 +315,11 @@ type ComplexityRoot struct {
 	}
 
 	Data struct {
-		BroadcastAt    func(childComplexity int) int
-		Data           func(childComplexity int) int
-		MatchedSpecIds func(childComplexity int) int
-		Signers        func(childComplexity int) int
+		BroadcastAt         func(childComplexity int) int
+		Data                func(childComplexity int) int
+		EthereumBlockHeight func(childComplexity int) int
+		MatchedSpecIds      func(childComplexity int) int
+		Signers             func(childComplexity int) int
 	}
 
 	DataSourceDefinition struct {
@@ -555,6 +557,26 @@ type ComplexityRoot struct {
 
 	Erc20WithdrawalDetails struct {
 		ReceiverAddress func(childComplexity int) int
+	}
+
+	EthCallSpec struct {
+		Abi                   func(childComplexity int) int
+		Address               func(childComplexity int) int
+		Args                  func(childComplexity int) int
+		Filters               func(childComplexity int) int
+		Method                func(childComplexity int) int
+		RequiredConfirmations func(childComplexity int) int
+		Trigger               func(childComplexity int) int
+	}
+
+	EthCallTrigger struct {
+		Trigger func(childComplexity int) int
+	}
+
+	EthTimeTrigger struct {
+		Every   func(childComplexity int) int
+		Initial func(childComplexity int) int
+		Until   func(childComplexity int) int
 	}
 
 	EthereumEvent struct {
@@ -1993,6 +2015,13 @@ type EpochTimestampsResolver interface {
 	FirstBlock(ctx context.Context, obj *vega.EpochTimestamps) (string, error)
 	LastBlock(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 }
+type EthCallSpecResolver interface {
+	Abi(ctx context.Context, obj *vega.EthCallSpec) ([]string, error)
+
+	Args(ctx context.Context, obj *vega.EthCallSpec) ([]string, error)
+	Trigger(ctx context.Context, obj *vega.EthCallSpec) (*EthCallTrigger, error)
+	RequiredConfirmations(ctx context.Context, obj *vega.EthCallSpec) (int, error)
+}
 type EthereumKeyRotationResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.EthereumKeyRotation) (string, error)
 }
@@ -3209,6 +3238,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Data.Data(childComplexity), true
 
+	case "Data.ethereumBlockHeight":
+		if e.complexity.Data.EthereumBlockHeight == nil {
+			break
+		}
+
+		return e.complexity.Data.EthereumBlockHeight(childComplexity), true
+
 	case "Data.matchedSpecIds":
 		if e.complexity.Data.MatchedSpecIds == nil {
 			break
@@ -4156,6 +4192,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Erc20WithdrawalDetails.ReceiverAddress(childComplexity), true
+
+	case "EthCallSpec.Abi":
+		if e.complexity.EthCallSpec.Abi == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Abi(childComplexity), true
+
+	case "EthCallSpec.Address":
+		if e.complexity.EthCallSpec.Address == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Address(childComplexity), true
+
+	case "EthCallSpec.Args":
+		if e.complexity.EthCallSpec.Args == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Args(childComplexity), true
+
+	case "EthCallSpec.Filters":
+		if e.complexity.EthCallSpec.Filters == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Filters(childComplexity), true
+
+	case "EthCallSpec.Method":
+		if e.complexity.EthCallSpec.Method == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Method(childComplexity), true
+
+	case "EthCallSpec.RequiredConfirmations":
+		if e.complexity.EthCallSpec.RequiredConfirmations == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.RequiredConfirmations(childComplexity), true
+
+	case "EthCallSpec.Trigger":
+		if e.complexity.EthCallSpec.Trigger == nil {
+			break
+		}
+
+		return e.complexity.EthCallSpec.Trigger(childComplexity), true
+
+	case "EthCallTrigger.trigger":
+		if e.complexity.EthCallTrigger.Trigger == nil {
+			break
+		}
+
+		return e.complexity.EthCallTrigger.Trigger(childComplexity), true
+
+	case "EthTimeTrigger.Every":
+		if e.complexity.EthTimeTrigger.Every == nil {
+			break
+		}
+
+		return e.complexity.EthTimeTrigger.Every(childComplexity), true
+
+	case "EthTimeTrigger.Initial":
+		if e.complexity.EthTimeTrigger.Initial == nil {
+			break
+		}
+
+		return e.complexity.EthTimeTrigger.Initial(childComplexity), true
+
+	case "EthTimeTrigger.Until":
+		if e.complexity.EthTimeTrigger.Until == nil {
+			break
+		}
+
+		return e.complexity.EthTimeTrigger.Until(childComplexity), true
 
 	case "EthereumEvent.contractId":
 		if e.complexity.EthereumEvent.ContractID == nil {
@@ -17582,6 +17695,47 @@ func (ec *executionContext) fieldContext_Data_data(ctx context.Context, field gr
 	return fc, nil
 }
 
+func (ec *executionContext) _Data_ethereumBlockHeight(ctx context.Context, field graphql.CollectedField, obj *Data) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Data_ethereumBlockHeight(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthereumBlockHeight, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Data_ethereumBlockHeight(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Data",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Data_matchedSpecIds(ctx context.Context, field graphql.CollectedField, obj *Data) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Data_matchedSpecIds(ctx, field)
 	if err != nil {
@@ -24202,6 +24356,482 @@ func (ec *executionContext) fieldContext_Erc20WithdrawalDetails_receiverAddress(
 	return fc, nil
 }
 
+func (ec *executionContext) _EthCallSpec_Address(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Address(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Address, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Address(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallSpec_Abi(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Abi(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthCallSpec().Abi(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Abi(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallSpec_Method(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Method(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Method, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Method(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallSpec_Args(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Args(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthCallSpec().Args(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallSpec_Trigger(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Trigger(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthCallSpec().Trigger(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*EthCallTrigger)
+	fc.Result = res
+	return ec.marshalNEthCallTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEthCallTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Trigger(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "trigger":
+				return ec.fieldContext_EthCallTrigger_trigger(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EthCallTrigger", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallSpec_RequiredConfirmations(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_RequiredConfirmations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EthCallSpec().RequiredConfirmations(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_RequiredConfirmations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallSpec_Filters(ctx context.Context, field graphql.CollectedField, obj *vega.EthCallSpec) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallSpec_Filters(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Filters, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v12.Filter)
+	fc.Result = res
+	return ec.marshalOFilter2ᚕᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋdataᚋv1ᚐFilterᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallSpec_Filters(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallSpec",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_Filter_key(ctx, field)
+			case "conditions":
+				return ec.fieldContext_Filter_conditions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Filter", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthCallTrigger_trigger(ctx context.Context, field graphql.CollectedField, obj *EthCallTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthCallTrigger_trigger(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Trigger, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TriggerKind)
+	fc.Result = res
+	return ec.marshalNTriggerKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTriggerKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthCallTrigger_trigger(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthCallTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type TriggerKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthTimeTrigger_Initial(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthTimeTrigger_Initial(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Initial, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthTimeTrigger_Initial(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthTimeTrigger_Every(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthTimeTrigger_Every(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Every, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthTimeTrigger_Every(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EthTimeTrigger_Until(ctx context.Context, field graphql.CollectedField, obj *EthTimeTrigger) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EthTimeTrigger_Until(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Until, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int64)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EthTimeTrigger_Until(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EthTimeTrigger",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EthereumEvent_contractId(ctx context.Context, field graphql.CollectedField, obj *EthereumEvent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_EthereumEvent_contractId(ctx, field)
 	if err != nil {
@@ -24705,6 +25335,8 @@ func (ec *executionContext) fieldContext_ExternalData_data(ctx context.Context, 
 				return ec.fieldContext_Data_signers(ctx, field)
 			case "data":
 				return ec.fieldContext_Data_data(ctx, field)
+			case "ethereumBlockHeight":
+				return ec.fieldContext_Data_ethereumBlockHeight(ctx, field)
 			case "matchedSpecIds":
 				return ec.fieldContext_Data_matchedSpecIds(ctx, field)
 			case "broadcastAt":
@@ -67363,6 +67995,13 @@ func (ec *executionContext) _ExternalDataSourceKind(ctx context.Context, sel ast
 			return graphql.Null
 		}
 		return ec._DataSourceSpecConfiguration(ctx, sel, obj)
+	case vega.EthCallSpec:
+		return ec._EthCallSpec(ctx, sel, &obj)
+	case *vega.EthCallSpec:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._EthCallSpec(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -67531,6 +68170,22 @@ func (ec *executionContext) _TransferKind(ctx context.Context, sel ast.Selection
 			return graphql.Null
 		}
 		return ec._RecurringTransfer(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _TriggerKind(ctx context.Context, sel ast.SelectionSet, obj TriggerKind) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case EthTimeTrigger:
+		return ec._EthTimeTrigger(ctx, sel, &obj)
+	case *EthTimeTrigger:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._EthTimeTrigger(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -69148,6 +69803,10 @@ func (ec *executionContext) _Data(ctx context.Context, sel ast.SelectionSet, obj
 		case "data":
 
 			out.Values[i] = ec._Data_data(ctx, field, obj)
+
+		case "ethereumBlockHeight":
+
+			out.Values[i] = ec._Data_ethereumBlockHeight(ctx, field, obj)
 
 		case "matchedSpecIds":
 
@@ -70927,6 +71586,180 @@ func (ec *executionContext) _Erc20WithdrawalDetails(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethCallSpecImplementors = []string{"EthCallSpec", "ExternalDataSourceKind"}
+
+func (ec *executionContext) _EthCallSpec(ctx context.Context, sel ast.SelectionSet, obj *vega.EthCallSpec) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethCallSpecImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthCallSpec")
+		case "Address":
+
+			out.Values[i] = ec._EthCallSpec_Address(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "Abi":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthCallSpec_Abi(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Method":
+
+			out.Values[i] = ec._EthCallSpec_Method(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "Args":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthCallSpec_Args(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Trigger":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthCallSpec_Trigger(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "RequiredConfirmations":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EthCallSpec_RequiredConfirmations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "Filters":
+
+			out.Values[i] = ec._EthCallSpec_Filters(ctx, field, obj)
+
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethCallTriggerImplementors = []string{"EthCallTrigger"}
+
+func (ec *executionContext) _EthCallTrigger(ctx context.Context, sel ast.SelectionSet, obj *EthCallTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethCallTriggerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthCallTrigger")
+		case "trigger":
+
+			out.Values[i] = ec._EthCallTrigger_trigger(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var ethTimeTriggerImplementors = []string{"EthTimeTrigger", "TriggerKind"}
+
+func (ec *executionContext) _EthTimeTrigger(ctx context.Context, sel ast.SelectionSet, obj *EthTimeTrigger) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, ethTimeTriggerImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EthTimeTrigger")
+		case "Initial":
+
+			out.Values[i] = ec._EthTimeTrigger_Initial(ctx, field, obj)
+
+		case "Every":
+
+			out.Values[i] = ec._EthTimeTrigger_Every(ctx, field, obj)
+
+		case "Until":
+
+			out.Values[i] = ec._EthTimeTrigger_Until(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -84472,6 +85305,20 @@ func (ec *executionContext) marshalNEpochTimestamps2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._EpochTimestamps(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNEthCallTrigger2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEthCallTrigger(ctx context.Context, sel ast.SelectionSet, v EthCallTrigger) graphql.Marshaler {
+	return ec._EthCallTrigger(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEthCallTrigger2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐEthCallTrigger(ctx context.Context, sel ast.SelectionSet, v *EthCallTrigger) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EthCallTrigger(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEthereumKeyRotation2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚋeventsᚋv1ᚐEthereumKeyRotation(ctx context.Context, sel ast.SelectionSet, v *v1.EthereumKeyRotation) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -86547,6 +87394,16 @@ func (ec *executionContext) marshalNTransferType2codeᚗvegaprotocolᚗioᚋvega
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTriggerKind2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐTriggerKind(ctx context.Context, sel ast.SelectionSet, v TriggerKind) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TriggerKind(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUpdateAssetSource2codeᚗvegaprotocolᚗioᚋvegaᚋdatanodeᚋgatewayᚋgraphqlᚐUpdateAssetSource(ctx context.Context, sel ast.SelectionSet, v UpdateAssetSource) graphql.Marshaler {

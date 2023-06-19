@@ -41,6 +41,38 @@ func (s *DataSourceDefinition) GetOracle() (*DataSourceSpecConfiguration, error)
 	return ds, nil
 }
 
+func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
+	ds := &EthCallSpec{}
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *vega.EthCallSpec:
+			ds.Address = tp.Address
+			abi, _ := tp.GetAbi().MarshalJSON()
+			//if err != nil {
+			//}
+			ds.Abi = abi
+			ds.Method = tp.Method
+			args := tp.GetArgs()
+			for _, arg := range args {
+				jsonArg, err := arg.MarshalJSON()
+				if err != nil {
+					return nil, err // TODO: Fix all of the errors
+				}
+				ds.ArgsJson = append(ds.ArgsJson, string(jsonArg))
+			}
+			trigger, _ := types.EthCallTriggerFromProto(tp.Trigger)
+			//if err != nil {
+			//}
+			ds.Trigger = EthCallTrigger{EthCallTrigger: trigger}
+			ds.RequiredConfirmations = tp.RequiredConfirmations
+			ds.Filters = s.GetFilters()
+		}
+	}
+
+	return ds, nil
+}
+
 func (s *DataSourceDefinition) GetInternalTimeTrigger() *DataSourceSpecConfigurationTime {
 	ds := &DataSourceSpecConfigurationTime{
 		Conditions: []Condition{},
@@ -84,7 +116,9 @@ func (s *DataSourceDefinition) GetFilters() []Filter {
 	if data != nil {
 		switch tp := data.(type) {
 		case *vega.DataSourceSpecConfiguration:
-			filters = FiltersFromProto(tp.GetFilters())
+			filters = FiltersFromProto(tp.Filters)
+		case *vega.EthCallSpec:
+			filters = FiltersFromProto(tp.Filters)
 		}
 	}
 
@@ -116,6 +150,76 @@ func DataSourceDefinitionFromProto(dsp *vega.DataSourceDefinition) DataSourceDef
 type DataSourceSpecConfiguration struct {
 	Signers Signers
 	Filters []Filter
+}
+
+type EthCallTrigger struct {
+	types.EthCallTrigger
+}
+
+type EthCallSpec struct {
+	Address               string
+	Abi                   []byte
+	Method                string
+	ArgsJson              []string
+	Trigger               EthCallTrigger
+	RequiredConfirmations uint64
+	Filters               []Filter
+}
+
+func (es *EthCallSpec) GetFilters() []Filter {
+	if es != nil {
+		return es.Filters
+	}
+
+	return []Filter{}
+}
+
+func (es *EthCallSpec) GetAddress() string {
+	if es != nil {
+		return es.Address
+	}
+
+	return ""
+}
+
+func (es *EthCallSpec) GetAbi() []byte {
+	if es != nil {
+		return es.Abi
+	}
+
+	return nil
+}
+
+func (es *EthCallSpec) GetMethod() string {
+	if es != nil {
+		return es.Method
+	}
+
+	return ""
+}
+
+func (es *EthCallSpec) GetArgs() []string {
+	if es != nil {
+		return es.ArgsJson
+	}
+
+	return []string{}
+}
+
+func (es *EthCallSpec) GetTrigger() EthCallTrigger {
+	if es != nil {
+		return es.Trigger
+	}
+
+	return EthCallTrigger{}
+}
+
+func (es *EthCallSpec) GetRequiredConfirmations() uint64 {
+	if es != nil {
+		return es.RequiredConfirmations
+	}
+
+	return uint64(0)
 }
 
 // DataSourceSpecConfigurationTime is a simplified version of the internal time
