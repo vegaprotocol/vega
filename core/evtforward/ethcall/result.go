@@ -1,9 +1,10 @@
 package ethcall
 
 import (
-	"code.vegaprotocol.io/vega/core/types"
 	"encoding/json"
 	"fmt"
+
+	"code.vegaprotocol.io/vega/core/types"
 	"github.com/PaesslerAG/jsonpath"
 )
 

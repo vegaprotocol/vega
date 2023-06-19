@@ -66,6 +66,10 @@ type TransferKind interface {
 	IsTransferKind()
 }
 
+type TriggerKind interface {
+	IsTriggerKind()
+}
+
 // One of the possible asset sources for update assets proposals
 type UpdateAssetSource interface {
 	IsUpdateAssetSource()
@@ -123,7 +127,8 @@ type Data struct {
 	// signers is the list of public keys/ETH addresses that signed the data
 	Signers []*Signer `json:"signers"`
 	// properties contains all the properties sent by a data source
-	Data []*v1.Property `json:"data"`
+	Data                []*v1.Property `json:"data"`
+	EthereumBlockHeight *int           `json:"ethereumBlockHeight"`
 	// List of all the data specs that matched this source data.
 	// When the array is empty, it means no data spec matched this source data.
 	MatchedSpecIds []string `json:"matchedSpecIds"`
@@ -275,6 +280,19 @@ type Erc20WithdrawalDetails struct {
 }
 
 func (Erc20WithdrawalDetails) IsWithdrawalDetails() {}
+
+// EthCallTrigger is the type of trigger used to make calls to Ethereum network.
+type EthCallTrigger struct {
+	Trigger TriggerKind `json:"trigger"`
+}
+
+type EthTimeTrigger struct {
+	Initial *int64 `json:"Initial"`
+	Every   *int64 `json:"Every"`
+	Until   *int64 `json:"Until"`
+}
+
+func (EthTimeTrigger) IsTriggerKind() {}
 
 // An Ethereum data source
 type EthereumEvent struct {

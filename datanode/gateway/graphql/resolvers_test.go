@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/gateway"
@@ -83,30 +84,61 @@ func TestNewResolverRoot_QueryResolver(t *testing.T) {
 	assert.NotNil(t, queryResolver)
 }
 
-func getTestMarket(termInt bool) *protoTypes.Market {
+func getTestMarket(termType protoTypes.DataSourceContentType) *protoTypes.Market {
 	pk := types.CreateSignerFromString("0xDEADBEEF", types.DataSignerTypePubKey)
-	term := &protoTypes.DataSourceSpec{
-		Data: protoTypes.NewDataSourceDefinition(
-			protoTypes.DataSourceContentTypeOracle,
-		).SetOracleConfig(
-			&vega.DataSourceDefinitionExternal_Oracle{
-				Oracle: &protoTypes.DataSourceSpecConfiguration{
-					Signers: []*datav1.Signer{pk.IntoProto()},
-					Filters: []*datav1.Filter{
-						{
-							Key: &datav1.PropertyKey{
-								Name: "trading.terminated",
-								Type: datav1.PropertyKey_TYPE_BOOLEAN,
+
+	term := &protoTypes.DataSourceSpec{}
+	switch termType {
+	case protoTypes.DataSourceContentTypeOracle:
+		term = &protoTypes.DataSourceSpec{
+			Data: protoTypes.NewDataSourceDefinition(
+				protoTypes.DataSourceContentTypeOracle,
+			).SetOracleConfig(
+				&vega.DataSourceDefinitionExternal_Oracle{
+					Oracle: &protoTypes.DataSourceSpecConfiguration{
+						Signers: []*datav1.Signer{pk.IntoProto()},
+						Filters: []*datav1.Filter{
+							{
+								Key: &datav1.PropertyKey{
+									Name: "trading.terminated",
+									Type: datav1.PropertyKey_TYPE_BOOLEAN,
+								},
+								Conditions: []*datav1.Condition{},
 							},
-							Conditions: []*datav1.Condition{},
 						},
 					},
 				},
-			},
-		),
-	}
+			),
+		}
 
-	if termInt {
+	case protoTypes.DataSourceContentTypeEthOracle:
+		term = &protoTypes.DataSourceSpec{
+			Data: protoTypes.NewDataSourceDefinition(
+				protoTypes.DataSourceContentTypeOracle,
+			).SetOracleConfig(
+				&vega.DataSourceDefinitionExternal_EthOracle{
+					EthOracle: &protoTypes.EthCallSpec{
+						Address: "test-address",
+						Abi: &structpb.ListValue{
+							Values: []*structpb.Value{
+								{
+									Kind: structpb.NewNullValue().Kind,
+								},
+							},
+						},
+						Method:                "stake",
+						RequiredConfirmations: uint64(9),
+						Trigger: &protoTypes.EthCallTrigger{
+							Trigger: &protoTypes.EthCallTrigger_TimeTrigger{
+								TimeTrigger: &protoTypes.EthTimeTrigger{},
+							},
+						},
+					},
+				},
+			),
+		}
+
+	case protoTypes.DataSourceContentTypeInternalTimeTermination:
 		term = &protoTypes.DataSourceSpec{
 			Data: protoTypes.NewDataSourceDefinition(
 				protoTypes.DataSourceContentTypeInternalTimeTermination,
@@ -197,7 +229,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	marketNotExistsErr := errors.New("market does not exist")
 	markets := map[string]*protoTypes.Market{
-		"BTC/DEC19": getTestMarket(false),
+		"BTC/DEC19": getTestMarket(protoTypes.DataSourceContentTypeInternalTimeTermination),
 		"ETH/USD18": nil,
 	}
 

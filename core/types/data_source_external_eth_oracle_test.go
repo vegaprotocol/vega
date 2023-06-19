@@ -50,7 +50,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		assert.Nil(t, s.Trigger)
 	})
 
-	t.Run("non-empty", func(t *testing.T) {
+	t.Run("non-empty with error", func(t *testing.T) {
 		timeNow := uint64(time.Now().UnixNano())
 		protoSource := &vegapb.EthCallSpec{
 			Address: "test-eth-address",
@@ -110,6 +110,57 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		assert.Equal(t, 1, len(ds.Filters))
 		assert.Equal(t, "test-key", ds.Filters[0].Key.Name)
 		assert.Equal(t, types.DataSourceSpecPropertyKeyType(1), ds.Filters[0].Key.Type)
+		assert.NotNil(t, ds.Trigger)
+		assert.IsType(t, &vegapb.EthCallTrigger_TimeTrigger{}, ds.Trigger.IntoEthCallTriggerProto().Trigger)
+	})
+
+	t.Run("non-empty", func(t *testing.T) {
+		timeNow := uint64(time.Now().UnixNano())
+		protoSource := &vegapb.EthCallSpec{
+			Address: "test-eth-address",
+			Abi: &structpb.ListValue{
+				Values: []*structpb.Value{
+					{
+						Kind: &structpb.Value_NumberValue{
+							NumberValue: float64(5),
+						},
+					},
+				},
+			},
+			Method: "test-method",
+			Args: []*structpb.Value{
+				structpb.NewStringValue("test-arg-value"),
+			},
+			Trigger: &vegapb.EthCallTrigger{
+				Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+					TimeTrigger: &vegapb.EthTimeTrigger{
+						Initial: &timeNow,
+					},
+				},
+			},
+			Filters: []*v1.Filter{
+				{
+					Key: &v1.PropertyKey{
+						Name: "test-key",
+						Type: v1.PropertyKey_Type(1),
+					},
+				},
+			},
+		}
+
+		ds, err := types.EthCallSpecFromProto(protoSource)
+		assert.Nil(t, err)
+		assert.IsType(t, types.EthCallSpec{}, ds)
+
+		assert.Equal(t, "test-eth-address", ds.Address)
+		assert.Equal(t, []byte{91, 53, 93}, ds.AbiJson)
+		assert.Equal(t, "test-method", ds.Method)
+		assert.Equal(t, []string{"\"test-arg-value\""}, ds.ArgsJson)
+		filters := ds.Filters
+		assert.Equal(t, 1, len(filters))
+		assert.Equal(t, 0, len(filters[0].Conditions))
+		assert.Equal(t, "test-key", filters[0].Key.Name)
+		assert.Equal(t, v1.PropertyKey_Type(1), filters[0].Key.Type)
 		assert.NotNil(t, ds.Trigger)
 		assert.IsType(t, &vegapb.EthCallTrigger_TimeTrigger{}, ds.Trigger.IntoEthCallTriggerProto().Trigger)
 	})

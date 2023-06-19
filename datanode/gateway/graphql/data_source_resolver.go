@@ -37,11 +37,15 @@ func (de myDataSourceDefinitionExternalResolver) SourceType(_ context.Context, o
 				if tp.Oracle != nil {
 					return tp.Oracle, nil
 				}
+			case *vegapb.DataSourceDefinitionExternal_EthOracle:
+				if tp.EthOracle != nil {
+					return tp.EthOracle, nil
+				}
 			}
 		}
 	}
 
-	return &vegapb.DataSourceSpecConfiguration{}, nil
+	return nil, nil
 }
 
 type myDataSourceDefinitionInternalResolver VegaResolverRoot
