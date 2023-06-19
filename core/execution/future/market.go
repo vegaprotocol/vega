@@ -141,6 +141,8 @@ type Market struct {
 
 	settlementAsset string
 	succeeded       bool
+
+	maxStopOrdersPerParties *num.Uint
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -286,6 +288,7 @@ func NewMarket(
 		lpPriceRange:              mkt.LPPriceRange,
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties:   num.UintZero(),
 	}
 
 	assets, _ := mkt.GetAssets()

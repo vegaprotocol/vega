@@ -698,6 +698,10 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.MarketSuccessorLaunchWindow,
 			Watcher: svcs.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
+		{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
 	}
 
 	watchers = append(watchers, powWatchers...)
