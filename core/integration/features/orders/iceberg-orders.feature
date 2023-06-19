@@ -913,7 +913,7 @@ Feature: Iceberg orders
       | party3 | ETH/DEC19 | sell | 2              | 5     | STATUS_ACTIVE | 23              |
 
 
-@iceberg
+  @iceberg
   Scenario: An order matches multiple icebergs at the same level where the order volume > cumulative iceberg display volume (0014-ORDT-038)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -955,3 +955,53 @@ Feature: Iceberg orders
       | party4 | party2 | 5     | 100  |
       | party4 | party3 | 5     | 100  |
 
+
+  @iceberg
+  Scenario: Pegged orders are not re-priced as price-levels are consumed (0014-ORDT-039)
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC19 | sell | 10     | 25    | 0                | TYPE_LIMIT | TIF_GTC |
+    And the parties place the following pegged iceberg orders:
+      | party  | market id | side | volume | resulting trades | type       | tif     | initial peak | minimum peak | pegged reference | offset |
+      | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | BID              | 1      |
+    And the parties place the following pegged orders:
+      | party  | market id | side | volume | pegged reference | offset |
+      | party1 | ETH/DEC19 | buy  | 1      | BID              | 2      |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3 | ETH/DEC19 | sell | 12     | 8     | 3                | TYPE_LIMIT | TIF_GTC |
+    # Check pegged ordinary and iceberg orders are not re-priced as the best-bid price-level is consumed
+    Then the following trades should be executed:
+      | buyer  | seller | price | size |
+      | party2 | party3 | 10    | 1    |
+      | party1 | party3 | 9     | 10   |
+      | party1 | party3 | 8     | 1    |
+   
