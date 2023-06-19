@@ -21,12 +21,12 @@ import (
 
 type icebergOrderResolver VegaResolverRoot
 
-func (r *icebergOrderResolver) InitialPeakSize(_ context.Context, io *vega.IcebergOrder) (string, error) {
-	return strconv.FormatUint(io.InitialPeakSize, 10), nil
+func (r *icebergOrderResolver) PeakSize(_ context.Context, io *vega.IcebergOrder) (string, error) {
+	return strconv.FormatUint(io.PeakSize, 10), nil
 }
 
-func (r *icebergOrderResolver) MinimumPeakSize(_ context.Context, io *vega.IcebergOrder) (string, error) {
-	return strconv.FormatUint(io.MinimumPeakSize, 10), nil
+func (r *icebergOrderResolver) MinimumVisibleSize(_ context.Context, io *vega.IcebergOrder) (string, error) {
+	return strconv.FormatUint(io.MinimumVisibleSize, 10), nil
 }
 
 func (r *icebergOrderResolver) ReservedRemaining(_ context.Context, io *vega.IcebergOrder) (string, error) {

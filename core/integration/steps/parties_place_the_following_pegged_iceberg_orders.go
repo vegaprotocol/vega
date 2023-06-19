@@ -24,19 +24,18 @@ import (
 	"github.com/cucumber/godog"
 )
 
-func PartiesPlaceTheFollowingIcebergOrders(
+func PartiesPlaceTheFollowingPeggedIcebergOrders(
 	exec Execution,
 	ts *stubs.TimeStub,
 	table *godog.Table,
 ) error {
 	now := ts.GetTimeNow()
-	for _, r := range parseSubmitIcebergOrderTable(table) {
-		row := submitIcebergOrderRow{row: r}
+	for _, r := range parseSubmitPeggedIcebergOrderTable(table) {
+		row := submitPeggedIcebergOrderRow{row: r}
 
 		orderSubmission := types.OrderSubmission{
 			MarketID:    row.MarketID(),
 			Side:        row.Side(),
-			Price:       row.Price(),
 			Size:        row.Volume(),
 			ExpiresAt:   row.ExpirationDate(now),
 			Type:        row.OrderType(),
@@ -45,6 +44,10 @@ func PartiesPlaceTheFollowingIcebergOrders(
 			IcebergOrder: &types.IcebergOrder{
 				PeakSize:           row.InitialPeak(),
 				MinimumVisibleSize: row.MinimumPeak(),
+			},
+			PeggedOrder: &types.PeggedOrder{
+				Reference: row.PeggedReference(),
+				Offset:    row.Offset(),
 			},
 		}
 		only := row.Only()
@@ -79,17 +82,18 @@ func PartiesPlaceTheFollowingIcebergOrders(
 	return nil
 }
 
-func parseSubmitIcebergOrderTable(table *godog.Table) []RowWrapper {
+func parseSubmitPeggedIcebergOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"market id",
 		"side",
 		"volume",
-		"price",
 		"type",
 		"tif",
 		"peak size",
 		"minimum visible size",
+		"pegged reference",
+		"offset",
 	}, []string{
 		"reference",
 		"error",
@@ -99,39 +103,35 @@ func parseSubmitIcebergOrderTable(table *godog.Table) []RowWrapper {
 	})
 }
 
-type submitIcebergOrderRow struct {
+type submitPeggedIcebergOrderRow struct {
 	row RowWrapper
 }
 
-func (r submitIcebergOrderRow) Party() string {
+func (r submitPeggedIcebergOrderRow) Party() string {
 	return r.row.MustStr("party")
 }
 
-func (r submitIcebergOrderRow) MarketID() string {
+func (r submitPeggedIcebergOrderRow) MarketID() string {
 	return r.row.MustStr("market id")
 }
 
-func (r submitIcebergOrderRow) Side() types.Side {
+func (r submitPeggedIcebergOrderRow) Side() types.Side {
 	return r.row.MustSide("side")
 }
 
-func (r submitIcebergOrderRow) Volume() uint64 {
+func (r submitPeggedIcebergOrderRow) Volume() uint64 {
 	return r.row.MustU64("volume")
 }
 
-func (r submitIcebergOrderRow) Price() *num.Uint {
-	return r.row.MustUint("price")
-}
-
-func (r submitIcebergOrderRow) OrderType() types.OrderType {
+func (r submitPeggedIcebergOrderRow) OrderType() types.OrderType {
 	return r.row.MustOrderType("type")
 }
 
-func (r submitIcebergOrderRow) TimeInForce() types.OrderTimeInForce {
+func (r submitPeggedIcebergOrderRow) TimeInForce() types.OrderTimeInForce {
 	return r.row.MustTIF("tif")
 }
 
-func (r submitIcebergOrderRow) ExpirationDate(now time.Time) int64 {
+func (r submitPeggedIcebergOrderRow) ExpirationDate(now time.Time) int64 {
 	if r.OrderType() == types.OrderTypeMarket {
 		return 0
 	}
@@ -143,27 +143,27 @@ func (r submitIcebergOrderRow) ExpirationDate(now time.Time) int64 {
 	return 0
 }
 
-func (r submitIcebergOrderRow) ExpectResultingTrades() bool {
+func (r submitPeggedIcebergOrderRow) ExpectResultingTrades() bool {
 	return r.row.HasColumn("resulting trades")
 }
 
-func (r submitIcebergOrderRow) ResultingTrades() int64 {
+func (r submitPeggedIcebergOrderRow) ResultingTrades() int64 {
 	return r.row.I64("resulting trades")
 }
 
-func (r submitIcebergOrderRow) Reference() string {
+func (r submitPeggedIcebergOrderRow) Reference() string {
 	return r.row.Str("reference")
 }
 
-func (r submitIcebergOrderRow) Error() string {
+func (r submitPeggedIcebergOrderRow) Error() string {
 	return r.row.Str("error")
 }
 
-func (r submitIcebergOrderRow) ExpectError() bool {
+func (r submitPeggedIcebergOrderRow) ExpectError() bool {
 	return r.row.HasColumn("error")
 }
 
-func (r submitIcebergOrderRow) Only() Only {
+func (r submitPeggedIcebergOrderRow) Only() Only {
 	if !r.row.HasColumn("only") {
 		return None
 	}
@@ -175,10 +175,18 @@ func (r submitIcebergOrderRow) Only() Only {
 	return t
 }
 
-func (r submitIcebergOrderRow) MinimumPeak() uint64 {
+func (r submitPeggedIcebergOrderRow) MinimumPeak() uint64 {
 	return r.row.MustU64("minimum visible size")
 }
 
-func (r submitIcebergOrderRow) InitialPeak() uint64 {
+func (r submitPeggedIcebergOrderRow) InitialPeak() uint64 {
 	return r.row.MustU64("peak size")
+}
+
+func (r submitPeggedIcebergOrderRow) PeggedReference() types.PeggedReference {
+	return r.row.MustPeggedReference("pegged reference")
+}
+
+func (r submitPeggedIcebergOrderRow) Offset() *num.Uint {
+	return r.row.Uint("offset")
 }

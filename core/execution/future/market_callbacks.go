@@ -115,3 +115,7 @@ func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	m.nextMTM = m.nextMTM.Add(d)
 	m.mtmDelta = d
 }
+
+func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) {
+	m.maxStopOrdersPerParties = u.Clone()
+}

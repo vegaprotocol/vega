@@ -62,8 +62,8 @@ func addTestOrder(t *testing.T, os *sqlstore.Orders, id entities.OrderID, block 
 		TxHash:          txHash,
 	}
 	if icebergOpts != nil {
-		order.InitialPeakSize = ptr.From(int64(icebergOpts.InitialPeakSize))
-		order.MinimumPeakSize = ptr.From(int64(icebergOpts.MinimumPeakSize))
+		order.PeakSize = ptr.From(int64(icebergOpts.PeakSize))
+		order.MinimumVisibleSize = ptr.From(int64(icebergOpts.MinimumVisibleSize))
 		order.ReservedRemaining = ptr.From(int64(icebergOpts.ReservedRemaining))
 	}
 	err := os.Add(order)
@@ -118,9 +118,9 @@ func TestOrders(t *testing.T) {
 		// every 10th is a berg
 		if i%10 == 0 {
 			iceberg = &vega.IcebergOrder{
-				InitialPeakSize:   8,
-				MinimumPeakSize:   5,
-				ReservedRemaining: 10,
+				PeakSize:           8,
+				MinimumVisibleSize: 5,
+				ReservedRemaining:  10,
 			}
 		}
 
@@ -239,8 +239,8 @@ func TestOrders(t *testing.T) {
 		for _, berg := range icebergs {
 			o, err := os.GetOrder(ctx, berg.ID.String(), nil)
 			assert.NoError(t, err)
-			assert.Equal(t, berg.InitialPeakSize, o.InitialPeakSize)
-			assert.Equal(t, berg.MinimumPeakSize, o.MinimumPeakSize)
+			assert.Equal(t, berg.PeakSize, o.PeakSize)
+			assert.Equal(t, berg.MinimumVisibleSize, o.MinimumVisibleSize)
 			assert.Equal(t, berg.ReservedRemaining, o.ReservedRemaining)
 		}
 	})
