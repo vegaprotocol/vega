@@ -97,8 +97,9 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 	onQueryResultVerified(resourceToCheck, true)
 
 	oracleData := oracles.OracleData{
-		Signers: nil,
-		Data:    okResult().Normalised,
+		Signers:  nil,
+		Data:     okResult().Normalised,
+		MetaData: map[string]string{"eth-block-height": "1"},
 	}
 
 	eov.oracleBroadcaster.EXPECT().BroadcastData(gomock.Any(), oracleData)

@@ -216,6 +216,14 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 		})
 	}
 
+	metaData := make([]*datapb.Property, 0, len(data.MetaData))
+	for name, value := range data.MetaData {
+		metaData = append(metaData, &datapb.Property{
+			Name:  name,
+			Value: value,
+		})
+	}
+
 	sort.Slice(payload, func(i, j int) bool {
 		return strings.Compare(payload[i].Name, payload[j].Name) < 0
 	})
@@ -237,6 +245,7 @@ func (e *Engine) sendMatchedOracleData(ctx context.Context, data OracleData, spe
 				Data:           payload,
 				MatchedSpecIds: ids,
 				BroadcastAt:    e.timeService.GetTimeNow().UnixNano(),
+				MetaData:       metaData,
 			},
 		},
 	}
