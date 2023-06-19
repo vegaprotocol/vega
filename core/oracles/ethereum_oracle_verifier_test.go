@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	mocks2 "code.vegaprotocol.io/vega/core/broker/mocks"
+
 	"code.vegaprotocol.io/vega/core/client/eth"
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 	"code.vegaprotocol.io/vega/core/oracles"
@@ -29,6 +31,7 @@ type etheriumOracleVerifierTest struct {
 	oracleBroadcaster *mocks.MockOracleDataBroadcaster
 	ethCallEngine     *mocks.MockEthCallEngine
 	ethConfirmations  *mocks.MockEthereumConfirmations
+	broker            *mocks2.MockBroker
 
 	onTick func(context.Context, time.Time)
 }
@@ -42,15 +45,17 @@ func getTestEthereumOracleVerifier(t *testing.T) *etheriumOracleVerifierTest {
 	broadcaster := mocks.NewMockOracleDataBroadcaster(ctrl)
 	ethCallEngine := mocks.NewMockEthCallEngine(ctrl)
 	ethConfirmations := mocks.NewMockEthereumConfirmations(ctrl)
+	broker := mocks2.NewMockBroker(ctrl)
 
 	evt := &etheriumOracleVerifierTest{
-		EthereumOracleVerifier: oracles.NewEthereumOracleVerifier(log, witness, ts, broadcaster, ethCallEngine, ethConfirmations),
+		EthereumOracleVerifier: oracles.NewEthereumOracleVerifier(log, witness, ts, broker, broadcaster, ethCallEngine, ethConfirmations),
 		ctrl:                   ctrl,
 		witness:                witness,
 		ts:                     ts,
 		oracleBroadcaster:      broadcaster,
 		ethCallEngine:          ethCallEngine,
 		ethConfirmations:       ethConfirmations,
+		broker:                 broker,
 	}
 	evt.onTick = evt.EthereumOracleVerifier.OnTick
 
@@ -63,6 +68,27 @@ func TestEthereumOracleVerifier(t *testing.T) {
 	t.Run("testProcessEthereumOracleFilterMismatch", testProcessEthereumOracleFilterMismatch)
 	t.Run("testProcessEthereumOracleInsufficientConfirmations", testProcessEthereumOracleInsufficientConfirmations)
 	t.Run("testProcessEthereumOracleQueryDuplicateIgnored", testProcessEthereumOracleQueryDuplicateIgnored)
+	t.Run("testProcessEthereumOracleChainEventWithError", testProcessEthereumOracleChainEventWithError)
+}
+
+func testProcessEthereumOracleChainEventWithError(t *testing.T) {
+	eov := getTestEthereumOracleVerifier(t)
+	defer eov.ctrl.Finish()
+	assert.NotNil(t, eov)
+
+	eov.ts.EXPECT().GetTimeNow().Times(1)
+	eov.broker.EXPECT().Send(gomock.Any())
+
+	testError := "testerror"
+	errEvent := types.EthContractCallEvent{
+		BlockHeight: 1,
+		BlockTime:   100,
+		SpecId:      "testspec",
+		Error:       &testError,
+	}
+
+	err := eov.ProcessEthereumContractCallResult(errEvent)
+	assert.NoError(t, err)
 }
 
 func testProcessEthereumOracleQueryOK(t *testing.T) {

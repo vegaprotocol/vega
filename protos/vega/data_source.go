@@ -32,7 +32,6 @@ func NewDataSourceSpec(sc *DataSourceDefinition) *DataSourceSpec {
 						ds.Id = datapb.NewID(nil, o.Filters)
 					}
 				}
-
 			}
 		case *DataSourceDefinition_Internal:
 			in := sc.GetInternal()

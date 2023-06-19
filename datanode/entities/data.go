@@ -77,6 +77,7 @@ type Data struct {
 	MetaData       []Property
 	MatchedSpecIds [][]byte // pgx automatically handles [][]byte to Postgres ByteaArray mappings
 	BroadcastAt    time.Time
+	Error          *string
 	TxHash         TxHash
 	VegaTime       time.Time
 	SeqNum         uint64
@@ -137,6 +138,7 @@ func ExternalDataFromProto(data *datapb.ExternalData, txHash TxHash, vegaTime ti
 			MetaData:       metaDataProperties,
 			MatchedSpecIds: specIDs,
 			BroadcastAt:    NanosToPostgresTimestamp(data.Data.BroadcastAt),
+			Error:          data.Data.Error,
 			TxHash:         txHash,
 			VegaTime:       vegaTime,
 			SeqNum:         seqNum,
@@ -187,6 +189,7 @@ func (od *ExternalData) ToProto() *datapb.ExternalData {
 			MetaData:       metaDataProperties,
 			MatchedSpecIds: specIDs,
 			BroadcastAt:    od.Data.BroadcastAt.UnixNano(),
+			Error:          od.Data.Error,
 		},
 	}
 }

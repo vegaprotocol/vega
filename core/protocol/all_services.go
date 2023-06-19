@@ -231,7 +231,7 @@ func newServices(
 		go svcs.ethCallEngine.Start()
 	}
 
-	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService,
+	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 
 	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
