@@ -47,7 +47,7 @@ func testOracleEngineListensToSignersSucceeds(t *testing.T) {
 	// test conditions
 	ctx := context.Background()
 	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 
 	// test oracle engine with 1 subscriber and 1 key provided
 	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42")
@@ -95,7 +95,7 @@ func testOracleEngineListensToSignersFails(t *testing.T) {
 	// test conditions
 	ctx := context.Background()
 	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 
 	// test oracle engine with single subscriber and wrong key
 	btcEquals42 := spec(t, "BTC", datapb.Condition_OPERATOR_EQUALS, "42", "0xWRONGKEY")
@@ -138,7 +138,7 @@ func testOracleEngineSubscribingSucceeds(t *testing.T) {
 	ctx := context.Background()
 	currentTime := time.Now()
 
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethLess84.spec.OriginalSpec)
 
@@ -165,7 +165,8 @@ func testOracleEngineSubscribingToSpecActivationSucceeds(t *testing.T) {
 
 	subscriber := newTestActivationSubscriber()
 
-	engine := newEngine(ctx, t, currentTime, subscriber)
+	engine := newEngine(ctx, t, currentTime)
+	engine.AddSpecActivationListener(subscriber)
 
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 
@@ -216,7 +217,7 @@ func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 	// setup
 	ctx := context.Background()
 	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 
 	// when
 	subscribe := func() {
@@ -239,7 +240,7 @@ func testOracleEngineBroadcastingMatchingDataSucceeds(t *testing.T) {
 	// setup
 	ctx := context.Background()
 	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcGreater21.spec.OriginalSpec)
 	engine.broker.expectNewOracleSpecSubscription(currentTime, ethEquals42.spec.OriginalSpec)
@@ -271,7 +272,7 @@ func testOracleEngineUnsubscribingUnknownIDPanics(t *testing.T) {
 	// setup
 	ctx := context.Background()
 	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 
 	// when
 	unsubscribe := func() {
@@ -288,7 +289,7 @@ func testOracleEngineUnsubscribingKnownIDSucceeds(t *testing.T) {
 	ethEquals42 := spec(t, "ETH", datapb.Condition_OPERATOR_EQUALS, "42")
 	ctx := context.Background()
 	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime, newTestActivationSubscriber())
+	engine := newEngine(ctx, t, currentTime)
 
 	// expect
 	engine.broker.expectNewOracleSpecSubscription(currentTime, btcEquals42.spec.OriginalSpec)
@@ -329,10 +330,10 @@ func testOracleEngineUpdatingCurrentTimeSucceeds(t *testing.T) {
 	ctx := context.Background()
 	time30 := time.Unix(30, 0)
 	time60 := time.Unix(60, 0)
-	engine := newEngine(ctx, t, time30, nil)
+	engine := newEngine(ctx, t, time30)
 	assert.Equal(t, time30, engine.ts.GetTimeNow())
 
-	engine2 := newEngine(ctx, t, time60, nil)
+	engine2 := newEngine(ctx, t, time60)
 	assert.Equal(t, time60, engine2.ts.GetTimeNow())
 }
 
@@ -343,7 +344,7 @@ type testEngine struct {
 }
 
 // newEngine returns new Oracle test engine, but with preset time, so we can test against its value.
-func newEngine(ctx context.Context, t *testing.T, tm time.Time, specActivationListener oracles.SpecActivationsListener) *testEngine {
+func newEngine(ctx context.Context, t *testing.T, tm time.Time) *testEngine {
 	t.Helper()
 	broker := newBroker(ctx, t)
 
@@ -359,7 +360,6 @@ func newEngine(ctx context.Context, t *testing.T, tm time.Time, specActivationLi
 			oracles.NewDefaultConfig(),
 			ts,
 			broker,
-			specActivationListener,
 		),
 		ts:     ts,
 		broker: broker,

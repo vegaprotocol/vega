@@ -58,7 +58,6 @@ func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarde
 		poller:    newPoller(cfg.PollEvery.Get()),
 	}
 
-	go e.Start()
 	return e
 }
 
@@ -180,9 +179,11 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 				e.log.Errorf("failed to call contract: %w", err)
 				continue
 			}
-			// TODO: check filters (and confirmations?) before submitting
-			event := makeChainEvent(res, specID, ethBlock)
-			e.forwarder.ForwardFromSelf(event)
+
+			if res.PassesFilters {
+				event := makeChainEvent(res, specID, ethBlock)
+				e.forwarder.ForwardFromSelf(event)
+			}
 		}
 	}
 	e.prevEthBlock = ethBlock
@@ -190,8 +191,8 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 
 func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
 	ce := commandspb.ChainEvent{
-		TxId:  "", // NA
-		Nonce: 0,  // NA
+		TxId:  "internal", // NA
+		Nonce: 0,          // NA
 		Event: &commandspb.ChainEvent_ContractCall{
 			ContractCall: &vega.EthContractCallEvent{
 				SpecId:      specID,

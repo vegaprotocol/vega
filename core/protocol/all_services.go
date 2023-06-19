@@ -223,16 +223,19 @@ func newServices(
 		svcs.eventForwarderEngine = evtforward.NewNoopEngine(svcs.log, svcs.conf.EvtForward)
 	}
 
+	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker)
+
+	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
+
 	if svcs.conf.IsValidator() {
-		svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
-		svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService,
-			svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
-	} else {
-		svcs.ethCallEngine = NullEthCallEngine{}
-		svcs.ethereumOraclesVerifier = NullEthOracleVerifier{}
+		go svcs.ethCallEngine.Start()
 	}
 
-	svcs.oracle = oracles.NewEngine(svcs.log, svcs.conf.Oracles, svcs.timeService, svcs.broker, svcs.ethCallEngine)
+	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService,
+		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
+
+	// Not using the activation event bus event here as on recovery the ethCallEngine needs to have all specs - is this necessary?
+	svcs.oracle.AddSpecActivationListener(svcs.ethCallEngine)
 
 	svcs.builtinOracle = oracles.NewBuiltinOracle(svcs.oracle, svcs.timeService)
 	svcs.oracleAdaptors = oracleAdaptors.New()
@@ -296,8 +299,6 @@ func newServices(
 		// checkpoint have been loaded
 		// which means that genesis has been loaded as well
 		// we should be fully ready to start the event sourcing from ethereum
-		// TODO - not convined the eef needs starting
-		svcs.ethCallEngine.Start()
 	})
 
 	svcs.genesisHandler.OnGenesisAppStateLoaded(
@@ -731,31 +732,3 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 	// now add some watcher for our netparams
 	return svcs.netParams.Watch(watchers...)
 }
-
-type NullEthCallEngine struct{}
-
-func (n NullEthCallEngine) Start() {}
-
-func (n NullEthCallEngine) Stop() {}
-
-func (n NullEthCallEngine) MakeResult(specID string, bytes []byte) (ethcall.Result, error) {
-	return ethcall.Result{}, nil
-}
-
-func (n NullEthCallEngine) CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error) {
-	return ethcall.Result{}, nil
-}
-
-func (n NullEthCallEngine) OnSpecActivated(ctx context.Context, spec types.OracleSpec) error {
-	return nil
-}
-
-func (n NullEthCallEngine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {}
-
-type NullEthOracleVerifier struct{}
-
-func (n NullEthOracleVerifier) ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error {
-	return nil
-}
-
-func (n NullEthOracleVerifier) OnTick(ctx context.Context, t time.Time) {}
