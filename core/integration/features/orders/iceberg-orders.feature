@@ -253,7 +253,7 @@ Feature: Iceberg orders
 
 
 @iceberg
-  Scenario: Iceberg order trading during auction uncrossing (0014-ORDT-020)
+  Scenario: Iceberg order trading during auction uncrossing (0014-ORDT-013)
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount   |
