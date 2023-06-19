@@ -459,6 +459,58 @@ Feature: Iceberg orders
       | party2 | ETH/DEC19 | buy  | 0              | 5     | STATUS_FILLED | 0               |
 
 
+  @margin
+  @iceberg
+  Scenario: Cancelling an active iceberg order (0014-ORDT-026)
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Given the parties place the following iceberg orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference |
+      | party1 | ETH/DEC19 | buy  | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 26     | 9974    |
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 2      |
+    When the parties cancel the following orders:
+      | party  | reference |
+      | party1 | iceberg   |
+    # The order should be cancelled
+    Then the iceberg orders should have the following states:
+      | party  | market id | side | visible volume | price | status           | reserved volume | reference |
+      | party1 | ETH/DEC19 | buy  | 2              | 5     | STATUS_CANCELLED | 98              | iceberg   |
+    # The margin released
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | BTC   | ETH/DEC19 | 0      | 10000   |
+    # And the order book updated
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | buy  | 5     | 0      |
+
+
   @iceberg
   Scenario: An aggressive iceberg order crosses an order with volume > iceberg volume (0014-ORDT-027)
     # setup accounts
