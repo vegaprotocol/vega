@@ -29,12 +29,12 @@ var (
 )
 
 type Config struct {
-	GRPC          grpc.Config   `group:"grpc api" namespace:"grpc"`
-	GRPCUI        GRPCUIConfig  `group:"grpc web ui" namespace:"grpcui"`
-	REST          RESTConfig    `group:"rest api" namespace:"rest"`
-	Gateway       GatewayConfig `group:"gateway" namespace:"grpcui"`
-	ListenAddress string        `long:"listen-address" description:"the IP address that our sever will listen on"`
-	ListenPort    uint16        `long:"listen-port" description:"the port that our sever will listen on"`
+	GRPC          grpc.Config   `group:"grpc api"                                           namespace:"grpc"`
+	GRPCUI        GRPCUIConfig  `group:"grpc web ui"                                        namespace:"grpcui"`
+	REST          RESTConfig    `group:"rest api"                                           namespace:"rest"`
+	Gateway       GatewayConfig `group:"gateway"                                            namespace:"grpcui"`
+	ListenAddress string        `description:"the IP address that our sever will listen on" long:"listen-address"`
+	ListenPort    uint16        `description:"the port that our sever will listen on"       long:"listen-port"`
 }
 
 func NewDefaultConfig() Config {
@@ -51,8 +51,8 @@ func NewDefaultConfig() Config {
 type GRPCUIConfig struct {
 	Enabled        encoding.Bool     `long:"enabled"`
 	Endpoint       string            `long:"endpoint"`
-	Level          encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
-	MaxPayloadSize encoding.ByteSize `long:"max-payload-size" description:"Maximum size of GRPC messages the UI will accept from the GRPC server (e.g. 4mb)"`
+	Level          encoding.LogLevel `choice:"debug"                                                                                 choice:"info"           choice:"warning" long:"log-level"`
+	MaxPayloadSize encoding.ByteSize `description:"Maximum size of GRPC messages the UI will accept from the GRPC server (e.g. 4mb)" long:"max-payload-size"`
 }
 
 func NewDefaultGRPCUIConfig() GRPCUIConfig {
@@ -65,7 +65,7 @@ func NewDefaultGRPCUIConfig() GRPCUIConfig {
 }
 
 type GatewayConfig struct {
-	CORS libhttp.CORSConfig `long:"cors" description:"CORS allowed origins"`
+	CORS libhttp.CORSConfig `description:"CORS allowed origins" long:"cors"`
 }
 
 func NewDefaultGatewayConfig() GatewayConfig {
@@ -78,7 +78,7 @@ func NewDefaultGatewayConfig() GatewayConfig {
 }
 
 type RESTConfig struct {
-	Level    encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
+	Level    encoding.LogLevel `choice:"debug"  choice:"info" choice:"warning" long:"log-level"`
 	Enabled  encoding.Bool     `long:"enabled"`
 	Endpoint string            `long:"endpoint"`
 }

@@ -150,6 +150,18 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalFreeformMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 		GovernanceProposalFreeformMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
 
+		// governance transfer proposal
+		GovernanceProposalTransferMinClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalTransferMaxClose:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalTransferRequiredParticipation: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalTransferMinEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalTransferMaxEnact:              NewDuration(gte1s, lte1y).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalTransferRequiredMajority:      NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalTransferMinProposerBalance:    NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceProposalTransferMinVoterBalance:       NewUint(gteU1, ltMaxU).Mutable(true).MustUpdate("1"),
+		GovernanceTransferMaxAmount:                     NewDecimal(gteD1).Mutable(true).MustUpdate("7000000000000000000000"),
+		GovernanceTransferMaxFraction:                   NewDecimal(gtD0, lteD1).Mutable(true).MustUpdate("1"),
+
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(gtD0).Mutable(true).MustUpdate("1"),
 
@@ -224,9 +236,10 @@ func defaultNetParams() map[string]value {
 		MinBlockCapacity:           NewUint(UintGTE(num.NewUint(1)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("32"),
 		MaxPeggedOrders:            NewUint(UintGTE(num.NewUint(0)), UintLTE(num.NewUint(10000))).Mutable(true).MustUpdate("1500"),
 
-		MarkPriceUpdateMaximumFrequency:   NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
-		ValidatorPerformanceScalingFactor: NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
-		SuccessorLaunchWindow:             NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
+		MarkPriceUpdateMaximumFrequency:      NewDuration(gte0s, lte1h).Mutable(true).MustUpdate("5s"),
+		ValidatorPerformanceScalingFactor:    NewDecimal(gteD0, lteD1).Mutable(true).MustUpdate("0"),
+		MarketSuccessorLaunchWindow:          NewDuration(gte1s, lte1mo).Mutable(true).MustUpdate("168h"), // 168h == 7 days
+		SpamProtectionMaxStopOrdersPerMarket: NewUint(UintGTE(num.UintZero()), UintLTE(num.NewUint(100))).Mutable(true).MustUpdate("4"),
 	}
 
 	// add additional cross net param rules

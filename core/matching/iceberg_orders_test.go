@@ -39,8 +39,8 @@ func submitIcebergOrder(t *testing.T, book *tstOB, size, peak, minPeak uint64, a
 		Type:          types.OrderTypeLimit,
 		ExpiresAt:     10,
 		IcebergOrder: &types.IcebergOrder{
-			InitialPeakSize: peak,
-			MinimumPeakSize: minPeak,
+			PeakSize:           peak,
+			MinimumVisibleSize: minPeak,
 		},
 	}
 	confirm, err := book.SubmitOrder(o)
@@ -63,6 +63,26 @@ func submitCrossedOrder(t *testing.T, book *tstOB, size uint64) (*types.Order, *
 		Status:        types.OrderStatusActive,
 		MarketID:      book.marketID,
 		Party:         "B",
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          size,
+		Remaining:     size,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
+	}
+	confirm, err := book.SubmitOrder(o)
+	require.NoError(t, err)
+	return o, confirm
+}
+
+func submitCrossedWashOrder(t *testing.T, book *tstOB, size uint64) (*types.Order, *types.OrderConfirmation) {
+	t.Helper()
+	o := &types.Order{
+		ID:            vgcrypto.RandomHash(),
+		Status:        types.OrderStatusActive,
+		MarketID:      book.marketID,
+		Party:         "A",
 		Side:          types.SideSell,
 		Price:         num.NewUint(100),
 		OriginalPrice: num.NewUint(100),
@@ -108,7 +128,7 @@ func TestIcebergsFakeUncross(t *testing.T) {
 	// check it is now on the book
 	_, err := book.GetOrderByID(iceberg.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(4))
+	assert.Equal(t, uint64(100), book.getTotalBuyVolume())
 
 	// check the peaks are proper
 	assert.Equal(t, uint64(4), iceberg.Remaining)
@@ -138,7 +158,7 @@ func TestIcebergFullPeakConsumedExactly(t *testing.T) {
 	// check it is now on the book
 	_, err := book.GetOrderByID(iceberg.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(40))
+	assert.Equal(t, uint64(100), book.getTotalBuyVolume())
 
 	trades := getTradesCrossedOrder(t, book, 40)
 	assert.Equal(t, 1, len(trades))
@@ -151,7 +171,7 @@ func TestIcebergFullPeakConsumedExactly(t *testing.T) {
 
 	// check that the iceberg has been refreshed and book volume is back at 40
 	assert.Equal(t, 1, book.getNumberOfBuyLevels())
-	assert.Equal(t, uint64(40), book.getTotalBuyVolume())
+	assert.Equal(t, uint64(60), book.getTotalBuyVolume())
 	assert.Equal(t, uint64(40), iceberg.Remaining)
 	assert.Equal(t, uint64(20), iceberg.IcebergOrder.ReservedRemaining)
 }
@@ -168,7 +188,7 @@ func TestIcebergPeakAboveMinimum(t *testing.T) {
 	_, confirm = submitCrossedOrder(t, book, 1)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, 1, book.getNumberOfBuyLevels())
-	assert.Equal(t, uint64(3), book.getTotalBuyVolume())
+	assert.Equal(t, uint64(99), book.getTotalBuyVolume())
 
 	// now submit another order that *will* remove the rest of the peak
 	_, confirm = submitCrossedOrder(t, book, 3)
@@ -176,7 +196,7 @@ func TestIcebergPeakAboveMinimum(t *testing.T) {
 
 	assert.Equal(t, uint64(4), iceberg.Remaining)
 	assert.Equal(t, uint64(92), iceberg.IcebergOrder.ReservedRemaining)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(4))
+	assert.Equal(t, uint64(96), book.getTotalBuyVolume())
 }
 
 func TestIcebergAggressiveTakesAll(t *testing.T) {
@@ -195,7 +215,7 @@ func TestIcebergAggressiveTakesAll(t *testing.T) {
 	// now check iceberg sits on the book with the correct peaks
 	assert.Equal(t, uint64(4), o.Remaining)
 	assert.Equal(t, uint64(36), o.IcebergOrder.ReservedRemaining)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(4))
+	assert.Equal(t, uint64(40), book.getTotalBuyVolume())
 }
 
 func TestAggressiveIcebergFullyFilled(t *testing.T) {
@@ -226,7 +246,7 @@ func TestIcebergPeakBelowMinimumNotZero(t *testing.T) {
 	iceberg, confirm := submitIcebergOrder(t, book, 100, 4, 2, true)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	// submit an order that takes the berg below its minimum peak, but is not zero
+	// submit an order that takes the berg below its minimum visible size, but is not zero
 	_, confirm = submitCrossedOrder(t, book, 3)
 	assert.Equal(t, 1, len(confirm.Trades))
 
@@ -234,12 +254,13 @@ func TestIcebergPeakBelowMinimumNotZero(t *testing.T) {
 	assert.Equal(t, types.OrderStatusActive, iceberg.Status)
 	assert.Equal(t, uint64(4), iceberg.Remaining)
 	assert.Equal(t, uint64(93), iceberg.IcebergOrder.ReservedRemaining)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(4))
+	assert.Equal(t, uint64(97), book.getTotalBuyVolume())
 
 	// put in another order which will eat into the remaining
 	submitCrossedOrder(t, book, 10)
 	assert.Equal(t, uint64(4), iceberg.Remaining)
 	assert.Equal(t, uint64(83), iceberg.IcebergOrder.ReservedRemaining)
+	assert.Equal(t, uint64(87), book.getTotalBuyVolume())
 }
 
 func TestIcebergRefreshToPartialPeak(t *testing.T) {
@@ -252,16 +273,16 @@ func TestIcebergRefreshToPartialPeak(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	// expect the volume to be the peak size
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(90))
+	assert.Equal(t, uint64(100), book.getTotalBuyVolume())
 
 	// submit an order that takes almost the full peak
 	_, confirm = submitCrossedOrder(t, book, 89)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	// remaining + reserved < initial peak
+	// remaining + reserved < peak size
 	assert.Equal(t, uint64(11), iceberg.Remaining)
 	assert.Equal(t, uint64(0), iceberg.IcebergOrder.ReservedRemaining)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(11))
+	assert.Equal(t, uint64(11), book.getTotalBuyVolume())
 
 	// check we can now fill it and the iceberg is removed
 	_, confirm = submitCrossedOrder(t, book, 100)
@@ -269,7 +290,7 @@ func TestIcebergRefreshToPartialPeak(t *testing.T) {
 	assert.Equal(t, uint64(0), iceberg.Remaining)
 	assert.Equal(t, uint64(0), iceberg.IcebergOrder.ReservedRemaining)
 	assert.Equal(t, types.OrderStatusFilled, iceberg.Status)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(0))
+	assert.Equal(t, uint64(0), book.getTotalBuyVolume())
 }
 
 func TestIcebergHiddenDistribution(t *testing.T) {
@@ -319,7 +340,7 @@ func TestIcebergHiddenDistributionCrumbs(t *testing.T) {
 	iceberg1, _ := submitIcebergOrder(t, book, 500, 100, 2, false)
 	iceberg2, _ := submitIcebergOrder(t, book, 500, 100, 2, false)
 	iceberg3, _ := submitIcebergOrder(t, book, 500, 100, 100, false)
-	assert.Equal(t, uint64(300), book.getTotalBuyVolume())
+	assert.Equal(t, uint64(1500), book.getTotalBuyVolume())
 
 	// submit a big order such that all three peaks are consumed (100 + 100 + 100 = 300)
 	// and the left over is 100 to be divided between three
@@ -429,7 +450,7 @@ func TestIcebergHiddenDistributionPrimeHidden(t *testing.T) {
 	assert.Equal(t, uint64(146), iceberg3.IcebergOrder.ReservedRemaining)
 	assert.Equal(t, types.OrderStatusActive, iceberg2.Status)
 
-	assert.Equal(t, uint64(43+67+9), book.getTotalBuyVolume())
+	assert.Equal(t, uint64(550), book.getTotalBuyVolume())
 }
 
 func TestIcebergTimePriorityLostOnRefresh(t *testing.T) {
@@ -446,7 +467,7 @@ func TestIcebergTimePriorityLostOnRefresh(t *testing.T) {
 	assert.Equal(t, 0, len(confirm.Trades))
 
 	// expect the volume to be the peak size
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(110))
+	assert.Equal(t, uint64(200), book.getTotalBuyVolume())
 
 	// submit a order that will take out some of the peak of the first iceberg, check its refreshed
 	_, confirm = submitCrossedOrder(t, book, 5)
@@ -468,7 +489,7 @@ func TestAmendIceberg(t *testing.T) {
 	// submit an iceberg order that sits on the book with a big peak
 	iceberg, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
 	assert.Equal(t, 0, len(confirm.Trades))
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(10))
+	assert.Equal(t, uint64(100), book.getTotalBuyVolume())
 
 	// amend iceberg such that the size is increased and the reserve is increased
 	amend := iceberg.Clone()
@@ -476,7 +497,7 @@ func TestAmendIceberg(t *testing.T) {
 	amend.IcebergOrder.ReservedRemaining = 140
 	err := book.AmendOrder(iceberg, amend)
 	require.NoError(t, err)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(10))
+	assert.Equal(t, uint64(150), book.getTotalBuyVolume())
 
 	// amend iceberg such that the volume is decreased but not enough to eat into the peak
 	amend = iceberg.Clone()
@@ -484,7 +505,7 @@ func TestAmendIceberg(t *testing.T) {
 	amend.IcebergOrder.ReservedRemaining = 130
 	err = book.AmendOrder(iceberg, amend)
 	require.NoError(t, err)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(10))
+	assert.Equal(t, uint64(140), book.getTotalBuyVolume())
 
 	// decrease again such that reserved is 0 and peak is reduced
 	amend = iceberg.Clone()
@@ -493,5 +514,58 @@ func TestAmendIceberg(t *testing.T) {
 	amend.IcebergOrder.ReservedRemaining = 0
 	err = book.AmendOrder(iceberg, amend)
 	require.NoError(t, err)
-	assert.Equal(t, book.getTotalBuyVolume(), uint64(5))
+	assert.Equal(t, uint64(5), book.getTotalBuyVolume())
+}
+
+func TestIcebergWashTradePassiveIceberg(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// submit an iceberg order that sits on the book
+	_, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(100), book.getTotalBuyVolume())
+
+	// same party submits and order which trades with themselves
+	o, confirm := submitCrossedWashOrder(t, book, 10)
+	assert.Equal(t, types.OrderStatusStopped, o.Status)
+	assert.Equal(t, 0, len(confirm.Trades))
+}
+
+func TestIcebergWashTradeAggressiveIceberg(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	// party submits an order that sits on the book
+	_, confirm := submitCrossedWashOrder(t, book, 10)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(10), book.getTotalSellVolume())
+
+	// same party submit an aggressive iceberg order that trades with themselves
+	iceberg, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
+	assert.Equal(t, types.OrderStatusStopped, iceberg.Status)
+	assert.Equal(t, 0, len(confirm.Trades))
+}
+
+func TestIcebergWashTradeAggressiveIcebergPartialFill(t *testing.T) {
+	market := "testMarket"
+	book := getTestOrderBook(t, market)
+	defer book.Finish()
+
+	_, confirm := submitCrossedOrder(t, book, 5)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(5), book.getTotalSellVolume())
+
+	_, confirm = submitCrossedWashOrder(t, book, 10)
+	assert.Equal(t, 0, len(confirm.Trades))
+	assert.Equal(t, uint64(15), book.getTotalSellVolume())
+
+	// submit an iceberg order that partially trades, then causes a wash trade and so
+	// is not put on the book
+	iceberg, confirm := submitIcebergOrder(t, book, 100, 10, 8, true)
+	assert.Equal(t, types.OrderStatusPartiallyFilled, iceberg.Status)
+	assert.Equal(t, 1, len(confirm.Trades))
+	assert.Equal(t, uint64(10), book.getTotalSellVolume())
 }

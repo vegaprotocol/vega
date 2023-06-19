@@ -141,6 +141,8 @@ type Market struct {
 
 	settlementAsset string
 	succeeded       bool
+
+	maxStopOrdersPerParties *num.Uint
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -235,16 +237,17 @@ func NewMarket(
 	mkt.State = types.MarketStateProposed
 	mkt.TradingMode = types.MarketTradingModeNoTrading
 
+	pending, open := as.GetAuctionBegin(), as.GetAuctionEnd()
 	// Populate the market timestamps
 	ts := &types.MarketTimestamps{
 		Proposed: now.UnixNano(),
 		Pending:  now.UnixNano(),
 	}
-
-	if mkt.OpeningAuction != nil {
-		ts.Open = now.Add(time.Duration(mkt.OpeningAuction.Duration)).UnixNano()
-	} else {
-		ts.Open = now.UnixNano()
+	if pending != nil {
+		ts.Pending = pending.UnixNano()
+	}
+	if open != nil {
+		ts.Open = open.UnixNano()
 	}
 
 	mkt.MarketTimestamps = ts
@@ -285,6 +288,7 @@ func NewMarket(
 		lpPriceRange:              mkt.LPPriceRange,
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties:   num.UintZero(),
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -521,7 +525,7 @@ func (m *Market) ReloadConf(
 }
 
 func (m *Market) Reject(ctx context.Context) error {
-	if m.mkt.State != types.MarketStateProposed {
+	if !m.canReject() {
 		return common.ErrCannotRejectMarketNotInProposedState
 	}
 
@@ -532,6 +536,17 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
+}
+
+func (m *Market) canReject() bool {
+	if m.mkt.State == types.MarketStateProposed {
+		return true
+	}
+	if len(m.mkt.ParentMarketID) == 0 {
+		return false
+	}
+	// parent market is set, market can be in pending state when it is rejected.
+	return m.mkt.State == types.MarketStatePending
 }
 
 func (m *Market) onTxProcessed() {
@@ -556,6 +571,18 @@ func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState)
 	m.equityShares.InheritELS(pstate.Shares)
 }
 
+func (m *Market) RollbackInherit(ctx context.Context) {
+	// the InheritParent call has to be made before checking if the market can leave opening auction
+	// if the market did not leave opening auction, market state needs to be resored to what it was
+	// before the call to InheritParent was made. Market is still in opening auction, therefore
+	// feeSplitter trade value is zero, and equity shares are linear stake/vstake/ELS
+	// do make sure this call is not made when the market is active
+	if m.mkt.State == types.MarketStatePending {
+		m.feeSplitter.SetTradeValue(num.UintZero())
+		m.equityShares.RollbackParentELS()
+	}
+}
+
 func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.mkt.State != types.MarketStateProposed {
 		return common.ErrCannotStartOpeningAuctionForMarketNotInProposedState
@@ -567,7 +594,8 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	if m.as.AuctionStart() {
 		// we are now in a pending state
 		m.mkt.State = types.MarketStatePending
-		m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
+		// this should no longer be needed
+		// m.mkt.MarketTimestamps.Pending = m.timeService.GetTimeNow().UnixNano()
 		m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
 		m.enterAuction(ctx)
 	} else {
@@ -744,8 +772,10 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 		parties = append(parties, k)
 	}
 
+	// insurance pool has to be preserved in case a successor market leaves opening auction
+	keepInsurance := mktState == types.MarketStateSettled && !m.succeeded
 	sort.Strings(parties)
-	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties)
+	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, keepInsurance)
 	if err != nil {
 		m.log.Error("Clear market error",
 			logging.MarketID(m.GetID()),
@@ -1251,7 +1281,9 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 
 		// we can delete the party from the map here
-		delete(m.parties, pos.Party())
+		if !m.liquidity.IsLiquidityProvider(pos.Party()) {
+			delete(m.parties, pos.Party())
+		}
 	}
 	m.broker.SendBatch(evts)
 }
@@ -2729,15 +2761,14 @@ func (m *Market) amendOrder(
 		return nil, nil, common.ErrMarginCheckFailed
 	}
 
-	icebergSizeChange := false
-	if amendedOrder.IcebergOrder != nil {
+	icebergSizeIncrease := false
+	if amendedOrder.IcebergOrder != nil && sizeIncrease {
 		// iceberg orders size changes can always be done in-place because they either:
 		// 1) decrease the size, which is already done in-place for all orders
 		// 2) increase the size, which only increases the reserved remaining and not the "active" remaining of the iceberg
-		// so set a flag to indicate this special case
+		// so we set an icebergSizeIncrease to skip the cancel-replace flow.
 		sizeIncrease = false
-		sizeDecrease = false
-		icebergSizeChange = true
+		icebergSizeIncrease = true
 	}
 
 	// if increase in size or change in price
@@ -2748,7 +2779,7 @@ func (m *Market) amendOrder(
 
 	// if decrease in size or change in expiration date
 	// ---> DO amend in place in matching engine
-	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeChange {
+	if expiryChange || sizeDecrease || timeInForceChange || icebergSizeIncrease {
 		ret := m.orderAmendInPlace(existingOrder, amendedOrder)
 		if sizeDecrease {
 			// ensure we release excess if party reduced the size of their order
@@ -3362,7 +3393,7 @@ func (m *Market) cleanupOnReject(ctx context.Context) {
 			logging.Error(err))
 	}
 
-	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties)
+	tresps, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, false)
 	if err != nil {
 		m.log.Panic("unable to cleanup a rejected market",
 			logging.String("market-id", m.GetID()),

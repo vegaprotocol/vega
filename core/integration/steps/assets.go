@@ -13,21 +13,46 @@
 package steps
 
 import (
+	"context"
+	"fmt"
+
+	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
+	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/cucumber/godog"
 )
 
-func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub) error {
+func RegisterAsset(tbl *godog.Table, asset *stubs.AssetStub, col *collateral.Engine) error {
 	rows := StrictParseTable(tbl, []string{
 		"id",
 		"decimal places",
 	}, nil)
+	toEnable := []string{}
 	for _, row := range rows {
+		aid := row.MustStr("id")
 		asset.Register(
-			row.MustStr("id"),
+			aid,
 			row.MustU64("decimal places"),
 		)
+		toEnable = append(toEnable, aid)
+	}
+	return enableAssets(toEnable, col)
+}
+
+func enableAssets(ids []string, collateralEngine *collateral.Engine) error {
+	for _, assetToEnable := range ids {
+		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
+			ID: assetToEnable,
+			Details: &types.AssetDetails{
+				Quantum: num.DecimalZero(),
+				Symbol:  assetToEnable,
+			},
+		})
+		if err != nil && err != collateral.ErrAssetAlreadyEnabled {
+			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
+		}
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ package logging
 
 // Config contains the configurable items for this package.
 type Config struct {
-	Environment string  `long:"env" choice:"dev" choice:"custom"`
+	Environment string  `choice:"dev"                                                                   choice:"custom" long:"env"`
 	Custom      *Custom `tomlcp:"This section takes effect only when Environment is set to \"custom\"."`
 }
 

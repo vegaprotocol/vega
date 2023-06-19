@@ -259,6 +259,10 @@ message ProposalTerms {
     NewSpotMarket new_spot_market = 107;
     // Proposal change for modifying an existing spot market on Vega.
     UpdateSpotMarket update_spot_market = 108;
+    // Proposal change for a governance transfer.
+    NewTransfer new_transfer = 109;
+    // Cancel a governance transfer.
+    CancelTransfer cancel_transfer = 110;
   }
 }
 
@@ -442,6 +446,12 @@ enum ProposalError {
   PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED = 47;
   // Market proposal is invalid, either invalid insurance pool fraction, or it specifies a parent market that it can't succeed.
   PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET = 48;
+  // Governance transfer proposal is invalid
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED = 49;
+  // Governance transfer proposal failed
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID = 50;
+  // Proposal for cancelling transfer is invalid, check proposal ID
+  PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID = 51;
 }
 
 // Governance vote
@@ -474,4 +484,69 @@ message Vote {
   string total_governance_token_weight = 6;
   // The weight of the vote compared to the total amount of equity-like share on the market.
   string total_equity_like_share_weight = 7;
+}
+
+message CancelTransfer {
+  // Configuration for cancellation of a governance-initiated transfer
+  CancelTransferConfiguration changes = 1;
+}
+
+message CancelTransferConfiguration {
+  // ID of the governance transfer proposal.
+  string transfer_id = 1;
+}
+
+// New governance transfer
+message NewTransfer {
+  // Configuration for a new transfer.
+  NewTransferConfiguration changes = 1;
+}
+
+enum GovernanceTransferType {
+  GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED = 0;
+  GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING = 1;
+  GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT = 2;
+}
+
+message NewTransferConfiguration {
+  // Source account type, such as network treasury, market insurance pool
+  vega.AccountType source_type = 1;
+  // If network treasury, field is empty, otherwise uses the market ID
+  string source = 2;
+  // "All or nothing" or "best effort":
+  // All or nothing: Transfers the specified amount or does not transfer anything
+  // Best effort: Transfers the specified amount or the max allowable amount if this is less than the specified amount
+  GovernanceTransferType transfer_type = 3;
+  // Maximum amount to transfer
+  string amount = 4;
+  // ID of asset to transfer
+  string asset = 5;
+  // Maximum fraction of the source account's balance to transfer as a decimal - i.e. 0.1 = 10% of the balance
+  string fraction_of_balance = 6;
+  // Specifies the account type to transfer to: reward pool, party, network insurance pool, market insurance pool
+  vega.AccountType destination_type = 7;
+  // Specifies the account to transfer to, depending on the account type:
+  // Network treasury: leave empty
+  // Party: party's public key
+  // Market insurance pool: market ID
+  string destination = 8;
+  // Specific details of the transfer.
+  oneof kind {
+    OneOffTransfer one_off = 101;
+    RecurringTransfer recurring = 102;
+  }
+}
+
+// Specific details for a one off transfer
+message OneOffTransfer {
+  // Timestamp in Unix nanoseconds for when the transfer should be delivered into the receiver's account.
+  int64 deliver_on = 1;
+}
+
+// Specific details for a recurring transfer
+message RecurringTransfer {
+  // First epoch from which this transfer shall be paid.
+  uint64 start_epoch = 1;
+  // Last epoch at which this transfer shall be paid.
+  optional uint64 end_epoch = 2;
 }

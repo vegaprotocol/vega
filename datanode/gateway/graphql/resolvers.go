@@ -399,6 +399,10 @@ func (r *VegaResolverRoot) ERC20MultiSigSignerRemovedBundle() ERC20MultiSigSigne
 	return (*erc20MultiSigSignerRemovedBundleResolver)(r)
 }
 
+func (r *VegaResolverRoot) IcebergOrder() IcebergOrderResolver {
+	return (*icebergOrderResolver)(r)
+}
+
 // RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
 func (r *VegaResolverRoot) RewardSummaryFilter() RewardSummaryFilterResolver {
 	return (*rewardSummaryFilterResolver)(r)
@@ -1306,7 +1310,7 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 	return resp.GetSegment(), nil
 }
 
-func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool) ([]*vega.Market, error) {
+func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.SuccessorMarketConnection, error) {
 	getAll := false
 
 	if fullHistory != nil {
@@ -1316,6 +1320,7 @@ func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string,
 	req := &v2.ListSuccessorMarketsRequest{
 		MarketId:           marketID,
 		IncludeFullHistory: getAll,
+		Pagination:         pagination,
 	}
 
 	resp, err := r.tradingDataClientV2.ListSuccessorMarkets(ctx, req)
@@ -1858,6 +1863,10 @@ func (r *myOrderResolver) Party(_ context.Context, order *types.Order) (*types.P
 
 func (r *myOrderResolver) PeggedOrder(_ context.Context, order *types.Order) (*types.PeggedOrder, error) {
 	return order.PeggedOrder, nil
+}
+
+func (r *myOrderResolver) IcebergOrder(_ context.Context, order *types.Order) IcebergOrderResolver {
+	return (*icebergOrderResolver)(r)
 }
 
 func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Order) (*types.LiquidityProvision, error) {

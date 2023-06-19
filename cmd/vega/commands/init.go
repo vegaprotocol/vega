@@ -40,11 +40,11 @@ type InitCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"nodewallet-passphrase-file"`
 
-	Force bool `short:"f" long:"force" description:"Erase existing vega configuration at the specified path"`
+	Force bool `description:"Erase existing vega configuration at the specified path" long:"force" short:"f"`
 
-	NoTendermint   bool   `long:"no-tendermint" description:"Disable tendermint configuration generation"`
-	TendermintHome string `long:"tendermint-home" required:"true" description:"Directory for tendermint config and data" default:"$HOME/.cometbft"`
-	TendermintKey  string `long:"tendermint-key" description:"Key type to generate privval file with" choice:"ed25519" choice:"secp256k1" default:"ed25519"`
+	NoTendermint   bool   `description:"Disable tendermint configuration generation" long:"no-tendermint"`
+	TendermintHome string `default:"$HOME/.cometbft"                                 description:"Directory for tendermint config and data" long:"tendermint-home" required:"true"`
+	TendermintKey  string `choice:"ed25519"                                          choice:"secp256k1"                                     default:"ed25519"      description:"Key type to generate privval file with" long:"tendermint-key"`
 }
 
 var initCmd InitCmd

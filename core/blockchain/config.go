@@ -34,7 +34,7 @@ type Config struct {
 	ChainProvider       string            `long:"chain-provider"`
 
 	Tendermint TendermintConfig `group:"Tendermint" namespace:"tendermint"`
-	Null       NullChainConfig  `group:"NullChain" namespace:"nullchain"`
+	Null       NullChainConfig  `group:"NullChain"  namespace:"nullchain"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -51,8 +51,8 @@ func NewDefaultConfig() Config {
 }
 
 type TendermintConfig struct {
-	Level   encoding.LogLevel `long:"log-level" description:" "`
-	RPCAddr string            `long:"rpc-addr" description:"address of the tendermint rpc"`
+	Level   encoding.LogLevel `description:" "                             long:"log-level"`
+	RPCAddr string            `description:"address of the tendermint rpc" long:"rpc-addr"`
 }
 
 // NewDefaultTendermintConfig creates an instance of the package specific configuration, given a
@@ -64,18 +64,18 @@ func NewDefaultTendermintConfig() TendermintConfig {
 }
 
 type ReplayConfig struct {
-	Record     bool   `long:"record" description:"whether to record block data to a file to allow replaying"`
-	Replay     bool   `long:"replay" description:"whether to replay any blockdata found in replay-file"`
-	ReplayFile string `long:"replay-file" description:"path to file of which to write/read replay data"`
+	Record     bool   `description:"whether to record block data to a file to allow replaying" long:"record"`
+	Replay     bool   `description:"whether to replay any blockdata found in replay-file"      long:"replay"`
+	ReplayFile string `description:"path to file of which to write/read replay data"           long:"replay-file"`
 }
 
 type NullChainConfig struct {
 	Level                encoding.LogLevel `long:"log-level"`
-	BlockDuration        encoding.Duration `long:"block-duration" description:"(default 1s)"`
-	TransactionsPerBlock uint64            `long:"transactions-per-block" description:"(default 10)"`
-	GenesisFile          string            `long:"genesis-file" description:"path to a tendermint genesis file"`
-	IP                   string            `long:"ip" description:"time-forwarding IP (default localhost)"`
-	Port                 int               `long:"port" description:"time-forwarding port (default 3009)"`
+	BlockDuration        encoding.Duration `description:"(default 1s)"                           long:"block-duration"`
+	TransactionsPerBlock uint64            `description:"(default 10)"                           long:"transactions-per-block"`
+	GenesisFile          string            `description:"path to a tendermint genesis file"      long:"genesis-file"`
+	IP                   string            `description:"time-forwarding IP (default localhost)" long:"ip"`
+	Port                 int               `description:"time-forwarding port (default 3009)"    long:"port"`
 	Replay               ReplayConfig
 }
 

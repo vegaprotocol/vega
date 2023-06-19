@@ -187,6 +187,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Instrument
   InstrumentMetadata:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentMetadata
+  SuccessorMarket:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.SuccessorMarket
   Market:
     model: code.vegaprotocol.io/vega/protos/vega.Market
     fields:
@@ -270,6 +272,8 @@ models:
         resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.PeggedOrder
+  IcebergOrder:
+    model: code.vegaprotocol.io/vega/protos/vega.IcebergOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
   DataSourceDefinition:
@@ -392,8 +396,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PageInfo
   MarketConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketConnection
+  SuccessorMarketConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.SuccessorMarketConnection
   MarketEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketEdge
+  SuccessorMarketEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.SuccessorMarketEdge
   PositionConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PositionConnection
   PositionEdge:

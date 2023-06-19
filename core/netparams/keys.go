@@ -34,6 +34,7 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
 
 	RewardAsset = "reward.asset"
 
@@ -98,6 +99,18 @@ const (
 	GovernanceProposalFreeformMinProposerBalance    = "governance.proposal.freeform.minProposerBalance"
 	GovernanceProposalFreeformMinVoterBalance       = "governance.proposal.freeform.minVoterBalance"
 
+	// governance transfer proposal parameters.
+	GovernanceProposalTransferMinClose              = "governance.proposal.transfer.minClose"
+	GovernanceProposalTransferMaxClose              = "governance.proposal.transfer.maxClose"
+	GovernanceProposalTransferMinEnact              = "governance.proposal.transfer.minEnact"
+	GovernanceProposalTransferMaxEnact              = "governance.proposal.transfer.maxEnact"
+	GovernanceProposalTransferRequiredParticipation = "governance.proposal.transfer.requiredParticipation"
+	GovernanceProposalTransferRequiredMajority      = "governance.proposal.transfer.requiredMajority"
+	GovernanceProposalTransferMinProposerBalance    = "governance.proposal.transfer.minProposerBalance"
+	GovernanceProposalTransferMinVoterBalance       = "governance.proposal.transfer.minVoterBalance"
+	GovernanceTransferMaxAmount                     = "governance.proposal.transfer.maxAmount"
+	GovernanceTransferMaxFraction                   = "governance.proposal.transfer.maxFraction"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -121,6 +134,7 @@ const (
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
+	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -151,7 +165,6 @@ const (
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
-	SuccessorLaunchWindow              = "network.liquidity.successorLaunchWindowLength"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -246,6 +259,16 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalFreeformRequiredMajority:               {},
 	GovernanceProposalFreeformMinProposerBalance:             {},
 	GovernanceProposalFreeformMinVoterBalance:                {},
+	GovernanceProposalTransferMinClose:                       {},
+	GovernanceProposalTransferMaxClose:                       {},
+	GovernanceProposalTransferMinEnact:                       {},
+	GovernanceProposalTransferMaxEnact:                       {},
+	GovernanceProposalTransferRequiredParticipation:          {},
+	GovernanceProposalTransferRequiredMajority:               {},
+	GovernanceProposalTransferMinProposerBalance:             {},
+	GovernanceProposalTransferMinVoterBalance:                {},
+	GovernanceTransferMaxAmount:                              {},
+	GovernanceTransferMaxFraction:                            {},
 	BlockchainsEthereumConfig:                                {},
 	MarketLiquidityProvisionShapesMaxSize:                    {},
 	MarketProbabilityOfTradingTauScaling:                     {},
@@ -301,5 +324,6 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                        {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
 	SpamProtectionMinMultisigUpdates:                         {},
-	SuccessorLaunchWindow:                                    {},
+	MarketSuccessorLaunchWindow:                              {},
+	SpamProtectionMaxStopOrdersPerMarket:                     {},
 }

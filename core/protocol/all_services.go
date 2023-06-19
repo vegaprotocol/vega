@@ -238,20 +238,20 @@ func newServices(
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		svcs.codec = &processor.NullBlockchainTxCodec{}
 		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
+		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 	} else {
 		svcs.codec = &processor.TxCodec{}
 		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
+		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()
@@ -651,6 +651,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.banking.OnTransferFeeFactorUpdate,
 		},
 		{
+			Param:   netparams.GovernanceTransferMaxFraction,
+			Watcher: svcs.banking.OnMaxFractionChanged,
+		},
+		{
+			Param:   netparams.GovernanceTransferMaxAmount,
+			Watcher: svcs.banking.OnMaxAmountChanged,
+		},
+		{
 			Param:   netparams.TransferMinTransferQuantumMultiple,
 			Watcher: svcs.banking.OnMinTransferQuantumMultiple,
 		},
@@ -687,8 +695,12 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
 		{
-			Param:   netparams.SuccessorLaunchWindow,
+			Param:   netparams.MarketSuccessorLaunchWindow,
 			Watcher: svcs.executionEngine.OnSuccessorMarketTimeWindowUpdate,
+		},
+		{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},
 	}
 

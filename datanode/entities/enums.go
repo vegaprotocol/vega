@@ -511,6 +511,11 @@ const (
 	ProposalErrorTooManyMarketDecimalPlaces       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES)
 	ProposalErrorTooManyPriceMonitoringTriggers   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS)
 	ProposalErrorERC20AddressAlreadyInUse         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE)
+	ProporsalErrorInvalidGovernanceTransfer       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID)
+	ProporsalErrorFailedGovernanceTransfer        = ProposalError(vega.ProposalError_PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED)
+	ProporsalErrorFailedGovernanceTransferCancel  = ProposalError(vega.ProposalError_PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID)
+	ProposalErrorInvalidSpot                      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SPOT)
+	ProposalErrorSpotNotEnabled                   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED)
 	ProposalErrorInvalidSuccessorMarket           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET)
 )
 

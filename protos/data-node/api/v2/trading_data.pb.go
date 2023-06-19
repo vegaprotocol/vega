@@ -348,7 +348,7 @@ func (x ListGovernanceDataRequest_Type) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ListGovernanceDataRequest_Type.Descriptor instead.
 func (ListGovernanceDataRequest_Type) EnumDescriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{187, 0}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{190, 0}
 }
 
 // All data returned from the API is ordered in a well-defined manner.
@@ -8404,6 +8404,8 @@ type ListSuccessorMarketsRequest struct {
 	// Flag to indicate whether or not to include the full succession line, or only list
 	// the children of the given market ID. If true, the full succession line is included.
 	IncludeFullHistory bool `protobuf:"varint,2,opt,name=include_full_history,json=includeFullHistory,proto3" json:"include_full_history,omitempty"`
+	// Pagination control.
+	Pagination *Pagination `protobuf:"bytes,3,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
 func (x *ListSuccessorMarketsRequest) Reset() {
@@ -8452,6 +8454,189 @@ func (x *ListSuccessorMarketsRequest) GetIncludeFullHistory() bool {
 	return false
 }
 
+func (x *ListSuccessorMarketsRequest) GetPagination() *Pagination {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+// Successor market information includes the market that is a member of the succession line
+// and any governance data that is associated with proposals for child markets
+// whether enacted or not.
+type SuccessorMarket struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The market that is a member of the succession line.
+	Market *vega.Market `protobuf:"bytes,1,opt,name=market,proto3" json:"market,omitempty"`
+	// All proposals for child markets that have the market as a parent.
+	Proposals []*vega.GovernanceData `protobuf:"bytes,2,rep,name=proposals,proto3" json:"proposals,omitempty"`
+}
+
+func (x *SuccessorMarket) Reset() {
+	*x = SuccessorMarket{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[133]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuccessorMarket) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuccessorMarket) ProtoMessage() {}
+
+func (x *SuccessorMarket) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[133]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuccessorMarket.ProtoReflect.Descriptor instead.
+func (*SuccessorMarket) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{133}
+}
+
+func (x *SuccessorMarket) GetMarket() *vega.Market {
+	if x != nil {
+		return x.Market
+	}
+	return nil
+}
+
+func (x *SuccessorMarket) GetProposals() []*vega.GovernanceData {
+	if x != nil {
+		return x.Proposals
+	}
+	return nil
+}
+
+// Successor market record with the corresponding cursor for paginated results
+type SuccessorMarketEdge struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Successor market record.
+	Node *SuccessorMarket `protobuf:"bytes,1,opt,name=node,proto3" json:"node,omitempty"`
+	// Cursor identifying the record for pagination control.
+	Cursor string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+}
+
+func (x *SuccessorMarketEdge) Reset() {
+	*x = SuccessorMarketEdge{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[134]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuccessorMarketEdge) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuccessorMarketEdge) ProtoMessage() {}
+
+func (x *SuccessorMarketEdge) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[134]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuccessorMarketEdge.ProtoReflect.Descriptor instead.
+func (*SuccessorMarketEdge) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{134}
+}
+
+func (x *SuccessorMarketEdge) GetNode() *SuccessorMarket {
+	if x != nil {
+		return x.Node
+	}
+	return nil
+}
+
+func (x *SuccessorMarketEdge) GetCursor() string {
+	if x != nil {
+		return x.Cursor
+	}
+	return ""
+}
+
+// Page of successor market records and corresponding page information.
+type SuccessorMarketConnection struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Page of successor markets and their cursors.
+	Edges []*SuccessorMarketEdge `protobuf:"bytes,1,rep,name=edges,proto3" json:"edges,omitempty"`
+	// Page information for pagination control.
+	PageInfo *PageInfo `protobuf:"bytes,2,opt,name=page_info,json=pageInfo,proto3" json:"page_info,omitempty"`
+}
+
+func (x *SuccessorMarketConnection) Reset() {
+	*x = SuccessorMarketConnection{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[135]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuccessorMarketConnection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuccessorMarketConnection) ProtoMessage() {}
+
+func (x *SuccessorMarketConnection) ProtoReflect() protoreflect.Message {
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[135]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuccessorMarketConnection.ProtoReflect.Descriptor instead.
+func (*SuccessorMarketConnection) Descriptor() ([]byte, []int) {
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{135}
+}
+
+func (x *SuccessorMarketConnection) GetEdges() []*SuccessorMarketEdge {
+	if x != nil {
+		return x.Edges
+	}
+	return nil
+}
+
+func (x *SuccessorMarketConnection) GetPageInfo() *PageInfo {
+	if x != nil {
+		return x.PageInfo
+	}
+	return nil
+}
+
 // Response from a list successor markets request.
 type ListSuccessorMarketsResponse struct {
 	state         protoimpl.MessageState
@@ -8459,13 +8644,13 @@ type ListSuccessorMarketsResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// List of markets in the succession line.
-	Markets []*vega.Market `protobuf:"bytes,1,rep,name=markets,proto3" json:"markets,omitempty"`
+	Markets *SuccessorMarketConnection `protobuf:"bytes,1,opt,name=markets,proto3" json:"markets,omitempty"`
 }
 
 func (x *ListSuccessorMarketsResponse) Reset() {
 	*x = ListSuccessorMarketsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[133]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[136]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8478,7 +8663,7 @@ func (x *ListSuccessorMarketsResponse) String() string {
 func (*ListSuccessorMarketsResponse) ProtoMessage() {}
 
 func (x *ListSuccessorMarketsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[133]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[136]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8491,10 +8676,10 @@ func (x *ListSuccessorMarketsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSuccessorMarketsResponse.ProtoReflect.Descriptor instead.
 func (*ListSuccessorMarketsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{133}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{136}
 }
 
-func (x *ListSuccessorMarketsResponse) GetMarkets() []*vega.Market {
+func (x *ListSuccessorMarketsResponse) GetMarkets() *SuccessorMarketConnection {
 	if x != nil {
 		return x.Markets
 	}
@@ -8514,7 +8699,7 @@ type GetPartyRequest struct {
 func (x *GetPartyRequest) Reset() {
 	*x = GetPartyRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[134]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[137]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8527,7 +8712,7 @@ func (x *GetPartyRequest) String() string {
 func (*GetPartyRequest) ProtoMessage() {}
 
 func (x *GetPartyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[134]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[137]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8540,7 +8725,7 @@ func (x *GetPartyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPartyRequest.ProtoReflect.Descriptor instead.
 func (*GetPartyRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{134}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *GetPartyRequest) GetPartyId() string {
@@ -8563,7 +8748,7 @@ type GetPartyResponse struct {
 func (x *GetPartyResponse) Reset() {
 	*x = GetPartyResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[135]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[138]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8576,7 +8761,7 @@ func (x *GetPartyResponse) String() string {
 func (*GetPartyResponse) ProtoMessage() {}
 
 func (x *GetPartyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[135]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[138]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8589,7 +8774,7 @@ func (x *GetPartyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPartyResponse.ProtoReflect.Descriptor instead.
 func (*GetPartyResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{135}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *GetPartyResponse) GetParty() *vega.Party {
@@ -8614,7 +8799,7 @@ type ListPartiesRequest struct {
 func (x *ListPartiesRequest) Reset() {
 	*x = ListPartiesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[136]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[139]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8627,7 +8812,7 @@ func (x *ListPartiesRequest) String() string {
 func (*ListPartiesRequest) ProtoMessage() {}
 
 func (x *ListPartiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[136]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[139]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8640,7 +8825,7 @@ func (x *ListPartiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPartiesRequest.ProtoReflect.Descriptor instead.
 func (*ListPartiesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{136}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *ListPartiesRequest) GetPartyId() string {
@@ -8670,7 +8855,7 @@ type ListPartiesResponse struct {
 func (x *ListPartiesResponse) Reset() {
 	*x = ListPartiesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[137]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[140]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8683,7 +8868,7 @@ func (x *ListPartiesResponse) String() string {
 func (*ListPartiesResponse) ProtoMessage() {}
 
 func (x *ListPartiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[137]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[140]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8696,7 +8881,7 @@ func (x *ListPartiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPartiesResponse.ProtoReflect.Descriptor instead.
 func (*ListPartiesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{137}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{140}
 }
 
 func (x *ListPartiesResponse) GetParties() *PartyConnection {
@@ -8721,7 +8906,7 @@ type PartyEdge struct {
 func (x *PartyEdge) Reset() {
 	*x = PartyEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[138]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[141]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8734,7 +8919,7 @@ func (x *PartyEdge) String() string {
 func (*PartyEdge) ProtoMessage() {}
 
 func (x *PartyEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[138]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[141]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8747,7 +8932,7 @@ func (x *PartyEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyEdge.ProtoReflect.Descriptor instead.
 func (*PartyEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{138}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{141}
 }
 
 func (x *PartyEdge) GetNode() *vega.Party {
@@ -8779,7 +8964,7 @@ type PartyConnection struct {
 func (x *PartyConnection) Reset() {
 	*x = PartyConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[139]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[142]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8792,7 +8977,7 @@ func (x *PartyConnection) String() string {
 func (*PartyConnection) ProtoMessage() {}
 
 func (x *PartyConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[139]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[142]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8805,7 +8990,7 @@ func (x *PartyConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PartyConnection.ProtoReflect.Descriptor instead.
 func (*PartyConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{139}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{142}
 }
 
 func (x *PartyConnection) GetEdges() []*PartyEdge {
@@ -8837,7 +9022,7 @@ type OrderEdge struct {
 func (x *OrderEdge) Reset() {
 	*x = OrderEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[140]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[143]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8850,7 +9035,7 @@ func (x *OrderEdge) String() string {
 func (*OrderEdge) ProtoMessage() {}
 
 func (x *OrderEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[140]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[143]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8863,7 +9048,7 @@ func (x *OrderEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderEdge.ProtoReflect.Descriptor instead.
 func (*OrderEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{140}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{143}
 }
 
 func (x *OrderEdge) GetNode() *vega.Order {
@@ -8897,7 +9082,7 @@ type ListMarginLevelsRequest struct {
 func (x *ListMarginLevelsRequest) Reset() {
 	*x = ListMarginLevelsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[141]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[144]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8910,7 +9095,7 @@ func (x *ListMarginLevelsRequest) String() string {
 func (*ListMarginLevelsRequest) ProtoMessage() {}
 
 func (x *ListMarginLevelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[141]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[144]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8923,7 +9108,7 @@ func (x *ListMarginLevelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMarginLevelsRequest.ProtoReflect.Descriptor instead.
 func (*ListMarginLevelsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{141}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{144}
 }
 
 func (x *ListMarginLevelsRequest) GetPartyId() string {
@@ -8960,7 +9145,7 @@ type ListMarginLevelsResponse struct {
 func (x *ListMarginLevelsResponse) Reset() {
 	*x = ListMarginLevelsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[142]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[145]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -8973,7 +9158,7 @@ func (x *ListMarginLevelsResponse) String() string {
 func (*ListMarginLevelsResponse) ProtoMessage() {}
 
 func (x *ListMarginLevelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[142]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[145]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8986,7 +9171,7 @@ func (x *ListMarginLevelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMarginLevelsResponse.ProtoReflect.Descriptor instead.
 func (*ListMarginLevelsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{142}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{145}
 }
 
 func (x *ListMarginLevelsResponse) GetMarginLevels() *MarginConnection {
@@ -9013,7 +9198,7 @@ type ObserveMarginLevelsRequest struct {
 func (x *ObserveMarginLevelsRequest) Reset() {
 	*x = ObserveMarginLevelsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[143]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[146]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9026,7 +9211,7 @@ func (x *ObserveMarginLevelsRequest) String() string {
 func (*ObserveMarginLevelsRequest) ProtoMessage() {}
 
 func (x *ObserveMarginLevelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[143]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[146]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9039,7 +9224,7 @@ func (x *ObserveMarginLevelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveMarginLevelsRequest.ProtoReflect.Descriptor instead.
 func (*ObserveMarginLevelsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{143}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{146}
 }
 
 func (x *ObserveMarginLevelsRequest) GetPartyId() string {
@@ -9069,7 +9254,7 @@ type ObserveMarginLevelsResponse struct {
 func (x *ObserveMarginLevelsResponse) Reset() {
 	*x = ObserveMarginLevelsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[144]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[147]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9082,7 +9267,7 @@ func (x *ObserveMarginLevelsResponse) String() string {
 func (*ObserveMarginLevelsResponse) ProtoMessage() {}
 
 func (x *ObserveMarginLevelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[144]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[147]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9095,7 +9280,7 @@ func (x *ObserveMarginLevelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveMarginLevelsResponse.ProtoReflect.Descriptor instead.
 func (*ObserveMarginLevelsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{144}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{147}
 }
 
 func (x *ObserveMarginLevelsResponse) GetMarginLevels() *vega.MarginLevels {
@@ -9120,7 +9305,7 @@ type OrderConnection struct {
 func (x *OrderConnection) Reset() {
 	*x = OrderConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[145]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[148]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9133,7 +9318,7 @@ func (x *OrderConnection) String() string {
 func (*OrderConnection) ProtoMessage() {}
 
 func (x *OrderConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[145]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[148]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9146,7 +9331,7 @@ func (x *OrderConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderConnection.ProtoReflect.Descriptor instead.
 func (*OrderConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{145}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{148}
 }
 
 func (x *OrderConnection) GetEdges() []*OrderEdge {
@@ -9178,7 +9363,7 @@ type MarginEdge struct {
 func (x *MarginEdge) Reset() {
 	*x = MarginEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[146]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[149]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9191,7 +9376,7 @@ func (x *MarginEdge) String() string {
 func (*MarginEdge) ProtoMessage() {}
 
 func (x *MarginEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[146]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[149]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9204,7 +9389,7 @@ func (x *MarginEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarginEdge.ProtoReflect.Descriptor instead.
 func (*MarginEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{146}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{149}
 }
 
 func (x *MarginEdge) GetNode() *vega.MarginLevels {
@@ -9236,7 +9421,7 @@ type MarginConnection struct {
 func (x *MarginConnection) Reset() {
 	*x = MarginConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[147]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[150]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9249,7 +9434,7 @@ func (x *MarginConnection) String() string {
 func (*MarginConnection) ProtoMessage() {}
 
 func (x *MarginConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[147]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[150]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9262,7 +9447,7 @@ func (x *MarginConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarginConnection.ProtoReflect.Descriptor instead.
 func (*MarginConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{147}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{150}
 }
 
 func (x *MarginConnection) GetEdges() []*MarginEdge {
@@ -9300,7 +9485,7 @@ type ListRewardsRequest struct {
 func (x *ListRewardsRequest) Reset() {
 	*x = ListRewardsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[148]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[151]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9313,7 +9498,7 @@ func (x *ListRewardsRequest) String() string {
 func (*ListRewardsRequest) ProtoMessage() {}
 
 func (x *ListRewardsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[148]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[151]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9326,7 +9511,7 @@ func (x *ListRewardsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRewardsRequest.ProtoReflect.Descriptor instead.
 func (*ListRewardsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{148}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{151}
 }
 
 func (x *ListRewardsRequest) GetPartyId() string {
@@ -9377,7 +9562,7 @@ type ListRewardsResponse struct {
 func (x *ListRewardsResponse) Reset() {
 	*x = ListRewardsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[149]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[152]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9390,7 +9575,7 @@ func (x *ListRewardsResponse) String() string {
 func (*ListRewardsResponse) ProtoMessage() {}
 
 func (x *ListRewardsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[149]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[152]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9403,7 +9588,7 @@ func (x *ListRewardsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRewardsResponse.ProtoReflect.Descriptor instead.
 func (*ListRewardsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{149}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{152}
 }
 
 func (x *ListRewardsResponse) GetRewards() *RewardsConnection {
@@ -9428,7 +9613,7 @@ type RewardEdge struct {
 func (x *RewardEdge) Reset() {
 	*x = RewardEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[150]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[153]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9441,7 +9626,7 @@ func (x *RewardEdge) String() string {
 func (*RewardEdge) ProtoMessage() {}
 
 func (x *RewardEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[150]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[153]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9454,7 +9639,7 @@ func (x *RewardEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardEdge.ProtoReflect.Descriptor instead.
 func (*RewardEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{150}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{153}
 }
 
 func (x *RewardEdge) GetNode() *vega.Reward {
@@ -9486,7 +9671,7 @@ type RewardsConnection struct {
 func (x *RewardsConnection) Reset() {
 	*x = RewardsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[151]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[154]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9499,7 +9684,7 @@ func (x *RewardsConnection) String() string {
 func (*RewardsConnection) ProtoMessage() {}
 
 func (x *RewardsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[151]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[154]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9512,7 +9697,7 @@ func (x *RewardsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardsConnection.ProtoReflect.Descriptor instead.
 func (*RewardsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{151}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{154}
 }
 
 func (x *RewardsConnection) GetEdges() []*RewardEdge {
@@ -9546,7 +9731,7 @@ type ListRewardSummariesRequest struct {
 func (x *ListRewardSummariesRequest) Reset() {
 	*x = ListRewardSummariesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[152]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[155]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9559,7 +9744,7 @@ func (x *ListRewardSummariesRequest) String() string {
 func (*ListRewardSummariesRequest) ProtoMessage() {}
 
 func (x *ListRewardSummariesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[152]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[155]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9572,7 +9757,7 @@ func (x *ListRewardSummariesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRewardSummariesRequest.ProtoReflect.Descriptor instead.
 func (*ListRewardSummariesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{152}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{155}
 }
 
 func (x *ListRewardSummariesRequest) GetPartyId() string {
@@ -9609,7 +9794,7 @@ type ListRewardSummariesResponse struct {
 func (x *ListRewardSummariesResponse) Reset() {
 	*x = ListRewardSummariesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[153]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[156]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9622,7 +9807,7 @@ func (x *ListRewardSummariesResponse) String() string {
 func (*ListRewardSummariesResponse) ProtoMessage() {}
 
 func (x *ListRewardSummariesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[153]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[156]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9635,7 +9820,7 @@ func (x *ListRewardSummariesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRewardSummariesResponse.ProtoReflect.Descriptor instead.
 func (*ListRewardSummariesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{153}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{156}
 }
 
 func (x *ListRewardSummariesResponse) GetSummaries() []*vega.RewardSummary {
@@ -9664,7 +9849,7 @@ type RewardSummaryFilter struct {
 func (x *RewardSummaryFilter) Reset() {
 	*x = RewardSummaryFilter{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[154]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[157]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9677,7 +9862,7 @@ func (x *RewardSummaryFilter) String() string {
 func (*RewardSummaryFilter) ProtoMessage() {}
 
 func (x *RewardSummaryFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[154]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[157]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9690,7 +9875,7 @@ func (x *RewardSummaryFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RewardSummaryFilter.ProtoReflect.Descriptor instead.
 func (*RewardSummaryFilter) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{154}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{157}
 }
 
 func (x *RewardSummaryFilter) GetAssetIds() []string {
@@ -9736,7 +9921,7 @@ type ListEpochRewardSummariesRequest struct {
 func (x *ListEpochRewardSummariesRequest) Reset() {
 	*x = ListEpochRewardSummariesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[155]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[158]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9749,7 +9934,7 @@ func (x *ListEpochRewardSummariesRequest) String() string {
 func (*ListEpochRewardSummariesRequest) ProtoMessage() {}
 
 func (x *ListEpochRewardSummariesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[155]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[158]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9762,7 +9947,7 @@ func (x *ListEpochRewardSummariesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEpochRewardSummariesRequest.ProtoReflect.Descriptor instead.
 func (*ListEpochRewardSummariesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{155}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{158}
 }
 
 func (x *ListEpochRewardSummariesRequest) GetFilter() *RewardSummaryFilter {
@@ -9792,7 +9977,7 @@ type ListEpochRewardSummariesResponse struct {
 func (x *ListEpochRewardSummariesResponse) Reset() {
 	*x = ListEpochRewardSummariesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[156]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[159]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9805,7 +9990,7 @@ func (x *ListEpochRewardSummariesResponse) String() string {
 func (*ListEpochRewardSummariesResponse) ProtoMessage() {}
 
 func (x *ListEpochRewardSummariesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[156]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[159]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9818,7 +10003,7 @@ func (x *ListEpochRewardSummariesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEpochRewardSummariesResponse.ProtoReflect.Descriptor instead.
 func (*ListEpochRewardSummariesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{156}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{159}
 }
 
 func (x *ListEpochRewardSummariesResponse) GetSummaries() *EpochRewardSummaryConnection {
@@ -9843,7 +10028,7 @@ type EpochRewardSummaryConnection struct {
 func (x *EpochRewardSummaryConnection) Reset() {
 	*x = EpochRewardSummaryConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[157]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[160]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9856,7 +10041,7 @@ func (x *EpochRewardSummaryConnection) String() string {
 func (*EpochRewardSummaryConnection) ProtoMessage() {}
 
 func (x *EpochRewardSummaryConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[157]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[160]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9869,7 +10054,7 @@ func (x *EpochRewardSummaryConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochRewardSummaryConnection.ProtoReflect.Descriptor instead.
 func (*EpochRewardSummaryConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{157}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{160}
 }
 
 func (x *EpochRewardSummaryConnection) GetEdges() []*EpochRewardSummaryEdge {
@@ -9901,7 +10086,7 @@ type EpochRewardSummaryEdge struct {
 func (x *EpochRewardSummaryEdge) Reset() {
 	*x = EpochRewardSummaryEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[158]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[161]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9914,7 +10099,7 @@ func (x *EpochRewardSummaryEdge) String() string {
 func (*EpochRewardSummaryEdge) ProtoMessage() {}
 
 func (x *EpochRewardSummaryEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[158]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[161]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9927,7 +10112,7 @@ func (x *EpochRewardSummaryEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EpochRewardSummaryEdge.ProtoReflect.Descriptor instead.
 func (*EpochRewardSummaryEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{158}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{161}
 }
 
 func (x *EpochRewardSummaryEdge) GetNode() *vega.EpochRewardSummary {
@@ -9959,7 +10144,7 @@ type ObserveRewardsRequest struct {
 func (x *ObserveRewardsRequest) Reset() {
 	*x = ObserveRewardsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[159]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[162]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -9972,7 +10157,7 @@ func (x *ObserveRewardsRequest) String() string {
 func (*ObserveRewardsRequest) ProtoMessage() {}
 
 func (x *ObserveRewardsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[159]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[162]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9985,7 +10170,7 @@ func (x *ObserveRewardsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveRewardsRequest.ProtoReflect.Descriptor instead.
 func (*ObserveRewardsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{159}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{162}
 }
 
 func (x *ObserveRewardsRequest) GetAssetId() string {
@@ -10015,7 +10200,7 @@ type ObserveRewardsResponse struct {
 func (x *ObserveRewardsResponse) Reset() {
 	*x = ObserveRewardsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[160]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[163]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10028,7 +10213,7 @@ func (x *ObserveRewardsResponse) String() string {
 func (*ObserveRewardsResponse) ProtoMessage() {}
 
 func (x *ObserveRewardsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[160]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[163]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10041,7 +10226,7 @@ func (x *ObserveRewardsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveRewardsResponse.ProtoReflect.Descriptor instead.
 func (*ObserveRewardsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{160}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{163}
 }
 
 func (x *ObserveRewardsResponse) GetReward() *vega.Reward {
@@ -10064,7 +10249,7 @@ type GetDepositRequest struct {
 func (x *GetDepositRequest) Reset() {
 	*x = GetDepositRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[161]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[164]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10077,7 +10262,7 @@ func (x *GetDepositRequest) String() string {
 func (*GetDepositRequest) ProtoMessage() {}
 
 func (x *GetDepositRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[161]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[164]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10090,7 +10275,7 @@ func (x *GetDepositRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDepositRequest.ProtoReflect.Descriptor instead.
 func (*GetDepositRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{161}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{164}
 }
 
 func (x *GetDepositRequest) GetId() string {
@@ -10113,7 +10298,7 @@ type GetDepositResponse struct {
 func (x *GetDepositResponse) Reset() {
 	*x = GetDepositResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[162]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[165]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10126,7 +10311,7 @@ func (x *GetDepositResponse) String() string {
 func (*GetDepositResponse) ProtoMessage() {}
 
 func (x *GetDepositResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[162]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[165]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10139,7 +10324,7 @@ func (x *GetDepositResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDepositResponse.ProtoReflect.Descriptor instead.
 func (*GetDepositResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{162}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{165}
 }
 
 func (x *GetDepositResponse) GetDeposit() *vega.Deposit {
@@ -10166,7 +10351,7 @@ type ListDepositsRequest struct {
 func (x *ListDepositsRequest) Reset() {
 	*x = ListDepositsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[163]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[166]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10179,7 +10364,7 @@ func (x *ListDepositsRequest) String() string {
 func (*ListDepositsRequest) ProtoMessage() {}
 
 func (x *ListDepositsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[163]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[166]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10192,7 +10377,7 @@ func (x *ListDepositsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDepositsRequest.ProtoReflect.Descriptor instead.
 func (*ListDepositsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{163}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{166}
 }
 
 func (x *ListDepositsRequest) GetPartyId() string {
@@ -10229,7 +10414,7 @@ type ListDepositsResponse struct {
 func (x *ListDepositsResponse) Reset() {
 	*x = ListDepositsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[164]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[167]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10242,7 +10427,7 @@ func (x *ListDepositsResponse) String() string {
 func (*ListDepositsResponse) ProtoMessage() {}
 
 func (x *ListDepositsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[164]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[167]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10255,7 +10440,7 @@ func (x *ListDepositsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDepositsResponse.ProtoReflect.Descriptor instead.
 func (*ListDepositsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{164}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{167}
 }
 
 func (x *ListDepositsResponse) GetDeposits() *DepositsConnection {
@@ -10280,7 +10465,7 @@ type DepositEdge struct {
 func (x *DepositEdge) Reset() {
 	*x = DepositEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[165]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[168]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10293,7 +10478,7 @@ func (x *DepositEdge) String() string {
 func (*DepositEdge) ProtoMessage() {}
 
 func (x *DepositEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[165]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[168]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10306,7 +10491,7 @@ func (x *DepositEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DepositEdge.ProtoReflect.Descriptor instead.
 func (*DepositEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{165}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{168}
 }
 
 func (x *DepositEdge) GetNode() *vega.Deposit {
@@ -10338,7 +10523,7 @@ type DepositsConnection struct {
 func (x *DepositsConnection) Reset() {
 	*x = DepositsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[166]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[169]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10351,7 +10536,7 @@ func (x *DepositsConnection) String() string {
 func (*DepositsConnection) ProtoMessage() {}
 
 func (x *DepositsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[166]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[169]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10364,7 +10549,7 @@ func (x *DepositsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DepositsConnection.ProtoReflect.Descriptor instead.
 func (*DepositsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{166}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{169}
 }
 
 func (x *DepositsConnection) GetEdges() []*DepositEdge {
@@ -10394,7 +10579,7 @@ type GetWithdrawalRequest struct {
 func (x *GetWithdrawalRequest) Reset() {
 	*x = GetWithdrawalRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[167]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[170]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10407,7 +10592,7 @@ func (x *GetWithdrawalRequest) String() string {
 func (*GetWithdrawalRequest) ProtoMessage() {}
 
 func (x *GetWithdrawalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[167]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[170]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10420,7 +10605,7 @@ func (x *GetWithdrawalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetWithdrawalRequest.ProtoReflect.Descriptor instead.
 func (*GetWithdrawalRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{167}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{170}
 }
 
 func (x *GetWithdrawalRequest) GetId() string {
@@ -10443,7 +10628,7 @@ type GetWithdrawalResponse struct {
 func (x *GetWithdrawalResponse) Reset() {
 	*x = GetWithdrawalResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[168]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[171]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10456,7 +10641,7 @@ func (x *GetWithdrawalResponse) String() string {
 func (*GetWithdrawalResponse) ProtoMessage() {}
 
 func (x *GetWithdrawalResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[168]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[171]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10469,7 +10654,7 @@ func (x *GetWithdrawalResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetWithdrawalResponse.ProtoReflect.Descriptor instead.
 func (*GetWithdrawalResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{168}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{171}
 }
 
 func (x *GetWithdrawalResponse) GetWithdrawal() *vega.Withdrawal {
@@ -10496,7 +10681,7 @@ type ListWithdrawalsRequest struct {
 func (x *ListWithdrawalsRequest) Reset() {
 	*x = ListWithdrawalsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[169]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[172]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10509,7 +10694,7 @@ func (x *ListWithdrawalsRequest) String() string {
 func (*ListWithdrawalsRequest) ProtoMessage() {}
 
 func (x *ListWithdrawalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[169]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[172]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10522,7 +10707,7 @@ func (x *ListWithdrawalsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWithdrawalsRequest.ProtoReflect.Descriptor instead.
 func (*ListWithdrawalsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{169}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{172}
 }
 
 func (x *ListWithdrawalsRequest) GetPartyId() string {
@@ -10559,7 +10744,7 @@ type ListWithdrawalsResponse struct {
 func (x *ListWithdrawalsResponse) Reset() {
 	*x = ListWithdrawalsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[170]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[173]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10572,7 +10757,7 @@ func (x *ListWithdrawalsResponse) String() string {
 func (*ListWithdrawalsResponse) ProtoMessage() {}
 
 func (x *ListWithdrawalsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[170]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[173]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10585,7 +10770,7 @@ func (x *ListWithdrawalsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWithdrawalsResponse.ProtoReflect.Descriptor instead.
 func (*ListWithdrawalsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{170}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{173}
 }
 
 func (x *ListWithdrawalsResponse) GetWithdrawals() *WithdrawalsConnection {
@@ -10610,7 +10795,7 @@ type WithdrawalEdge struct {
 func (x *WithdrawalEdge) Reset() {
 	*x = WithdrawalEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[171]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[174]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10623,7 +10808,7 @@ func (x *WithdrawalEdge) String() string {
 func (*WithdrawalEdge) ProtoMessage() {}
 
 func (x *WithdrawalEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[171]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[174]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10636,7 +10821,7 @@ func (x *WithdrawalEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WithdrawalEdge.ProtoReflect.Descriptor instead.
 func (*WithdrawalEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{171}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{174}
 }
 
 func (x *WithdrawalEdge) GetNode() *vega.Withdrawal {
@@ -10668,7 +10853,7 @@ type WithdrawalsConnection struct {
 func (x *WithdrawalsConnection) Reset() {
 	*x = WithdrawalsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[172]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[175]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10681,7 +10866,7 @@ func (x *WithdrawalsConnection) String() string {
 func (*WithdrawalsConnection) ProtoMessage() {}
 
 func (x *WithdrawalsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[172]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[175]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10694,7 +10879,7 @@ func (x *WithdrawalsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WithdrawalsConnection.ProtoReflect.Descriptor instead.
 func (*WithdrawalsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{172}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{175}
 }
 
 func (x *WithdrawalsConnection) GetEdges() []*WithdrawalEdge {
@@ -10724,7 +10909,7 @@ type GetAssetRequest struct {
 func (x *GetAssetRequest) Reset() {
 	*x = GetAssetRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[173]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[176]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10737,7 +10922,7 @@ func (x *GetAssetRequest) String() string {
 func (*GetAssetRequest) ProtoMessage() {}
 
 func (x *GetAssetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[173]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[176]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10750,7 +10935,7 @@ func (x *GetAssetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAssetRequest.ProtoReflect.Descriptor instead.
 func (*GetAssetRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{173}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *GetAssetRequest) GetAssetId() string {
@@ -10773,7 +10958,7 @@ type GetAssetResponse struct {
 func (x *GetAssetResponse) Reset() {
 	*x = GetAssetResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[174]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[177]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10786,7 +10971,7 @@ func (x *GetAssetResponse) String() string {
 func (*GetAssetResponse) ProtoMessage() {}
 
 func (x *GetAssetResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[174]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[177]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10799,7 +10984,7 @@ func (x *GetAssetResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAssetResponse.ProtoReflect.Descriptor instead.
 func (*GetAssetResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{174}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *GetAssetResponse) GetAsset() *vega.Asset {
@@ -10824,7 +11009,7 @@ type ListAssetsRequest struct {
 func (x *ListAssetsRequest) Reset() {
 	*x = ListAssetsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[175]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[178]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10837,7 +11022,7 @@ func (x *ListAssetsRequest) String() string {
 func (*ListAssetsRequest) ProtoMessage() {}
 
 func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[175]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[178]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10850,7 +11035,7 @@ func (x *ListAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{175}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{178}
 }
 
 func (x *ListAssetsRequest) GetAssetId() string {
@@ -10880,7 +11065,7 @@ type ListAssetsResponse struct {
 func (x *ListAssetsResponse) Reset() {
 	*x = ListAssetsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[176]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[179]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10893,7 +11078,7 @@ func (x *ListAssetsResponse) String() string {
 func (*ListAssetsResponse) ProtoMessage() {}
 
 func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[176]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[179]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10906,7 +11091,7 @@ func (x *ListAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{176}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *ListAssetsResponse) GetAssets() *AssetsConnection {
@@ -10931,7 +11116,7 @@ type AssetEdge struct {
 func (x *AssetEdge) Reset() {
 	*x = AssetEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[177]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[180]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -10944,7 +11129,7 @@ func (x *AssetEdge) String() string {
 func (*AssetEdge) ProtoMessage() {}
 
 func (x *AssetEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[177]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[180]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10957,7 +11142,7 @@ func (x *AssetEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetEdge.ProtoReflect.Descriptor instead.
 func (*AssetEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{177}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{180}
 }
 
 func (x *AssetEdge) GetNode() *vega.Asset {
@@ -10989,7 +11174,7 @@ type AssetsConnection struct {
 func (x *AssetsConnection) Reset() {
 	*x = AssetsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[178]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[181]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11002,7 +11187,7 @@ func (x *AssetsConnection) String() string {
 func (*AssetsConnection) ProtoMessage() {}
 
 func (x *AssetsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[178]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[181]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11015,7 +11200,7 @@ func (x *AssetsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AssetsConnection.ProtoReflect.Descriptor instead.
 func (*AssetsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{178}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{181}
 }
 
 func (x *AssetsConnection) GetEdges() []*AssetEdge {
@@ -11053,7 +11238,7 @@ type ListLiquidityProvisionsRequest struct {
 func (x *ListLiquidityProvisionsRequest) Reset() {
 	*x = ListLiquidityProvisionsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[179]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[182]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11066,7 +11251,7 @@ func (x *ListLiquidityProvisionsRequest) String() string {
 func (*ListLiquidityProvisionsRequest) ProtoMessage() {}
 
 func (x *ListLiquidityProvisionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[179]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[182]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11079,7 +11264,7 @@ func (x *ListLiquidityProvisionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLiquidityProvisionsRequest.ProtoReflect.Descriptor instead.
 func (*ListLiquidityProvisionsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{179}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *ListLiquidityProvisionsRequest) GetMarketId() string {
@@ -11130,7 +11315,7 @@ type ListLiquidityProvisionsResponse struct {
 func (x *ListLiquidityProvisionsResponse) Reset() {
 	*x = ListLiquidityProvisionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[180]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[183]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11143,7 +11328,7 @@ func (x *ListLiquidityProvisionsResponse) String() string {
 func (*ListLiquidityProvisionsResponse) ProtoMessage() {}
 
 func (x *ListLiquidityProvisionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[180]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[183]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11156,7 +11341,7 @@ func (x *ListLiquidityProvisionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLiquidityProvisionsResponse.ProtoReflect.Descriptor instead.
 func (*ListLiquidityProvisionsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{180}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *ListLiquidityProvisionsResponse) GetLiquidityProvisions() *LiquidityProvisionsConnection {
@@ -11181,7 +11366,7 @@ type LiquidityProvisionsEdge struct {
 func (x *LiquidityProvisionsEdge) Reset() {
 	*x = LiquidityProvisionsEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[181]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[184]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11194,7 +11379,7 @@ func (x *LiquidityProvisionsEdge) String() string {
 func (*LiquidityProvisionsEdge) ProtoMessage() {}
 
 func (x *LiquidityProvisionsEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[181]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[184]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11207,7 +11392,7 @@ func (x *LiquidityProvisionsEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityProvisionsEdge.ProtoReflect.Descriptor instead.
 func (*LiquidityProvisionsEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{181}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{184}
 }
 
 func (x *LiquidityProvisionsEdge) GetNode() *vega.LiquidityProvision {
@@ -11239,7 +11424,7 @@ type LiquidityProvisionsConnection struct {
 func (x *LiquidityProvisionsConnection) Reset() {
 	*x = LiquidityProvisionsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[182]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[185]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11252,7 +11437,7 @@ func (x *LiquidityProvisionsConnection) String() string {
 func (*LiquidityProvisionsConnection) ProtoMessage() {}
 
 func (x *LiquidityProvisionsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[182]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[185]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11265,7 +11450,7 @@ func (x *LiquidityProvisionsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidityProvisionsConnection.ProtoReflect.Descriptor instead.
 func (*LiquidityProvisionsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{182}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{185}
 }
 
 func (x *LiquidityProvisionsConnection) GetEdges() []*LiquidityProvisionsEdge {
@@ -11297,7 +11482,7 @@ type ObserveLiquidityProvisionsRequest struct {
 func (x *ObserveLiquidityProvisionsRequest) Reset() {
 	*x = ObserveLiquidityProvisionsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[183]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[186]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11310,7 +11495,7 @@ func (x *ObserveLiquidityProvisionsRequest) String() string {
 func (*ObserveLiquidityProvisionsRequest) ProtoMessage() {}
 
 func (x *ObserveLiquidityProvisionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[183]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[186]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11323,7 +11508,7 @@ func (x *ObserveLiquidityProvisionsRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ObserveLiquidityProvisionsRequest.ProtoReflect.Descriptor instead.
 func (*ObserveLiquidityProvisionsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{183}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{186}
 }
 
 func (x *ObserveLiquidityProvisionsRequest) GetMarketId() string {
@@ -11352,7 +11537,7 @@ type ObserveLiquidityProvisionsResponse struct {
 func (x *ObserveLiquidityProvisionsResponse) Reset() {
 	*x = ObserveLiquidityProvisionsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[184]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[187]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11365,7 +11550,7 @@ func (x *ObserveLiquidityProvisionsResponse) String() string {
 func (*ObserveLiquidityProvisionsResponse) ProtoMessage() {}
 
 func (x *ObserveLiquidityProvisionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[184]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[187]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11378,7 +11563,7 @@ func (x *ObserveLiquidityProvisionsResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ObserveLiquidityProvisionsResponse.ProtoReflect.Descriptor instead.
 func (*ObserveLiquidityProvisionsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{184}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{187}
 }
 
 func (x *ObserveLiquidityProvisionsResponse) GetLiquidityProvisions() []*vega.LiquidityProvision {
@@ -11403,7 +11588,7 @@ type GetGovernanceDataRequest struct {
 func (x *GetGovernanceDataRequest) Reset() {
 	*x = GetGovernanceDataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[185]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[188]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11416,7 +11601,7 @@ func (x *GetGovernanceDataRequest) String() string {
 func (*GetGovernanceDataRequest) ProtoMessage() {}
 
 func (x *GetGovernanceDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[185]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[188]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11429,7 +11614,7 @@ func (x *GetGovernanceDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGovernanceDataRequest.ProtoReflect.Descriptor instead.
 func (*GetGovernanceDataRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{185}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{188}
 }
 
 func (x *GetGovernanceDataRequest) GetProposalId() string {
@@ -11459,7 +11644,7 @@ type GetGovernanceDataResponse struct {
 func (x *GetGovernanceDataResponse) Reset() {
 	*x = GetGovernanceDataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[186]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[189]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11472,7 +11657,7 @@ func (x *GetGovernanceDataResponse) String() string {
 func (*GetGovernanceDataResponse) ProtoMessage() {}
 
 func (x *GetGovernanceDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[186]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[189]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11485,7 +11670,7 @@ func (x *GetGovernanceDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGovernanceDataResponse.ProtoReflect.Descriptor instead.
 func (*GetGovernanceDataResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{186}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{189}
 }
 
 func (x *GetGovernanceDataResponse) GetData() *vega.GovernanceData {
@@ -11516,7 +11701,7 @@ type ListGovernanceDataRequest struct {
 func (x *ListGovernanceDataRequest) Reset() {
 	*x = ListGovernanceDataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[187]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[190]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11529,7 +11714,7 @@ func (x *ListGovernanceDataRequest) String() string {
 func (*ListGovernanceDataRequest) ProtoMessage() {}
 
 func (x *ListGovernanceDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[187]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[190]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11542,7 +11727,7 @@ func (x *ListGovernanceDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGovernanceDataRequest.ProtoReflect.Descriptor instead.
 func (*ListGovernanceDataRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{187}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{190}
 }
 
 func (x *ListGovernanceDataRequest) GetProposalState() vega.Proposal_State {
@@ -11593,7 +11778,7 @@ type ListGovernanceDataResponse struct {
 func (x *ListGovernanceDataResponse) Reset() {
 	*x = ListGovernanceDataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[188]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[191]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11606,7 +11791,7 @@ func (x *ListGovernanceDataResponse) String() string {
 func (*ListGovernanceDataResponse) ProtoMessage() {}
 
 func (x *ListGovernanceDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[188]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[191]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11619,7 +11804,7 @@ func (x *ListGovernanceDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGovernanceDataResponse.ProtoReflect.Descriptor instead.
 func (*ListGovernanceDataResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{188}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{191}
 }
 
 func (x *ListGovernanceDataResponse) GetConnection() *GovernanceDataConnection {
@@ -11644,7 +11829,7 @@ type GovernanceDataEdge struct {
 func (x *GovernanceDataEdge) Reset() {
 	*x = GovernanceDataEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[189]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[192]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11657,7 +11842,7 @@ func (x *GovernanceDataEdge) String() string {
 func (*GovernanceDataEdge) ProtoMessage() {}
 
 func (x *GovernanceDataEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[189]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[192]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11670,7 +11855,7 @@ func (x *GovernanceDataEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GovernanceDataEdge.ProtoReflect.Descriptor instead.
 func (*GovernanceDataEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{189}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{192}
 }
 
 func (x *GovernanceDataEdge) GetNode() *vega.GovernanceData {
@@ -11702,7 +11887,7 @@ type GovernanceDataConnection struct {
 func (x *GovernanceDataConnection) Reset() {
 	*x = GovernanceDataConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[190]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[193]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11715,7 +11900,7 @@ func (x *GovernanceDataConnection) String() string {
 func (*GovernanceDataConnection) ProtoMessage() {}
 
 func (x *GovernanceDataConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[190]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[193]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11728,7 +11913,7 @@ func (x *GovernanceDataConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GovernanceDataConnection.ProtoReflect.Descriptor instead.
 func (*GovernanceDataConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{190}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{193}
 }
 
 func (x *GovernanceDataConnection) GetEdges() []*GovernanceDataEdge {
@@ -11758,7 +11943,7 @@ type ObserveGovernanceRequest struct {
 func (x *ObserveGovernanceRequest) Reset() {
 	*x = ObserveGovernanceRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[191]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[194]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11771,7 +11956,7 @@ func (x *ObserveGovernanceRequest) String() string {
 func (*ObserveGovernanceRequest) ProtoMessage() {}
 
 func (x *ObserveGovernanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[191]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[194]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11784,7 +11969,7 @@ func (x *ObserveGovernanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveGovernanceRequest.ProtoReflect.Descriptor instead.
 func (*ObserveGovernanceRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{191}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{194}
 }
 
 func (x *ObserveGovernanceRequest) GetPartyId() string {
@@ -11807,7 +11992,7 @@ type ObserveGovernanceResponse struct {
 func (x *ObserveGovernanceResponse) Reset() {
 	*x = ObserveGovernanceResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[192]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[195]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11820,7 +12005,7 @@ func (x *ObserveGovernanceResponse) String() string {
 func (*ObserveGovernanceResponse) ProtoMessage() {}
 
 func (x *ObserveGovernanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[192]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[195]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11833,7 +12018,7 @@ func (x *ObserveGovernanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveGovernanceResponse.ProtoReflect.Descriptor instead.
 func (*ObserveGovernanceResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{192}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{195}
 }
 
 func (x *ObserveGovernanceResponse) GetData() *vega.GovernanceData {
@@ -11862,7 +12047,7 @@ type ListDelegationsRequest struct {
 func (x *ListDelegationsRequest) Reset() {
 	*x = ListDelegationsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[193]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[196]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11875,7 +12060,7 @@ func (x *ListDelegationsRequest) String() string {
 func (*ListDelegationsRequest) ProtoMessage() {}
 
 func (x *ListDelegationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[193]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[196]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11888,7 +12073,7 @@ func (x *ListDelegationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDelegationsRequest.ProtoReflect.Descriptor instead.
 func (*ListDelegationsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{193}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{196}
 }
 
 func (x *ListDelegationsRequest) GetPartyId() string {
@@ -11932,7 +12117,7 @@ type ListDelegationsResponse struct {
 func (x *ListDelegationsResponse) Reset() {
 	*x = ListDelegationsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[194]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[197]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11945,7 +12130,7 @@ func (x *ListDelegationsResponse) String() string {
 func (*ListDelegationsResponse) ProtoMessage() {}
 
 func (x *ListDelegationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[194]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[197]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11958,7 +12143,7 @@ func (x *ListDelegationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDelegationsResponse.ProtoReflect.Descriptor instead.
 func (*ListDelegationsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{194}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{197}
 }
 
 func (x *ListDelegationsResponse) GetDelegations() *DelegationsConnection {
@@ -11983,7 +12168,7 @@ type DelegationEdge struct {
 func (x *DelegationEdge) Reset() {
 	*x = DelegationEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[195]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[198]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -11996,7 +12181,7 @@ func (x *DelegationEdge) String() string {
 func (*DelegationEdge) ProtoMessage() {}
 
 func (x *DelegationEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[195]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[198]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12009,7 +12194,7 @@ func (x *DelegationEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DelegationEdge.ProtoReflect.Descriptor instead.
 func (*DelegationEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{195}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{198}
 }
 
 func (x *DelegationEdge) GetNode() *vega.Delegation {
@@ -12041,7 +12226,7 @@ type DelegationsConnection struct {
 func (x *DelegationsConnection) Reset() {
 	*x = DelegationsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[196]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[199]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12054,7 +12239,7 @@ func (x *DelegationsConnection) String() string {
 func (*DelegationsConnection) ProtoMessage() {}
 
 func (x *DelegationsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[196]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[199]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12067,7 +12252,7 @@ func (x *DelegationsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DelegationsConnection.ProtoReflect.Descriptor instead.
 func (*DelegationsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{196}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{199}
 }
 
 func (x *DelegationsConnection) GetEdges() []*DelegationEdge {
@@ -12099,7 +12284,7 @@ type ObserveDelegationsRequest struct {
 func (x *ObserveDelegationsRequest) Reset() {
 	*x = ObserveDelegationsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[197]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[200]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12112,7 +12297,7 @@ func (x *ObserveDelegationsRequest) String() string {
 func (*ObserveDelegationsRequest) ProtoMessage() {}
 
 func (x *ObserveDelegationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[197]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[200]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12125,7 +12310,7 @@ func (x *ObserveDelegationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveDelegationsRequest.ProtoReflect.Descriptor instead.
 func (*ObserveDelegationsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{197}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{200}
 }
 
 func (x *ObserveDelegationsRequest) GetPartyId() string {
@@ -12155,7 +12340,7 @@ type ObserveDelegationsResponse struct {
 func (x *ObserveDelegationsResponse) Reset() {
 	*x = ObserveDelegationsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[198]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[201]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12168,7 +12353,7 @@ func (x *ObserveDelegationsResponse) String() string {
 func (*ObserveDelegationsResponse) ProtoMessage() {}
 
 func (x *ObserveDelegationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[198]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[201]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12181,7 +12366,7 @@ func (x *ObserveDelegationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveDelegationsResponse.ProtoReflect.Descriptor instead.
 func (*ObserveDelegationsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{198}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{201}
 }
 
 func (x *ObserveDelegationsResponse) GetDelegation() *vega.Delegation {
@@ -12220,7 +12405,7 @@ type NodeBasic struct {
 func (x *NodeBasic) Reset() {
 	*x = NodeBasic{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[199]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[202]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12233,7 +12418,7 @@ func (x *NodeBasic) String() string {
 func (*NodeBasic) ProtoMessage() {}
 
 func (x *NodeBasic) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[199]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[202]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12246,7 +12431,7 @@ func (x *NodeBasic) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeBasic.ProtoReflect.Descriptor instead.
 func (*NodeBasic) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{199}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{202}
 }
 
 func (x *NodeBasic) GetId() string {
@@ -12322,7 +12507,7 @@ type GetNetworkDataRequest struct {
 func (x *GetNetworkDataRequest) Reset() {
 	*x = GetNetworkDataRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[200]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[203]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12335,7 +12520,7 @@ func (x *GetNetworkDataRequest) String() string {
 func (*GetNetworkDataRequest) ProtoMessage() {}
 
 func (x *GetNetworkDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[200]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[203]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12348,7 +12533,7 @@ func (x *GetNetworkDataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkDataRequest.ProtoReflect.Descriptor instead.
 func (*GetNetworkDataRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{200}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{203}
 }
 
 // Response from getting network data
@@ -12364,7 +12549,7 @@ type GetNetworkDataResponse struct {
 func (x *GetNetworkDataResponse) Reset() {
 	*x = GetNetworkDataResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[201]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[204]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12377,7 +12562,7 @@ func (x *GetNetworkDataResponse) String() string {
 func (*GetNetworkDataResponse) ProtoMessage() {}
 
 func (x *GetNetworkDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[201]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[204]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12390,7 +12575,7 @@ func (x *GetNetworkDataResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkDataResponse.ProtoReflect.Descriptor instead.
 func (*GetNetworkDataResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{201}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{204}
 }
 
 func (x *GetNetworkDataResponse) GetNodeData() *vega.NodeData {
@@ -12413,7 +12598,7 @@ type GetNodeRequest struct {
 func (x *GetNodeRequest) Reset() {
 	*x = GetNodeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[202]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[205]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12426,7 +12611,7 @@ func (x *GetNodeRequest) String() string {
 func (*GetNodeRequest) ProtoMessage() {}
 
 func (x *GetNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[202]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[205]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12439,7 +12624,7 @@ func (x *GetNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNodeRequest.ProtoReflect.Descriptor instead.
 func (*GetNodeRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{202}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{205}
 }
 
 func (x *GetNodeRequest) GetId() string {
@@ -12462,7 +12647,7 @@ type GetNodeResponse struct {
 func (x *GetNodeResponse) Reset() {
 	*x = GetNodeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[203]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[206]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12475,7 +12660,7 @@ func (x *GetNodeResponse) String() string {
 func (*GetNodeResponse) ProtoMessage() {}
 
 func (x *GetNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[203]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[206]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12488,7 +12673,7 @@ func (x *GetNodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNodeResponse.ProtoReflect.Descriptor instead.
 func (*GetNodeResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{203}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{206}
 }
 
 func (x *GetNodeResponse) GetNode() *vega.Node {
@@ -12513,7 +12698,7 @@ type ListNodesRequest struct {
 func (x *ListNodesRequest) Reset() {
 	*x = ListNodesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[204]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[207]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12526,7 +12711,7 @@ func (x *ListNodesRequest) String() string {
 func (*ListNodesRequest) ProtoMessage() {}
 
 func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[204]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[207]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12539,7 +12724,7 @@ func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{204}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{207}
 }
 
 func (x *ListNodesRequest) GetEpochSeq() uint64 {
@@ -12569,7 +12754,7 @@ type ListNodesResponse struct {
 func (x *ListNodesResponse) Reset() {
 	*x = ListNodesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[205]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[208]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12582,7 +12767,7 @@ func (x *ListNodesResponse) String() string {
 func (*ListNodesResponse) ProtoMessage() {}
 
 func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[205]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[208]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12595,7 +12780,7 @@ func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodesResponse.ProtoReflect.Descriptor instead.
 func (*ListNodesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{205}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{208}
 }
 
 func (x *ListNodesResponse) GetNodes() *NodesConnection {
@@ -12620,7 +12805,7 @@ type NodeEdge struct {
 func (x *NodeEdge) Reset() {
 	*x = NodeEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[206]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[209]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12633,7 +12818,7 @@ func (x *NodeEdge) String() string {
 func (*NodeEdge) ProtoMessage() {}
 
 func (x *NodeEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[206]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[209]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12646,7 +12831,7 @@ func (x *NodeEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeEdge.ProtoReflect.Descriptor instead.
 func (*NodeEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{206}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{209}
 }
 
 func (x *NodeEdge) GetNode() *vega.Node {
@@ -12678,7 +12863,7 @@ type NodesConnection struct {
 func (x *NodesConnection) Reset() {
 	*x = NodesConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[207]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[210]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12691,7 +12876,7 @@ func (x *NodesConnection) String() string {
 func (*NodesConnection) ProtoMessage() {}
 
 func (x *NodesConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[207]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[210]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12704,7 +12889,7 @@ func (x *NodesConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodesConnection.ProtoReflect.Descriptor instead.
 func (*NodesConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{207}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{210}
 }
 
 func (x *NodesConnection) GetEdges() []*NodeEdge {
@@ -12736,7 +12921,7 @@ type ListNodeSignaturesRequest struct {
 func (x *ListNodeSignaturesRequest) Reset() {
 	*x = ListNodeSignaturesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[208]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[211]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12749,7 +12934,7 @@ func (x *ListNodeSignaturesRequest) String() string {
 func (*ListNodeSignaturesRequest) ProtoMessage() {}
 
 func (x *ListNodeSignaturesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[208]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[211]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12762,7 +12947,7 @@ func (x *ListNodeSignaturesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeSignaturesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodeSignaturesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{208}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{211}
 }
 
 func (x *ListNodeSignaturesRequest) GetId() string {
@@ -12792,7 +12977,7 @@ type ListNodeSignaturesResponse struct {
 func (x *ListNodeSignaturesResponse) Reset() {
 	*x = ListNodeSignaturesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[209]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[212]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12805,7 +12990,7 @@ func (x *ListNodeSignaturesResponse) String() string {
 func (*ListNodeSignaturesResponse) ProtoMessage() {}
 
 func (x *ListNodeSignaturesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[209]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[212]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12818,7 +13003,7 @@ func (x *ListNodeSignaturesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeSignaturesResponse.ProtoReflect.Descriptor instead.
 func (*ListNodeSignaturesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{209}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{212}
 }
 
 func (x *ListNodeSignaturesResponse) GetSignatures() *NodeSignaturesConnection {
@@ -12843,7 +13028,7 @@ type NodeSignatureEdge struct {
 func (x *NodeSignatureEdge) Reset() {
 	*x = NodeSignatureEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[210]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[213]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12856,7 +13041,7 @@ func (x *NodeSignatureEdge) String() string {
 func (*NodeSignatureEdge) ProtoMessage() {}
 
 func (x *NodeSignatureEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[210]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[213]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12869,7 +13054,7 @@ func (x *NodeSignatureEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeSignatureEdge.ProtoReflect.Descriptor instead.
 func (*NodeSignatureEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{210}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{213}
 }
 
 func (x *NodeSignatureEdge) GetNode() *v11.NodeSignature {
@@ -12901,7 +13086,7 @@ type NodeSignaturesConnection struct {
 func (x *NodeSignaturesConnection) Reset() {
 	*x = NodeSignaturesConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[211]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[214]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12914,7 +13099,7 @@ func (x *NodeSignaturesConnection) String() string {
 func (*NodeSignaturesConnection) ProtoMessage() {}
 
 func (x *NodeSignaturesConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[211]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[214]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12927,7 +13112,7 @@ func (x *NodeSignaturesConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeSignaturesConnection.ProtoReflect.Descriptor instead.
 func (*NodeSignaturesConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{211}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{214}
 }
 
 func (x *NodeSignaturesConnection) GetEdges() []*NodeSignatureEdge {
@@ -12957,7 +13142,7 @@ type GetEpochRequest struct {
 func (x *GetEpochRequest) Reset() {
 	*x = GetEpochRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[212]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[215]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -12970,7 +13155,7 @@ func (x *GetEpochRequest) String() string {
 func (*GetEpochRequest) ProtoMessage() {}
 
 func (x *GetEpochRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[212]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[215]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12983,7 +13168,7 @@ func (x *GetEpochRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEpochRequest.ProtoReflect.Descriptor instead.
 func (*GetEpochRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{212}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{215}
 }
 
 func (x *GetEpochRequest) GetId() uint64 {
@@ -13007,7 +13192,7 @@ type GetEpochResponse struct {
 func (x *GetEpochResponse) Reset() {
 	*x = GetEpochResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[213]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[216]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13020,7 +13205,7 @@ func (x *GetEpochResponse) String() string {
 func (*GetEpochResponse) ProtoMessage() {}
 
 func (x *GetEpochResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[213]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[216]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13033,7 +13218,7 @@ func (x *GetEpochResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEpochResponse.ProtoReflect.Descriptor instead.
 func (*GetEpochResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{213}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{216}
 }
 
 func (x *GetEpochResponse) GetEpoch() *vega.Epoch {
@@ -13060,7 +13245,7 @@ type EstimateFeeRequest struct {
 func (x *EstimateFeeRequest) Reset() {
 	*x = EstimateFeeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[214]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[217]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13073,7 +13258,7 @@ func (x *EstimateFeeRequest) String() string {
 func (*EstimateFeeRequest) ProtoMessage() {}
 
 func (x *EstimateFeeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[214]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[217]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13086,7 +13271,7 @@ func (x *EstimateFeeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateFeeRequest.ProtoReflect.Descriptor instead.
 func (*EstimateFeeRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{214}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{217}
 }
 
 func (x *EstimateFeeRequest) GetMarketId() string {
@@ -13123,7 +13308,7 @@ type EstimateFeeResponse struct {
 func (x *EstimateFeeResponse) Reset() {
 	*x = EstimateFeeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[215]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[218]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13136,7 +13321,7 @@ func (x *EstimateFeeResponse) String() string {
 func (*EstimateFeeResponse) ProtoMessage() {}
 
 func (x *EstimateFeeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[215]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[218]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13149,7 +13334,7 @@ func (x *EstimateFeeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateFeeResponse.ProtoReflect.Descriptor instead.
 func (*EstimateFeeResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{215}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{218}
 }
 
 func (x *EstimateFeeResponse) GetFee() *vega.Fee {
@@ -13184,7 +13369,7 @@ type EstimateMarginRequest struct {
 func (x *EstimateMarginRequest) Reset() {
 	*x = EstimateMarginRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[216]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[219]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13197,7 +13382,7 @@ func (x *EstimateMarginRequest) String() string {
 func (*EstimateMarginRequest) ProtoMessage() {}
 
 func (x *EstimateMarginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[216]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[219]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13210,7 +13395,7 @@ func (x *EstimateMarginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateMarginRequest.ProtoReflect.Descriptor instead.
 func (*EstimateMarginRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{216}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{219}
 }
 
 func (x *EstimateMarginRequest) GetMarketId() string {
@@ -13270,7 +13455,7 @@ type EstimateMarginResponse struct {
 func (x *EstimateMarginResponse) Reset() {
 	*x = EstimateMarginResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[217]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[220]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13283,7 +13468,7 @@ func (x *EstimateMarginResponse) String() string {
 func (*EstimateMarginResponse) ProtoMessage() {}
 
 func (x *EstimateMarginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[217]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[220]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13296,7 +13481,7 @@ func (x *EstimateMarginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimateMarginResponse.ProtoReflect.Descriptor instead.
 func (*EstimateMarginResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{217}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{220}
 }
 
 func (x *EstimateMarginResponse) GetMarginLevels() *vega.MarginLevels {
@@ -13319,7 +13504,7 @@ type ListNetworkParametersRequest struct {
 func (x *ListNetworkParametersRequest) Reset() {
 	*x = ListNetworkParametersRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[218]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[221]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13332,7 +13517,7 @@ func (x *ListNetworkParametersRequest) String() string {
 func (*ListNetworkParametersRequest) ProtoMessage() {}
 
 func (x *ListNetworkParametersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[218]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[221]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13345,7 +13530,7 @@ func (x *ListNetworkParametersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNetworkParametersRequest.ProtoReflect.Descriptor instead.
 func (*ListNetworkParametersRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{218}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{221}
 }
 
 func (x *ListNetworkParametersRequest) GetPagination() *Pagination {
@@ -13368,7 +13553,7 @@ type ListNetworkParametersResponse struct {
 func (x *ListNetworkParametersResponse) Reset() {
 	*x = ListNetworkParametersResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[219]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[222]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13381,7 +13566,7 @@ func (x *ListNetworkParametersResponse) String() string {
 func (*ListNetworkParametersResponse) ProtoMessage() {}
 
 func (x *ListNetworkParametersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[219]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[222]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13394,7 +13579,7 @@ func (x *ListNetworkParametersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNetworkParametersResponse.ProtoReflect.Descriptor instead.
 func (*ListNetworkParametersResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{219}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{222}
 }
 
 func (x *ListNetworkParametersResponse) GetNetworkParameters() *NetworkParameterConnection {
@@ -13417,7 +13602,7 @@ type GetNetworkParameterRequest struct {
 func (x *GetNetworkParameterRequest) Reset() {
 	*x = GetNetworkParameterRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[220]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[223]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13430,7 +13615,7 @@ func (x *GetNetworkParameterRequest) String() string {
 func (*GetNetworkParameterRequest) ProtoMessage() {}
 
 func (x *GetNetworkParameterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[220]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[223]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13443,7 +13628,7 @@ func (x *GetNetworkParameterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkParameterRequest.ProtoReflect.Descriptor instead.
 func (*GetNetworkParameterRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{220}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{223}
 }
 
 func (x *GetNetworkParameterRequest) GetKey() string {
@@ -13466,7 +13651,7 @@ type GetNetworkParameterResponse struct {
 func (x *GetNetworkParameterResponse) Reset() {
 	*x = GetNetworkParameterResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[221]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[224]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13479,7 +13664,7 @@ func (x *GetNetworkParameterResponse) String() string {
 func (*GetNetworkParameterResponse) ProtoMessage() {}
 
 func (x *GetNetworkParameterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[221]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[224]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13492,7 +13677,7 @@ func (x *GetNetworkParameterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkParameterResponse.ProtoReflect.Descriptor instead.
 func (*GetNetworkParameterResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{221}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{224}
 }
 
 func (x *GetNetworkParameterResponse) GetNetworkParameter() *vega.NetworkParameter {
@@ -13517,7 +13702,7 @@ type NetworkParameterEdge struct {
 func (x *NetworkParameterEdge) Reset() {
 	*x = NetworkParameterEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[222]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[225]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13530,7 +13715,7 @@ func (x *NetworkParameterEdge) String() string {
 func (*NetworkParameterEdge) ProtoMessage() {}
 
 func (x *NetworkParameterEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[222]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[225]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13543,7 +13728,7 @@ func (x *NetworkParameterEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkParameterEdge.ProtoReflect.Descriptor instead.
 func (*NetworkParameterEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{222}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{225}
 }
 
 func (x *NetworkParameterEdge) GetNode() *vega.NetworkParameter {
@@ -13575,7 +13760,7 @@ type NetworkParameterConnection struct {
 func (x *NetworkParameterConnection) Reset() {
 	*x = NetworkParameterConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[223]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[226]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13588,7 +13773,7 @@ func (x *NetworkParameterConnection) String() string {
 func (*NetworkParameterConnection) ProtoMessage() {}
 
 func (x *NetworkParameterConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[223]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[226]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13601,7 +13786,7 @@ func (x *NetworkParameterConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkParameterConnection.ProtoReflect.Descriptor instead.
 func (*NetworkParameterConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{223}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{226}
 }
 
 func (x *NetworkParameterConnection) GetEdges() []*NetworkParameterEdge {
@@ -13635,7 +13820,7 @@ type Checkpoint struct {
 func (x *Checkpoint) Reset() {
 	*x = Checkpoint{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[224]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[227]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13648,7 +13833,7 @@ func (x *Checkpoint) String() string {
 func (*Checkpoint) ProtoMessage() {}
 
 func (x *Checkpoint) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[224]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[227]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13661,7 +13846,7 @@ func (x *Checkpoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Checkpoint.ProtoReflect.Descriptor instead.
 func (*Checkpoint) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{224}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{227}
 }
 
 func (x *Checkpoint) GetHash() string {
@@ -13698,7 +13883,7 @@ type ListCheckpointsRequest struct {
 func (x *ListCheckpointsRequest) Reset() {
 	*x = ListCheckpointsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[225]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[228]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13711,7 +13896,7 @@ func (x *ListCheckpointsRequest) String() string {
 func (*ListCheckpointsRequest) ProtoMessage() {}
 
 func (x *ListCheckpointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[225]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[228]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13724,7 +13909,7 @@ func (x *ListCheckpointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCheckpointsRequest.ProtoReflect.Descriptor instead.
 func (*ListCheckpointsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{225}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{228}
 }
 
 func (x *ListCheckpointsRequest) GetPagination() *Pagination {
@@ -13747,7 +13932,7 @@ type ListCheckpointsResponse struct {
 func (x *ListCheckpointsResponse) Reset() {
 	*x = ListCheckpointsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[226]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[229]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13760,7 +13945,7 @@ func (x *ListCheckpointsResponse) String() string {
 func (*ListCheckpointsResponse) ProtoMessage() {}
 
 func (x *ListCheckpointsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[226]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[229]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13773,7 +13958,7 @@ func (x *ListCheckpointsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCheckpointsResponse.ProtoReflect.Descriptor instead.
 func (*ListCheckpointsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{226}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{229}
 }
 
 func (x *ListCheckpointsResponse) GetCheckpoints() *CheckpointsConnection {
@@ -13798,7 +13983,7 @@ type CheckpointEdge struct {
 func (x *CheckpointEdge) Reset() {
 	*x = CheckpointEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[227]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[230]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13811,7 +13996,7 @@ func (x *CheckpointEdge) String() string {
 func (*CheckpointEdge) ProtoMessage() {}
 
 func (x *CheckpointEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[227]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[230]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13824,7 +14009,7 @@ func (x *CheckpointEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckpointEdge.ProtoReflect.Descriptor instead.
 func (*CheckpointEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{227}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{230}
 }
 
 func (x *CheckpointEdge) GetNode() *Checkpoint {
@@ -13856,7 +14041,7 @@ type CheckpointsConnection struct {
 func (x *CheckpointsConnection) Reset() {
 	*x = CheckpointsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[228]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[231]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13869,7 +14054,7 @@ func (x *CheckpointsConnection) String() string {
 func (*CheckpointsConnection) ProtoMessage() {}
 
 func (x *CheckpointsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[228]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[231]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13882,7 +14067,7 @@ func (x *CheckpointsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckpointsConnection.ProtoReflect.Descriptor instead.
 func (*CheckpointsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{228}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{231}
 }
 
 func (x *CheckpointsConnection) GetEdges() []*CheckpointEdge {
@@ -13914,7 +14099,7 @@ type GetStakeRequest struct {
 func (x *GetStakeRequest) Reset() {
 	*x = GetStakeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[229]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[232]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13927,7 +14112,7 @@ func (x *GetStakeRequest) String() string {
 func (*GetStakeRequest) ProtoMessage() {}
 
 func (x *GetStakeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[229]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[232]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13940,7 +14125,7 @@ func (x *GetStakeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStakeRequest.ProtoReflect.Descriptor instead.
 func (*GetStakeRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{229}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{232}
 }
 
 func (x *GetStakeRequest) GetPartyId() string {
@@ -13972,7 +14157,7 @@ type GetStakeResponse struct {
 func (x *GetStakeResponse) Reset() {
 	*x = GetStakeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[230]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[233]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -13985,7 +14170,7 @@ func (x *GetStakeResponse) String() string {
 func (*GetStakeResponse) ProtoMessage() {}
 
 func (x *GetStakeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[230]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[233]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13998,7 +14183,7 @@ func (x *GetStakeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStakeResponse.ProtoReflect.Descriptor instead.
 func (*GetStakeResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{230}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{233}
 }
 
 func (x *GetStakeResponse) GetCurrentStakeAvailable() string {
@@ -14030,7 +14215,7 @@ type StakeLinkingEdge struct {
 func (x *StakeLinkingEdge) Reset() {
 	*x = StakeLinkingEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[231]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[234]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14043,7 +14228,7 @@ func (x *StakeLinkingEdge) String() string {
 func (*StakeLinkingEdge) ProtoMessage() {}
 
 func (x *StakeLinkingEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[231]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[234]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14056,7 +14241,7 @@ func (x *StakeLinkingEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StakeLinkingEdge.ProtoReflect.Descriptor instead.
 func (*StakeLinkingEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{231}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{234}
 }
 
 func (x *StakeLinkingEdge) GetNode() *v1.StakeLinking {
@@ -14088,7 +14273,7 @@ type StakesConnection struct {
 func (x *StakesConnection) Reset() {
 	*x = StakesConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[232]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[235]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14101,7 +14286,7 @@ func (x *StakesConnection) String() string {
 func (*StakesConnection) ProtoMessage() {}
 
 func (x *StakesConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[232]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[235]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14114,7 +14299,7 @@ func (x *StakesConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StakesConnection.ProtoReflect.Descriptor instead.
 func (*StakesConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{232}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{235}
 }
 
 func (x *StakesConnection) GetEdges() []*StakeLinkingEdge {
@@ -14144,7 +14329,7 @@ type GetRiskFactorsRequest struct {
 func (x *GetRiskFactorsRequest) Reset() {
 	*x = GetRiskFactorsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[233]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[236]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14157,7 +14342,7 @@ func (x *GetRiskFactorsRequest) String() string {
 func (*GetRiskFactorsRequest) ProtoMessage() {}
 
 func (x *GetRiskFactorsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[233]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[236]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14170,7 +14355,7 @@ func (x *GetRiskFactorsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRiskFactorsRequest.ProtoReflect.Descriptor instead.
 func (*GetRiskFactorsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{233}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{236}
 }
 
 func (x *GetRiskFactorsRequest) GetMarketId() string {
@@ -14193,7 +14378,7 @@ type GetRiskFactorsResponse struct {
 func (x *GetRiskFactorsResponse) Reset() {
 	*x = GetRiskFactorsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[234]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[237]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14206,7 +14391,7 @@ func (x *GetRiskFactorsResponse) String() string {
 func (*GetRiskFactorsResponse) ProtoMessage() {}
 
 func (x *GetRiskFactorsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[234]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[237]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14219,7 +14404,7 @@ func (x *GetRiskFactorsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRiskFactorsResponse.ProtoReflect.Descriptor instead.
 func (*GetRiskFactorsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{234}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{237}
 }
 
 func (x *GetRiskFactorsResponse) GetRiskFactor() *vega.RiskFactor {
@@ -14254,7 +14439,7 @@ type ObserveEventBusRequest struct {
 func (x *ObserveEventBusRequest) Reset() {
 	*x = ObserveEventBusRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[235]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[238]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14267,7 +14452,7 @@ func (x *ObserveEventBusRequest) String() string {
 func (*ObserveEventBusRequest) ProtoMessage() {}
 
 func (x *ObserveEventBusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[235]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[238]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14280,7 +14465,7 @@ func (x *ObserveEventBusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveEventBusRequest.ProtoReflect.Descriptor instead.
 func (*ObserveEventBusRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{235}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{238}
 }
 
 func (x *ObserveEventBusRequest) GetType() []v1.BusEventType {
@@ -14324,7 +14509,7 @@ type ObserveEventBusResponse struct {
 func (x *ObserveEventBusResponse) Reset() {
 	*x = ObserveEventBusResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[236]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[239]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14337,7 +14522,7 @@ func (x *ObserveEventBusResponse) String() string {
 func (*ObserveEventBusResponse) ProtoMessage() {}
 
 func (x *ObserveEventBusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[236]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[239]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14350,7 +14535,7 @@ func (x *ObserveEventBusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveEventBusResponse.ProtoReflect.Descriptor instead.
 func (*ObserveEventBusResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{236}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{239}
 }
 
 func (x *ObserveEventBusResponse) GetEvents() []*v1.BusEvent {
@@ -14370,7 +14555,7 @@ type ObserveLedgerMovementsRequest struct {
 func (x *ObserveLedgerMovementsRequest) Reset() {
 	*x = ObserveLedgerMovementsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[237]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[240]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14383,7 +14568,7 @@ func (x *ObserveLedgerMovementsRequest) String() string {
 func (*ObserveLedgerMovementsRequest) ProtoMessage() {}
 
 func (x *ObserveLedgerMovementsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[237]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[240]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14396,7 +14581,7 @@ func (x *ObserveLedgerMovementsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveLedgerMovementsRequest.ProtoReflect.Descriptor instead.
 func (*ObserveLedgerMovementsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{237}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{240}
 }
 
 // Response from ledger movements subscription
@@ -14412,7 +14597,7 @@ type ObserveLedgerMovementsResponse struct {
 func (x *ObserveLedgerMovementsResponse) Reset() {
 	*x = ObserveLedgerMovementsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[238]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[241]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14425,7 +14610,7 @@ func (x *ObserveLedgerMovementsResponse) String() string {
 func (*ObserveLedgerMovementsResponse) ProtoMessage() {}
 
 func (x *ObserveLedgerMovementsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[238]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[241]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14438,7 +14623,7 @@ func (x *ObserveLedgerMovementsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObserveLedgerMovementsResponse.ProtoReflect.Descriptor instead.
 func (*ObserveLedgerMovementsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{238}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{241}
 }
 
 func (x *ObserveLedgerMovementsResponse) GetLedgerMovement() *vega.LedgerMovement {
@@ -14463,7 +14648,7 @@ type ListKeyRotationsRequest struct {
 func (x *ListKeyRotationsRequest) Reset() {
 	*x = ListKeyRotationsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[239]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[242]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14476,7 +14661,7 @@ func (x *ListKeyRotationsRequest) String() string {
 func (*ListKeyRotationsRequest) ProtoMessage() {}
 
 func (x *ListKeyRotationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[239]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[242]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14489,7 +14674,7 @@ func (x *ListKeyRotationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListKeyRotationsRequest.ProtoReflect.Descriptor instead.
 func (*ListKeyRotationsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{239}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{242}
 }
 
 func (x *ListKeyRotationsRequest) GetNodeId() string {
@@ -14519,7 +14704,7 @@ type ListKeyRotationsResponse struct {
 func (x *ListKeyRotationsResponse) Reset() {
 	*x = ListKeyRotationsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[240]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[243]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14532,7 +14717,7 @@ func (x *ListKeyRotationsResponse) String() string {
 func (*ListKeyRotationsResponse) ProtoMessage() {}
 
 func (x *ListKeyRotationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[240]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[243]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14545,7 +14730,7 @@ func (x *ListKeyRotationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListKeyRotationsResponse.ProtoReflect.Descriptor instead.
 func (*ListKeyRotationsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{240}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{243}
 }
 
 func (x *ListKeyRotationsResponse) GetRotations() *KeyRotationConnection {
@@ -14570,7 +14755,7 @@ type KeyRotationEdge struct {
 func (x *KeyRotationEdge) Reset() {
 	*x = KeyRotationEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[241]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[244]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14583,7 +14768,7 @@ func (x *KeyRotationEdge) String() string {
 func (*KeyRotationEdge) ProtoMessage() {}
 
 func (x *KeyRotationEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[241]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[244]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14596,7 +14781,7 @@ func (x *KeyRotationEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyRotationEdge.ProtoReflect.Descriptor instead.
 func (*KeyRotationEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{241}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{244}
 }
 
 func (x *KeyRotationEdge) GetNode() *v1.KeyRotation {
@@ -14628,7 +14813,7 @@ type KeyRotationConnection struct {
 func (x *KeyRotationConnection) Reset() {
 	*x = KeyRotationConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[242]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[245]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14641,7 +14826,7 @@ func (x *KeyRotationConnection) String() string {
 func (*KeyRotationConnection) ProtoMessage() {}
 
 func (x *KeyRotationConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[242]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[245]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14654,7 +14839,7 @@ func (x *KeyRotationConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KeyRotationConnection.ProtoReflect.Descriptor instead.
 func (*KeyRotationConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{242}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{245}
 }
 
 func (x *KeyRotationConnection) GetEdges() []*KeyRotationEdge {
@@ -14686,7 +14871,7 @@ type ListEthereumKeyRotationsRequest struct {
 func (x *ListEthereumKeyRotationsRequest) Reset() {
 	*x = ListEthereumKeyRotationsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[243]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[246]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14699,7 +14884,7 @@ func (x *ListEthereumKeyRotationsRequest) String() string {
 func (*ListEthereumKeyRotationsRequest) ProtoMessage() {}
 
 func (x *ListEthereumKeyRotationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[243]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[246]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14712,7 +14897,7 @@ func (x *ListEthereumKeyRotationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEthereumKeyRotationsRequest.ProtoReflect.Descriptor instead.
 func (*ListEthereumKeyRotationsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{243}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{246}
 }
 
 func (x *ListEthereumKeyRotationsRequest) GetNodeId() string {
@@ -14742,7 +14927,7 @@ type ListEthereumKeyRotationsResponse struct {
 func (x *ListEthereumKeyRotationsResponse) Reset() {
 	*x = ListEthereumKeyRotationsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[244]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[247]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14755,7 +14940,7 @@ func (x *ListEthereumKeyRotationsResponse) String() string {
 func (*ListEthereumKeyRotationsResponse) ProtoMessage() {}
 
 func (x *ListEthereumKeyRotationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[244]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[247]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14768,7 +14953,7 @@ func (x *ListEthereumKeyRotationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEthereumKeyRotationsResponse.ProtoReflect.Descriptor instead.
 func (*ListEthereumKeyRotationsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{244}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{247}
 }
 
 func (x *ListEthereumKeyRotationsResponse) GetKeyRotations() *EthereumKeyRotationsConnection {
@@ -14793,7 +14978,7 @@ type EthereumKeyRotationsConnection struct {
 func (x *EthereumKeyRotationsConnection) Reset() {
 	*x = EthereumKeyRotationsConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[245]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[248]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14806,7 +14991,7 @@ func (x *EthereumKeyRotationsConnection) String() string {
 func (*EthereumKeyRotationsConnection) ProtoMessage() {}
 
 func (x *EthereumKeyRotationsConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[245]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[248]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14819,7 +15004,7 @@ func (x *EthereumKeyRotationsConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EthereumKeyRotationsConnection.ProtoReflect.Descriptor instead.
 func (*EthereumKeyRotationsConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{245}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{248}
 }
 
 func (x *EthereumKeyRotationsConnection) GetEdges() []*EthereumKeyRotationEdge {
@@ -14851,7 +15036,7 @@ type EthereumKeyRotationEdge struct {
 func (x *EthereumKeyRotationEdge) Reset() {
 	*x = EthereumKeyRotationEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[246]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[249]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14864,7 +15049,7 @@ func (x *EthereumKeyRotationEdge) String() string {
 func (*EthereumKeyRotationEdge) ProtoMessage() {}
 
 func (x *EthereumKeyRotationEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[246]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[249]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14877,7 +15062,7 @@ func (x *EthereumKeyRotationEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EthereumKeyRotationEdge.ProtoReflect.Descriptor instead.
 func (*EthereumKeyRotationEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{246}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{249}
 }
 
 func (x *EthereumKeyRotationEdge) GetNode() *v1.EthereumKeyRotation {
@@ -14904,7 +15089,7 @@ type GetVegaTimeRequest struct {
 func (x *GetVegaTimeRequest) Reset() {
 	*x = GetVegaTimeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[247]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[250]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14917,7 +15102,7 @@ func (x *GetVegaTimeRequest) String() string {
 func (*GetVegaTimeRequest) ProtoMessage() {}
 
 func (x *GetVegaTimeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[247]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[250]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14930,7 +15115,7 @@ func (x *GetVegaTimeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVegaTimeRequest.ProtoReflect.Descriptor instead.
 func (*GetVegaTimeRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{247}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{250}
 }
 
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
@@ -14947,7 +15132,7 @@ type GetVegaTimeResponse struct {
 func (x *GetVegaTimeResponse) Reset() {
 	*x = GetVegaTimeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[248]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[251]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -14960,7 +15145,7 @@ func (x *GetVegaTimeResponse) String() string {
 func (*GetVegaTimeResponse) ProtoMessage() {}
 
 func (x *GetVegaTimeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[248]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[251]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14973,7 +15158,7 @@ func (x *GetVegaTimeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVegaTimeResponse.ProtoReflect.Descriptor instead.
 func (*GetVegaTimeResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{248}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{251}
 }
 
 func (x *GetVegaTimeResponse) GetTimestamp() int64 {
@@ -14999,7 +15184,7 @@ type DateRange struct {
 func (x *DateRange) Reset() {
 	*x = DateRange{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[249]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[252]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15012,7 +15197,7 @@ func (x *DateRange) String() string {
 func (*DateRange) ProtoMessage() {}
 
 func (x *DateRange) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[249]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[252]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15025,7 +15210,7 @@ func (x *DateRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DateRange.ProtoReflect.Descriptor instead.
 func (*DateRange) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{249}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{252}
 }
 
 func (x *DateRange) GetStartTimestamp() int64 {
@@ -15052,7 +15237,7 @@ type GetProtocolUpgradeStatusRequest struct {
 func (x *GetProtocolUpgradeStatusRequest) Reset() {
 	*x = GetProtocolUpgradeStatusRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[250]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[253]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15065,7 +15250,7 @@ func (x *GetProtocolUpgradeStatusRequest) String() string {
 func (*GetProtocolUpgradeStatusRequest) ProtoMessage() {}
 
 func (x *GetProtocolUpgradeStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[250]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[253]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15078,7 +15263,7 @@ func (x *GetProtocolUpgradeStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProtocolUpgradeStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetProtocolUpgradeStatusRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{250}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{253}
 }
 
 // Response from getting protocol upgrade status
@@ -15094,7 +15279,7 @@ type GetProtocolUpgradeStatusResponse struct {
 func (x *GetProtocolUpgradeStatusResponse) Reset() {
 	*x = GetProtocolUpgradeStatusResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[251]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[254]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15107,7 +15292,7 @@ func (x *GetProtocolUpgradeStatusResponse) String() string {
 func (*GetProtocolUpgradeStatusResponse) ProtoMessage() {}
 
 func (x *GetProtocolUpgradeStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[251]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[254]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15120,7 +15305,7 @@ func (x *GetProtocolUpgradeStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProtocolUpgradeStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetProtocolUpgradeStatusResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{251}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{254}
 }
 
 func (x *GetProtocolUpgradeStatusResponse) GetReady() bool {
@@ -15147,7 +15332,7 @@ type ListProtocolUpgradeProposalsRequest struct {
 func (x *ListProtocolUpgradeProposalsRequest) Reset() {
 	*x = ListProtocolUpgradeProposalsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[252]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[255]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15160,7 +15345,7 @@ func (x *ListProtocolUpgradeProposalsRequest) String() string {
 func (*ListProtocolUpgradeProposalsRequest) ProtoMessage() {}
 
 func (x *ListProtocolUpgradeProposalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[252]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[255]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15173,7 +15358,7 @@ func (x *ListProtocolUpgradeProposalsRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ListProtocolUpgradeProposalsRequest.ProtoReflect.Descriptor instead.
 func (*ListProtocolUpgradeProposalsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{252}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{255}
 }
 
 func (x *ListProtocolUpgradeProposalsRequest) GetStatus() v1.ProtocolUpgradeProposalStatus {
@@ -15210,7 +15395,7 @@ type ListProtocolUpgradeProposalsResponse struct {
 func (x *ListProtocolUpgradeProposalsResponse) Reset() {
 	*x = ListProtocolUpgradeProposalsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[253]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[256]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15223,7 +15408,7 @@ func (x *ListProtocolUpgradeProposalsResponse) String() string {
 func (*ListProtocolUpgradeProposalsResponse) ProtoMessage() {}
 
 func (x *ListProtocolUpgradeProposalsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[253]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[256]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15236,7 +15421,7 @@ func (x *ListProtocolUpgradeProposalsResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ListProtocolUpgradeProposalsResponse.ProtoReflect.Descriptor instead.
 func (*ListProtocolUpgradeProposalsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{253}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{256}
 }
 
 func (x *ListProtocolUpgradeProposalsResponse) GetProtocolUpgradeProposals() *ProtocolUpgradeProposalConnection {
@@ -15261,7 +15446,7 @@ type ProtocolUpgradeProposalConnection struct {
 func (x *ProtocolUpgradeProposalConnection) Reset() {
 	*x = ProtocolUpgradeProposalConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[254]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[257]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15274,7 +15459,7 @@ func (x *ProtocolUpgradeProposalConnection) String() string {
 func (*ProtocolUpgradeProposalConnection) ProtoMessage() {}
 
 func (x *ProtocolUpgradeProposalConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[254]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[257]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15287,7 +15472,7 @@ func (x *ProtocolUpgradeProposalConnection) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ProtocolUpgradeProposalConnection.ProtoReflect.Descriptor instead.
 func (*ProtocolUpgradeProposalConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{254}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{257}
 }
 
 func (x *ProtocolUpgradeProposalConnection) GetEdges() []*ProtocolUpgradeProposalEdge {
@@ -15319,7 +15504,7 @@ type ProtocolUpgradeProposalEdge struct {
 func (x *ProtocolUpgradeProposalEdge) Reset() {
 	*x = ProtocolUpgradeProposalEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[255]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[258]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15332,7 +15517,7 @@ func (x *ProtocolUpgradeProposalEdge) String() string {
 func (*ProtocolUpgradeProposalEdge) ProtoMessage() {}
 
 func (x *ProtocolUpgradeProposalEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[255]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[258]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15345,7 +15530,7 @@ func (x *ProtocolUpgradeProposalEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProtocolUpgradeProposalEdge.ProtoReflect.Descriptor instead.
 func (*ProtocolUpgradeProposalEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{255}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{258}
 }
 
 func (x *ProtocolUpgradeProposalEdge) GetNode() *v1.ProtocolUpgradeEvent {
@@ -15375,7 +15560,7 @@ type ListCoreSnapshotsRequest struct {
 func (x *ListCoreSnapshotsRequest) Reset() {
 	*x = ListCoreSnapshotsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[256]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[259]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15388,7 +15573,7 @@ func (x *ListCoreSnapshotsRequest) String() string {
 func (*ListCoreSnapshotsRequest) ProtoMessage() {}
 
 func (x *ListCoreSnapshotsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[256]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[259]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15401,7 +15586,7 @@ func (x *ListCoreSnapshotsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoreSnapshotsRequest.ProtoReflect.Descriptor instead.
 func (*ListCoreSnapshotsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{256}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{259}
 }
 
 func (x *ListCoreSnapshotsRequest) GetPagination() *Pagination {
@@ -15424,7 +15609,7 @@ type ListCoreSnapshotsResponse struct {
 func (x *ListCoreSnapshotsResponse) Reset() {
 	*x = ListCoreSnapshotsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[257]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[260]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15437,7 +15622,7 @@ func (x *ListCoreSnapshotsResponse) String() string {
 func (*ListCoreSnapshotsResponse) ProtoMessage() {}
 
 func (x *ListCoreSnapshotsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[257]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[260]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15450,7 +15635,7 @@ func (x *ListCoreSnapshotsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoreSnapshotsResponse.ProtoReflect.Descriptor instead.
 func (*ListCoreSnapshotsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{257}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{260}
 }
 
 func (x *ListCoreSnapshotsResponse) GetCoreSnapshots() *CoreSnapshotConnection {
@@ -15475,7 +15660,7 @@ type CoreSnapshotConnection struct {
 func (x *CoreSnapshotConnection) Reset() {
 	*x = CoreSnapshotConnection{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[258]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[261]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15488,7 +15673,7 @@ func (x *CoreSnapshotConnection) String() string {
 func (*CoreSnapshotConnection) ProtoMessage() {}
 
 func (x *CoreSnapshotConnection) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[258]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[261]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15501,7 +15686,7 @@ func (x *CoreSnapshotConnection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CoreSnapshotConnection.ProtoReflect.Descriptor instead.
 func (*CoreSnapshotConnection) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{258}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{261}
 }
 
 func (x *CoreSnapshotConnection) GetEdges() []*CoreSnapshotEdge {
@@ -15533,7 +15718,7 @@ type CoreSnapshotEdge struct {
 func (x *CoreSnapshotEdge) Reset() {
 	*x = CoreSnapshotEdge{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[259]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[262]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15546,7 +15731,7 @@ func (x *CoreSnapshotEdge) String() string {
 func (*CoreSnapshotEdge) ProtoMessage() {}
 
 func (x *CoreSnapshotEdge) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[259]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[262]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15559,7 +15744,7 @@ func (x *CoreSnapshotEdge) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CoreSnapshotEdge.ProtoReflect.Descriptor instead.
 func (*CoreSnapshotEdge) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{259}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{262}
 }
 
 func (x *CoreSnapshotEdge) GetNode() *v1.CoreSnapshotData {
@@ -15599,7 +15784,7 @@ type HistorySegment struct {
 func (x *HistorySegment) Reset() {
 	*x = HistorySegment{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[260]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[263]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15612,7 +15797,7 @@ func (x *HistorySegment) String() string {
 func (*HistorySegment) ProtoMessage() {}
 
 func (x *HistorySegment) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[260]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[263]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15625,7 +15810,7 @@ func (x *HistorySegment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HistorySegment.ProtoReflect.Descriptor instead.
 func (*HistorySegment) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{260}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{263}
 }
 
 func (x *HistorySegment) GetFromHeight() int64 {
@@ -15680,7 +15865,7 @@ type GetMostRecentNetworkHistorySegmentRequest struct {
 func (x *GetMostRecentNetworkHistorySegmentRequest) Reset() {
 	*x = GetMostRecentNetworkHistorySegmentRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[261]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[264]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15693,7 +15878,7 @@ func (x *GetMostRecentNetworkHistorySegmentRequest) String() string {
 func (*GetMostRecentNetworkHistorySegmentRequest) ProtoMessage() {}
 
 func (x *GetMostRecentNetworkHistorySegmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[261]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[264]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15706,7 +15891,7 @@ func (x *GetMostRecentNetworkHistorySegmentRequest) ProtoReflect() protoreflect.
 
 // Deprecated: Use GetMostRecentNetworkHistorySegmentRequest.ProtoReflect.Descriptor instead.
 func (*GetMostRecentNetworkHistorySegmentRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{261}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{264}
 }
 
 // Response from getting most recent history segment
@@ -15724,7 +15909,7 @@ type GetMostRecentNetworkHistorySegmentResponse struct {
 func (x *GetMostRecentNetworkHistorySegmentResponse) Reset() {
 	*x = GetMostRecentNetworkHistorySegmentResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[262]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[265]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15737,7 +15922,7 @@ func (x *GetMostRecentNetworkHistorySegmentResponse) String() string {
 func (*GetMostRecentNetworkHistorySegmentResponse) ProtoMessage() {}
 
 func (x *GetMostRecentNetworkHistorySegmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[262]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[265]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15750,7 +15935,7 @@ func (x *GetMostRecentNetworkHistorySegmentResponse) ProtoReflect() protoreflect
 
 // Deprecated: Use GetMostRecentNetworkHistorySegmentResponse.ProtoReflect.Descriptor instead.
 func (*GetMostRecentNetworkHistorySegmentResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{262}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{265}
 }
 
 func (x *GetMostRecentNetworkHistorySegmentResponse) GetSegment() *HistorySegment {
@@ -15777,7 +15962,7 @@ type ListAllNetworkHistorySegmentsRequest struct {
 func (x *ListAllNetworkHistorySegmentsRequest) Reset() {
 	*x = ListAllNetworkHistorySegmentsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[263]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15790,7 +15975,7 @@ func (x *ListAllNetworkHistorySegmentsRequest) String() string {
 func (*ListAllNetworkHistorySegmentsRequest) ProtoMessage() {}
 
 func (x *ListAllNetworkHistorySegmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[263]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15803,7 +15988,7 @@ func (x *ListAllNetworkHistorySegmentsRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ListAllNetworkHistorySegmentsRequest.ProtoReflect.Descriptor instead.
 func (*ListAllNetworkHistorySegmentsRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{263}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{266}
 }
 
 // Response with a list of all the nodes history segments
@@ -15819,7 +16004,7 @@ type ListAllNetworkHistorySegmentsResponse struct {
 func (x *ListAllNetworkHistorySegmentsResponse) Reset() {
 	*x = ListAllNetworkHistorySegmentsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[264]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15832,7 +16017,7 @@ func (x *ListAllNetworkHistorySegmentsResponse) String() string {
 func (*ListAllNetworkHistorySegmentsResponse) ProtoMessage() {}
 
 func (x *ListAllNetworkHistorySegmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[264]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15845,7 +16030,7 @@ func (x *ListAllNetworkHistorySegmentsResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ListAllNetworkHistorySegmentsResponse.ProtoReflect.Descriptor instead.
 func (*ListAllNetworkHistorySegmentsResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{264}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{267}
 }
 
 func (x *ListAllNetworkHistorySegmentsResponse) GetSegments() []*HistorySegment {
@@ -15865,7 +16050,7 @@ type GetActiveNetworkHistoryPeerAddressesRequest struct {
 func (x *GetActiveNetworkHistoryPeerAddressesRequest) Reset() {
 	*x = GetActiveNetworkHistoryPeerAddressesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[265]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[268]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15878,7 +16063,7 @@ func (x *GetActiveNetworkHistoryPeerAddressesRequest) String() string {
 func (*GetActiveNetworkHistoryPeerAddressesRequest) ProtoMessage() {}
 
 func (x *GetActiveNetworkHistoryPeerAddressesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[265]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[268]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15891,7 +16076,7 @@ func (x *GetActiveNetworkHistoryPeerAddressesRequest) ProtoReflect() protoreflec
 
 // Deprecated: Use GetActiveNetworkHistoryPeerAddressesRequest.ProtoReflect.Descriptor instead.
 func (*GetActiveNetworkHistoryPeerAddressesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{265}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{268}
 }
 
 // Response containing the addresses of active network history peers
@@ -15907,7 +16092,7 @@ type GetActiveNetworkHistoryPeerAddressesResponse struct {
 func (x *GetActiveNetworkHistoryPeerAddressesResponse) Reset() {
 	*x = GetActiveNetworkHistoryPeerAddressesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[269]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15920,7 +16105,7 @@ func (x *GetActiveNetworkHistoryPeerAddressesResponse) String() string {
 func (*GetActiveNetworkHistoryPeerAddressesResponse) ProtoMessage() {}
 
 func (x *GetActiveNetworkHistoryPeerAddressesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[266]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[269]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15933,7 +16118,7 @@ func (x *GetActiveNetworkHistoryPeerAddressesResponse) ProtoReflect() protorefle
 
 // Deprecated: Use GetActiveNetworkHistoryPeerAddressesResponse.ProtoReflect.Descriptor instead.
 func (*GetActiveNetworkHistoryPeerAddressesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{266}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{269}
 }
 
 func (x *GetActiveNetworkHistoryPeerAddressesResponse) GetIpAddresses() []string {
@@ -15953,7 +16138,7 @@ type GetNetworkHistoryStatusRequest struct {
 func (x *GetNetworkHistoryStatusRequest) Reset() {
 	*x = GetNetworkHistoryStatusRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[270]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -15966,7 +16151,7 @@ func (x *GetNetworkHistoryStatusRequest) String() string {
 func (*GetNetworkHistoryStatusRequest) ProtoMessage() {}
 
 func (x *GetNetworkHistoryStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[267]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[270]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15979,7 +16164,7 @@ func (x *GetNetworkHistoryStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkHistoryStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetNetworkHistoryStatusRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{267}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{270}
 }
 
 // Response containing the status of network history
@@ -16001,7 +16186,7 @@ type GetNetworkHistoryStatusResponse struct {
 func (x *GetNetworkHistoryStatusResponse) Reset() {
 	*x = GetNetworkHistoryStatusResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[268]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[271]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16014,7 +16199,7 @@ func (x *GetNetworkHistoryStatusResponse) String() string {
 func (*GetNetworkHistoryStatusResponse) ProtoMessage() {}
 
 func (x *GetNetworkHistoryStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[268]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[271]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16027,7 +16212,7 @@ func (x *GetNetworkHistoryStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkHistoryStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetNetworkHistoryStatusResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{268}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{271}
 }
 
 func (x *GetNetworkHistoryStatusResponse) GetIpfsAddress() string {
@@ -16068,7 +16253,7 @@ type GetNetworkHistoryBootstrapPeersRequest struct {
 func (x *GetNetworkHistoryBootstrapPeersRequest) Reset() {
 	*x = GetNetworkHistoryBootstrapPeersRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[269]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[272]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16081,7 +16266,7 @@ func (x *GetNetworkHistoryBootstrapPeersRequest) String() string {
 func (*GetNetworkHistoryBootstrapPeersRequest) ProtoMessage() {}
 
 func (x *GetNetworkHistoryBootstrapPeersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[269]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[272]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16094,7 +16279,7 @@ func (x *GetNetworkHistoryBootstrapPeersRequest) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetNetworkHistoryBootstrapPeersRequest.ProtoReflect.Descriptor instead.
 func (*GetNetworkHistoryBootstrapPeersRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{269}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{272}
 }
 
 // Response containing the nodes network history bootstrap peers
@@ -16110,7 +16295,7 @@ type GetNetworkHistoryBootstrapPeersResponse struct {
 func (x *GetNetworkHistoryBootstrapPeersResponse) Reset() {
 	*x = GetNetworkHistoryBootstrapPeersResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[270]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[273]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16123,7 +16308,7 @@ func (x *GetNetworkHistoryBootstrapPeersResponse) String() string {
 func (*GetNetworkHistoryBootstrapPeersResponse) ProtoMessage() {}
 
 func (x *GetNetworkHistoryBootstrapPeersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[270]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[273]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16136,7 +16321,7 @@ func (x *GetNetworkHistoryBootstrapPeersResponse) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use GetNetworkHistoryBootstrapPeersResponse.ProtoReflect.Descriptor instead.
 func (*GetNetworkHistoryBootstrapPeersResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{270}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{273}
 }
 
 func (x *GetNetworkHistoryBootstrapPeersResponse) GetBootstrapPeers() []string {
@@ -16167,7 +16352,7 @@ type ExportNetworkHistoryRequest struct {
 func (x *ExportNetworkHistoryRequest) Reset() {
 	*x = ExportNetworkHistoryRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[271]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[274]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16180,7 +16365,7 @@ func (x *ExportNetworkHistoryRequest) String() string {
 func (*ExportNetworkHistoryRequest) ProtoMessage() {}
 
 func (x *ExportNetworkHistoryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[271]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[274]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16193,7 +16378,7 @@ func (x *ExportNetworkHistoryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportNetworkHistoryRequest.ProtoReflect.Descriptor instead.
 func (*ExportNetworkHistoryRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{271}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{274}
 }
 
 func (x *ExportNetworkHistoryRequest) GetFromBlock() int64 {
@@ -16230,7 +16415,7 @@ type ListEntitiesRequest struct {
 func (x *ListEntitiesRequest) Reset() {
 	*x = ListEntitiesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[272]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[275]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16243,7 +16428,7 @@ func (x *ListEntitiesRequest) String() string {
 func (*ListEntitiesRequest) ProtoMessage() {}
 
 func (x *ListEntitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[272]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[275]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16256,7 +16441,7 @@ func (x *ListEntitiesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEntitiesRequest.ProtoReflect.Descriptor instead.
 func (*ListEntitiesRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{272}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{275}
 }
 
 func (x *ListEntitiesRequest) GetTransactionHash() string {
@@ -16305,7 +16490,7 @@ type ListEntitiesResponse struct {
 func (x *ListEntitiesResponse) Reset() {
 	*x = ListEntitiesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[273]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[276]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16318,7 +16503,7 @@ func (x *ListEntitiesResponse) String() string {
 func (*ListEntitiesResponse) ProtoMessage() {}
 
 func (x *ListEntitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[273]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[276]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16331,7 +16516,7 @@ func (x *ListEntitiesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEntitiesResponse.ProtoReflect.Descriptor instead.
 func (*ListEntitiesResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{273}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{276}
 }
 
 func (x *ListEntitiesResponse) GetAccounts() []*vega.Account {
@@ -16540,7 +16725,7 @@ type PingRequest struct {
 func (x *PingRequest) Reset() {
 	*x = PingRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[274]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[277]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16553,7 +16738,7 @@ func (x *PingRequest) String() string {
 func (*PingRequest) ProtoMessage() {}
 
 func (x *PingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[274]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[277]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16566,7 +16751,7 @@ func (x *PingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
 func (*PingRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{274}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{277}
 }
 
 // Ping response from the data node
@@ -16579,7 +16764,7 @@ type PingResponse struct {
 func (x *PingResponse) Reset() {
 	*x = PingResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[275]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[278]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16592,7 +16777,7 @@ func (x *PingResponse) String() string {
 func (*PingResponse) ProtoMessage() {}
 
 func (x *PingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[275]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[278]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16605,7 +16790,7 @@ func (x *PingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingResponse.ProtoReflect.Descriptor instead.
 func (*PingResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{275}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{278}
 }
 
 // Basic description of an order.
@@ -16628,7 +16813,7 @@ type OrderInfo struct {
 func (x *OrderInfo) Reset() {
 	*x = OrderInfo{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[276]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[279]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16641,7 +16826,7 @@ func (x *OrderInfo) String() string {
 func (*OrderInfo) ProtoMessage() {}
 
 func (x *OrderInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[276]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[279]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16654,7 +16839,7 @@ func (x *OrderInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderInfo.ProtoReflect.Descriptor instead.
 func (*OrderInfo) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{276}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{279}
 }
 
 func (x *OrderInfo) GetSide() vega.Side {
@@ -16705,7 +16890,7 @@ type EstimatePositionRequest struct {
 func (x *EstimatePositionRequest) Reset() {
 	*x = EstimatePositionRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[277]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[280]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16718,7 +16903,7 @@ func (x *EstimatePositionRequest) String() string {
 func (*EstimatePositionRequest) ProtoMessage() {}
 
 func (x *EstimatePositionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[277]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[280]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16731,7 +16916,7 @@ func (x *EstimatePositionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimatePositionRequest.ProtoReflect.Descriptor instead.
 func (*EstimatePositionRequest) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{277}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{280}
 }
 
 func (x *EstimatePositionRequest) GetMarketId() string {
@@ -16777,7 +16962,7 @@ type EstimatePositionResponse struct {
 func (x *EstimatePositionResponse) Reset() {
 	*x = EstimatePositionResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[278]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[281]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16790,7 +16975,7 @@ func (x *EstimatePositionResponse) String() string {
 func (*EstimatePositionResponse) ProtoMessage() {}
 
 func (x *EstimatePositionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[278]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[281]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16803,7 +16988,7 @@ func (x *EstimatePositionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EstimatePositionResponse.ProtoReflect.Descriptor instead.
 func (*EstimatePositionResponse) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{278}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{281}
 }
 
 func (x *EstimatePositionResponse) GetMargin() *MarginEstimate {
@@ -16835,7 +17020,7 @@ type MarginEstimate struct {
 func (x *MarginEstimate) Reset() {
 	*x = MarginEstimate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[279]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[282]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16848,7 +17033,7 @@ func (x *MarginEstimate) String() string {
 func (*MarginEstimate) ProtoMessage() {}
 
 func (x *MarginEstimate) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[279]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[282]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16861,7 +17046,7 @@ func (x *MarginEstimate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarginEstimate.ProtoReflect.Descriptor instead.
 func (*MarginEstimate) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{279}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{282}
 }
 
 func (x *MarginEstimate) GetWorstCase() *vega.MarginLevels {
@@ -16893,7 +17078,7 @@ type LiquidationEstimate struct {
 func (x *LiquidationEstimate) Reset() {
 	*x = LiquidationEstimate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[280]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[283]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16906,7 +17091,7 @@ func (x *LiquidationEstimate) String() string {
 func (*LiquidationEstimate) ProtoMessage() {}
 
 func (x *LiquidationEstimate) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[280]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[283]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16919,7 +17104,7 @@ func (x *LiquidationEstimate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidationEstimate.ProtoReflect.Descriptor instead.
 func (*LiquidationEstimate) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{280}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{283}
 }
 
 func (x *LiquidationEstimate) GetWorstCase() *LiquidationPrice {
@@ -16953,7 +17138,7 @@ type LiquidationPrice struct {
 func (x *LiquidationPrice) Reset() {
 	*x = LiquidationPrice{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[281]
+		mi := &file_data_node_api_v2_trading_data_proto_msgTypes[284]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -16966,7 +17151,7 @@ func (x *LiquidationPrice) String() string {
 func (*LiquidationPrice) ProtoMessage() {}
 
 func (x *LiquidationPrice) ProtoReflect() protoreflect.Message {
-	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[281]
+	mi := &file_data_node_api_v2_trading_data_proto_msgTypes[284]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16979,7 +17164,7 @@ func (x *LiquidationPrice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LiquidationPrice.ProtoReflect.Descriptor instead.
 func (*LiquidationPrice) Descriptor() ([]byte, []int) {
-	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{281}
+	return file_data_node_api_v2_trading_data_proto_rawDescGZIP(), []int{284}
 }
 
 func (x *LiquidationPrice) GetOpenVolumeOnly() string {
@@ -18104,18 +18289,46 @@ var file_data_node_api_v2_trading_data_proto_rawDesc = []byte{
 	0x61, 0x67, 0x65, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x19,
 	0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32,
 	0x2e, 0x50, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x08, 0x70, 0x61, 0x67, 0x65, 0x49,
-	0x6e, 0x66, 0x6f, 0x22, 0x72, 0x0a, 0x1b, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x63, 0x63, 0x65,
-	0x73, 0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x12, 0x21, 0x0a, 0x09, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x04, 0xe2, 0x41, 0x01, 0x02, 0x52, 0x08, 0x6d, 0x61, 0x72,
-	0x6b, 0x65, 0x74, 0x49, 0x64, 0x12, 0x30, 0x0a, 0x14, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65,
-	0x5f, 0x66, 0x75, 0x6c, 0x6c, 0x5f, 0x68, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x08, 0x52, 0x12, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x46, 0x75, 0x6c, 0x6c,
-	0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x22, 0x46, 0x0a, 0x1c, 0x4c, 0x69, 0x73, 0x74, 0x53,
-	0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x52,
-	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x26, 0x0a, 0x07, 0x6d, 0x61, 0x72, 0x6b, 0x65,
-	0x74, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
-	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x52, 0x07, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x22,
+	0x6e, 0x66, 0x6f, 0x22, 0xaf, 0x01, 0x0a, 0x1b, 0x4c, 0x69, 0x73, 0x74, 0x53, 0x75, 0x63, 0x63,
+	0x65, 0x73, 0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x09, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x5f, 0x69, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x42, 0x04, 0xe2, 0x41, 0x01, 0x02, 0x52, 0x08, 0x6d, 0x61,
+	0x72, 0x6b, 0x65, 0x74, 0x49, 0x64, 0x12, 0x30, 0x0a, 0x14, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64,
+	0x65, 0x5f, 0x66, 0x75, 0x6c, 0x6c, 0x5f, 0x68, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x08, 0x52, 0x12, 0x69, 0x6e, 0x63, 0x6c, 0x75, 0x64, 0x65, 0x46, 0x75, 0x6c,
+	0x6c, 0x48, 0x69, 0x73, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x3b, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69,
+	0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x64,
+	0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x50,
+	0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x6b, 0x0a, 0x0f, 0x53, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73,
+	0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x12, 0x24, 0x0a, 0x06, 0x6d, 0x61, 0x72, 0x6b,
+	0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0c, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x52, 0x06, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x12, 0x32,
+	0x0a, 0x09, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61, 0x6c, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28,
+	0x0b, 0x32, 0x14, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x47, 0x6f, 0x76, 0x65, 0x72, 0x6e, 0x61,
+	0x6e, 0x63, 0x65, 0x44, 0x61, 0x74, 0x61, 0x52, 0x09, 0x70, 0x72, 0x6f, 0x70, 0x6f, 0x73, 0x61,
+	0x6c, 0x73, 0x22, 0x63, 0x0a, 0x13, 0x53, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x6f, 0x72, 0x4d,
+	0x61, 0x72, 0x6b, 0x65, 0x74, 0x45, 0x64, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x04, 0x6e, 0x6f, 0x64,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x20, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f,
+	0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x75, 0x63, 0x63, 0x65, 0x73,
+	0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x52, 0x04, 0x6e, 0x6f, 0x64, 0x65, 0x12,
+	0x16, 0x0a, 0x06, 0x63, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x63, 0x75, 0x72, 0x73, 0x6f, 0x72, 0x22, 0x8f, 0x01, 0x0a, 0x19, 0x53, 0x75, 0x63, 0x63,
+	0x65, 0x73, 0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x6e, 0x65,
+	0x63, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x3a, 0x0a, 0x05, 0x65, 0x64, 0x67, 0x65, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x6f, 0x72,
+	0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x45, 0x64, 0x67, 0x65, 0x52, 0x05, 0x65, 0x64, 0x67, 0x65,
+	0x73, 0x12, 0x36, 0x0a, 0x09, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x69, 0x6e, 0x66, 0x6f, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x19, 0x2e, 0x64, 0x61, 0x74, 0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
+	0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x52,
+	0x08, 0x70, 0x61, 0x67, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x64, 0x0a, 0x1c, 0x4c, 0x69, 0x73,
+	0x74, 0x53, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74,
+	0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a, 0x07, 0x6d, 0x61, 0x72,
+	0x6b, 0x65, 0x74, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2a, 0x2e, 0x64, 0x61, 0x74,
+	0x61, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x61, 0x70, 0x69, 0x2e, 0x76, 0x32, 0x2e, 0x53, 0x75, 0x63,
+	0x63, 0x65, 0x73, 0x73, 0x6f, 0x72, 0x4d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x43, 0x6f, 0x6e, 0x6e,
+	0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x07, 0x6d, 0x61, 0x72, 0x6b, 0x65, 0x74, 0x73, 0x22,
 	0x32, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x50, 0x61, 0x72, 0x74, 0x79, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x12, 0x1f, 0x0a, 0x08, 0x70, 0x61, 0x72, 0x74, 0x79, 0x5f, 0x69, 0x64, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x09, 0x42, 0x04, 0xe2, 0x41, 0x01, 0x02, 0x52, 0x07, 0x70, 0x61, 0x72, 0x74,
@@ -20043,7 +20256,7 @@ func file_data_node_api_v2_trading_data_proto_rawDescGZIP() []byte {
 }
 
 var file_data_node_api_v2_trading_data_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_data_node_api_v2_trading_data_proto_msgTypes = make([]protoimpl.MessageInfo, 282)
+var file_data_node_api_v2_trading_data_proto_msgTypes = make([]protoimpl.MessageInfo, 285)
 var file_data_node_api_v2_trading_data_proto_goTypes = []interface{}{
 	(LedgerEntryField)(0),                                 // 0: datanode.api.v2.LedgerEntryField
 	(AccountField)(0),                                     // 1: datanode.api.v2.AccountField
@@ -20183,262 +20396,265 @@ var file_data_node_api_v2_trading_data_proto_goTypes = []interface{}{
 	(*MarketEdge)(nil),                                    // 135: datanode.api.v2.MarketEdge
 	(*MarketConnection)(nil),                              // 136: datanode.api.v2.MarketConnection
 	(*ListSuccessorMarketsRequest)(nil),                   // 137: datanode.api.v2.ListSuccessorMarketsRequest
-	(*ListSuccessorMarketsResponse)(nil),                  // 138: datanode.api.v2.ListSuccessorMarketsResponse
-	(*GetPartyRequest)(nil),                               // 139: datanode.api.v2.GetPartyRequest
-	(*GetPartyResponse)(nil),                              // 140: datanode.api.v2.GetPartyResponse
-	(*ListPartiesRequest)(nil),                            // 141: datanode.api.v2.ListPartiesRequest
-	(*ListPartiesResponse)(nil),                           // 142: datanode.api.v2.ListPartiesResponse
-	(*PartyEdge)(nil),                                     // 143: datanode.api.v2.PartyEdge
-	(*PartyConnection)(nil),                               // 144: datanode.api.v2.PartyConnection
-	(*OrderEdge)(nil),                                     // 145: datanode.api.v2.OrderEdge
-	(*ListMarginLevelsRequest)(nil),                       // 146: datanode.api.v2.ListMarginLevelsRequest
-	(*ListMarginLevelsResponse)(nil),                      // 147: datanode.api.v2.ListMarginLevelsResponse
-	(*ObserveMarginLevelsRequest)(nil),                    // 148: datanode.api.v2.ObserveMarginLevelsRequest
-	(*ObserveMarginLevelsResponse)(nil),                   // 149: datanode.api.v2.ObserveMarginLevelsResponse
-	(*OrderConnection)(nil),                               // 150: datanode.api.v2.OrderConnection
-	(*MarginEdge)(nil),                                    // 151: datanode.api.v2.MarginEdge
-	(*MarginConnection)(nil),                              // 152: datanode.api.v2.MarginConnection
-	(*ListRewardsRequest)(nil),                            // 153: datanode.api.v2.ListRewardsRequest
-	(*ListRewardsResponse)(nil),                           // 154: datanode.api.v2.ListRewardsResponse
-	(*RewardEdge)(nil),                                    // 155: datanode.api.v2.RewardEdge
-	(*RewardsConnection)(nil),                             // 156: datanode.api.v2.RewardsConnection
-	(*ListRewardSummariesRequest)(nil),                    // 157: datanode.api.v2.ListRewardSummariesRequest
-	(*ListRewardSummariesResponse)(nil),                   // 158: datanode.api.v2.ListRewardSummariesResponse
-	(*RewardSummaryFilter)(nil),                           // 159: datanode.api.v2.RewardSummaryFilter
-	(*ListEpochRewardSummariesRequest)(nil),               // 160: datanode.api.v2.ListEpochRewardSummariesRequest
-	(*ListEpochRewardSummariesResponse)(nil),              // 161: datanode.api.v2.ListEpochRewardSummariesResponse
-	(*EpochRewardSummaryConnection)(nil),                  // 162: datanode.api.v2.EpochRewardSummaryConnection
-	(*EpochRewardSummaryEdge)(nil),                        // 163: datanode.api.v2.EpochRewardSummaryEdge
-	(*ObserveRewardsRequest)(nil),                         // 164: datanode.api.v2.ObserveRewardsRequest
-	(*ObserveRewardsResponse)(nil),                        // 165: datanode.api.v2.ObserveRewardsResponse
-	(*GetDepositRequest)(nil),                             // 166: datanode.api.v2.GetDepositRequest
-	(*GetDepositResponse)(nil),                            // 167: datanode.api.v2.GetDepositResponse
-	(*ListDepositsRequest)(nil),                           // 168: datanode.api.v2.ListDepositsRequest
-	(*ListDepositsResponse)(nil),                          // 169: datanode.api.v2.ListDepositsResponse
-	(*DepositEdge)(nil),                                   // 170: datanode.api.v2.DepositEdge
-	(*DepositsConnection)(nil),                            // 171: datanode.api.v2.DepositsConnection
-	(*GetWithdrawalRequest)(nil),                          // 172: datanode.api.v2.GetWithdrawalRequest
-	(*GetWithdrawalResponse)(nil),                         // 173: datanode.api.v2.GetWithdrawalResponse
-	(*ListWithdrawalsRequest)(nil),                        // 174: datanode.api.v2.ListWithdrawalsRequest
-	(*ListWithdrawalsResponse)(nil),                       // 175: datanode.api.v2.ListWithdrawalsResponse
-	(*WithdrawalEdge)(nil),                                // 176: datanode.api.v2.WithdrawalEdge
-	(*WithdrawalsConnection)(nil),                         // 177: datanode.api.v2.WithdrawalsConnection
-	(*GetAssetRequest)(nil),                               // 178: datanode.api.v2.GetAssetRequest
-	(*GetAssetResponse)(nil),                              // 179: datanode.api.v2.GetAssetResponse
-	(*ListAssetsRequest)(nil),                             // 180: datanode.api.v2.ListAssetsRequest
-	(*ListAssetsResponse)(nil),                            // 181: datanode.api.v2.ListAssetsResponse
-	(*AssetEdge)(nil),                                     // 182: datanode.api.v2.AssetEdge
-	(*AssetsConnection)(nil),                              // 183: datanode.api.v2.AssetsConnection
-	(*ListLiquidityProvisionsRequest)(nil),                // 184: datanode.api.v2.ListLiquidityProvisionsRequest
-	(*ListLiquidityProvisionsResponse)(nil),               // 185: datanode.api.v2.ListLiquidityProvisionsResponse
-	(*LiquidityProvisionsEdge)(nil),                       // 186: datanode.api.v2.LiquidityProvisionsEdge
-	(*LiquidityProvisionsConnection)(nil),                 // 187: datanode.api.v2.LiquidityProvisionsConnection
-	(*ObserveLiquidityProvisionsRequest)(nil),             // 188: datanode.api.v2.ObserveLiquidityProvisionsRequest
-	(*ObserveLiquidityProvisionsResponse)(nil),            // 189: datanode.api.v2.ObserveLiquidityProvisionsResponse
-	(*GetGovernanceDataRequest)(nil),                      // 190: datanode.api.v2.GetGovernanceDataRequest
-	(*GetGovernanceDataResponse)(nil),                     // 191: datanode.api.v2.GetGovernanceDataResponse
-	(*ListGovernanceDataRequest)(nil),                     // 192: datanode.api.v2.ListGovernanceDataRequest
-	(*ListGovernanceDataResponse)(nil),                    // 193: datanode.api.v2.ListGovernanceDataResponse
-	(*GovernanceDataEdge)(nil),                            // 194: datanode.api.v2.GovernanceDataEdge
-	(*GovernanceDataConnection)(nil),                      // 195: datanode.api.v2.GovernanceDataConnection
-	(*ObserveGovernanceRequest)(nil),                      // 196: datanode.api.v2.ObserveGovernanceRequest
-	(*ObserveGovernanceResponse)(nil),                     // 197: datanode.api.v2.ObserveGovernanceResponse
-	(*ListDelegationsRequest)(nil),                        // 198: datanode.api.v2.ListDelegationsRequest
-	(*ListDelegationsResponse)(nil),                       // 199: datanode.api.v2.ListDelegationsResponse
-	(*DelegationEdge)(nil),                                // 200: datanode.api.v2.DelegationEdge
-	(*DelegationsConnection)(nil),                         // 201: datanode.api.v2.DelegationsConnection
-	(*ObserveDelegationsRequest)(nil),                     // 202: datanode.api.v2.ObserveDelegationsRequest
-	(*ObserveDelegationsResponse)(nil),                    // 203: datanode.api.v2.ObserveDelegationsResponse
-	(*NodeBasic)(nil),                                     // 204: datanode.api.v2.NodeBasic
-	(*GetNetworkDataRequest)(nil),                         // 205: datanode.api.v2.GetNetworkDataRequest
-	(*GetNetworkDataResponse)(nil),                        // 206: datanode.api.v2.GetNetworkDataResponse
-	(*GetNodeRequest)(nil),                                // 207: datanode.api.v2.GetNodeRequest
-	(*GetNodeResponse)(nil),                               // 208: datanode.api.v2.GetNodeResponse
-	(*ListNodesRequest)(nil),                              // 209: datanode.api.v2.ListNodesRequest
-	(*ListNodesResponse)(nil),                             // 210: datanode.api.v2.ListNodesResponse
-	(*NodeEdge)(nil),                                      // 211: datanode.api.v2.NodeEdge
-	(*NodesConnection)(nil),                               // 212: datanode.api.v2.NodesConnection
-	(*ListNodeSignaturesRequest)(nil),                     // 213: datanode.api.v2.ListNodeSignaturesRequest
-	(*ListNodeSignaturesResponse)(nil),                    // 214: datanode.api.v2.ListNodeSignaturesResponse
-	(*NodeSignatureEdge)(nil),                             // 215: datanode.api.v2.NodeSignatureEdge
-	(*NodeSignaturesConnection)(nil),                      // 216: datanode.api.v2.NodeSignaturesConnection
-	(*GetEpochRequest)(nil),                               // 217: datanode.api.v2.GetEpochRequest
-	(*GetEpochResponse)(nil),                              // 218: datanode.api.v2.GetEpochResponse
-	(*EstimateFeeRequest)(nil),                            // 219: datanode.api.v2.EstimateFeeRequest
-	(*EstimateFeeResponse)(nil),                           // 220: datanode.api.v2.EstimateFeeResponse
-	(*EstimateMarginRequest)(nil),                         // 221: datanode.api.v2.EstimateMarginRequest
-	(*EstimateMarginResponse)(nil),                        // 222: datanode.api.v2.EstimateMarginResponse
-	(*ListNetworkParametersRequest)(nil),                  // 223: datanode.api.v2.ListNetworkParametersRequest
-	(*ListNetworkParametersResponse)(nil),                 // 224: datanode.api.v2.ListNetworkParametersResponse
-	(*GetNetworkParameterRequest)(nil),                    // 225: datanode.api.v2.GetNetworkParameterRequest
-	(*GetNetworkParameterResponse)(nil),                   // 226: datanode.api.v2.GetNetworkParameterResponse
-	(*NetworkParameterEdge)(nil),                          // 227: datanode.api.v2.NetworkParameterEdge
-	(*NetworkParameterConnection)(nil),                    // 228: datanode.api.v2.NetworkParameterConnection
-	(*Checkpoint)(nil),                                    // 229: datanode.api.v2.Checkpoint
-	(*ListCheckpointsRequest)(nil),                        // 230: datanode.api.v2.ListCheckpointsRequest
-	(*ListCheckpointsResponse)(nil),                       // 231: datanode.api.v2.ListCheckpointsResponse
-	(*CheckpointEdge)(nil),                                // 232: datanode.api.v2.CheckpointEdge
-	(*CheckpointsConnection)(nil),                         // 233: datanode.api.v2.CheckpointsConnection
-	(*GetStakeRequest)(nil),                               // 234: datanode.api.v2.GetStakeRequest
-	(*GetStakeResponse)(nil),                              // 235: datanode.api.v2.GetStakeResponse
-	(*StakeLinkingEdge)(nil),                              // 236: datanode.api.v2.StakeLinkingEdge
-	(*StakesConnection)(nil),                              // 237: datanode.api.v2.StakesConnection
-	(*GetRiskFactorsRequest)(nil),                         // 238: datanode.api.v2.GetRiskFactorsRequest
-	(*GetRiskFactorsResponse)(nil),                        // 239: datanode.api.v2.GetRiskFactorsResponse
-	(*ObserveEventBusRequest)(nil),                        // 240: datanode.api.v2.ObserveEventBusRequest
-	(*ObserveEventBusResponse)(nil),                       // 241: datanode.api.v2.ObserveEventBusResponse
-	(*ObserveLedgerMovementsRequest)(nil),                 // 242: datanode.api.v2.ObserveLedgerMovementsRequest
-	(*ObserveLedgerMovementsResponse)(nil),                // 243: datanode.api.v2.ObserveLedgerMovementsResponse
-	(*ListKeyRotationsRequest)(nil),                       // 244: datanode.api.v2.ListKeyRotationsRequest
-	(*ListKeyRotationsResponse)(nil),                      // 245: datanode.api.v2.ListKeyRotationsResponse
-	(*KeyRotationEdge)(nil),                               // 246: datanode.api.v2.KeyRotationEdge
-	(*KeyRotationConnection)(nil),                         // 247: datanode.api.v2.KeyRotationConnection
-	(*ListEthereumKeyRotationsRequest)(nil),               // 248: datanode.api.v2.ListEthereumKeyRotationsRequest
-	(*ListEthereumKeyRotationsResponse)(nil),              // 249: datanode.api.v2.ListEthereumKeyRotationsResponse
-	(*EthereumKeyRotationsConnection)(nil),                // 250: datanode.api.v2.EthereumKeyRotationsConnection
-	(*EthereumKeyRotationEdge)(nil),                       // 251: datanode.api.v2.EthereumKeyRotationEdge
-	(*GetVegaTimeRequest)(nil),                            // 252: datanode.api.v2.GetVegaTimeRequest
-	(*GetVegaTimeResponse)(nil),                           // 253: datanode.api.v2.GetVegaTimeResponse
-	(*DateRange)(nil),                                     // 254: datanode.api.v2.DateRange
-	(*GetProtocolUpgradeStatusRequest)(nil),               // 255: datanode.api.v2.GetProtocolUpgradeStatusRequest
-	(*GetProtocolUpgradeStatusResponse)(nil),              // 256: datanode.api.v2.GetProtocolUpgradeStatusResponse
-	(*ListProtocolUpgradeProposalsRequest)(nil),           // 257: datanode.api.v2.ListProtocolUpgradeProposalsRequest
-	(*ListProtocolUpgradeProposalsResponse)(nil),          // 258: datanode.api.v2.ListProtocolUpgradeProposalsResponse
-	(*ProtocolUpgradeProposalConnection)(nil),             // 259: datanode.api.v2.ProtocolUpgradeProposalConnection
-	(*ProtocolUpgradeProposalEdge)(nil),                   // 260: datanode.api.v2.ProtocolUpgradeProposalEdge
-	(*ListCoreSnapshotsRequest)(nil),                      // 261: datanode.api.v2.ListCoreSnapshotsRequest
-	(*ListCoreSnapshotsResponse)(nil),                     // 262: datanode.api.v2.ListCoreSnapshotsResponse
-	(*CoreSnapshotConnection)(nil),                        // 263: datanode.api.v2.CoreSnapshotConnection
-	(*CoreSnapshotEdge)(nil),                              // 264: datanode.api.v2.CoreSnapshotEdge
-	(*HistorySegment)(nil),                                // 265: datanode.api.v2.HistorySegment
-	(*GetMostRecentNetworkHistorySegmentRequest)(nil),     // 266: datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
-	(*GetMostRecentNetworkHistorySegmentResponse)(nil),    // 267: datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
-	(*ListAllNetworkHistorySegmentsRequest)(nil),          // 268: datanode.api.v2.ListAllNetworkHistorySegmentsRequest
-	(*ListAllNetworkHistorySegmentsResponse)(nil),         // 269: datanode.api.v2.ListAllNetworkHistorySegmentsResponse
-	(*GetActiveNetworkHistoryPeerAddressesRequest)(nil),   // 270: datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
-	(*GetActiveNetworkHistoryPeerAddressesResponse)(nil),  // 271: datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
-	(*GetNetworkHistoryStatusRequest)(nil),                // 272: datanode.api.v2.GetNetworkHistoryStatusRequest
-	(*GetNetworkHistoryStatusResponse)(nil),               // 273: datanode.api.v2.GetNetworkHistoryStatusResponse
-	(*GetNetworkHistoryBootstrapPeersRequest)(nil),        // 274: datanode.api.v2.GetNetworkHistoryBootstrapPeersRequest
-	(*GetNetworkHistoryBootstrapPeersResponse)(nil),       // 275: datanode.api.v2.GetNetworkHistoryBootstrapPeersResponse
-	(*ExportNetworkHistoryRequest)(nil),                   // 276: datanode.api.v2.ExportNetworkHistoryRequest
-	(*ListEntitiesRequest)(nil),                           // 277: datanode.api.v2.ListEntitiesRequest
-	(*ListEntitiesResponse)(nil),                          // 278: datanode.api.v2.ListEntitiesResponse
-	(*PingRequest)(nil),                                   // 279: datanode.api.v2.PingRequest
-	(*PingResponse)(nil),                                  // 280: datanode.api.v2.PingResponse
-	(*OrderInfo)(nil),                                     // 281: datanode.api.v2.OrderInfo
-	(*EstimatePositionRequest)(nil),                       // 282: datanode.api.v2.EstimatePositionRequest
-	(*EstimatePositionResponse)(nil),                      // 283: datanode.api.v2.EstimatePositionResponse
-	(*MarginEstimate)(nil),                                // 284: datanode.api.v2.MarginEstimate
-	(*LiquidationEstimate)(nil),                           // 285: datanode.api.v2.LiquidationEstimate
-	(*LiquidationPrice)(nil),                              // 286: datanode.api.v2.LiquidationPrice
-	(vega.AccountType)(0),                                 // 287: vega.AccountType
-	(*vega.Order)(nil),                                    // 288: vega.Order
-	(vega.Order_Status)(0),                                // 289: vega.Order.Status
-	(vega.Order_Type)(0),                                  // 290: vega.Order.Type
-	(vega.Order_TimeInForce)(0),                           // 291: vega.Order.TimeInForce
-	(*vega.Position)(nil),                                 // 292: vega.Position
-	(*vega.LedgerEntry)(nil),                              // 293: vega.LedgerEntry
-	(vega.TransferType)(0),                                // 294: vega.TransferType
-	(*vega.MarketDepth)(nil),                              // 295: vega.MarketDepth
-	(*vega.MarketDepthUpdate)(nil),                        // 296: vega.MarketDepthUpdate
-	(*vega.MarketData)(nil),                               // 297: vega.MarketData
-	(*vega.PriceLevel)(nil),                               // 298: vega.PriceLevel
-	(*vega.Trade)(nil),                                    // 299: vega.Trade
-	(*v1.Transfer)(nil),                                   // 300: vega.events.v1.Transfer
-	(*vega.NetworkLimits)(nil),                            // 301: vega.NetworkLimits
-	(*vega.Vote)(nil),                                     // 302: vega.Vote
-	(*v1.ERC20MultiSigSignerAdded)(nil),                   // 303: vega.events.v1.ERC20MultiSigSignerAdded
-	(*v1.ERC20MultiSigSignerRemoved)(nil),                 // 304: vega.events.v1.ERC20MultiSigSignerRemoved
-	(*vega.OracleSpec)(nil),                               // 305: vega.OracleSpec
-	(*vega.OracleData)(nil),                               // 306: vega.OracleData
-	(*vega.Market)(nil),                                   // 307: vega.Market
-	(*vega.Party)(nil),                                    // 308: vega.Party
-	(*vega.MarginLevels)(nil),                             // 309: vega.MarginLevels
-	(*vega.Reward)(nil),                                   // 310: vega.Reward
-	(*vega.RewardSummary)(nil),                            // 311: vega.RewardSummary
-	(*vega.EpochRewardSummary)(nil),                       // 312: vega.EpochRewardSummary
-	(*vega.Deposit)(nil),                                  // 313: vega.Deposit
-	(*vega.Withdrawal)(nil),                               // 314: vega.Withdrawal
-	(*vega.Asset)(nil),                                    // 315: vega.Asset
-	(*vega.LiquidityProvision)(nil),                       // 316: vega.LiquidityProvision
-	(*vega.GovernanceData)(nil),                           // 317: vega.GovernanceData
-	(vega.Proposal_State)(0),                              // 318: vega.Proposal.State
-	(*vega.Delegation)(nil),                               // 319: vega.Delegation
-	(vega.NodeStatus)(0),                                  // 320: vega.NodeStatus
-	(*vega.NodeData)(nil),                                 // 321: vega.NodeData
-	(*vega.Node)(nil),                                     // 322: vega.Node
-	(*v11.NodeSignature)(nil),                             // 323: vega.commands.v1.NodeSignature
-	(*vega.Epoch)(nil),                                    // 324: vega.Epoch
-	(*vega.Fee)(nil),                                      // 325: vega.Fee
-	(vega.Side)(0),                                        // 326: vega.Side
-	(*vega.NetworkParameter)(nil),                         // 327: vega.NetworkParameter
-	(*v1.StakeLinking)(nil),                               // 328: vega.events.v1.StakeLinking
-	(*vega.RiskFactor)(nil),                               // 329: vega.RiskFactor
-	(v1.BusEventType)(0),                                  // 330: vega.events.v1.BusEventType
-	(*v1.BusEvent)(nil),                                   // 331: vega.events.v1.BusEvent
-	(*vega.LedgerMovement)(nil),                           // 332: vega.LedgerMovement
-	(*v1.KeyRotation)(nil),                                // 333: vega.events.v1.KeyRotation
-	(*v1.EthereumKeyRotation)(nil),                        // 334: vega.events.v1.EthereumKeyRotation
-	(v1.ProtocolUpgradeProposalStatus)(0),                 // 335: vega.events.v1.ProtocolUpgradeProposalStatus
-	(*v1.ProtocolUpgradeEvent)(nil),                       // 336: vega.events.v1.ProtocolUpgradeEvent
-	(*v1.CoreSnapshotData)(nil),                           // 337: vega.events.v1.CoreSnapshotData
-	(*vega.Account)(nil),                                  // 338: vega.Account
-	(*vega.Proposal)(nil),                                 // 339: vega.Proposal
-	(*httpbody.HttpBody)(nil),                             // 340: google.api.HttpBody
+	(*SuccessorMarket)(nil),                               // 138: datanode.api.v2.SuccessorMarket
+	(*SuccessorMarketEdge)(nil),                           // 139: datanode.api.v2.SuccessorMarketEdge
+	(*SuccessorMarketConnection)(nil),                     // 140: datanode.api.v2.SuccessorMarketConnection
+	(*ListSuccessorMarketsResponse)(nil),                  // 141: datanode.api.v2.ListSuccessorMarketsResponse
+	(*GetPartyRequest)(nil),                               // 142: datanode.api.v2.GetPartyRequest
+	(*GetPartyResponse)(nil),                              // 143: datanode.api.v2.GetPartyResponse
+	(*ListPartiesRequest)(nil),                            // 144: datanode.api.v2.ListPartiesRequest
+	(*ListPartiesResponse)(nil),                           // 145: datanode.api.v2.ListPartiesResponse
+	(*PartyEdge)(nil),                                     // 146: datanode.api.v2.PartyEdge
+	(*PartyConnection)(nil),                               // 147: datanode.api.v2.PartyConnection
+	(*OrderEdge)(nil),                                     // 148: datanode.api.v2.OrderEdge
+	(*ListMarginLevelsRequest)(nil),                       // 149: datanode.api.v2.ListMarginLevelsRequest
+	(*ListMarginLevelsResponse)(nil),                      // 150: datanode.api.v2.ListMarginLevelsResponse
+	(*ObserveMarginLevelsRequest)(nil),                    // 151: datanode.api.v2.ObserveMarginLevelsRequest
+	(*ObserveMarginLevelsResponse)(nil),                   // 152: datanode.api.v2.ObserveMarginLevelsResponse
+	(*OrderConnection)(nil),                               // 153: datanode.api.v2.OrderConnection
+	(*MarginEdge)(nil),                                    // 154: datanode.api.v2.MarginEdge
+	(*MarginConnection)(nil),                              // 155: datanode.api.v2.MarginConnection
+	(*ListRewardsRequest)(nil),                            // 156: datanode.api.v2.ListRewardsRequest
+	(*ListRewardsResponse)(nil),                           // 157: datanode.api.v2.ListRewardsResponse
+	(*RewardEdge)(nil),                                    // 158: datanode.api.v2.RewardEdge
+	(*RewardsConnection)(nil),                             // 159: datanode.api.v2.RewardsConnection
+	(*ListRewardSummariesRequest)(nil),                    // 160: datanode.api.v2.ListRewardSummariesRequest
+	(*ListRewardSummariesResponse)(nil),                   // 161: datanode.api.v2.ListRewardSummariesResponse
+	(*RewardSummaryFilter)(nil),                           // 162: datanode.api.v2.RewardSummaryFilter
+	(*ListEpochRewardSummariesRequest)(nil),               // 163: datanode.api.v2.ListEpochRewardSummariesRequest
+	(*ListEpochRewardSummariesResponse)(nil),              // 164: datanode.api.v2.ListEpochRewardSummariesResponse
+	(*EpochRewardSummaryConnection)(nil),                  // 165: datanode.api.v2.EpochRewardSummaryConnection
+	(*EpochRewardSummaryEdge)(nil),                        // 166: datanode.api.v2.EpochRewardSummaryEdge
+	(*ObserveRewardsRequest)(nil),                         // 167: datanode.api.v2.ObserveRewardsRequest
+	(*ObserveRewardsResponse)(nil),                        // 168: datanode.api.v2.ObserveRewardsResponse
+	(*GetDepositRequest)(nil),                             // 169: datanode.api.v2.GetDepositRequest
+	(*GetDepositResponse)(nil),                            // 170: datanode.api.v2.GetDepositResponse
+	(*ListDepositsRequest)(nil),                           // 171: datanode.api.v2.ListDepositsRequest
+	(*ListDepositsResponse)(nil),                          // 172: datanode.api.v2.ListDepositsResponse
+	(*DepositEdge)(nil),                                   // 173: datanode.api.v2.DepositEdge
+	(*DepositsConnection)(nil),                            // 174: datanode.api.v2.DepositsConnection
+	(*GetWithdrawalRequest)(nil),                          // 175: datanode.api.v2.GetWithdrawalRequest
+	(*GetWithdrawalResponse)(nil),                         // 176: datanode.api.v2.GetWithdrawalResponse
+	(*ListWithdrawalsRequest)(nil),                        // 177: datanode.api.v2.ListWithdrawalsRequest
+	(*ListWithdrawalsResponse)(nil),                       // 178: datanode.api.v2.ListWithdrawalsResponse
+	(*WithdrawalEdge)(nil),                                // 179: datanode.api.v2.WithdrawalEdge
+	(*WithdrawalsConnection)(nil),                         // 180: datanode.api.v2.WithdrawalsConnection
+	(*GetAssetRequest)(nil),                               // 181: datanode.api.v2.GetAssetRequest
+	(*GetAssetResponse)(nil),                              // 182: datanode.api.v2.GetAssetResponse
+	(*ListAssetsRequest)(nil),                             // 183: datanode.api.v2.ListAssetsRequest
+	(*ListAssetsResponse)(nil),                            // 184: datanode.api.v2.ListAssetsResponse
+	(*AssetEdge)(nil),                                     // 185: datanode.api.v2.AssetEdge
+	(*AssetsConnection)(nil),                              // 186: datanode.api.v2.AssetsConnection
+	(*ListLiquidityProvisionsRequest)(nil),                // 187: datanode.api.v2.ListLiquidityProvisionsRequest
+	(*ListLiquidityProvisionsResponse)(nil),               // 188: datanode.api.v2.ListLiquidityProvisionsResponse
+	(*LiquidityProvisionsEdge)(nil),                       // 189: datanode.api.v2.LiquidityProvisionsEdge
+	(*LiquidityProvisionsConnection)(nil),                 // 190: datanode.api.v2.LiquidityProvisionsConnection
+	(*ObserveLiquidityProvisionsRequest)(nil),             // 191: datanode.api.v2.ObserveLiquidityProvisionsRequest
+	(*ObserveLiquidityProvisionsResponse)(nil),            // 192: datanode.api.v2.ObserveLiquidityProvisionsResponse
+	(*GetGovernanceDataRequest)(nil),                      // 193: datanode.api.v2.GetGovernanceDataRequest
+	(*GetGovernanceDataResponse)(nil),                     // 194: datanode.api.v2.GetGovernanceDataResponse
+	(*ListGovernanceDataRequest)(nil),                     // 195: datanode.api.v2.ListGovernanceDataRequest
+	(*ListGovernanceDataResponse)(nil),                    // 196: datanode.api.v2.ListGovernanceDataResponse
+	(*GovernanceDataEdge)(nil),                            // 197: datanode.api.v2.GovernanceDataEdge
+	(*GovernanceDataConnection)(nil),                      // 198: datanode.api.v2.GovernanceDataConnection
+	(*ObserveGovernanceRequest)(nil),                      // 199: datanode.api.v2.ObserveGovernanceRequest
+	(*ObserveGovernanceResponse)(nil),                     // 200: datanode.api.v2.ObserveGovernanceResponse
+	(*ListDelegationsRequest)(nil),                        // 201: datanode.api.v2.ListDelegationsRequest
+	(*ListDelegationsResponse)(nil),                       // 202: datanode.api.v2.ListDelegationsResponse
+	(*DelegationEdge)(nil),                                // 203: datanode.api.v2.DelegationEdge
+	(*DelegationsConnection)(nil),                         // 204: datanode.api.v2.DelegationsConnection
+	(*ObserveDelegationsRequest)(nil),                     // 205: datanode.api.v2.ObserveDelegationsRequest
+	(*ObserveDelegationsResponse)(nil),                    // 206: datanode.api.v2.ObserveDelegationsResponse
+	(*NodeBasic)(nil),                                     // 207: datanode.api.v2.NodeBasic
+	(*GetNetworkDataRequest)(nil),                         // 208: datanode.api.v2.GetNetworkDataRequest
+	(*GetNetworkDataResponse)(nil),                        // 209: datanode.api.v2.GetNetworkDataResponse
+	(*GetNodeRequest)(nil),                                // 210: datanode.api.v2.GetNodeRequest
+	(*GetNodeResponse)(nil),                               // 211: datanode.api.v2.GetNodeResponse
+	(*ListNodesRequest)(nil),                              // 212: datanode.api.v2.ListNodesRequest
+	(*ListNodesResponse)(nil),                             // 213: datanode.api.v2.ListNodesResponse
+	(*NodeEdge)(nil),                                      // 214: datanode.api.v2.NodeEdge
+	(*NodesConnection)(nil),                               // 215: datanode.api.v2.NodesConnection
+	(*ListNodeSignaturesRequest)(nil),                     // 216: datanode.api.v2.ListNodeSignaturesRequest
+	(*ListNodeSignaturesResponse)(nil),                    // 217: datanode.api.v2.ListNodeSignaturesResponse
+	(*NodeSignatureEdge)(nil),                             // 218: datanode.api.v2.NodeSignatureEdge
+	(*NodeSignaturesConnection)(nil),                      // 219: datanode.api.v2.NodeSignaturesConnection
+	(*GetEpochRequest)(nil),                               // 220: datanode.api.v2.GetEpochRequest
+	(*GetEpochResponse)(nil),                              // 221: datanode.api.v2.GetEpochResponse
+	(*EstimateFeeRequest)(nil),                            // 222: datanode.api.v2.EstimateFeeRequest
+	(*EstimateFeeResponse)(nil),                           // 223: datanode.api.v2.EstimateFeeResponse
+	(*EstimateMarginRequest)(nil),                         // 224: datanode.api.v2.EstimateMarginRequest
+	(*EstimateMarginResponse)(nil),                        // 225: datanode.api.v2.EstimateMarginResponse
+	(*ListNetworkParametersRequest)(nil),                  // 226: datanode.api.v2.ListNetworkParametersRequest
+	(*ListNetworkParametersResponse)(nil),                 // 227: datanode.api.v2.ListNetworkParametersResponse
+	(*GetNetworkParameterRequest)(nil),                    // 228: datanode.api.v2.GetNetworkParameterRequest
+	(*GetNetworkParameterResponse)(nil),                   // 229: datanode.api.v2.GetNetworkParameterResponse
+	(*NetworkParameterEdge)(nil),                          // 230: datanode.api.v2.NetworkParameterEdge
+	(*NetworkParameterConnection)(nil),                    // 231: datanode.api.v2.NetworkParameterConnection
+	(*Checkpoint)(nil),                                    // 232: datanode.api.v2.Checkpoint
+	(*ListCheckpointsRequest)(nil),                        // 233: datanode.api.v2.ListCheckpointsRequest
+	(*ListCheckpointsResponse)(nil),                       // 234: datanode.api.v2.ListCheckpointsResponse
+	(*CheckpointEdge)(nil),                                // 235: datanode.api.v2.CheckpointEdge
+	(*CheckpointsConnection)(nil),                         // 236: datanode.api.v2.CheckpointsConnection
+	(*GetStakeRequest)(nil),                               // 237: datanode.api.v2.GetStakeRequest
+	(*GetStakeResponse)(nil),                              // 238: datanode.api.v2.GetStakeResponse
+	(*StakeLinkingEdge)(nil),                              // 239: datanode.api.v2.StakeLinkingEdge
+	(*StakesConnection)(nil),                              // 240: datanode.api.v2.StakesConnection
+	(*GetRiskFactorsRequest)(nil),                         // 241: datanode.api.v2.GetRiskFactorsRequest
+	(*GetRiskFactorsResponse)(nil),                        // 242: datanode.api.v2.GetRiskFactorsResponse
+	(*ObserveEventBusRequest)(nil),                        // 243: datanode.api.v2.ObserveEventBusRequest
+	(*ObserveEventBusResponse)(nil),                       // 244: datanode.api.v2.ObserveEventBusResponse
+	(*ObserveLedgerMovementsRequest)(nil),                 // 245: datanode.api.v2.ObserveLedgerMovementsRequest
+	(*ObserveLedgerMovementsResponse)(nil),                // 246: datanode.api.v2.ObserveLedgerMovementsResponse
+	(*ListKeyRotationsRequest)(nil),                       // 247: datanode.api.v2.ListKeyRotationsRequest
+	(*ListKeyRotationsResponse)(nil),                      // 248: datanode.api.v2.ListKeyRotationsResponse
+	(*KeyRotationEdge)(nil),                               // 249: datanode.api.v2.KeyRotationEdge
+	(*KeyRotationConnection)(nil),                         // 250: datanode.api.v2.KeyRotationConnection
+	(*ListEthereumKeyRotationsRequest)(nil),               // 251: datanode.api.v2.ListEthereumKeyRotationsRequest
+	(*ListEthereumKeyRotationsResponse)(nil),              // 252: datanode.api.v2.ListEthereumKeyRotationsResponse
+	(*EthereumKeyRotationsConnection)(nil),                // 253: datanode.api.v2.EthereumKeyRotationsConnection
+	(*EthereumKeyRotationEdge)(nil),                       // 254: datanode.api.v2.EthereumKeyRotationEdge
+	(*GetVegaTimeRequest)(nil),                            // 255: datanode.api.v2.GetVegaTimeRequest
+	(*GetVegaTimeResponse)(nil),                           // 256: datanode.api.v2.GetVegaTimeResponse
+	(*DateRange)(nil),                                     // 257: datanode.api.v2.DateRange
+	(*GetProtocolUpgradeStatusRequest)(nil),               // 258: datanode.api.v2.GetProtocolUpgradeStatusRequest
+	(*GetProtocolUpgradeStatusResponse)(nil),              // 259: datanode.api.v2.GetProtocolUpgradeStatusResponse
+	(*ListProtocolUpgradeProposalsRequest)(nil),           // 260: datanode.api.v2.ListProtocolUpgradeProposalsRequest
+	(*ListProtocolUpgradeProposalsResponse)(nil),          // 261: datanode.api.v2.ListProtocolUpgradeProposalsResponse
+	(*ProtocolUpgradeProposalConnection)(nil),             // 262: datanode.api.v2.ProtocolUpgradeProposalConnection
+	(*ProtocolUpgradeProposalEdge)(nil),                   // 263: datanode.api.v2.ProtocolUpgradeProposalEdge
+	(*ListCoreSnapshotsRequest)(nil),                      // 264: datanode.api.v2.ListCoreSnapshotsRequest
+	(*ListCoreSnapshotsResponse)(nil),                     // 265: datanode.api.v2.ListCoreSnapshotsResponse
+	(*CoreSnapshotConnection)(nil),                        // 266: datanode.api.v2.CoreSnapshotConnection
+	(*CoreSnapshotEdge)(nil),                              // 267: datanode.api.v2.CoreSnapshotEdge
+	(*HistorySegment)(nil),                                // 268: datanode.api.v2.HistorySegment
+	(*GetMostRecentNetworkHistorySegmentRequest)(nil),     // 269: datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
+	(*GetMostRecentNetworkHistorySegmentResponse)(nil),    // 270: datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
+	(*ListAllNetworkHistorySegmentsRequest)(nil),          // 271: datanode.api.v2.ListAllNetworkHistorySegmentsRequest
+	(*ListAllNetworkHistorySegmentsResponse)(nil),         // 272: datanode.api.v2.ListAllNetworkHistorySegmentsResponse
+	(*GetActiveNetworkHistoryPeerAddressesRequest)(nil),   // 273: datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
+	(*GetActiveNetworkHistoryPeerAddressesResponse)(nil),  // 274: datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
+	(*GetNetworkHistoryStatusRequest)(nil),                // 275: datanode.api.v2.GetNetworkHistoryStatusRequest
+	(*GetNetworkHistoryStatusResponse)(nil),               // 276: datanode.api.v2.GetNetworkHistoryStatusResponse
+	(*GetNetworkHistoryBootstrapPeersRequest)(nil),        // 277: datanode.api.v2.GetNetworkHistoryBootstrapPeersRequest
+	(*GetNetworkHistoryBootstrapPeersResponse)(nil),       // 278: datanode.api.v2.GetNetworkHistoryBootstrapPeersResponse
+	(*ExportNetworkHistoryRequest)(nil),                   // 279: datanode.api.v2.ExportNetworkHistoryRequest
+	(*ListEntitiesRequest)(nil),                           // 280: datanode.api.v2.ListEntitiesRequest
+	(*ListEntitiesResponse)(nil),                          // 281: datanode.api.v2.ListEntitiesResponse
+	(*PingRequest)(nil),                                   // 282: datanode.api.v2.PingRequest
+	(*PingResponse)(nil),                                  // 283: datanode.api.v2.PingResponse
+	(*OrderInfo)(nil),                                     // 284: datanode.api.v2.OrderInfo
+	(*EstimatePositionRequest)(nil),                       // 285: datanode.api.v2.EstimatePositionRequest
+	(*EstimatePositionResponse)(nil),                      // 286: datanode.api.v2.EstimatePositionResponse
+	(*MarginEstimate)(nil),                                // 287: datanode.api.v2.MarginEstimate
+	(*LiquidationEstimate)(nil),                           // 288: datanode.api.v2.LiquidationEstimate
+	(*LiquidationPrice)(nil),                              // 289: datanode.api.v2.LiquidationPrice
+	(vega.AccountType)(0),                                 // 290: vega.AccountType
+	(*vega.Order)(nil),                                    // 291: vega.Order
+	(vega.Order_Status)(0),                                // 292: vega.Order.Status
+	(vega.Order_Type)(0),                                  // 293: vega.Order.Type
+	(vega.Order_TimeInForce)(0),                           // 294: vega.Order.TimeInForce
+	(*vega.Position)(nil),                                 // 295: vega.Position
+	(*vega.LedgerEntry)(nil),                              // 296: vega.LedgerEntry
+	(vega.TransferType)(0),                                // 297: vega.TransferType
+	(*vega.MarketDepth)(nil),                              // 298: vega.MarketDepth
+	(*vega.MarketDepthUpdate)(nil),                        // 299: vega.MarketDepthUpdate
+	(*vega.MarketData)(nil),                               // 300: vega.MarketData
+	(*vega.PriceLevel)(nil),                               // 301: vega.PriceLevel
+	(*vega.Trade)(nil),                                    // 302: vega.Trade
+	(*v1.Transfer)(nil),                                   // 303: vega.events.v1.Transfer
+	(*vega.NetworkLimits)(nil),                            // 304: vega.NetworkLimits
+	(*vega.Vote)(nil),                                     // 305: vega.Vote
+	(*v1.ERC20MultiSigSignerAdded)(nil),                   // 306: vega.events.v1.ERC20MultiSigSignerAdded
+	(*v1.ERC20MultiSigSignerRemoved)(nil),                 // 307: vega.events.v1.ERC20MultiSigSignerRemoved
+	(*vega.OracleSpec)(nil),                               // 308: vega.OracleSpec
+	(*vega.OracleData)(nil),                               // 309: vega.OracleData
+	(*vega.Market)(nil),                                   // 310: vega.Market
+	(*vega.GovernanceData)(nil),                           // 311: vega.GovernanceData
+	(*vega.Party)(nil),                                    // 312: vega.Party
+	(*vega.MarginLevels)(nil),                             // 313: vega.MarginLevels
+	(*vega.Reward)(nil),                                   // 314: vega.Reward
+	(*vega.RewardSummary)(nil),                            // 315: vega.RewardSummary
+	(*vega.EpochRewardSummary)(nil),                       // 316: vega.EpochRewardSummary
+	(*vega.Deposit)(nil),                                  // 317: vega.Deposit
+	(*vega.Withdrawal)(nil),                               // 318: vega.Withdrawal
+	(*vega.Asset)(nil),                                    // 319: vega.Asset
+	(*vega.LiquidityProvision)(nil),                       // 320: vega.LiquidityProvision
+	(vega.Proposal_State)(0),                              // 321: vega.Proposal.State
+	(*vega.Delegation)(nil),                               // 322: vega.Delegation
+	(vega.NodeStatus)(0),                                  // 323: vega.NodeStatus
+	(*vega.NodeData)(nil),                                 // 324: vega.NodeData
+	(*vega.Node)(nil),                                     // 325: vega.Node
+	(*v11.NodeSignature)(nil),                             // 326: vega.commands.v1.NodeSignature
+	(*vega.Epoch)(nil),                                    // 327: vega.Epoch
+	(*vega.Fee)(nil),                                      // 328: vega.Fee
+	(vega.Side)(0),                                        // 329: vega.Side
+	(*vega.NetworkParameter)(nil),                         // 330: vega.NetworkParameter
+	(*v1.StakeLinking)(nil),                               // 331: vega.events.v1.StakeLinking
+	(*vega.RiskFactor)(nil),                               // 332: vega.RiskFactor
+	(v1.BusEventType)(0),                                  // 333: vega.events.v1.BusEventType
+	(*v1.BusEvent)(nil),                                   // 334: vega.events.v1.BusEvent
+	(*vega.LedgerMovement)(nil),                           // 335: vega.LedgerMovement
+	(*v1.KeyRotation)(nil),                                // 336: vega.events.v1.KeyRotation
+	(*v1.EthereumKeyRotation)(nil),                        // 337: vega.events.v1.EthereumKeyRotation
+	(v1.ProtocolUpgradeProposalStatus)(0),                 // 338: vega.events.v1.ProtocolUpgradeProposalStatus
+	(*v1.ProtocolUpgradeEvent)(nil),                       // 339: vega.events.v1.ProtocolUpgradeEvent
+	(*v1.CoreSnapshotData)(nil),                           // 340: vega.events.v1.CoreSnapshotData
+	(*vega.Account)(nil),                                  // 341: vega.Account
+	(*vega.Proposal)(nil),                                 // 342: vega.Proposal
+	(*httpbody.HttpBody)(nil),                             // 343: google.api.HttpBody
 }
 var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
-	287, // 0: datanode.api.v2.AccountBalance.type:type_name -> vega.AccountType
+	290, // 0: datanode.api.v2.AccountBalance.type:type_name -> vega.AccountType
 	55,  // 1: datanode.api.v2.ListAccountsRequest.filter:type_name -> datanode.api.v2.AccountFilter
 	5,   // 2: datanode.api.v2.ListAccountsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	10,  // 3: datanode.api.v2.ListAccountsResponse.accounts:type_name -> datanode.api.v2.AccountsConnection
 	11,  // 4: datanode.api.v2.AccountsConnection.edges:type_name -> datanode.api.v2.AccountEdge
 	6,   // 5: datanode.api.v2.AccountsConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	7,   // 6: datanode.api.v2.AccountEdge.node:type_name -> datanode.api.v2.AccountBalance
-	287, // 7: datanode.api.v2.ObserveAccountsRequest.type:type_name -> vega.AccountType
+	290, // 7: datanode.api.v2.ObserveAccountsRequest.type:type_name -> vega.AccountType
 	14,  // 8: datanode.api.v2.ObserveAccountsResponse.snapshot:type_name -> datanode.api.v2.AccountSnapshotPage
 	15,  // 9: datanode.api.v2.ObserveAccountsResponse.updates:type_name -> datanode.api.v2.AccountUpdates
 	7,   // 10: datanode.api.v2.AccountSnapshotPage.accounts:type_name -> datanode.api.v2.AccountBalance
 	7,   // 11: datanode.api.v2.AccountUpdates.accounts:type_name -> datanode.api.v2.AccountBalance
-	288, // 12: datanode.api.v2.GetOrderResponse.order:type_name -> vega.Order
-	289, // 13: datanode.api.v2.OrderFilter.statuses:type_name -> vega.Order.Status
-	290, // 14: datanode.api.v2.OrderFilter.types:type_name -> vega.Order.Type
-	291, // 15: datanode.api.v2.OrderFilter.time_in_forces:type_name -> vega.Order.TimeInForce
-	254, // 16: datanode.api.v2.OrderFilter.date_range:type_name -> datanode.api.v2.DateRange
+	291, // 12: datanode.api.v2.GetOrderResponse.order:type_name -> vega.Order
+	292, // 13: datanode.api.v2.OrderFilter.statuses:type_name -> vega.Order.Status
+	293, // 14: datanode.api.v2.OrderFilter.types:type_name -> vega.Order.Type
+	294, // 15: datanode.api.v2.OrderFilter.time_in_forces:type_name -> vega.Order.TimeInForce
+	257, // 16: datanode.api.v2.OrderFilter.date_range:type_name -> datanode.api.v2.DateRange
 	5,   // 17: datanode.api.v2.ListOrdersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	20,  // 18: datanode.api.v2.ListOrdersRequest.filter:type_name -> datanode.api.v2.OrderFilter
-	150, // 19: datanode.api.v2.ListOrdersResponse.orders:type_name -> datanode.api.v2.OrderConnection
+	153, // 19: datanode.api.v2.ListOrdersResponse.orders:type_name -> datanode.api.v2.OrderConnection
 	5,   // 20: datanode.api.v2.ListOrderVersionsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	150, // 21: datanode.api.v2.ListOrderVersionsResponse.orders:type_name -> datanode.api.v2.OrderConnection
+	153, // 21: datanode.api.v2.ListOrderVersionsResponse.orders:type_name -> datanode.api.v2.OrderConnection
 	27,  // 22: datanode.api.v2.ObserveOrdersResponse.snapshot:type_name -> datanode.api.v2.OrderSnapshotPage
 	28,  // 23: datanode.api.v2.ObserveOrdersResponse.updates:type_name -> datanode.api.v2.OrderUpdates
-	288, // 24: datanode.api.v2.OrderSnapshotPage.orders:type_name -> vega.Order
-	288, // 25: datanode.api.v2.OrderUpdates.orders:type_name -> vega.Order
+	291, // 24: datanode.api.v2.OrderSnapshotPage.orders:type_name -> vega.Order
+	291, // 25: datanode.api.v2.OrderUpdates.orders:type_name -> vega.Order
 	5,   // 26: datanode.api.v2.ListPositionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	35,  // 27: datanode.api.v2.ListPositionsResponse.positions:type_name -> datanode.api.v2.PositionConnection
 	31,  // 28: datanode.api.v2.ListAllPositionsRequest.filter:type_name -> datanode.api.v2.PositionsFilter
 	5,   // 29: datanode.api.v2.ListAllPositionsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	35,  // 30: datanode.api.v2.ListAllPositionsResponse.positions:type_name -> datanode.api.v2.PositionConnection
-	292, // 31: datanode.api.v2.PositionEdge.node:type_name -> vega.Position
+	295, // 31: datanode.api.v2.PositionEdge.node:type_name -> vega.Position
 	34,  // 32: datanode.api.v2.PositionConnection.edges:type_name -> datanode.api.v2.PositionEdge
 	6,   // 33: datanode.api.v2.PositionConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	38,  // 34: datanode.api.v2.ObservePositionsResponse.snapshot:type_name -> datanode.api.v2.PositionSnapshotPage
 	39,  // 35: datanode.api.v2.ObservePositionsResponse.updates:type_name -> datanode.api.v2.PositionUpdates
-	292, // 36: datanode.api.v2.PositionSnapshotPage.positions:type_name -> vega.Position
-	292, // 37: datanode.api.v2.PositionUpdates.positions:type_name -> vega.Position
-	293, // 38: datanode.api.v2.LedgerEntriesEdge.node:type_name -> vega.LedgerEntry
+	295, // 36: datanode.api.v2.PositionSnapshotPage.positions:type_name -> vega.Position
+	295, // 37: datanode.api.v2.PositionUpdates.positions:type_name -> vega.Position
+	296, // 38: datanode.api.v2.LedgerEntriesEdge.node:type_name -> vega.LedgerEntry
 	40,  // 39: datanode.api.v2.LedgerEntriesConnection.edges:type_name -> datanode.api.v2.LedgerEntriesEdge
 	6,   // 40: datanode.api.v2.LedgerEntriesConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	55,  // 41: datanode.api.v2.LedgerEntryFilter.from_account_filter:type_name -> datanode.api.v2.AccountFilter
 	55,  // 42: datanode.api.v2.LedgerEntryFilter.to_account_filter:type_name -> datanode.api.v2.AccountFilter
-	294, // 43: datanode.api.v2.LedgerEntryFilter.transfer_types:type_name -> vega.TransferType
-	294, // 44: datanode.api.v2.AggregatedLedgerEntry.transfer_type:type_name -> vega.TransferType
-	287, // 45: datanode.api.v2.AggregatedLedgerEntry.from_account_type:type_name -> vega.AccountType
-	287, // 46: datanode.api.v2.AggregatedLedgerEntry.to_account_type:type_name -> vega.AccountType
+	297, // 43: datanode.api.v2.LedgerEntryFilter.transfer_types:type_name -> vega.TransferType
+	297, // 44: datanode.api.v2.AggregatedLedgerEntry.transfer_type:type_name -> vega.TransferType
+	290, // 45: datanode.api.v2.AggregatedLedgerEntry.from_account_type:type_name -> vega.AccountType
+	290, // 46: datanode.api.v2.AggregatedLedgerEntry.to_account_type:type_name -> vega.AccountType
 	42,  // 47: datanode.api.v2.ListLedgerEntriesRequest.filter:type_name -> datanode.api.v2.LedgerEntryFilter
 	5,   // 48: datanode.api.v2.ListLedgerEntriesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	254, // 49: datanode.api.v2.ListLedgerEntriesRequest.date_range:type_name -> datanode.api.v2.DateRange
-	254, // 50: datanode.api.v2.ExportLedgerEntriesRequest.date_range:type_name -> datanode.api.v2.DateRange
+	257, // 49: datanode.api.v2.ListLedgerEntriesRequest.date_range:type_name -> datanode.api.v2.DateRange
+	257, // 50: datanode.api.v2.ExportLedgerEntriesRequest.date_range:type_name -> datanode.api.v2.DateRange
 	48,  // 51: datanode.api.v2.ListLedgerEntriesResponse.ledger_entries:type_name -> datanode.api.v2.AggregatedLedgerEntriesConnection
 	41,  // 52: datanode.api.v2.ListLedgerEntriesResponse.entries:type_name -> datanode.api.v2.LedgerEntriesConnection
 	43,  // 53: datanode.api.v2.AggregatedLedgerEntriesEdge.node:type_name -> datanode.api.v2.AggregatedLedgerEntry
@@ -20446,38 +20662,38 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	6,   // 55: datanode.api.v2.AggregatedLedgerEntriesConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	55,  // 56: datanode.api.v2.ListBalanceChangesRequest.filter:type_name -> datanode.api.v2.AccountFilter
 	5,   // 57: datanode.api.v2.ListBalanceChangesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	254, // 58: datanode.api.v2.ListBalanceChangesRequest.date_range:type_name -> datanode.api.v2.DateRange
+	257, // 58: datanode.api.v2.ListBalanceChangesRequest.date_range:type_name -> datanode.api.v2.DateRange
 	54,  // 59: datanode.api.v2.ListBalanceChangesResponse.balances:type_name -> datanode.api.v2.AggregatedBalanceConnection
 	55,  // 60: datanode.api.v2.GetBalanceHistoryRequest.filter:type_name -> datanode.api.v2.AccountFilter
 	1,   // 61: datanode.api.v2.GetBalanceHistoryRequest.group_by:type_name -> datanode.api.v2.AccountField
 	5,   // 62: datanode.api.v2.GetBalanceHistoryRequest.pagination:type_name -> datanode.api.v2.Pagination
-	254, // 63: datanode.api.v2.GetBalanceHistoryRequest.date_range:type_name -> datanode.api.v2.DateRange
+	257, // 63: datanode.api.v2.GetBalanceHistoryRequest.date_range:type_name -> datanode.api.v2.DateRange
 	54,  // 64: datanode.api.v2.GetBalanceHistoryResponse.balances:type_name -> datanode.api.v2.AggregatedBalanceConnection
 	56,  // 65: datanode.api.v2.AggregatedBalanceEdge.node:type_name -> datanode.api.v2.AggregatedBalance
 	53,  // 66: datanode.api.v2.AggregatedBalanceConnection.edges:type_name -> datanode.api.v2.AggregatedBalanceEdge
 	6,   // 67: datanode.api.v2.AggregatedBalanceConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	287, // 68: datanode.api.v2.AccountFilter.account_types:type_name -> vega.AccountType
-	287, // 69: datanode.api.v2.AggregatedBalance.account_type:type_name -> vega.AccountType
-	295, // 70: datanode.api.v2.ObserveMarketsDepthResponse.market_depth:type_name -> vega.MarketDepth
-	296, // 71: datanode.api.v2.ObserveMarketsDepthUpdatesResponse.update:type_name -> vega.MarketDepthUpdate
-	297, // 72: datanode.api.v2.ObserveMarketsDataResponse.market_data:type_name -> vega.MarketData
-	298, // 73: datanode.api.v2.GetLatestMarketDepthResponse.buy:type_name -> vega.PriceLevel
-	298, // 74: datanode.api.v2.GetLatestMarketDepthResponse.sell:type_name -> vega.PriceLevel
-	299, // 75: datanode.api.v2.GetLatestMarketDepthResponse.last_trade:type_name -> vega.Trade
-	297, // 76: datanode.api.v2.ListLatestMarketDataResponse.markets_data:type_name -> vega.MarketData
-	297, // 77: datanode.api.v2.GetLatestMarketDataResponse.market_data:type_name -> vega.MarketData
+	290, // 68: datanode.api.v2.AccountFilter.account_types:type_name -> vega.AccountType
+	290, // 69: datanode.api.v2.AggregatedBalance.account_type:type_name -> vega.AccountType
+	298, // 70: datanode.api.v2.ObserveMarketsDepthResponse.market_depth:type_name -> vega.MarketDepth
+	299, // 71: datanode.api.v2.ObserveMarketsDepthUpdatesResponse.update:type_name -> vega.MarketDepthUpdate
+	300, // 72: datanode.api.v2.ObserveMarketsDataResponse.market_data:type_name -> vega.MarketData
+	301, // 73: datanode.api.v2.GetLatestMarketDepthResponse.buy:type_name -> vega.PriceLevel
+	301, // 74: datanode.api.v2.GetLatestMarketDepthResponse.sell:type_name -> vega.PriceLevel
+	302, // 75: datanode.api.v2.GetLatestMarketDepthResponse.last_trade:type_name -> vega.Trade
+	300, // 76: datanode.api.v2.ListLatestMarketDataResponse.markets_data:type_name -> vega.MarketData
+	300, // 77: datanode.api.v2.GetLatestMarketDataResponse.market_data:type_name -> vega.MarketData
 	5,   // 78: datanode.api.v2.GetMarketDataHistoryByIDRequest.pagination:type_name -> datanode.api.v2.Pagination
 	72,  // 79: datanode.api.v2.GetMarketDataHistoryByIDResponse.market_data:type_name -> datanode.api.v2.MarketDataConnection
-	297, // 80: datanode.api.v2.MarketDataEdge.node:type_name -> vega.MarketData
+	300, // 80: datanode.api.v2.MarketDataEdge.node:type_name -> vega.MarketData
 	71,  // 81: datanode.api.v2.MarketDataConnection.edges:type_name -> datanode.api.v2.MarketDataEdge
 	6,   // 82: datanode.api.v2.MarketDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	2,   // 83: datanode.api.v2.ListTransfersRequest.direction:type_name -> datanode.api.v2.TransferDirection
 	5,   // 84: datanode.api.v2.ListTransfersRequest.pagination:type_name -> datanode.api.v2.Pagination
 	76,  // 85: datanode.api.v2.ListTransfersResponse.transfers:type_name -> datanode.api.v2.TransferConnection
-	300, // 86: datanode.api.v2.TransferEdge.node:type_name -> vega.events.v1.Transfer
+	303, // 86: datanode.api.v2.TransferEdge.node:type_name -> vega.events.v1.Transfer
 	75,  // 87: datanode.api.v2.TransferConnection.edges:type_name -> datanode.api.v2.TransferEdge
 	6,   // 88: datanode.api.v2.TransferConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	301, // 89: datanode.api.v2.GetNetworkLimitsResponse.limits:type_name -> vega.NetworkLimits
+	304, // 89: datanode.api.v2.GetNetworkLimitsResponse.limits:type_name -> vega.NetworkLimits
 	80,  // 90: datanode.api.v2.ListCandleIntervalsResponse.interval_to_candle_id:type_name -> datanode.api.v2.IntervalToCandleId
 	82,  // 91: datanode.api.v2.ObserveCandleDataResponse.candle:type_name -> datanode.api.v2.Candle
 	5,   // 92: datanode.api.v2.ListCandleDataRequest.pagination:type_name -> datanode.api.v2.Pagination
@@ -20487,399 +20703,405 @@ var file_data_node_api_v2_trading_data_proto_depIdxs = []int32{
 	6,   // 96: datanode.api.v2.CandleDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 97: datanode.api.v2.ListVotesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	92,  // 98: datanode.api.v2.ListVotesResponse.votes:type_name -> datanode.api.v2.VoteConnection
-	302, // 99: datanode.api.v2.VoteEdge.node:type_name -> vega.Vote
+	305, // 99: datanode.api.v2.VoteEdge.node:type_name -> vega.Vote
 	91,  // 100: datanode.api.v2.VoteConnection.edges:type_name -> datanode.api.v2.VoteEdge
 	6,   // 101: datanode.api.v2.VoteConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	302, // 102: datanode.api.v2.ObserveVotesResponse.vote:type_name -> vega.Vote
+	305, // 102: datanode.api.v2.ObserveVotesResponse.vote:type_name -> vega.Vote
 	5,   // 103: datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	99,  // 104: datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse.bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedConnection
-	303, // 105: datanode.api.v2.ERC20MultiSigSignerAddedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerAdded
+	306, // 105: datanode.api.v2.ERC20MultiSigSignerAddedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerAdded
 	100, // 106: datanode.api.v2.ERC20MultiSigSignerAddedBundleEdge.node:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundle
 	98,  // 107: datanode.api.v2.ERC20MultiSigSignerAddedConnection.edges:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundleEdge
 	6,   // 108: datanode.api.v2.ERC20MultiSigSignerAddedConnection.page_info:type_name -> datanode.api.v2.PageInfo
 	5,   // 109: datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest.pagination:type_name -> datanode.api.v2.Pagination
 	105, // 110: datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse.bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedConnection
-	304, // 111: datanode.api.v2.ERC20MultiSigSignerRemovedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerRemoved
+	307, // 111: datanode.api.v2.ERC20MultiSigSignerRemovedEdge.node:type_name -> vega.events.v1.ERC20MultiSigSignerRemoved
 	106, // 112: datanode.api.v2.ERC20MultiSigSignerRemovedBundleEdge.node:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundle
 	104, // 113: datanode.api.v2.ERC20MultiSigSignerRemovedConnection.edges:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundleEdge
 	6,   // 114: datanode.api.v2.ERC20MultiSigSignerRemovedConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	299, // 115: datanode.api.v2.GetLastTradeResponse.trade:type_name -> vega.Trade
+	302, // 115: datanode.api.v2.GetLastTradeResponse.trade:type_name -> vega.Trade
 	5,   // 116: datanode.api.v2.ListTradesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	254, // 117: datanode.api.v2.ListTradesRequest.date_range:type_name -> datanode.api.v2.DateRange
+	257, // 117: datanode.api.v2.ListTradesRequest.date_range:type_name -> datanode.api.v2.DateRange
 	117, // 118: datanode.api.v2.ListTradesResponse.trades:type_name -> datanode.api.v2.TradeConnection
 	118, // 119: datanode.api.v2.TradeConnection.edges:type_name -> datanode.api.v2.TradeEdge
 	6,   // 120: datanode.api.v2.TradeConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	299, // 121: datanode.api.v2.TradeEdge.node:type_name -> vega.Trade
-	299, // 122: datanode.api.v2.ObserveTradesResponse.trades:type_name -> vega.Trade
-	305, // 123: datanode.api.v2.GetOracleSpecResponse.oracle_spec:type_name -> vega.OracleSpec
+	302, // 121: datanode.api.v2.TradeEdge.node:type_name -> vega.Trade
+	302, // 122: datanode.api.v2.ObserveTradesResponse.trades:type_name -> vega.Trade
+	308, // 123: datanode.api.v2.GetOracleSpecResponse.oracle_spec:type_name -> vega.OracleSpec
 	5,   // 124: datanode.api.v2.ListOracleSpecsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	128, // 125: datanode.api.v2.ListOracleSpecsResponse.oracle_specs:type_name -> datanode.api.v2.OracleSpecsConnection
 	5,   // 126: datanode.api.v2.ListOracleDataRequest.pagination:type_name -> datanode.api.v2.Pagination
 	130, // 127: datanode.api.v2.ListOracleDataResponse.oracle_data:type_name -> datanode.api.v2.OracleDataConnection
-	305, // 128: datanode.api.v2.OracleSpecEdge.node:type_name -> vega.OracleSpec
+	308, // 128: datanode.api.v2.OracleSpecEdge.node:type_name -> vega.OracleSpec
 	127, // 129: datanode.api.v2.OracleSpecsConnection.edges:type_name -> datanode.api.v2.OracleSpecEdge
 	6,   // 130: datanode.api.v2.OracleSpecsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	306, // 131: datanode.api.v2.OracleDataEdge.node:type_name -> vega.OracleData
+	309, // 131: datanode.api.v2.OracleDataEdge.node:type_name -> vega.OracleData
 	129, // 132: datanode.api.v2.OracleDataConnection.edges:type_name -> datanode.api.v2.OracleDataEdge
 	6,   // 133: datanode.api.v2.OracleDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	307, // 134: datanode.api.v2.GetMarketResponse.market:type_name -> vega.Market
+	310, // 134: datanode.api.v2.GetMarketResponse.market:type_name -> vega.Market
 	5,   // 135: datanode.api.v2.ListMarketsRequest.pagination:type_name -> datanode.api.v2.Pagination
 	136, // 136: datanode.api.v2.ListMarketsResponse.markets:type_name -> datanode.api.v2.MarketConnection
-	307, // 137: datanode.api.v2.MarketEdge.node:type_name -> vega.Market
+	310, // 137: datanode.api.v2.MarketEdge.node:type_name -> vega.Market
 	135, // 138: datanode.api.v2.MarketConnection.edges:type_name -> datanode.api.v2.MarketEdge
 	6,   // 139: datanode.api.v2.MarketConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	307, // 140: datanode.api.v2.ListSuccessorMarketsResponse.markets:type_name -> vega.Market
-	308, // 141: datanode.api.v2.GetPartyResponse.party:type_name -> vega.Party
-	5,   // 142: datanode.api.v2.ListPartiesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	144, // 143: datanode.api.v2.ListPartiesResponse.parties:type_name -> datanode.api.v2.PartyConnection
-	308, // 144: datanode.api.v2.PartyEdge.node:type_name -> vega.Party
-	143, // 145: datanode.api.v2.PartyConnection.edges:type_name -> datanode.api.v2.PartyEdge
-	6,   // 146: datanode.api.v2.PartyConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	288, // 147: datanode.api.v2.OrderEdge.node:type_name -> vega.Order
-	5,   // 148: datanode.api.v2.ListMarginLevelsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	152, // 149: datanode.api.v2.ListMarginLevelsResponse.margin_levels:type_name -> datanode.api.v2.MarginConnection
-	309, // 150: datanode.api.v2.ObserveMarginLevelsResponse.margin_levels:type_name -> vega.MarginLevels
-	145, // 151: datanode.api.v2.OrderConnection.edges:type_name -> datanode.api.v2.OrderEdge
-	6,   // 152: datanode.api.v2.OrderConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	309, // 153: datanode.api.v2.MarginEdge.node:type_name -> vega.MarginLevels
-	151, // 154: datanode.api.v2.MarginConnection.edges:type_name -> datanode.api.v2.MarginEdge
-	6,   // 155: datanode.api.v2.MarginConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 156: datanode.api.v2.ListRewardsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	156, // 157: datanode.api.v2.ListRewardsResponse.rewards:type_name -> datanode.api.v2.RewardsConnection
-	310, // 158: datanode.api.v2.RewardEdge.node:type_name -> vega.Reward
-	155, // 159: datanode.api.v2.RewardsConnection.edges:type_name -> datanode.api.v2.RewardEdge
-	6,   // 160: datanode.api.v2.RewardsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 161: datanode.api.v2.ListRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	311, // 162: datanode.api.v2.ListRewardSummariesResponse.summaries:type_name -> vega.RewardSummary
-	159, // 163: datanode.api.v2.ListEpochRewardSummariesRequest.filter:type_name -> datanode.api.v2.RewardSummaryFilter
-	5,   // 164: datanode.api.v2.ListEpochRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	162, // 165: datanode.api.v2.ListEpochRewardSummariesResponse.summaries:type_name -> datanode.api.v2.EpochRewardSummaryConnection
-	163, // 166: datanode.api.v2.EpochRewardSummaryConnection.edges:type_name -> datanode.api.v2.EpochRewardSummaryEdge
-	6,   // 167: datanode.api.v2.EpochRewardSummaryConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	312, // 168: datanode.api.v2.EpochRewardSummaryEdge.node:type_name -> vega.EpochRewardSummary
-	310, // 169: datanode.api.v2.ObserveRewardsResponse.reward:type_name -> vega.Reward
-	313, // 170: datanode.api.v2.GetDepositResponse.deposit:type_name -> vega.Deposit
-	5,   // 171: datanode.api.v2.ListDepositsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	254, // 172: datanode.api.v2.ListDepositsRequest.date_range:type_name -> datanode.api.v2.DateRange
-	171, // 173: datanode.api.v2.ListDepositsResponse.deposits:type_name -> datanode.api.v2.DepositsConnection
-	313, // 174: datanode.api.v2.DepositEdge.node:type_name -> vega.Deposit
-	170, // 175: datanode.api.v2.DepositsConnection.edges:type_name -> datanode.api.v2.DepositEdge
-	6,   // 176: datanode.api.v2.DepositsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	314, // 177: datanode.api.v2.GetWithdrawalResponse.withdrawal:type_name -> vega.Withdrawal
-	5,   // 178: datanode.api.v2.ListWithdrawalsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	254, // 179: datanode.api.v2.ListWithdrawalsRequest.date_range:type_name -> datanode.api.v2.DateRange
-	177, // 180: datanode.api.v2.ListWithdrawalsResponse.withdrawals:type_name -> datanode.api.v2.WithdrawalsConnection
-	314, // 181: datanode.api.v2.WithdrawalEdge.node:type_name -> vega.Withdrawal
-	176, // 182: datanode.api.v2.WithdrawalsConnection.edges:type_name -> datanode.api.v2.WithdrawalEdge
-	6,   // 183: datanode.api.v2.WithdrawalsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	315, // 184: datanode.api.v2.GetAssetResponse.asset:type_name -> vega.Asset
-	5,   // 185: datanode.api.v2.ListAssetsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	183, // 186: datanode.api.v2.ListAssetsResponse.assets:type_name -> datanode.api.v2.AssetsConnection
-	315, // 187: datanode.api.v2.AssetEdge.node:type_name -> vega.Asset
-	182, // 188: datanode.api.v2.AssetsConnection.edges:type_name -> datanode.api.v2.AssetEdge
-	6,   // 189: datanode.api.v2.AssetsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 190: datanode.api.v2.ListLiquidityProvisionsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	187, // 191: datanode.api.v2.ListLiquidityProvisionsResponse.liquidity_provisions:type_name -> datanode.api.v2.LiquidityProvisionsConnection
-	316, // 192: datanode.api.v2.LiquidityProvisionsEdge.node:type_name -> vega.LiquidityProvision
-	186, // 193: datanode.api.v2.LiquidityProvisionsConnection.edges:type_name -> datanode.api.v2.LiquidityProvisionsEdge
-	6,   // 194: datanode.api.v2.LiquidityProvisionsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	316, // 195: datanode.api.v2.ObserveLiquidityProvisionsResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
-	317, // 196: datanode.api.v2.GetGovernanceDataResponse.data:type_name -> vega.GovernanceData
-	318, // 197: datanode.api.v2.ListGovernanceDataRequest.proposal_state:type_name -> vega.Proposal.State
-	4,   // 198: datanode.api.v2.ListGovernanceDataRequest.proposal_type:type_name -> datanode.api.v2.ListGovernanceDataRequest.Type
-	5,   // 199: datanode.api.v2.ListGovernanceDataRequest.pagination:type_name -> datanode.api.v2.Pagination
-	195, // 200: datanode.api.v2.ListGovernanceDataResponse.connection:type_name -> datanode.api.v2.GovernanceDataConnection
-	317, // 201: datanode.api.v2.GovernanceDataEdge.node:type_name -> vega.GovernanceData
-	194, // 202: datanode.api.v2.GovernanceDataConnection.edges:type_name -> datanode.api.v2.GovernanceDataEdge
-	6,   // 203: datanode.api.v2.GovernanceDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	317, // 204: datanode.api.v2.ObserveGovernanceResponse.data:type_name -> vega.GovernanceData
-	5,   // 205: datanode.api.v2.ListDelegationsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	201, // 206: datanode.api.v2.ListDelegationsResponse.delegations:type_name -> datanode.api.v2.DelegationsConnection
-	319, // 207: datanode.api.v2.DelegationEdge.node:type_name -> vega.Delegation
-	200, // 208: datanode.api.v2.DelegationsConnection.edges:type_name -> datanode.api.v2.DelegationEdge
-	6,   // 209: datanode.api.v2.DelegationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	319, // 210: datanode.api.v2.ObserveDelegationsResponse.delegation:type_name -> vega.Delegation
-	320, // 211: datanode.api.v2.NodeBasic.status:type_name -> vega.NodeStatus
-	321, // 212: datanode.api.v2.GetNetworkDataResponse.node_data:type_name -> vega.NodeData
-	322, // 213: datanode.api.v2.GetNodeResponse.node:type_name -> vega.Node
-	5,   // 214: datanode.api.v2.ListNodesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	212, // 215: datanode.api.v2.ListNodesResponse.nodes:type_name -> datanode.api.v2.NodesConnection
-	322, // 216: datanode.api.v2.NodeEdge.node:type_name -> vega.Node
-	211, // 217: datanode.api.v2.NodesConnection.edges:type_name -> datanode.api.v2.NodeEdge
-	6,   // 218: datanode.api.v2.NodesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 219: datanode.api.v2.ListNodeSignaturesRequest.pagination:type_name -> datanode.api.v2.Pagination
-	216, // 220: datanode.api.v2.ListNodeSignaturesResponse.signatures:type_name -> datanode.api.v2.NodeSignaturesConnection
-	323, // 221: datanode.api.v2.NodeSignatureEdge.node:type_name -> vega.commands.v1.NodeSignature
-	215, // 222: datanode.api.v2.NodeSignaturesConnection.edges:type_name -> datanode.api.v2.NodeSignatureEdge
-	6,   // 223: datanode.api.v2.NodeSignaturesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	324, // 224: datanode.api.v2.GetEpochResponse.epoch:type_name -> vega.Epoch
-	325, // 225: datanode.api.v2.EstimateFeeResponse.fee:type_name -> vega.Fee
-	326, // 226: datanode.api.v2.EstimateMarginRequest.side:type_name -> vega.Side
-	290, // 227: datanode.api.v2.EstimateMarginRequest.type:type_name -> vega.Order.Type
-	309, // 228: datanode.api.v2.EstimateMarginResponse.margin_levels:type_name -> vega.MarginLevels
-	5,   // 229: datanode.api.v2.ListNetworkParametersRequest.pagination:type_name -> datanode.api.v2.Pagination
-	228, // 230: datanode.api.v2.ListNetworkParametersResponse.network_parameters:type_name -> datanode.api.v2.NetworkParameterConnection
-	327, // 231: datanode.api.v2.GetNetworkParameterResponse.network_parameter:type_name -> vega.NetworkParameter
-	327, // 232: datanode.api.v2.NetworkParameterEdge.node:type_name -> vega.NetworkParameter
-	227, // 233: datanode.api.v2.NetworkParameterConnection.edges:type_name -> datanode.api.v2.NetworkParameterEdge
-	6,   // 234: datanode.api.v2.NetworkParameterConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 235: datanode.api.v2.ListCheckpointsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	233, // 236: datanode.api.v2.ListCheckpointsResponse.checkpoints:type_name -> datanode.api.v2.CheckpointsConnection
-	229, // 237: datanode.api.v2.CheckpointEdge.node:type_name -> datanode.api.v2.Checkpoint
-	232, // 238: datanode.api.v2.CheckpointsConnection.edges:type_name -> datanode.api.v2.CheckpointEdge
-	6,   // 239: datanode.api.v2.CheckpointsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 240: datanode.api.v2.GetStakeRequest.pagination:type_name -> datanode.api.v2.Pagination
-	237, // 241: datanode.api.v2.GetStakeResponse.stake_linkings:type_name -> datanode.api.v2.StakesConnection
-	328, // 242: datanode.api.v2.StakeLinkingEdge.node:type_name -> vega.events.v1.StakeLinking
-	236, // 243: datanode.api.v2.StakesConnection.edges:type_name -> datanode.api.v2.StakeLinkingEdge
-	6,   // 244: datanode.api.v2.StakesConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	329, // 245: datanode.api.v2.GetRiskFactorsResponse.risk_factor:type_name -> vega.RiskFactor
-	330, // 246: datanode.api.v2.ObserveEventBusRequest.type:type_name -> vega.events.v1.BusEventType
-	331, // 247: datanode.api.v2.ObserveEventBusResponse.events:type_name -> vega.events.v1.BusEvent
-	332, // 248: datanode.api.v2.ObserveLedgerMovementsResponse.ledger_movement:type_name -> vega.LedgerMovement
-	5,   // 249: datanode.api.v2.ListKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	247, // 250: datanode.api.v2.ListKeyRotationsResponse.rotations:type_name -> datanode.api.v2.KeyRotationConnection
-	333, // 251: datanode.api.v2.KeyRotationEdge.node:type_name -> vega.events.v1.KeyRotation
-	246, // 252: datanode.api.v2.KeyRotationConnection.edges:type_name -> datanode.api.v2.KeyRotationEdge
-	6,   // 253: datanode.api.v2.KeyRotationConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	5,   // 254: datanode.api.v2.ListEthereumKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	250, // 255: datanode.api.v2.ListEthereumKeyRotationsResponse.key_rotations:type_name -> datanode.api.v2.EthereumKeyRotationsConnection
-	251, // 256: datanode.api.v2.EthereumKeyRotationsConnection.edges:type_name -> datanode.api.v2.EthereumKeyRotationEdge
-	6,   // 257: datanode.api.v2.EthereumKeyRotationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	334, // 258: datanode.api.v2.EthereumKeyRotationEdge.node:type_name -> vega.events.v1.EthereumKeyRotation
-	335, // 259: datanode.api.v2.ListProtocolUpgradeProposalsRequest.status:type_name -> vega.events.v1.ProtocolUpgradeProposalStatus
-	5,   // 260: datanode.api.v2.ListProtocolUpgradeProposalsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	259, // 261: datanode.api.v2.ListProtocolUpgradeProposalsResponse.protocol_upgrade_proposals:type_name -> datanode.api.v2.ProtocolUpgradeProposalConnection
-	260, // 262: datanode.api.v2.ProtocolUpgradeProposalConnection.edges:type_name -> datanode.api.v2.ProtocolUpgradeProposalEdge
-	6,   // 263: datanode.api.v2.ProtocolUpgradeProposalConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	336, // 264: datanode.api.v2.ProtocolUpgradeProposalEdge.node:type_name -> vega.events.v1.ProtocolUpgradeEvent
-	5,   // 265: datanode.api.v2.ListCoreSnapshotsRequest.pagination:type_name -> datanode.api.v2.Pagination
-	263, // 266: datanode.api.v2.ListCoreSnapshotsResponse.core_snapshots:type_name -> datanode.api.v2.CoreSnapshotConnection
-	264, // 267: datanode.api.v2.CoreSnapshotConnection.edges:type_name -> datanode.api.v2.CoreSnapshotEdge
-	6,   // 268: datanode.api.v2.CoreSnapshotConnection.page_info:type_name -> datanode.api.v2.PageInfo
-	337, // 269: datanode.api.v2.CoreSnapshotEdge.node:type_name -> vega.events.v1.CoreSnapshotData
-	265, // 270: datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse.segment:type_name -> datanode.api.v2.HistorySegment
-	265, // 271: datanode.api.v2.ListAllNetworkHistorySegmentsResponse.segments:type_name -> datanode.api.v2.HistorySegment
-	3,   // 272: datanode.api.v2.ExportNetworkHistoryRequest.table:type_name -> datanode.api.v2.Table
-	338, // 273: datanode.api.v2.ListEntitiesResponse.accounts:type_name -> vega.Account
-	288, // 274: datanode.api.v2.ListEntitiesResponse.orders:type_name -> vega.Order
-	292, // 275: datanode.api.v2.ListEntitiesResponse.positions:type_name -> vega.Position
-	293, // 276: datanode.api.v2.ListEntitiesResponse.ledger_entries:type_name -> vega.LedgerEntry
-	7,   // 277: datanode.api.v2.ListEntitiesResponse.balance_changes:type_name -> datanode.api.v2.AccountBalance
-	300, // 278: datanode.api.v2.ListEntitiesResponse.transfers:type_name -> vega.events.v1.Transfer
-	302, // 279: datanode.api.v2.ListEntitiesResponse.votes:type_name -> vega.Vote
-	100, // 280: datanode.api.v2.ListEntitiesResponse.erc20_multi_sig_signer_added_bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundle
-	106, // 281: datanode.api.v2.ListEntitiesResponse.erc20_multi_sig_signer_removed_bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundle
-	299, // 282: datanode.api.v2.ListEntitiesResponse.trades:type_name -> vega.Trade
-	305, // 283: datanode.api.v2.ListEntitiesResponse.oracle_specs:type_name -> vega.OracleSpec
-	306, // 284: datanode.api.v2.ListEntitiesResponse.oracle_data:type_name -> vega.OracleData
-	307, // 285: datanode.api.v2.ListEntitiesResponse.markets:type_name -> vega.Market
-	308, // 286: datanode.api.v2.ListEntitiesResponse.parties:type_name -> vega.Party
-	309, // 287: datanode.api.v2.ListEntitiesResponse.margin_levels:type_name -> vega.MarginLevels
-	310, // 288: datanode.api.v2.ListEntitiesResponse.rewards:type_name -> vega.Reward
-	313, // 289: datanode.api.v2.ListEntitiesResponse.deposits:type_name -> vega.Deposit
-	314, // 290: datanode.api.v2.ListEntitiesResponse.withdrawals:type_name -> vega.Withdrawal
-	315, // 291: datanode.api.v2.ListEntitiesResponse.assets:type_name -> vega.Asset
-	316, // 292: datanode.api.v2.ListEntitiesResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
-	339, // 293: datanode.api.v2.ListEntitiesResponse.proposals:type_name -> vega.Proposal
-	319, // 294: datanode.api.v2.ListEntitiesResponse.delegations:type_name -> vega.Delegation
-	204, // 295: datanode.api.v2.ListEntitiesResponse.nodes:type_name -> datanode.api.v2.NodeBasic
-	323, // 296: datanode.api.v2.ListEntitiesResponse.node_signatures:type_name -> vega.commands.v1.NodeSignature
-	327, // 297: datanode.api.v2.ListEntitiesResponse.network_parameters:type_name -> vega.NetworkParameter
-	333, // 298: datanode.api.v2.ListEntitiesResponse.key_rotations:type_name -> vega.events.v1.KeyRotation
-	334, // 299: datanode.api.v2.ListEntitiesResponse.ethereum_key_rotations:type_name -> vega.events.v1.EthereumKeyRotation
-	336, // 300: datanode.api.v2.ListEntitiesResponse.protocol_upgrade_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
-	326, // 301: datanode.api.v2.OrderInfo.side:type_name -> vega.Side
-	281, // 302: datanode.api.v2.EstimatePositionRequest.orders:type_name -> datanode.api.v2.OrderInfo
-	284, // 303: datanode.api.v2.EstimatePositionResponse.margin:type_name -> datanode.api.v2.MarginEstimate
-	285, // 304: datanode.api.v2.EstimatePositionResponse.liquidation:type_name -> datanode.api.v2.LiquidationEstimate
-	309, // 305: datanode.api.v2.MarginEstimate.worst_case:type_name -> vega.MarginLevels
-	309, // 306: datanode.api.v2.MarginEstimate.best_case:type_name -> vega.MarginLevels
-	286, // 307: datanode.api.v2.LiquidationEstimate.worst_case:type_name -> datanode.api.v2.LiquidationPrice
-	286, // 308: datanode.api.v2.LiquidationEstimate.best_case:type_name -> datanode.api.v2.LiquidationPrice
-	8,   // 309: datanode.api.v2.TradingDataService.ListAccounts:input_type -> datanode.api.v2.ListAccountsRequest
-	12,  // 310: datanode.api.v2.TradingDataService.ObserveAccounts:input_type -> datanode.api.v2.ObserveAccountsRequest
-	16,  // 311: datanode.api.v2.TradingDataService.Info:input_type -> datanode.api.v2.InfoRequest
-	18,  // 312: datanode.api.v2.TradingDataService.GetOrder:input_type -> datanode.api.v2.GetOrderRequest
-	21,  // 313: datanode.api.v2.TradingDataService.ListOrders:input_type -> datanode.api.v2.ListOrdersRequest
-	23,  // 314: datanode.api.v2.TradingDataService.ListOrderVersions:input_type -> datanode.api.v2.ListOrderVersionsRequest
-	25,  // 315: datanode.api.v2.TradingDataService.ObserveOrders:input_type -> datanode.api.v2.ObserveOrdersRequest
-	29,  // 316: datanode.api.v2.TradingDataService.ListPositions:input_type -> datanode.api.v2.ListPositionsRequest
-	32,  // 317: datanode.api.v2.TradingDataService.ListAllPositions:input_type -> datanode.api.v2.ListAllPositionsRequest
-	36,  // 318: datanode.api.v2.TradingDataService.ObservePositions:input_type -> datanode.api.v2.ObservePositionsRequest
-	44,  // 319: datanode.api.v2.TradingDataService.ListLedgerEntries:input_type -> datanode.api.v2.ListLedgerEntriesRequest
-	45,  // 320: datanode.api.v2.TradingDataService.ExportLedgerEntries:input_type -> datanode.api.v2.ExportLedgerEntriesRequest
-	49,  // 321: datanode.api.v2.TradingDataService.ListBalanceChanges:input_type -> datanode.api.v2.ListBalanceChangesRequest
-	67,  // 322: datanode.api.v2.TradingDataService.GetLatestMarketData:input_type -> datanode.api.v2.GetLatestMarketDataRequest
-	65,  // 323: datanode.api.v2.TradingDataService.ListLatestMarketData:input_type -> datanode.api.v2.ListLatestMarketDataRequest
-	63,  // 324: datanode.api.v2.TradingDataService.GetLatestMarketDepth:input_type -> datanode.api.v2.GetLatestMarketDepthRequest
-	57,  // 325: datanode.api.v2.TradingDataService.ObserveMarketsDepth:input_type -> datanode.api.v2.ObserveMarketsDepthRequest
-	59,  // 326: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:input_type -> datanode.api.v2.ObserveMarketsDepthUpdatesRequest
-	61,  // 327: datanode.api.v2.TradingDataService.ObserveMarketsData:input_type -> datanode.api.v2.ObserveMarketsDataRequest
-	69,  // 328: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:input_type -> datanode.api.v2.GetMarketDataHistoryByIDRequest
-	73,  // 329: datanode.api.v2.TradingDataService.ListTransfers:input_type -> datanode.api.v2.ListTransfersRequest
-	77,  // 330: datanode.api.v2.TradingDataService.GetNetworkLimits:input_type -> datanode.api.v2.GetNetworkLimitsRequest
-	85,  // 331: datanode.api.v2.TradingDataService.ListCandleData:input_type -> datanode.api.v2.ListCandleDataRequest
-	83,  // 332: datanode.api.v2.TradingDataService.ObserveCandleData:input_type -> datanode.api.v2.ObserveCandleDataRequest
-	79,  // 333: datanode.api.v2.TradingDataService.ListCandleIntervals:input_type -> datanode.api.v2.ListCandleIntervalsRequest
-	89,  // 334: datanode.api.v2.TradingDataService.ListVotes:input_type -> datanode.api.v2.ListVotesRequest
-	93,  // 335: datanode.api.v2.TradingDataService.ObserveVotes:input_type -> datanode.api.v2.ObserveVotesRequest
-	95,  // 336: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest
-	101, // 337: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest
-	107, // 338: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:input_type -> datanode.api.v2.GetERC20ListAssetBundleRequest
-	109, // 339: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:input_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleRequest
-	111, // 340: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:input_type -> datanode.api.v2.GetERC20WithdrawalApprovalRequest
-	113, // 341: datanode.api.v2.TradingDataService.GetLastTrade:input_type -> datanode.api.v2.GetLastTradeRequest
-	115, // 342: datanode.api.v2.TradingDataService.ListTrades:input_type -> datanode.api.v2.ListTradesRequest
-	119, // 343: datanode.api.v2.TradingDataService.ObserveTrades:input_type -> datanode.api.v2.ObserveTradesRequest
-	121, // 344: datanode.api.v2.TradingDataService.GetOracleSpec:input_type -> datanode.api.v2.GetOracleSpecRequest
-	123, // 345: datanode.api.v2.TradingDataService.ListOracleSpecs:input_type -> datanode.api.v2.ListOracleSpecsRequest
-	125, // 346: datanode.api.v2.TradingDataService.ListOracleData:input_type -> datanode.api.v2.ListOracleDataRequest
-	131, // 347: datanode.api.v2.TradingDataService.GetMarket:input_type -> datanode.api.v2.GetMarketRequest
-	133, // 348: datanode.api.v2.TradingDataService.ListMarkets:input_type -> datanode.api.v2.ListMarketsRequest
-	137, // 349: datanode.api.v2.TradingDataService.ListSuccessorMarkets:input_type -> datanode.api.v2.ListSuccessorMarketsRequest
-	139, // 350: datanode.api.v2.TradingDataService.GetParty:input_type -> datanode.api.v2.GetPartyRequest
-	141, // 351: datanode.api.v2.TradingDataService.ListParties:input_type -> datanode.api.v2.ListPartiesRequest
-	146, // 352: datanode.api.v2.TradingDataService.ListMarginLevels:input_type -> datanode.api.v2.ListMarginLevelsRequest
-	148, // 353: datanode.api.v2.TradingDataService.ObserveMarginLevels:input_type -> datanode.api.v2.ObserveMarginLevelsRequest
-	153, // 354: datanode.api.v2.TradingDataService.ListRewards:input_type -> datanode.api.v2.ListRewardsRequest
-	157, // 355: datanode.api.v2.TradingDataService.ListRewardSummaries:input_type -> datanode.api.v2.ListRewardSummariesRequest
-	160, // 356: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:input_type -> datanode.api.v2.ListEpochRewardSummariesRequest
-	166, // 357: datanode.api.v2.TradingDataService.GetDeposit:input_type -> datanode.api.v2.GetDepositRequest
-	168, // 358: datanode.api.v2.TradingDataService.ListDeposits:input_type -> datanode.api.v2.ListDepositsRequest
-	172, // 359: datanode.api.v2.TradingDataService.GetWithdrawal:input_type -> datanode.api.v2.GetWithdrawalRequest
-	174, // 360: datanode.api.v2.TradingDataService.ListWithdrawals:input_type -> datanode.api.v2.ListWithdrawalsRequest
-	178, // 361: datanode.api.v2.TradingDataService.GetAsset:input_type -> datanode.api.v2.GetAssetRequest
-	180, // 362: datanode.api.v2.TradingDataService.ListAssets:input_type -> datanode.api.v2.ListAssetsRequest
-	184, // 363: datanode.api.v2.TradingDataService.ListLiquidityProvisions:input_type -> datanode.api.v2.ListLiquidityProvisionsRequest
-	188, // 364: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:input_type -> datanode.api.v2.ObserveLiquidityProvisionsRequest
-	190, // 365: datanode.api.v2.TradingDataService.GetGovernanceData:input_type -> datanode.api.v2.GetGovernanceDataRequest
-	192, // 366: datanode.api.v2.TradingDataService.ListGovernanceData:input_type -> datanode.api.v2.ListGovernanceDataRequest
-	196, // 367: datanode.api.v2.TradingDataService.ObserveGovernance:input_type -> datanode.api.v2.ObserveGovernanceRequest
-	198, // 368: datanode.api.v2.TradingDataService.ListDelegations:input_type -> datanode.api.v2.ListDelegationsRequest
-	205, // 369: datanode.api.v2.TradingDataService.GetNetworkData:input_type -> datanode.api.v2.GetNetworkDataRequest
-	207, // 370: datanode.api.v2.TradingDataService.GetNode:input_type -> datanode.api.v2.GetNodeRequest
-	209, // 371: datanode.api.v2.TradingDataService.ListNodes:input_type -> datanode.api.v2.ListNodesRequest
-	213, // 372: datanode.api.v2.TradingDataService.ListNodeSignatures:input_type -> datanode.api.v2.ListNodeSignaturesRequest
-	217, // 373: datanode.api.v2.TradingDataService.GetEpoch:input_type -> datanode.api.v2.GetEpochRequest
-	219, // 374: datanode.api.v2.TradingDataService.EstimateFee:input_type -> datanode.api.v2.EstimateFeeRequest
-	221, // 375: datanode.api.v2.TradingDataService.EstimateMargin:input_type -> datanode.api.v2.EstimateMarginRequest
-	282, // 376: datanode.api.v2.TradingDataService.EstimatePosition:input_type -> datanode.api.v2.EstimatePositionRequest
-	223, // 377: datanode.api.v2.TradingDataService.ListNetworkParameters:input_type -> datanode.api.v2.ListNetworkParametersRequest
-	225, // 378: datanode.api.v2.TradingDataService.GetNetworkParameter:input_type -> datanode.api.v2.GetNetworkParameterRequest
-	230, // 379: datanode.api.v2.TradingDataService.ListCheckpoints:input_type -> datanode.api.v2.ListCheckpointsRequest
-	234, // 380: datanode.api.v2.TradingDataService.GetStake:input_type -> datanode.api.v2.GetStakeRequest
-	238, // 381: datanode.api.v2.TradingDataService.GetRiskFactors:input_type -> datanode.api.v2.GetRiskFactorsRequest
-	240, // 382: datanode.api.v2.TradingDataService.ObserveEventBus:input_type -> datanode.api.v2.ObserveEventBusRequest
-	242, // 383: datanode.api.v2.TradingDataService.ObserveLedgerMovements:input_type -> datanode.api.v2.ObserveLedgerMovementsRequest
-	244, // 384: datanode.api.v2.TradingDataService.ListKeyRotations:input_type -> datanode.api.v2.ListKeyRotationsRequest
-	248, // 385: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:input_type -> datanode.api.v2.ListEthereumKeyRotationsRequest
-	252, // 386: datanode.api.v2.TradingDataService.GetVegaTime:input_type -> datanode.api.v2.GetVegaTimeRequest
-	255, // 387: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:input_type -> datanode.api.v2.GetProtocolUpgradeStatusRequest
-	257, // 388: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:input_type -> datanode.api.v2.ListProtocolUpgradeProposalsRequest
-	261, // 389: datanode.api.v2.TradingDataService.ListCoreSnapshots:input_type -> datanode.api.v2.ListCoreSnapshotsRequest
-	266, // 390: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:input_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
-	268, // 391: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:input_type -> datanode.api.v2.ListAllNetworkHistorySegmentsRequest
-	270, // 392: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:input_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
-	272, // 393: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:input_type -> datanode.api.v2.GetNetworkHistoryStatusRequest
-	274, // 394: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:input_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersRequest
-	277, // 395: datanode.api.v2.TradingDataService.ListEntities:input_type -> datanode.api.v2.ListEntitiesRequest
-	276, // 396: datanode.api.v2.TradingDataService.ExportNetworkHistory:input_type -> datanode.api.v2.ExportNetworkHistoryRequest
-	279, // 397: datanode.api.v2.TradingDataService.Ping:input_type -> datanode.api.v2.PingRequest
-	9,   // 398: datanode.api.v2.TradingDataService.ListAccounts:output_type -> datanode.api.v2.ListAccountsResponse
-	13,  // 399: datanode.api.v2.TradingDataService.ObserveAccounts:output_type -> datanode.api.v2.ObserveAccountsResponse
-	17,  // 400: datanode.api.v2.TradingDataService.Info:output_type -> datanode.api.v2.InfoResponse
-	19,  // 401: datanode.api.v2.TradingDataService.GetOrder:output_type -> datanode.api.v2.GetOrderResponse
-	22,  // 402: datanode.api.v2.TradingDataService.ListOrders:output_type -> datanode.api.v2.ListOrdersResponse
-	24,  // 403: datanode.api.v2.TradingDataService.ListOrderVersions:output_type -> datanode.api.v2.ListOrderVersionsResponse
-	26,  // 404: datanode.api.v2.TradingDataService.ObserveOrders:output_type -> datanode.api.v2.ObserveOrdersResponse
-	30,  // 405: datanode.api.v2.TradingDataService.ListPositions:output_type -> datanode.api.v2.ListPositionsResponse
-	33,  // 406: datanode.api.v2.TradingDataService.ListAllPositions:output_type -> datanode.api.v2.ListAllPositionsResponse
-	37,  // 407: datanode.api.v2.TradingDataService.ObservePositions:output_type -> datanode.api.v2.ObservePositionsResponse
-	46,  // 408: datanode.api.v2.TradingDataService.ListLedgerEntries:output_type -> datanode.api.v2.ListLedgerEntriesResponse
-	340, // 409: datanode.api.v2.TradingDataService.ExportLedgerEntries:output_type -> google.api.HttpBody
-	50,  // 410: datanode.api.v2.TradingDataService.ListBalanceChanges:output_type -> datanode.api.v2.ListBalanceChangesResponse
-	68,  // 411: datanode.api.v2.TradingDataService.GetLatestMarketData:output_type -> datanode.api.v2.GetLatestMarketDataResponse
-	66,  // 412: datanode.api.v2.TradingDataService.ListLatestMarketData:output_type -> datanode.api.v2.ListLatestMarketDataResponse
-	64,  // 413: datanode.api.v2.TradingDataService.GetLatestMarketDepth:output_type -> datanode.api.v2.GetLatestMarketDepthResponse
-	58,  // 414: datanode.api.v2.TradingDataService.ObserveMarketsDepth:output_type -> datanode.api.v2.ObserveMarketsDepthResponse
-	60,  // 415: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:output_type -> datanode.api.v2.ObserveMarketsDepthUpdatesResponse
-	62,  // 416: datanode.api.v2.TradingDataService.ObserveMarketsData:output_type -> datanode.api.v2.ObserveMarketsDataResponse
-	70,  // 417: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:output_type -> datanode.api.v2.GetMarketDataHistoryByIDResponse
-	74,  // 418: datanode.api.v2.TradingDataService.ListTransfers:output_type -> datanode.api.v2.ListTransfersResponse
-	78,  // 419: datanode.api.v2.TradingDataService.GetNetworkLimits:output_type -> datanode.api.v2.GetNetworkLimitsResponse
-	86,  // 420: datanode.api.v2.TradingDataService.ListCandleData:output_type -> datanode.api.v2.ListCandleDataResponse
-	84,  // 421: datanode.api.v2.TradingDataService.ObserveCandleData:output_type -> datanode.api.v2.ObserveCandleDataResponse
-	81,  // 422: datanode.api.v2.TradingDataService.ListCandleIntervals:output_type -> datanode.api.v2.ListCandleIntervalsResponse
-	90,  // 423: datanode.api.v2.TradingDataService.ListVotes:output_type -> datanode.api.v2.ListVotesResponse
-	94,  // 424: datanode.api.v2.TradingDataService.ObserveVotes:output_type -> datanode.api.v2.ObserveVotesResponse
-	96,  // 425: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse
-	102, // 426: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse
-	108, // 427: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:output_type -> datanode.api.v2.GetERC20ListAssetBundleResponse
-	110, // 428: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:output_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleResponse
-	112, // 429: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:output_type -> datanode.api.v2.GetERC20WithdrawalApprovalResponse
-	114, // 430: datanode.api.v2.TradingDataService.GetLastTrade:output_type -> datanode.api.v2.GetLastTradeResponse
-	116, // 431: datanode.api.v2.TradingDataService.ListTrades:output_type -> datanode.api.v2.ListTradesResponse
-	120, // 432: datanode.api.v2.TradingDataService.ObserveTrades:output_type -> datanode.api.v2.ObserveTradesResponse
-	122, // 433: datanode.api.v2.TradingDataService.GetOracleSpec:output_type -> datanode.api.v2.GetOracleSpecResponse
-	124, // 434: datanode.api.v2.TradingDataService.ListOracleSpecs:output_type -> datanode.api.v2.ListOracleSpecsResponse
-	126, // 435: datanode.api.v2.TradingDataService.ListOracleData:output_type -> datanode.api.v2.ListOracleDataResponse
-	132, // 436: datanode.api.v2.TradingDataService.GetMarket:output_type -> datanode.api.v2.GetMarketResponse
-	134, // 437: datanode.api.v2.TradingDataService.ListMarkets:output_type -> datanode.api.v2.ListMarketsResponse
-	138, // 438: datanode.api.v2.TradingDataService.ListSuccessorMarkets:output_type -> datanode.api.v2.ListSuccessorMarketsResponse
-	140, // 439: datanode.api.v2.TradingDataService.GetParty:output_type -> datanode.api.v2.GetPartyResponse
-	142, // 440: datanode.api.v2.TradingDataService.ListParties:output_type -> datanode.api.v2.ListPartiesResponse
-	147, // 441: datanode.api.v2.TradingDataService.ListMarginLevels:output_type -> datanode.api.v2.ListMarginLevelsResponse
-	149, // 442: datanode.api.v2.TradingDataService.ObserveMarginLevels:output_type -> datanode.api.v2.ObserveMarginLevelsResponse
-	154, // 443: datanode.api.v2.TradingDataService.ListRewards:output_type -> datanode.api.v2.ListRewardsResponse
-	158, // 444: datanode.api.v2.TradingDataService.ListRewardSummaries:output_type -> datanode.api.v2.ListRewardSummariesResponse
-	161, // 445: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:output_type -> datanode.api.v2.ListEpochRewardSummariesResponse
-	167, // 446: datanode.api.v2.TradingDataService.GetDeposit:output_type -> datanode.api.v2.GetDepositResponse
-	169, // 447: datanode.api.v2.TradingDataService.ListDeposits:output_type -> datanode.api.v2.ListDepositsResponse
-	173, // 448: datanode.api.v2.TradingDataService.GetWithdrawal:output_type -> datanode.api.v2.GetWithdrawalResponse
-	175, // 449: datanode.api.v2.TradingDataService.ListWithdrawals:output_type -> datanode.api.v2.ListWithdrawalsResponse
-	179, // 450: datanode.api.v2.TradingDataService.GetAsset:output_type -> datanode.api.v2.GetAssetResponse
-	181, // 451: datanode.api.v2.TradingDataService.ListAssets:output_type -> datanode.api.v2.ListAssetsResponse
-	185, // 452: datanode.api.v2.TradingDataService.ListLiquidityProvisions:output_type -> datanode.api.v2.ListLiquidityProvisionsResponse
-	189, // 453: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:output_type -> datanode.api.v2.ObserveLiquidityProvisionsResponse
-	191, // 454: datanode.api.v2.TradingDataService.GetGovernanceData:output_type -> datanode.api.v2.GetGovernanceDataResponse
-	193, // 455: datanode.api.v2.TradingDataService.ListGovernanceData:output_type -> datanode.api.v2.ListGovernanceDataResponse
-	197, // 456: datanode.api.v2.TradingDataService.ObserveGovernance:output_type -> datanode.api.v2.ObserveGovernanceResponse
-	199, // 457: datanode.api.v2.TradingDataService.ListDelegations:output_type -> datanode.api.v2.ListDelegationsResponse
-	206, // 458: datanode.api.v2.TradingDataService.GetNetworkData:output_type -> datanode.api.v2.GetNetworkDataResponse
-	208, // 459: datanode.api.v2.TradingDataService.GetNode:output_type -> datanode.api.v2.GetNodeResponse
-	210, // 460: datanode.api.v2.TradingDataService.ListNodes:output_type -> datanode.api.v2.ListNodesResponse
-	214, // 461: datanode.api.v2.TradingDataService.ListNodeSignatures:output_type -> datanode.api.v2.ListNodeSignaturesResponse
-	218, // 462: datanode.api.v2.TradingDataService.GetEpoch:output_type -> datanode.api.v2.GetEpochResponse
-	220, // 463: datanode.api.v2.TradingDataService.EstimateFee:output_type -> datanode.api.v2.EstimateFeeResponse
-	222, // 464: datanode.api.v2.TradingDataService.EstimateMargin:output_type -> datanode.api.v2.EstimateMarginResponse
-	283, // 465: datanode.api.v2.TradingDataService.EstimatePosition:output_type -> datanode.api.v2.EstimatePositionResponse
-	224, // 466: datanode.api.v2.TradingDataService.ListNetworkParameters:output_type -> datanode.api.v2.ListNetworkParametersResponse
-	226, // 467: datanode.api.v2.TradingDataService.GetNetworkParameter:output_type -> datanode.api.v2.GetNetworkParameterResponse
-	231, // 468: datanode.api.v2.TradingDataService.ListCheckpoints:output_type -> datanode.api.v2.ListCheckpointsResponse
-	235, // 469: datanode.api.v2.TradingDataService.GetStake:output_type -> datanode.api.v2.GetStakeResponse
-	239, // 470: datanode.api.v2.TradingDataService.GetRiskFactors:output_type -> datanode.api.v2.GetRiskFactorsResponse
-	241, // 471: datanode.api.v2.TradingDataService.ObserveEventBus:output_type -> datanode.api.v2.ObserveEventBusResponse
-	243, // 472: datanode.api.v2.TradingDataService.ObserveLedgerMovements:output_type -> datanode.api.v2.ObserveLedgerMovementsResponse
-	245, // 473: datanode.api.v2.TradingDataService.ListKeyRotations:output_type -> datanode.api.v2.ListKeyRotationsResponse
-	249, // 474: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:output_type -> datanode.api.v2.ListEthereumKeyRotationsResponse
-	253, // 475: datanode.api.v2.TradingDataService.GetVegaTime:output_type -> datanode.api.v2.GetVegaTimeResponse
-	256, // 476: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:output_type -> datanode.api.v2.GetProtocolUpgradeStatusResponse
-	258, // 477: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:output_type -> datanode.api.v2.ListProtocolUpgradeProposalsResponse
-	262, // 478: datanode.api.v2.TradingDataService.ListCoreSnapshots:output_type -> datanode.api.v2.ListCoreSnapshotsResponse
-	267, // 479: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:output_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
-	269, // 480: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:output_type -> datanode.api.v2.ListAllNetworkHistorySegmentsResponse
-	271, // 481: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:output_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
-	273, // 482: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:output_type -> datanode.api.v2.GetNetworkHistoryStatusResponse
-	275, // 483: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:output_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersResponse
-	278, // 484: datanode.api.v2.TradingDataService.ListEntities:output_type -> datanode.api.v2.ListEntitiesResponse
-	340, // 485: datanode.api.v2.TradingDataService.ExportNetworkHistory:output_type -> google.api.HttpBody
-	280, // 486: datanode.api.v2.TradingDataService.Ping:output_type -> datanode.api.v2.PingResponse
-	398, // [398:487] is the sub-list for method output_type
-	309, // [309:398] is the sub-list for method input_type
-	309, // [309:309] is the sub-list for extension type_name
-	309, // [309:309] is the sub-list for extension extendee
-	0,   // [0:309] is the sub-list for field type_name
+	5,   // 140: datanode.api.v2.ListSuccessorMarketsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	310, // 141: datanode.api.v2.SuccessorMarket.market:type_name -> vega.Market
+	311, // 142: datanode.api.v2.SuccessorMarket.proposals:type_name -> vega.GovernanceData
+	138, // 143: datanode.api.v2.SuccessorMarketEdge.node:type_name -> datanode.api.v2.SuccessorMarket
+	139, // 144: datanode.api.v2.SuccessorMarketConnection.edges:type_name -> datanode.api.v2.SuccessorMarketEdge
+	6,   // 145: datanode.api.v2.SuccessorMarketConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	140, // 146: datanode.api.v2.ListSuccessorMarketsResponse.markets:type_name -> datanode.api.v2.SuccessorMarketConnection
+	312, // 147: datanode.api.v2.GetPartyResponse.party:type_name -> vega.Party
+	5,   // 148: datanode.api.v2.ListPartiesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	147, // 149: datanode.api.v2.ListPartiesResponse.parties:type_name -> datanode.api.v2.PartyConnection
+	312, // 150: datanode.api.v2.PartyEdge.node:type_name -> vega.Party
+	146, // 151: datanode.api.v2.PartyConnection.edges:type_name -> datanode.api.v2.PartyEdge
+	6,   // 152: datanode.api.v2.PartyConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	291, // 153: datanode.api.v2.OrderEdge.node:type_name -> vega.Order
+	5,   // 154: datanode.api.v2.ListMarginLevelsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	155, // 155: datanode.api.v2.ListMarginLevelsResponse.margin_levels:type_name -> datanode.api.v2.MarginConnection
+	313, // 156: datanode.api.v2.ObserveMarginLevelsResponse.margin_levels:type_name -> vega.MarginLevels
+	148, // 157: datanode.api.v2.OrderConnection.edges:type_name -> datanode.api.v2.OrderEdge
+	6,   // 158: datanode.api.v2.OrderConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	313, // 159: datanode.api.v2.MarginEdge.node:type_name -> vega.MarginLevels
+	154, // 160: datanode.api.v2.MarginConnection.edges:type_name -> datanode.api.v2.MarginEdge
+	6,   // 161: datanode.api.v2.MarginConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 162: datanode.api.v2.ListRewardsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	159, // 163: datanode.api.v2.ListRewardsResponse.rewards:type_name -> datanode.api.v2.RewardsConnection
+	314, // 164: datanode.api.v2.RewardEdge.node:type_name -> vega.Reward
+	158, // 165: datanode.api.v2.RewardsConnection.edges:type_name -> datanode.api.v2.RewardEdge
+	6,   // 166: datanode.api.v2.RewardsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 167: datanode.api.v2.ListRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	315, // 168: datanode.api.v2.ListRewardSummariesResponse.summaries:type_name -> vega.RewardSummary
+	162, // 169: datanode.api.v2.ListEpochRewardSummariesRequest.filter:type_name -> datanode.api.v2.RewardSummaryFilter
+	5,   // 170: datanode.api.v2.ListEpochRewardSummariesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	165, // 171: datanode.api.v2.ListEpochRewardSummariesResponse.summaries:type_name -> datanode.api.v2.EpochRewardSummaryConnection
+	166, // 172: datanode.api.v2.EpochRewardSummaryConnection.edges:type_name -> datanode.api.v2.EpochRewardSummaryEdge
+	6,   // 173: datanode.api.v2.EpochRewardSummaryConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	316, // 174: datanode.api.v2.EpochRewardSummaryEdge.node:type_name -> vega.EpochRewardSummary
+	314, // 175: datanode.api.v2.ObserveRewardsResponse.reward:type_name -> vega.Reward
+	317, // 176: datanode.api.v2.GetDepositResponse.deposit:type_name -> vega.Deposit
+	5,   // 177: datanode.api.v2.ListDepositsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	257, // 178: datanode.api.v2.ListDepositsRequest.date_range:type_name -> datanode.api.v2.DateRange
+	174, // 179: datanode.api.v2.ListDepositsResponse.deposits:type_name -> datanode.api.v2.DepositsConnection
+	317, // 180: datanode.api.v2.DepositEdge.node:type_name -> vega.Deposit
+	173, // 181: datanode.api.v2.DepositsConnection.edges:type_name -> datanode.api.v2.DepositEdge
+	6,   // 182: datanode.api.v2.DepositsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	318, // 183: datanode.api.v2.GetWithdrawalResponse.withdrawal:type_name -> vega.Withdrawal
+	5,   // 184: datanode.api.v2.ListWithdrawalsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	257, // 185: datanode.api.v2.ListWithdrawalsRequest.date_range:type_name -> datanode.api.v2.DateRange
+	180, // 186: datanode.api.v2.ListWithdrawalsResponse.withdrawals:type_name -> datanode.api.v2.WithdrawalsConnection
+	318, // 187: datanode.api.v2.WithdrawalEdge.node:type_name -> vega.Withdrawal
+	179, // 188: datanode.api.v2.WithdrawalsConnection.edges:type_name -> datanode.api.v2.WithdrawalEdge
+	6,   // 189: datanode.api.v2.WithdrawalsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	319, // 190: datanode.api.v2.GetAssetResponse.asset:type_name -> vega.Asset
+	5,   // 191: datanode.api.v2.ListAssetsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	186, // 192: datanode.api.v2.ListAssetsResponse.assets:type_name -> datanode.api.v2.AssetsConnection
+	319, // 193: datanode.api.v2.AssetEdge.node:type_name -> vega.Asset
+	185, // 194: datanode.api.v2.AssetsConnection.edges:type_name -> datanode.api.v2.AssetEdge
+	6,   // 195: datanode.api.v2.AssetsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 196: datanode.api.v2.ListLiquidityProvisionsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	190, // 197: datanode.api.v2.ListLiquidityProvisionsResponse.liquidity_provisions:type_name -> datanode.api.v2.LiquidityProvisionsConnection
+	320, // 198: datanode.api.v2.LiquidityProvisionsEdge.node:type_name -> vega.LiquidityProvision
+	189, // 199: datanode.api.v2.LiquidityProvisionsConnection.edges:type_name -> datanode.api.v2.LiquidityProvisionsEdge
+	6,   // 200: datanode.api.v2.LiquidityProvisionsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	320, // 201: datanode.api.v2.ObserveLiquidityProvisionsResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
+	311, // 202: datanode.api.v2.GetGovernanceDataResponse.data:type_name -> vega.GovernanceData
+	321, // 203: datanode.api.v2.ListGovernanceDataRequest.proposal_state:type_name -> vega.Proposal.State
+	4,   // 204: datanode.api.v2.ListGovernanceDataRequest.proposal_type:type_name -> datanode.api.v2.ListGovernanceDataRequest.Type
+	5,   // 205: datanode.api.v2.ListGovernanceDataRequest.pagination:type_name -> datanode.api.v2.Pagination
+	198, // 206: datanode.api.v2.ListGovernanceDataResponse.connection:type_name -> datanode.api.v2.GovernanceDataConnection
+	311, // 207: datanode.api.v2.GovernanceDataEdge.node:type_name -> vega.GovernanceData
+	197, // 208: datanode.api.v2.GovernanceDataConnection.edges:type_name -> datanode.api.v2.GovernanceDataEdge
+	6,   // 209: datanode.api.v2.GovernanceDataConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	311, // 210: datanode.api.v2.ObserveGovernanceResponse.data:type_name -> vega.GovernanceData
+	5,   // 211: datanode.api.v2.ListDelegationsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	204, // 212: datanode.api.v2.ListDelegationsResponse.delegations:type_name -> datanode.api.v2.DelegationsConnection
+	322, // 213: datanode.api.v2.DelegationEdge.node:type_name -> vega.Delegation
+	203, // 214: datanode.api.v2.DelegationsConnection.edges:type_name -> datanode.api.v2.DelegationEdge
+	6,   // 215: datanode.api.v2.DelegationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	322, // 216: datanode.api.v2.ObserveDelegationsResponse.delegation:type_name -> vega.Delegation
+	323, // 217: datanode.api.v2.NodeBasic.status:type_name -> vega.NodeStatus
+	324, // 218: datanode.api.v2.GetNetworkDataResponse.node_data:type_name -> vega.NodeData
+	325, // 219: datanode.api.v2.GetNodeResponse.node:type_name -> vega.Node
+	5,   // 220: datanode.api.v2.ListNodesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	215, // 221: datanode.api.v2.ListNodesResponse.nodes:type_name -> datanode.api.v2.NodesConnection
+	325, // 222: datanode.api.v2.NodeEdge.node:type_name -> vega.Node
+	214, // 223: datanode.api.v2.NodesConnection.edges:type_name -> datanode.api.v2.NodeEdge
+	6,   // 224: datanode.api.v2.NodesConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 225: datanode.api.v2.ListNodeSignaturesRequest.pagination:type_name -> datanode.api.v2.Pagination
+	219, // 226: datanode.api.v2.ListNodeSignaturesResponse.signatures:type_name -> datanode.api.v2.NodeSignaturesConnection
+	326, // 227: datanode.api.v2.NodeSignatureEdge.node:type_name -> vega.commands.v1.NodeSignature
+	218, // 228: datanode.api.v2.NodeSignaturesConnection.edges:type_name -> datanode.api.v2.NodeSignatureEdge
+	6,   // 229: datanode.api.v2.NodeSignaturesConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	327, // 230: datanode.api.v2.GetEpochResponse.epoch:type_name -> vega.Epoch
+	328, // 231: datanode.api.v2.EstimateFeeResponse.fee:type_name -> vega.Fee
+	329, // 232: datanode.api.v2.EstimateMarginRequest.side:type_name -> vega.Side
+	293, // 233: datanode.api.v2.EstimateMarginRequest.type:type_name -> vega.Order.Type
+	313, // 234: datanode.api.v2.EstimateMarginResponse.margin_levels:type_name -> vega.MarginLevels
+	5,   // 235: datanode.api.v2.ListNetworkParametersRequest.pagination:type_name -> datanode.api.v2.Pagination
+	231, // 236: datanode.api.v2.ListNetworkParametersResponse.network_parameters:type_name -> datanode.api.v2.NetworkParameterConnection
+	330, // 237: datanode.api.v2.GetNetworkParameterResponse.network_parameter:type_name -> vega.NetworkParameter
+	330, // 238: datanode.api.v2.NetworkParameterEdge.node:type_name -> vega.NetworkParameter
+	230, // 239: datanode.api.v2.NetworkParameterConnection.edges:type_name -> datanode.api.v2.NetworkParameterEdge
+	6,   // 240: datanode.api.v2.NetworkParameterConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 241: datanode.api.v2.ListCheckpointsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	236, // 242: datanode.api.v2.ListCheckpointsResponse.checkpoints:type_name -> datanode.api.v2.CheckpointsConnection
+	232, // 243: datanode.api.v2.CheckpointEdge.node:type_name -> datanode.api.v2.Checkpoint
+	235, // 244: datanode.api.v2.CheckpointsConnection.edges:type_name -> datanode.api.v2.CheckpointEdge
+	6,   // 245: datanode.api.v2.CheckpointsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 246: datanode.api.v2.GetStakeRequest.pagination:type_name -> datanode.api.v2.Pagination
+	240, // 247: datanode.api.v2.GetStakeResponse.stake_linkings:type_name -> datanode.api.v2.StakesConnection
+	331, // 248: datanode.api.v2.StakeLinkingEdge.node:type_name -> vega.events.v1.StakeLinking
+	239, // 249: datanode.api.v2.StakesConnection.edges:type_name -> datanode.api.v2.StakeLinkingEdge
+	6,   // 250: datanode.api.v2.StakesConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	332, // 251: datanode.api.v2.GetRiskFactorsResponse.risk_factor:type_name -> vega.RiskFactor
+	333, // 252: datanode.api.v2.ObserveEventBusRequest.type:type_name -> vega.events.v1.BusEventType
+	334, // 253: datanode.api.v2.ObserveEventBusResponse.events:type_name -> vega.events.v1.BusEvent
+	335, // 254: datanode.api.v2.ObserveLedgerMovementsResponse.ledger_movement:type_name -> vega.LedgerMovement
+	5,   // 255: datanode.api.v2.ListKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	250, // 256: datanode.api.v2.ListKeyRotationsResponse.rotations:type_name -> datanode.api.v2.KeyRotationConnection
+	336, // 257: datanode.api.v2.KeyRotationEdge.node:type_name -> vega.events.v1.KeyRotation
+	249, // 258: datanode.api.v2.KeyRotationConnection.edges:type_name -> datanode.api.v2.KeyRotationEdge
+	6,   // 259: datanode.api.v2.KeyRotationConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	5,   // 260: datanode.api.v2.ListEthereumKeyRotationsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	253, // 261: datanode.api.v2.ListEthereumKeyRotationsResponse.key_rotations:type_name -> datanode.api.v2.EthereumKeyRotationsConnection
+	254, // 262: datanode.api.v2.EthereumKeyRotationsConnection.edges:type_name -> datanode.api.v2.EthereumKeyRotationEdge
+	6,   // 263: datanode.api.v2.EthereumKeyRotationsConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	337, // 264: datanode.api.v2.EthereumKeyRotationEdge.node:type_name -> vega.events.v1.EthereumKeyRotation
+	338, // 265: datanode.api.v2.ListProtocolUpgradeProposalsRequest.status:type_name -> vega.events.v1.ProtocolUpgradeProposalStatus
+	5,   // 266: datanode.api.v2.ListProtocolUpgradeProposalsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	262, // 267: datanode.api.v2.ListProtocolUpgradeProposalsResponse.protocol_upgrade_proposals:type_name -> datanode.api.v2.ProtocolUpgradeProposalConnection
+	263, // 268: datanode.api.v2.ProtocolUpgradeProposalConnection.edges:type_name -> datanode.api.v2.ProtocolUpgradeProposalEdge
+	6,   // 269: datanode.api.v2.ProtocolUpgradeProposalConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	339, // 270: datanode.api.v2.ProtocolUpgradeProposalEdge.node:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	5,   // 271: datanode.api.v2.ListCoreSnapshotsRequest.pagination:type_name -> datanode.api.v2.Pagination
+	266, // 272: datanode.api.v2.ListCoreSnapshotsResponse.core_snapshots:type_name -> datanode.api.v2.CoreSnapshotConnection
+	267, // 273: datanode.api.v2.CoreSnapshotConnection.edges:type_name -> datanode.api.v2.CoreSnapshotEdge
+	6,   // 274: datanode.api.v2.CoreSnapshotConnection.page_info:type_name -> datanode.api.v2.PageInfo
+	340, // 275: datanode.api.v2.CoreSnapshotEdge.node:type_name -> vega.events.v1.CoreSnapshotData
+	268, // 276: datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse.segment:type_name -> datanode.api.v2.HistorySegment
+	268, // 277: datanode.api.v2.ListAllNetworkHistorySegmentsResponse.segments:type_name -> datanode.api.v2.HistorySegment
+	3,   // 278: datanode.api.v2.ExportNetworkHistoryRequest.table:type_name -> datanode.api.v2.Table
+	341, // 279: datanode.api.v2.ListEntitiesResponse.accounts:type_name -> vega.Account
+	291, // 280: datanode.api.v2.ListEntitiesResponse.orders:type_name -> vega.Order
+	295, // 281: datanode.api.v2.ListEntitiesResponse.positions:type_name -> vega.Position
+	296, // 282: datanode.api.v2.ListEntitiesResponse.ledger_entries:type_name -> vega.LedgerEntry
+	7,   // 283: datanode.api.v2.ListEntitiesResponse.balance_changes:type_name -> datanode.api.v2.AccountBalance
+	303, // 284: datanode.api.v2.ListEntitiesResponse.transfers:type_name -> vega.events.v1.Transfer
+	305, // 285: datanode.api.v2.ListEntitiesResponse.votes:type_name -> vega.Vote
+	100, // 286: datanode.api.v2.ListEntitiesResponse.erc20_multi_sig_signer_added_bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerAddedBundle
+	106, // 287: datanode.api.v2.ListEntitiesResponse.erc20_multi_sig_signer_removed_bundles:type_name -> datanode.api.v2.ERC20MultiSigSignerRemovedBundle
+	302, // 288: datanode.api.v2.ListEntitiesResponse.trades:type_name -> vega.Trade
+	308, // 289: datanode.api.v2.ListEntitiesResponse.oracle_specs:type_name -> vega.OracleSpec
+	309, // 290: datanode.api.v2.ListEntitiesResponse.oracle_data:type_name -> vega.OracleData
+	310, // 291: datanode.api.v2.ListEntitiesResponse.markets:type_name -> vega.Market
+	312, // 292: datanode.api.v2.ListEntitiesResponse.parties:type_name -> vega.Party
+	313, // 293: datanode.api.v2.ListEntitiesResponse.margin_levels:type_name -> vega.MarginLevels
+	314, // 294: datanode.api.v2.ListEntitiesResponse.rewards:type_name -> vega.Reward
+	317, // 295: datanode.api.v2.ListEntitiesResponse.deposits:type_name -> vega.Deposit
+	318, // 296: datanode.api.v2.ListEntitiesResponse.withdrawals:type_name -> vega.Withdrawal
+	319, // 297: datanode.api.v2.ListEntitiesResponse.assets:type_name -> vega.Asset
+	320, // 298: datanode.api.v2.ListEntitiesResponse.liquidity_provisions:type_name -> vega.LiquidityProvision
+	342, // 299: datanode.api.v2.ListEntitiesResponse.proposals:type_name -> vega.Proposal
+	322, // 300: datanode.api.v2.ListEntitiesResponse.delegations:type_name -> vega.Delegation
+	207, // 301: datanode.api.v2.ListEntitiesResponse.nodes:type_name -> datanode.api.v2.NodeBasic
+	326, // 302: datanode.api.v2.ListEntitiesResponse.node_signatures:type_name -> vega.commands.v1.NodeSignature
+	330, // 303: datanode.api.v2.ListEntitiesResponse.network_parameters:type_name -> vega.NetworkParameter
+	336, // 304: datanode.api.v2.ListEntitiesResponse.key_rotations:type_name -> vega.events.v1.KeyRotation
+	337, // 305: datanode.api.v2.ListEntitiesResponse.ethereum_key_rotations:type_name -> vega.events.v1.EthereumKeyRotation
+	339, // 306: datanode.api.v2.ListEntitiesResponse.protocol_upgrade_proposals:type_name -> vega.events.v1.ProtocolUpgradeEvent
+	329, // 307: datanode.api.v2.OrderInfo.side:type_name -> vega.Side
+	284, // 308: datanode.api.v2.EstimatePositionRequest.orders:type_name -> datanode.api.v2.OrderInfo
+	287, // 309: datanode.api.v2.EstimatePositionResponse.margin:type_name -> datanode.api.v2.MarginEstimate
+	288, // 310: datanode.api.v2.EstimatePositionResponse.liquidation:type_name -> datanode.api.v2.LiquidationEstimate
+	313, // 311: datanode.api.v2.MarginEstimate.worst_case:type_name -> vega.MarginLevels
+	313, // 312: datanode.api.v2.MarginEstimate.best_case:type_name -> vega.MarginLevels
+	289, // 313: datanode.api.v2.LiquidationEstimate.worst_case:type_name -> datanode.api.v2.LiquidationPrice
+	289, // 314: datanode.api.v2.LiquidationEstimate.best_case:type_name -> datanode.api.v2.LiquidationPrice
+	8,   // 315: datanode.api.v2.TradingDataService.ListAccounts:input_type -> datanode.api.v2.ListAccountsRequest
+	12,  // 316: datanode.api.v2.TradingDataService.ObserveAccounts:input_type -> datanode.api.v2.ObserveAccountsRequest
+	16,  // 317: datanode.api.v2.TradingDataService.Info:input_type -> datanode.api.v2.InfoRequest
+	18,  // 318: datanode.api.v2.TradingDataService.GetOrder:input_type -> datanode.api.v2.GetOrderRequest
+	21,  // 319: datanode.api.v2.TradingDataService.ListOrders:input_type -> datanode.api.v2.ListOrdersRequest
+	23,  // 320: datanode.api.v2.TradingDataService.ListOrderVersions:input_type -> datanode.api.v2.ListOrderVersionsRequest
+	25,  // 321: datanode.api.v2.TradingDataService.ObserveOrders:input_type -> datanode.api.v2.ObserveOrdersRequest
+	29,  // 322: datanode.api.v2.TradingDataService.ListPositions:input_type -> datanode.api.v2.ListPositionsRequest
+	32,  // 323: datanode.api.v2.TradingDataService.ListAllPositions:input_type -> datanode.api.v2.ListAllPositionsRequest
+	36,  // 324: datanode.api.v2.TradingDataService.ObservePositions:input_type -> datanode.api.v2.ObservePositionsRequest
+	44,  // 325: datanode.api.v2.TradingDataService.ListLedgerEntries:input_type -> datanode.api.v2.ListLedgerEntriesRequest
+	45,  // 326: datanode.api.v2.TradingDataService.ExportLedgerEntries:input_type -> datanode.api.v2.ExportLedgerEntriesRequest
+	49,  // 327: datanode.api.v2.TradingDataService.ListBalanceChanges:input_type -> datanode.api.v2.ListBalanceChangesRequest
+	67,  // 328: datanode.api.v2.TradingDataService.GetLatestMarketData:input_type -> datanode.api.v2.GetLatestMarketDataRequest
+	65,  // 329: datanode.api.v2.TradingDataService.ListLatestMarketData:input_type -> datanode.api.v2.ListLatestMarketDataRequest
+	63,  // 330: datanode.api.v2.TradingDataService.GetLatestMarketDepth:input_type -> datanode.api.v2.GetLatestMarketDepthRequest
+	57,  // 331: datanode.api.v2.TradingDataService.ObserveMarketsDepth:input_type -> datanode.api.v2.ObserveMarketsDepthRequest
+	59,  // 332: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:input_type -> datanode.api.v2.ObserveMarketsDepthUpdatesRequest
+	61,  // 333: datanode.api.v2.TradingDataService.ObserveMarketsData:input_type -> datanode.api.v2.ObserveMarketsDataRequest
+	69,  // 334: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:input_type -> datanode.api.v2.GetMarketDataHistoryByIDRequest
+	73,  // 335: datanode.api.v2.TradingDataService.ListTransfers:input_type -> datanode.api.v2.ListTransfersRequest
+	77,  // 336: datanode.api.v2.TradingDataService.GetNetworkLimits:input_type -> datanode.api.v2.GetNetworkLimitsRequest
+	85,  // 337: datanode.api.v2.TradingDataService.ListCandleData:input_type -> datanode.api.v2.ListCandleDataRequest
+	83,  // 338: datanode.api.v2.TradingDataService.ObserveCandleData:input_type -> datanode.api.v2.ObserveCandleDataRequest
+	79,  // 339: datanode.api.v2.TradingDataService.ListCandleIntervals:input_type -> datanode.api.v2.ListCandleIntervalsRequest
+	89,  // 340: datanode.api.v2.TradingDataService.ListVotes:input_type -> datanode.api.v2.ListVotesRequest
+	93,  // 341: datanode.api.v2.TradingDataService.ObserveVotes:input_type -> datanode.api.v2.ObserveVotesRequest
+	95,  // 342: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesRequest
+	101, // 343: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:input_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesRequest
+	107, // 344: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:input_type -> datanode.api.v2.GetERC20ListAssetBundleRequest
+	109, // 345: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:input_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleRequest
+	111, // 346: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:input_type -> datanode.api.v2.GetERC20WithdrawalApprovalRequest
+	113, // 347: datanode.api.v2.TradingDataService.GetLastTrade:input_type -> datanode.api.v2.GetLastTradeRequest
+	115, // 348: datanode.api.v2.TradingDataService.ListTrades:input_type -> datanode.api.v2.ListTradesRequest
+	119, // 349: datanode.api.v2.TradingDataService.ObserveTrades:input_type -> datanode.api.v2.ObserveTradesRequest
+	121, // 350: datanode.api.v2.TradingDataService.GetOracleSpec:input_type -> datanode.api.v2.GetOracleSpecRequest
+	123, // 351: datanode.api.v2.TradingDataService.ListOracleSpecs:input_type -> datanode.api.v2.ListOracleSpecsRequest
+	125, // 352: datanode.api.v2.TradingDataService.ListOracleData:input_type -> datanode.api.v2.ListOracleDataRequest
+	131, // 353: datanode.api.v2.TradingDataService.GetMarket:input_type -> datanode.api.v2.GetMarketRequest
+	133, // 354: datanode.api.v2.TradingDataService.ListMarkets:input_type -> datanode.api.v2.ListMarketsRequest
+	137, // 355: datanode.api.v2.TradingDataService.ListSuccessorMarkets:input_type -> datanode.api.v2.ListSuccessorMarketsRequest
+	142, // 356: datanode.api.v2.TradingDataService.GetParty:input_type -> datanode.api.v2.GetPartyRequest
+	144, // 357: datanode.api.v2.TradingDataService.ListParties:input_type -> datanode.api.v2.ListPartiesRequest
+	149, // 358: datanode.api.v2.TradingDataService.ListMarginLevels:input_type -> datanode.api.v2.ListMarginLevelsRequest
+	151, // 359: datanode.api.v2.TradingDataService.ObserveMarginLevels:input_type -> datanode.api.v2.ObserveMarginLevelsRequest
+	156, // 360: datanode.api.v2.TradingDataService.ListRewards:input_type -> datanode.api.v2.ListRewardsRequest
+	160, // 361: datanode.api.v2.TradingDataService.ListRewardSummaries:input_type -> datanode.api.v2.ListRewardSummariesRequest
+	163, // 362: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:input_type -> datanode.api.v2.ListEpochRewardSummariesRequest
+	169, // 363: datanode.api.v2.TradingDataService.GetDeposit:input_type -> datanode.api.v2.GetDepositRequest
+	171, // 364: datanode.api.v2.TradingDataService.ListDeposits:input_type -> datanode.api.v2.ListDepositsRequest
+	175, // 365: datanode.api.v2.TradingDataService.GetWithdrawal:input_type -> datanode.api.v2.GetWithdrawalRequest
+	177, // 366: datanode.api.v2.TradingDataService.ListWithdrawals:input_type -> datanode.api.v2.ListWithdrawalsRequest
+	181, // 367: datanode.api.v2.TradingDataService.GetAsset:input_type -> datanode.api.v2.GetAssetRequest
+	183, // 368: datanode.api.v2.TradingDataService.ListAssets:input_type -> datanode.api.v2.ListAssetsRequest
+	187, // 369: datanode.api.v2.TradingDataService.ListLiquidityProvisions:input_type -> datanode.api.v2.ListLiquidityProvisionsRequest
+	191, // 370: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:input_type -> datanode.api.v2.ObserveLiquidityProvisionsRequest
+	193, // 371: datanode.api.v2.TradingDataService.GetGovernanceData:input_type -> datanode.api.v2.GetGovernanceDataRequest
+	195, // 372: datanode.api.v2.TradingDataService.ListGovernanceData:input_type -> datanode.api.v2.ListGovernanceDataRequest
+	199, // 373: datanode.api.v2.TradingDataService.ObserveGovernance:input_type -> datanode.api.v2.ObserveGovernanceRequest
+	201, // 374: datanode.api.v2.TradingDataService.ListDelegations:input_type -> datanode.api.v2.ListDelegationsRequest
+	208, // 375: datanode.api.v2.TradingDataService.GetNetworkData:input_type -> datanode.api.v2.GetNetworkDataRequest
+	210, // 376: datanode.api.v2.TradingDataService.GetNode:input_type -> datanode.api.v2.GetNodeRequest
+	212, // 377: datanode.api.v2.TradingDataService.ListNodes:input_type -> datanode.api.v2.ListNodesRequest
+	216, // 378: datanode.api.v2.TradingDataService.ListNodeSignatures:input_type -> datanode.api.v2.ListNodeSignaturesRequest
+	220, // 379: datanode.api.v2.TradingDataService.GetEpoch:input_type -> datanode.api.v2.GetEpochRequest
+	222, // 380: datanode.api.v2.TradingDataService.EstimateFee:input_type -> datanode.api.v2.EstimateFeeRequest
+	224, // 381: datanode.api.v2.TradingDataService.EstimateMargin:input_type -> datanode.api.v2.EstimateMarginRequest
+	285, // 382: datanode.api.v2.TradingDataService.EstimatePosition:input_type -> datanode.api.v2.EstimatePositionRequest
+	226, // 383: datanode.api.v2.TradingDataService.ListNetworkParameters:input_type -> datanode.api.v2.ListNetworkParametersRequest
+	228, // 384: datanode.api.v2.TradingDataService.GetNetworkParameter:input_type -> datanode.api.v2.GetNetworkParameterRequest
+	233, // 385: datanode.api.v2.TradingDataService.ListCheckpoints:input_type -> datanode.api.v2.ListCheckpointsRequest
+	237, // 386: datanode.api.v2.TradingDataService.GetStake:input_type -> datanode.api.v2.GetStakeRequest
+	241, // 387: datanode.api.v2.TradingDataService.GetRiskFactors:input_type -> datanode.api.v2.GetRiskFactorsRequest
+	243, // 388: datanode.api.v2.TradingDataService.ObserveEventBus:input_type -> datanode.api.v2.ObserveEventBusRequest
+	245, // 389: datanode.api.v2.TradingDataService.ObserveLedgerMovements:input_type -> datanode.api.v2.ObserveLedgerMovementsRequest
+	247, // 390: datanode.api.v2.TradingDataService.ListKeyRotations:input_type -> datanode.api.v2.ListKeyRotationsRequest
+	251, // 391: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:input_type -> datanode.api.v2.ListEthereumKeyRotationsRequest
+	255, // 392: datanode.api.v2.TradingDataService.GetVegaTime:input_type -> datanode.api.v2.GetVegaTimeRequest
+	258, // 393: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:input_type -> datanode.api.v2.GetProtocolUpgradeStatusRequest
+	260, // 394: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:input_type -> datanode.api.v2.ListProtocolUpgradeProposalsRequest
+	264, // 395: datanode.api.v2.TradingDataService.ListCoreSnapshots:input_type -> datanode.api.v2.ListCoreSnapshotsRequest
+	269, // 396: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:input_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentRequest
+	271, // 397: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:input_type -> datanode.api.v2.ListAllNetworkHistorySegmentsRequest
+	273, // 398: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:input_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesRequest
+	275, // 399: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:input_type -> datanode.api.v2.GetNetworkHistoryStatusRequest
+	277, // 400: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:input_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersRequest
+	280, // 401: datanode.api.v2.TradingDataService.ListEntities:input_type -> datanode.api.v2.ListEntitiesRequest
+	279, // 402: datanode.api.v2.TradingDataService.ExportNetworkHistory:input_type -> datanode.api.v2.ExportNetworkHistoryRequest
+	282, // 403: datanode.api.v2.TradingDataService.Ping:input_type -> datanode.api.v2.PingRequest
+	9,   // 404: datanode.api.v2.TradingDataService.ListAccounts:output_type -> datanode.api.v2.ListAccountsResponse
+	13,  // 405: datanode.api.v2.TradingDataService.ObserveAccounts:output_type -> datanode.api.v2.ObserveAccountsResponse
+	17,  // 406: datanode.api.v2.TradingDataService.Info:output_type -> datanode.api.v2.InfoResponse
+	19,  // 407: datanode.api.v2.TradingDataService.GetOrder:output_type -> datanode.api.v2.GetOrderResponse
+	22,  // 408: datanode.api.v2.TradingDataService.ListOrders:output_type -> datanode.api.v2.ListOrdersResponse
+	24,  // 409: datanode.api.v2.TradingDataService.ListOrderVersions:output_type -> datanode.api.v2.ListOrderVersionsResponse
+	26,  // 410: datanode.api.v2.TradingDataService.ObserveOrders:output_type -> datanode.api.v2.ObserveOrdersResponse
+	30,  // 411: datanode.api.v2.TradingDataService.ListPositions:output_type -> datanode.api.v2.ListPositionsResponse
+	33,  // 412: datanode.api.v2.TradingDataService.ListAllPositions:output_type -> datanode.api.v2.ListAllPositionsResponse
+	37,  // 413: datanode.api.v2.TradingDataService.ObservePositions:output_type -> datanode.api.v2.ObservePositionsResponse
+	46,  // 414: datanode.api.v2.TradingDataService.ListLedgerEntries:output_type -> datanode.api.v2.ListLedgerEntriesResponse
+	343, // 415: datanode.api.v2.TradingDataService.ExportLedgerEntries:output_type -> google.api.HttpBody
+	50,  // 416: datanode.api.v2.TradingDataService.ListBalanceChanges:output_type -> datanode.api.v2.ListBalanceChangesResponse
+	68,  // 417: datanode.api.v2.TradingDataService.GetLatestMarketData:output_type -> datanode.api.v2.GetLatestMarketDataResponse
+	66,  // 418: datanode.api.v2.TradingDataService.ListLatestMarketData:output_type -> datanode.api.v2.ListLatestMarketDataResponse
+	64,  // 419: datanode.api.v2.TradingDataService.GetLatestMarketDepth:output_type -> datanode.api.v2.GetLatestMarketDepthResponse
+	58,  // 420: datanode.api.v2.TradingDataService.ObserveMarketsDepth:output_type -> datanode.api.v2.ObserveMarketsDepthResponse
+	60,  // 421: datanode.api.v2.TradingDataService.ObserveMarketsDepthUpdates:output_type -> datanode.api.v2.ObserveMarketsDepthUpdatesResponse
+	62,  // 422: datanode.api.v2.TradingDataService.ObserveMarketsData:output_type -> datanode.api.v2.ObserveMarketsDataResponse
+	70,  // 423: datanode.api.v2.TradingDataService.GetMarketDataHistoryByID:output_type -> datanode.api.v2.GetMarketDataHistoryByIDResponse
+	74,  // 424: datanode.api.v2.TradingDataService.ListTransfers:output_type -> datanode.api.v2.ListTransfersResponse
+	78,  // 425: datanode.api.v2.TradingDataService.GetNetworkLimits:output_type -> datanode.api.v2.GetNetworkLimitsResponse
+	86,  // 426: datanode.api.v2.TradingDataService.ListCandleData:output_type -> datanode.api.v2.ListCandleDataResponse
+	84,  // 427: datanode.api.v2.TradingDataService.ObserveCandleData:output_type -> datanode.api.v2.ObserveCandleDataResponse
+	81,  // 428: datanode.api.v2.TradingDataService.ListCandleIntervals:output_type -> datanode.api.v2.ListCandleIntervalsResponse
+	90,  // 429: datanode.api.v2.TradingDataService.ListVotes:output_type -> datanode.api.v2.ListVotesResponse
+	94,  // 430: datanode.api.v2.TradingDataService.ObserveVotes:output_type -> datanode.api.v2.ObserveVotesResponse
+	96,  // 431: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerAddedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerAddedBundlesResponse
+	102, // 432: datanode.api.v2.TradingDataService.ListERC20MultiSigSignerRemovedBundles:output_type -> datanode.api.v2.ListERC20MultiSigSignerRemovedBundlesResponse
+	108, // 433: datanode.api.v2.TradingDataService.GetERC20ListAssetBundle:output_type -> datanode.api.v2.GetERC20ListAssetBundleResponse
+	110, // 434: datanode.api.v2.TradingDataService.GetERC20SetAssetLimitsBundle:output_type -> datanode.api.v2.GetERC20SetAssetLimitsBundleResponse
+	112, // 435: datanode.api.v2.TradingDataService.GetERC20WithdrawalApproval:output_type -> datanode.api.v2.GetERC20WithdrawalApprovalResponse
+	114, // 436: datanode.api.v2.TradingDataService.GetLastTrade:output_type -> datanode.api.v2.GetLastTradeResponse
+	116, // 437: datanode.api.v2.TradingDataService.ListTrades:output_type -> datanode.api.v2.ListTradesResponse
+	120, // 438: datanode.api.v2.TradingDataService.ObserveTrades:output_type -> datanode.api.v2.ObserveTradesResponse
+	122, // 439: datanode.api.v2.TradingDataService.GetOracleSpec:output_type -> datanode.api.v2.GetOracleSpecResponse
+	124, // 440: datanode.api.v2.TradingDataService.ListOracleSpecs:output_type -> datanode.api.v2.ListOracleSpecsResponse
+	126, // 441: datanode.api.v2.TradingDataService.ListOracleData:output_type -> datanode.api.v2.ListOracleDataResponse
+	132, // 442: datanode.api.v2.TradingDataService.GetMarket:output_type -> datanode.api.v2.GetMarketResponse
+	134, // 443: datanode.api.v2.TradingDataService.ListMarkets:output_type -> datanode.api.v2.ListMarketsResponse
+	141, // 444: datanode.api.v2.TradingDataService.ListSuccessorMarkets:output_type -> datanode.api.v2.ListSuccessorMarketsResponse
+	143, // 445: datanode.api.v2.TradingDataService.GetParty:output_type -> datanode.api.v2.GetPartyResponse
+	145, // 446: datanode.api.v2.TradingDataService.ListParties:output_type -> datanode.api.v2.ListPartiesResponse
+	150, // 447: datanode.api.v2.TradingDataService.ListMarginLevels:output_type -> datanode.api.v2.ListMarginLevelsResponse
+	152, // 448: datanode.api.v2.TradingDataService.ObserveMarginLevels:output_type -> datanode.api.v2.ObserveMarginLevelsResponse
+	157, // 449: datanode.api.v2.TradingDataService.ListRewards:output_type -> datanode.api.v2.ListRewardsResponse
+	161, // 450: datanode.api.v2.TradingDataService.ListRewardSummaries:output_type -> datanode.api.v2.ListRewardSummariesResponse
+	164, // 451: datanode.api.v2.TradingDataService.ListEpochRewardSummaries:output_type -> datanode.api.v2.ListEpochRewardSummariesResponse
+	170, // 452: datanode.api.v2.TradingDataService.GetDeposit:output_type -> datanode.api.v2.GetDepositResponse
+	172, // 453: datanode.api.v2.TradingDataService.ListDeposits:output_type -> datanode.api.v2.ListDepositsResponse
+	176, // 454: datanode.api.v2.TradingDataService.GetWithdrawal:output_type -> datanode.api.v2.GetWithdrawalResponse
+	178, // 455: datanode.api.v2.TradingDataService.ListWithdrawals:output_type -> datanode.api.v2.ListWithdrawalsResponse
+	182, // 456: datanode.api.v2.TradingDataService.GetAsset:output_type -> datanode.api.v2.GetAssetResponse
+	184, // 457: datanode.api.v2.TradingDataService.ListAssets:output_type -> datanode.api.v2.ListAssetsResponse
+	188, // 458: datanode.api.v2.TradingDataService.ListLiquidityProvisions:output_type -> datanode.api.v2.ListLiquidityProvisionsResponse
+	192, // 459: datanode.api.v2.TradingDataService.ObserveLiquidityProvisions:output_type -> datanode.api.v2.ObserveLiquidityProvisionsResponse
+	194, // 460: datanode.api.v2.TradingDataService.GetGovernanceData:output_type -> datanode.api.v2.GetGovernanceDataResponse
+	196, // 461: datanode.api.v2.TradingDataService.ListGovernanceData:output_type -> datanode.api.v2.ListGovernanceDataResponse
+	200, // 462: datanode.api.v2.TradingDataService.ObserveGovernance:output_type -> datanode.api.v2.ObserveGovernanceResponse
+	202, // 463: datanode.api.v2.TradingDataService.ListDelegations:output_type -> datanode.api.v2.ListDelegationsResponse
+	209, // 464: datanode.api.v2.TradingDataService.GetNetworkData:output_type -> datanode.api.v2.GetNetworkDataResponse
+	211, // 465: datanode.api.v2.TradingDataService.GetNode:output_type -> datanode.api.v2.GetNodeResponse
+	213, // 466: datanode.api.v2.TradingDataService.ListNodes:output_type -> datanode.api.v2.ListNodesResponse
+	217, // 467: datanode.api.v2.TradingDataService.ListNodeSignatures:output_type -> datanode.api.v2.ListNodeSignaturesResponse
+	221, // 468: datanode.api.v2.TradingDataService.GetEpoch:output_type -> datanode.api.v2.GetEpochResponse
+	223, // 469: datanode.api.v2.TradingDataService.EstimateFee:output_type -> datanode.api.v2.EstimateFeeResponse
+	225, // 470: datanode.api.v2.TradingDataService.EstimateMargin:output_type -> datanode.api.v2.EstimateMarginResponse
+	286, // 471: datanode.api.v2.TradingDataService.EstimatePosition:output_type -> datanode.api.v2.EstimatePositionResponse
+	227, // 472: datanode.api.v2.TradingDataService.ListNetworkParameters:output_type -> datanode.api.v2.ListNetworkParametersResponse
+	229, // 473: datanode.api.v2.TradingDataService.GetNetworkParameter:output_type -> datanode.api.v2.GetNetworkParameterResponse
+	234, // 474: datanode.api.v2.TradingDataService.ListCheckpoints:output_type -> datanode.api.v2.ListCheckpointsResponse
+	238, // 475: datanode.api.v2.TradingDataService.GetStake:output_type -> datanode.api.v2.GetStakeResponse
+	242, // 476: datanode.api.v2.TradingDataService.GetRiskFactors:output_type -> datanode.api.v2.GetRiskFactorsResponse
+	244, // 477: datanode.api.v2.TradingDataService.ObserveEventBus:output_type -> datanode.api.v2.ObserveEventBusResponse
+	246, // 478: datanode.api.v2.TradingDataService.ObserveLedgerMovements:output_type -> datanode.api.v2.ObserveLedgerMovementsResponse
+	248, // 479: datanode.api.v2.TradingDataService.ListKeyRotations:output_type -> datanode.api.v2.ListKeyRotationsResponse
+	252, // 480: datanode.api.v2.TradingDataService.ListEthereumKeyRotations:output_type -> datanode.api.v2.ListEthereumKeyRotationsResponse
+	256, // 481: datanode.api.v2.TradingDataService.GetVegaTime:output_type -> datanode.api.v2.GetVegaTimeResponse
+	259, // 482: datanode.api.v2.TradingDataService.GetProtocolUpgradeStatus:output_type -> datanode.api.v2.GetProtocolUpgradeStatusResponse
+	261, // 483: datanode.api.v2.TradingDataService.ListProtocolUpgradeProposals:output_type -> datanode.api.v2.ListProtocolUpgradeProposalsResponse
+	265, // 484: datanode.api.v2.TradingDataService.ListCoreSnapshots:output_type -> datanode.api.v2.ListCoreSnapshotsResponse
+	270, // 485: datanode.api.v2.TradingDataService.GetMostRecentNetworkHistorySegment:output_type -> datanode.api.v2.GetMostRecentNetworkHistorySegmentResponse
+	272, // 486: datanode.api.v2.TradingDataService.ListAllNetworkHistorySegments:output_type -> datanode.api.v2.ListAllNetworkHistorySegmentsResponse
+	274, // 487: datanode.api.v2.TradingDataService.GetActiveNetworkHistoryPeerAddresses:output_type -> datanode.api.v2.GetActiveNetworkHistoryPeerAddressesResponse
+	276, // 488: datanode.api.v2.TradingDataService.GetNetworkHistoryStatus:output_type -> datanode.api.v2.GetNetworkHistoryStatusResponse
+	278, // 489: datanode.api.v2.TradingDataService.GetNetworkHistoryBootstrapPeers:output_type -> datanode.api.v2.GetNetworkHistoryBootstrapPeersResponse
+	281, // 490: datanode.api.v2.TradingDataService.ListEntities:output_type -> datanode.api.v2.ListEntitiesResponse
+	343, // 491: datanode.api.v2.TradingDataService.ExportNetworkHistory:output_type -> google.api.HttpBody
+	283, // 492: datanode.api.v2.TradingDataService.Ping:output_type -> datanode.api.v2.PingResponse
+	404, // [404:493] is the sub-list for method output_type
+	315, // [315:404] is the sub-list for method input_type
+	315, // [315:315] is the sub-list for extension type_name
+	315, // [315:315] is the sub-list for extension extendee
+	0,   // [0:315] is the sub-list for field type_name
 }
 
 func init() { file_data_node_api_v2_trading_data_proto_init() }
@@ -22485,7 +22707,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[133].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListSuccessorMarketsResponse); i {
+			switch v := v.(*SuccessorMarket); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22497,7 +22719,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[134].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetPartyRequest); i {
+			switch v := v.(*SuccessorMarketEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22509,7 +22731,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[135].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetPartyResponse); i {
+			switch v := v.(*SuccessorMarketConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22521,7 +22743,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[136].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPartiesRequest); i {
+			switch v := v.(*ListSuccessorMarketsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22533,7 +22755,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[137].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListPartiesResponse); i {
+			switch v := v.(*GetPartyRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22545,7 +22767,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[138].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyEdge); i {
+			switch v := v.(*GetPartyResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22557,7 +22779,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[139].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PartyConnection); i {
+			switch v := v.(*ListPartiesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22569,7 +22791,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[140].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OrderEdge); i {
+			switch v := v.(*ListPartiesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22581,7 +22803,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[141].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListMarginLevelsRequest); i {
+			switch v := v.(*PartyEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22593,7 +22815,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[142].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListMarginLevelsResponse); i {
+			switch v := v.(*PartyConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22605,7 +22827,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[143].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveMarginLevelsRequest); i {
+			switch v := v.(*OrderEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22617,7 +22839,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[144].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveMarginLevelsResponse); i {
+			switch v := v.(*ListMarginLevelsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22629,7 +22851,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[145].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OrderConnection); i {
+			switch v := v.(*ListMarginLevelsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22641,7 +22863,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[146].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MarginEdge); i {
+			switch v := v.(*ObserveMarginLevelsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22653,7 +22875,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[147].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MarginConnection); i {
+			switch v := v.(*ObserveMarginLevelsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22665,7 +22887,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[148].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRewardsRequest); i {
+			switch v := v.(*OrderConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22677,7 +22899,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[149].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRewardsResponse); i {
+			switch v := v.(*MarginEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22689,7 +22911,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[150].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardEdge); i {
+			switch v := v.(*MarginConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22701,7 +22923,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[151].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardsConnection); i {
+			switch v := v.(*ListRewardsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22713,7 +22935,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[152].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRewardSummariesRequest); i {
+			switch v := v.(*ListRewardsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22725,7 +22947,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[153].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListRewardSummariesResponse); i {
+			switch v := v.(*RewardEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22737,7 +22959,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[154].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RewardSummaryFilter); i {
+			switch v := v.(*RewardsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22749,7 +22971,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[155].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListEpochRewardSummariesRequest); i {
+			switch v := v.(*ListRewardSummariesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22761,7 +22983,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[156].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListEpochRewardSummariesResponse); i {
+			switch v := v.(*ListRewardSummariesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22773,7 +22995,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[157].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochRewardSummaryConnection); i {
+			switch v := v.(*RewardSummaryFilter); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22785,7 +23007,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[158].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EpochRewardSummaryEdge); i {
+			switch v := v.(*ListEpochRewardSummariesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22797,7 +23019,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[159].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveRewardsRequest); i {
+			switch v := v.(*ListEpochRewardSummariesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22809,7 +23031,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[160].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveRewardsResponse); i {
+			switch v := v.(*EpochRewardSummaryConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22821,7 +23043,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[161].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetDepositRequest); i {
+			switch v := v.(*EpochRewardSummaryEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22833,7 +23055,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[162].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetDepositResponse); i {
+			switch v := v.(*ObserveRewardsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22845,7 +23067,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[163].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDepositsRequest); i {
+			switch v := v.(*ObserveRewardsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22857,7 +23079,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[164].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDepositsResponse); i {
+			switch v := v.(*GetDepositRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22869,7 +23091,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[165].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DepositEdge); i {
+			switch v := v.(*GetDepositResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22881,7 +23103,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[166].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DepositsConnection); i {
+			switch v := v.(*ListDepositsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22893,7 +23115,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[167].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetWithdrawalRequest); i {
+			switch v := v.(*ListDepositsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22905,7 +23127,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[168].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetWithdrawalResponse); i {
+			switch v := v.(*DepositEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22917,7 +23139,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[169].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListWithdrawalsRequest); i {
+			switch v := v.(*DepositsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22929,7 +23151,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[170].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListWithdrawalsResponse); i {
+			switch v := v.(*GetWithdrawalRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22941,7 +23163,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[171].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WithdrawalEdge); i {
+			switch v := v.(*GetWithdrawalResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22953,7 +23175,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[172].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*WithdrawalsConnection); i {
+			switch v := v.(*ListWithdrawalsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22965,7 +23187,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[173].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetAssetRequest); i {
+			switch v := v.(*ListWithdrawalsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22977,7 +23199,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[174].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetAssetResponse); i {
+			switch v := v.(*WithdrawalEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -22989,7 +23211,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[175].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAssetsRequest); i {
+			switch v := v.(*WithdrawalsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23001,7 +23223,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[176].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAssetsResponse); i {
+			switch v := v.(*GetAssetRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23013,7 +23235,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[177].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AssetEdge); i {
+			switch v := v.(*GetAssetResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23025,7 +23247,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[178].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AssetsConnection); i {
+			switch v := v.(*ListAssetsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23037,7 +23259,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[179].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListLiquidityProvisionsRequest); i {
+			switch v := v.(*ListAssetsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23049,7 +23271,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[180].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListLiquidityProvisionsResponse); i {
+			switch v := v.(*AssetEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23061,7 +23283,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[181].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityProvisionsEdge); i {
+			switch v := v.(*AssetsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23073,7 +23295,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[182].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidityProvisionsConnection); i {
+			switch v := v.(*ListLiquidityProvisionsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23085,7 +23307,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[183].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveLiquidityProvisionsRequest); i {
+			switch v := v.(*ListLiquidityProvisionsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23097,7 +23319,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[184].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveLiquidityProvisionsResponse); i {
+			switch v := v.(*LiquidityProvisionsEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23109,7 +23331,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[185].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetGovernanceDataRequest); i {
+			switch v := v.(*LiquidityProvisionsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23121,7 +23343,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[186].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetGovernanceDataResponse); i {
+			switch v := v.(*ObserveLiquidityProvisionsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23133,7 +23355,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[187].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGovernanceDataRequest); i {
+			switch v := v.(*ObserveLiquidityProvisionsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23145,7 +23367,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[188].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListGovernanceDataResponse); i {
+			switch v := v.(*GetGovernanceDataRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23157,7 +23379,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[189].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GovernanceDataEdge); i {
+			switch v := v.(*GetGovernanceDataResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23169,7 +23391,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[190].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GovernanceDataConnection); i {
+			switch v := v.(*ListGovernanceDataRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23181,7 +23403,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[191].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveGovernanceRequest); i {
+			switch v := v.(*ListGovernanceDataResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23193,7 +23415,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[192].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveGovernanceResponse); i {
+			switch v := v.(*GovernanceDataEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23205,7 +23427,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[193].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDelegationsRequest); i {
+			switch v := v.(*GovernanceDataConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23217,7 +23439,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[194].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListDelegationsResponse); i {
+			switch v := v.(*ObserveGovernanceRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23229,7 +23451,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[195].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DelegationEdge); i {
+			switch v := v.(*ObserveGovernanceResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23241,7 +23463,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[196].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DelegationsConnection); i {
+			switch v := v.(*ListDelegationsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23253,7 +23475,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[197].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveDelegationsRequest); i {
+			switch v := v.(*ListDelegationsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23265,7 +23487,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[198].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveDelegationsResponse); i {
+			switch v := v.(*DelegationEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23277,7 +23499,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[199].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeBasic); i {
+			switch v := v.(*DelegationsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23289,7 +23511,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[200].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkDataRequest); i {
+			switch v := v.(*ObserveDelegationsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23301,7 +23523,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[201].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkDataResponse); i {
+			switch v := v.(*ObserveDelegationsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23313,7 +23535,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[202].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNodeRequest); i {
+			switch v := v.(*NodeBasic); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23325,7 +23547,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[203].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNodeResponse); i {
+			switch v := v.(*GetNetworkDataRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23337,7 +23559,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[204].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListNodesRequest); i {
+			switch v := v.(*GetNetworkDataResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23349,7 +23571,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[205].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListNodesResponse); i {
+			switch v := v.(*GetNodeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23361,7 +23583,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[206].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeEdge); i {
+			switch v := v.(*GetNodeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23373,7 +23595,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[207].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodesConnection); i {
+			switch v := v.(*ListNodesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23385,7 +23607,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[208].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListNodeSignaturesRequest); i {
+			switch v := v.(*ListNodesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23397,7 +23619,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[209].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListNodeSignaturesResponse); i {
+			switch v := v.(*NodeEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23409,7 +23631,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[210].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeSignatureEdge); i {
+			switch v := v.(*NodesConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23421,7 +23643,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[211].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NodeSignaturesConnection); i {
+			switch v := v.(*ListNodeSignaturesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23433,7 +23655,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[212].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetEpochRequest); i {
+			switch v := v.(*ListNodeSignaturesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23445,7 +23667,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[213].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetEpochResponse); i {
+			switch v := v.(*NodeSignatureEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23457,7 +23679,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[214].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimateFeeRequest); i {
+			switch v := v.(*NodeSignaturesConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23469,7 +23691,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[215].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimateFeeResponse); i {
+			switch v := v.(*GetEpochRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23481,7 +23703,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[216].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimateMarginRequest); i {
+			switch v := v.(*GetEpochResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23493,7 +23715,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[217].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimateMarginResponse); i {
+			switch v := v.(*EstimateFeeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23505,7 +23727,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[218].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListNetworkParametersRequest); i {
+			switch v := v.(*EstimateFeeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23517,7 +23739,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[219].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListNetworkParametersResponse); i {
+			switch v := v.(*EstimateMarginRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23529,7 +23751,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[220].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkParameterRequest); i {
+			switch v := v.(*EstimateMarginResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23541,7 +23763,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[221].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkParameterResponse); i {
+			switch v := v.(*ListNetworkParametersRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23553,7 +23775,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[222].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NetworkParameterEdge); i {
+			switch v := v.(*ListNetworkParametersResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23565,7 +23787,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[223].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*NetworkParameterConnection); i {
+			switch v := v.(*GetNetworkParameterRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23577,7 +23799,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[224].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Checkpoint); i {
+			switch v := v.(*GetNetworkParameterResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23589,7 +23811,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[225].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListCheckpointsRequest); i {
+			switch v := v.(*NetworkParameterEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23601,7 +23823,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[226].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListCheckpointsResponse); i {
+			switch v := v.(*NetworkParameterConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23613,7 +23835,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[227].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CheckpointEdge); i {
+			switch v := v.(*Checkpoint); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23625,7 +23847,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[228].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CheckpointsConnection); i {
+			switch v := v.(*ListCheckpointsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23637,7 +23859,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[229].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetStakeRequest); i {
+			switch v := v.(*ListCheckpointsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23649,7 +23871,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[230].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetStakeResponse); i {
+			switch v := v.(*CheckpointEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23661,7 +23883,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[231].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StakeLinkingEdge); i {
+			switch v := v.(*CheckpointsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23673,7 +23895,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[232].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StakesConnection); i {
+			switch v := v.(*GetStakeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23685,7 +23907,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[233].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRiskFactorsRequest); i {
+			switch v := v.(*GetStakeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23697,7 +23919,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[234].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRiskFactorsResponse); i {
+			switch v := v.(*StakeLinkingEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23709,7 +23931,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[235].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveEventBusRequest); i {
+			switch v := v.(*StakesConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23721,7 +23943,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[236].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveEventBusResponse); i {
+			switch v := v.(*GetRiskFactorsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23733,7 +23955,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[237].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveLedgerMovementsRequest); i {
+			switch v := v.(*GetRiskFactorsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23745,7 +23967,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[238].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ObserveLedgerMovementsResponse); i {
+			switch v := v.(*ObserveEventBusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23757,7 +23979,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[239].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListKeyRotationsRequest); i {
+			switch v := v.(*ObserveEventBusResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23769,7 +23991,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[240].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListKeyRotationsResponse); i {
+			switch v := v.(*ObserveLedgerMovementsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23781,7 +24003,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[241].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*KeyRotationEdge); i {
+			switch v := v.(*ObserveLedgerMovementsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23793,7 +24015,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[242].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*KeyRotationConnection); i {
+			switch v := v.(*ListKeyRotationsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23805,7 +24027,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[243].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListEthereumKeyRotationsRequest); i {
+			switch v := v.(*ListKeyRotationsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23817,7 +24039,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[244].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListEthereumKeyRotationsResponse); i {
+			switch v := v.(*KeyRotationEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23829,7 +24051,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[245].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EthereumKeyRotationsConnection); i {
+			switch v := v.(*KeyRotationConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23841,7 +24063,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[246].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EthereumKeyRotationEdge); i {
+			switch v := v.(*ListEthereumKeyRotationsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23853,7 +24075,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[247].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVegaTimeRequest); i {
+			switch v := v.(*ListEthereumKeyRotationsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23865,7 +24087,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[248].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetVegaTimeResponse); i {
+			switch v := v.(*EthereumKeyRotationsConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23877,7 +24099,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[249].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*DateRange); i {
+			switch v := v.(*EthereumKeyRotationEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23889,7 +24111,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[250].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetProtocolUpgradeStatusRequest); i {
+			switch v := v.(*GetVegaTimeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23901,7 +24123,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[251].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetProtocolUpgradeStatusResponse); i {
+			switch v := v.(*GetVegaTimeResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23913,7 +24135,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[252].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListProtocolUpgradeProposalsRequest); i {
+			switch v := v.(*DateRange); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23925,7 +24147,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[253].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListProtocolUpgradeProposalsResponse); i {
+			switch v := v.(*GetProtocolUpgradeStatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23937,7 +24159,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[254].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProtocolUpgradeProposalConnection); i {
+			switch v := v.(*GetProtocolUpgradeStatusResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23949,7 +24171,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[255].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ProtocolUpgradeProposalEdge); i {
+			switch v := v.(*ListProtocolUpgradeProposalsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23961,7 +24183,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[256].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListCoreSnapshotsRequest); i {
+			switch v := v.(*ListProtocolUpgradeProposalsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23973,7 +24195,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[257].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListCoreSnapshotsResponse); i {
+			switch v := v.(*ProtocolUpgradeProposalConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23985,7 +24207,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[258].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CoreSnapshotConnection); i {
+			switch v := v.(*ProtocolUpgradeProposalEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -23997,7 +24219,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[259].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CoreSnapshotEdge); i {
+			switch v := v.(*ListCoreSnapshotsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24009,7 +24231,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[260].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HistorySegment); i {
+			switch v := v.(*ListCoreSnapshotsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24021,7 +24243,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[261].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetMostRecentNetworkHistorySegmentRequest); i {
+			switch v := v.(*CoreSnapshotConnection); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24033,7 +24255,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[262].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetMostRecentNetworkHistorySegmentResponse); i {
+			switch v := v.(*CoreSnapshotEdge); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24045,7 +24267,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[263].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAllNetworkHistorySegmentsRequest); i {
+			switch v := v.(*HistorySegment); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24057,7 +24279,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[264].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListAllNetworkHistorySegmentsResponse); i {
+			switch v := v.(*GetMostRecentNetworkHistorySegmentRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24069,7 +24291,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[265].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetActiveNetworkHistoryPeerAddressesRequest); i {
+			switch v := v.(*GetMostRecentNetworkHistorySegmentResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24081,7 +24303,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[266].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetActiveNetworkHistoryPeerAddressesResponse); i {
+			switch v := v.(*ListAllNetworkHistorySegmentsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24093,7 +24315,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[267].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkHistoryStatusRequest); i {
+			switch v := v.(*ListAllNetworkHistorySegmentsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24105,7 +24327,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[268].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkHistoryStatusResponse); i {
+			switch v := v.(*GetActiveNetworkHistoryPeerAddressesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24117,7 +24339,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[269].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkHistoryBootstrapPeersRequest); i {
+			switch v := v.(*GetActiveNetworkHistoryPeerAddressesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24129,7 +24351,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[270].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetNetworkHistoryBootstrapPeersResponse); i {
+			switch v := v.(*GetNetworkHistoryStatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24141,7 +24363,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[271].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ExportNetworkHistoryRequest); i {
+			switch v := v.(*GetNetworkHistoryStatusResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24153,7 +24375,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[272].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListEntitiesRequest); i {
+			switch v := v.(*GetNetworkHistoryBootstrapPeersRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24165,7 +24387,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[273].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListEntitiesResponse); i {
+			switch v := v.(*GetNetworkHistoryBootstrapPeersResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24177,7 +24399,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[274].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PingRequest); i {
+			switch v := v.(*ExportNetworkHistoryRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24189,7 +24411,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[275].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PingResponse); i {
+			switch v := v.(*ListEntitiesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24201,7 +24423,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[276].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OrderInfo); i {
+			switch v := v.(*ListEntitiesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24213,7 +24435,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[277].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimatePositionRequest); i {
+			switch v := v.(*PingRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24225,7 +24447,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[278].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EstimatePositionResponse); i {
+			switch v := v.(*PingResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24237,7 +24459,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[279].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*MarginEstimate); i {
+			switch v := v.(*OrderInfo); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24249,7 +24471,7 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[280].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*LiquidationEstimate); i {
+			switch v := v.(*EstimatePositionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -24261,6 +24483,42 @@ func file_data_node_api_v2_trading_data_proto_init() {
 			}
 		}
 		file_data_node_api_v2_trading_data_proto_msgTypes[281].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*EstimatePositionResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[282].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MarginEstimate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[283].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*LiquidationEstimate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_data_node_api_v2_trading_data_proto_msgTypes[284].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*LiquidationPrice); i {
 			case 0:
 				return &v.state
@@ -24311,41 +24569,41 @@ func file_data_node_api_v2_trading_data_proto_init() {
 	file_data_node_api_v2_trading_data_proto_msgTypes[118].OneofWrappers = []interface{}{}
 	file_data_node_api_v2_trading_data_proto_msgTypes[120].OneofWrappers = []interface{}{}
 	file_data_node_api_v2_trading_data_proto_msgTypes[128].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[143].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[148].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[152].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[154].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[146].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[151].OneofWrappers = []interface{}{}
 	file_data_node_api_v2_trading_data_proto_msgTypes[155].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[159].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[163].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[169].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[175].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[179].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[183].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[185].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[187].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[191].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[193].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[197].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[204].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[208].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[212].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[218].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[225].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[229].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[239].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[243].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[249].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[157].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[158].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[162].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[166].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[172].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[178].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[182].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[186].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[188].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[190].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[194].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[196].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[200].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[207].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[211].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[215].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[221].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[228].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[232].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[242].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[246].OneofWrappers = []interface{}{}
 	file_data_node_api_v2_trading_data_proto_msgTypes[252].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[256].OneofWrappers = []interface{}{}
-	file_data_node_api_v2_trading_data_proto_msgTypes[277].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[255].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[259].OneofWrappers = []interface{}{}
+	file_data_node_api_v2_trading_data_proto_msgTypes[280].OneofWrappers = []interface{}{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_data_node_api_v2_trading_data_proto_rawDesc,
 			NumEnums:      5,
-			NumMessages:   282,
+			NumMessages:   285,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

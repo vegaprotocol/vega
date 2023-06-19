@@ -30,18 +30,18 @@ const (
 )
 
 type Config struct {
-	Level      encoding.LogLevel      `long:"level" description:"Log level"`
-	RateLimit  vghttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
-	WalletName string                 `long:"wallet-name" description:"Name of the wallet to use to sign events"`
-	Port       int                    `long:"port" description:"Listen for connections on port <port>"`
-	IP         string                 `long:"ip" description:"Bind to address <ip>"`
-	Node       NodeConfig             `group:"Node" namespace:"node"`
+	Level      encoding.LogLevel      `description:"Log level"                                long:"level"`
+	RateLimit  vghttp.RateLimitConfig `group:"RateLimit"                                      namespace:"rateLimit"`
+	WalletName string                 `description:"Name of the wallet to use to sign events" long:"wallet-name"`
+	Port       int                    `description:"Listen for connections on port <port>"    long:"port"`
+	IP         string                 `description:"Bind to address <ip>"                     long:"ip"`
+	Node       NodeConfig             `group:"Node"                                           namespace:"node"`
 }
 
 type NodeConfig struct {
-	Port    int    `long:"port" description:"Connect to Node on port <port>"`
-	IP      string `long:"ip" description:"Connect to Node on address <ip>"`
-	Retries uint64 `long:"retries" description:"Connection retries before fail"`
+	Port    int    `description:"Connect to Node on port <port>"  long:"port"`
+	IP      string `description:"Connect to Node on address <ip>" long:"ip"`
+	Retries uint64 `description:"Connection retries before fail"  long:"retries"`
 }
 
 func NewDefaultConfig() Config {

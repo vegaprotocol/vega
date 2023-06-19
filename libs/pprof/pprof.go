@@ -55,7 +55,7 @@ type Config struct {
 	// (For n>1 the details of sampling may change.)
 	MutexProfileFraction int `long:"mutex-profile-fraction"`
 	// Write the profiles to disk every WriteEvery interval
-	WriteEvery encoding.Duration `long:"write-every"  description:"write pprof files at this interval; if 0 only write on shutdown"`
+	WriteEvery encoding.Duration `description:"write pprof files at this interval; if 0 only write on shutdown" long:"write-every"`
 }
 
 // Pprofhandler is handling pprof profile management.

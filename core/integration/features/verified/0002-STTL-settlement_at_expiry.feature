@@ -24,9 +24,10 @@ Feature: Test settlement at expiry (0016-PFUT-012)
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "0" decimal places
 
     And the following network parameters are set:
-      | name                                    | value |
-      | market.auction.minimumDuration          | 1     |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | name                                         | value |
+      | market.auction.minimumDuration               | 1     |
+      | network.markPriceUpdateMaximumFrequency      | 0s    |
+      | market.liquidity.successorLaunchWindowLength | 1s    |
 
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -211,7 +212,8 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | party2 | ETH   | ETH/DEC19 | 0      | 42      |
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
 
-    And the cumulated balance for all accounts should be worth "100236000"
+    When the network moves ahead "2" blocks
+    Then the cumulated balance for all accounts should be worth "100236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the network treasury balance should be "20000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
@@ -288,7 +290,7 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | name             | value |
       | prices.ETH.value | 700   |
 
-    And the network moves ahead "1" blocks
+    And the network moves ahead "3" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "15000" for the market "ETH/DEC19"
     And the network treasury balance should be "5000" for the asset "ETH"
@@ -332,7 +334,8 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | party2 | ETH   | ETH/DEC19 | 0      | 42      |
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
 
-    And the cumulated balance for all accounts should be worth "200236000"
+    When the network moves ahead "2" blocks
+    Then the cumulated balance for all accounts should be worth "200236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "20000" for the asset "ETH"
@@ -396,7 +399,8 @@ Feature: Test settlement at expiry (0016-PFUT-012)
       | party1 | ETH   | ETH/DEC19 | 0      | 11916   |
       | party2 | ETH   | ETH/DEC19 | 0      | 0       |
 
-    And the cumulated balance for all accounts should be worth "100213000"
+    When the network moves ahead "2" blocks
+    Then the cumulated balance for all accounts should be worth "100213000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
     And the network treasury balance should be "42" for the asset "ETH"

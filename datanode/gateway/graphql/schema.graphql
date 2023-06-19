@@ -25,6 +25,16 @@ type PeggedOrder {
   offset: String!
 }
 
+"Details of the iceberg order"
+type IcebergOrder {
+  "Size of the order that will be made visible if the iceberg order is replenished after trading"
+  peakSize: String!
+  "If the visible size of the order falls below this value, it will be replenished back to the peak size using the reserved amount"
+  minimumVisibleSize: String!
+  "Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed"
+  reservedRemaining: String!
+}
+
 "Subscriptions allow a caller to receive new information as it is available from the Vega network."
 type Subscription {
   "Subscribe to the accounts updates"
@@ -625,7 +635,7 @@ type Query {
     "ID for an order"
     id: ID!
 
-    "Version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    "Order version number, starting at 1 for the original order and incrementing by 1 for each successful amendment; omitted for the most recent version."
     version: Int
   ): Order!
 
@@ -694,7 +704,9 @@ type Query {
     When false, only the requested market and its children are returned.
     """
     fullHistory: Boolean,
-  ): [Market]
+    "Optional pagination information"
+    pagination: Pagination
+  ): SuccessorMarketConnection
 
   "Get a list of all trades and apply any given filters to the results"
   trades(
@@ -1871,6 +1883,9 @@ type Market {
   Optional: When a successor market is created, a fraction of the parent market's insurance pool can be transferred to the successor market
   """
   insurancePoolFraction: String
+
+  "Optional: Market ID of the successor to this market if one exists"
+  successorMarketID: ID
 }
 
 """
@@ -1967,7 +1982,6 @@ type ObservableMarketDepthUpdate {
   "Sequence number of the last update sent; useful for checking that no updates were missed."
   previousSequenceNumber: String!
 }
-
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
@@ -2364,6 +2378,9 @@ type Order {
 
   "Is this a reduce only order"
   reduceOnly: Boolean
+
+  "Details of an iceberg order"
+  icebergOrder: IcebergOrder
 }
 
 "An order update in Vega, if active it will be on the order book for the market"
@@ -2977,6 +2994,18 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_FREEFORM
   "The ERC-20 address specified by this proposal is already in use by another asset"
   PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
+  "The governance transfer proposal is invalid"
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID
+  "The governance transfer proposal has failed"
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED
+  "The proposal for cancellation of an active governance transfer has failed"
+  PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID
+  "Validation of spot market proposal failed"
+  PROPOSAL_ERROR_INVALID_SPOT
+  "Spot trading is disabled"
+  PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
+  "Validation of successor market has failed"
+  PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
 }
 
 "Why the order was rejected by the core node"
@@ -3919,7 +3948,7 @@ type LiquidityOrderReference {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -3947,7 +3976,7 @@ type LiquidityProvision {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvisionUpdate {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   partyID: ID!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -4187,7 +4216,7 @@ type PartyConnection {
   pageInfo: PageInfo!
 }
 
-"Edge type containing the order and cursor information returned by a OrderConnection"
+"Edge type containing the market and cursor information returned by a MarketConnection"
 type MarketEdge {
   "The market"
   node: Market!
@@ -4199,6 +4228,29 @@ type MarketEdge {
 type MarketConnection {
   "The markets in this connection"
   edges: [MarketEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
+type SuccessorMarket {
+  "The market"
+  market: Market!
+  "Proposals for child markets"
+  proposals: [Proposal]
+}
+
+"Edge type containing the market and cursor information returned by a MarketConnection"
+type SuccessorMarketEdge {
+  "The market"
+  node: SuccessorMarket!
+  "The cursor for this market"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated market information"
+type SuccessorMarketConnection {
+  "The markets in this connection"
+  edges: [SuccessorMarketEdge!]!
   "The pagination information"
   pageInfo: PageInfo!
 }
