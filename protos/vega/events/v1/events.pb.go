@@ -204,7 +204,7 @@ const (
 	BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS BusEventType = 58
 	// Event indicating a spot liquidity provision has been created or updated.
 	BusEventType_BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION BusEventType = 59
-	// Event indicating a spot liquidity provision has been created or updated.
+	// Event indicating a stop order has been submitted or updated.
 	BusEventType_BUS_EVENT_TYPE_STOP_ORDER BusEventType = 60
 	// Event indicating a market related event, for example when a market opens
 	BusEventType_BUS_EVENT_TYPE_MARKET BusEventType = 101

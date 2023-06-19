@@ -751,7 +751,7 @@ enum BusEventType {
   // Event indicating a spot liquidity provision has been created or updated.
   BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION = 59;
 
-  // Event indicating a spot liquidity provision has been created or updated.
+  // Event indicating a stop order has been submitted or updated.
   BUS_EVENT_TYPE_STOP_ORDER = 60;
 
   // Event indicating a market related event, for example when a market opens
