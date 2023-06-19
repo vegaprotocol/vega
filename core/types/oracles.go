@@ -85,6 +85,7 @@ type EthContractCallEvent struct {
 	BlockTime   uint64
 	SpecId      string
 	Result      []byte
+	Error       *string
 }
 
 func EthereumContractCallResultFromProto(
@@ -95,6 +96,7 @@ func EthereumContractCallResultFromProto(
 		BlockHeight: qr.BlockHeight,
 		BlockTime:   qr.BlockTime,
 		Result:      qr.Result,
+		Error:       qr.Error,
 	}
 }
 
@@ -104,6 +106,7 @@ func (q *EthContractCallEvent) IntoProto() *vegapb.EthContractCallEvent {
 		BlockHeight: q.BlockHeight,
 		BlockTime:   q.BlockTime,
 		Result:      q.Result,
+		Error:       q.Error,
 	}
 }
 
@@ -112,6 +115,10 @@ func (q EthContractCallEvent) Hash() string {
 	blockTime := strconv.FormatUint(q.BlockHeight, 10)
 	bytes := []byte(blockHeight + blockTime + q.SpecId)
 	bytes = append(bytes, q.Result...)
+	if q.Error != nil {
+		bytes = append(bytes, []byte(*q.Error)...)
+	}
+
 	return hex.EncodeToString(
 		crypto.Hash(bytes),
 	)

@@ -180,7 +180,6 @@ func (s *DataSourceDefinition) SetOracleConfig(oc isDataSourceDefinitionExternal
 						}
 					}
 				}
-
 			}
 		}
 	}

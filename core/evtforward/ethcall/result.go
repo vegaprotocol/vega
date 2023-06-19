@@ -75,8 +75,3 @@ func normaliseValues(values []any, rules map[string]string) (map[string]string, 
 
 	return res, nil
 }
-
-func (r Result) HasRequiredConfirmations() bool {
-	// TODO
-	return true
-}

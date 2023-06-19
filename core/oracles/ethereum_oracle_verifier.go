@@ -9,6 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/events"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
+
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 
 	"code.vegaprotocol.io/vega/core/types"
@@ -59,6 +63,7 @@ type EthereumOracleVerifier struct {
 
 	witness          Witness
 	timeService      TimeService
+	broker           Broker
 	oracleEngine     OracleDataBroadcaster
 	ethEngine        EthCallEngine
 	ethConfirmations EthereumConfirmations
@@ -89,6 +94,7 @@ func NewEthereumOracleVerifier(
 	log *logging.Logger,
 	witness Witness,
 	ts TimeService,
+	broker Broker,
 	oracleBroadcaster OracleDataBroadcaster,
 	ethCallEngine EthCallEngine,
 	ethConfirmations EthereumConfirmations,
@@ -98,6 +104,7 @@ func NewEthereumOracleVerifier(
 		log:              log,
 		witness:          witness,
 		timeService:      ts,
+		broker:           broker,
 		oracleEngine:     oracleBroadcaster,
 		ethEngine:        ethCallEngine,
 		ethConfirmations: ethConfirmations,
@@ -124,14 +131,26 @@ func (s *EthereumOracleVerifier) ensureNotDuplicate(hash string) bool {
 // duplicates but not result in a memory leak, agreed to postpone for now  (other verifiers have the same issue)
 
 func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error {
-	// Possible that a single oracle trigger, where trigger is based off of vegatime, could result in chain events with
-	// different contents (and therefore different hashes) due to difference in the time when the validators query
-	// ethereum, it is assumed that the consumer of the oracle events will handle this.  Alternatively we could restrict
-	// triggers to use ethereum time and not allow vega time triggers, then no such issue.
 	if ok := s.ensureNotDuplicate(callEvent.Hash()); !ok {
 		s.log.Error("ethereum call event already exists",
 			logging.String("event", fmt.Sprintf("%+v", callEvent)))
 		return ErrDuplicatedEthereumCallEvent
+	}
+
+	if callEvent.Error != nil {
+		dataProto := vegapb.OracleData{
+			ExternalData: &datapb.ExternalData{
+				Data: &datapb.Data{
+					MatchedSpecIds: []string{callEvent.SpecId},
+					BroadcastAt:    s.timeService.GetTimeNow().UnixNano(),
+					Error:          callEvent.Error,
+				},
+			},
+		}
+
+		s.broker.Send(events.NewOracleDataEvent(context.Background(), vegapb.OracleData{ExternalData: dataProto.ExternalData}))
+
+		return nil
 	}
 
 	pending := &pendingCallEvent{

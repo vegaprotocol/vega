@@ -47,6 +47,8 @@ message Data {
   int64 broadcast_at = 4;
   // Holds all metadata properties
   repeated Property meta_data = 5;
+  // Error is the error message if the data could not be sourced.
+  optional string error = 6;
 }
 
 message ExternalData {

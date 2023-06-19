@@ -14,6 +14,8 @@ message EthContractCallEvent {
   uint64 block_time = 3;
   // Result of contract call, packed according to the ABI stored in the associated data source spec.
   bytes result = 4;
+  // Error message if the call failed.
+  optional string error = 5;
 }
 
 // Deposit for a Vega built-in asset
