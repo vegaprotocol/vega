@@ -37,7 +37,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | only |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only |
       | party1 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTC | 10           | 5            | post |
 
     Then the iceberg orders should have the following states:
@@ -45,7 +45,7 @@ Feature: Iceberg orders
       | party1 | ETH/DEC19 | buy  | 10             | 10    | STATUS_ACTIVE | 90              |
 
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | expires in | initial peak | minimum peak | only |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | expires in | peak size | minimum visible size | only |
       | party2 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTT | 3600       | 8            | 4            | post |
 
     Then the iceberg orders should have the following states:
@@ -84,10 +84,10 @@ Feature: Iceberg orders
       | party2 | ETH/DEC19 | buy  | 1      | 10    | 0                | TYPE_LIMIT | TIF_GTC | best-bid  |
       | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC | best-ask  |
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference        |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference        |
       | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 3           | 1            | ordinary-iceberg |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | side | volume | resulting trades | type       | tif     | initial peak | minimum peak | pegged reference | offset | reference      |
+      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset | reference      |
       | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | BID              | 1      | pegged-iceberg |
     Then the order book should have the following volumes for market "ETH/DEC19":
       | side | price | volume |
@@ -133,7 +133,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | only | reference       |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | only | reference       |
       | party1 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTC | 10           | 5            | post | iceberg-order-1 |
 
     Then the iceberg orders should have the following states:
@@ -201,7 +201,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 100    | 10    | 0                | TYPE_LIMIT | TIF_GTC | 10           | 5            |
 
     Then the iceberg orders should have the following states:
@@ -234,7 +234,7 @@ Feature: Iceberg orders
 
     # place an iceberg order that will trade when coming out of auction
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | 10           | 10           |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
@@ -275,13 +275,13 @@ Feature: Iceberg orders
       | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 10     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
     And the parties place the following orders:
       | party | market id  | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC19 | buy  | 8      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
       | party3 | ETH/DEC19 | sell | 10     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
     And the opening auction period ends for market "ETH/DEC19"
     Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -324,7 +324,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
       | party1 | ETH/DEC19 | sell | 50     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
       | party2 | ETH/DEC19 | sell | 5      | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
 
@@ -384,7 +384,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
       | party1 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
       | party2 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
 
@@ -443,7 +443,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
       | party1 | ETH/DEC19 | sell | 16     | 5     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 5            | 1            |
       | party2 | ETH/DEC19 | buy  | 10     | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
 
@@ -486,7 +486,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
       | party1 | ETH/DEC19 | buy  | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
@@ -541,7 +541,7 @@ Feature: Iceberg orders
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC19 | sell | 15     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 10     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     Then the following trades should be executed:
       | buyer  | seller | price | size |
@@ -581,7 +581,7 @@ Feature: Iceberg orders
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party2 | ETH/DEC19 | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 15     | 5     | 1                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     Then the following trades should be executed:
       | buyer  | seller | price | size |
@@ -618,7 +618,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -660,7 +660,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -713,7 +713,7 @@ Feature: Iceberg orders
       | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
       | party4 | ETH/DEC19 | sell | 50     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 100    | 5     | 3                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     Then the following trades should be executed:
       | buyer  | seller | price | size |
@@ -758,7 +758,7 @@ Feature: Iceberg orders
       | party2 | ETH/DEC19 | sell | 30     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
       | party3 | ETH/DEC19 | sell | 40     | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     When the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | buy  | 100    | 5     | 2                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     Then the following trades should be executed:
       | buyer  | seller | price | size |
@@ -798,7 +798,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size |
       | party1 | ETH/DEC19 | sell | 10     | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -849,7 +849,7 @@ Feature: Iceberg orders
       | party2 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
       | party3 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
       | party1 | ETH/DEC19 | sell | 5      | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -894,7 +894,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
       | party1 | ETH/DEC19 | sell | 200    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
       | party2 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
       | party3 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
@@ -942,7 +942,7 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     Given the parties place the following iceberg orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | initial peak | minimum peak | reference |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | peak size | minimum visible size | reference |
       | party1 | ETH/DEC19 | sell | 200    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
       | party2 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
       | party3 | ETH/DEC19 | sell | 100    | 5     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | iceberg   |
@@ -990,7 +990,7 @@ Feature: Iceberg orders
       | party2 | ETH/DEC19 | sell | 1      | 20    | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC19 | sell | 10     | 25    | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties place the following pegged iceberg orders:
-      | party  | market id | side | volume | resulting trades | type       | tif     | initial peak | minimum peak | pegged reference | offset |
+      | party  | market id | side | volume | resulting trades | type       | tif     | peak size | minimum visible size | pegged reference | offset |
       | party1 | ETH/DEC19 | buy  | 10     | 0                | TYPE_LIMIT | TIF_GTC | 2            | 1            | BID              | 1      |
     And the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |

@@ -30,6 +30,7 @@
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
 - [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders in `graphQL`
 - [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders during auction uncrossing
+- [8524](https://github.com/vegaprotocol/vega/issues/8524) - Rename iceberg fields for clarity
 - [8459](https://github.com/vegaprotocol/vega/issues/8459) - Market depth and book volume include iceberg reserves
 - [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
 - [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
