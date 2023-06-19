@@ -278,6 +278,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesPlaceTheFollowingIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
 
+	s.Step(`^the parties place the following pegged iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingPeggedIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+
 	s.Step(`^the iceberg orders should have the following states:$`, func(table *godog.Table) error {
 		return steps.TheIcebergOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
