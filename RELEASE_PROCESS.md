@@ -3,7 +3,7 @@
 
 This document outlines the steps required in order to create a core protocol release.
 
-Please be aware of the [version numbering pattern](./#version-numbering-pattern) that must be used.
+Please be aware of the [version numbering pattern](#version-numbering-pattern) that must be used.
 
 
 ## Major/minor release process
