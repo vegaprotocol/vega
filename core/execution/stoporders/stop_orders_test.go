@@ -2,6 +2,7 @@ package stoporders_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/types"
@@ -277,13 +278,18 @@ func newPricedStopOrder(
 		Party:     party,
 		OCOLinkID: ocoLinkID,
 		Trigger:   types.NewPriceStopOrderTrigger(direction, price),
-
-		// the following are no needed for these tests / not cared for by the package
-		// OrderSubmission *OrderSubmission
-		// Expiry          *StopOrderExpiry
-		// Status          StopOrderStatus
-		// CreatedAt       time.Time
-		// UpdatedAt       time.Time
+		Expiry:    &types.StopOrderExpiry{}, // no expiry, not important here
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now().Add(10 * time.Second),
+		Status:    types.StopOrderStatusPending,
+		OrderSubmission: &types.OrderSubmission{
+			MarketID:    "some",
+			Type:        types.OrderTypeMarket,
+			ReduceOnly:  true,
+			Size:        10,
+			TimeInForce: types.OrderTimeInForceIOC,
+			Side:        types.SideBuy,
+		},
 	}
 }
 
@@ -298,12 +304,17 @@ func newTrailingStopOrder(
 		Party:     party,
 		OCOLinkID: ocoLinkID,
 		Trigger:   types.NewTrailingStopOrderTrigger(direction, offset),
-
-		// the following are no needed for these tests / not cared for by the package
-		// OrderSubmission *OrderSubmission
-		// Expiry          *StopOrderExpiry
-		// Status          StopOrderStatus
-		// CreatedAt       time.Time
-		// UpdatedAt       time.Time
+		Expiry:    &types.StopOrderExpiry{}, // no expiry, not important here
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now().Add(10 * time.Second),
+		Status:    types.StopOrderStatusPending,
+		OrderSubmission: &types.OrderSubmission{
+			MarketID:    "some",
+			Type:        types.OrderTypeMarket,
+			ReduceOnly:  true,
+			Size:        10,
+			TimeInForce: types.OrderTimeInForceIOC,
+			Side:        types.SideBuy,
+		},
 	}
 }

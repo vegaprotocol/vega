@@ -353,6 +353,7 @@ type ExecMarket struct {
 	Parties                    []string
 	Closed                     bool
 	IsSucceeded                bool
+	StopOrders                 *snapshot.StopOrders
 }
 
 type ExecSpotMarket struct {
@@ -3166,6 +3167,7 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		Parties:                    em.Parties,
 		Closed:                     em.Closed,
 		IsSucceeded:                em.Succeeded,
+		StopOrders:                 em.StopOrders,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
@@ -3199,6 +3201,7 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
 		Succeeded:                  e.IsSucceeded,
+		StopOrders:                 e.StopOrders,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())

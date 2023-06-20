@@ -53,6 +53,7 @@
 - [8466](https://github.com/vegaprotocol/vega/issues/8466) - Add stop orders protobufs and domain types
 - [8467](https://github.com/vegaprotocol/vega/issues/8467) - Add stop orders data structures
 - [8516](https://github.com/vegaprotocol/vega/issues/8516) - Add stop orders network parameter
+- [8470](https://github.com/vegaprotocol/vega/issues/8470) - Stop orders snapshots
 
 ### 🐛 Fixes
 
