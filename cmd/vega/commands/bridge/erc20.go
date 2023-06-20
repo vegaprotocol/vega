@@ -43,6 +43,7 @@ type ERC20Cmd struct {
 	VerifyWithdrawAsset    ERC20VerifyWithdrawAssetCmd    `command:"verify_withdraw_asset" description:"Verify withdraw ERC20 from the bridge"`
 	SetBridgeAddress       ERC20SetBridgeAddressCmd       `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
 	SetMultisigControl     ERC20SetMultisigControlCmd     `command:"set_multisig_control" description:"Update the bridge address use by the asset pool"`
+	VerifyGlobalResume     ERC20VerifyGlobalResumeCmd     `command:"verify_global_resume" description:"Verify the signature to resume usage of the bridge"`
 	GlobalResume           ERC20GlobalResumeCmd           `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
 	GlobalStop             ERC20GlobalStopCmd             `command:"global_stop" description:"Build the signature to stop the bridge"`
 	SetWithdrawDelay       ERC20SetWithdrawDelayCmd       `command:"set_withdraw_delay" description:"Update the withdraw delay for all asset"`
@@ -98,6 +99,7 @@ func ERC20() *ERC20Cmd {
 		VerifySetAssetLimits:   ERC20VerifySetAssetLimitsCmd{},
 		SetBridgeAddress:       ERC20SetBridgeAddressCmd{},
 		SetMultisigControl:     ERC20SetMultisigControlCmd{},
+		VerifyGlobalResume:     ERC20VerifyGlobalResumeCmd{},
 		GlobalResume:           ERC20GlobalResumeCmd{},
 		GlobalStop:             ERC20GlobalStopCmd{},
 		SetWithdrawDelay:       ERC20SetWithdrawDelayCmd{},
@@ -588,6 +590,47 @@ func (opts *ERC20GlobalResumeCmd) Execute(_ []string) error {
 	}
 
 	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20VerifyGlobalResumeCmd struct {
+	Nonce         string `long:"nonce" required:"true" description:"A nonce for this signature"`
+	BridgeAddress string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
+	Signatures    string `long:"signatures" required:"true" description:"The list of signatures from the validators"`
+}
+
+func (opts *ERC20VerifyGlobalResumeCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	signers, err := erc20.VerifyGlobalResume(
+		nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(signers)
+	for _, v := range signers {
+		fmt.Printf("%v\n", v)
+	}
+	return nil
+
 	return nil
 }
 

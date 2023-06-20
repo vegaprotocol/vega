@@ -716,3 +716,61 @@ func (e ERC20Logic) GlobalResume(
 
 	return sign(e.signer, msg)
 }
+
+func (e ERC20Logic) VerifyGlobalResume(
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	typString, err := abi.NewType("string", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typU256, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "uint256",
+			Type: typU256,
+		},
+		{
+			Name: "func_name",
+			Type: typString,
+		},
+	})
+
+	buf, err := args.Pack([]interface{}{
+		nonce.BigInt(),
+		"global_resume",
+	}...)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
+}
