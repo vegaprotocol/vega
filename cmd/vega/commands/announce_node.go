@@ -189,7 +189,13 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
 
-	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.RPCAddr)
+	rpcAddr := cfg.Blockchain.Tendermint.RPCAddr
+	if len(rpcAddr) <= 0 {
+		rpcAddr = "tcp://127.0.0.1:26657"
+		log.Warn("Blockchain.Tendermint.RPCAddr is empty, using default", logging.String("address", rpcAddr))
+	}
+
+	abciClient, err := abci.NewClient(rpcAddr)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}

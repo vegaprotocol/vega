@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -64,6 +65,10 @@ func (opts *ProposeUpgradeCmd) Execute(_ []string) error {
 
 	if !conf.IsValidator() {
 		return errors.New("node is not a validator")
+	}
+
+	if !strings.HasPrefix(opts.VegaReleaseTag, "v") {
+		return errors.New("invalid vega release tag, expected prefix 'v' (example: v0.71.9)")
 	}
 
 	cmd := commandspb.ProtocolUpgradeProposal{

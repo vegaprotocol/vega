@@ -1,6 +1,10 @@
 # Release processes
 
+
 This document outlines the steps required in order to create a core protocol release.
+
+Please be aware of the [version numbering pattern](#version-numbering-pattern) that must be used.
+
 
 ## Major/minor release process
 
@@ -20,6 +24,7 @@ This document outlines the steps required in order to create a core protocol rel
 1. Once the pull request has been merged, create a tag on the `master` branch
 1. The CI will see the tag and create all the release artifacts
 1. Follow the [common release process](./#common-release-process) steps
+
 
 ## Patch release process
 
@@ -91,3 +96,17 @@ Once the above steps have been taken for the required type of release, the follo
     - when all pull requests have been checked run the `Generate release notes` action
 1. Notify devops that the release version needs to be deployed onto the `stagnet1` environment for verification
 1. Notify the `@release` group on Slack in the `#engineering` channel
+
+
+## Version numbering pattern
+
+To ensure no confusion between testnet (pre-release) versions and the versions deemed ready for the validators (latest), the following pattern will be used:
+
+- Mainnet ready "latest" versions: `X.Y.Z`
+- Staging / Testnet release candidate versions: `X.Y.Z-preview.n`
+
+Where `n` increments with each pre-release candidate version, and therefore:
+
+- `0.71.6-preview.2` is greater than `0.71.6-preview.1`
+- `0.71.6` is greater than `0.71.6-preview.2`
+- `0.72.0` is greater than `0.71.6`

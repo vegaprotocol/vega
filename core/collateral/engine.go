@@ -2345,7 +2345,9 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 		Asset:       asset,
 		Type:        types.TransferTypeClearAccount,
 	}
-	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
+
+	lpFeeAcc, exists := e.accs[lpFeeAccID]
+	if exists && !lpFeeAcc.Balance.IsZero() {
 		req.FromAccount[0] = lpFeeAcc
 		req.ToAccount[0] = marketInsuranceAcc
 		req.Amount = lpFeeAcc.Balance.Clone()
@@ -2353,10 +2355,7 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 		if err != nil {
 			e.log.Panic("unable to redistribute remainder of LP fee account funds", logging.Error(err))
 		}
-		// only remove this account when the market is ready to be fully cleared
-		if !keepFeeAcc {
-			e.removeAccount(lpFeeAccID)
-		}
+
 		for _, bal := range lpFeeLE.Balances {
 			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
 				e.log.Error("Could not update the target account in transfer",
@@ -2367,6 +2366,12 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 		}
 		ret = append(ret, lpFeeLE)
 	}
+
+	// only remove this account when the market is ready to be fully cleared
+	if exists && !keepFeeAcc {
+		e.removeAccount(lpFeeAccID)
+	}
+
 	// clear remaining maker fees
 	makerAcc, err := e.GetMarketMakerFeeAccount(mktID, asset)
 	if err == nil && makerAcc != nil && !makerAcc.Balance.IsZero() {
@@ -2444,7 +2449,6 @@ func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, cl
 	// add the network treasury, if it doesn't exist yet, create it
 	globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
 	insuranceAccounts = append(insuranceAccounts, globalRewardPool)
-
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
