@@ -165,7 +165,8 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 		if iter.Event.Raw.BlockNumber == event.BlockNumber &&
 			uint64(iter.Event.Raw.Index) == event.LogIndex &&
 			iter.Event.NewThreshold == uint16(event.Threshold) &&
-			nonce.Cmp(iter.Event.Nonce) == 0 {
+			nonce.Cmp(iter.Event.Nonce) == 0 &&
+			iter.Event.Raw.TxHash.Hex() == event.TxHash {
 			// now we know the event is OK,
 			// just need to check for confirmations
 			return o.ethConfirmations.Check(event.BlockNumber)
@@ -205,7 +206,8 @@ func (o *OnChainVerifier) filterSignerAdded(
 		if iter.Event.Raw.BlockNumber == event.BlockNumber &&
 			uint64(iter.Event.Raw.Index) == event.LogIndex &&
 			iter.Event.NewSigner.Hex() == event.Address &&
-			nonce.Cmp(iter.Event.Nonce) == 0 {
+			nonce.Cmp(iter.Event.Nonce) == 0 &&
+			iter.Event.Raw.TxHash.Hex() == event.TxHash {
 			// now we know the event is OK,
 			// just need to check for confirmations
 			return o.ethConfirmations.Check(event.BlockNumber)
@@ -245,7 +247,8 @@ func (o *OnChainVerifier) filterSignerRemoved(
 		if iter.Event.Raw.BlockNumber == event.BlockNumber &&
 			uint64(iter.Event.Raw.Index) == event.LogIndex &&
 			iter.Event.OldSigner.Hex() == event.Address &&
-			nonce.Cmp(iter.Event.Nonce) == 0 {
+			nonce.Cmp(iter.Event.Nonce) == 0 &&
+			iter.Event.Raw.TxHash.Hex() == event.TxHash {
 			// now we know the event is OK,
 			// just need to check for confirmations
 			return o.ethConfirmations.Check(event.BlockNumber)

@@ -504,73 +504,73 @@ func (m *MockERC20BridgeView) EXPECT() *MockERC20BridgeViewMockRecorder {
 }
 
 // FindAssetLimitsUpdated mocks base method.
-func (m *MockERC20BridgeView) FindAssetLimitsUpdated(arg0 *types.ERC20AssetLimitsUpdated, arg1, arg2 uint64, arg3 string) error {
+func (m *MockERC20BridgeView) FindAssetLimitsUpdated(arg0 *types.ERC20AssetLimitsUpdated, arg1, arg2 uint64, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAssetLimitsUpdated", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "FindAssetLimitsUpdated", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // FindAssetLimitsUpdated indicates an expected call of FindAssetLimitsUpdated.
-func (mr *MockERC20BridgeViewMockRecorder) FindAssetLimitsUpdated(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockERC20BridgeViewMockRecorder) FindAssetLimitsUpdated(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAssetLimitsUpdated", reflect.TypeOf((*MockERC20BridgeView)(nil).FindAssetLimitsUpdated), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAssetLimitsUpdated", reflect.TypeOf((*MockERC20BridgeView)(nil).FindAssetLimitsUpdated), arg0, arg1, arg2, arg3, arg4)
 }
 
 // FindAssetList mocks base method.
-func (m *MockERC20BridgeView) FindAssetList(arg0 *types.ERC20AssetList, arg1, arg2 uint64) error {
+func (m *MockERC20BridgeView) FindAssetList(arg0 *types.ERC20AssetList, arg1, arg2 uint64, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindAssetList", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "FindAssetList", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // FindAssetList indicates an expected call of FindAssetList.
-func (mr *MockERC20BridgeViewMockRecorder) FindAssetList(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockERC20BridgeViewMockRecorder) FindAssetList(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAssetList", reflect.TypeOf((*MockERC20BridgeView)(nil).FindAssetList), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAssetList", reflect.TypeOf((*MockERC20BridgeView)(nil).FindAssetList), arg0, arg1, arg2, arg3)
 }
 
 // FindBridgeResumed mocks base method.
-func (m *MockERC20BridgeView) FindBridgeResumed(arg0 *types.ERC20EventBridgeResumed, arg1, arg2 uint64) error {
+func (m *MockERC20BridgeView) FindBridgeResumed(arg0 *types.ERC20EventBridgeResumed, arg1, arg2 uint64, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindBridgeResumed", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "FindBridgeResumed", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // FindBridgeResumed indicates an expected call of FindBridgeResumed.
-func (mr *MockERC20BridgeViewMockRecorder) FindBridgeResumed(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockERC20BridgeViewMockRecorder) FindBridgeResumed(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindBridgeResumed", reflect.TypeOf((*MockERC20BridgeView)(nil).FindBridgeResumed), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindBridgeResumed", reflect.TypeOf((*MockERC20BridgeView)(nil).FindBridgeResumed), arg0, arg1, arg2, arg3)
 }
 
 // FindBridgeStopped mocks base method.
-func (m *MockERC20BridgeView) FindBridgeStopped(arg0 *types.ERC20EventBridgeStopped, arg1, arg2 uint64) error {
+func (m *MockERC20BridgeView) FindBridgeStopped(arg0 *types.ERC20EventBridgeStopped, arg1, arg2 uint64, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindBridgeStopped", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "FindBridgeStopped", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // FindBridgeStopped indicates an expected call of FindBridgeStopped.
-func (mr *MockERC20BridgeViewMockRecorder) FindBridgeStopped(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockERC20BridgeViewMockRecorder) FindBridgeStopped(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindBridgeStopped", reflect.TypeOf((*MockERC20BridgeView)(nil).FindBridgeStopped), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindBridgeStopped", reflect.TypeOf((*MockERC20BridgeView)(nil).FindBridgeStopped), arg0, arg1, arg2, arg3)
 }
 
 // FindDeposit mocks base method.
-func (m *MockERC20BridgeView) FindDeposit(arg0 *types.ERC20Deposit, arg1, arg2 uint64, arg3 string) error {
+func (m *MockERC20BridgeView) FindDeposit(arg0 *types.ERC20Deposit, arg1, arg2 uint64, arg3, arg4 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindDeposit", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "FindDeposit", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // FindDeposit indicates an expected call of FindDeposit.
-func (mr *MockERC20BridgeViewMockRecorder) FindDeposit(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockERC20BridgeViewMockRecorder) FindDeposit(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeposit", reflect.TypeOf((*MockERC20BridgeView)(nil).FindDeposit), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindDeposit", reflect.TypeOf((*MockERC20BridgeView)(nil).FindDeposit), arg0, arg1, arg2, arg3, arg4)
 }
 
 // MockEthereumEventSource is a mock of EthereumEventSource interface.

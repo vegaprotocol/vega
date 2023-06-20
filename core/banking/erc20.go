@@ -34,11 +34,11 @@ var (
 )
 
 type ERC20BridgeView interface {
-	FindAssetList(al *types.ERC20AssetList, blockNumber, logIndex uint64) error
-	FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64) error
-	FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64) error
-	FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string) error
-	FindAssetLimitsUpdated(update *types.ERC20AssetLimitsUpdated, blockNumber uint64, logIndex uint64, ethAssetAddress string) error
+	FindAssetList(al *types.ERC20AssetList, blockNumber, logIndex uint64, txHash string) error
+	FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64, txHash string) error
+	FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64, txHash string) error
+	FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string, txHash string) error
+	FindAssetLimitsUpdated(update *types.ERC20AssetLimitsUpdated, blockNumber uint64, logIndex uint64, ethAssetAddress string, txHash string) error
 }
 
 func (e *Engine) EnableERC20(
