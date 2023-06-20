@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -323,8 +324,9 @@ type MatchingBook struct {
 }
 
 type ExecutionMarkets struct {
-	Markets     []*ExecMarket
-	SpotMarkets []*ExecSpotMarket
+	Markets        []*ExecMarket
+	SpotMarkets    []*ExecSpotMarket
+	SettledMarkets []*CPMarketState
 }
 
 type ExecMarket struct {
@@ -3215,9 +3217,15 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 		spots = append(spots, ExecSpotMarketFromProto(m))
 	}
 
+	settled := make([]*CPMarketState, 0, len(em.SettledMarkets))
+	for _, m := range em.SettledMarkets {
+		settled = append(settled, NewMarketStateFromProto(m))
+	}
+
 	return &ExecutionMarkets{
-		Markets:     mkts,
-		SpotMarkets: spots,
+		Markets:        mkts,
+		SpotMarkets:    spots,
+		SettledMarkets: settled,
 	}
 }
 
@@ -3230,9 +3238,14 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 	for _, m := range e.SpotMarkets {
 		spots = append(spots, m.IntoProto())
 	}
+	settled := make([]*checkpoint.MarketState, 0, len(e.SettledMarkets))
+	for _, m := range e.SettledMarkets {
+		settled = append(settled, m.IntoProto())
+	}
 	return &snapshot.ExecutionMarkets{
-		Markets:     mkts,
-		SpotMarkets: spots,
+		Markets:        mkts,
+		SpotMarkets:    spots,
+		SettledMarkets: settled,
 	}
 }
 

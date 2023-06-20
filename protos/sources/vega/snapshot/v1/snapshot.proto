@@ -477,6 +477,7 @@ message PeggedOrders {
 message ExecutionMarkets {
   repeated Market markets = 1;
   repeated SpotMarket spot_markets = 2;
+  repeated vega.checkpoint.v1.MarketState settled_markets = 3;
 }
 
 message Position {

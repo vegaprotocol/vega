@@ -15,6 +15,7 @@ package execution
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/execution/future"
@@ -148,11 +149,23 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 
 func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, err error) {
 	mkts, pvds := e.marketsStates()
+	cpStates := make([]*types.CPMarketState, 0, len(e.marketCPStates))
+	for _, cp := range e.marketCPStates {
+		if cp.Market != nil {
+			cpy := cp
+			cpStates = append(cpStates, cpy)
+		}
+	}
+	// ensure the states are sorted
+	sort.SliceStable(cpStates, func(i, j int) bool {
+		return cpStates[i].Market.ID > cpStates[j].Market.ID
+	})
 
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
-				Markets: mkts,
+				Markets:        mkts,
+				SettledMarkets: cpStates,
 			},
 		},
 	}
@@ -193,6 +206,11 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		providers, err := e.restoreMarketsStates(ctx, pl.ExecutionMarkets.Markets)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
+		}
+		// restore settled market state
+		for _, m := range pl.ExecutionMarkets.SettledMarkets {
+			cpy := m
+			e.marketCPStates[m.Market.ID] = cpy
 		}
 		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
 		return providers, err
