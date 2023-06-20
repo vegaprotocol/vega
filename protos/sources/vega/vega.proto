@@ -50,7 +50,7 @@ message StopOrder {
   // Strategy to adopt if the expiry time is reached.
   optional ExpiryStrategy expiry_strategy = 4;
   // Trigger direction for this stop order.
-  optional TriggerDirection trigger_direction = 5;
+  TriggerDirection trigger_direction = 5;
   // Status of the stop order.
   Status status = 6;
   // Creation time of the stop order.
@@ -59,8 +59,8 @@ message StopOrder {
   optional int64 updated_at = 8;
   // ID of the order created once the trigger is hit.
   string order_id = 9;
-  // Order to be submitted once the trigger is hit.
-  // OrderSubmission order_submission = 10;
+  // The party that submitted this stop order
+  string party = 10;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
