@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -143,6 +144,7 @@ type Market struct {
 	succeeded       bool
 
 	maxStopOrdersPerParties *num.Uint
+	stopOrders              *stoporders.Pool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -289,6 +291,7 @@ func NewMarket(
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
 		maxStopOrdersPerParties:   num.UintZero(),
+		stopOrders:                stoporders.New(log),
 	}
 
 	assets, _ := mkt.GetAssets()
