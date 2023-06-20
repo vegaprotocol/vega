@@ -46,6 +46,7 @@ import (
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -1208,7 +1209,7 @@ func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) er
 	}
 
 	maxBatchSize := app.maxBatchSize.Load()
-	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions))
+	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions) + len(bmi.StopOrdersSubmission) + len(bmi.StopOrdersCancellation))
 	if size > maxBatchSize {
 		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
 	}
@@ -1329,7 +1330,15 @@ func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, det
 
 	// Submit the create order request to the execution engine
 	idgen := idgeneration.New(deterministicID)
-	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen)
+	var fallsBelow, risesAbove *string
+	if os.FallsBelow != nil {
+		fallsBelow = ptr.From(idgen.NextID())
+	}
+	if os.RisesAbove != nil {
+		risesAbove = ptr.From(idgen.NextID())
+	}
+
+	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
 	if err != nil {
 		app.log.Error("could not submit stop order",
 			logging.StopOrderSubmission(os), logging.Error(err))
