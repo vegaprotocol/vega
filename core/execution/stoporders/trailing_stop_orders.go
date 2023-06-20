@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/google/btree"
 	"golang.org/x/exp/slices"
 )
@@ -53,6 +54,93 @@ func NewTrailingStopOrders() *TrailingStopOrders {
 		risesAbove: btree.NewG(2, lessFuncOffsetsAtPrice),
 		fallsBelow: btree.NewG(2, lessFuncOffsetsAtPrice),
 	}
+}
+
+func NewTrailingStopOrdersFromProto(p *v1.TrailingStopOrders) *TrailingStopOrders {
+	tso := NewTrailingStopOrders()
+
+	if len(p.LastSeenPrice) > 0 {
+		var overflow bool
+		tso.lastSeenPrice, overflow = num.UintFromString(p.LastSeenPrice, 10)
+		if overflow {
+			panic("lastSeenPrice should always be valid")
+		}
+	}
+
+	for _, v := range p.FallsBellow {
+		price, overflow := num.UintFromString(v.Price, 10)
+		if overflow {
+			panic(fmt.Sprintf("invalid uint from snapshot, would overflow: %s", v.Price))
+		}
+		for _, offset := range v.Offsets {
+			off, err := num.DecimalFromString(offset.Offset)
+			if err != nil {
+				panic(fmt.Sprintf("invalid decimal from snapshot: %s", offset.Offset))
+			}
+			for _, oid := range offset.Orders {
+				tso.insertAtPrice(
+					oid, off, price, types.StopOrderTriggerDirectionFallsBelow)
+			}
+		}
+	}
+
+	for _, v := range p.RisesAbove {
+		price, overflow := num.UintFromString(v.Price, 10)
+		if overflow {
+			panic(fmt.Sprintf("invalid uint from snapshot, would overflow: %s", v.Price))
+		}
+		for _, offset := range v.Offsets {
+			off, err := num.DecimalFromString(offset.Offset)
+			if err != nil {
+				panic(fmt.Sprintf("invalid decimal from snapshot: %s", offset.Offset))
+			}
+			for _, oid := range offset.Orders {
+				tso.insertAtPrice(
+					oid, off, price, types.StopOrderTriggerDirectionRisesAbove)
+			}
+		}
+	}
+
+	return tso
+}
+
+func (p *TrailingStopOrders) ToProto() *v1.TrailingStopOrders {
+	var lastSeenPrice string
+	if p.lastSeenPrice != nil {
+		lastSeenPrice = p.lastSeenPrice.String()
+	}
+
+	return &v1.TrailingStopOrders{
+		LastSeenPrice: lastSeenPrice,
+		FallsBellow:   p.serialize(p.fallsBelow),
+		RisesAbove:    p.serialize(p.risesAbove),
+	}
+}
+
+func (p *TrailingStopOrders) serialize(
+	tree *btree.BTreeG[*offsetsAtPrice],
+) []*v1.OffsetsAtPrice {
+	out := []*v1.OffsetsAtPrice{}
+
+	tree.Ascend(func(item *offsetsAtPrice) bool {
+		offsets := []*v1.OrdersAtOffset{}
+
+		item.offsets.Ascend(func(item *ordersAtOffset) bool {
+			offsets = append(offsets, &v1.OrdersAtOffset{
+				Offset: item.offset.String(),
+				Orders: slices.Clone(item.orders),
+			})
+			return true
+		})
+
+		out = append(out, &v1.OffsetsAtPrice{
+			Price:   item.price.String(),
+			Offsets: offsets,
+		})
+		return true
+	})
+
+	return out
 }
 
 func (p *TrailingStopOrders) PriceUpdated(newPrice *num.Uint) []string {
@@ -207,6 +295,19 @@ func (p *TrailingStopOrders) Insert(
 		p.insertOrUpdateOffsetAtPrice(p.fallsBelow, id, p.lastSeenPrice.Clone(), offset)
 	case types.StopOrderTriggerDirectionRisesAbove:
 		p.insertOrUpdateOffsetAtPrice(p.risesAbove, id, p.lastSeenPrice.Clone(), offset)
+	}
+}
+
+func (p *TrailingStopOrders) insertAtPrice(
+	id string, offset num.Decimal, price *num.Uint, direction types.StopOrderTriggerDirection,
+) {
+	p.orders[id] = orderAtOffsetStat{offset, direction}
+
+	switch direction {
+	case types.StopOrderTriggerDirectionFallsBelow:
+		p.insertOrUpdateOffsetAtPrice(p.fallsBelow, id, price.Clone(), offset)
+	case types.StopOrderTriggerDirectionRisesAbove:
+		p.insertOrUpdateOffsetAtPrice(p.risesAbove, id, price.Clone(), offset)
 	}
 }
 
