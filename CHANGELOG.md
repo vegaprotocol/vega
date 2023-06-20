@@ -29,6 +29,7 @@
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
 - [8471](https://github.com/vegaprotocol/vega/issues/8471) - Restore network parameters from snapshot without validation to avoid order dependence.
+- [GHSA-8rc9-vxjh-qjf2](https://github.com/vegaprotocol/vega/security/advisories/GHSA-8rc9-vxjh-qjf2) - Validators able to submit duplicate transactions
 
 ## 0.71.5
 
