@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type StopOrderExpiryStrategy = vega.StopOrder_ExpiryStrategy
@@ -147,7 +148,9 @@ func StopOrderSetupFromProto(
 		return nil, err
 	}
 
-	trigger := &StopOrderTrigger{}
+	trigger := &StopOrderTrigger{
+		Direction: direction,
+	}
 	switch t := psetup.Trigger.(type) {
 	case *commandspb.StopOrderSetup_Price:
 		var overflow bool
@@ -257,6 +260,93 @@ type StopOrder struct {
 	Status          StopOrderStatus
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+}
+
+func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
+	sub, err := NewOrderSubmissionFromProto(p.Submission)
+	if err != nil {
+		panic("submission should always be valid here")
+	}
+
+	trigger := &StopOrderTrigger{
+		Direction: p.StopOrder.TriggerDirection,
+	}
+	switch t := p.StopOrder.Trigger.(type) {
+	case *vega.StopOrder_Price:
+		var overflow bool
+		// checking here, but seeing that the payload have been validated down
+		// the line there's little to no changes this is invalid
+		if trigger.price, overflow = num.UintFromString(t.Price, 10); overflow {
+			panic("invalid trigger price")
+		}
+	case *vega.StopOrder_TrailingPercentOffset:
+		var err error
+		// same stuff here
+		if trigger.trailingPercentOffset, err = num.DecimalFromString(t.TrailingPercentOffset); err != nil {
+			panic(err)
+		}
+	}
+
+	expiry := &StopOrderExpiry{}
+	if p.StopOrder.ExpiresAt != nil {
+		expiry.ExpiresAt = ptr.From(time.Unix(*p.StopOrder.ExpiresAt, 0))
+		expiry.ExpiryStrategy = p.StopOrder.ExpiryStrategy
+	}
+
+	return &StopOrder{
+		ID:              p.StopOrder.Id,
+		Party:           p.StopOrder.Party,
+		OCOLinkID:       ptr.UnBox(p.StopOrder.OcoLinkId),
+		Status:          p.StopOrder.Status,
+		CreatedAt:       time.Unix(p.StopOrder.CreatedAt, 0),
+		UpdatedAt:       time.Unix(ptr.UnBox(p.StopOrder.UpdatedAt), 0),
+		OrderSubmission: sub,
+		Trigger:         trigger,
+		Expiry:          expiry,
+	}
+}
+
+func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
+	var updatedAt *int64
+	if s.UpdatedAt != (time.Time{}) {
+		updatedAt = ptr.From(s.UpdatedAt.Unix())
+	}
+
+	var ocoLinkID *string
+	if len(s.OCOLinkID) > 0 {
+		ocoLinkID = ptr.From(s.OCOLinkID)
+	}
+
+	ev := &eventspb.StopOrderEvent{
+		Submission: s.OrderSubmission.IntoProto(),
+		StopOrder: &vega.StopOrder{
+			Id:               s.ID,
+			Party:            s.Party,
+			OcoLinkId:        ocoLinkID,
+			Status:           s.Status,
+			CreatedAt:        s.CreatedAt.Unix(),
+			UpdatedAt:        updatedAt,
+			TriggerDirection: s.Trigger.Direction,
+		},
+	}
+
+	if s.Expiry.Expires() {
+		ev.StopOrder.ExpiresAt = ptr.From(s.Expiry.ExpiresAt.Unix())
+		ev.StopOrder.ExpiryStrategy = s.Expiry.ExpiryStrategy
+	}
+
+	switch {
+	case s.Trigger.IsPrice():
+		ev.StopOrder.Trigger = &vega.StopOrder_Price{
+			Price: s.Trigger.Price().String(),
+		}
+	case s.Trigger.IsTrailingPercenOffset():
+		ev.StopOrder.Trigger = &vega.StopOrder_TrailingPercentOffset{
+			TrailingPercentOffset: s.Trigger.TrailingPercentOffset().String(),
+		}
+	}
+
+	return ev
 }
 
 type StopOrdersCancellation struct {

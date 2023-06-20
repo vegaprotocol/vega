@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"golang.org/x/exp/slices"
 
 	"github.com/google/btree"
@@ -43,6 +44,53 @@ func NewPricedStopOrders() *PricedStopOrders {
 		fallsBelow: btree.NewG(2, lessFuncOrdersAtPrice),
 		risesAbove: btree.NewG(2, lessFuncOrdersAtPrice),
 	}
+}
+
+func NewPricedStopOrdersFromProto(p *v1.PricedStopOrders) *PricedStopOrders {
+	pso := NewPricedStopOrders()
+
+	for _, v := range p.FallsBellow {
+		for _, oid := range v.Orders {
+			price, overflow := num.UintFromString(v.Price, 10)
+			if overflow {
+				panic(fmt.Sprintf("invalid uint from snapshot, would overflow: %s", v.Price))
+			}
+			pso.Insert(oid, price, types.StopOrderTriggerDirectionFallsBelow)
+		}
+	}
+
+	for _, v := range p.RisesAbove {
+		for _, oid := range v.Orders {
+			price, overflow := num.UintFromString(v.Price, 10)
+			if overflow {
+				panic(fmt.Sprintf("invalid uint from snapshot, would overflow: %s", v.Price))
+			}
+			pso.Insert(oid, price, types.StopOrderTriggerDirectionRisesAbove)
+		}
+	}
+
+	return pso
+}
+
+func (p *PricedStopOrders) ToProto() *v1.PricedStopOrders {
+	return &v1.PricedStopOrders{
+		FallsBellow: p.serialize(p.fallsBelow),
+		RisesAbove:  p.serialize(p.risesAbove),
+	}
+}
+
+func (p *PricedStopOrders) serialize(tree *btree.BTreeG[*ordersAtPrice]) []*v1.OrdersAtPrice {
+	out := []*v1.OrdersAtPrice{}
+
+	tree.Ascend(func(item *ordersAtPrice) bool {
+		out = append(out, &v1.OrdersAtPrice{
+			Price:  item.price.String(),
+			Orders: slices.Clone(item.orders),
+		})
+		return true
+	})
+
+	return out
 }
 
 func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
