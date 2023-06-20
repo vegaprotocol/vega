@@ -148,7 +148,9 @@ func StopOrderSetupFromProto(
 		return nil, err
 	}
 
-	trigger := &StopOrderTrigger{}
+	trigger := &StopOrderTrigger{
+		Direction: direction,
+	}
 	switch t := psetup.Trigger.(type) {
 	case *commandspb.StopOrderSetup_Price:
 		var overflow bool
@@ -266,7 +268,9 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		panic("submission should always be valid here")
 	}
 
-	trigger := &StopOrderTrigger{}
+	trigger := &StopOrderTrigger{
+		Direction: p.StopOrder.TriggerDirection,
+	}
 	switch t := p.StopOrder.Trigger.(type) {
 	case *vega.StopOrder_Price:
 		var overflow bool

@@ -1,6 +1,7 @@
 package stoporders_test
 
 import (
+	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
@@ -47,4 +48,9 @@ func TestStopOrdersSnapshot(t *testing.T) {
 
 	pool2 := stoporders.NewFromProto(log, deserialized)
 	assert.True(t, pool.Equal(pool2))
+
+	serialized2 := pool2.ToProto()
+	buf2, err := proto.Marshal(serialized2)
+	assert.NoError(t, err)
+	assert.Equal(t, hex.EncodeToString(buf), hex.EncodeToString(buf2))
 }
