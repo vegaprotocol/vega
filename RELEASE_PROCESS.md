@@ -103,7 +103,7 @@ Once the above steps have been taken for the required type of release, the follo
 To ensure no confusion between testnet (pre-release) versions and the versions deemed ready for the validators (latest), the following pattern will be used:
 
 - Mainnet ready "latest" versions: `X.Y.Z`
-- Testnet release candidate versions: `X.Y.Z-preview.n`
+- Staging / Testnet release candidate versions: `X.Y.Z-preview.n`
 
 Where `n` increments with each pre-release candidate version, and therefore:
 
