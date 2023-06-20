@@ -28,8 +28,8 @@ func makeIceberg(t *testing.T, orderbook *tstOB, market string, id string, side 
 	t.Helper()
 	order := getOrder(t, market, id, side, price, partyid, size)
 	order.IcebergOrder = &types.IcebergOrder{
-		InitialPeakSize: 1,
-		MinimumPeakSize: 1,
+		PeakSize:           1,
+		MinimumVisibleSize: 1,
 	}
 	_, err := orderbook.ob.SubmitOrder(order)
 	assert.NoError(t, err)

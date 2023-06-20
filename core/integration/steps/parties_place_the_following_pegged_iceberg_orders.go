@@ -42,8 +42,8 @@ func PartiesPlaceTheFollowingPeggedIcebergOrders(
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
 			IcebergOrder: &types.IcebergOrder{
-				InitialPeakSize: row.InitialPeak(),
-				MinimumPeakSize: row.MinimumPeak(),
+				PeakSize:           row.InitialPeak(),
+				MinimumVisibleSize: row.MinimumPeak(),
 			},
 			PeggedOrder: &types.PeggedOrder{
 				Reference: row.PeggedReference(),
@@ -90,8 +90,8 @@ func parseSubmitPeggedIcebergOrderTable(table *godog.Table) []RowWrapper {
 		"volume",
 		"type",
 		"tif",
-		"initial peak",
-		"minimum peak",
+		"peak size",
+		"minimum visible size",
 		"pegged reference",
 		"offset",
 	}, []string{
@@ -176,11 +176,11 @@ func (r submitPeggedIcebergOrderRow) Only() Only {
 }
 
 func (r submitPeggedIcebergOrderRow) MinimumPeak() uint64 {
-	return r.row.MustU64("minimum peak")
+	return r.row.MustU64("minimum visible size")
 }
 
 func (r submitPeggedIcebergOrderRow) InitialPeak() uint64 {
-	return r.row.MustU64("initial peak")
+	return r.row.MustU64("peak size")
 }
 
 func (r submitPeggedIcebergOrderRow) PeggedReference() types.PeggedReference {

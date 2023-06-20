@@ -35,7 +35,7 @@ message StopOrder {
     // Stopped by the network, e.g: OCO on the other side has been triggered
     STATUS_STOPPED = 3;
     // Stop order has been triggered and generated an order
-    STATUS_TRIGGERRED = 4;
+    STATUS_TRIGGERED = 4;
     // Stop order has expired
     STATUS_EXPIRED = 5;
   }
@@ -176,10 +176,10 @@ message PeggedOrder {
 
 // Details of an iceberg order
 message IcebergOrder {
-  // Size of the order that will be made visible if the iceberg order is refreshed after a trade has occurred.
-  uint64 initial_peak_size = 1;
-  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
-  uint64 minimum_peak_size = 2;
+  // Size of the order that will be made visible if the iceberg order is replenished after trading.
+  uint64 peak_size = 1;
+  // If the visible size of the order falls below this value, it will be replenished back to the peak size using the reserved amount.
+  uint64 minimum_visible_size = 2;
   // Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed.
   uint64 reserved_remaining = 3;
 }

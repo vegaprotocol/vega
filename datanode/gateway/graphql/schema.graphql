@@ -27,10 +27,10 @@ type PeggedOrder {
 
 "Details of the iceberg order"
 type IcebergOrder {
-  "Size of the order that will be made visible if the iceberg order is refreshed after a trade has occurred"
-  initialPeakSize: String!
-  "Threshold at which the order's visible remaining size will be refreshed back to its initial peak size"
-  minimumPeakSize: String!
+  "Size of the order that will be made visible if the iceberg order is replenished after trading"
+  peakSize: String!
+  "If the visible size of the order falls below this value, it will be replenished back to the peak size using the reserved amount"
+  minimumVisibleSize: String!
   "Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed"
   reservedRemaining: String!
 }
@@ -2373,7 +2373,7 @@ type Order {
   reduceOnly: Boolean
 
   "Details of an iceberg order"
-  IcebergOrder: IcebergOrder
+  icebergOrder: IcebergOrder
 }
 
 "An order update in Vega, if active it will be on the order book for the market"

@@ -45,8 +45,8 @@ const (
 	// Stopped by the network, e.g: OCO other side has been triggered.
 	StopOrderStatusStopped = vega.StopOrder_STATUS_STOPPED
 	// Stop order has been triggered and generated an order.
-	StopOrderStatusTiggered = vega.StopOrder_STATUS_TRIGGERRED
-	// Stop order has been expired.
+	StopOrderStatusTriggered = vega.StopOrder_STATUS_TRIGGERED
+	// Stop order has expired.
 	StopOrderStatusExpired = vega.StopOrder_STATUS_EXPIRED
 )
 
