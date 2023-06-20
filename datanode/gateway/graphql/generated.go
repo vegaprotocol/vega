@@ -274,6 +274,7 @@ type ComplexityRoot struct {
 		High               func(childComplexity int) int
 		LastUpdateInPeriod func(childComplexity int) int
 		Low                func(childComplexity int) int
+		Notional           func(childComplexity int) int
 		Open               func(childComplexity int) int
 		PeriodStart        func(childComplexity int) int
 		Volume             func(childComplexity int) int
@@ -1965,6 +1966,7 @@ type CandleResolver interface {
 	LastUpdateInPeriod(ctx context.Context, obj *v2.Candle) (int64, error)
 
 	Volume(ctx context.Context, obj *v2.Candle) (string, error)
+	Notional(ctx context.Context, obj *v2.Candle) (string, error)
 }
 type CoreSnapshotDataResolver interface {
 	BlockHeight(ctx context.Context, obj *v1.CoreSnapshotData) (string, error)
@@ -3104,6 +3106,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Candle.Low(childComplexity), true
+
+	case "Candle.notional":
+		if e.complexity.Candle.Notional == nil {
+			break
+		}
+
+		return e.complexity.Candle.Notional(childComplexity), true
 
 	case "Candle.open":
 		if e.complexity.Candle.Open == nil {
@@ -16952,6 +16961,50 @@ func (ec *executionContext) fieldContext_Candle_volume(ctx context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Candle_notional(ctx context.Context, field graphql.CollectedField, obj *v2.Candle) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Candle_notional(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Candle().Notional(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Candle_notional(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Candle",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CandleDataConnection_edges(ctx context.Context, field graphql.CollectedField, obj *v2.CandleDataConnection) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CandleDataConnection_edges(ctx, field)
 	if err != nil {
@@ -17103,6 +17156,8 @@ func (ec *executionContext) fieldContext_CandleEdge_node(ctx context.Context, fi
 				return ec.fieldContext_Candle_close(ctx, field)
 			case "volume":
 				return ec.fieldContext_Candle_volume(ctx, field)
+			case "notional":
+				return ec.fieldContext_Candle_notional(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Candle", field.Name)
 		},
@@ -58432,6 +58487,8 @@ func (ec *executionContext) fieldContext_Subscription_candles(ctx context.Contex
 				return ec.fieldContext_Candle_close(ctx, field)
 			case "volume":
 				return ec.fieldContext_Candle_volume(ctx, field)
+			case "notional":
+				return ec.fieldContext_Candle_notional(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Candle", field.Name)
 		},
@@ -69554,6 +69611,26 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Candle_volume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "notional":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Candle_notional(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

@@ -12,6 +12,7 @@
 
 ### 🛠 Improvements
 
+- [8409](https://github.com/vegaprotocol/vega/issues/8409) - Add `total notional value` to the candles.
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`

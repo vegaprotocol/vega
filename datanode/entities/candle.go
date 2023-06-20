@@ -32,6 +32,7 @@ type Candle struct {
 	High               decimal.Decimal
 	Low                decimal.Decimal
 	Volume             uint64
+	Notional           uint64
 }
 
 func (c *Candle) ToV1CandleProto(interval vega.Interval) (*vega.Candle, error) {
@@ -43,6 +44,7 @@ func (c *Candle) ToV1CandleProto(interval vega.Interval) (*vega.Candle, error) {
 		Open:      c.Open.String(),
 		Close:     c.Close.String(),
 		Volume:    c.Volume,
+		Notional:  c.Notional,
 		Interval:  interval,
 	}, nil
 }
@@ -56,6 +58,7 @@ func (c *Candle) ToV2CandleProto() *v2.Candle {
 		Open:       c.Open.String(),
 		Close:      c.Close.String(),
 		Volume:     c.Volume,
+		Notional:   c.Notional,
 	}
 }
 
