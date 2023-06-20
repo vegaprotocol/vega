@@ -12,7 +12,8 @@
 
 ### 🛠 Improvements
 
-- [7684](https://github.com/vegaprotocol/vega/issues/7684) - Add filters for `Block Explorer` transactions `API` for multiple command types (inclusive and exclusive) and multiple parties 
+- [7684](https://github.com/vegaprotocol/vega/issues/7684) - Add filters for `Block Explorer` transactions `API` for multiple command types (inclusive and exclusive) and multiple parties
+- [7592](https://github.com/vegaprotocol/vega/issues/7592) - Add `block` parameter to `epoch` query.
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
 - [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
 - [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
@@ -79,6 +80,7 @@
 - [8429](https://github.com/vegaprotocol/vega/issues/8429) - Set order status to stopped if an iceberg order instantly causes a wash trade
 - [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
 - [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
+- [8536](https://github.com/vegaprotocol/vega/issues/8536) - If liquidity fee account is empty do not create 0 amount transfers to insurance pool when clearing market
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
 - [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
 - [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription

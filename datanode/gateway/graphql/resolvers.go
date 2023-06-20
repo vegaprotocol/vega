@@ -1212,8 +1212,11 @@ func (r *myQueryResolver) EthereumKeyRotations(ctx context.Context, nodeID *stri
 	return resp.KeyRotations, nil
 }
 
-func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {
-	var epochID *uint64
+func (r *myQueryResolver) Epoch(ctx context.Context, id *string, block *string) (*types.Epoch, error) {
+	var (
+		epochID, blockHeight *uint64
+		err                  error
+	)
 	if id != nil {
 		parsedID, err := strconv.ParseUint(*id, 10, 64)
 		if err != nil {
@@ -1223,7 +1226,19 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 		epochID = &parsedID
 	}
 
-	resp, err := r.tradingDataClientV2.GetEpoch(ctx, &v2.GetEpochRequest{Id: epochID})
+	if block != nil {
+		parsedHeight, err := strconv.ParseUint(*block, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		blockHeight = &parsedHeight
+	}
+
+	req := &v2.GetEpochRequest{
+		Id:    epochID,
+		Block: blockHeight,
+	}
+	resp, err := r.tradingDataClientV2.GetEpoch(ctx, req)
 	if err != nil {
 		return nil, err
 	}
