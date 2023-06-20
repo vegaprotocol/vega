@@ -84,40 +84,42 @@ type Engine struct {
 }
 
 type netParamsValues struct {
-	shapesMaxSize                   int64
-	feeDistributionTimeStep         time.Duration
-	marketValueWindowLength         time.Duration
-	suppliedStakeToObligationFactor num.Decimal
-	infrastructureFee               num.Decimal
-	makerFee                        num.Decimal
-	scalingFactors                  *types.ScalingFactors
-	maxLiquidityFee                 num.Decimal
-	bondPenaltyFactor               num.Decimal
-	auctionMinDuration              time.Duration
-	probabilityOfTradingTauScaling  num.Decimal
-	minProbabilityOfTradingLPOrders num.Decimal
-	minLpStakeQuantumMultiple       num.Decimal
-	marketCreationQuantumMultiple   num.Decimal
-	markPriceUpdateMaximumFrequency time.Duration
+	shapesMaxSize                        int64
+	feeDistributionTimeStep              time.Duration
+	marketValueWindowLength              time.Duration
+	suppliedStakeToObligationFactor      num.Decimal
+	infrastructureFee                    num.Decimal
+	makerFee                             num.Decimal
+	scalingFactors                       *types.ScalingFactors
+	maxLiquidityFee                      num.Decimal
+	bondPenaltyFactor                    num.Decimal
+	auctionMinDuration                   time.Duration
+	probabilityOfTradingTauScaling       num.Decimal
+	minProbabilityOfTradingLPOrders      num.Decimal
+	minLpStakeQuantumMultiple            num.Decimal
+	marketCreationQuantumMultiple        num.Decimal
+	markPriceUpdateMaximumFrequency      time.Duration
+	marketPartiesMaximumStopOrdersUpdate *num.Uint
 }
 
 func defaultNetParamsValues() netParamsValues {
 	return netParamsValues{
-		shapesMaxSize:                   -1,
-		feeDistributionTimeStep:         -1,
-		marketValueWindowLength:         -1,
-		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
-		infrastructureFee:               num.DecimalFromInt64(-1),
-		makerFee:                        num.DecimalFromInt64(-1),
-		scalingFactors:                  nil,
-		maxLiquidityFee:                 num.DecimalFromInt64(-1),
-		bondPenaltyFactor:               num.DecimalFromInt64(-1),
-		auctionMinDuration:              -1,
-		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
-		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
-		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
-		marketCreationQuantumMultiple:   num.DecimalFromInt64(-1),
-		markPriceUpdateMaximumFrequency: 5 * time.Second, // default is 5 seconds, should come from net params though
+		shapesMaxSize:                        -1,
+		feeDistributionTimeStep:              -1,
+		marketValueWindowLength:              -1,
+		suppliedStakeToObligationFactor:      num.DecimalFromInt64(-1),
+		infrastructureFee:                    num.DecimalFromInt64(-1),
+		makerFee:                             num.DecimalFromInt64(-1),
+		scalingFactors:                       nil,
+		maxLiquidityFee:                      num.DecimalFromInt64(-1),
+		bondPenaltyFactor:                    num.DecimalFromInt64(-1),
+		auctionMinDuration:                   -1,
+		probabilityOfTradingTauScaling:       num.DecimalFromInt64(-1),
+		minProbabilityOfTradingLPOrders:      num.DecimalFromInt64(-1),
+		minLpStakeQuantumMultiple:            num.DecimalFromInt64(-1),
+		marketCreationQuantumMultiple:        num.DecimalFromInt64(-1),
+		markPriceUpdateMaximumFrequency:      5 * time.Second, // default is 5 seconds, should come from net params though
+		marketPartiesMaximumStopOrdersUpdate: num.UintZero(),
 	}
 }
 
@@ -572,6 +574,8 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Mark
 	if e.npv.markPriceUpdateMaximumFrequency > 0 {
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
 	}
+
+	mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, e.npv.marketPartiesMaximumStopOrdersUpdate)
 	return nil
 }
 
@@ -1277,6 +1281,20 @@ func (e *Engine) OnMarketCreationQuantumMultipleUpdate(ctx context.Context, d nu
 		)
 	}
 	e.npv.marketCreationQuantumMultiple = d
+	return nil
+}
+
+func (e *Engine) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market parties maxiumum stop orders",
+			logging.BigUint("value", u),
+		)
+	}
+	e.npv.marketPartiesMaximumStopOrdersUpdate = u
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketPartiesMaximumStopOrdersUpdate(ctx, u)
+	}
+
 	return nil
 }
 

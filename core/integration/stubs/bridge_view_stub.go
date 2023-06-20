@@ -22,22 +22,22 @@ func NewBridgeViewStub() *BridgeViewStub {
 	return &BridgeViewStub{}
 }
 
-func (*BridgeViewStub) FindAssetList(al *types.ERC20AssetList, blockNumber, logIndex uint64) error {
+func (*BridgeViewStub) FindAssetList(al *types.ERC20AssetList, blockNumber, logIndex uint64, txHash string) error {
 	return nil
 }
 
-func (*BridgeViewStub) FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64) error {
+func (*BridgeViewStub) FindBridgeStopped(al *types.ERC20EventBridgeStopped, blockNumber, logIndex uint64, txHash string) error {
 	return nil
 }
 
-func (*BridgeViewStub) FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64) error {
+func (*BridgeViewStub) FindBridgeResumed(al *types.ERC20EventBridgeResumed, blockNumber, logIndex uint64, txHash string) error {
 	return nil
 }
 
-func (*BridgeViewStub) FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string) error {
+func (*BridgeViewStub) FindDeposit(d *types.ERC20Deposit, blockNumber, logIndex uint64, ethAssetAddress string, txHash string) error {
 	return nil
 }
 
-func (*BridgeViewStub) FindAssetLimitsUpdated(w *types.ERC20AssetLimitsUpdated, blockNumber, logIndex uint64, ethAssetAddress string) error {
+func (*BridgeViewStub) FindAssetLimitsUpdated(w *types.ERC20AssetLimitsUpdated, blockNumber, logIndex uint64, ethAssetAddress string, txHash string) error {
 	return nil
 }

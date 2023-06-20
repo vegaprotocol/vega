@@ -39,8 +39,8 @@ func submitIcebergOrder(t *testing.T, book *tstOB, size, peak, minPeak uint64, a
 		Type:          types.OrderTypeLimit,
 		ExpiresAt:     10,
 		IcebergOrder: &types.IcebergOrder{
-			InitialPeakSize: peak,
-			MinimumPeakSize: minPeak,
+			PeakSize:           peak,
+			MinimumVisibleSize: minPeak,
 		},
 	}
 	confirm, err := book.SubmitOrder(o)
@@ -246,7 +246,7 @@ func TestIcebergPeakBelowMinimumNotZero(t *testing.T) {
 	iceberg, confirm := submitIcebergOrder(t, book, 100, 4, 2, true)
 	assert.Equal(t, 0, len(confirm.Trades))
 
-	// submit an order that takes the berg below its minimum peak, but is not zero
+	// submit an order that takes the berg below its minimum visible size, but is not zero
 	_, confirm = submitCrossedOrder(t, book, 3)
 	assert.Equal(t, 1, len(confirm.Trades))
 
@@ -279,7 +279,7 @@ func TestIcebergRefreshToPartialPeak(t *testing.T) {
 	_, confirm = submitCrossedOrder(t, book, 89)
 	assert.Equal(t, 1, len(confirm.Trades))
 
-	// remaining + reserved < initial peak
+	// remaining + reserved < peak size
 	assert.Equal(t, uint64(11), iceberg.Remaining)
 	assert.Equal(t, uint64(0), iceberg.IcebergOrder.ReservedRemaining)
 	assert.Equal(t, uint64(11), book.getTotalBuyVolume())
