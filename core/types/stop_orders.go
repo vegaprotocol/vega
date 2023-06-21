@@ -49,6 +49,8 @@ const (
 	StopOrderStatusTriggered = vega.StopOrder_STATUS_TRIGGERED
 	// Stop order has expired.
 	StopOrderStatusExpired = vega.StopOrder_STATUS_EXPIRED
+	// Stop order was rejected at submission.
+	StopOrderStatusRejected = vega.StopOrder_STATUS_REJECTED
 )
 
 type StopOrderExpiry struct {
@@ -257,6 +259,7 @@ type StopOrder struct {
 	Party           string
 	Market          string
 	OrderSubmission *OrderSubmission
+	OrderID         string
 	OCOLinkID       string
 	Expiry          *StopOrderExpiry
 	Trigger         *StopOrderTrigger
@@ -300,6 +303,7 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		ID:              p.StopOrder.Id,
 		Party:           p.StopOrder.PartyId,
 		Market:          p.StopOrder.MarketId,
+		OrderID:         p.StopOrder.OrderId,
 		OCOLinkID:       ptr.UnBox(p.StopOrder.OcoLinkId),
 		Status:          p.StopOrder.Status,
 		CreatedAt:       time.Unix(p.StopOrder.CreatedAt, 0),
@@ -327,6 +331,7 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 			Id:               s.ID,
 			PartyId:          s.Party,
 			MarketId:         s.Market,
+			OrderId:          s.OrderID,
 			OcoLinkId:        ocoLinkID,
 			Status:           s.Status,
 			CreatedAt:        s.CreatedAt.Unix(),

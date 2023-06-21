@@ -1338,7 +1338,7 @@ func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, det
 		risesAbove = ptr.From(idgen.NextID())
 	}
 
-	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
+	_, err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
 	if err != nil {
 		app.log.Error("could not submit stop order",
 			logging.StopOrderSubmission(os), logging.Error(err))

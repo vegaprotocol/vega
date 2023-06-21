@@ -43,6 +43,7 @@ import (
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -1297,6 +1298,153 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 		}
 	}
 	m.broker.SendBatch(evts)
+}
+
+func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
+	ctx context.Context,
+	submission *types.StopOrdersSubmission,
+	party string,
+	idgen common.IDGenerator,
+	fallsBelowID, risesAboveID *string,
+) (*types.OrderConfirmation, error) {
+	m.idgen = idgen
+	defer func() { m.idgen = nil }()
+
+	fallsBellow, risesAbove := submission.IntoStopOrders(
+		party, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
+
+	defer func() {
+		m.broker.SendBatch([]events.Event{
+			events.NewStopOrderEvent(ctx, fallsBellow),
+			events.NewStopOrderEvent(ctx, risesAbove),
+		})
+	}()
+
+	if !m.canTrade() {
+		fallsBellow.Status = types.StopOrderStatusRejected
+		risesAbove.Status = types.StopOrderStatusRejected
+		return nil, common.ErrTradingNotAllowed
+	}
+
+	// now check if that party hasn't exceeded the max amount per market
+	if m.stopOrders.CountForParty(party) >= m.maxStopOrdersPerParties.Uint64() {
+		fallsBellow.Status = types.StopOrderStatusRejected
+		risesAbove.Status = types.StopOrderStatusRejected
+		return nil, common.ErrMaxStopOrdersPerPartyReached
+	}
+
+	// now check for the parties position
+	positions := m.position.GetPositionsByParty(party)
+	if len(positions) > 1 {
+		m.log.Panic("only one position expected", logging.Int("got", len(positions)))
+	}
+
+	if len(positions) < 1 {
+		fallsBellow.Status = types.StopOrderStatusRejected
+		risesAbove.Status = types.StopOrderStatusRejected
+		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
+	}
+
+	pos := positions[0]
+
+	// now we will reject if the direction of order if is not
+	// going to close the position or potential position
+	potentialSize := pos.Size() + pos.Sell() + pos.Buy()
+	size := pos.Size()
+
+	var stopOrderSide types.Side
+	if fallsBellow != nil {
+		stopOrderSide = fallsBellow.OrderSubmission.Side
+	} else {
+		stopOrderSide = risesAbove.OrderSubmission.Side
+	}
+
+	switch stopOrderSide {
+	case types.SideBuy:
+		if potentialSize <= 0 && size <= 0 {
+			fallsBellow.Status = types.StopOrderStatusRejected
+			risesAbove.Status = types.StopOrderStatusRejected
+			return nil, common.ErrStopOrderSideNotClosingThePosition
+		}
+	case types.SideSell:
+		if potentialSize >= 0 && size >= 0 {
+			fallsBellow.Status = types.StopOrderStatusRejected
+			risesAbove.Status = types.StopOrderStatusRejected
+			return nil, common.ErrStopOrderSideNotClosingThePosition
+		}
+	}
+
+	fallsBellowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBellow),
+		m.stopOrderWouldTriggerAtSubmission(risesAbove)
+	triggered := fallsBellowTriggered || risesAboveTriggered
+
+	// if we are in an auction
+	// or no order is triggered
+	// let's just submit it straight away
+	if m.as.InAuction() || !triggered {
+		return nil, m.poolStopOrders(ctx, fallsBellow, risesAbove)
+	}
+
+	var confirmation *types.OrderConfirmation
+	var err error
+	// now would the order get trigger straight away?
+	switch {
+	case fallsBellowTriggered:
+		fallsBellow.Status = types.StopOrderStatusTriggered
+		risesAbove.Status = types.StopOrderStatusStopped
+		fallsBellow.OrderID = idgen.NextID()
+		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
+			ctx, fallsBellow.OrderSubmission, party, idgen, fallsBellow.OrderID,
+		)
+	case risesAboveTriggered:
+		risesAbove.Status = types.StopOrderStatusTriggered
+		fallsBellow.Status = types.StopOrderStatusStopped
+		risesAbove.OrderID = idgen.NextID()
+		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
+			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID,
+		)
+	}
+
+	return confirmation, err
+}
+
+func (m *Market) poolStopOrders(
+	ctx context.Context,
+	fallsBellow, risesAbove *types.StopOrder,
+) error {
+	evts := []events.Event{}
+	if fallsBellow != nil {
+		m.stopOrders.Insert(fallsBellow)
+		evts = append(evts, events.NewStopOrderEvent(ctx, fallsBellow))
+	}
+	if risesAbove != nil {
+		m.stopOrders.Insert(risesAbove)
+		evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
+	}
+
+	m.broker.SendBatch(evts)
+
+	return nil
+}
+
+func (m *Market) stopOrderWouldTriggerAtSubmission(
+	stopOrder *types.StopOrder,
+) bool {
+	if stopOrder.Trigger.IsTrailingPercenOffset() {
+		return false
+	}
+
+	switch stopOrder.Trigger.Direction {
+	case types.StopOrderTriggerDirectionFallsBelow:
+		if m.lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
+			return true
+		}
+	case types.StopOrderTriggerDirectionRisesAbove:
+		if m.lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
+			return true
+		}
+	}
+	return false
 }
 
 // SubmitOrder submits the given order.

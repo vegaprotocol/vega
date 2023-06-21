@@ -256,3 +256,12 @@ func (p *Pool) RemoveExpired(orderIDs []string) []*types.StopOrder {
 
 	return orders
 }
+
+func (p *Pool) CountForParty(party string) uint64 {
+	orders, ok := p.orders[party]
+	if !ok {
+		return 0
+	}
+
+	return uint64(len(orders))
+}

@@ -662,8 +662,31 @@ func (e *Engine) SubmitStopOrders(
 	idgen common.IDGenerator,
 	fallsBelowID *string,
 	risesAboveID *string,
-) error {
-	return errors.New("stop order submission not supported yet")
+) (*types.OrderConfirmation, error) {
+	var market string
+	if submission.FallsBelow != nil {
+		market = submission.FallsBelow.OrderSubmission.MarketID
+	} else {
+		market = submission.RisesAbove.OrderSubmission.MarketID
+	}
+
+	mkt, ok := e.markets[market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+
+	conf, err := mkt.SubmitStopOrdersWithIDGeneratorAndOrderIDs(
+		ctx, submission, party, idgen, fallsBelowID, risesAboveID)
+	if err != nil {
+		return nil, err
+	}
+
+	// not necessary going to trade on submission, could be nil
+	if conf != nil {
+		e.decrementOrderGaugeMetrics(market, conf.Order, conf.PassiveOrdersAffected)
+	}
+
+	return conf, nil
 }
 
 func (e *Engine) CancelStopOrders(

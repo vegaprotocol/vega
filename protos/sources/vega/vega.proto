@@ -38,6 +38,8 @@ message StopOrder {
     STATUS_TRIGGERED = 4;
     // Stop order has expired
     STATUS_EXPIRED = 5;
+    // Stop order was rejected at submission
+    STATUS_REJECTED = 6;
   }
 
   // ID of this stop order
