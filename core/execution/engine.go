@@ -611,6 +611,8 @@ func (e *Engine) SubmitStopOrders(
 	submission *types.StopOrdersSubmission,
 	party string,
 	idgen common.IDGenerator,
+	fallsBelowID *string,
+	risesAboveID *string,
 ) error {
 	return errors.New("stop order submission not supported yet")
 }
