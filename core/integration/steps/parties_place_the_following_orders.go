@@ -208,6 +208,46 @@ func PartiesPlaceTheFollowingOrders(
 	return nil
 }
 
+func PartyAddsTheFollowingOrdersToABatch(party string, exec Execution, time *stubs.TimeStub, table *godog.Table) error {
+	// ensure time is set + idgen is not nil
+	now := time.GetTimeNow()
+	time.SetTime(now)
+	for _, r := range parseAddOrderToBatchTable(table) {
+		row := newSubmitOrderRow(r)
+
+		orderSubmission := types.OrderSubmission{
+			MarketID:    row.MarketID(),
+			Side:        row.Side(),
+			Price:       row.Price(),
+			Size:        row.Volume(),
+			ExpiresAt:   row.ExpirationDate(now),
+			Type:        row.OrderType(),
+			TimeInForce: row.TimeInForce(),
+			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
+		}
+
+		if err := exec.AddSubmitOrderToBatch(&orderSubmission, party); err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func PartySubmitsTheirBatchInstruction(party string, exec Execution) error {
+	return exec.ProcessBatch(context.Background(), party)
+}
+
+func PartyStartsABatchInstruction(party string, exec Execution) error {
+	return exec.StartBatch(party)
+}
+
 func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
@@ -221,6 +261,22 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"reference",
 		"error",
 		"resulting trades",
+		"expires in",
+		"only",
+	})
+}
+
+func parseAddOrderToBatchTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"market id",
+		"side",
+		"volume",
+		"price",
+		"type",
+		"tif",
+	}, []string{
+		"reference",
+		"error",
 		"expires in",
 		"only",
 	})

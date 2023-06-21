@@ -1227,7 +1227,7 @@ func (app *App) DeliverBatchMarketInstructions(
 		return err
 	}
 
-	return NewBMIProcessor(app.log, app.exec).
+	return NewBMIProcessor(app.log, app.exec, Validate{}).
 		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
 }
 
