@@ -89,6 +89,7 @@
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
 - [8500](https://github.com/vegaprotocol/vega/issues/8500) - Fix liquidity provision `ID` is nullable in `GraphQL API`.
 - [8511](https://github.com/vegaprotocol/vega/issues/8511) - Include settled markets in the snapshots
+- [8551](https://github.com/vegaprotocol/vega/issues/8551) - Reload market checkpoint data on snapshot loaded.
 
 ## 0.71.0
 

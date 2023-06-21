@@ -39,6 +39,8 @@ type EquityShares struct {
 	totalPStake num.Decimal
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
+	// used to restore own ELS from checkpoint
+	pendingLPs []*types.ELSShare
 
 	openingAuctionEnded bool
 }
@@ -73,6 +75,10 @@ func (es *EquityShares) InheritELS(shares []*types.ELSShare) {
 			es.SetPartyStake(els.PartyID, update)
 		}
 	}
+}
+
+func (es *EquityShares) RestoreELS(shares []*types.ELSShare) {
+	es.pendingLPs = shares
 }
 
 func (es *EquityShares) RollbackParentELS() {
@@ -113,6 +119,10 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	// we should never call this twice
 	if es.openingAuctionEnded {
 		panic("market already left opening auction")
+	}
+	if len(es.pendingLPs) > 0 {
+		es.InheritELS(es.pendingLPs)
+		es.pendingLPs = nil
 	}
 	es.openingAuctionEnded = true
 	es.r = num.DecimalZero()

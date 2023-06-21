@@ -574,6 +574,10 @@ func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState)
 	m.equityShares.InheritELS(pstate.Shares)
 }
 
+func (m *Market) RestoreELS(ctx context.Context, pstate *types.CPMarketState) {
+	m.equityShares.RestoreELS(pstate.Shares)
+}
+
 func (m *Market) RollbackInherit(ctx context.Context) {
 	// the InheritParent call has to be made before checking if the market can leave opening auction
 	// if the market did not leave opening auction, market state needs to be resored to what it was
@@ -776,7 +780,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	}
 
 	// insurance pool has to be preserved in case a successor market leaves opening auction
-	keepInsurance := mktState == types.MarketStateSettled && !m.succeeded
+	// the insurance pool must be preserved if a market is settled or was closed through governance
+	keepInsurance := (mktState == types.MarketStateSettled || mktState == types.MarketStateClosed) && !m.succeeded
 	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, keepInsurance)
 	if err != nil {
