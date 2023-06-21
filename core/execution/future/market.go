@@ -776,7 +776,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	}
 
 	// insurance pool has to be preserved in case a successor market leaves opening auction
-	keepInsurance := mktState == types.MarketStateSettled && !m.succeeded
+	// the insurance pool must be preserved if a market is settled or was closed through governance
+	keepInsurance := (mktState == types.MarketStateSettled || mktState == types.MarketStateClosed) && !m.succeeded
 	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, keepInsurance)
 	if err != nil {

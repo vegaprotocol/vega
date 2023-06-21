@@ -971,23 +971,36 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 	e.broker.SendBatch(evts)
 
+	rmCPStates := make([]string, 0, len(toDelete))
 	for _, id := range toDelete {
+		// a cancelled market cannot be succeeded, so remove it from the CP state immediately
+		if m, ok := e.markets[id]; ok && m.Mkt().State == types.MarketStateCancelled {
+			rmCPStates = append(rmCPStates, id)
+		}
 		e.removeMarket(id)
 	}
-	// clear slice
-	toDelete = make([]string, 0, len(toDelete))
 	// find state that should expire
 	for id, cpm := range e.marketCPStates {
 		// market field will be nil if the market is still current (ie not closed/settled)
-		if cpm.TTL.Before(t) && cpm.Market != nil {
-			toDelete = append(toDelete, id)
+		if !cpm.TTL.Before(t) {
+			// CP data has not expired yet
+			continue
+		}
+		if cpm.Market == nil {
+			// expired, and yet somehow the market is gone, this is stale data, must be removed
+			if _, ok := e.markets[id]; !ok {
+				rmCPStates = append(rmCPStates, id)
+			}
+		} else {
+			// market state was set, so this is a closed/settled market that was not succeeded in time
+			rmCPStates = append(rmCPStates, id)
 			assets, _ := cpm.Market.GetAssets()
 			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
 				e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 			}
 		}
 	}
-	for _, id := range toDelete {
+	for _, id := range rmCPStates {
 		delete(e.marketCPStates, id)
 		if ss, ok := e.successors[id]; ok {
 			// parent market expired, remove parent ID
