@@ -59,8 +59,10 @@ message StopOrder {
   optional int64 updated_at = 8;
   // ID of the order created once the trigger is hit.
   string order_id = 9;
-  // The party that submitted this stop order
-  string party = 10;
+  // The party that submitted this stop order.
+  string party_id = 10;
+  // The market the stop order is submitted for.
+  string market_id = 11;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.

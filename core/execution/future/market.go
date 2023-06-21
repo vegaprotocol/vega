@@ -145,6 +145,7 @@ type Market struct {
 
 	maxStopOrdersPerParties *num.Uint
 	stopOrders              *stoporders.Pool
+	expiringStopOrders      *common.ExpiringOrders
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -292,6 +293,7 @@ func NewMarket(
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
 		maxStopOrdersPerParties:   num.UintZero(),
 		stopOrders:                stoporders.New(log),
+		expiringStopOrders:        common.NewExpiringOrders(),
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -2292,6 +2294,28 @@ func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer
 	return riskUpdates
 }
 
+func (m *Market) CancelAllStopOrders(ctx context.Context, partyID string) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
+	stopOrders, err := m.stopOrders.Cancel(partyID, "")
+	if err != nil {
+		return err
+	}
+
+	m.removeCancelledExpiringStopOrders(stopOrders)
+
+	evts := make([]events.Event, 0, len(stopOrders))
+	for _, v := range stopOrders {
+		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(evts)
+
+	return nil
+}
+
 func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.OrderCancellationConfirmation, error) {
 	defer m.onTxProcessed()
 
@@ -2395,6 +2419,41 @@ func (m *Market) CancelOrderWithIDGenerator(
 	}
 
 	return conf, nil
+}
+
+func (m *Market) CancelStopOrder(
+	ctx context.Context,
+	partyID, orderID string,
+) error {
+	if !m.canTrade() {
+		return common.ErrTradingNotAllowed
+	}
+
+	stopOrders, err := m.stopOrders.Cancel(partyID, orderID)
+	if err != nil {
+		return err
+	}
+
+	m.removeCancelledExpiringStopOrders(stopOrders)
+
+	evts := []events.Event{events.NewStopOrderEvent(ctx, stopOrders[0])}
+	if len(stopOrders) > 1 {
+		evts = append(evts, events.NewStopOrderEvent(ctx, stopOrders[1]))
+	}
+
+	m.broker.SendBatch(evts)
+
+	return nil
+}
+
+func (m *Market) removeCancelledExpiringStopOrders(
+	stopOrders []*types.StopOrder,
+) {
+	for _, o := range stopOrders {
+		if o.Expiry.Expires() {
+			m.expiringStopOrders.RemoveOrder(o.Expiry.ExpiresAt.Unix(), o.ID)
+		}
+	}
 }
 
 // CancelOrder cancels the given order.

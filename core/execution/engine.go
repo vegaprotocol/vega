@@ -45,6 +45,9 @@ var (
 
 	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
 	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
+
+	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
+	ErrInvalidStopOrdersCancellation = errors.New("invalid stop orders cancellation")
 )
 
 // Engine is the execution engine.
@@ -665,11 +668,62 @@ func (e *Engine) SubmitStopOrders(
 
 func (e *Engine) CancelStopOrders(
 	ctx context.Context,
-	cancellation *types.StopOrdersCancellation,
+	cancel *types.StopOrdersCancellation,
 	party string,
 	idgen common.IDGenerator,
 ) error {
-	return errors.New("stop order cancellation not supported yet")
+	// ensure that if orderID is specified marketId is as well
+	if len(cancel.OrderID) > 0 && len(cancel.MarketID) <= 0 {
+		return ErrInvalidOrderCancellation
+	}
+
+	if len(cancel.MarketID) > 0 {
+		if len(cancel.OrderID) > 0 {
+			return e.cancelStopOrders(ctx, party, cancel.MarketID, cancel.OrderID, idgen)
+		}
+		return e.cancelStopOrdersByMarket(ctx, party, cancel.MarketID)
+	}
+	return e.cancelAllPartyStopOrders(ctx, party)
+
+}
+
+func (e *Engine) cancelStopOrders(
+	ctx context.Context,
+	party, market, orderID string,
+	idgen common.IDGenerator,
+) error {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+	err := mkt.CancelStopOrder(ctx, party, orderID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Engine) cancelStopOrdersByMarket(ctx context.Context, party, market string) error {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+	err := mkt.CancelAllStopOrders(ctx, party)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *Engine) cancelAllPartyStopOrders(ctx context.Context, party string) error {
+	for _, mkt := range e.marketsCpy {
+		err := mkt.CancelAllStopOrders(ctx, party)
+		if err != nil && err != common.ErrTradingNotAllowed {
+			return err
+		}
+	}
+	return nil
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.

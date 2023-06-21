@@ -208,13 +208,14 @@ func NewStopOrderSubmissionFromProto(psubmission *commandspb.StopOrdersSubmissio
 }
 
 func (s *StopOrdersSubmission) IntoStopOrders(
-	party, risesAboveID, fallsBelowID string,
+	party, fallsBelowID, risesAboveID string,
 	now time.Time,
-) (risesAbove, fallsBelow *StopOrder) {
+) (fallsBelow, risesAbove *StopOrder) {
 	if s.RisesAbove != nil {
 		risesAbove = &StopOrder{
 			ID:              risesAboveID,
 			Party:           party,
+			Market:          s.RisesAbove.OrderSubmission.MarketID,
 			OrderSubmission: s.RisesAbove.OrderSubmission,
 			OCOLinkID:       fallsBelowID,
 			Expiry:          s.RisesAbove.Expiry,
@@ -229,6 +230,7 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 		fallsBelow = &StopOrder{
 			ID:              fallsBelowID,
 			Party:           party,
+			Market:          s.FallsBelow.OrderSubmission.MarketID,
 			OrderSubmission: s.FallsBelow.OrderSubmission,
 			OCOLinkID:       risesAboveID,
 			Expiry:          s.FallsBelow.Expiry,
@@ -239,7 +241,7 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 		}
 	}
 
-	return risesAbove, fallsBelow
+	return fallsBelow, risesAbove
 }
 
 func (s StopOrdersSubmission) String() string {
@@ -253,6 +255,7 @@ func (s StopOrdersSubmission) String() string {
 type StopOrder struct {
 	ID              string
 	Party           string
+	Market          string
 	OrderSubmission *OrderSubmission
 	OCOLinkID       string
 	Expiry          *StopOrderExpiry
@@ -295,7 +298,8 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 
 	return &StopOrder{
 		ID:              p.StopOrder.Id,
-		Party:           p.StopOrder.Party,
+		Party:           p.StopOrder.PartyId,
+		Market:          p.StopOrder.MarketId,
 		OCOLinkID:       ptr.UnBox(p.StopOrder.OcoLinkId),
 		Status:          p.StopOrder.Status,
 		CreatedAt:       time.Unix(p.StopOrder.CreatedAt, 0),
@@ -321,7 +325,8 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 		Submission: s.OrderSubmission.IntoProto(),
 		StopOrder: &vega.StopOrder{
 			Id:               s.ID,
-			Party:            s.Party,
+			PartyId:          s.Party,
+			MarketId:         s.Market,
 			OcoLinkId:        ocoLinkID,
 			Status:           s.Status,
 			CreatedAt:        s.CreatedAt.Unix(),
