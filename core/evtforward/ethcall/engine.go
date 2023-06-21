@@ -177,6 +177,8 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 			res, err := call.Call(ctx, e.client, ethBlock.NumberU64())
 			if err != nil {
 				e.log.Errorf("failed to call contract: %w", err)
+				event := makeErrorChainEvent(err, specID, ethBlock)
+				e.forwarder.ForwardFromSelf(event)
 				continue
 			}
 
@@ -199,6 +201,24 @@ func makeChainEvent(res Result, specID string, block blockish) *commandspb.Chain
 				BlockHeight: block.NumberU64(),
 				BlockTime:   block.Time(),
 				Result:      res.Bytes,
+			},
+		},
+	}
+
+	return &ce
+}
+
+func makeErrorChainEvent(err error, specID string, block blockish) *commandspb.ChainEvent {
+	errMsg := err.Error()
+	ce := commandspb.ChainEvent{
+		TxId:  "internal", // NA
+		Nonce: 0,          // NA
+		Event: &commandspb.ChainEvent_ContractCall{
+			ContractCall: &vega.EthContractCallEvent{
+				SpecId:      specID,
+				BlockHeight: block.NumberU64(),
+				BlockTime:   block.Time(),
+				Error:       &errMsg,
 			},
 		},
 	}

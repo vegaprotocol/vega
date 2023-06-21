@@ -218,7 +218,6 @@ func TestGetFilters(t *testing.T) {
 
 func TestSetOracleConfig(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-
 	})
 	t.Run("non-empty oracle", func(t *testing.T) {
 		dsd := &vegapb.DataSourceDefinition{
@@ -398,7 +397,6 @@ func TestSetOracleConfig(t *testing.T) {
 
 		assert.Equal(t, datapb.Condition_OPERATOR_GREATER_THAN, filters[1].Conditions[1].Operator)
 		assert.Equal(t, "ext-test-value-4", filters[1].Conditions[1].Value)
-
 	})
 
 	t.Run("try to set oracle config to internal data source", func(t *testing.T) {
@@ -775,5 +773,4 @@ func TestContent(t *testing.T) {
 }
 
 func TestNewDataSourceDefinition(t *testing.T) {
-
 }
