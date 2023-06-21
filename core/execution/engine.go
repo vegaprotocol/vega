@@ -282,7 +282,7 @@ func (e *Engine) restoreOwnState(ctx context.Context, mID string) (bool, error) 
 	}
 	if state, ok := e.marketCPStates[mID]; ok {
 		// set ELS state and the like
-		mkt.InheritParent(ctx, state)
+		mkt.RestoreELS(ctx, state)
 		// if there was state of the market to restore, then check if this is a successor market
 		if pid := mkt.GetParentMarketID(); len(pid) > 0 {
 			// mark parent market as being succeeded

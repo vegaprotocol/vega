@@ -574,6 +574,10 @@ func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState)
 	m.equityShares.InheritELS(pstate.Shares)
 }
 
+func (m *Market) RestoreELS(ctx context.Context, pstate *types.CPMarketState) {
+	m.equityShares.RestoreELS(pstate.Shares)
+}
+
 func (m *Market) RollbackInherit(ctx context.Context) {
 	// the InheritParent call has to be made before checking if the market can leave opening auction
 	// if the market did not leave opening auction, market state needs to be resored to what it was
