@@ -51,6 +51,8 @@ Feature: Spot market
       | buyer  | price | size | seller |
       | party1 | 15    | 1    | party2 |
 
+#so far party1 has 1 order left, size 2, price 10
+
     And the parties amend the following orders:
       | party  | reference     | price | size delta | tif     |
       | party2 | party-order12 | 10    | 0          | TIF_GTC |
@@ -58,6 +60,8 @@ Feature: Spot market
     And the following trades should be executed:
       | buyer  | price | size | seller |
       | party1 | 15    | 1    | party2 |
+
+#so far party1 has 1 order left, size 1, price 10
 
     Then "party1" should have holding account balance of "26" for asset "ETH"
     Then "party2" should have holding account balance of "0" for asset "BTC"
