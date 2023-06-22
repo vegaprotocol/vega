@@ -57,6 +57,7 @@ Feature: Iceberg orders
       | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the mark price should be "2" for the market "ETH/DEC19"
 
     And the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
@@ -92,3 +93,6 @@ Feature: Iceberg orders
       | party1 | USD   | ETH/DEC19 | 147       | 9853      |
       | party2 | USD   | ETH/DEC19 | 147       | 9853      |
       | party3 | USD   | ETH/DEC19 | 168000010 | 831999990 |
+
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+    And the mark price should be "2" for the market "ETH/DEC19"
