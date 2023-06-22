@@ -87,18 +87,19 @@ Feature: Iceberg orders
       | party3 | party1 | 2     | 4    |
       | party3 | party2 | 2 | 3 |
       | party3 | party1 | 2     | 2    |
+    And the network moves ahead "1" blocks
 
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -4     | 0              | 0            |
-      | party2 | -2     | 0              | 0            |
-      | party3 | 6      | 0              | 0            |
+      | party1 | -6 | 0 | 0 |
+      | party2 | -3 | 0 | 0 |
+      | party3 | 9  | 0 | 0 |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
       | party1 | USD   | ETH/DEC19 | 147       | 9853      |
       | party2 | USD   | ETH/DEC19 | 147       | 9853      |
-      | party3 | USD   | ETH/DEC19 | 168000010 | 831999990 |
+      | party3 | USD | ETH/DEC19 | 270000010 | 729999990 |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "2" for the market "ETH/DEC19"
