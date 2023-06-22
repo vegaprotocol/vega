@@ -84,6 +84,7 @@
 - [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
 - [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
 - [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
+- [8453](https://github.com/vegaprotocol/vega/issues/8453) - Do not verify termination timestamp in update market when pre-enacting proposal
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
