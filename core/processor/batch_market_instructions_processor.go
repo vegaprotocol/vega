@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
@@ -74,7 +75,20 @@ func (p *BMIProcessor) ProcessBatch(
 	// first we generate the IDs for all new orders,
 	// these need to be determinitistic
 	idgen := idgeneration.New(determinitisticID)
-	submissionsIDs := make([]string, 0, len(batch.Submissions))
+
+	// we will need an ID for every stop orders
+	// not all StopsOrderSubmission have 2 StopOrder
+	stopOrderSize := 0
+	for _, v := range batch.StopOrdersSubmission {
+		if v.FallsBelow != nil {
+			stopOrderSize++
+		}
+		if v.RisesAbove != nil {
+			stopOrderSize++
+		}
+	}
+
+	submissionsIDs := make([]string, 0, len(batch.Submissions)+stopOrderSize)
 	for i := 0; i < len(batch.Submissions); i++ {
 		submissionsIDs = append(submissionsIDs, idgen.NextID())
 	}
@@ -129,6 +143,7 @@ func (p *BMIProcessor) ProcessBatch(
 	}
 
 	// then submissions
+	idIdx := 0
 	for i, protoSubmit := range batch.Submissions {
 		err := commands.CheckOrderSubmission(protoSubmit)
 		if err == nil {
@@ -151,9 +166,62 @@ func (p *BMIProcessor) ProcessBatch(
 			errCnt++
 		}
 		idx++
+		idIdx = i
 	}
 
-	errs.isPartial = errCnt != len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)
+	// process cancellations
+	for i, cancel := range batch.StopOrdersCancellation {
+		err := commands.CheckStopOrdersCancellation(cancel)
+		if err == nil {
+			stats.IncTotalCancelOrder()
+			err = p.exec.CancelStopOrders(
+				ctx, types.NewStopOrderCancellationFromProto(cancel), party, idgen)
+		}
+
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%d", i), err)
+			errCnt++
+		}
+		idx++
+	}
+
+	for i, protoSubmit := range batch.StopOrdersSubmission {
+		err := commands.CheckStopOrdersSubmission(protoSubmit)
+		if err == nil {
+			var submit *types.StopOrdersSubmission
+			stats.IncTotalCreateOrder()
+			if submit, err = types.NewStopOrderSubmissionFromProto(protoSubmit); err == nil {
+				var id1, id2 *string
+				var inc bool
+				if submit.FallsBelow != nil {
+					id1 = ptr.From(submissionsIDs[i+idIdx])
+					inc = true
+				}
+				if submit.RisesAbove != nil {
+					if inc {
+						idIdx++
+					}
+					id2 = ptr.From(submissionsIDs[i+idIdx])
+				}
+				err = p.exec.SubmitStopOrders(ctx, submit, party, idgen, id1, id2)
+				// FIXME(): when prototyp is updated, add the eventual crossing orders here.
+				// if conf != nil {
+				// 	stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
+				// 	stats.AddTotalTrades(uint64(len(conf.Trades)))
+				// 	stats.IncCurrentOrdersInBatch()
+				// }
+				// stats.IncTotalOrders()
+			}
+		}
+
+		if err != nil {
+			errs.AddForProperty(fmt.Sprintf("%d", idx), err)
+			errCnt++
+		}
+		idx++
+	}
+
+	errs.isPartial = errCnt != len(batch.Submissions)+len(batch.Amendments)+len(batch.Cancellations)+len(batch.StopOrdersCancellation)+len(batch.StopOrdersSubmission)
 
 	return errs.ErrorOrNil()
 }

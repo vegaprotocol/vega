@@ -24,8 +24,10 @@ message BatchMarketInstructions {
   repeated OrderAmendment amendments = 2;
   // List of order submissions to be processed sequentially.
   repeated OrderSubmission submissions = 3;
+  // List of stop order cancellations to be processed sequentially.
+  repeated StopOrdersCancellation stop_orders_cancellation = 4;
   // List of stop order submissions to be processed sequentially.
-  repeated StopOrdersSubmission stop_orders_submissions = 4;
+  repeated StopOrdersSubmission stop_orders_submission = 5;
 }
 
 // Stop order submission submits stops orders.

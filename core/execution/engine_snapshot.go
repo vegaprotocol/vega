@@ -225,5 +225,15 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 			return err
 		}
 	}
+	// use the time as restored by the snapshot
+	t := e.timeService.GetTimeNow()
+	// restore marketCPStates through marketsCpy to ensure the order is preserved
+	for _, m := range e.marketsCpy {
+		if !m.IsSucceeded() {
+			cps := m.GetCPState()
+			cps.TTL = t.Add(e.successorWindow)
+			e.marketCPStates[m.GetID()] = cps
+		}
+	}
 	return nil
 }
