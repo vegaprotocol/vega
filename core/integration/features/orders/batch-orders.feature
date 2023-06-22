@@ -69,6 +69,8 @@ Feature: Iceberg orders
       | party1 | USD   | ETH/DEC19 | 147    | 9853    |
       | party2 | USD   | ETH/DEC19 | 147    | 9853    |
 
+# margin initial = 0.4878731*100*2*1.5 = 147
+
     Then the party "party3" starts a batch instruction
 
     Then the party "party3" adds the following orders to a batch:
