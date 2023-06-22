@@ -332,7 +332,7 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 	// if parent market is active, mark as succeeded
 	if pmo, ok := e.markets[parent]; ok {
 		// succeeding a parent market before it was enacted is not allowed
-		if pmo.Mkt().State == types.MarketStateProposed {
+		if !restore && pmo.Mkt().State == types.MarketStateProposed {
 			e.RejectMarket(ctx, successor)
 			return ErrParentMarketNotEnactedYet
 		}
@@ -369,7 +369,8 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	if err := e.submitOrRestoreMarket(ctx, marketConfig, "", false, e.timeService.GetTimeNow()); err != nil {
 		return err
 	}
-	// attempt to restore market state. The restoreOwnState call handles both parent and successor markets
+	// attempt to restore market state from checkpoint, returns true if state (ELS) was restored
+	// error if the market doesn't exist
 	ok, err := e.restoreOwnState(ctx, marketConfig.ID)
 	if ok || err != nil {
 		return err
