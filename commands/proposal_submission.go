@@ -290,6 +290,10 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBePositive)
 	}
 
+	if fraction.GreaterThan(num.DecimalOne()) {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.fraction_of_balance", ErrMustBeLTE1)
+	}
+
 	if recurring := changes.GetRecurring(); recurring != nil {
 		if recurring.EndEpoch != nil && *recurring.EndEpoch < recurring.StartEpoch {
 			return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.recurring.end_epoch", ErrIsNotValid)

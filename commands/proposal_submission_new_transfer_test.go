@@ -372,9 +372,10 @@ func testNewTransferChangeSubmissionInvalidAseetFails(t *testing.T) {
 
 func testNewTransferChangeSubmissionInvalidFractionFails(t *testing.T) {
 	expectation := map[string]error{
-		"":    commands.ErrIsRequired,
-		"abc": commands.ErrIsNotValid,
-		"-1":  commands.ErrMustBePositive,
+		"":     commands.ErrIsRequired,
+		"abc":  commands.ErrIsNotValid,
+		"-1":   commands.ErrMustBePositive,
+		"1.01": commands.ErrMustBeLTE1,
 	}
 
 	transfer := &types.NewTransferConfiguration{
