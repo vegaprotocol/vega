@@ -88,6 +88,12 @@ Feature: Iceberg orders
       | party3 | party2 | 2 | 3 |
       | party3 | party1 | 2     | 2    |
 
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | -4     | 0              | 0            |
+      | party2 | -2     | 0              | 0            |
+      | party3 | 6      | 0              | 0            |
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin    | general   |
       | party1 | USD   | ETH/DEC19 | 147       | 9853      |
