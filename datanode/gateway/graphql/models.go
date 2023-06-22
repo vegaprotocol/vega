@@ -316,6 +316,8 @@ type LiquidityProviderFeeShare struct {
 	AverageEntryValuation string `json:"averageEntryValuation"`
 	// The average liquidity score
 	AverageScore string `json:"averageScore"`
+	// The virtual stake for this liquidity provider (float)
+	VirtualStake string `json:"virtualStake"`
 }
 
 type LossSocialization struct {

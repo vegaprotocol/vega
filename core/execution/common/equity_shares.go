@@ -102,6 +102,7 @@ func (es *EquityShares) LpsToLiquidityProviderFeeShare(ls map[string]num.Decimal
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
 			AverageScore:          ls[k].String(),
+			VirtualStake:          v.vStake.String(),
 		})
 	}
 
@@ -152,6 +153,10 @@ func (es *EquityShares) UpdateVStake() {
 
 func (es *EquityShares) GetTotalVStake() num.Decimal {
 	return es.totalVStake
+}
+
+func (es *EquityShares) GetMarketGrowth() num.Decimal {
+	return es.r
 }
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {

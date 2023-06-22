@@ -1051,6 +1051,8 @@ message MarketData {
   int64 next_mark_to_market = 28;
   // Last traded price of the market. This field is an unsigned integer scaled to the market's decimal places.
   string last_traded_price = 29;
+  // Market growth at the last market time window.
+  string market_growth = 30;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
@@ -1063,6 +1065,8 @@ message LiquidityProviderFeeShare {
   string average_entry_valuation = 3;
   // Average liquidity score.
   string average_score = 4;
+  // The virtual stake of this liquidity provider (float).
+  string virtual_stake = 5;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger

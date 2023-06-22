@@ -252,6 +252,8 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
+  "The market growth factor for the last market time window"
+  marketGrowth: String!
 }
 
 "Live data of a Market"
@@ -336,6 +338,8 @@ type LiquidityProviderFeeShare {
   averageEntryValuation: String!
   "The average liquidity score"
   averageScore: String!
+  "The virtual stake for this liquidity provider (float)"
+  virtualStake: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"

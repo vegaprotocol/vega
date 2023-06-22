@@ -507,6 +507,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidity.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
+		GetMarketGrowth:           m.equityShares.GetMarketGrowth(),
 	}
 }
 
