@@ -81,6 +81,7 @@ const (
 	EventForwarderSnapshot         SnapshotNamespace = "eventforwarder"
 	TopologySnapshot               SnapshotNamespace = "topology"
 	LiquiditySnapshot              SnapshotNamespace = "liquidity"
+	LiquidityV2Snapshot            SnapshotNamespace = "liquidityV2"
 	LiquidityTargetSnapshot        SnapshotNamespace = "liquiditytarget"
 	FloatingPointConsensusSnapshot SnapshotNamespace = "floatingpoint"
 	MarketActivityTrackerSnapshot  SnapshotNamespace = "marketActivityTracker"

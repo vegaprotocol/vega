@@ -31,7 +31,7 @@ type testEngine struct {
 	priceMonitor     *mocks.MockPriceMonitor
 	orderbook        *mocks.MockOrderBook
 	auctionState     *mmocks.MockAuctionState
-	engine           *liquidity.Engine
+	engine           *liquidity.SnapshotEngine
 	stateVar         *stubs.StateVarStub
 	defaultSLAParams *types.LiquiditySLAParams
 }
@@ -64,8 +64,18 @@ func newTestEngine(t *testing.T) *testEngine {
 		PerformanceHysteresisEpochs: 4,                         // performanceHysteresisEpochs
 	}
 
-	engine := liquidity.NewEngine(liquidityConfig,
-		log, tsvc, broker, risk, monitor, orderbook, auctionState, asset, market, stateVarEngine,
+	engine := liquidity.NewSnapshotEngine(
+		liquidityConfig,
+		log,
+		tsvc,
+		broker,
+		risk,
+		monitor,
+		orderbook,
+		auctionState,
+		asset,
+		market,
+		stateVarEngine,
 		num.NewDecimalFromFloat(1), // positionFactor
 		defaultSLAParams,
 	)
@@ -274,8 +284,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				penalties := te.engine.CalculateSLAPenalties(epochEnd)
 				sla := penalties.PenaltiesPerParty[party]
 
-				fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
-				require.True(t, sla.Fee.Equal(tC.expectedPenalty))
+				require.Truef(t, sla.Fee.Equal(tC.expectedPenalty), "actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
 			})
 		}
 	}
@@ -392,8 +401,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			penalties := te.engine.CalculateSLAPenalties(epochEnd)
 			sla := penalties.PenaltiesPerParty[partyID]
 
-			fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
-			require.True(t, sla.Fee.Equal(tC.expectedPenalty))
+			require.Truef(t, sla.Fee.Equal(tC.expectedPenalty), "actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
 		})
 	}
 }
@@ -524,8 +532,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			penalties := te.engine.CalculateSLAPenalties(epochEnd)
 			sla := penalties.PenaltiesPerParty[party]
 
-			fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Bond, tC.expectedPenalty)
-			require.True(t, sla.Bond.Equal(tC.expectedPenalty))
+			require.Truef(t, sla.Bond.Equal(tC.expectedPenalty), "actual penalty: %s, expected penalty: %s \n", sla.Bond, tC.expectedPenalty)
 		})
 	}
 }

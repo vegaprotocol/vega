@@ -33,7 +33,7 @@ func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
 	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) {
-		e.pendingProvisions[party] = updatedLp
+		e.pendingProvisions.Set(party, updatedLp)
 		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, updatedLp))
 		return nil
 	}

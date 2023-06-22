@@ -108,7 +108,7 @@ type Engine struct {
 
 	// state
 	provisions        *SnapshotableProvisionsPerParty
-	pendingProvisions PendingProvision
+	pendingProvisions *SnapshotablePendingProvisions
 
 	// this is the max fee that can be specified
 	maxFee num.Decimal
@@ -166,7 +166,7 @@ func NewEngine(config Config,
 
 		// provisions related state
 		provisions:        newSnapshotableProvisionsPerParty(),
-		pendingProvisions: map[string]*types.LiquidityProvision{},
+		pendingProvisions: newSnapshotablePendingProvisions(),
 
 		// SLA commitment
 		slaPerformance: map[string]*slaPerformance{},
@@ -224,15 +224,15 @@ func (e *Engine) SubmitLiquidityProvision(
 	}
 
 	provision.Status = types.LiquidityProvisionStatusPending
-	e.pendingProvisions[party] = provision
+	e.pendingProvisions.Set(party, provision)
 	return false, nil
 }
 
 func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision {
-	updatedProvisionsPerParty := make(map[string]*types.LiquidityProvision, len(e.pendingProvisions))
+	updatedProvisionsPerParty := make(map[string]*types.LiquidityProvision, e.pendingProvisions.Len())
 
 	for _, party := range e.pendingProvisions.sortedKeys() {
-		provision := e.pendingProvisions[party]
+		provision, _ := e.pendingProvisions.Get(party)
 		updatedProvisionsPerParty[party] = provision
 		provision.UpdatedAt = now.UnixNano()
 
@@ -254,17 +254,17 @@ func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) map[
 		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
 	}
 
-	e.pendingProvisions = map[string]*types.LiquidityProvision{}
+	e.pendingProvisions = newSnapshotablePendingProvisions()
 	return updatedProvisionsPerParty
 }
 
 func (e *Engine) PendingProvisionByPartyID(party string) *types.LiquidityProvision {
-	provision := e.pendingProvisions[party]
+	provision, _ := e.pendingProvisions.Get(party)
 	return provision
 }
 
 func (e *Engine) PendingProvision() map[string]*types.LiquidityProvision {
-	return e.pendingProvisions
+	return e.pendingProvisions.PendingProvisions
 }
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
@@ -331,7 +331,7 @@ func (e *Engine) stopLiquidityProvision(
 func (e *Engine) destroyProvision(party string) {
 	e.provisions.Delete(party)
 	delete(e.slaPerformance, party)
-	delete(e.pendingProvisions, party)
+	e.pendingProvisions.Delete(party)
 }
 
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
@@ -385,7 +385,7 @@ func (e *Engine) UpdatePartyCommitment(partyID string, newCommitment *num.Uint) 
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	supplied := num.UintZero()
 
-	for party, pending := range e.pendingProvisions {
+	for party, pending := range e.pendingProvisions.PendingProvisions {
 		provision, ok := e.provisions.Get(party)
 		if ok && pending.CommitmentAmount.LT(provision.CommitmentAmount) {
 			supplied.AddSum(provision.CommitmentAmount)
@@ -395,7 +395,7 @@ func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	}
 
 	for party, provision := range e.provisions.ProvisionsPerParty {
-		_, ok := e.pendingProvisions[party]
+		_, ok := e.pendingProvisions.Get(party)
 		if ok {
 			continue
 		}
@@ -406,8 +406,8 @@ func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	return supplied
 }
 
-// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
-// Dost not include pending commitments.
+// CalculateSuppliedStakeWithoutPending returns the sum of commitment amounts
+// from all the liquidity providers. Does not include pending commitments.
 func (e *Engine) CalculateSuppliedStakeWithoutPending() *num.Uint {
 	supplied := num.UintZero()
 	for _, provision := range e.provisions.ProvisionsPerParty {
