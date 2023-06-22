@@ -1,26 +1,47 @@
 Feature: Iceberg orders
 
   Background:
+
+    Given the log normal risk model named "lognormal-risk-model-1":
+      | risk aversion | tau  | mu | r   | sigma |
+      | 0.001         | 0.01 | 0  | 0.0 | 1.2   |
+    #calculated risk factor long: 0.336895684; risk factor short: 0.4878731
+
+    And the price monitoring named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 1       | 0.99999999  | 300               |
+    And the margin calculator named "margin-calculator-1":
+      | search factor | initial factor | release factor |
+      | 1.2           | 1.5            | 2              |
+
+    And the oracle spec for settlement data filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
+      | property         | type         | binding         |
+      | prices.ETH.value | TYPE_INTEGER | settlement data |
+
+    And the oracle spec for trading termination filtering data from "0xCAFECAFE19" named "ethDec19Oracle":
+      | property           | type         | binding             |
+      | trading.terminated | TYPE_BOOLEAN | trading termination |
     Given the markets:
-      | id        | quote name | asset | risk model                      | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model             | margin calculator   | auction duration | fees         | price monitoring   | data source config | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | ETH        | USD   | lognormal-risk-model-1 | margin-calculator-1 | 1                | default-none | price-monitoring-1 | ethDec19Oracle     | 1e6                    | 1e6                       |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 1500  |
+      | network.markPriceUpdateMaximumFrequency | 0s |
 
   @batch
-  Scenario: Batch with normal orders and icebergs
+  Scenario: Batch with normal orders and icebergs, 0014-ORDT-014, 0014-ORDT-015
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount   |
-      | party1 | BTC   | 10000    |
-      | party2 | BTC   | 10000    |
-      | party3 | BTC   | 1000000000    |
-      | aux    | BTC   | 1000000 |
-      | aux2   | BTC   | 100000   |
-      | lpprov | BTC   | 90000000 |
+      | party  | asset | amount     |
+      | party1 | USD   | 10000      |
+      | party2 | USD   | 10000      |
+      | party3 | USD   | 1000000000 |
+      | aux    | USD   | 1000000    |
+      | aux2   | USD   | 100000     |
+      | lpprov | USD   | 90000000   |
 
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
@@ -29,7 +50,7 @@ Feature: Iceberg orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | party | market id                                                        | side | volume | price | resulting trades | type       | tif     |
+      | party | market id | side | volume | price | resulting trades | type | tif |
       | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
@@ -38,9 +59,14 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
     And the parties place the following iceberg orders:
-      | party  | market id                                                        | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
-      | party1 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 4            | 5            |
-      | party2 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 4            | 5            |
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
+      | party1 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 4         | 5                    |
+      | party2 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 4         | 5                    |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party1 | USD   | ETH/DEC19 | 147    | 9853    |
+      | party2 | USD   | ETH/DEC19 | 147    | 9853    |
 
     Then the party "party3" starts a batch instruction
 
@@ -48,16 +74,21 @@ Feature: Iceberg orders
       | market id | side | volume | price | type       | tif     | reference |
       | ETH/DEC19 | buy  | 4      | 2     | TYPE_LIMIT | TIF_GTC | party3    |
 
-
     Then the party "party3" adds the following iceberg orders to a batch:
-      | market id                                                        | side | volume | price | type       | tif     | reference    | peak size | minimum visible size |
-      | ETH/DEC19 | buy | 3    | 2     | TYPE_LIMIT | TIF_GTC | this-order-1 | 2            | 1            |
-      | ETH/DEC19 | buy | 2    | 2     | TYPE_LIMIT | TIF_GTC | this-order-2 | 2            | 1            |
+      | market id | side | volume | price | type       | tif     | reference    | peak size | minimum visible size |
+      | ETH/DEC19 | buy  | 3      | 2     | TYPE_LIMIT | TIF_GTC | this-order-1 | 2         | 1                    |
+      | ETH/DEC19 | buy  | 2      | 2     | TYPE_LIMIT | TIF_GTC | this-order-2 | 2         | 1                    |
 
     Then the party "party3" submits their batch instruction
 
     Then the following trades should be executed:
       | buyer  | seller | price | size |
       | party3 | party1 | 2     | 4    |
-      | party3 | party2 | 2     | 3    | #the iceberg of party1 will refresh and lose priority so the next trade will be with party2
+      | party3 | party2 | 2 | 3 |
       | party3 | party1 | 2     | 2    |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin    | general   |
+      | party1 | USD   | ETH/DEC19 | 147       | 9853      |
+      | party2 | USD   | ETH/DEC19 | 147       | 9853      |
+      | party3 | USD   | ETH/DEC19 | 168000010 | 831999990 |
