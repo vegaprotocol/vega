@@ -152,7 +152,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 	if suppliedStake, err = parseDecimal(data.SuppliedStake); err != nil {
 		return nil, err
 	}
-	if growth, err := parseDecimal(data.MarketGrowth); err != nil {
+	if growth, err = parseDecimal(data.MarketGrowth); err != nil {
 		return nil, err
 	}
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
