@@ -636,6 +636,7 @@ type MarketData struct {
 	MarketValueProxy          string
 	LiquidityProviderFeeShare []*LiquidityProviderFeeShare
 	NextMTM                   int64
+	MarketGrowth              num.Decimal
 }
 
 func (m MarketData) DeepClone() *MarketData {
@@ -693,6 +694,7 @@ func (m MarketData) IntoProto() *proto.MarketData {
 		MarketValueProxy:          m.MarketValueProxy,
 		LiquidityProviderFeeShare: make([]*proto.LiquidityProviderFeeShare, 0, len(m.LiquidityProviderFeeShare)),
 		NextMarkToMarket:          m.NextMTM,
+		MarketGrowth:              m.MarketGrowth.String(),
 	}
 	for _, pmb := range m.PriceMonitoringBounds {
 		r.PriceMonitoringBounds = append(r.PriceMonitoringBounds, pmb.IntoProto())
@@ -705,7 +707,7 @@ func (m MarketData) IntoProto() *proto.MarketData {
 
 func (m MarketData) String() string {
 	return fmt.Sprintf(
-		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) nextMTM(%v)",
+		"markPrice(%s) lastTradedPrice(%s) bestBidPrice(%s) bestBidVolume(%v) bestOfferPrice(%s) bestOfferVolume(%v) bestStaticBidPrice(%s) bestStaticBidVolume(%v) bestStaticOfferPrice(%s) bestStaticOfferVolume(%v) midPrice(%s) staticMidPrice(%s) market(%s) timestamp(%v) openInterest(%v) auctionEnd(%v) auctionStart(%v) indicativePrice(%s) indicativeVolume(%v) marketTradingMode(%s) marketState(%s) trigger(%s) extensionTrigger(%s) targetStake(%s) suppliedStake(%s) priceMonitoringBounds(%s) marketValueProxy(%s) liquidityProviderFeeShare(%v) nextMTM(%v) marketGrowth(%v)",
 		uintPointerToString(m.MarkPrice),
 		uintPointerToString(m.LastTradedPrice),
 		m.BestBidPrice.String(),
@@ -735,6 +737,7 @@ func (m MarketData) String() string {
 		m.MarketValueProxy,
 		LiquidityProviderFeeShares(m.LiquidityProviderFeeShare).String(),
 		m.NextMTM,
+		m.MarketGrowth,
 	)
 }
 

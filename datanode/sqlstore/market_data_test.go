@@ -64,6 +64,7 @@ const (
 	csvColumnMarketValueProxy
 	csvColumnLiquidityProviderFeeShares
 	csvColumnMarketState
+	csvColumnMarketGrowth
 )
 
 func Test_MarketData(t *testing.T) {
@@ -859,11 +860,14 @@ func setupMarketData(t *testing.T, ctx context.Context) (*sqlstore.MarketData, e
 	seqNum := 0
 	for {
 		line, err := reader.Read()
-		if err == io.EOF {
-			break
-		}
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return nil, err
+		}
+		if len(line) == 0 {
+			continue
 		}
 
 		marketData := csvToMarketData(t, line, seqNum)
@@ -1001,5 +1005,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		VegaTime:                   vegaTime,
 		SeqNum:                     uint64(seqNum),
 		SyntheticTime:              syntheticTime,
+		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
 	}
 }

@@ -186,6 +186,7 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 			EquityLikeShare:       v.EquityLikeShare,
 			AverageEntryValuation: v.AverageEntryValuation,
 			AverageScore:          v.AverageScore,
+			VirtualStake:          v.VirtualStake,
 		})
 	}
 	return out, nil
@@ -193,6 +194,10 @@ func (r *myMarketDataResolver) LiquidityProviderFeeShare(_ context.Context, m *t
 
 func (r *myMarketDataResolver) NextMarkToMarket(_ context.Context, m *types.MarketData) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(m.NextMarkToMarket)), nil
+}
+
+func (r *myMarketDataResolver) MarketGrowth(_ context.Context, m *types.MarketData) (string, error) {
+	return m.MarketGrowth, nil
 }
 
 type myObservableMarketDataResolver myMarketDataResolver
@@ -297,6 +302,10 @@ func (r *myObservableMarketDataResolver) LiquidityProviderFeeShare(ctx context.C
 
 func (r *myObservableMarketDataResolver) NextMarkToMarket(ctx context.Context, m *types.MarketData) (string, error) {
 	return (*myMarketDataResolver)(r).NextMarkToMarket(ctx, m)
+}
+
+func (r *myObservableMarketDataResolver) MarketGrowth(ctx context.Context, m *types.MarketData) (string, error) {
+	return (*myMarketDataResolver)(r).MarketGrowth(ctx, m)
 }
 
 // END: MarketData resolver
