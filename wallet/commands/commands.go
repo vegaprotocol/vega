@@ -68,6 +68,10 @@ func CheckSubmitTransactionRequest(req *walletpb.SubmitTransactionRequest) comma
 		cmdErr = commands.CheckIssueSignatures(cmd.IssueSignatures)
 	case *walletpb.SubmitTransactionRequest_BatchMarketInstructions:
 		cmdErr = commands.CheckBatchMarketInstructions(cmd.BatchMarketInstructions)
+	case *walletpb.SubmitTransactionRequest_StopOrdersSubmission:
+		cmdErr = commands.CheckStopOrdersSubmission(cmd.StopOrdersSubmission)
+	case *walletpb.SubmitTransactionRequest_StopOrdersCancellation:
+		cmdErr = commands.CheckStopOrdersCancellation(cmd.StopOrdersCancellation)
 	default:
 		errs.AddForProperty("input_data.command", commands.ErrIsNotSupported)
 	}
