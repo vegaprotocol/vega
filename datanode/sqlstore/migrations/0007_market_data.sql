@@ -40,9 +40,6 @@ END;
 $$;
 -- +goose StatementEnd
 
-CREATE OR REPLACE TRIGGER update_current_market_data AFTER INSERT ON market_data FOR EACH ROW EXECUTE function update_current_market_data();
-
-
 -- +goose Down
 
 ALTER TABLE market_data DROP COLUMN IF EXISTS market_growth;
@@ -84,6 +81,4 @@ BEGIN
 END;
 $$;
 -- +goose StatementEnd
-
-CREATE OR REPLACE TRIGGER update_current_market_data AFTER INSERT ON market_data FOR EACH ROW EXECUTE function update_current_market_data();
 
