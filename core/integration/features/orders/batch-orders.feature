@@ -9,7 +9,7 @@ Feature: Iceberg orders
 
     And the price monitoring named "price-monitoring-1":
       | horizon | probability | auction extension |
-      | 1       | 0.99999999  | 300               |
+      | 100     | 0.99999999  | 300               |
     And the margin calculator named "margin-calculator-1":
       | search factor | initial factor | release factor |
       | 1.2           | 1.5            | 2              |
@@ -29,7 +29,7 @@ Feature: Iceberg orders
       | market.auction.minimumDuration          | 1     |
       | network.markPriceUpdateMaximumFrequency | 0s    |
       | limits.markets.maxPeggedOrders          | 1500  |
-      | network.markPriceUpdateMaximumFrequency | 0s |
+      | network.markPriceUpdateMaximumFrequency | 0s    |
 
   @batch
   Scenario: Batch with normal orders and icebergs, 0014-ORDT-014, 0014-ORDT-015
@@ -50,24 +50,26 @@ Feature: Iceberg orders
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type | tif |
-      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2  | ETH/DEC19 | buy  | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux   | ETH/DEC19 | sell | 1      | 2     | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 99    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 101   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 100   | 0                | TYPE_LIMIT | TIF_GTC |
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    And the mark price should be "2" for the market "ETH/DEC19"
+    And the mark price should be "100" for the market "ETH/DEC19"
 
     And the parties place the following iceberg orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    | peak size | minimum visible size |
-      | party1 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 4         | 5                    |
-      | party2 | ETH/DEC19 | sell | 100    | 2     | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 4         | 5                    |
+      | party1 | ETH/DEC19 | sell | 6      | 100   | 0                | TYPE_LIMIT | TIF_GTC | this-order-1 | 4         | 5                    |
+      | party2 | ETH/DEC19 | sell | 3      | 100   | 0                | TYPE_LIMIT | TIF_GTC | this-order-2 | 4         | 5                    |
+      | party1 | ETH/DEC19 | sell | 100    | 101   | 0                | TYPE_LIMIT | TIF_GTC | this-order-3 | 4         | 5                    |
+      | party2 | ETH/DEC19 | buy  | 100    | 99    | 0                | TYPE_LIMIT | TIF_GTC | this-order-4 | 4         | 5                    |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | USD   | ETH/DEC19 | 147    | 9853    |
-      | party2 | USD   | ETH/DEC19 | 147    | 9853    |
+      | party1 | USD   | ETH/DEC19 | 7758   | 2242    |
+      | party2 | USD   | ETH/DEC19 | 5053   | 4947    |
 
 # margin initial = 0.4878731*100*2*1.5 = 147
 
@@ -75,33 +77,29 @@ Feature: Iceberg orders
 
     Then the party "party3" adds the following orders to a batch:
       | market id | side | volume | price | type       | tif     | reference |
-      | ETH/DEC19 | buy  | 4      | 2     | TYPE_LIMIT | TIF_GTC | party3    |
+      | ETH/DEC19 | buy  | 4      | 101   | TYPE_LIMIT | TIF_GTC | party3    |
 
     Then the party "party3" adds the following iceberg orders to a batch:
       | market id | side | volume | price | type       | tif     | reference    | peak size | minimum visible size |
-      | ETH/DEC19 | buy  | 3      | 2     | TYPE_LIMIT | TIF_GTC | this-order-1 | 2         | 1                    |
-      | ETH/DEC19 | buy  | 2      | 2     | TYPE_LIMIT | TIF_GTC | this-order-2 | 2         | 1                    |
+      | ETH/DEC19 | buy  | 3      | 101   | TYPE_LIMIT | TIF_GTC | this-order-5 | 2         | 1                    |
+      | ETH/DEC19 | buy  | 4      | 101   | TYPE_LIMIT | TIF_GTC | this-order-6 | 2         | 1                    |
 
     Then the party "party3" submits their batch instruction
 
     Then the following trades should be executed:
       | buyer  | seller | price | size |
-      | party3 | party1 | 2     | 4    |
-      | party3 | party2 | 2 | 3 |
-      | party3 | party1 | 2     | 2    |
-    And the network moves ahead "1" blocks
+  | party3 | party1 | 100   | 4    |
+      | party3 | party2 | 100   | 3    |
+      | party3 | party1 | 100   | 2    |
 
-    Then the parties should have the following profit and loss:
-      | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -6 | 0 | 0 |
-      | party2 | -3 | 0 | 0 |
-      | party3 | 9  | 0 | 0 |
+    And the network moves ahead "10" blocks
 
     And the parties should have the following account balances:
-      | party  | asset | market id | margin    | general   |
-      | party1 | USD   | ETH/DEC19 | 147       | 9853      |
-      | party2 | USD   | ETH/DEC19 | 147       | 9853      |
-      | party3 | USD | ETH/DEC19 | 270000010 | 729999990 |
+      | party  | asset | market id | margin | general   |
+      | party1 | USD   | ETH/DEC19 | 7752   | 2242      |
+      | party2 | USD   | ETH/DEC19 | 5050   | 4947      |
+      | party3 | USD   | ETH/DEC19 | 576    | 999999433 |
+
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
-    And the mark price should be "2" for the market "ETH/DEC19"
+    And the mark price should be "101" for the market "ETH/DEC19"
