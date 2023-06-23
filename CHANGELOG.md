@@ -89,6 +89,7 @@
 - [8453](https://github.com/vegaprotocol/vega/issues/8453) - Do not verify termination timestamp in update market when pre-enacting proposal
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
+- [8565](https://github.com/vegaprotocol/vega/issues/8565) - Unsubscribe all data sources when restoring a settled market from a snapshot
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
 - [8500](https://github.com/vegaprotocol/vega/issues/8500) - Fix liquidity provision `ID` is nullable in `GraphQL API`.
 - [8511](https://github.com/vegaprotocol/vega/issues/8511) - Include settled markets in the snapshots
