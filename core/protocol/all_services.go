@@ -73,6 +73,7 @@ type EthCallEngine interface {
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
 	OnSpecActivated(ctx context.Context, spec types.OracleSpec) error
 	OnSpecDeactivated(ctx context.Context, spec types.OracleSpec)
+	UpdatePreviousEthBlock(height uint64, timestamp uint64)
 }
 
 type EthOracleVerifier interface {

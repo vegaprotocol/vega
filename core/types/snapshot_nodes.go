@@ -229,6 +229,10 @@ type PayloadStakeVerifierRemoved struct {
 	StakeVerifierRemoved []*StakeRemoved
 }
 
+type PayloadEthOracleLastBlock struct {
+	EthOracleLastBlock *EthBlock
+}
+
 type PayloadEthContractCallEvent struct {
 	EthContractCallEvent []*EthContractCallEvent
 }
@@ -809,6 +813,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakeVerifierRemovedFromProto(dt)
 	case *snapshot.Payload_EthContractCallResults:
 		ret.Data = PayloadEthContractCallEventFromProto(dt)
+	case *snapshot.Payload_EthOracleVerifierLastBlock:
+		ret.Data = PayloadEthOracleVerifierLastBlockFromProto(dt)
 	case *snapshot.Payload_Topology:
 		ret.Data = PayloadTopologyFromProto(dt)
 	case *snapshot.Payload_LiquidityParameters:
@@ -991,6 +997,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityScores:
 		ret.Data = dt
 	case *snapshot.Payload_EthContractCallResults:
+		ret.Data = dt
+	case *snapshot.Payload_EthOracleVerifierLastBlock:
 		ret.Data = dt
 	}
 	return &ret
@@ -3875,6 +3883,42 @@ func (*PayloadEthContractCallEvent) Key() string {
 }
 
 func (*PayloadEthContractCallEvent) Namespace() SnapshotNamespace {
+	return EthereumOracleVerifierSnapshot
+}
+
+func PayloadEthOracleVerifierLastBlockFromProto(svd *snapshot.Payload_EthOracleVerifierLastBlock) *PayloadEthOracleLastBlock {
+	return &PayloadEthOracleLastBlock{
+		EthOracleLastBlock: &EthBlock{
+			Height: svd.EthOracleVerifierLastBlock.BlockHeight,
+			Time:   svd.EthOracleVerifierLastBlock.BlockTime,
+		},
+	}
+}
+
+func (p *PayloadEthOracleLastBlock) IntoProto() *snapshot.Payload_EthOracleVerifierLastBlock {
+	if p.EthOracleLastBlock != nil {
+		return &snapshot.Payload_EthOracleVerifierLastBlock{
+			EthOracleVerifierLastBlock: &snapshot.EthOracleVerifierLastBlock{
+				BlockHeight: p.EthOracleLastBlock.Height,
+				BlockTime:   p.EthOracleLastBlock.Time,
+			},
+		}
+	}
+
+	return &snapshot.Payload_EthOracleVerifierLastBlock{}
+}
+
+func (*PayloadEthOracleLastBlock) isPayload() {}
+
+func (p *PayloadEthOracleLastBlock) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadEthOracleLastBlock) Key() string {
+	return "ethoraclelastblock"
+}
+
+func (*PayloadEthOracleLastBlock) Namespace() SnapshotNamespace {
 	return EthereumOracleVerifierSnapshot
 }
 

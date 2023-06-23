@@ -125,6 +125,7 @@ message Payload {
     BankingRecurringGovernanceTransfers banking_recurring_governance_transfers = 60;
     BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
     EthContractCallResults eth_contract_call_results = 62;
+    EthOracleVerifierLastBlock eth_oracle_verifier_last_block = 63;
   }
 }
 
@@ -652,6 +653,11 @@ message StakeVerifierPending {
   uint64 log_index = 6;
   string tx_id = 7;
   string id = 8;
+}
+
+message EthOracleVerifierLastBlock {
+  uint64 block_height = 1;
+  uint64 block_time = 2;
 }
 
 message EthContractCallResults {
