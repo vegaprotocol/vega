@@ -683,6 +683,9 @@ func (e *Engine) SubmitStopOrders(
 
 	// not necessary going to trade on submission, could be nil
 	if conf != nil {
+		// increasing the gauge, just because we reuse the
+		// decrement function, and it required the order + passive
+		metrics.OrderGaugeAdd(1, market)
 		e.decrementOrderGaugeMetrics(market, conf.Order, conf.PassiveOrdersAffected)
 	}
 
@@ -707,13 +710,12 @@ func (e *Engine) CancelStopOrders(
 		return e.cancelStopOrdersByMarket(ctx, party, cancel.MarketID)
 	}
 	return e.cancelAllPartyStopOrders(ctx, party)
-
 }
 
 func (e *Engine) cancelStopOrders(
 	ctx context.Context,
 	party, market, orderID string,
-	idgen common.IDGenerator,
+	_ common.IDGenerator,
 ) error {
 	mkt, ok := e.markets[market]
 	if !ok {

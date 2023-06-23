@@ -657,6 +657,18 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	if !m.closed && m.canTrade() {
 		expired := m.removeExpiredOrders(ctx, t.UnixNano())
 		metrics.OrderGaugeAdd(-len(expired), m.GetID())
+		confirmations := m.removeExpiredStopOrders(ctx, t.UnixNano(), m.idgen)
+
+		stopsExpired := 0
+		for _, v := range confirmations {
+			stopsExpired++
+			for _, v := range v.PassiveOrdersAffected {
+				if v.Status != types.OrderStatusActive {
+					stopsExpired++
+				}
+			}
+		}
+		metrics.OrderGaugeAdd(-stopsExpired)
 	}
 
 	// some engines still needs to get updates:
@@ -1382,7 +1394,8 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	// or no order is triggered
 	// let's just submit it straight away
 	if m.as.InAuction() || !triggered {
-		return nil, m.poolStopOrders(ctx, fallsBellow, risesAbove)
+		m.poolStopOrders(ctx, fallsBellow, risesAbove)
+		return nil, nil
 	}
 
 	var confirmation *types.OrderConfirmation
@@ -1411,20 +1424,24 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 func (m *Market) poolStopOrders(
 	ctx context.Context,
 	fallsBellow, risesAbove *types.StopOrder,
-) error {
+) {
 	evts := []events.Event{}
 	if fallsBellow != nil {
 		m.stopOrders.Insert(fallsBellow)
+		if fallsBellow.Expiry.Expires() {
+			m.expiringStopOrders.Insert(fallsBellow.ID, fallsBellow.CreatedAt.UnixNano())
+		}
 		evts = append(evts, events.NewStopOrderEvent(ctx, fallsBellow))
 	}
 	if risesAbove != nil {
 		m.stopOrders.Insert(risesAbove)
+		if risesAbove.Expiry.Expires() {
+			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.CreatedAt.UnixNano())
+		}
 		evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
 	}
 
 	m.broker.SendBatch(evts)
-
-	return nil
 }
 
 func (m *Market) stopOrderWouldTriggerAtSubmission(
@@ -3279,7 +3296,71 @@ func (m *Market) orderAmendWhenParked(amendOrder *types.Order) *types.OrderConfi
 	}
 }
 
-// RemoveExpiredOrders remove all expired orders from the order book
+// submitTriggeredStopOrders gets a status as parameter.
+// this function is used on trigger but also on submission
+// at expiry, so just filters out with a parameter.
+func (m *Market) submitTriggeredStopOrders(
+	ctx context.Context,
+	stopOrders []*types.StopOrder,
+	status types.StopOrderStatus,
+	idgen common.IDGenerator,
+) []*types.OrderConfirmation {
+	confirmations := []*types.OrderConfirmation{}
+	evts := make([]events.Event, 0, len(stopOrders))
+
+	// might contains both the triggered orders and the expired OCO
+	for _, v := range stopOrders {
+		if v.Status == status {
+			conf, err := m.SubmitOrderWithIDGeneratorAndOrderID(
+				ctx, v.OrderSubmission, v.Party, idgen, idgen.NextID(),
+			)
+			if err != nil {
+				// not much we can do at that point, let's log the error and move on?
+				m.log.Error("could not submit stop order",
+					logging.StopOrderSubmission(v),
+					logging.Error(err))
+			}
+			if err == nil && conf != nil {
+				confirmations = append(confirmations, conf)
+			}
+		}
+
+		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(evts)
+
+	return confirmations
+}
+
+// removeExpiredOrders remove all expired orders from the order book
+// and also any pegged orders that are parked.
+func (m *Market) removeExpiredStopOrders(
+	ctx context.Context, timestamp int64, idgen common.IDGenerator,
+) []*types.OrderConfirmation {
+	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredStopOrders")
+	defer timer.EngineTimeCounterAdd()
+
+	toExpire := m.expiringStopOrders.Expire(timestamp)
+	stopOrders := m.stopOrders.RemoveExpired(toExpire)
+
+	evts := []events.Event{}
+	filteredOCO := []*types.StopOrder{}
+	for _, v := range stopOrders {
+		if v.Expiry.Expires() && *v.Expiry.ExpiryStrategy == types.StopOrderExpiryStrategySubmit && len(v.OCOLinkID) <= 0 {
+			filteredOCO = append(filteredOCO, v)
+			continue
+		}
+		// nothing to do, can send the event now
+		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(evts)
+
+	return m.submitTriggeredStopOrders(ctx, filteredOCO, types.StopOrderStatusExpired, idgen)
+}
+
+// removeExpiredOrders remove all expired orders from the order book
 // and also any pegged orders that are parked.
 func (m *Market) removeExpiredOrders(
 	ctx context.Context, timestamp int64,

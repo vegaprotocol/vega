@@ -268,6 +268,23 @@ type StopOrder struct {
 	UpdatedAt       time.Time
 }
 
+func (s *StopOrder) String() string {
+	return fmt.Sprintf(
+		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v)",
+		s.ID,
+		s.Party,
+		s.Market,
+		s.OrderSubmission.String(),
+		s.OrderID,
+		s.OCOLinkID,
+		s.Expiry.String(),
+		s.Trigger.String(),
+		s.Status,
+		s.CreatedAt,
+		s.UpdatedAt,
+	)
+}
+
 func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 	sub, err := NewOrderSubmissionFromProto(p.Submission)
 	if err != nil {
