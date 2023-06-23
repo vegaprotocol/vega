@@ -232,9 +232,8 @@ func PartyAddsTheFollowingOrdersToABatch(party string, exec Execution, time *stu
 		case Reduce:
 			orderSubmission.ReduceOnly = true
 		}
-
 		if err := exec.AddSubmitOrderToBatch(&orderSubmission, party); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil
