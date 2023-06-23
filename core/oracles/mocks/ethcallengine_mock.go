@@ -64,3 +64,15 @@ func (mr *MockEthCallEngineMockRecorder) MakeResult(arg0, arg1 interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeResult", reflect.TypeOf((*MockEthCallEngine)(nil).MakeResult), arg0, arg1)
 }
+
+// UpdatePreviousEthBlock mocks base method.
+func (m *MockEthCallEngine) UpdatePreviousEthBlock(arg0, arg1 uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdatePreviousEthBlock", arg0, arg1)
+}
+
+// UpdatePreviousEthBlock indicates an expected call of UpdatePreviousEthBlock.
+func (mr *MockEthCallEngineMockRecorder) UpdatePreviousEthBlock(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePreviousEthBlock", reflect.TypeOf((*MockEthCallEngine)(nil).UpdatePreviousEthBlock), arg0, arg1)
+}
