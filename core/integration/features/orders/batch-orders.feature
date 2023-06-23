@@ -103,17 +103,14 @@ Feature: Iceberg orders
       | party2 | USD   | ETH/DEC19 | 5050   | 4947      |
       | party3 | USD   | ETH/DEC19 | 576    | 999999433 |
 
+    #cancel an order which had been traded
+    When the parties cancel the following orders:
+      | party  | reference    | error                                  |
+      | party3 | this-order-5 | unable to find the order in the market |
+
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "101" for the market "ETH/DEC19"
 
-# Then the iceberg orders should have the following states:
-#   | party  | market id | side | visible volume | price | status                  | reserved volume | reference    |
-#   | party3 | ETH/DEC19 | buy  | 2              | 101   | STATUS_PARTIALLY_FILLED | 0               | this-order-6 |
-
-# When the parties cancel the following orders:
-#   | party  | reference    |
-#   | party3 | this-order-6 |
-# party3 increase batch order size
     Then the party "party4" starts a batch instruction
 
     Then the party "party4" adds the following iceberg orders to a batch:
@@ -144,10 +141,12 @@ Feature: Iceberg orders
       | party4 | party4-normal-order |
       | party4 | this-order-7 |
 
+#iceberg order canceled
     Then the iceberg orders should have the following states:
       | party  | market id | side | visible volume | price | status           | reserved volume | reference    |
       | party4 | ETH/DEC19 | buy  | 3              | 100   | STATUS_CANCELLED | 3               | this-order-7 |
 
+    And the network moves ahead "10" blocks
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party4 | USD   | ETH/DEC19 | 1123   | 998877  |
@@ -159,6 +158,7 @@ Feature: Iceberg orders
       | party  | reference    |
       | party4 | this-order-8 |
 
+#margin released after order cancellation
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party4 | USD   | ETH/DEC19 | 0      | 1000000 |
