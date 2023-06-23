@@ -310,12 +310,14 @@ type LiquidityMonitoringParameters struct {
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party ID
 	Party *vega.Party `json:"party"`
-	// The share owned by this liquidity provider (float)
+	// The share owned by this liquidity provider
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
 	// The average liquidity score
 	AverageScore string `json:"averageScore"`
+	// The virtual stake for this liquidity provider
+	VirtualStake string `json:"virtualStake"`
 }
 
 type LossSocialization struct {

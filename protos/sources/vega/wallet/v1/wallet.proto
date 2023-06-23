@@ -31,6 +31,8 @@ message SubmitTransactionRequest {
     commands.v1.CancelTransfer cancel_transfer = 1013;
     commands.v1.AnnounceNode announce_node = 1014;
     commands.v1.BatchMarketInstructions batch_market_instructions = 1015;
+    commands.v1.StopOrdersSubmission stop_orders_submission = 1016;
+    commands.v1.StopOrdersCancellation stop_orders_cancellation = 1017;
 
     // Validator commands
     commands.v1.NodeVote node_vote = 2002;
