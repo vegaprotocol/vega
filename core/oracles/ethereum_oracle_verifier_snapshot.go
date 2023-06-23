@@ -12,13 +12,15 @@ import (
 
 var (
 	contractCall = (&types.PayloadEthContractCallEvent{}).Key()
+	lastEthBlock = (&types.PayloadEthOracleLastBlock{}).Key()
 	hashKeys     = []string{
-		contractCall,
+		contractCall, lastEthBlock,
 	}
 )
 
 type ethereumOracleVerifierSnapshotState struct {
-	seralisedPendingCallEvents []byte
+	serialisedPendingCallEvents []byte
+	serialisedLastEthBlock      []byte
 }
 
 func (s *EthereumOracleVerifier) serialisePendingContractCallEvents() ([]byte, error) {
@@ -37,6 +39,28 @@ func (s *EthereumOracleVerifier) serialisePendingContractCallEvents() ([]byte, e
 	return proto.Marshal(pl.IntoProto())
 }
 
+func (s *EthereumOracleVerifier) serialiseLastEthBlock() ([]byte, error) {
+	s.log.Info("serialising last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", s.lastBlock)))
+
+	var pl types.Payload
+	if s.lastBlock != nil {
+		pl = types.Payload{
+			Data: &types.PayloadEthOracleLastBlock{
+				EthOracleLastBlock: &types.EthBlock{
+					Height: s.lastBlock.Height,
+					Time:   s.lastBlock.Time,
+				},
+			},
+		}
+	} else {
+		pl = types.Payload{
+			Data: &types.PayloadEthOracleLastBlock{},
+		}
+	}
+
+	return proto.Marshal(pl.IntoProto())
+}
+
 func (s *EthereumOracleVerifier) serialiseK(serialFunc func() ([]byte, error), dataField *[]byte) ([]byte, error) {
 	data, err := serialFunc()
 	if err != nil {
@@ -50,7 +74,9 @@ func (s *EthereumOracleVerifier) serialiseK(serialFunc func() ([]byte, error), d
 func (s *EthereumOracleVerifier) serialise(k string) ([]byte, error) {
 	switch k {
 	case contractCall:
-		return s.serialiseK(s.serialisePendingContractCallEvents, &s.snapshotState.seralisedPendingCallEvents)
+		return s.serialiseK(s.serialisePendingContractCallEvents, &s.snapshotState.serialisedPendingCallEvents)
+	case lastEthBlock:
+		return s.serialiseK(s.serialiseLastEthBlock, &s.snapshotState.serialisedLastEthBlock)
 	default:
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -81,9 +107,32 @@ func (s *EthereumOracleVerifier) LoadState(ctx context.Context, payload *types.P
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEthContractCallEvent:
 		return nil, s.restorePendingCallEvents(pl.EthContractCallEvent, payload)
+	case *types.PayloadEthOracleLastBlock:
+		return nil, s.restoreLastEthBlock(pl.EthOracleLastBlock, payload)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
+}
+
+func (s *EthereumOracleVerifier) OnStateLoaded(ctx context.Context) error {
+	// tell the eth call engine what the last block seen was so it does not retrigger calls
+	if s.lastBlock != nil && s.lastBlock.Height > 0 {
+		s.ethEngine.UpdatePreviousEthBlock(s.lastBlock.Height, s.lastBlock.Time)
+	}
+
+	return nil
+}
+
+func (s *EthereumOracleVerifier) restoreLastEthBlock(lastBlock *types.EthBlock, p *types.Payload) error {
+	s.log.Info("restoring last eth block", logging.String("last-eth-block", fmt.Sprintf("%+v", lastBlock)))
+	s.lastBlock = lastBlock
+
+	var err error
+	if s.snapshotState.serialisedLastEthBlock, err = proto.Marshal(p.IntoProto()); err != nil {
+		return fmt.Errorf("failed to unmarshal payload: %w", err)
+	}
+
+	return nil
 }
 
 func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthContractCallEvent, p *types.Payload) error {
@@ -109,7 +158,7 @@ func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthCo
 	}
 
 	var err error
-	if s.snapshotState.seralisedPendingCallEvents, err = proto.Marshal(p.IntoProto()); err != nil {
+	if s.snapshotState.serialisedPendingCallEvents, err = proto.Marshal(p.IntoProto()); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 

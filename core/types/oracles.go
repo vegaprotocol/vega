@@ -80,6 +80,11 @@ type OracleSpecSigners = DataSourceSpecSigners
 
 type OracleSpecStatus = DataSourceSpecStatus
 
+type EthBlock struct {
+	Height uint64
+	Time   uint64
+}
+
 type EthContractCallEvent struct {
 	BlockHeight uint64
 	BlockTime   uint64

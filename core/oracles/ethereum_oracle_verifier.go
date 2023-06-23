@@ -42,6 +42,7 @@ type EthereumConfirmations interface {
 type EthCallEngine interface {
 	MakeResult(specID string, bytes []byte) (ethcall.Result, error)
 	CallSpec(ctx context.Context, id string, atBlock uint64) (ethcall.Result, error)
+	UpdatePreviousEthBlock(height uint64, timestamp uint64)
 }
 
 type CallEngine interface {
@@ -70,6 +71,8 @@ type EthereumOracleVerifier struct {
 
 	pendingCallEvents    []*pendingCallEvent
 	finalizedCallResults []*types.EthContractCallEvent
+
+	lastBlock *types.EthBlock
 
 	mu     sync.Mutex
 	hashes map[string]struct{}
@@ -151,6 +154,11 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 		s.broker.Send(events.NewOracleDataEvent(context.Background(), vegapb.OracleData{ExternalData: dataProto.ExternalData}))
 
 		return nil
+	}
+
+	s.lastBlock = &types.EthBlock{
+		Height: callEvent.BlockHeight,
+		Time:   callEvent.BlockTime,
 	}
 
 	pending := &pendingCallEvent{
