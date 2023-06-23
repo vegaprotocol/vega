@@ -4919,13 +4919,13 @@ type LiquidityProviderFeeShare struct {
 
 	// Liquidity provider party ID.
 	Party string `protobuf:"bytes,1,opt,name=party,proto3" json:"party,omitempty"`
-	// Share own by this liquidity provider (float).
+	// Share own by this liquidity provider.
 	EquityLikeShare string `protobuf:"bytes,2,opt,name=equity_like_share,json=equityLikeShare,proto3" json:"equity_like_share,omitempty"`
 	// Average entry valuation of the liquidity provider for the market.
 	AverageEntryValuation string `protobuf:"bytes,3,opt,name=average_entry_valuation,json=averageEntryValuation,proto3" json:"average_entry_valuation,omitempty"`
 	// Average liquidity score.
 	AverageScore string `protobuf:"bytes,4,opt,name=average_score,json=averageScore,proto3" json:"average_score,omitempty"`
-	// The virtual stake of this liquidity provider (float).
+	// The virtual stake of this liquidity provider.
 	VirtualStake string `protobuf:"bytes,5,opt,name=virtual_stake,json=virtualStake,proto3" json:"virtual_stake,omitempty"`
 }
 

@@ -1059,13 +1059,13 @@ message MarketData {
 message LiquidityProviderFeeShare {
   // Liquidity provider party ID.
   string party = 1;
-  // Share own by this liquidity provider (float).
+  // Share own by this liquidity provider.
   string equity_like_share = 2;
   // Average entry valuation of the liquidity provider for the market.
   string average_entry_valuation = 3;
   // Average liquidity score.
   string average_score = 4;
-  // The virtual stake of this liquidity provider (float).
+  // The virtual stake of this liquidity provider.
   string virtual_stake = 5;
 }
 

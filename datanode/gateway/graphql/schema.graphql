@@ -332,13 +332,13 @@ type MarketTimestamps {
 type LiquidityProviderFeeShare {
   "The liquidity provider party ID"
   party: Party!
-  "The share owned by this liquidity provider (float)"
+  "The share owned by this liquidity provider"
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
   averageScore: String!
-  "The virtual stake for this liquidity provider (float)"
+  "The virtual stake for this liquidity provider"
   virtualStake: String!
 }
 
