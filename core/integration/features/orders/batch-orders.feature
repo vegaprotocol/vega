@@ -71,6 +71,8 @@ Feature: Iceberg orders
       | party1 | USD   | ETH/DEC19 | 7758   | 2242    |
       | party2 | USD   | ETH/DEC19 | 5053   | 4947    |
 
+# margin initial = 0.4878731*100*2*1.5 = 147
+
     Then the party "party3" starts a batch instruction
 
     Then the party "party3" adds the following orders to a batch:
@@ -86,7 +88,7 @@ Feature: Iceberg orders
 
     Then the following trades should be executed:
       | buyer  | seller | price | size |
-      | party3 | party1 | 100   | 4    |
+  | party3 | party1 | 100   | 4    |
       | party3 | party2 | 100   | 3    |
       | party3 | party1 | 100   | 2    |
 
@@ -97,6 +99,7 @@ Feature: Iceberg orders
       | party1 | USD   | ETH/DEC19 | 7752   | 2242      |
       | party2 | USD   | ETH/DEC19 | 5050   | 4947      |
       | party3 | USD   | ETH/DEC19 | 576    | 999999433 |
+
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "101" for the market "ETH/DEC19"
