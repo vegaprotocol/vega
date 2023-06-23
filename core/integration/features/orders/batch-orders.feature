@@ -39,6 +39,8 @@ Feature: Iceberg orders
       | party1 | USD   | 10000      |
       | party2 | USD   | 10000      |
       | party3 | USD   | 1000000000 |
+      | party4 | USD | 1000000 |
+      | party5 | USD | 1000000 |
       | aux    | USD   | 1000000    |
       | aux2   | USD   | 100000     |
       | lpprov | USD   | 90000000   |
@@ -86,9 +88,10 @@ Feature: Iceberg orders
 
     Then the party "party3" submits their batch instruction
 
+#Iceberg order trading during continous mode
     Then the following trades should be executed:
       | buyer  | seller | price | size |
-  | party3 | party1 | 100   | 4    |
+      | party3 | party1 | 100 | 4 |
       | party3 | party2 | 100   | 3    |
       | party3 | party1 | 100   | 2    |
 
@@ -100,6 +103,30 @@ Feature: Iceberg orders
       | party2 | USD   | ETH/DEC19 | 5050   | 4947      |
       | party3 | USD   | ETH/DEC19 | 576    | 999999433 |
 
-
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "101" for the market "ETH/DEC19"
+
+    #party3 increase batch order size
+    Then the party "party4" starts a batch instruction
+
+    Then the party "party4" adds the following iceberg orders to a batch:
+      | market id | side | volume | price | type       | tif     | reference    | peak size | minimum visible size |
+      | ETH/DEC19 | buy  | 6      | 101   | TYPE_LIMIT | TIF_GTC | this-order-7 | 3         | 1                    |
+      | ETH/DEC19 | buy  | 8      | 100   | TYPE_LIMIT | TIF_GTC | this-order-8 | 2         | 1                    |
+    Then the party "party4" adds the following orders to a batch:
+      | market id | side | volume | price | type       | tif     | reference           |
+      | ETH/DEC19 | buy  | 8      | 101   | TYPE_LIMIT | TIF_GTC | party4-normal-order |
+
+    Then the party "party4" submits their batch instruction
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party4 | USD   | ETH/DEC19 | 1132   | 998868  |
+
+    When the parties cancel the following orders:
+      | party  | reference           |
+      | party4 | party4-normal-order |
+
+# And the parties should have the following account balances:
+#   | party  | asset | market id | margin | general |
+#   | party4 | USD   | ETH/DEC19 | 0      | 1000000 |
