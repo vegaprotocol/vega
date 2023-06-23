@@ -282,7 +282,7 @@ func (e *Engine) restoreOwnState(ctx context.Context, mID string) (bool, error) 
 	}
 	if state, ok := e.marketCPStates[mID]; ok {
 		// set ELS state and the like
-		mkt.InheritParent(ctx, state)
+		mkt.RestoreELS(ctx, state)
 		// if there was state of the market to restore, then check if this is a successor market
 		if pid := mkt.GetParentMarketID(); len(pid) > 0 {
 			// mark parent market as being succeeded
@@ -332,7 +332,7 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 	// if parent market is active, mark as succeeded
 	if pmo, ok := e.markets[parent]; ok {
 		// succeeding a parent market before it was enacted is not allowed
-		if pmo.Mkt().State == types.MarketStateProposed {
+		if !restore && pmo.Mkt().State == types.MarketStateProposed {
 			e.RejectMarket(ctx, successor)
 			return ErrParentMarketNotEnactedYet
 		}
@@ -369,7 +369,8 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	if err := e.submitOrRestoreMarket(ctx, marketConfig, "", false, e.timeService.GetTimeNow()); err != nil {
 		return err
 	}
-	// attempt to restore market state. The restoreOwnState call handles both parent and successor markets
+	// attempt to restore market state from checkpoint, returns true if state (ELS) was restored
+	// error if the market doesn't exist
 	ok, err := e.restoreOwnState(ctx, marketConfig.ID)
 	if ok || err != nil {
 		return err
@@ -971,23 +972,36 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 	e.broker.SendBatch(evts)
 
+	rmCPStates := make([]string, 0, len(toDelete))
 	for _, id := range toDelete {
+		// a cancelled market cannot be succeeded, so remove it from the CP state immediately
+		if m, ok := e.markets[id]; ok && m.Mkt().State == types.MarketStateCancelled {
+			rmCPStates = append(rmCPStates, id)
+		}
 		e.removeMarket(id)
 	}
-	// clear slice
-	toDelete = make([]string, 0, len(toDelete))
 	// find state that should expire
 	for id, cpm := range e.marketCPStates {
 		// market field will be nil if the market is still current (ie not closed/settled)
-		if cpm.TTL.Before(t) && cpm.Market != nil {
-			toDelete = append(toDelete, id)
+		if !cpm.TTL.Before(t) {
+			// CP data has not expired yet
+			continue
+		}
+		if cpm.Market == nil {
+			// expired, and yet somehow the market is gone, this is stale data, must be removed
+			if _, ok := e.markets[id]; !ok {
+				rmCPStates = append(rmCPStates, id)
+			}
+		} else {
+			// market state was set, so this is a closed/settled market that was not succeeded in time
+			rmCPStates = append(rmCPStates, id)
 			assets, _ := cpm.Market.GetAssets()
 			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
 				e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 			}
 		}
 	}
-	for _, id := range toDelete {
+	for _, id := range rmCPStates {
 		delete(e.marketCPStates, id)
 		if ss, ok := e.successors[id]; ok {
 			// parent market expired, remove parent ID
