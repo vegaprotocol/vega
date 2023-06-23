@@ -106,27 +106,59 @@ Feature: Iceberg orders
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
     And the mark price should be "101" for the market "ETH/DEC19"
 
-    #party3 increase batch order size
+# Then the iceberg orders should have the following states:
+#   | party  | market id | side | visible volume | price | status                  | reserved volume | reference    |
+#   | party3 | ETH/DEC19 | buy  | 2              | 101   | STATUS_PARTIALLY_FILLED | 0               | this-order-6 |
+
+# When the parties cancel the following orders:
+#   | party  | reference    |
+#   | party3 | this-order-6 |
+# party3 increase batch order size
     Then the party "party4" starts a batch instruction
 
     Then the party "party4" adds the following iceberg orders to a batch:
       | market id | side | volume | price | type       | tif     | reference    | peak size | minimum visible size |
-      | ETH/DEC19 | buy  | 6      | 101   | TYPE_LIMIT | TIF_GTC | this-order-7 | 3         | 1                    |
+      | ETH/DEC19 | buy | 6 | 100 | TYPE_LIMIT | TIF_GTC | this-order-7 | 3 | 1 |
       | ETH/DEC19 | buy  | 8      | 100   | TYPE_LIMIT | TIF_GTC | this-order-8 | 2         | 1                    |
     Then the party "party4" adds the following orders to a batch:
       | market id | side | volume | price | type       | tif     | reference           |
-      | ETH/DEC19 | buy  | 8      | 101   | TYPE_LIMIT | TIF_GTC | party4-normal-order |
+      | ETH/DEC19 | buy | 8 | 100 | TYPE_LIMIT | TIF_GTC | party4-normal-order |
 
     Then the party "party4" submits their batch instruction
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party4 | USD   | ETH/DEC19 | 1132   | 998868  |
+      | party4 | USD | ETH/DEC19 | 1123 | 998877 |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party4 | ETH/DEC19 | 749         | 898    | 1123    | 1498    |
+
+    And the network moves ahead "10" blocks
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party4 | USD   | ETH/DEC19 | 1123   | 998877  |
 
     When the parties cancel the following orders:
       | party  | reference           |
       | party4 | party4-normal-order |
+      | party4 | this-order-7 |
 
-# And the parties should have the following account balances:
-#   | party  | asset | market id | margin | general |
-#   | party4 | USD   | ETH/DEC19 | 0      | 1000000 |
+    Then the iceberg orders should have the following states:
+      | party  | market id | side | visible volume | price | status           | reserved volume | reference    |
+      | party4 | ETH/DEC19 | buy  | 3              | 100   | STATUS_CANCELLED | 3               | this-order-7 |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party4 | USD   | ETH/DEC19 | 1123   | 998877  |
+    Then the parties should have the following margin levels:
+      | party  | market id | maintenance | search | initial | release |
+      | party4 | ETH/DEC19 | 749         | 898    | 1123    | 1498    |
+
+    When the parties cancel the following orders:
+      | party  | reference    |
+      | party4 | this-order-8 |
+
+    And the parties should have the following account balances:
+      | party  | asset | market id | margin | general |
+      | party4 | USD   | ETH/DEC19 | 0      | 1000000 |
