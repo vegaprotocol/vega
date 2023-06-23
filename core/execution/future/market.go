@@ -1407,14 +1407,14 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		risesAbove.Status = types.StopOrderStatusStopped
 		fallsBellow.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, fallsBellow.OrderSubmission, party, idgen, fallsBellow.OrderID,
+			ctx, fallsBellow.OrderSubmission, party, idgen, fallsBellow.OrderID, true,
 		)
 	case risesAboveTriggered:
 		risesAbove.Status = types.StopOrderStatusTriggered
 		fallsBellow.Status = types.StopOrderStatusStopped
 		risesAbove.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID,
+			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID, true,
 		)
 	}
 
@@ -1464,6 +1464,32 @@ func (m *Market) stopOrderWouldTriggerAtSubmission(
 	return false
 }
 
+func (m *Market) triggerStopOrders(
+	ctx context.Context,
+	idgen common.IDGenerator,
+) []*types.OrderConfirmation {
+	if m.lastTradedPrice == nil {
+		return nil
+	}
+
+	triggered, cancelled := m.stopOrders.PriceUpdated(m.lastTradedPrice)
+
+	if len(triggered) <= 0 {
+		return nil
+	}
+
+	evts := make([]events.Event, 0, len(cancelled))
+	for _, v := range cancelled {
+		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(evts)
+
+	confirmations := m.submitStopOrders(ctx, triggered, types.StopOrderStatusTriggered, idgen)
+
+	return append(m.triggerStopOrders(ctx, idgen), confirmations...)
+}
+
 // SubmitOrder submits the given order.
 func (m *Market) SubmitOrder(
 	ctx context.Context,
@@ -1473,7 +1499,7 @@ func (m *Market) SubmitOrder(
 ) (oc *types.OrderConfirmation, _ error) {
 	idgen := idgeneration.New(deterministicID)
 	return m.SubmitOrderWithIDGeneratorAndOrderID(
-		ctx, orderSubmission, party, idgen, idgen.NextID(),
+		ctx, orderSubmission, party, idgen, idgen.NextID(), true,
 	)
 }
 
@@ -1484,12 +1510,20 @@ func (m *Market) SubmitOrderWithIDGeneratorAndOrderID(
 	party string,
 	idgen common.IDGenerator,
 	orderID string,
+	checkForTriggers bool,
 ) (oc *types.OrderConfirmation, _ error) {
 	defer m.onTxProcessed()
 
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
+	defer func() {
+		if !checkForTriggers {
+			return
+		}
+
+		m.triggerStopOrders(ctx, idgen)
+	}()
 	order := orderSubmission.IntoOrder(party)
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
@@ -3296,10 +3330,10 @@ func (m *Market) orderAmendWhenParked(amendOrder *types.Order) *types.OrderConfi
 	}
 }
 
-// submitTriggeredStopOrders gets a status as parameter.
+// submitStopOrders gets a status as parameter.
 // this function is used on trigger but also on submission
 // at expiry, so just filters out with a parameter.
-func (m *Market) submitTriggeredStopOrders(
+func (m *Market) submitStopOrders(
 	ctx context.Context,
 	stopOrders []*types.StopOrder,
 	status types.StopOrderStatus,
@@ -3312,7 +3346,7 @@ func (m *Market) submitTriggeredStopOrders(
 	for _, v := range stopOrders {
 		if v.Status == status {
 			conf, err := m.SubmitOrderWithIDGeneratorAndOrderID(
-				ctx, v.OrderSubmission, v.Party, idgen, idgen.NextID(),
+				ctx, v.OrderSubmission, v.Party, idgen, idgen.NextID(), false,
 			)
 			if err != nil {
 				// not much we can do at that point, let's log the error and move on?
@@ -3357,7 +3391,7 @@ func (m *Market) removeExpiredStopOrders(
 
 	m.broker.SendBatch(evts)
 
-	return m.submitTriggeredStopOrders(ctx, filteredOCO, types.StopOrderStatusExpired, idgen)
+	return m.submitStopOrders(ctx, filteredOCO, types.StopOrderStatusExpired, idgen)
 }
 
 // removeExpiredOrders remove all expired orders from the order book

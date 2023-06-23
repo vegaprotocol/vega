@@ -779,7 +779,7 @@ func (e *Engine) SubmitOrder(
 
 	metrics.OrderGaugeAdd(1, submission.MarketID)
 	conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
-		ctx, submission, party, idgen, orderID)
+		ctx, submission, party, idgen, orderID, true)
 	if err != nil {
 		return nil, err
 	}
