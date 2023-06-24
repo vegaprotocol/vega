@@ -397,6 +397,10 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 	return
 }
 
+func (e *Engine) TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	return e.transferSpotFees(ctx, marketID, assetID, ft)
+}
+
 func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	return e.transferFees(ctx, marketID, assetID, ft)
 }
@@ -465,6 +469,30 @@ func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, tr
 	return responses, nil
 }
 
+func (e *Engine) TransferSpotFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	if len(ft.Transfers()) <= 0 {
+		return nil, nil
+	}
+	// check quickly that all parties have enough monies in their accounts
+	// this may be done only in case of continuous trading
+	for party, amount := range ft.TotalFeesAmountPerParty() {
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, party, assetID, types.AccountTypeGeneral))
+		if err != nil {
+			e.log.Error("unable to get party account",
+				logging.String("account-type", "general"),
+				logging.String("party-id", party),
+				logging.String("asset", assetID))
+			return nil, ErrAccountDoesNotExist
+		}
+
+		if generalAcc.Balance.LT(amount) {
+			return nil, ErrInsufficientFundsToPayFees
+		}
+	}
+
+	return e.transferSpotFees(ctx, marketID, assetID, ft)
+}
+
 func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil
@@ -497,6 +525,43 @@ func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID str
 	}
 
 	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
+func (e *Engine) transferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	makerFee, infraFee, liquiFee, err := e.getFeesAccounts(marketID, assetID)
+	if err != nil {
+		return nil, err
+	}
+
+	transfers := ft.Transfers()
+	responses := make([]*types.LedgerMovement, 0, len(transfers))
+
+	for _, transfer := range transfers {
+		req, err := e.getSpotFeeTransferRequest(
+			transfer, makerFee, infraFee, liquiFee, marketID, assetID)
+		if err != nil {
+			e.log.Error("Failed to build transfer request for event",
+				logging.Error(err))
+			return nil, err
+		}
+
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error("Failed to transfer funds", logging.Error(err))
+			return nil, err
+		}
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		responses = append(responses, res)
+	}
+
+	return responses, nil
 }
 
 func (e *Engine) transferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error) {
@@ -1517,6 +1582,66 @@ func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, updat
 		return res, mevt, nil
 	}
 	return res, nil, nil
+}
+
+func (e *Engine) getSpotFeeTransferRequest(
+	t *types.Transfer,
+	makerFee, infraFee, liquiFee *types.Account,
+	marketID, assetID string,
+) (*types.TransferRequest, error) {
+	var (
+		err     error
+		general *types.Account
+	)
+
+	// the accounts for the party we need
+
+	general, err = e.GetAccountByID(e.accountID(noMarket, t.Owner, assetID, types.AccountTypeGeneral))
+	if err != nil {
+		e.log.Error(
+			"Failed to get the general party account",
+			logging.String("owner-id", t.Owner),
+			logging.String("market-id", marketID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	treq := &types.TransferRequest{
+		Amount:    t.Amount.Amount.Clone(),
+		MinAmount: t.Amount.Amount.Clone(),
+		Asset:     assetID,
+		Type:      t.Type,
+	}
+
+	switch t.Type {
+	case types.TransferTypeInfrastructureFeePay:
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{infraFee}
+		return treq, nil
+	case types.TransferTypeInfrastructureFeeDistribute:
+		treq.FromAccount = []*types.Account{infraFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeLiquidityFeePay:
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{liquiFee}
+		return treq, nil
+	case types.TransferTypeLiquidityFeeDistribute:
+		treq.FromAccount = []*types.Account{liquiFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	case types.TransferTypeMakerFeePay:
+		treq.FromAccount = []*types.Account{general}
+		treq.ToAccount = []*types.Account{makerFee}
+		return treq, nil
+	case types.TransferTypeMakerFeeReceive:
+		treq.FromAccount = []*types.Account{makerFee}
+		treq.ToAccount = []*types.Account{general}
+		return treq, nil
+	default:
+		return nil, ErrInvalidTransferTypeForFeeRequest
+	}
 }
 
 func (e *Engine) getFeeTransferRequest(
@@ -2587,6 +2712,12 @@ func (e *Engine) GetPartyMarginAccount(market, party, asset string) (*types.Acco
 	return e.GetAccountByID(margin)
 }
 
+// GetPartyHoldingAccount returns a holding account given the partyID and market.
+func (e *Engine) GetPartyHoldingAccount(party, asset string) (*types.Account, error) {
+	margin := e.accountID(noMarket, party, asset, types.AccountTypeHolding)
+	return e.GetAccountByID(margin)
+}
+
 // GetPartyGeneralAccount returns a general account given the partyID.
 func (e *Engine) GetPartyGeneralAccount(partyID, asset string) (*types.Account, error) {
 	generalID := e.accountID(noMarket, partyID, asset, types.AccountTypeGeneral)
@@ -3337,7 +3468,7 @@ func (e *Engine) CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAs
 
 // PartyHasSufficientBalance checks if the party has sufficient amount in the general account.
 func (e *Engine) PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error {
-	acc, err := e.GetPartyGeneralAccount(asset, partyID)
+	acc, err := e.GetPartyGeneralAccount(partyID, asset)
 	if err != nil {
 		return err
 	}

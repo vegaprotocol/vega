@@ -19,6 +19,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/types"
@@ -50,7 +51,7 @@ func (m *Market) repricePeggedOrders(
 				m.log.Panic("if order is not parked, it should be on the book", logging.OrderID(oid))
 			}
 		}
-		if OrderReferenceCheck(*order).HasMoved(changes) {
+		if common.OrderReferenceCheck(*order).HasMoved(changes) {
 			// First if the order isn't parked, then
 			// we will just remove if from the orderbook
 			if order.Status != types.OrderStatusParked {

@@ -67,6 +67,7 @@ var (
 	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
 	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
 	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
+	ErrSpotMarketProposalDisabled                    = errors.New("spot market proposal disabled")
 	ErrOracleDataNormalization                       = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
@@ -1137,6 +1138,10 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			if !app.limits.CanProposeAsset() {
 				return ErrAssetProposalDisabled
 			}
+		case types.ProposalTermsTypeNewSpotMarket:
+			if !app.limits.CanProposeSpotMarket() {
+				return ErrSpotMarketProposalDisabled
+			}
 		}
 	}
 	return nil
@@ -1549,7 +1554,24 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicID 
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
 				logging.Error(err))
-			// an error happened when submitting the market + liquidity
+			// an error happened when submitting the market
+			// we should cancel this proposal now
+			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
+				// this should never happen
+				app.log.Panic("tried to reject an non-existing proposal",
+					logging.String("proposal-id", toSubmit.Proposal().ID),
+					logging.Error(err))
+			}
+			return err
+		}
+	} else if toSubmit.IsNewSpotMarket() {
+		oos := time.Unix(toSubmit.Proposal().Terms.ClosingTimestamp, 0).Round(time.Second)
+		nm := toSubmit.NewSpotMarket()
+		if err := app.exec.SubmitSpotMarket(ctx, nm.Market(), party, oos); err != nil {
+			app.log.Debug("unable to submit new spot market",
+				logging.ProposalID(nm.Market().ID),
+				logging.Error(err))
+			// an error happened when submitting the market
 			// we should cancel this proposal now
 			if err := app.gov.RejectProposal(ctx, toSubmit.Proposal(), types.ProposalErrorCouldNotInstantiateMarket, err); err != nil {
 				// this should never happen
@@ -1764,12 +1786,16 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactSuccessorMarket(ctx, prop)
 		case toEnact.IsNewMarket():
 			app.enactMarket(ctx, prop)
+		case toEnact.IsNewSpotMarket():
+			app.enactSpotMarket(ctx, prop)
 		case toEnact.IsNewAsset():
 			app.enactAsset(ctx, prop, toEnact.NewAsset())
 		case toEnact.IsUpdateAsset():
 			app.enactAssetUpdate(ctx, prop, toEnact.UpdateAsset())
 		case toEnact.IsUpdateMarket():
 			app.enactUpdateMarket(ctx, prop, toEnact.UpdateMarket())
+		case toEnact.IsUpdateSpotMarket():
+			app.enactUpdateSpotMarket(ctx, prop, toEnact.UpdateSpotMarket())
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
 		case toEnact.IsFreeform():
@@ -1877,6 +1903,10 @@ func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
+}
+
+func (app *App) enactSpotMarket(_ context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
 }
 
 func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
@@ -1999,6 +2029,17 @@ func (app *App) enactUpdateMarket(ctx context.Context, prop *types.Proposal, mar
 	if err := app.exec.UpdateMarket(ctx, market); err != nil {
 		prop.FailUnexpectedly(err)
 		app.log.Error("failed to update market",
+			logging.ProposalID(prop.ID),
+			logging.Error(err))
+		return
+	}
+	prop.State = types.ProposalStateEnacted
+}
+
+func (app *App) enactUpdateSpotMarket(ctx context.Context, prop *types.Proposal, market *types.Market) {
+	if err := app.exec.UpdateSpotMarket(ctx, market); err != nil {
+		prop.FailUnexpectedly(err)
+		app.log.Error("failed to update spot market",
 			logging.ProposalID(prop.ID),
 			logging.Error(err))
 		return

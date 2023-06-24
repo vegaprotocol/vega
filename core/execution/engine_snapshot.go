@@ -52,6 +52,27 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	return mks, e.newGeneratedProviders
 }
 
+func (e *Engine) spotMarketsStates() ([]*types.ExecSpotMarket, []types.StateProvider) {
+	mkts := len(e.spotMarketsCpy)
+	if mkts == 0 {
+		return nil, nil
+	}
+	mks := make([]*types.ExecSpotMarket, 0, mkts)
+
+	// we don't really know how many new markets there are so don't bother with the calculation
+	e.newGeneratedProviders = []types.StateProvider{}
+	for _, m := range e.spotMarketsCpy {
+		e.log.Debug("serialising spot market", logging.String("id", m.Mkt().ID))
+		mks = append(mks, m.GetState())
+		if _, ok := e.generatedProviders[m.GetID()]; !ok {
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.GetNewStateProviders()...)
+			e.generatedProviders[m.GetID()] = struct{}{}
+		}
+	}
+
+	return mks, e.newGeneratedProviders
+}
+
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*future.Market, error) {
 	marketConfig := em.Market
 
@@ -124,7 +145,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	// ensure this is set correctly
 	mkt.SetNextMTM(nextMTM)
 
-	e.publishNewMarketInfos(ctx, mkt)
+	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 	return mkt, nil
 }
 
@@ -161,10 +182,13 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 		return cpStates[i].Market.ID > cpStates[j].Market.ID
 	})
 
+	spotMkts, spotPvds := e.spotMarketsStates()
+
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
 				Markets:        mkts,
+				SpotMarkets:    spotMkts,
 				SettledMarkets: cpStates,
 			},
 		},
@@ -176,7 +200,7 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 	}
 	e.snapshotSerialised = s
 
-	return s, pvds, nil
+	return s, append(pvds, spotPvds...), nil
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {

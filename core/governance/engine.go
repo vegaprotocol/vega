@@ -62,13 +62,13 @@ type Broker interface {
 // computation.
 type Markets interface {
 	MarketExists(market string) bool
+	SpotMarketExists(market string) bool
 	GetMarket(market string, settled bool) (types.Market, bool)
 	GetMarketState(market string) (types.MarketState, error)
 	GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool)
 	RestoreMarket(ctx context.Context, marketConfig *types.Market) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	SpotsMarketsEnabled() bool
 	IsSucceeded(mktID string) bool
 }
 
@@ -623,14 +623,10 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 			m: mkt,
 		}
 	case types.ProposalTermsTypeNewSpotMarket:
-		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		newMarket := p.Terms.GetNewSpotMarket()
 		auctionDuration := enactTime.Sub(closeTime)
-		if !e.markets.SpotsMarketsEnabled() {
-			e.rejectProposal(ctx, p, types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled)
-			return nil, fmt.Errorf("%w, %v", ErrSpotsNotEnabled, types.ProposalErrorSpotNotEnabled)
-		}
 		if perr, err := validateNewSpotMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
@@ -943,7 +939,7 @@ func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *Proposal
 
 func (e *Engine) validateSpotMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
 	updateMarket := proposal.SpotMarketUpdate()
-	if !e.markets.MarketExists(updateMarket.MarketID) {
+	if !e.markets.SpotMarketExists(updateMarket.MarketID) {
 		e.log.Debug("market does not exist",
 			logging.MarketID(updateMarket.MarketID),
 			logging.PartyID(proposal.Party),
@@ -1003,9 +999,6 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	case types.ProposalTermsTypeCancelTransfer:
 		return e.validateCancelGovernanceTransfer(terms.GetCancelTransfer().Changes.TransferID)
 	case types.ProposalTermsTypeNewSpotMarket:
-		if !e.markets.SpotsMarketsEnabled() {
-			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
-		}
 		closeTime := time.Unix(terms.ClosingTimestamp, 0)
 		return validateNewSpotMarketChange(terms.GetNewSpotMarket(), e.assets, true, e.netp, enactTime.Sub(closeTime), enct)
 	case types.ProposalTermsTypeUpdateSpotMarket:

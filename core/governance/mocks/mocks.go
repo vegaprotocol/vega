@@ -129,18 +129,18 @@ func (mr *MockMarketsMockRecorder) RestoreMarket(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreMarket", reflect.TypeOf((*MockMarkets)(nil).RestoreMarket), arg0, arg1)
 }
 
-// SpotsMarketsEnabled mocks base method.
-func (m *MockMarkets) SpotsMarketsEnabled() bool {
+// SpotMarketExists mocks base method.
+func (m *MockMarkets) SpotMarketExists(arg0 string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SpotsMarketsEnabled")
+	ret := m.ctrl.Call(m, "SpotMarketExists", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// SpotsMarketsEnabled indicates an expected call of SpotsMarketsEnabled.
-func (mr *MockMarketsMockRecorder) SpotsMarketsEnabled() *gomock.Call {
+// SpotMarketExists indicates an expected call of SpotMarketExists.
+func (mr *MockMarketsMockRecorder) SpotMarketExists(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpotsMarketsEnabled", reflect.TypeOf((*MockMarkets)(nil).SpotsMarketsEnabled))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpotMarketExists", reflect.TypeOf((*MockMarkets)(nil).SpotMarketExists), arg0)
 }
 
 // StartOpeningAuction mocks base method.

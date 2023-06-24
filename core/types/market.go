@@ -318,12 +318,15 @@ func (t TradableInstrument) String() string {
 }
 
 func (t TradableInstrument) DeepClone() *TradableInstrument {
-	return &TradableInstrument{
-		Instrument:       t.Instrument.DeepClone(),
-		MarginCalculator: t.MarginCalculator.DeepClone(),
-		RiskModel:        t.RiskModel,
-		rmt:              t.rmt,
+	ti := &TradableInstrument{
+		Instrument: t.Instrument.DeepClone(),
+		RiskModel:  t.RiskModel,
+		rmt:        t.rmt,
 	}
+	if t.MarginCalculator != nil {
+		ti.MarginCalculator = t.MarginCalculator.DeepClone()
+	}
+	return ti
 }
 
 type InstrumentSpot struct {
@@ -349,6 +352,7 @@ type Spot struct {
 
 func SpotFromProto(s *proto.Spot) *Spot {
 	return &Spot{
+		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
 	}
@@ -356,6 +360,7 @@ func SpotFromProto(s *proto.Spot) *Spot {
 
 func (s Spot) IntoProto() *proto.Spot {
 	return &proto.Spot{
+		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
 	}
@@ -576,6 +581,9 @@ func (i Instrument) IntoProto() *proto.Instrument {
 	}
 	switch pt := p.(type) {
 	case *proto.Instrument_Future:
+		r.Product = pt
+
+	case *proto.Instrument_Spot:
 		r.Product = pt
 	}
 	return r

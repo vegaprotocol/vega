@@ -1119,6 +1119,8 @@ message NetworkLimits {
   int64 propose_market_enabled_from = 8;
   // Timestamp in Unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
   int64 propose_asset_enabled_from = 9;
+  // Are spot market proposals allowed at this point in time.
+  bool can_propose_spot_market = 10;
 }
 
 // Represents a liquidity order

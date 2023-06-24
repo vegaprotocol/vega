@@ -136,7 +136,9 @@ type Collateral interface {
 	CanCoverBond(market, party, asset string, amount *num.Uint) bool
 	Hash() []byte
 	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	TransferSpotFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.LedgerMovement, []events.Margin, []events.Margin, error)
 	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error)
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
@@ -145,6 +147,37 @@ type Collateral interface {
 	GetInsurancePoolBalance(marketID, asset string) (*num.Uint, bool)
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
+	CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAsset string) error
 	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
 	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
+	TransferToHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
+	ReleaseFromHoldingAccount(ctx context.Context, transfer *types.Transfer) (*types.LedgerMovement, error)
+	ClearSpotMarket(ctx context.Context, mktID, quoteAsset string) ([]*types.LedgerMovement, error)
+	PartyHasSufficientBalance(asset, partyID string, amount *num.Uint) error
+	TransferSpot(ctx context.Context, partyID, toPartyID, asset string, quantity *num.Uint) (*types.LedgerMovement, error)
+}
+
+type OrderReferenceCheck types.Order
+
+const (
+	// PriceMoveMid used to indicate that the mid price has moved.
+	PriceMoveMid = 1
+
+	// PriceMoveBestBid used to indicate that the best bid price has moved.
+	PriceMoveBestBid = 2
+
+	// PriceMoveBestAsk used to indicate that the best ask price has moved.
+	PriceMoveBestAsk = 4
+
+	// PriceMoveAll used to indicate everything has moved.
+	PriceMoveAll = PriceMoveMid + PriceMoveBestBid + PriceMoveBestAsk
+)
+
+func (o OrderReferenceCheck) HasMoved(changes uint8) bool {
+	return (o.PeggedOrder.Reference == types.PeggedReferenceMid &&
+		changes&PriceMoveMid > 0) ||
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestBid &&
+			changes&PriceMoveBestBid > 0) ||
+		(o.PeggedOrder.Reference == types.PeggedReferenceBestAsk &&
+			changes&PriceMoveBestAsk > 0)
 }

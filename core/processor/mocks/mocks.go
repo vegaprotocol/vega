@@ -434,6 +434,20 @@ func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
 }
 
+// SubmitSpotMarket mocks base method.
+func (m *MockExecutionEngine) SubmitSpotMarket(arg0 context.Context, arg1 *types.Market, arg2 string, arg3 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitSpotMarket", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SubmitSpotMarket indicates an expected call of SubmitSpotMarket.
+func (mr *MockExecutionEngineMockRecorder) SubmitSpotMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitSpotMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitSpotMarket), arg0, arg1, arg2, arg3)
+}
+
 // SubmitStopOrders mocks base method.
 func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common.IDGenerator, arg4, arg5 *string) error {
 	m.ctrl.T.Helper()
@@ -474,6 +488,20 @@ func (m *MockExecutionEngine) UpdateMarket(arg0 context.Context, arg1 *types.Mar
 func (mr *MockExecutionEngineMockRecorder) UpdateMarket(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarket", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarket), arg0, arg1)
+}
+
+// UpdateSpotMarket mocks base method.
+func (m *MockExecutionEngine) UpdateSpotMarket(arg0 context.Context, arg1 *types.Market) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSpotMarket", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSpotMarket indicates an expected call of UpdateSpotMarket.
+func (mr *MockExecutionEngineMockRecorder) UpdateSpotMarket(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSpotMarket", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateSpotMarket), arg0, arg1)
 }
 
 // MockGovernanceEngine is a mock of GovernanceEngine interface.
@@ -1879,6 +1907,20 @@ func (m *MockLimits) CanProposeMarket() bool {
 func (mr *MockLimitsMockRecorder) CanProposeMarket() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeMarket", reflect.TypeOf((*MockLimits)(nil).CanProposeMarket))
+}
+
+// CanProposeSpotMarket mocks base method.
+func (m *MockLimits) CanProposeSpotMarket() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanProposeSpotMarket")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanProposeSpotMarket indicates an expected call of CanProposeSpotMarket.
+func (mr *MockLimitsMockRecorder) CanProposeSpotMarket() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeSpotMarket", reflect.TypeOf((*MockLimits)(nil).CanProposeSpotMarket))
 }
 
 // CanTrade mocks base method.

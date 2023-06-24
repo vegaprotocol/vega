@@ -770,6 +770,21 @@ func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Accou
 	return
 }
 
+// GetPartyGeneralAccount returns the latest event WRT the party's general account.
+func (b *BrokerStub) GetPartyHoldingAccount(party, asset string) (ga types.Account, err error) {
+	batch := b.GetAccountEvents()
+	err = errors.New("account does not exist")
+	for _, e := range batch {
+		v := e.Account()
+		if v.Owner == party && v.Type == types.AccountType_ACCOUNT_TYPE_HOLDING && v.Asset == asset {
+			ga = v
+			err = nil
+		}
+	}
+
+	return
+}
+
 // GetRewardAccountBalance returns the latest event WRT the reward accounts with the given type for the asset.
 func (b *BrokerStub) GetRewardAccountBalance(accountType, asset string) (ga types.Account, err error) {
 	batch := b.GetAccountEvents()

@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/future"
+	"code.vegaprotocol.io/vega/core/execution/spot"
 	"code.vegaprotocol.io/vega/core/metrics"
 	"code.vegaprotocol.io/vega/core/monitor"
 	"code.vegaprotocol.io/vega/core/types"
@@ -54,6 +55,10 @@ type Engine struct {
 
 	markets    map[string]*future.Market
 	marketsCpy []*future.Market
+
+	spotMarkets    map[string]*spot.Market
+	spotMarketsCpy []*spot.Market
+
 	collateral common.Collateral
 	assets     common.Assets
 
@@ -143,6 +148,7 @@ func NewEngine(
 		log:                   log,
 		Config:                executionConfig,
 		markets:               map[string]*future.Market{},
+		spotMarkets:           map[string]*spot.Market{},
 		timeService:           ts,
 		collateral:            collateral,
 		assets:                assets,
@@ -180,11 +186,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 	for _, mkt := range e.marketsCpy {
 		mkt.ReloadConf(e.Matching, e.Risk, e.Position, e.Settlement, e.Fee)
 	}
-}
 
-func (e *Engine) SpotsMarketsEnabled() bool {
-	// TODO replace with real implementation
-	return false
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.ReloadConf(e.Matching, e.Fee)
+	}
 }
 
 func (e *Engine) Hash() []byte {
@@ -194,6 +199,12 @@ func (e *Engine) Hash() []byte {
 	for _, m := range e.marketsCpy {
 		hash := m.Hash()
 		e.log.Debug("market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
+		hashes = append(hashes, string(hash))
+	}
+
+	for _, m := range e.spotMarketsCpy {
+		hash := m.Hash()
+		e.log.Debug("spot market app state hash", logging.Hash(hash), logging.String("market-id", m.GetID()))
 		hashes = append(hashes, string(hash))
 	}
 
@@ -219,35 +230,42 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 		e.log.Debug("reject market", logging.MarketID(marketID))
 	}
 
-	mkt, ok := e.markets[marketID]
-	if !ok {
-		return nil, ErrMarketDoesNotExist
-	}
-
-	if err := mkt.Reject(ctx); err != nil {
-		return nil, err
-	}
-
-	idx := e.removeMarket(marketID)
-	if idx > -1 {
-		ret = append(ret, idx)
-	}
-	// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
-	// they should be purged here, and @TODO handle any errors
-	if successors, ok := e.successors[marketID]; ok {
-		delete(e.successors, marketID)
-		for _, sID := range successors {
-			if i, _ := e.RejectMarket(ctx, sID); len(i) > 0 {
-				ret = append(ret, i...)
-			}
-			delete(e.isSuccessor, sID)
+	// if the market is a futures market
+	if mkt, ok := e.markets[marketID]; ok {
+		if err := mkt.Reject(ctx); err != nil {
+			return nil, err
 		}
+
+		idx := e.removeMarket(marketID)
+		if idx > -1 {
+			ret = append(ret, idx)
+		}
+		// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
+		// they should be purged here, and @TODO handle any errors
+		if successors, ok := e.successors[marketID]; ok {
+			delete(e.successors, marketID)
+			for _, sID := range successors {
+				if i, _ := e.RejectMarket(ctx, sID); len(i) > 0 {
+					ret = append(ret, i...)
+				}
+				delete(e.isSuccessor, sID)
+			}
+		}
+		// remove entries in succession maps
+		delete(e.isSuccessor, marketID)
+		// and clear out any state that may exist
+		delete(e.marketCPStates, marketID)
+		return ret, nil
 	}
-	// remove entries in succession maps
-	delete(e.isSuccessor, marketID)
-	// and clear out any state that may exist
-	delete(e.marketCPStates, marketID)
-	return ret, nil
+	// if the market is a spot market
+	if mkt, ok := e.spotMarkets[marketID]; ok {
+		if err := mkt.Reject(ctx); err != nil {
+			return nil, err
+		}
+		e.removeMarket(marketID)
+		return nil, nil
+	}
+	return nil, ErrMarketDoesNotExist
 }
 
 // StartOpeningAuction will start the opening auction of the given market.
@@ -257,18 +275,21 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 		e.log.Debug("start opening auction", logging.MarketID(marketID))
 	}
 
-	mkt, ok := e.markets[marketID]
-	if !ok {
-		return ErrMarketDoesNotExist
+	if mkt, ok := e.markets[marketID]; ok {
+		err := mkt.StartOpeningAuction(ctx)
+		if err != nil {
+			return err
+		}
+		// proposal was accepted, the parent market should not be checked here, it'll reach the correct state
+		// either before this (in case of restore) or when calling SucceedMarket. If neither are called,
+		// this proposal doesn't need to have the ParentMarketID checked.
+
+		return nil
 	}
-	err := mkt.StartOpeningAuction(ctx)
-	if err != nil {
-		return err
+	if mkt, ok := e.spotMarkets[marketID]; ok {
+		return mkt.StartOpeningAuction(ctx)
 	}
-	// proposal was accepted, the parent market should not be checked here, it'll reach the correct state
-	// either before this (in case of restore) or when calling SucceedMarket. If neither are called,
-	// this proposal doesn't need to have the ParentMarketID checked.
-	return nil
+	return ErrMarketDoesNotExist
 }
 
 func (e *Engine) SucceedMarket(ctx context.Context, successor, parent string) error {
@@ -344,19 +365,31 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 
 // IsEligibleForProposerBonus checks if the given value is greater than that market quantum * quantum_multiplier.
 func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bool {
-	if _, ok := e.markets[marketID]; !ok {
-		return false
+	if _, ok := e.markets[marketID]; ok {
+		quantum, err := e.collateral.GetAssetQuantum(e.markets[marketID].GetSettlementAsset())
+		if err != nil {
+			return false
+		}
+		return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.marketCreationQuantumMultiple))
 	}
-	quantum, err := e.collateral.GetAssetQuantum(e.markets[marketID].GetSettlementAsset())
-	if err != nil {
-		return false
+	if _, ok := e.spotMarkets[marketID]; ok {
+		quantum, err := e.collateral.GetAssetQuantum(e.spotMarkets[marketID].GetQuoteAsset())
+		if err != nil {
+			return false
+		}
+		return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.marketCreationQuantumMultiple))
 	}
-	return value.ToDecimal().GreaterThan(quantum.Mul(e.npv.marketCreationQuantumMultiple))
+	return false
 }
 
 // SubmitMarket submits a new market configuration to the network.
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error {
 	return e.submitOrRestoreMarket(ctx, marketConfig, proposer, true, oos)
+}
+
+// SubmitSpotMarket submits a new spot market configuration to the network.
+func (e *Engine) SubmitSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error {
+	return e.submitOrRestorSpotMarket(ctx, marketConfig, proposer, true, oos)
 }
 
 // RestoreMarket restores a new market from proposal checkpoint.
@@ -410,14 +443,54 @@ func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.
 		if err != nil {
 			e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
 		}
-		asset := assets[0]
-		e.marketActivityTracker.MarketProposed(asset, marketConfig.ID, proposer)
+		e.marketActivityTracker.MarketProposed(assets[0], marketConfig.ID, proposer)
 	}
 
 	// keep state in pending, opening auction is triggered when proposal is enacted
 	mkt := e.markets[marketConfig.ID]
+	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
+	return nil
+}
 
-	e.publishNewMarketInfos(ctx, mkt)
+func (e *Engine) submitOrRestorSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string, isNewMarket bool, oos time.Time) error {
+	if e.log.IsDebug() {
+		msg := "submit spot market"
+		if !isNewMarket {
+			msg = "restore spot market"
+		}
+		e.log.Debug(msg, logging.Market(*marketConfig))
+	}
+
+	if err := e.submitSpotMarket(ctx, marketConfig, oos); err != nil {
+		return err
+	}
+
+	if isNewMarket {
+		assets, err := marketConfig.GetAssets()
+		if err != nil {
+			e.log.Panic("failed to get asset from market config", logging.String("market", marketConfig.ID), logging.String("error", err.Error()))
+		}
+		e.marketActivityTracker.MarketProposed(assets[1], marketConfig.ID, proposer)
+	}
+
+	// keep state in pending, opening auction is triggered when proposal is enacted
+	mkt := e.spotMarkets[marketConfig.ID]
+	e.publishNewMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
+	return nil
+}
+
+// UpdateSpotMarket will update an existing market configuration.
+func (e *Engine) UpdateSpotMarket(ctx context.Context, marketConfig *types.Market) error {
+	e.log.Info("update spot market", logging.Market(*marketConfig))
+
+	mkt := e.spotMarkets[marketConfig.ID]
+
+	if err := mkt.Update(ctx, marketConfig); err != nil {
+		return err
+	}
+
+	e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
+
 	return nil
 }
 
@@ -431,22 +504,22 @@ func (e *Engine) UpdateMarket(ctx context.Context, marketConfig *types.Market) e
 		return err
 	}
 
-	e.publishUpdateMarketInfos(ctx, mkt)
+	e.publishUpdateMarketInfos(ctx, mkt.GetMarketData(), *mkt.Mkt())
 
 	return nil
 }
 
-func (e *Engine) publishNewMarketInfos(ctx context.Context, mkt *future.Market) {
-	// send a market data event for this market when it's created so graphql does not fail
-	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	e.broker.Send(events.NewMarketCreatedEvent(ctx, *mkt.Mkt()))
-	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.Mkt()))
+func (e *Engine) publishNewMarketInfos(ctx context.Context, data types.MarketData, mkt types.Market) {
+	// we send a market data event for this market when it's created so graphql does not fail
+	e.broker.Send(events.NewMarketDataEvent(ctx, data))
+	e.broker.Send(events.NewMarketCreatedEvent(ctx, mkt))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, mkt))
 }
 
-func (e *Engine) publishUpdateMarketInfos(ctx context.Context, mkt *future.Market) {
-	// send a market data event for this market when it's created so graphql does not fail
-	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.Mkt()))
+func (e *Engine) publishUpdateMarketInfos(ctx context.Context, data types.MarketData, mkt types.Market) {
+	// we send a market data event for this market when it's created so graphql does not fail
+	e.broker.Send(events.NewMarketDataEvent(ctx, data))
+	e.broker.Send(events.NewMarketUpdatedEvent(ctx, mkt))
 }
 
 // submitMarket will submit a new market configuration to the network.
@@ -517,6 +590,125 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 	return e.propagateInitialNetParams(ctx, mkt)
 }
 
+// submitMarket will submit a new market configuration to the network.
+func (e *Engine) submitSpotMarket(ctx context.Context, marketConfig *types.Market, oos time.Time) error {
+	if len(marketConfig.ID) == 0 {
+		return ErrNoMarketID
+	}
+
+	// ensure the asset for this new market exists
+	assets, err := marketConfig.GetAssets()
+	if err != nil {
+		return err
+	}
+	baseAsset := assets[0]
+	if !e.collateral.AssetExists(baseAsset) {
+		e.log.Error("unable to create a spot market with an invalid base asset",
+			logging.MarketID(marketConfig.ID),
+			logging.AssetID(baseAsset))
+	}
+
+	quoteAsset := assets[1]
+	if !e.collateral.AssetExists(quoteAsset) {
+		e.log.Error("unable to create a spot market with an invalid quote asset",
+			logging.MarketID(marketConfig.ID),
+			logging.AssetID(quoteAsset))
+	}
+
+	// create market auction state
+	mas := monitor.NewAuctionState(marketConfig, oos)
+	bad, err := e.assets.Get(baseAsset)
+	if err != nil {
+		e.log.Error("Failed to create a new market, unknown asset",
+			logging.MarketID(marketConfig.ID),
+			logging.String("asset-id", baseAsset),
+			logging.Error(err),
+		)
+		return err
+	}
+	qad, err := e.assets.Get(quoteAsset)
+	if err != nil {
+		e.log.Error("Failed to create a new market, unknown asset",
+			logging.MarketID(marketConfig.ID),
+			logging.String("asset-id", quoteAsset),
+			logging.Error(err),
+		)
+		return err
+	}
+	mkt, err := spot.NewMarket(
+		ctx,
+		e.log,
+		e.Matching,
+		e.Fee,
+		e.collateral,
+		marketConfig,
+		e.timeService,
+		e.broker,
+		mas,
+		e.stateVarEngine,
+		e.marketActivityTracker,
+		bad,
+		qad,
+		e.peggedOrderCountUpdated,
+	)
+	if err != nil {
+		e.log.Error("failed to instantiate market",
+			logging.MarketID(marketConfig.ID),
+			logging.Error(err),
+		)
+		return err
+	}
+
+	e.spotMarkets[marketConfig.ID] = mkt
+	e.spotMarketsCpy = append(e.spotMarketsCpy, mkt)
+	e.collateral.CreateSpotMarketAccounts(ctx, marketConfig.ID, quoteAsset)
+
+	if err := e.propagateSpotInitialNetParams(ctx, mkt); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Engine) propagateSpotInitialNetParams(ctx context.Context, mkt *spot.Market) error {
+	if !e.npv.minLpStakeQuantumMultiple.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, e.npv.minLpStakeQuantumMultiple)
+	}
+	if e.npv.auctionMinDuration != -1 {
+		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
+	}
+	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
+		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee); err != nil {
+			return err
+		}
+	}
+
+	if !e.npv.makerFee.Equal(num.DecimalFromInt64(-1)) {
+		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee); err != nil {
+			return err
+		}
+	}
+
+	if e.npv.feeDistributionTimeStep != -1 {
+		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(e.npv.feeDistributionTimeStep)
+	}
+
+	if e.npv.marketValueWindowLength != -1 {
+		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
+	}
+
+	if !e.npv.suppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
+	}
+	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
+	}
+	if e.npv.markPriceUpdateMaximumFrequency > 0 {
+		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, e.npv.markPriceUpdateMaximumFrequency)
+	}
+	return nil
+}
+
 func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Market) error {
 	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
@@ -583,17 +775,33 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Mark
 func (e *Engine) removeMarket(mktID string) int {
 	e.log.Debug("removing market", logging.String("id", mktID))
 
-	delete(e.markets, mktID)
-	for i, mkt := range e.marketsCpy {
-		if mkt.GetID() == mktID {
-			mkt.StopSnapshots()
-
-			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
-			e.marketsCpy[len(e.marketsCpy)-1] = nil
-			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
-			e.marketActivityTracker.RemoveMarket(mktID)
-			e.log.Debug("removed in total", logging.String("id", mktID))
-			return i
+	if _, ok := e.markets[mktID]; ok {
+		delete(e.markets, mktID)
+		for i, mkt := range e.marketsCpy {
+			if mkt.GetID() == mktID {
+				mkt.StopSnapshots()
+				copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
+				e.marketsCpy[len(e.marketsCpy)-1] = nil
+				e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+				e.marketActivityTracker.RemoveMarket(mktID)
+				e.log.Debug("removed in total", logging.String("id", mktID))
+				return i
+			}
+		}
+		return -1
+	}
+	if _, ok := e.spotMarkets[mktID]; ok {
+		delete(e.spotMarkets, mktID)
+		for i, mkt := range e.spotMarketsCpy {
+			if mkt.GetID() == mktID {
+				mkt.StopSnapshots()
+				copy(e.spotMarketsCpy[i:], e.spotMarketsCpy[i+1:])
+				e.spotMarketsCpy[len(e.spotMarketsCpy)-1] = nil
+				e.spotMarketsCpy = e.spotMarketsCpy[:len(e.spotMarketsCpy)-1]
+				e.marketActivityTracker.RemoveMarket(mktID)
+				e.log.Debug("removed in total", logging.String("id", mktID))
+				return i
+			}
 		}
 	}
 	return -1
@@ -644,25 +852,39 @@ func (e *Engine) SubmitOrder(
 		e.log.Debug("submit order", logging.OrderSubmission(submission))
 	}
 
-	mkt, ok := e.markets[submission.MarketID]
-	if !ok {
-		return nil, types.ErrInvalidMarketID
+	if mkt, ok := e.markets[submission.MarketID]; ok {
+		if submission.PeggedOrder != nil && !e.canSubmitPeggedOrder() {
+			return nil, &types.ErrTooManyPeggedOrders
+		}
+
+		metrics.OrderGaugeAdd(1, submission.MarketID)
+		conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
+			ctx, submission, party, idgen, orderID)
+		if err != nil {
+			return nil, err
+		}
+
+		e.decrementOrderGaugeMetrics(submission.MarketID, conf.Order, conf.PassiveOrdersAffected)
+		return conf, nil
 	}
 
-	if submission.PeggedOrder != nil && !e.canSubmitPeggedOrder() {
-		return nil, &types.ErrTooManyPeggedOrders
+	if mkt, ok := e.spotMarkets[submission.MarketID]; ok {
+		if submission.PeggedOrder != nil && !e.canSubmitPeggedOrder() {
+			return nil, &types.ErrTooManyPeggedOrders
+		}
+
+		metrics.OrderGaugeAdd(1, submission.MarketID)
+		conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
+			ctx, submission, party, idgen, orderID)
+		if err != nil {
+			return nil, err
+		}
+
+		e.decrementOrderGaugeMetrics(submission.MarketID, conf.Order, conf.PassiveOrdersAffected)
+		return conf, nil
 	}
 
-	metrics.OrderGaugeAdd(1, submission.MarketID)
-	conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
-		ctx, submission, party, idgen, orderID)
-	if err != nil {
-		return nil, err
-	}
-
-	e.decrementOrderGaugeMetrics(submission.MarketID, conf.Order, conf.PassiveOrdersAffected)
-
-	return conf, nil
+	return nil, types.ErrInvalidMarketID
 }
 
 // AmendOrder takes order amendment details and attempts to amend the order
@@ -682,19 +904,26 @@ func (e *Engine) AmendOrder(
 		e.log.Debug("amend order", logging.OrderAmendment(amendment))
 	}
 
-	mkt, ok := e.markets[amendment.MarketID]
-	if !ok {
-		return nil, types.ErrInvalidMarketID
+	if mkt, ok := e.markets[amendment.MarketID]; ok {
+		conf, err := mkt.AmendOrderWithIDGenerator(ctx, amendment, party, idgen)
+		if err != nil {
+			return nil, err
+		}
+
+		e.decrementOrderGaugeMetrics(amendment.MarketID, conf.Order, conf.PassiveOrdersAffected)
+		return conf, nil
+	}
+	if mkt, ok := e.spotMarkets[amendment.MarketID]; ok {
+		conf, err := mkt.AmendOrderWithIDGenerator(ctx, amendment, party, idgen)
+		if err != nil {
+			return nil, err
+		}
+
+		e.decrementOrderGaugeMetrics(amendment.MarketID, conf.Order, conf.PassiveOrdersAffected)
+		return conf, nil
 	}
 
-	conf, err := mkt.AmendOrderWithIDGenerator(ctx, amendment, party, idgen)
-	if err != nil {
-		return nil, err
-	}
-
-	e.decrementOrderGaugeMetrics(amendment.MarketID, conf.Order, conf.PassiveOrdersAffected)
-
-	return conf, nil
+	return nil, types.ErrInvalidMarketID
 }
 
 func (e *Engine) decrementOrderGaugeMetrics(
@@ -752,55 +981,93 @@ func (e *Engine) cancelOrder(
 	party, market, orderID string,
 	idgen common.IDGenerator,
 ) ([]*types.OrderCancellationConfirmation, error) {
-	mkt, ok := e.markets[market]
-	if !ok {
-		return nil, types.ErrInvalidMarketID
+	if mkt, ok := e.markets[market]; ok {
+		conf, err := mkt.CancelOrderWithIDGenerator(ctx, party, orderID, idgen)
+		if err != nil {
+			return nil, err
+		}
+		if conf.Order.Status == types.OrderStatusCancelled {
+			metrics.OrderGaugeAdd(-1, market)
+		}
+		return []*types.OrderCancellationConfirmation{conf}, nil
 	}
-	conf, err := mkt.CancelOrderWithIDGenerator(ctx, party, orderID, idgen)
-	if err != nil {
-		return nil, err
+	if mkt, ok := e.spotMarkets[market]; ok {
+		conf, err := mkt.CancelOrderWithIDGenerator(ctx, party, orderID, idgen)
+		if err != nil {
+			return nil, err
+		}
+		if conf.Order.Status == types.OrderStatusCancelled {
+			metrics.OrderGaugeAdd(-1, market)
+		}
+		return []*types.OrderCancellationConfirmation{conf}, nil
 	}
-	if conf.Order.Status == types.OrderStatusCancelled {
-		metrics.OrderGaugeAdd(-1, market)
-	}
-	return []*types.OrderCancellationConfirmation{conf}, nil
+	return nil, types.ErrInvalidMarketID
 }
 
 func (e *Engine) cancelOrderByMarket(ctx context.Context, party, market string) ([]*types.OrderCancellationConfirmation, error) {
-	mkt, ok := e.markets[market]
-	if !ok {
-		return nil, types.ErrInvalidMarketID
+	if mkt, ok := e.markets[market]; ok {
+		confirmations, err := mkt.CancelAllOrders(ctx, party)
+		if err != nil {
+			return nil, err
+		}
+		var confirmed int
+		for _, conf := range confirmations {
+			if conf.Order.Status == types.OrderStatusCancelled {
+				confirmed++
+			}
+		}
+		metrics.OrderGaugeAdd(-confirmed, market)
+		return confirmations, nil
 	}
-	confirmations, err := mkt.CancelAllOrders(ctx, party)
-	if err != nil {
+	if mkt, ok := e.spotMarkets[market]; ok {
+		confirmations, err := mkt.CancelAllOrders(ctx, party)
+		if err != nil {
+			return nil, err
+		}
+		var confirmed int
+		for _, conf := range confirmations {
+			if conf.Order.Status == types.OrderStatusCancelled {
+				confirmed++
+			}
+		}
+		metrics.OrderGaugeAdd(-confirmed, market)
+		return confirmations, nil
+	}
+	return nil, types.ErrInvalidMarketID
+}
+
+func (e *Engine) cancelAllPartyOrdersForMarket(ctx context.Context, ID, party string, f func(context.Context, string) ([]*types.OrderCancellationConfirmation, error)) ([]*types.OrderCancellationConfirmation, error) {
+	confs, err := f(ctx, party)
+	if err != nil && err != common.ErrTradingNotAllowed {
 		return nil, err
 	}
 	var confirmed int
-	for _, conf := range confirmations {
+	for _, conf := range confs {
 		if conf.Order.Status == types.OrderStatusCancelled {
 			confirmed++
 		}
 	}
-	metrics.OrderGaugeAdd(-confirmed, market)
-	return confirmations, nil
+	metrics.OrderGaugeAdd(-confirmed, ID)
+	return confs, nil
 }
 
 func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*types.OrderCancellationConfirmation, error) {
 	confirmations := []*types.OrderCancellationConfirmation{}
 
 	for _, mkt := range e.marketsCpy {
-		confs, err := mkt.CancelAllOrders(ctx, party)
+		confs, err := e.cancelAllPartyOrdersForMarket(ctx, mkt.GetID(), party, mkt.CancelAllOrders)
 		if err != nil && err != common.ErrTradingNotAllowed {
 			return nil, err
 		}
 		confirmations = append(confirmations, confs...)
-		var confirmed int
-		for _, conf := range confs {
-			if conf.Order.Status == types.OrderStatusCancelled {
-				confirmed++
-			}
+	}
+
+	for _, mkt := range e.spotMarketsCpy {
+		confs, err := e.cancelAllPartyOrdersForMarket(ctx, mkt.GetID(), party, mkt.CancelAllOrders)
+		if err != nil && err != common.ErrTradingNotAllowed {
+			return nil, err
 		}
-		metrics.OrderGaugeAdd(-confirmed, mkt.GetID())
+		confirmations = append(confirmations, confs...)
 	}
 	return confirmations, nil
 }
@@ -824,11 +1091,15 @@ func (e *Engine) SubmitLiquidityProvision(
 	}
 
 	mkt, ok := e.markets[sub.MarketID]
-	if !ok {
-		return types.ErrInvalidMarketID
+	if ok {
+		return mkt.SubmitLiquidityProvision(ctx, sub, party, deterministicID)
 	}
 
-	return mkt.SubmitLiquidityProvision(ctx, sub, party, deterministicID)
+	spotMkt, ok := e.spotMarkets[sub.MarketID]
+	if ok {
+		return spotMkt.SubmitLiquidityProvision(ctx, sub, party, deterministicID)
+	}
+	return types.ErrInvalidMarketID
 }
 
 func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string,
@@ -848,11 +1119,15 @@ func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 	}
 
 	mkt, ok := e.markets[lpa.MarketID]
-	if !ok {
-		return types.ErrInvalidMarketID
+	if ok {
+		return mkt.AmendLiquidityProvision(ctx, lpa, party, deterministicID)
 	}
 
-	return mkt.AmendLiquidityProvision(ctx, lpa, party, deterministicID)
+	spotMkt, ok := e.spotMarkets[lpa.MarketID]
+	if ok {
+		return spotMkt.AmendLiquidityProvision(ctx, lpa, party, deterministicID)
+	}
+	return types.ErrInvalidMarketID
 }
 
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (returnedErr error) {
@@ -870,11 +1145,15 @@ func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 	}
 
 	mkt, ok := e.markets[cancel.MarketID]
-	if !ok {
-		return types.ErrInvalidMarketID
+	if ok {
+		return mkt.CancelLiquidityProvision(ctx, cancel, party)
 	}
 
-	return mkt.CancelLiquidityProvision(ctx, cancel, party)
+	spotMkt, ok := e.spotMarkets[cancel.MarketID]
+	if ok {
+		return spotMkt.CancelLiquidityProvision(ctx, cancel, party)
+	}
+	return types.ErrInvalidMarketID
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
@@ -970,6 +1249,16 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		}
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
+
+	for _, mkt := range e.spotMarketsCpy {
+		closing := mkt.OnTick(ctx, t)
+		if closing {
+			e.log.Info("spot market is closed, removing from execution engine",
+				logging.MarketID(mkt.GetID()))
+			toDelete = append(toDelete, mkt.GetID())
+		}
+		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
+	}
 	e.broker.SendBatch(evts)
 
 	rmCPStates := make([]string, 0, len(toDelete))
@@ -1042,14 +1331,19 @@ func (e *Engine) BlockEnd(ctx context.Context) {
 	for _, mkt := range e.marketsCpy {
 		mkt.BlockEnd(ctx)
 	}
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.BlockEnd(ctx)
+	}
 }
 
 func (e *Engine) GetMarketState(mktID string) (types.MarketState, error) {
-	mkt, ok := e.markets[mktID]
-	if !ok {
-		return types.MarketStateUnspecified, types.ErrInvalidMarketID
+	if mkt, ok := e.markets[mktID]; ok {
+		return mkt.GetMarketState(), nil
 	}
-	return mkt.GetMarketState(), nil
+	if mkt, ok := e.spotMarkets[mktID]; ok {
+		return mkt.GetMarketState(), nil
+	}
+	return types.MarketStateUnspecified, types.ErrInvalidMarketID
 }
 
 func (e *Engine) IsSucceeded(mktID string) bool {
@@ -1062,15 +1356,20 @@ func (e *Engine) IsSucceeded(mktID string) bool {
 }
 
 func (e *Engine) GetMarketData(mktID string) (types.MarketData, error) {
-	mkt, ok := e.markets[mktID]
-	if !ok {
-		return types.MarketData{}, types.ErrInvalidMarketID
+	if mkt, ok := e.markets[mktID]; ok {
+		return mkt.GetMarketData(), nil
 	}
-	return mkt.GetMarketData(), nil
+	if mkt, ok := e.spotMarkets[mktID]; ok {
+		return mkt.GetMarketData(), nil
+	}
+	return types.MarketData{}, types.ErrInvalidMarketID
 }
 
 func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) error {
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
+	}
+	for _, mkt := range e.spotMarketsCpy {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, d)
 	}
 	e.npv.auctionMinDuration = d
@@ -1078,7 +1377,7 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 }
 
 func (e *Engine) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.Duration) error {
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		mkt.OnMarkPriceUpdateMaximumFrequency(ctx, d)
 	}
 	e.npv.markPriceUpdateMaximumFrequency = d
@@ -1092,7 +1391,7 @@ func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, d num.D
 		)
 	}
 
-	for _, mkt := range e.markets {
+	for _, mkt := range e.marketsCpy {
 		mkt.BondPenaltyFactorUpdate(ctx, d)
 	}
 
@@ -1137,6 +1436,12 @@ func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Dec
 		}
 	}
 
+	for _, mkt := range e.spotMarketsCpy {
+		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, d); err != nil {
+			return err
+		}
+	}
+
 	e.npv.makerFee = d
 
 	return nil
@@ -1150,6 +1455,11 @@ func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, 
 	}
 
 	for _, mkt := range e.marketsCpy {
+		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, d); err != nil {
+			return err
+		}
+	}
+	for _, mkt := range e.spotMarketsCpy {
 		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, d); err != nil {
 			return err
 		}
@@ -1170,6 +1480,9 @@ func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, d nu
 	for _, mkt := range e.marketsCpy {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(d)
 	}
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.OnSuppliedStakeToObligationFactorUpdate(d)
+	}
 
 	e.npv.suppliedStakeToObligationFactor = d
 
@@ -1187,6 +1500,10 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 		mkt.OnMarketValueWindowLengthUpdate(d)
 	}
 
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.OnMarketValueWindowLengthUpdate(d)
+	}
+
 	e.npv.marketValueWindowLength = d
 
 	return nil
@@ -1200,6 +1517,9 @@ func (e *Engine) OnMarketLiquidityProvidersFeeDistributionTimeStep(_ context.Con
 	}
 
 	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
+	}
+	for _, mkt := range e.spotMarketsCpy {
 		mkt.OnMarketLiquidityProvidersFeeDistribitionTimeStep(d)
 	}
 
@@ -1236,6 +1556,9 @@ func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
 	}
 
 	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(d)
+	}
+	for _, mkt := range e.spotMarketsCpy {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(d)
 	}
 
@@ -1286,6 +1609,9 @@ func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.De
 	for _, mkt := range e.marketsCpy {
 		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, d)
 	}
+	for _, mkt := range e.spotMarketsCpy {
+		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, d)
+	}
 	e.npv.minLpStakeQuantumMultiple = d
 	return nil
 }
@@ -1324,8 +1650,14 @@ func (e *Engine) OnMaxPeggedOrderUpdate(ctx context.Context, max *num.Uint) erro
 	return nil
 }
 
+func (e *Engine) SpotMarketExists(market string) bool {
+	_, ok := e.spotMarkets[market]
+	return ok
+}
+
 func (e *Engine) MarketExists(market string) bool {
 	_, ok := e.markets[market]
+
 	return ok
 }
 
@@ -1333,8 +1665,11 @@ func (e *Engine) GetMarket(market string, settled bool) (types.Market, bool) {
 	if mkt, ok := e.markets[market]; ok {
 		return mkt.IntoType(), true
 	}
+	if mkt, ok := e.spotMarkets[market]; ok {
+		return mkt.IntoType(), true
+	}
 	// market wasn't found in the markets map, if a successor market was proposed after parent market
-	// was settled/closed, then check the checkpoint states map for the parent market definition.
+	// was settled/closed, then we should check the checkpoint states map for the parent market definition.
 	if settled {
 		if mcp, ok := e.marketCPStates[market]; ok && mcp.Market != nil {
 			cpy := mcp.Market.DeepClone()
@@ -1347,19 +1682,13 @@ func (e *Engine) GetMarket(market string, settled bool) (types.Market, bool) {
 // GetEquityLikeShareForMarketAndParty return the equity-like shares of the given
 // party in the given market. If the market doesn't exist, it returns false.
 func (e *Engine) GetEquityLikeShareForMarketAndParty(market, party string) (num.Decimal, bool) {
-	mkt, ok := e.markets[market]
-	if !ok {
-		return num.DecimalZero(), false
+	if mkt, ok := e.markets[market]; ok {
+		return mkt.GetEquityShares().SharesFromParty(party), true
 	}
-	return mkt.GetEquityShares().SharesFromParty(party), true
-}
-
-func (e *Engine) GetAsset(assetID string) (types.Asset, bool) {
-	a, err := e.assets.Get(assetID)
-	if err != nil {
-		return types.Asset{}, false
+	if mkt, ok := e.spotMarkets[market]; ok {
+		return mkt.GetEquityShares().SharesFromParty(party), true
 	}
-	return *a.ToAssetType(), true
+	return num.DecimalZero(), false
 }
 
 // GetMarketCounters returns the per-market counts used for gas estimation.
@@ -1371,6 +1700,14 @@ func (e *Engine) GetMarketCounters() map[string]*types.MarketCounters {
 			OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
 			PositionCount:       m.GetTotalOpenPositionCount(),
 			LPShapeCount:        m.GetTotalLPShapeCount(),
+		}
+	}
+	for k, m := range e.spotMarkets {
+		counters[k] = &types.MarketCounters{
+			PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
+			OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
+			PositionCount:       0,
+			LPShapeCount:        0,
 		}
 	}
 	return counters

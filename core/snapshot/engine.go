@@ -150,6 +150,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.MatchingSnapshot,               // this requires a market
 	types.PositionsSnapshot,              // again, needs a market
 	types.SettlementSnapshot,             // needs the market to exist, too
+	types.HoldingAccountTrackerSnapshot,
 	types.LiquiditySnapshot,
 	types.LiquidityTargetSnapshot,
 	types.StakingSnapshot,

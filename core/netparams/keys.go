@@ -13,7 +13,7 @@
 package netparams
 
 const (
-	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+	SpotMarketTradingEnabled = "limits.markets.proposeSpotEnabled"
 
 	// market related parameters.
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
