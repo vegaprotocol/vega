@@ -25,6 +25,7 @@ func TestCheckProposalSubmissionForNewTransfer(t *testing.T) {
 	t.Run("Submitting a new transfer change with an invalid fraction fails", testNewTransferChangeSubmissionInvalidFractionFails)
 	t.Run("Submitting a new transfer change with neither one off nor recurring fails", testNewTransferWithNoKind)
 	t.Run("Submitting a new transfer change with recurring end epoch before the start epoch", testNewRecurringGovernanceTransferInvalidEndEpoch)
+	t.Run("Submitting a ew transfer change with identifal source/destination accounts", testNewTransferChangeSubmissionIneffectualTransferFails)
 }
 
 func testNewRecurringGovernanceTransferInvalidEndEpoch(t *testing.T) {
@@ -236,6 +237,24 @@ func testNewTransferChangeSubmissionInvalidDestinationFails(t *testing.T) {
 					Changes: &types.NewTransferConfiguration{
 						SourceType:      types.AccountType_ACCOUNT_TYPE_INSURANCE,
 						DestinationType: types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD,
+						Destination:     "some destination",
+					},
+				},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrIsNotValid)
+}
+
+func testNewTransferChangeSubmissionIneffectualTransferFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						SourceType:      types.AccountType_ACCOUNT_TYPE_INSURANCE,
+						DestinationType: types.AccountType_ACCOUNT_TYPE_INSURANCE,
+						Source:          "some destination",
 						Destination:     "some destination",
 					},
 				},

@@ -95,6 +95,7 @@
 - [8551](https://github.com/vegaprotocol/vega/issues/8551) - Reload market checkpoint data on snapshot loaded.
 - [8486](https://github.com/vegaprotocol/vega/issues/8486) - Fix enactment timestamp being lost in checkpoints.
 - [8572](https://github.com/vegaprotocol/vega/issues/8572) - Fix governance fraction validation
+- [8583](https://github.com/vegaprotocol/vega/issues/8583) - Fix validation of ineffectual transfer
 
 ## 0.71.0
 
