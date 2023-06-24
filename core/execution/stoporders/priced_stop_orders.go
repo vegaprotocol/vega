@@ -98,7 +98,7 @@ func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 	orderIDs := p.trigger(
 		p.fallsBelow,
 		p.fallsBelow.DescendGreaterThan,
-		newPrice,
+		newPrice.Clone().Sub(newPrice.Clone(), num.NewUint(1)),
 	)
 
 	// then if it rises above?
@@ -106,7 +106,7 @@ func (p *PricedStopOrders) PriceUpdated(newPrice *num.Uint) []string {
 		p.trigger(
 			p.risesAbove,
 			p.risesAbove.AscendLessThan,
-			newPrice,
+			newPrice.Clone().Add(newPrice.Clone(), num.NewUint(1)),
 		)...,
 	)
 

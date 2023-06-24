@@ -56,6 +56,7 @@ var (
 	// ErrPartyInsufficientAssetBalance is returned when a party does not have sufficient balance of the required asset to perform an action.
 	ErrPartyInsufficientAssetBalance                        = errors.New("party has insufficient balance in asset")
 	ErrMaxStopOrdersPerPartyReached                         = errors.New("max stop orders per party reached")
-	ErrStopOrderSubmissionNotAllowedWithoutExistingPosition = errors.New("stop order submission not allowed with existing position")
+	ErrStopOrderSubmissionNotAllowedWithoutExistingPosition = errors.New("stop order submission not allowed without existing position")
 	ErrStopOrderSideNotClosingThePosition                   = errors.New("stop order side not closing the position")
+	ErrStopOrderMustBeReduceOnly                            = errors.New("stop order must be reduce only")
 )

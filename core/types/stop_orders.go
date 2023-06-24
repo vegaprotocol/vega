@@ -247,10 +247,17 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 }
 
 func (s StopOrdersSubmission) String() string {
+	rises, falls := "nil", "nil"
+	if s.RisesAbove != nil {
+		rises = s.RisesAbove.String()
+	}
+	if s.FallsBelow != nil {
+		falls = s.FallsBelow.String()
+	}
 	return fmt.Sprintf(
 		"risesAbove(%v) fallsBelow(%v)",
-		s.RisesAbove.String(),
-		s.FallsBelow.String(),
+		rises,
+		falls,
 	)
 }
 

@@ -102,6 +102,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return ctx, berr
 	})
 
+	s.Step(`^the stop orders should have the following states$`, func(table *godog.Table) error {
+		return steps.TheStopOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
+	})
+
 	// delegation/validator steps
 	s.Step(`the validators:$`, func(table *godog.Table) error {
 		return steps.TheValidators(execsetup.topology, execsetup.stakingAccount, execsetup.delegationEngine, table)

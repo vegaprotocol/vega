@@ -47,17 +47,17 @@ func testPricedStopOrderTriggerPriceBothDirection(t *testing.T) {
 	priced.Insert("e", num.NewUint(14), types.StopOrderTriggerDirectionFallsBelow)
 	priced.Insert("f", num.NewUint(15), types.StopOrderTriggerDirectionFallsBelow)
 
-	priced.Insert("a", num.NewUint(10), types.StopOrderTriggerDirectionRisesAbove)
-	priced.Insert("b", num.NewUint(11), types.StopOrderTriggerDirectionRisesAbove)
-	priced.Insert("c", num.NewUint(12), types.StopOrderTriggerDirectionRisesAbove)
-	priced.Insert("d", num.NewUint(13), types.StopOrderTriggerDirectionRisesAbove)
-	priced.Insert("e", num.NewUint(14), types.StopOrderTriggerDirectionRisesAbove)
-	priced.Insert("f", num.NewUint(15), types.StopOrderTriggerDirectionRisesAbove)
+	priced.Insert("g", num.NewUint(10), types.StopOrderTriggerDirectionRisesAbove)
+	priced.Insert("h", num.NewUint(11), types.StopOrderTriggerDirectionRisesAbove)
+	priced.Insert("i", num.NewUint(12), types.StopOrderTriggerDirectionRisesAbove)
+	priced.Insert("j", num.NewUint(13), types.StopOrderTriggerDirectionRisesAbove)
+	priced.Insert("k", num.NewUint(14), types.StopOrderTriggerDirectionRisesAbove)
+	priced.Insert("l", num.NewUint(15), types.StopOrderTriggerDirectionRisesAbove)
 
 	// Remove them once
 	assert.EqualValues(t,
 		priced.PriceUpdated(num.NewUint(13)),
-		[]string{"f", "e", "a", "b", "c"},
+		[]string{"f", "e", "d", "g", "h", "i", "j"},
 	)
 
 	// try again

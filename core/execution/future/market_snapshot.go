@@ -131,7 +131,9 @@ func NewMarketFromSnapshot(
 		stopOrders = stoporders.NewFromProto(log, em.StopOrders)
 	} else {
 		// use the last markPrice for the market to initialise stopOrders price
-		stopOrders.PriceUpdated(em.CurrentMarkPrice.Clone())
+		if em.LastTradedPrice != nil {
+			stopOrders.PriceUpdated(em.LastTradedPrice.Clone())
+		}
 	}
 
 	now := timeService.GetTimeNow()

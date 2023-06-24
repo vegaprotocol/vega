@@ -701,7 +701,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 	}
 
 	// check auction, if any. If we leave auction, MTM is performed in this call
-	m.checkAuction(ctx, t)
+	m.checkAuction(ctx, t, m.idgen)
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
@@ -750,6 +750,8 @@ func (m *Market) BlockEnd(ctx context.Context) {
 
 		if len(closedWithoutLP) > 0 {
 			m.releaseExcessMargin(ctx, closedWithoutLP...)
+			// also remove all stop orders
+			m.removeAllStopOrders(ctx, closedWithoutLP...)
 		}
 		// last traded price should not reflect the closeout trades
 		m.lastTradedPrice = mp.Clone()
@@ -757,6 +759,27 @@ func (m *Market) BlockEnd(ctx context.Context) {
 	m.releaseExcessMargin(ctx, m.position.Positions()...)
 	// send position events
 	m.position.FlushPositionEvents(ctx)
+}
+
+func (m *Market) removeAllStopOrders(
+	ctx context.Context,
+	positions ...events.MarketPosition,
+) {
+	evts := []events.Event{}
+
+	for _, v := range positions {
+		sos, _ := m.stopOrders.Cancel(v.Party(), "")
+		for _, so := range sos {
+			if so.Expiry.Expires() {
+				_ = m.expiringOrders.RemoveOrder(so.Expiry.ExpiresAt.UnixNano(), so.ID)
+			}
+			evts = append(evts, events.NewStopOrderEvent(ctx, so))
+		}
+	}
+
+	if len(evts) > 0 {
+		m.broker.SendBatch(evts)
+	}
 }
 
 func (m *Market) updateMarketValueProxy() {
@@ -1312,6 +1335,14 @@ func (m *Market) releaseExcessMargin(ctx context.Context, positions ...events.Ma
 	m.broker.SendBatch(evts)
 }
 
+func rejectStopOrders(orders ...*types.StopOrder) {
+	for _, o := range orders {
+		if o != nil {
+			o.Status = types.StopOrderStatusRejected
+		}
+	}
+}
+
 func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	ctx context.Context,
 	submission *types.StopOrdersSubmission,
@@ -1326,22 +1357,41 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		party, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
 
 	defer func() {
-		m.broker.SendBatch([]events.Event{
-			events.NewStopOrderEvent(ctx, fallsBellow),
-			events.NewStopOrderEvent(ctx, risesAbove),
-		})
+		evts := []events.Event{}
+		if fallsBellow != nil {
+			evts = append(evts, events.NewStopOrderEvent(ctx, fallsBellow))
+		}
+		if risesAbove != nil {
+			evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
+		}
+
+		if len(evts) > 0 {
+			m.broker.SendBatch(evts)
+		}
 	}()
 
 	if !m.canTrade() {
-		fallsBellow.Status = types.StopOrderStatusRejected
-		risesAbove.Status = types.StopOrderStatusRejected
+		rejectStopOrders(fallsBellow, risesAbove)
 		return nil, common.ErrTradingNotAllowed
 	}
 
+	orderCnt := 0
+	if fallsBellow != nil {
+		if !fallsBellow.OrderSubmission.ReduceOnly {
+			return nil, common.ErrStopOrderMustBeReduceOnly
+		}
+		orderCnt++
+	}
+	if risesAbove != nil {
+		if !risesAbove.OrderSubmission.ReduceOnly {
+			return nil, common.ErrStopOrderMustBeReduceOnly
+		}
+		orderCnt++
+	}
+
 	// now check if that party hasn't exceeded the max amount per market
-	if m.stopOrders.CountForParty(party) >= m.maxStopOrdersPerParties.Uint64() {
-		fallsBellow.Status = types.StopOrderStatusRejected
-		risesAbove.Status = types.StopOrderStatusRejected
+	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
+		rejectStopOrders(fallsBellow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
 
@@ -1352,8 +1402,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	if len(positions) < 1 {
-		fallsBellow.Status = types.StopOrderStatusRejected
-		risesAbove.Status = types.StopOrderStatusRejected
+		rejectStopOrders(fallsBellow, risesAbove)
 		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
 	}
 
@@ -1361,7 +1410,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	// now we will reject if the direction of order if is not
 	// going to close the position or potential position
-	potentialSize := pos.Size() + pos.Sell() + pos.Buy()
+	potentialSize := pos.Size() - pos.Sell() + pos.Buy()
 	size := pos.Size()
 
 	var stopOrderSide types.Side
@@ -1373,15 +1422,13 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	switch stopOrderSide {
 	case types.SideBuy:
-		if potentialSize <= 0 && size <= 0 {
-			fallsBellow.Status = types.StopOrderStatusRejected
-			risesAbove.Status = types.StopOrderStatusRejected
+		if potentialSize >= 0 && size >= 0 {
+			rejectStopOrders(fallsBellow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	case types.SideSell:
-		if potentialSize >= 0 && size >= 0 {
-			fallsBellow.Status = types.StopOrderStatusRejected
-			risesAbove.Status = types.StopOrderStatusRejected
+		if potentialSize <= 0 && size <= 0 {
+			rejectStopOrders(fallsBellow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	}
@@ -1404,18 +1451,28 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	switch {
 	case fallsBellowTriggered:
 		fallsBellow.Status = types.StopOrderStatusTriggered
-		risesAbove.Status = types.StopOrderStatusStopped
+		if risesAbove != nil {
+			risesAbove.Status = types.StopOrderStatusStopped
+		}
 		fallsBellow.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
 			ctx, fallsBellow.OrderSubmission, party, idgen, fallsBellow.OrderID, true,
 		)
+		if err != nil {
+			fallsBellow.OrderID = confirmation.Order.ID
+		}
 	case risesAboveTriggered:
 		risesAbove.Status = types.StopOrderStatusTriggered
-		fallsBellow.Status = types.StopOrderStatusStopped
+		if fallsBellow != nil {
+			fallsBellow.Status = types.StopOrderStatusStopped
+		}
 		risesAbove.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
 			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID, true,
 		)
+		if err != nil {
+			risesAbove.OrderID = confirmation.Order.ID
+		}
 	}
 
 	return confirmation, err
@@ -1447,17 +1504,17 @@ func (m *Market) poolStopOrders(
 func (m *Market) stopOrderWouldTriggerAtSubmission(
 	stopOrder *types.StopOrder,
 ) bool {
-	if stopOrder.Trigger.IsTrailingPercenOffset() {
+	if m.lastTradedPrice == nil || stopOrder == nil || stopOrder.Trigger.IsTrailingPercenOffset() {
 		return false
 	}
 
 	switch stopOrder.Trigger.Direction {
 	case types.StopOrderTriggerDirectionFallsBelow:
-		if m.lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
+		if m.lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
 			return true
 		}
 	case types.StopOrderTriggerDirectionRisesAbove:
-		if m.lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
+		if m.lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
 			return true
 		}
 	}
@@ -2756,6 +2813,10 @@ func (m *Market) AmendOrderWithIDGenerator(
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
+	defer func() {
+		m.triggerStopOrders(ctx, idgen)
+	}()
+
 	if !m.canTrade() {
 		return nil, common.ErrTradingNotAllowed
 	}
@@ -3355,6 +3416,7 @@ func (m *Market) submitStopOrders(
 					logging.Error(err))
 			}
 			if err == nil && conf != nil {
+				v.OrderID = conf.Order.ID
 				confirmations = append(confirmations, conf)
 			}
 		}
