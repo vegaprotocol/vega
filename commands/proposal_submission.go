@@ -261,6 +261,10 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 	}
 
+	if changes.SourceType == changes.DestinationType && changes.Source == changes.Destination {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+	}
+
 	if changes.TransferType == protoTypes.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.transfer_type", ErrIsRequired)
 	}
