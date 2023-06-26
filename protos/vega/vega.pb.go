@@ -1776,7 +1776,7 @@ type StopOrder struct {
 	OrderId string `protobuf:"bytes,9,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	// The party that submitted this stop order.
 	PartyId string `protobuf:"bytes,10,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// The market the stop order is submitted for.
+	// The market the stop order is submitted to.
 	MarketId string `protobuf:"bytes,11,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Trigger that will need to be breached for the order
 	// to be submitted to the book.

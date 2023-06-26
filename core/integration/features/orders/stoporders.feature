@@ -649,8 +649,8 @@ Feature: stop orders
 
     # create party1 stop order, results in a trade
     When the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |
-      | party1| ETH/DEC19 | sell | 1      |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce| 25               |       | stop1     |
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | ra price trigger |error | reference |
+      | party1| ETH/DEC19 | sell | 1      |  0    | 0                | TYPE_MARKET| TIF_IOC | reduce| 25               | 100              |      | stop1     |
 
 
     # close party1 position
@@ -677,11 +677,12 @@ Feature: stop orders
     # check that the order got submitted and stopped as would not reduce the position
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status         | reference |
-      | party1 | ETH/DEC19 | sell | 1      | 0     | STATUS_STOPPED | stop1     |
+      | party1 | ETH/DEC19 | sell | 1      | 0     | STATUS_STOPPED | stop1-1   |
 
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
-      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1-1   |
+      | party1 | ETH/DEC19 | STATUS_STOPPED   | stop1-2   |
 
   Scenario: A trailing stop order for a 5% drop placed when the price is 50, followed by a price rise to 60 will, Be triggered by a fall to 57. (0014-ORDT-059), Not be triggered by a fall to 58. (0014-ORDT-060)
 
