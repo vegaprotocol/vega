@@ -249,11 +249,12 @@ func validateAdminSendTransactionParams(rawParams jsonrpc.Params) (ParsedAdminSe
 	}
 
 	return ParsedAdminSendTransactionParams{
-		Wallet:         params.Wallet,
-		PublicKey:      params.PublicKey,
-		RawTransaction: string(tx),
-		Network:        params.Network,
-		NodeAddress:    params.NodeAddress,
-		Retries:        params.Retries,
+		Wallet:                 params.Wallet,
+		PublicKey:              params.PublicKey,
+		RawTransaction:         string(tx),
+		Network:                params.Network,
+		NodeAddress:            params.NodeAddress,
+		Retries:                params.Retries,
+		MaximumRequestDuration: params.MaximumRequestDuration,
 	}, nil
 }
