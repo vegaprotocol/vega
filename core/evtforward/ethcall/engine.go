@@ -36,6 +36,19 @@ type blockish interface {
 	Time() uint64
 }
 
+type blockishImpl struct {
+	number uint64
+	time   uint64
+}
+
+func (b blockishImpl) NumberU64() uint64 {
+	return b.number
+}
+
+func (b blockishImpl) Time() uint64 {
+	return b.time
+}
+
 type Engine struct {
 	log                   *logging.Logger
 	cfg                   Config
@@ -76,6 +89,12 @@ func (e *Engine) Start() {
 	e.poller.Loop(func() {
 		e.OnTick(ctx, time.Now())
 	})
+}
+
+func (e *Engine) UpdatePreviousEthBlock(height uint64, time uint64) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.prevEthBlock = blockishImpl{number: height, time: time}
 }
 
 func (e *Engine) Stop() {
