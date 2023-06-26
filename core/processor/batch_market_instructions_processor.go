@@ -13,18 +13,51 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
+type Validate struct{}
+
+func (v Validate) CheckOrderCancellation(cancel *commandspb.OrderCancellation) error {
+	return commands.CheckOrderCancellation(cancel)
+}
+
+func (v Validate) CheckOrderAmendment(amend *commandspb.OrderAmendment) error {
+	return commands.CheckOrderAmendment(amend)
+}
+
+func (v Validate) CheckOrderSubmission(order *commandspb.OrderSubmission) error {
+	return commands.CheckOrderSubmission(order)
+}
+
+func (v Validate) CheckStopOrdersCancellation(cancel *commandspb.StopOrdersCancellation) error {
+	return commands.CheckStopOrdersCancellation(cancel)
+}
+
+func (v Validate) CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmission) error {
+	return commands.CheckStopOrdersSubmission(order)
+}
+
+type Validator interface {
+	CheckOrderCancellation(cancel *commandspb.OrderCancellation) error
+	CheckOrderAmendment(amend *commandspb.OrderAmendment) error
+	CheckOrderSubmission(order *commandspb.OrderSubmission) error
+	CheckStopOrdersCancellation(cancel *commandspb.StopOrdersCancellation) error
+	CheckStopOrdersSubmission(order *commandspb.StopOrdersSubmission) error
+}
+
 type BMIProcessor struct {
-	log  *logging.Logger
-	exec ExecutionEngine
+	log       *logging.Logger
+	exec      ExecutionEngine
+	validator Validator
 }
 
 func NewBMIProcessor(
 	log *logging.Logger,
 	exec ExecutionEngine,
+	validator Validator,
 ) *BMIProcessor {
 	return &BMIProcessor{
-		log:  log,
-		exec: exec,
+		log:       log,
+		exec:      exec,
+		validator: validator,
 	}
 }
 
@@ -95,7 +128,7 @@ func (p *BMIProcessor) ProcessBatch(
 
 	// process cancellations
 	for i, cancel := range batch.Cancellations {
-		err := commands.CheckOrderCancellation(cancel)
+		err := p.validator.CheckOrderCancellation(cancel)
 		if err == nil {
 			stats.IncTotalCancelOrder()
 			_, err = p.exec.CancelOrder(
@@ -120,7 +153,7 @@ func (p *BMIProcessor) ProcessBatch(
 			// order already amended, just set an error, and do nothing
 			err = errors.New("order already amended in batch")
 		} else {
-			err = commands.CheckOrderAmendment(protoAmend)
+			err = p.validator.CheckOrderAmendment(protoAmend)
 			if err == nil {
 				stats.IncTotalAmendOrder()
 				var amend *types.OrderAmendment
@@ -145,7 +178,7 @@ func (p *BMIProcessor) ProcessBatch(
 	// then submissions
 	idIdx := 0
 	for i, protoSubmit := range batch.Submissions {
-		err := commands.CheckOrderSubmission(protoSubmit)
+		err := p.validator.CheckOrderSubmission(protoSubmit)
 		if err == nil {
 			var submit *types.OrderSubmission
 			stats.IncTotalCreateOrder()
@@ -171,7 +204,7 @@ func (p *BMIProcessor) ProcessBatch(
 
 	// process cancellations
 	for i, cancel := range batch.StopOrdersCancellation {
-		err := commands.CheckStopOrdersCancellation(cancel)
+		err := p.validator.CheckStopOrdersCancellation(cancel)
 		if err == nil {
 			stats.IncTotalCancelOrder()
 			err = p.exec.CancelStopOrders(
@@ -186,7 +219,7 @@ func (p *BMIProcessor) ProcessBatch(
 	}
 
 	for i, protoSubmit := range batch.StopOrdersSubmission {
-		err := commands.CheckStopOrdersSubmission(protoSubmit)
+		err := p.validator.CheckStopOrdersSubmission(protoSubmit)
 		if err == nil {
 			var submit *types.StopOrdersSubmission
 			stats.IncTotalCreateOrder()
