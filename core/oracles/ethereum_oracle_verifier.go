@@ -140,22 +140,6 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 		return ErrDuplicatedEthereumCallEvent
 	}
 
-	if callEvent.Error != nil {
-		dataProto := vegapb.OracleData{
-			ExternalData: &datapb.ExternalData{
-				Data: &datapb.Data{
-					MatchedSpecIds: []string{callEvent.SpecId},
-					BroadcastAt:    s.timeService.GetTimeNow().UnixNano(),
-					Error:          callEvent.Error,
-				},
-			},
-		}
-
-		s.broker.Send(events.NewOracleDataEvent(context.Background(), vegapb.OracleData{ExternalData: dataProto.ExternalData}))
-
-		return nil
-	}
-
 	s.lastBlock = &types.EthBlock{
 		Height: callEvent.BlockHeight,
 		Time:   callEvent.BlockTime,
@@ -180,7 +164,16 @@ func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContrac
 	// Maybe TODO; can we do better than this? Might want to cancel on shutdown or something..
 	ctx := context.Background()
 	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, callEvent.BlockHeight)
-	if err != nil {
+	if callEvent.Error != nil {
+		if err != nil {
+			if err.Error() == *callEvent.Error {
+				return nil
+			}
+			return fmt.Errorf("error mismatch, expected %s, got %s", *callEvent.Error, err.Error())
+		}
+
+		return fmt.Errorf("call event has error %s, but no error returned from call spec", *callEvent.Error)
+	} else if err != nil {
 		return fmt.Errorf("failed to execute call event spec: %w", err)
 	}
 
@@ -229,17 +222,30 @@ func (s *EthereumOracleVerifier) onCallEventVerified(event interface{}, ok bool)
 
 func (s *EthereumOracleVerifier) OnTick(ctx context.Context, t time.Time) {
 	for _, callResult := range s.finalizedCallResults {
-		result, err := s.ethEngine.MakeResult(callResult.SpecId, callResult.Result)
-		if err != nil {
-			s.log.Error("failed to create ethcall result", logging.Error(err))
-		}
+		if callResult.Error == nil {
+			result, err := s.ethEngine.MakeResult(callResult.SpecId, callResult.Result)
+			if err != nil {
+				s.log.Error("failed to create ethcall result", logging.Error(err))
+			}
 
-		s.oracleEngine.BroadcastData(ctx, OracleData{
-			Signers: nil,
-			Data:    result.Normalised,
-			// TODO: Fix the map creation; for now we add only the Ethereum height
-			MetaData: map[string]string{"eth-block-height": strconv.FormatUint(callResult.BlockHeight, 10)},
-		})
+			s.oracleEngine.BroadcastData(ctx, OracleData{
+				Signers:  nil,
+				Data:     result.Normalised,
+				MetaData: map[string]string{"eth-block-height": strconv.FormatUint(callResult.BlockHeight, 10)},
+			})
+		} else {
+			dataProto := vegapb.OracleData{
+				ExternalData: &datapb.ExternalData{
+					Data: &datapb.Data{
+						MatchedSpecIds: []string{callResult.SpecId},
+						BroadcastAt:    t.UnixNano(),
+						Error:          callResult.Error,
+					},
+				},
+			}
+
+			s.broker.Send(events.NewOracleDataEvent(context.Background(), vegapb.OracleData{ExternalData: dataProto.ExternalData}))
+		}
 	}
 
 	s.finalizedCallResults = nil

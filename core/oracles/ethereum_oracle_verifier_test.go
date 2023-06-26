@@ -2,10 +2,15 @@ package oracles_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/core/events"
+	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
 	mocks2 "code.vegaprotocol.io/vega/core/broker/mocks"
 
@@ -68,27 +73,130 @@ func TestEthereumOracleVerifier(t *testing.T) {
 	t.Run("testProcessEthereumOracleFilterMismatch", testProcessEthereumOracleFilterMismatch)
 	t.Run("testProcessEthereumOracleInsufficientConfirmations", testProcessEthereumOracleInsufficientConfirmations)
 	t.Run("testProcessEthereumOracleQueryDuplicateIgnored", testProcessEthereumOracleQueryDuplicateIgnored)
-	t.Run("testProcessEthereumOracleChainEventWithError", testProcessEthereumOracleChainEventWithError)
+	t.Run("testProcessEthereumOracleChainEventWithGlobalError", testProcessEthereumOracleChainEventWithGlobalError)
+	t.Run("testProcessEthereumOracleChainEventWithLocalError", testProcessEthereumOracleChainEventWithLocalError)
+	t.Run("testProcessEthereumOracleChainEventWithMismatchedError", testProcessEthereumOracleChainEventWithMismatchedError)
 }
 
-func testProcessEthereumOracleChainEventWithError(t *testing.T) {
+func testProcessEthereumOracleChainEventWithGlobalError(t *testing.T) {
 	eov := getTestEthereumOracleVerifier(t)
 	defer eov.ctrl.Finish()
 	assert.NotNil(t, eov)
 
-	eov.ts.EXPECT().GetTimeNow().Times(1)
-	eov.broker.EXPECT().Send(gomock.Any())
+	testError := "test error"
 
-	testError := "testerror"
-	errEvent := types.EthContractCallEvent{
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(ethcall.Result{}, errors.New(testError))
+
+	now := time.Now()
+	eov.ts.EXPECT().GetTimeNow().Return(now).Times(1)
+
+	var onQueryResultVerified func(interface{}, bool)
+	var checkResult error
+	var resourceToCheck interface{}
+	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
+			resourceToCheck = toCheck
+			onQueryResultVerified = fn
+			checkResult = toCheck.Check()
+			return nil
+		})
+
+	errCallEvent := types.EthContractCallEvent{
 		BlockHeight: 1,
 		BlockTime:   100,
 		SpecId:      "testspec",
+		Result:      nil,
 		Error:       &testError,
 	}
 
-	err := eov.ProcessEthereumContractCallResult(errEvent)
+	err := eov.ProcessEthereumContractCallResult(errCallEvent)
 	assert.NoError(t, err)
+	assert.NoError(t, checkResult)
+
+	// result verified
+	onQueryResultVerified(resourceToCheck, true)
+
+	tickTime := time.Unix(10, 0)
+
+	dataProto := vegapb.OracleData{
+		ExternalData: &datapb.ExternalData{
+			Data: &datapb.Data{
+				MatchedSpecIds: []string{"testspec"},
+				BroadcastAt:    tickTime.UnixNano(),
+				Error:          &testError,
+			},
+		},
+	}
+	eov.broker.EXPECT().Send(events.NewOracleDataEvent(context.Background(), vegapb.OracleData{ExternalData: dataProto.ExternalData}))
+
+	eov.onTick(context.Background(), tickTime)
+}
+
+func testProcessEthereumOracleChainEventWithLocalError(t *testing.T) {
+	eov := getTestEthereumOracleVerifier(t)
+	defer eov.ctrl.Finish()
+	assert.NotNil(t, eov)
+
+	testError := "test error"
+
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(ethcall.Result{}, nil)
+
+	now := time.Now()
+	eov.ts.EXPECT().GetTimeNow().Return(now).Times(1)
+
+	var checkResult error
+	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
+			checkResult = toCheck.Check()
+			return nil
+		})
+
+	errCallEvent := types.EthContractCallEvent{
+		BlockHeight: 1,
+		BlockTime:   100,
+		SpecId:      "testspec",
+		Result:      nil,
+		Error:       &testError,
+	}
+
+	err := eov.ProcessEthereumContractCallResult(errCallEvent)
+	assert.NoError(t, err)
+	assert.Error(t, checkResult)
+}
+
+func testProcessEthereumOracleChainEventWithMismatchedError(t *testing.T) {
+	eov := getTestEthereumOracleVerifier(t)
+	defer eov.ctrl.Finish()
+	assert.NotNil(t, eov)
+
+	testError := "test error"
+
+	eov.ethCallEngine.EXPECT().CallSpec(gomock.Any(), "testspec", uint64(1)).Return(ethcall.Result{}, errors.New("another error"))
+
+	now := time.Now()
+	eov.ts.EXPECT().GetTimeNow().Return(now).Times(1)
+
+	var checkResult error
+	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
+			checkResult = toCheck.Check()
+			return nil
+		})
+
+	errCallEvent := types.EthContractCallEvent{
+		BlockHeight: 1,
+		BlockTime:   100,
+		SpecId:      "testspec",
+		Result:      nil,
+		Error:       &testError,
+	}
+
+	err := eov.ProcessEthereumContractCallResult(errCallEvent)
+	assert.NoError(t, err)
+	assert.Error(t, checkResult)
 }
 
 func testProcessEthereumOracleQueryOK(t *testing.T) {
