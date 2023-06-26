@@ -35,20 +35,10 @@ func newResult(call Call, bytes []byte) (Result, error) {
 		return Result{}, fmt.Errorf("failed to normalise contract call result: %w", err)
 	}
 
-	passesFilters := true
-	// TO BE BE REPLACED BY PHILTER CHANGES - COMMENT IN TO RUN AGAINST SYSTEM TESTS
-	/*
-		passesFilters = false
-		for _, val := range normalised {
-			ival, err := strconv.Atoi(val)
-			if err != nil {
-				return Result{}, fmt.Errorf("unable to convert value to int: %v", err)
-			}
-
-			if ival > 25 {
-				passesFilters = true
-			}
-		} */
+	passesFilters, err := call.filters.Match(normalised)
+	if err != nil {
+		return Result{}, fmt.Errorf("error evaluating filters: %w", err)
+	}
 
 	return Result{
 		Bytes:         bytes,
