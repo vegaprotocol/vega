@@ -63,7 +63,7 @@ message StopOrder {
   string order_id = 9;
   // The party that submitted this stop order.
   string party_id = 10;
-  // The market the stop order is submitted for.
+  // The market the stop order is submitted to.
   string market_id = 11;
 
   // Trigger that will need to be breached for the order
