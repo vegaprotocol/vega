@@ -96,6 +96,8 @@
 - [8486](https://github.com/vegaprotocol/vega/issues/8486) - Fix enactment timestamp being lost in checkpoints.
 - [8572](https://github.com/vegaprotocol/vega/issues/8572) - Fix governance fraction validation
 - [8580](https://github.com/vegaprotocol/vega/issues/8580) - Fix wallet `CLI` ignoring max-request-duration
+- [8583](https://github.com/vegaprotocol/vega/issues/8583) - Fix validation of ineffectual transfer
+- [8586](https://github.com/vegaprotocol/vega/issues/8586) - Fix cancel governance transfer proposal validation
 
 ## 0.71.0
 

@@ -135,6 +135,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(CheckNewFreeformChanges(c))
 	case *protoTypes.ProposalTerms_NewTransfer:
 		errs.Merge((checkNewTransferChanges(c)))
+	case *protoTypes.ProposalTerms_CancelTransfer:
+		errs.Merge((checkCancelTransferChanges(c)))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -217,6 +219,23 @@ func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Error
 	return errs
 }
 
+func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer) Errors {
+	errs := NewErrors()
+	if change.CancelTransfer == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer", ErrIsRequired)
+	}
+
+	if change.CancelTransfer.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer.changes", ErrIsRequired)
+	}
+
+	changes := change.CancelTransfer.Changes
+	if len(changes.TransferId) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer.changes.transferId", ErrIsRequired)
+	}
+	return errs
+}
+
 func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Errors {
 	errs := NewErrors()
 	if change.NewTransfer == nil {
@@ -258,6 +277,10 @@ func checkNewTransferChanges(change *protoTypes.ProposalTerms_NewTransfer) Error
 	}
 
 	if changes.DestinationType == protoTypes.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD && len(changes.Destination) > 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
+	}
+
+	if changes.SourceType == changes.DestinationType && changes.Source == changes.Destination {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_transfer.changes.destination", ErrIsNotValid)
 	}
 
