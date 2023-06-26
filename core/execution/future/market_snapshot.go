@@ -192,7 +192,10 @@ func NewMarketFromSnapshot(
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
-		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
+	}
+	if mkt.State == types.MarketStateSettled {
+		market.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
 
 	if em.Closed {
