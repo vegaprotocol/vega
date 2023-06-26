@@ -136,6 +136,11 @@ func NewMarketFromSnapshot(
 		}
 	}
 
+	expiringStopOrders := common.NewExpiringOrders()
+	if em.ExpiringStopOrders != nil {
+		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
+	}
+
 	now := timeService.GetTimeNow()
 	market := &Market{
 		log:                        log,
@@ -178,6 +183,7 @@ func NewMarketFromSnapshot(
 		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
 		settlementAsset:            asset,
 		stopOrders:                 stopOrders,
+		expiringStopOrders:         expiringStopOrders,
 	}
 
 	for _, p := range em.Parties {
@@ -246,6 +252,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		Closed:                     m.closed,
 		IsSucceeded:                m.succeeded,
 		StopOrders:                 m.stopOrders.ToProto(),
+		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 	}
 
 	return em
