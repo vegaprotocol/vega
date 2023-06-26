@@ -85,17 +85,18 @@ Feature: Spot market
 
     Then debug transfers
     Then the following transfers should happen:
-      | from   | to     | from account         | to account              | market id | amount | asset |
-      | party1 | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_MAKER | BTC/ETH   | 10     | BTC   |
-# | trader3a |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 3      | ETH   |
-# | trader3a | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
-# | market   | trader4 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |
+      | from   | to     | from account            | to account                       | market id | amount | asset |
+      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | 10     | ETH   |
+      | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | 30     | ETH   |
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | 10     | ETH   |
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | 10     | ETH   |
 
-# Then "party1" should have holding account balance of "1000" for asset "ETH"
-# Then "party1" should have general account balance of "6500" for asset "ETH"
-# Then "party1" should have general account balance of "200" for asset "BTC"
 
-# Then "party2" should have holding account balance of "0" for asset "BTC"
-# Then "party2" should have general account balance of "300" for asset "BTC"
-# #party2 sold 1 BTC for 10ETH, and should have 15+10=25ETH now
-# Then "party2" should have general account balance of "2500" for asset "ETH"
+    Then "party1" should have holding account balance of "1000" for asset "ETH"
+    Then "party1" should have general account balance of "6510" for asset "ETH"
+    Then "party1" should have general account balance of "200" for asset "BTC"
+
+    Then "party2" should have holding account balance of "0" for asset "BTC"
+    Then "party2" should have general account balance of "300" for asset "BTC"
+    #party2 sold 1 BTC for 10ETH, and should have 15+10=25ETH now
+    Then "party2" should have general account balance of "2460" for asset "ETH"
