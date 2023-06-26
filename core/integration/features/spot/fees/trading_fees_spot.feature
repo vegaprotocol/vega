@@ -71,6 +71,12 @@ Feature: Spot market
     Then "party2" should have general account balance of "300" for asset "BTC"
     Then "party2" should have general account balance of "1500" for asset "ETH"
 
+
+    Then the order book should have the following volumes for market "BTC/ETH":
+      | side | price | volume |
+      | buy  | 1000  | 200    |
+      | sell | 9000  | 100    |
+
     And the parties amend the following orders:
       | party  | reference     | price | size delta | tif     |
       | party2 | party-order12 | 1000  | 0          | TIF_GTC |
@@ -88,9 +94,7 @@ Feature: Spot market
       | from   | to     | from account            | to account                       | market id | amount | asset |
       | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | BTC/ETH   | 10     | ETH   |
       | party1 | market | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | BTC/ETH   | 30     | ETH   |
-      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | 10     | ETH   |
-      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | BTC/ETH   | 10     | ETH   |
-
+      | market | party1 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL | BTC/ETH | 10 | ETH |
 
     Then "party1" should have holding account balance of "1000" for asset "ETH"
     Then "party1" should have general account balance of "6510" for asset "ETH"
@@ -100,3 +104,5 @@ Feature: Spot market
     Then "party2" should have general account balance of "300" for asset "BTC"
     #party2 sold 1 BTC for 10ETH, and should have 15+10=25ETH now
     Then "party2" should have general account balance of "2460" for asset "ETH"
+
+    When the network moves ahead "2" blocks
