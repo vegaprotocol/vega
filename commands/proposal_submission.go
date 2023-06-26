@@ -135,6 +135,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge(CheckNewFreeformChanges(c))
 	case *protoTypes.ProposalTerms_NewTransfer:
 		errs.Merge((checkNewTransferChanges(c)))
+	case *protoTypes.ProposalTerms_CancelTransfer:
+		errs.Merge((checkCancelTransferChanges(c)))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -213,6 +215,23 @@ func CheckNewFreeformChanges(change *protoTypes.ProposalTerms_NewFreeform) Error
 
 	if change.NewFreeform == nil {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.new_freeform", ErrIsRequired)
+	}
+	return errs
+}
+
+func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer) Errors {
+	errs := NewErrors()
+	if change.CancelTransfer == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer", ErrIsRequired)
+	}
+
+	if change.CancelTransfer.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer.changes", ErrIsRequired)
+	}
+
+	changes := change.CancelTransfer.Changes
+	if len(changes.TransferId) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer.changes.transferId", ErrIsRequired)
 	}
 	return errs
 }
