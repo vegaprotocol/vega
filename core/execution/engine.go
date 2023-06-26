@@ -100,19 +100,28 @@ type netParamsValues struct {
 	marketCreationQuantumMultiple        num.Decimal
 	markPriceUpdateMaximumFrequency      time.Duration
 	marketPartiesMaximumStopOrdersUpdate *num.Uint
+
+	// Liquidity version 2.
+	liquidityV2BondPenaltyFactor                 num.Decimal
+	liquidityV2EarlyExitPenalty                  num.Decimal
+	liquidityV2MaxLiquidityFee                   num.Decimal
+	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
+	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
+	liquidityV2SuppliedStakeToObligationFactor   num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
 	return netParamsValues{
-		shapesMaxSize:                        -1,
-		feeDistributionTimeStep:              -1,
-		marketValueWindowLength:              -1,
-		suppliedStakeToObligationFactor:      num.DecimalFromInt64(-1),
-		infrastructureFee:                    num.DecimalFromInt64(-1),
-		makerFee:                             num.DecimalFromInt64(-1),
-		scalingFactors:                       nil,
-		maxLiquidityFee:                      num.DecimalFromInt64(-1),
-		bondPenaltyFactor:                    num.DecimalFromInt64(-1),
+		shapesMaxSize:                   -1,
+		feeDistributionTimeStep:         -1,
+		marketValueWindowLength:         -1,
+		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
+		infrastructureFee:               num.DecimalFromInt64(-1),
+		makerFee:                        num.DecimalFromInt64(-1),
+		scalingFactors:                  nil,
+		maxLiquidityFee:                 num.DecimalFromInt64(-1),
+		bondPenaltyFactor:               num.DecimalFromInt64(-1),
+
 		auctionMinDuration:                   -1,
 		probabilityOfTradingTauScaling:       num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders:      num.DecimalFromInt64(-1),
@@ -120,6 +129,14 @@ func defaultNetParamsValues() netParamsValues {
 		marketCreationQuantumMultiple:        num.DecimalFromInt64(-1),
 		markPriceUpdateMaximumFrequency:      5 * time.Second, // default is 5 seconds, should come from net params though
 		marketPartiesMaximumStopOrdersUpdate: num.UintZero(),
+
+		// Liquidity version 2.
+		liquidityV2BondPenaltyFactor:                 num.DecimalFromInt64(-1),
+		liquidityV2EarlyExitPenalty:                  num.DecimalFromInt64(-1),
+		liquidityV2MaxLiquidityFee:                   num.DecimalFromInt64(-1),
+		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
+		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
+		liquidityV2SuppliedStakeToObligationFactor:   num.DecimalFromInt64(-1),
 	}
 }
 
@@ -514,10 +531,37 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
 
-	return e.propagateInitialNetParams(ctx, mkt)
+	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt)
 }
 
-func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Market) error {
+// TODO To wire to spot market initialisation.
+func (e *Engine) propagateInitialNetParamsToSpotMarket() { //nolint:unused
+	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2EarlyExitPenalty.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2MaxLiquidityFee.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2SLANonPerformanceBondPenaltySlope.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2SLANonPerformanceBondPenaltyMax.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2SuppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+}
+
+func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mkt *future.Market) error {
 	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
 	}
@@ -565,6 +609,7 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Mark
 	if !e.npv.suppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
+
 	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
 	}
@@ -1097,6 +1142,90 @@ func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, d num.D
 	}
 
 	e.npv.bondPenaltyFactor = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity bond penalty (liquidity v2)",
+			logging.Decimal("bond-penalty-factor", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2BondPenaltyFactor = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2EarlyExitPenaltyUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity early exit penalty (liquidity v2)",
+			logging.Decimal("early-exit-penalty", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2EarlyExitPenalty = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update liquidity provision max liquidity fee factor (liquidity v2)",
+			logging.Decimal("max-liquidity-fee", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2MaxLiquidityFee = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market SLA non performance bond penalty slope (liquidity v2)",
+			logging.Decimal("bond-penalty-slope", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
+			logging.Decimal("bond-penalty-max", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update supplied stake to obligation factor (liquidity v2)",
+			logging.Decimal("factor", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SuppliedStakeToObligationFactor = d
 
 	return nil
 }
