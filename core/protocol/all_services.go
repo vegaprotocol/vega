@@ -550,7 +550,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
 			Watcher: svcs.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
 		{
@@ -585,6 +585,32 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: svcs.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
 		},
+		// Liquidity version 2.
+		{
+			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+		},
+		// End of liquidity version 2.
 		{
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: svcs.epochService.OnEpochLengthUpdate,
@@ -633,7 +659,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
 			Watcher: svcs.checkpoint.OnTimeElapsedUpdate,
 		},
-
 		{
 			Param:   netparams.SnapshotIntervalLength,
 			Watcher: svcs.snapshot.OnSnapshotIntervalUpdate,
