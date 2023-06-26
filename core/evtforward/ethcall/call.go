@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"math/big"
 
+	"code.vegaprotocol.io/vega/core/oracles/filters"
 	"code.vegaprotocol.io/vega/core/types"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,6 +21,7 @@ type Call struct {
 	args    []byte
 	abi     abi.ABI
 	abiJSON []byte
+	filters filters.Filters
 }
 
 func NewCall(spec types.EthCallSpec) (Call, error) {
@@ -43,6 +46,11 @@ func NewCall(spec types.EthCallSpec) (Call, error) {
 		return Call{}, fmt.Errorf("failed to pack inputs: %w", err)
 	}
 
+	filters, err := filters.NewFilters(spec.Filters, true)
+	if err != nil {
+		return Call{}, fmt.Errorf("failed to create filters: %w", err)
+	}
+
 	return Call{
 		address: common.HexToAddress(spec.Address),
 		method:  spec.Method,
@@ -50,6 +58,7 @@ func NewCall(spec types.EthCallSpec) (Call, error) {
 		abi:     abi,
 		abiJSON: abiJSON,
 		spec:    spec,
+		filters: filters,
 	}, nil
 }
 
