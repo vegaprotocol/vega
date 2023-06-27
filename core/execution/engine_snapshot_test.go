@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution"
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
+	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
@@ -106,11 +107,13 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
 	oracleService := mocks.NewMockOracleEngine(ctrl)
-	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {})
+	oracleService.EXPECT().Unsubscribe(gomock.Any(), gomock.Any()).AnyTimes()
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().UnregisterStateVariable(gomock.Any(), gomock.Any()).AnyTimes()
 
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).Times(1)
@@ -336,16 +339,62 @@ func TestValidMarketSnapshot(t *testing.T) {
 
 func TestValidSettledMarketSnapshot(t *testing.T) {
 	ctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
-	engine, ctrl := createEngine(t)
-	defer ctrl.Finish()
+	engine := getMockedEngine(t)
+	engine.collateral.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
+	engine.collateral.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.collateral.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
+	engine.collateral.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
+	engine.collateral.EXPECT().FinalSettlement(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	engine.collateral.EXPECT().ClearMarket(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).AnyTimes().Return(nil, nil)
+	engine.timeSvc.EXPECT().GetTimeNow().AnyTimes()
+	engine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	engine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	// engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.statevar.EXPECT().UnregisterStateVariable(gomock.Any(), gomock.Any()).AnyTimes()
+	engine.statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	engine.epoch.EXPECT().NotifyOnEpoch(gomock.Any(), gomock.Any()).AnyTimes()
+	engine.asset.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(a string) (*assets.Asset, error) {
+		as := NewAssetStub(a, 0)
+		return as, nil
+	})
+	// create a market
+	marketConfig := getMarketConfig()
+	// now let's set up the settlement and trading terminated callbacks
+	var ttCB, sCB oracles.OnMatchedOracleData
+	ttData := oracles.OracleData{
+		Signers: marketConfig.TradableInstrument.Instrument.GetFuture().DataSourceSpecForTradingTermination.Data.GetSigners(),
+		Data: map[string]string{
+			"trading.terminated": "true",
+		},
+	}
+	sData := oracles.OracleData{
+		Signers: marketConfig.TradableInstrument.Instrument.GetFuture().DataSourceSpecForSettlementData.Data.GetSigners(),
+		Data: map[string]string{
+			"prices.ETH.value": "100000",
+		},
+	}
+	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, spec oracles.OracleSpec, cb oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber) {
+		if ok, _ := spec.MatchData(ttData); ok {
+			ttCB = cb
+		} else if ok, _ := spec.MatchData(sData); ok {
+			sCB = cb
+		}
+		return oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}
+	})
+	defer engine.ctrl.Finish()
 	assert.NotNil(t, engine)
 
-	marketConfig := getMarketConfig()
 	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
-	// this does not work. Setting the state to settled will update the state on the market object
-	// unfortunately, it does not set the closed flag, so OnTick will not work
-	// marketConfig.State = types.MarketStateSettled
+	// now let's settle the market by:
+	// 1. Ensuring the market is in active state
+	marketConfig.State = types.MarketStateActive
+	engine.OnTick(ctx, time.Now())
+	// 2. Using the oracle to set the market to trading terminated, then settling the market
+	ttCB(ctx, ttData)
+	sCB(ctx, sData)
+	require.Equal(t, marketConfig.State, types.MarketStateSettled)
 	engine.OnTick(ctx, time.Now())
 
 	keys := engine.Keys()
