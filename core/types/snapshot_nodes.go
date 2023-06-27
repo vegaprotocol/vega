@@ -3060,7 +3060,6 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 	}
 
 	m, _ := MarketFromProto(em.Market)
-
 	ret := ExecSpotMarket{
 		Market:                     m,
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -3124,8 +3123,14 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	lastBA, _ = num.UintFromString(em.LastBestAsk, 10)
 	lastMB, _ = num.UintFromString(em.LastMidBid, 10)
 	lastMA, _ = num.UintFromString(em.LastMidAsk, 10)
-	markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
-	lastTradedPrice, _ = num.UintFromString(em.LastTradedPrice, 10)
+
+	if len(em.CurrentMarkPrice) > 0 {
+		markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
+	}
+
+	if len(em.LastTradedPrice) > 0 {
+		lastTradedPrice, _ = num.UintFromString(em.LastTradedPrice, 10)
+	}
 
 	shortRF, _ := num.DecimalFromString(em.RiskFactorShort)
 	longRF, _ := num.DecimalFromString(em.RiskFactorLong)
@@ -3143,7 +3148,6 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	}
 
 	m, _ := MarketFromProto(em.Market)
-
 	ret := ExecMarket{
 		Market:                     m,
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -3194,19 +3198,26 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		LastMidAsk:                 e.LastMidAsk.String(),
 		LastMidBid:                 e.LastMidBid.String(),
 		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
-		CurrentMarkPrice:           e.CurrentMarkPrice.String(),
 		RiskFactorShort:            e.ShortRiskFactor.String(),
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
-		LastTradedPrice:            e.LastTradedPrice.String(),
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
 		Succeeded:                  e.IsSucceeded,
 		StopOrders:                 e.StopOrders,
 	}
+
+	if e.CurrentMarkPrice != nil {
+		ret.CurrentMarkPrice = e.CurrentMarkPrice.String()
+	}
+
+	if e.LastTradedPrice != nil {
+		ret.LastTradedPrice = e.LastTradedPrice.String()
+	}
+
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
 	}
