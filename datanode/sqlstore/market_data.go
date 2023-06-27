@@ -49,7 +49,7 @@ func NewMarketData(connectionSource *ConnectionSource) *MarketData {
 			"open_interest", "auction_end", "auction_start", "indicative_price", "indicative_volume",
 			"market_trading_mode", "auction_trigger", "extension_trigger", "target_stake",
 			"supplied_stake", "price_monitoring_bounds", "market_value_proxy", "liquidity_provider_fee_shares",
-			"market_state", "next_mark_to_market", "market_growth",
+			"market_state", "next_mark_to_market", "market_growth", "last_traded_price",
 		},
 	}
 }
@@ -70,7 +70,7 @@ func (md *MarketData) Flush(ctx context.Context) ([]*entities.MarketData, error)
 			data.MidPrice, data.StaticMidPrice, data.OpenInterest, data.AuctionEnd,
 			data.AuctionStart, data.IndicativePrice, data.IndicativeVolume, data.MarketTradingMode,
 			data.AuctionTrigger, data.ExtensionTrigger, data.TargetStake, data.SuppliedStake,
-			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState, data.NextMarkToMarket, data.MarketGrowth,
+			data.PriceMonitoringBounds, data.MarketValueProxy, data.LiquidityProviderFeeShares, data.MarketState, data.NextMarkToMarket, data.MarketGrowth, data.LastTradedPrice,
 		})
 	}
 	defer metrics.StartSQLQuery("MarketData", "Flush")()

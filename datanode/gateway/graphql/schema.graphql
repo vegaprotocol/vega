@@ -254,6 +254,8 @@ type MarketData {
   nextMarkToMarket: String!
   "The market growth factor for the last market time window"
   marketGrowth: String!
+  "The last traded price (an unsigned integer)"
+  lastTradedPrice: String!
 }
 
 "Live data of a Market"
@@ -314,6 +316,10 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
+  "The market growth factor for the last market time window"
+  marketGrowth: String!
+  "The last traded price (an unsigned integer)"
+  lastTradedPrice: String!
 }
 
 "Timestamps for when the market changes state"

@@ -18,6 +18,7 @@ import (
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -30,6 +31,7 @@ import (
 
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
+
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,6 +67,7 @@ const (
 	csvColumnLiquidityProviderFeeShares
 	csvColumnMarketState
 	csvColumnMarketGrowth
+	csvColumnLastTradedPrice
 )
 
 func Test_MarketData(t *testing.T) {
@@ -132,6 +135,7 @@ func getLatestMarketData(t *testing.T) {
 	marketID := entities.MarketID("8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 
 	want := entities.MarketData{
+		LastTradedPrice:       mustParseDecimal(t, "999992588"),
 		MarkPrice:             mustParseDecimal(t, "999992587"),
 		BestBidPrice:          mustParseDecimal(t, "1000056152"),
 		BestBidVolume:         3,
@@ -181,6 +185,7 @@ func getLatestMarketData(t *testing.T) {
 	got, err := store.GetMarketDataByID(ctx, "8cc0e020c0bc2f9eba77749d81ecec8283283b85941722c2cb88318aaf8b8cd8")
 	assert.NoError(t, err)
 
+	fmt.Printf("want: %#v\ngot: %#v\n", want, got)
 	assert.True(t, want.Equal(got))
 }
 
@@ -1006,5 +1011,6 @@ func csvToMarketData(t *testing.T, line []string, seqNum int) *entities.MarketDa
 		SeqNum:                     uint64(seqNum),
 		SyntheticTime:              syntheticTime,
 		MarketGrowth:               mustParseDecimal(t, line[csvColumnMarketGrowth]),
+		LastTradedPrice:            mustParseDecimal(t, line[csvColumnLastTradedPrice]),
 	}
 }

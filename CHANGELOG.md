@@ -102,7 +102,8 @@
 - [8580](https://github.com/vegaprotocol/vega/issues/8580) - Fix wallet `CLI` ignoring max-request-duration
 - [8583](https://github.com/vegaprotocol/vega/issues/8583) - Fix validation of ineffectual transfer
 - [8586](https://github.com/vegaprotocol/vega/issues/8586) - Fix cancel governance transfer proposal validation
-- [8597](https://github.com/vegaprotocol/vega/issues/8597) - Enact governance transfer cancellation 
+- [8597](https://github.com/vegaprotocol/vega/issues/8597) - Enact governance transfer cancellation
+- [8428](https://github.com/vegaprotocol/vega/issues/8428) - Add missing `LastTradedPrice` field in market data
 
 ## 0.71.0
 
