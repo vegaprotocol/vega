@@ -60,6 +60,7 @@
 - [8472](https://github.com/vegaprotocol/vega/issues/8472) - Add support for stop orders with batch market instructions
 - [8567](https://github.com/vegaprotocol/vega/issues/8567) - Add virtual stake and market growth to market data.
 - [8508](https://github.com/vegaprotocol/vega/issues/8508) - Add network parameters for SLA.
+- [8468](https://github.com/vegaprotocol/vega/issues/8468) - Wire in stop orders in markets
 
 ### 🐛 Fixes
 

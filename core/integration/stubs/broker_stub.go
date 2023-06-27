@@ -421,6 +421,26 @@ func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Ord
 	return ret
 }
 
+func (b *BrokerStub) GetStopOrderEvents() []events.StopOrder {
+	batch := b.GetBatch(events.StopOrderEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.StopOrder, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.StopOrder:
+			// o := vtypes.NewStopOrderFromProto(et.StopOrder())
+			ret = append(ret, *et)
+		case events.StopOrder:
+			// o := vtypes.NewStopOrderFromProto(et.StopOrder())
+			ret = append(ret, et)
+		}
+	}
+
+	return ret
+}
+
 func (b *BrokerStub) GetOrderEvents() []events.Order {
 	batch := b.GetBatch(events.OrderEvent)
 	if len(batch) == 0 {

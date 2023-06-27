@@ -49,6 +49,8 @@ const (
 	StopOrderStatusTriggered = vega.StopOrder_STATUS_TRIGGERED
 	// Stop order has expired.
 	StopOrderStatusExpired = vega.StopOrder_STATUS_EXPIRED
+	// Stop order was rejected at submission.
+	StopOrderStatusRejected = vega.StopOrder_STATUS_REJECTED
 )
 
 type StopOrderExpiry struct {
@@ -208,13 +210,14 @@ func NewStopOrderSubmissionFromProto(psubmission *commandspb.StopOrdersSubmissio
 }
 
 func (s *StopOrdersSubmission) IntoStopOrders(
-	party, risesAboveID, fallsBelowID string,
+	party, fallsBelowID, risesAboveID string,
 	now time.Time,
-) (risesAbove, fallsBelow *StopOrder) {
+) (fallsBelow, risesAbove *StopOrder) {
 	if s.RisesAbove != nil {
 		risesAbove = &StopOrder{
 			ID:              risesAboveID,
 			Party:           party,
+			Market:          s.RisesAbove.OrderSubmission.MarketID,
 			OrderSubmission: s.RisesAbove.OrderSubmission,
 			OCOLinkID:       fallsBelowID,
 			Expiry:          s.RisesAbove.Expiry,
@@ -229,6 +232,7 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 		fallsBelow = &StopOrder{
 			ID:              fallsBelowID,
 			Party:           party,
+			Market:          s.FallsBelow.OrderSubmission.MarketID,
 			OrderSubmission: s.FallsBelow.OrderSubmission,
 			OCOLinkID:       risesAboveID,
 			Expiry:          s.FallsBelow.Expiry,
@@ -239,27 +243,53 @@ func (s *StopOrdersSubmission) IntoStopOrders(
 		}
 	}
 
-	return risesAbove, fallsBelow
+	return fallsBelow, risesAbove
 }
 
 func (s StopOrdersSubmission) String() string {
+	rises, falls := "nil", "nil"
+	if s.RisesAbove != nil {
+		rises = s.RisesAbove.String()
+	}
+	if s.FallsBelow != nil {
+		falls = s.FallsBelow.String()
+	}
 	return fmt.Sprintf(
 		"risesAbove(%v) fallsBelow(%v)",
-		s.RisesAbove.String(),
-		s.FallsBelow.String(),
+		rises,
+		falls,
 	)
 }
 
 type StopOrder struct {
 	ID              string
 	Party           string
+	Market          string
 	OrderSubmission *OrderSubmission
+	OrderID         string
 	OCOLinkID       string
 	Expiry          *StopOrderExpiry
 	Trigger         *StopOrderTrigger
 	Status          StopOrderStatus
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+}
+
+func (s *StopOrder) String() string {
+	return fmt.Sprintf(
+		"id(%v) party(%v) market(%v) orderSubmission(%v) orderId(%v) ocoLink(%v) expiry(%v) trigger(%v) status(%v) createdAt(%v) updatedAt(%v)",
+		s.ID,
+		s.Party,
+		s.Market,
+		s.OrderSubmission.String(),
+		s.OrderID,
+		s.OCOLinkID,
+		s.Expiry.String(),
+		s.Trigger.String(),
+		s.Status,
+		s.CreatedAt,
+		s.UpdatedAt,
+	)
 }
 
 func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
@@ -295,7 +325,9 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 
 	return &StopOrder{
 		ID:              p.StopOrder.Id,
-		Party:           p.StopOrder.Party,
+		Party:           p.StopOrder.PartyId,
+		Market:          p.StopOrder.MarketId,
+		OrderID:         p.StopOrder.OrderId,
 		OCOLinkID:       ptr.UnBox(p.StopOrder.OcoLinkId),
 		Status:          p.StopOrder.Status,
 		CreatedAt:       time.Unix(p.StopOrder.CreatedAt, 0),
@@ -321,7 +353,9 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 		Submission: s.OrderSubmission.IntoProto(),
 		StopOrder: &vega.StopOrder{
 			Id:               s.ID,
-			Party:            s.Party,
+			PartyId:          s.Party,
+			MarketId:         s.Market,
+			OrderId:          s.OrderID,
 			OcoLinkId:        ocoLinkID,
 			Status:           s.Status,
 			CreatedAt:        s.CreatedAt.Unix(),

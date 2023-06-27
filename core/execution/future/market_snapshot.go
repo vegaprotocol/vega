@@ -131,7 +131,14 @@ func NewMarketFromSnapshot(
 		stopOrders = stoporders.NewFromProto(log, em.StopOrders)
 	} else {
 		// use the last markPrice for the market to initialise stopOrders price
-		stopOrders.PriceUpdated(em.CurrentMarkPrice.Clone())
+		if em.LastTradedPrice != nil {
+			stopOrders.PriceUpdated(em.LastTradedPrice.Clone())
+		}
+	}
+
+	expiringStopOrders := common.NewExpiringOrders()
+	if em.ExpiringStopOrders != nil {
+		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
 	}
 
 	now := timeService.GetTimeNow()
@@ -176,6 +183,7 @@ func NewMarketFromSnapshot(
 		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
 		settlementAsset:            asset,
 		stopOrders:                 stopOrders,
+		expiringStopOrders:         expiringStopOrders,
 	}
 
 	for _, p := range em.Parties {
@@ -244,6 +252,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		Closed:                     m.closed,
 		IsSucceeded:                m.succeeded,
 		StopOrders:                 m.stopOrders.ToProto(),
+		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 	}
 
 	return em
