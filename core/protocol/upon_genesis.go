@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/core/assets"
-	"code.vegaprotocol.io/vega/core/blockchain"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 	proto "code.vegaprotocol.io/vega/protos/vega"
@@ -76,9 +75,9 @@ func (svcs *allServices) loadAsset(
 		return fmt.Errorf("unable to get asset %v", err)
 	}
 
-	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && asset.IsERC20() {
-		return ErrERC20AssetWithNullChain
-	}
+	// if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && asset.IsERC20() {
+	// 	return ErrERC20AssetWithNullChain
+	// }
 
 	// the validation is required only for validators
 	if svcs.conf.IsValidator() {
