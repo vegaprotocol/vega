@@ -237,7 +237,6 @@ func (e *Engine) Hash() []byte {
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
 func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
-	ret := []int{}
 	if e.log.IsDebug() {
 		e.log.Debug("reject market", logging.MarketID(marketID))
 	}
@@ -251,10 +250,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 		return err
 	}
 
-	idx := e.removeMarket(marketID)
-	if idx > -1 {
-		ret = append(ret, idx)
-	}
+	e.removeMarket(marketID)
 	// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
 	// they should be purged here, and @TODO handle any errors
 	if successors, ok := e.successors[marketID]; ok {
@@ -629,7 +625,7 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	return nil
 }
 
-func (e *Engine) removeMarket(mktID string) int {
+func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
 
 	delete(e.markets, mktID)
@@ -642,10 +638,8 @@ func (e *Engine) removeMarket(mktID string) int {
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
-			return i
 		}
 	}
-	return -1
 }
 
 func (e *Engine) peggedOrderCountUpdated(added int64) {

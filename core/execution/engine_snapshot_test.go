@@ -343,8 +343,9 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	marketConfig := getMarketConfig()
 	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
-	// fake settled market
-	marketConfig.State = types.MarketStateSettled
+	// this does not work. Setting the state to settled will update the state on the market object
+	// unfortunately, it does not set the closed flag, so OnTick will not work
+	// marketConfig.State = types.MarketStateSettled
 	engine.OnTick(ctx, time.Now())
 
 	keys := engine.Keys()
