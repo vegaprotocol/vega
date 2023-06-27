@@ -104,6 +104,7 @@
 - [8586](https://github.com/vegaprotocol/vega/issues/8586) - Fix cancel governance transfer proposal validation
 - [8597](https://github.com/vegaprotocol/vega/issues/8597) - Enact governance transfer cancellation
 - [8428](https://github.com/vegaprotocol/vega/issues/8428) - Add missing `LastTradedPrice` field in market data
+- [8335](https://github.com/vegaprotocol/vega/issues/8335) - Validate asset for metrics in transfers to be an actual asset
 
 ## 0.71.0
 

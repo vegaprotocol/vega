@@ -49,6 +49,19 @@ func (e *Engine) recurringTransfer(
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
+	if transfer.DispatchStrategy != nil {
+		hasAsset := len(transfer.DispatchStrategy.AssetForMetric) > 0
+		// ensure the asset transfer is correct
+		if hasAsset {
+			_, err := e.assets.Get(transfer.DispatchStrategy.AssetForMetric)
+			if err != nil {
+				transfer.Status = types.TransferStatusRejected
+				e.log.Debug("cannot transfer funds, invalid asset for metric", logging.Error(err))
+				return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+			}
+		}
+	}
+
 	if err := transfer.IsValid(); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
