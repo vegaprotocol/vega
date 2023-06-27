@@ -44,7 +44,7 @@ type BinaryConfig struct {
 }
 
 /*
-description: Configures a connection to a core nodes exposed UNIX socket RPC API.
+description: Configures a connection to a core node's exposed UNIX socket RPC API.
 example:
 
 	type: toml
