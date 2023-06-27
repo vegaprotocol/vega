@@ -469,6 +469,7 @@ message Market {
   bool closed = 22;
   bool succeeded = 23;
   StopOrders stop_orders = 24;
+  repeated vega.Order expiring_stop_orders = 25;
 }
 
 message OrdersAtPrice {

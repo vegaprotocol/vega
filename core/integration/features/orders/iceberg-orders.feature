@@ -262,7 +262,7 @@ Feature: Iceberg orders
       | party3 | BTC   | 10000    |
       | aux    | BTC   | 100000   |
       | lpprov | BTC   | 90000000 |
-    
+
     And the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
       | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
@@ -808,7 +808,7 @@ Feature: Iceberg orders
       | party  | reference      | price | size delta | tif     |
       | party2 | order-to-amend | 5     | 0          | TIF_GTC |
     Then the following trades should be executed:
-      | buyer  | seller | price | size | 
+      | buyer  | seller | price | size |
       | party2 | party1 | 5     | 2    |
       | party2 | party3 | 5     | 5    |
     And the iceberg orders should have the following states:
@@ -1004,4 +1004,3 @@ Feature: Iceberg orders
       | party2 | party3 | 10    | 1    |
       | party1 | party3 | 9     | 10   |
       | party1 | party3 | 8     | 1    |
-   

@@ -354,6 +354,7 @@ type ExecMarket struct {
 	Closed                     bool
 	IsSucceeded                bool
 	StopOrders                 *snapshot.StopOrders
+	ExpiringStopOrders         []*Order
 }
 
 type ExecSpotMarket struct {
@@ -3173,6 +3174,9 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		or, _ := OrderFromProto(o)
 		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
 	}
+	for _, o := range em.ExpiringStopOrders {
+		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
+	}
 	return &ret
 }
 
@@ -3205,6 +3209,9 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
+	}
+	for _, o := range e.ExpiringStopOrders {
+		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &vega.Order{Id: o.ID, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }

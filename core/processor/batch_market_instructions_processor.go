@@ -236,14 +236,14 @@ func (p *BMIProcessor) ProcessBatch(
 					}
 					id2 = ptr.From(submissionsIDs[i+idIdx])
 				}
-				err = p.exec.SubmitStopOrders(ctx, submit, party, idgen, id1, id2)
-				// FIXME(): when prototyp is updated, add the eventual crossing orders here.
-				// if conf != nil {
-				// 	stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
-				// 	stats.AddTotalTrades(uint64(len(conf.Trades)))
-				// 	stats.IncCurrentOrdersInBatch()
-				// }
-				// stats.IncTotalOrders()
+
+				conf, err := p.exec.SubmitStopOrders(ctx, submit, party, idgen, id1, id2)
+				if err == nil && conf != nil {
+					stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
+					stats.AddTotalTrades(uint64(len(conf.Trades)))
+					stats.IncCurrentOrdersInBatch()
+					stats.IncTotalOrders()
+				}
 			}
 		}
 

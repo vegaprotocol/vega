@@ -476,12 +476,26 @@ func (r RowWrapper) MustOrderStatus(name string) types.OrderStatus {
 	return s
 }
 
+func (r RowWrapper) MustStopOrderStatus(name string) types.StopOrderStatus {
+	s, err := StopOrderStatus(r.MustStr(name))
+	panicW(name, err)
+	return s
+}
+
 func OrderStatus(rawValue string) (types.OrderStatus, error) {
 	ty, ok := proto.Order_Status_value[rawValue]
 	if !ok {
 		return types.OrderStatus(ty), fmt.Errorf("invalid order status: %v", rawValue)
 	}
 	return types.OrderStatus(ty), nil
+}
+
+func StopOrderStatus(rawValue string) (types.StopOrderStatus, error) {
+	ty, ok := proto.StopOrder_Status_value[rawValue]
+	if !ok {
+		return types.StopOrderStatus(ty), fmt.Errorf("invalid stop order status: %v", rawValue)
+	}
+	return types.StopOrderStatus(ty), nil
 }
 
 func (r RowWrapper) MustPositionStatus(name string) proto.PositionStatus {
@@ -522,12 +536,26 @@ func (r RowWrapper) MustTIF(name string) types.OrderTimeInForce {
 	return tif
 }
 
+func (r RowWrapper) MustExpiryStrategy(name string) types.StopOrderExpiryStrategy {
+	expiryS, err := ExpiryStrategy(r.MustStr(name))
+	panicW(name, err)
+	return expiryS
+}
+
 func TIF(rawValue string) (types.OrderTimeInForce, error) {
 	tif, ok := proto.Order_TimeInForce_value[strings.ReplaceAll(rawValue, "TIF_", "TIME_IN_FORCE_")]
 	if !ok {
 		return types.OrderTimeInForce(tif), fmt.Errorf("invalid time in force: %v", rawValue)
 	}
 	return types.OrderTimeInForce(tif), nil
+}
+
+func ExpiryStrategy(rawValue string) (types.StopOrderExpiryStrategy, error) {
+	es, ok := proto.StopOrder_ExpiryStrategy_value[rawValue]
+	if !ok {
+		return types.StopOrderExpiryStrategy(es), fmt.Errorf("invalid expiry strategy: %v", rawValue)
+	}
+	return types.StopOrderExpiryStrategy(es), nil
 }
 
 func (r RowWrapper) MustSide(name string) types.Side {

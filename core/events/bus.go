@@ -140,6 +140,7 @@ const (
 	DistressedOrdersClosedEvent
 	ExpiredOrdersEvent
 	DistressedPositionsEvent
+	StopOrderEvent
 )
 
 var (
