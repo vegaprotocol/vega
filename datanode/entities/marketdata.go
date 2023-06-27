@@ -96,6 +96,9 @@ type MarketData struct {
 	NextMarkToMarket time.Time
 	// market growth for the last market window
 	MarketGrowth num.Decimal
+	// Last traded price, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	LastTradedPrice decimal.Decimal
 }
 
 type PriceMonitoringTrigger struct {
@@ -119,10 +122,13 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
-	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth decimal.Decimal
+	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice decimal.Decimal
 	var err error
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
+		return nil, err
+	}
+	if lastTradedPrice, err = parseDecimal(data.LastTradedPrice); err != nil {
 		return nil, err
 	}
 	if bid, err = parseDecimal(data.BestBidPrice); err != nil {
@@ -158,6 +164,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
 
 	marketData := &MarketData{
+		LastTradedPrice:            lastTradedPrice,
 		MarkPrice:                  mark,
 		BestBidPrice:               bid,
 		BestBidVolume:              data.BestBidVolume,
@@ -206,7 +213,8 @@ func parseDecimal(input string) (decimal.Decimal, error) {
 }
 
 func (md MarketData) Equal(other MarketData) bool {
-	return md.MarkPrice.Equals(other.MarkPrice) &&
+	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
+		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
 		md.BestOfferPrice.Equals(other.BestOfferPrice) &&
 		md.BestStaticBidPrice.Equals(other.BestStaticBidPrice) &&
@@ -284,6 +292,7 @@ func liquidityProviderFeeShareMatches(feeShares, other []*types.LiquidityProvide
 
 func (md MarketData) ToProto() *types.MarketData {
 	result := types.MarketData{
+		LastTradedPrice:           md.LastTradedPrice.String(),
 		MarkPrice:                 md.MarkPrice.String(),
 		BestBidPrice:              md.BestBidPrice.String(),
 		BestBidVolume:             md.BestBidVolume,
