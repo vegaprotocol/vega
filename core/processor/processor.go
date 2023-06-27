@@ -208,6 +208,7 @@ type Banking interface {
 	NewGovernanceTransfer(ctx context.Context, ID, reference string, transferConfig *types.NewTransferConfiguration) error
 	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
 	VerifyCancelGovernanceTransfer(transferID string) error
+	CancelGovTransfer(ctx context.Context, ID string) error
 }
 
 // NetworkParameters ...
