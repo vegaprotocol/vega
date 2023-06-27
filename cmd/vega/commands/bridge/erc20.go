@@ -15,6 +15,7 @@ package bridge
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/bridges"
@@ -31,19 +32,24 @@ type ERC20Cmd struct {
 	Config     nodewallets.Config
 	PrivateKey string `description:"A ethereum private key to be use to sign the messages" long:"private-key" required:"false"`
 
-	AddSigner          ERC20AddSignerCmd          `command:"add_signer"           description:"Create signature to add a new signer to the erc20 bridge"`
-	RemoveSigner       ERC20RemoveSignerCmd       `command:"remove_signer"        description:"Create signature to remove a signer from the erc20 bridge"`
-	SetThreshold       ERC20SetThresholdCmd       `command:"set_threshold"        description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
-	BurnNonce          ERC20BurnNonceCmd          `command:"burn_nonce"           description:"Create signature to burn and existing nonce in order to prevent it to be used on the bridge"`
-	ListAsset          ERC20ListAssetCmd          `command:"list_asset"           description:"Add a new erc20 asset to the erc20 bridge"`
-	RemoveAsset        ERC20RemoveAssetCmd        `command:"remove_asset"         description:"Remove an erc20 asset from the erc20 bridge"`
-	WithdrawAsset      ERC20WithdrawAssetCmd      `command:"withdraw_asset"       description:"Withdraw ERC20 from the bridge"`
-	SetBridgeAddress   ERC20SetBridgeAddressCmd   `command:"set_bridge_address"   description:"Update the bridge address use by the asset pool"`
-	SetMultisigControl ERC20SetMultisigControlCmd `command:"set_multisig_control" description:"Update the bridge address use by the asset pool"`
-	GlobalResume       ERC20GlobalResumeCmd       `command:"global_resume"        description:"Build the signature to resume usage of the bridge"`
-	GlobalStop         ERC20GlobalStopCmd         `command:"global_stop"          description:"Build the signature to stop the bridge"`
-	SetWithdrawDelay   ERC20SetWithdrawDelayCmd   `command:"set_withdraw_delay"   description:"Update the withdraw delay for all asset"`
-	SetAssetLimits     ERC20SetAssetLimitsCmd     `command:"set_asset_limits"     description:"Update the limits for an asset"`
+	AddSigner              ERC20AddSignerCmd              `command:"add_signer"                description:"Create signature to add a new signer to the erc20 bridge"`
+	RemoveSigner           ERC20RemoveSignerCmd           `command:"remove_signer"             description:"Create signature to remove a signer from the erc20 bridge"`
+	SetThreshold           ERC20SetThresholdCmd           `command:"set_threshold"             description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
+	BurnNonce              ERC20BurnNonceCmd              `command:"burn_nonce"                description:"Create signature to burn and existing nonce in order to prevent it to be used on the bridge"`
+	ListAsset              ERC20ListAssetCmd              `command:"list_asset"                description:"Add a new erc20 asset to the erc20 bridge"`
+	VerifyListAsset        ERC20VerifyListAssetCmd        `command:"verify_list_asset"         description:"Verify signatures to add a new erc20 asset to the erc20 bridge"`
+	RemoveAsset            ERC20RemoveAssetCmd            `command:"remove_asset"              description:"Remove an erc20 asset from the erc20 bridge"`
+	WithdrawAsset          ERC20WithdrawAssetCmd          `command:"withdraw_asset"            description:"Withdraw ERC20 from the bridge"`
+	VerifyWithdrawAsset    ERC20VerifyWithdrawAssetCmd    `command:"verify_withdraw_asset"     description:"Verify withdraw ERC20 from the bridge"`
+	SetBridgeAddress       ERC20SetBridgeAddressCmd       `command:"set_bridge_address"        description:"Update the bridge address use by the asset pool"`
+	SetMultisigControl     ERC20SetMultisigControlCmd     `command:"set_multisig_control"      description:"Update the bridge address use by the asset pool"`
+	VerifyGlobalResume     ERC20VerifyGlobalResumeCmd     `command:"verify_global_resume"      description:"Verify the signature to resume usage of the bridge"`
+	GlobalResume           ERC20GlobalResumeCmd           `command:"global_resume"             description:"Build the signature to resume usage of the bridge"`
+	GlobalStop             ERC20GlobalStopCmd             `command:"global_stop"               description:"Build the signature to stop the bridge"`
+	SetWithdrawDelay       ERC20SetWithdrawDelayCmd       `command:"set_withdraw_delay"        description:"Update the withdraw delay for all asset"`
+	VerifySetWithdrawDelay ERC20VerifySetWithdrawDelayCmd `command:"verify_set_withdraw_delay" description:"Verify signatures to update the withdraw delay for all asset"`
+	SetAssetLimits         ERC20SetAssetLimitsCmd         `command:"set_asset_limits"          description:"Update the limits for an asset"`
+	VerifySetAssetLimits   ERC20VerifySetAssetLimitsCmd   `command:"verify_set_asset_limits"   description:"Verify signatures to update the limits for an asset"`
 }
 
 var erc20Cmd *ERC20Cmd
@@ -80,20 +86,25 @@ func (e *ERC20Cmd) GetSigner() (bridges.Signer, error) {
 
 func ERC20() *ERC20Cmd {
 	erc20Cmd = &ERC20Cmd{
-		Config:             nodewallets.NewDefaultConfig(),
-		AddSigner:          ERC20AddSignerCmd{},
-		RemoveSigner:       ERC20RemoveSignerCmd{},
-		SetThreshold:       ERC20SetThresholdCmd{},
-		ListAsset:          ERC20ListAssetCmd{},
-		RemoveAsset:        ERC20RemoveAssetCmd{},
-		WithdrawAsset:      ERC20WithdrawAssetCmd{},
-		SetAssetLimits:     ERC20SetAssetLimitsCmd{},
-		SetBridgeAddress:   ERC20SetBridgeAddressCmd{},
-		SetMultisigControl: ERC20SetMultisigControlCmd{},
-		GlobalResume:       ERC20GlobalResumeCmd{},
-		GlobalStop:         ERC20GlobalStopCmd{},
-		SetWithdrawDelay:   ERC20SetWithdrawDelayCmd{},
-		BurnNonce:          ERC20BurnNonceCmd{},
+		Config:                 nodewallets.NewDefaultConfig(),
+		AddSigner:              ERC20AddSignerCmd{},
+		RemoveSigner:           ERC20RemoveSignerCmd{},
+		SetThreshold:           ERC20SetThresholdCmd{},
+		ListAsset:              ERC20ListAssetCmd{},
+		VerifyListAsset:        ERC20VerifyListAssetCmd{},
+		RemoveAsset:            ERC20RemoveAssetCmd{},
+		WithdrawAsset:          ERC20WithdrawAssetCmd{},
+		VerifyWithdrawAsset:    ERC20VerifyWithdrawAssetCmd{},
+		SetAssetLimits:         ERC20SetAssetLimitsCmd{},
+		VerifySetAssetLimits:   ERC20VerifySetAssetLimitsCmd{},
+		SetBridgeAddress:       ERC20SetBridgeAddressCmd{},
+		SetMultisigControl:     ERC20SetMultisigControlCmd{},
+		VerifyGlobalResume:     ERC20VerifyGlobalResumeCmd{},
+		GlobalResume:           ERC20GlobalResumeCmd{},
+		GlobalStop:             ERC20GlobalStopCmd{},
+		SetWithdrawDelay:       ERC20SetWithdrawDelayCmd{},
+		VerifySetWithdrawDelay: ERC20VerifySetWithdrawDelayCmd{},
+		BurnNonce:              ERC20BurnNonceCmd{},
 	}
 	return erc20Cmd
 }
@@ -141,6 +152,56 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 	return nil
 }
 
+type ERC20VerifyWithdrawAssetCmd struct {
+	TokenAddress    string `description:"The Ethereum address of the new token"                                long:"token-address"    required:"true"`
+	Amount          string `description:"The amount to be withdrawn"                                           long:"amount"           required:"true"`
+	ReceiverAddress string `description:"The ethereum address of the wallet which is to receive the funds"     long:"receiver-address" required:"true"`
+	BridgeAddress   string `description:"The address of the vega bridge this transaction will be submitted to" long:"bridge-address"   required:"true"`
+	Nonce           string `description:"A nonce for this signature"                                           long:"nonce"            required:"true"`
+	Creation        int64  `description:"creation time of the withdrawal (timestamp)"                          long:"creation"         required:"true"`
+	Signatures      string `description:"signatures of the withdrawal"                                         long:"signatures"       required:"true"`
+}
+
+func (opts *ERC20VerifyWithdrawAssetCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10")
+	}
+
+	amount, overflowed := num.UintFromString(opts.Amount, 10)
+	if overflowed {
+		return errors.New("invalid amount, needs to be base 10")
+	}
+
+	creation := time.Unix(opts.Creation, 0)
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	addresses, err := erc20Logic.VerifyWithdrawAsset(
+		opts.TokenAddress, amount, opts.ReceiverAddress, creation, nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(addresses)
+	for _, v := range addresses {
+		fmt.Printf("%v\n", v)
+	}
+	return nil
+}
+
 type ERC20ListAssetCmd struct {
 	TokenAddress      string `description:"The Ethereum address of the new token"                                long:"token-address"      required:"true"`
 	VegaAssetID       string `description:"The vega ID for this new token"                                       long:"vega-asset-id"      required:"true"`
@@ -182,6 +243,57 @@ func (opts *ERC20ListAssetCmd) Execute(_ []string) error {
 	}
 
 	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20VerifyListAssetCmd struct {
+	TokenAddress      string `description:"The Ethereum address of the new token"                                long:"token-address"      required:"true"`
+	VegaAssetID       string `description:"The vega ID for this new token"                                       long:"vega-asset-id"      required:"true"`
+	BridgeAddress     string `description:"The address of the vega bridge this transaction will be submitted to" long:"bridge-address"     required:"true"`
+	Nonce             string `description:"A nonce for this signature"                                           long:"nonce"              required:"true"`
+	LifetimeLimit     string `description:"The lifetime deposit limit for the asset"                             long:"lifetime-limit"     required:"true"`
+	WithdrawThreshold string `description:"The withdrawal threshold for this asset"                              long:"withdraw-threshold" required:"true"`
+	Signatures        string `description:"The signature bundle to verify"                                       long:"signatures"         required:"true"`
+}
+
+func (opts *ERC20VerifyListAssetCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10")
+	}
+	lifetimeLimit, overflowed := num.UintFromString(opts.LifetimeLimit, 10)
+	if overflowed {
+		return errors.New("invalid lifetime-limit, needs to be base 10")
+	}
+	withdrawThreshod, overflowed := num.UintFromString(opts.WithdrawThreshold, 10)
+	if overflowed {
+		return errors.New("invalid withdraw-threshold, needs to be base 10")
+	}
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	addresses, err := erc20Logic.VerifyListAsset(
+		opts.TokenAddress, opts.VegaAssetID, lifetimeLimit, withdrawThreshod, nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(addresses)
+	for _, v := range addresses {
+		fmt.Printf("%v\n", v)
+	}
 	return nil
 }
 
@@ -481,6 +593,47 @@ func (opts *ERC20GlobalResumeCmd) Execute(_ []string) error {
 	return nil
 }
 
+type ERC20VerifyGlobalResumeCmd struct {
+	Nonce         string `description:"A nonce for this signature"                                           long:"nonce"          required:"true"`
+	BridgeAddress string `description:"The address of the vega bridge this transaction will be submitted to" long:"bridge-address" required:"true"`
+	Signatures    string `description:"The list of signatures from the validators"                           long:"signatures"     required:"true"`
+}
+
+func (opts *ERC20VerifyGlobalResumeCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	signers, err := erc20.VerifyGlobalResume(
+		nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(signers)
+	for _, v := range signers {
+		fmt.Printf("%v\n", v)
+	}
+	return nil
+
+	return nil
+}
+
 type ERC20SetAssetLimitsCmd struct {
 	WithdrawThreshold      string `description:"The threshold"                                                        long:"withdraw-threshold"       required:"true"`
 	DepositLifetimeMaximum string `description:"The maxium deposit allowed per address"                               long:"deposit-lifetime-maximum" required:"true"`
@@ -526,6 +679,58 @@ func (opts *ERC20SetAssetLimitsCmd) Execute(_ []string) error {
 	return nil
 }
 
+type ERC20VerifySetAssetLimitsCmd struct {
+	WithdrawThreshold      string `description:"The threshold"                                                        long:"withdraw-threshold"       required:"true"`
+	DepositLifetimeMaximum string `description:"The maxium deposit allowed per address"                               long:"deposit-lifetime-maximum" required:"true"`
+	Nonce                  string `description:"A nonce for this signature"                                           long:"nonce"                    required:"true"`
+	BridgeAddress          string `description:"The address of the vega bridge this transaction will be submitted to" long:"bridge-address"           required:"true"`
+	TokenAddress           string `description:"The address of the token to be used"                                  long:"token-address"            required:"true"`
+	Signatures             string `description:"The list of signatures from the validators"                           long:"signatures"               required:"true"`
+}
+
+func (opts *ERC20VerifySetAssetLimitsCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+
+	threshold, overflowed := num.UintFromString(opts.WithdrawThreshold, 10)
+	if overflowed {
+		return errors.New("invalid withdraw-threshold, needs to be base 10 and not overflow")
+	}
+
+	depositLifetime, overflowed := num.UintFromString(opts.DepositLifetimeMaximum, 10)
+	if overflowed {
+		return errors.New("invalid deposit-lifetime-maximum needs to be base 10 and not overflow")
+	}
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20 := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	signers, err := erc20.VerifySetAssetLimits(
+		opts.TokenAddress, depositLifetime, threshold, nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(signers)
+	for _, v := range signers {
+		fmt.Printf("%v\n", v)
+	}
+	return nil
+}
+
 type ERC20SetWithdrawDelayCmd struct {
 	Delay         time.Duration `description:"The delay to be applied to all withdrawals"                           long:"delay"          required:"true"`
 	Nonce         string        `description:"A nonce for this signature"                                           long:"nonce"          required:"true"`
@@ -556,5 +761,45 @@ func (opts *ERC20SetWithdrawDelayCmd) Execute(_ []string) error {
 	}
 
 	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20VerifySetWithdrawDelayCmd struct {
+	Delay         time.Duration `description:"The delay to be applied to all withdrawals"                           long:"delay"          required:"true"`
+	Nonce         string        `description:"A nonce for this signature"                                           long:"nonce"          required:"true"`
+	BridgeAddress string        `description:"The address of the vega bridge this transaction will be submitted to" long:"bridge-address" required:"true"`
+	Signatures    string        `description:"The signature bundle to verify"                                       long:"signatures"     required:"true"`
+}
+
+func (opts *ERC20VerifySetWithdrawDelayCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+
+	if len(opts.Signatures) <= 0 {
+		return errors.New("missing signatures")
+	}
+
+	if (len(opts.Signatures)-2)%130 != 0 {
+		return errors.New("invalid signatures format")
+	}
+
+	erc20Logic := bridges.NewERC20Logic(nil, opts.BridgeAddress)
+	addresses, err := erc20Logic.VerifyWithdrawDelay(
+		opts.Delay, nonce, opts.Signatures,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	sort.Strings(addresses)
+	for _, v := range addresses {
+		fmt.Printf("%v\n", v)
+	}
 	return nil
 }

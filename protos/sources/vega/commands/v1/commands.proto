@@ -24,8 +24,10 @@ message BatchMarketInstructions {
   repeated OrderAmendment amendments = 2;
   // List of order submissions to be processed sequentially.
   repeated OrderSubmission submissions = 3;
+  // List of stop order cancellations to be processed sequentially.
+  repeated StopOrdersCancellation stop_orders_cancellation = 4;
   // List of stop order submissions to be processed sequentially.
-  repeated StopOrdersSubmission stop_orders_submissions = 4;
+  repeated StopOrdersSubmission stop_orders_submission = 5;
 }
 
 // Stop order submission submits stops orders.
@@ -110,10 +112,10 @@ message OrderSubmission {
 
 // Iceberg order options
 message IcebergOpts {
-  // Size of the order that is initially made visible and can cause a trade during the execution of a single order.
-  uint64 initial_peak_size = 1;
-  // Threshold at which the order's visible remaining size will be refreshed back to its initial peak size.
-  uint64 minimum_peak_size = 2;
+  // Size of the order that is made visible and can be traded with during the execution of a single order.
+  uint64 peak_size = 1;
+  // Minimum allowed remaining size of the order before it is replenished back to its peak size.
+  uint64 minimum_visible_size = 2;
 }
 
 // Order cancellation is a request to cancel an existing order on Vega

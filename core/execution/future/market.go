@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/idgeneration"
 	"code.vegaprotocol.io/vega/core/liquidity"
@@ -141,6 +142,9 @@ type Market struct {
 
 	settlementAsset string
 	succeeded       bool
+
+	maxStopOrdersPerParties *num.Uint
+	stopOrders              *stoporders.Pool
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -286,6 +290,8 @@ func NewMarket(
 		lpPriceRange:              mkt.LPPriceRange,
 		linearSlippageFactor:      mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:   mkt.QuadraticSlippageFactor,
+		maxStopOrdersPerParties:   num.UintZero(),
+		stopOrders:                stoporders.New(log),
 	}
 
 	assets, _ := mkt.GetAssets()
@@ -501,6 +507,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		MarketValueProxy:          m.lastMarketValueProxy.BigInt().String(),
 		LiquidityProviderFeeShare: m.equityShares.LpsToLiquidityProviderFeeShare(m.liquidity.GetAverageLiquidityScores()),
 		NextMTM:                   m.nextMTM.UnixNano(),
+		MarketGrowth:              m.equityShares.GetMarketGrowth(),
 	}
 }
 
@@ -566,6 +573,10 @@ func (m *Market) InheritParent(ctx context.Context, pstate *types.CPMarketState)
 	// add the trade value from the parent
 	m.feeSplitter.SetTradeValue(pstate.LastTradeValue)
 	m.equityShares.InheritELS(pstate.Shares)
+}
+
+func (m *Market) RestoreELS(ctx context.Context, pstate *types.CPMarketState) {
+	m.equityShares.RestoreELS(pstate.Shares)
 }
 
 func (m *Market) RollbackInherit(ctx context.Context) {
@@ -770,7 +781,8 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 	}
 
 	// insurance pool has to be preserved in case a successor market leaves opening auction
-	keepInsurance := mktState == types.MarketStateSettled && !m.succeeded
+	// the insurance pool must be preserved if a market is settled or was closed through governance
+	keepInsurance := (mktState == types.MarketStateSettled || mktState == types.MarketStateClosed) && !m.succeeded
 	sort.Strings(parties)
 	clearMarketTransfers, err := m.collateral.ClearMarket(ctx, m.GetID(), m.settlementAsset, parties, keepInsurance)
 	if err != nil {

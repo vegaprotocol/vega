@@ -226,6 +226,21 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
+	s.Step(`^the party "([^"]+)" adds the following orders to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the party "([^"]+)" adds the following iceberg orders to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingIcebergOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the party "([^"]+)" starts a batch instruction$`, func(party string) error {
+		return steps.PartyStartsABatchInstruction(party, execsetup.executionEngine)
+	})
+
+	s.Step(`^the party "([^"]+)" submits their batch instruction$`, func(party string) error {
+		return steps.PartySubmitsTheirBatchInstruction(party, execsetup.executionEngine)
+	})
 
 	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrdersBlocksApart(execsetup.executionEngine, execsetup.timeService, execsetup.block, execsetup.epochEngine, table, blockCount)
@@ -276,6 +291,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^the parties place the following iceberg orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the parties place the following pegged iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingPeggedIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
 	})
 
 	s.Step(`^the iceberg orders should have the following states:$`, func(table *godog.Table) error {

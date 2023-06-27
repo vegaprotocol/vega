@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
@@ -93,6 +94,8 @@ type MarketData struct {
 	SeqNum uint64
 	// NextMarkToMarket is the next timestamp when the market wil be marked to market
 	NextMarkToMarket time.Time
+	// market growth for the last market window
+	MarketGrowth num.Decimal
 }
 
 type PriceMonitoringTrigger struct {
@@ -116,7 +119,7 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
-	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake decimal.Decimal
+	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth decimal.Decimal
 	var err error
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
@@ -147,6 +150,9 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		return nil, err
 	}
 	if suppliedStake, err = parseDecimal(data.SuppliedStake); err != nil {
+		return nil, err
+	}
+	if growth, err = parseDecimal(data.MarketGrowth); err != nil {
 		return nil, err
 	}
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
@@ -180,6 +186,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		LiquidityProviderFeeShares: data.LiquidityProviderFeeShare,
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
+		MarketGrowth:               growth,
 	}
 
 	return marketData, nil
@@ -226,7 +233,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
 		md.TxHash == other.TxHash &&
 		md.MarketState == other.MarketState &&
-		md.NextMarkToMarket.Equal(other.NextMarkToMarket)
+		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
+		md.MarketGrowth.Equal(other.MarketGrowth)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -304,6 +312,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		MarketValueProxy:          md.MarketValueProxy,
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
+		MarketGrowth:              md.MarketGrowth.String(),
 	}
 
 	return &result

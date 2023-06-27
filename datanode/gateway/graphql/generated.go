@@ -631,9 +631,9 @@ type ComplexityRoot struct {
 	}
 
 	IcebergOrder struct {
-		InitialPeakSize   func(childComplexity int) int
-		MinimumPeakSize   func(childComplexity int) int
-		ReservedRemaining func(childComplexity int) int
+		MinimumVisibleSize func(childComplexity int) int
+		PeakSize           func(childComplexity int) int
+		ReservedRemaining  func(childComplexity int) int
 	}
 
 	Instrument struct {
@@ -714,6 +714,7 @@ type ComplexityRoot struct {
 		AverageScore          func(childComplexity int) int
 		EquityLikeShare       func(childComplexity int) int
 		Party                 func(childComplexity int) int
+		VirtualStake          func(childComplexity int) int
 	}
 
 	LiquidityProvision struct {
@@ -867,6 +868,7 @@ type ComplexityRoot struct {
 		LiquidityProviderFeeShare func(childComplexity int) int
 		MarkPrice                 func(childComplexity int) int
 		Market                    func(childComplexity int) int
+		MarketGrowth              func(childComplexity int) int
 		MarketState               func(childComplexity int) int
 		MarketTradingMode         func(childComplexity int) int
 		MarketValueProxy          func(childComplexity int) int
@@ -1463,7 +1465,7 @@ type ComplexityRoot struct {
 		Deposit                            func(childComplexity int, id string) int
 		Deposits                           func(childComplexity int, dateRange *v2.DateRange, pagination *v2.Pagination) int
 		Entities                           func(childComplexity int, txHash string) int
-		Epoch                              func(childComplexity int, id *string) int
+		Epoch                              func(childComplexity int, id *string, block *string) int
 		EpochRewardSummaries               func(childComplexity int, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) int
 		Erc20ListAssetBundle               func(childComplexity int, assetID string) int
 		Erc20MultiSigSignerAddedBundles    func(childComplexity int, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) int
@@ -2030,8 +2032,8 @@ type FutureProductResolver interface {
 	SettlementAsset(ctx context.Context, obj *vega.FutureProduct) (*vega.Asset, error)
 }
 type IcebergOrderResolver interface {
-	InitialPeakSize(ctx context.Context, obj *vega.IcebergOrder) (string, error)
-	MinimumPeakSize(ctx context.Context, obj *vega.IcebergOrder) (string, error)
+	PeakSize(ctx context.Context, obj *vega.IcebergOrder) (string, error)
+	MinimumVisibleSize(ctx context.Context, obj *vega.IcebergOrder) (string, error)
 	ReservedRemaining(ctx context.Context, obj *vega.IcebergOrder) (string, error)
 }
 type InstrumentResolver interface {
@@ -2301,7 +2303,7 @@ type QueryResolver interface {
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	Deposits(ctx context.Context, dateRange *v2.DateRange, pagination *v2.Pagination) (*v2.DepositsConnection, error)
 	Entities(ctx context.Context, txHash string) (*v2.ListEntitiesResponse, error)
-	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
+	Epoch(ctx context.Context, id *string, block *string) (*vega.Epoch, error)
 	EpochRewardSummaries(ctx context.Context, filter *v2.RewardSummaryFilter, pagination *v2.Pagination) (*v2.EpochRewardSummaryConnection, error)
 	Erc20ListAssetBundle(ctx context.Context, assetID string) (*Erc20ListAssetBundle, error)
 	Erc20MultiSigSignerAddedBundles(ctx context.Context, nodeID string, submitter *string, epochSeq *string, pagination *v2.Pagination) (*ERC20MultiSigSignerAddedConnection, error)
@@ -4417,19 +4419,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.HistorySegment.ToHeight(childComplexity), true
 
-	case "IcebergOrder.initialPeakSize":
-		if e.complexity.IcebergOrder.InitialPeakSize == nil {
+	case "IcebergOrder.minimumVisibleSize":
+		if e.complexity.IcebergOrder.MinimumVisibleSize == nil {
 			break
 		}
 
-		return e.complexity.IcebergOrder.InitialPeakSize(childComplexity), true
+		return e.complexity.IcebergOrder.MinimumVisibleSize(childComplexity), true
 
-	case "IcebergOrder.minimumPeakSize":
-		if e.complexity.IcebergOrder.MinimumPeakSize == nil {
+	case "IcebergOrder.peakSize":
+		if e.complexity.IcebergOrder.PeakSize == nil {
 			break
 		}
 
-		return e.complexity.IcebergOrder.MinimumPeakSize(childComplexity), true
+		return e.complexity.IcebergOrder.PeakSize(childComplexity), true
 
 	case "IcebergOrder.reservedRemaining":
 		if e.complexity.IcebergOrder.ReservedRemaining == nil {
@@ -4724,6 +4726,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LiquidityProviderFeeShare.Party(childComplexity), true
+
+	case "LiquidityProviderFeeShare.virtualStake":
+		if e.complexity.LiquidityProviderFeeShare.VirtualStake == nil {
+			break
+		}
+
+		return e.complexity.LiquidityProviderFeeShare.VirtualStake(childComplexity), true
 
 	case "LiquidityProvision.buys":
 		if e.complexity.LiquidityProvision.Buys == nil {
@@ -5489,6 +5498,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketData.Market(childComplexity), true
+
+	case "MarketData.marketGrowth":
+		if e.complexity.MarketData.MarketGrowth == nil {
+			break
+		}
+
+		return e.complexity.MarketData.MarketGrowth(childComplexity), true
 
 	case "MarketData.marketState":
 		if e.complexity.MarketData.MarketState == nil {
@@ -6732,7 +6748,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Order.ExpiresAt(childComplexity), true
 
-	case "Order.IcebergOrder":
+	case "Order.icebergOrder":
 		if e.complexity.Order.IcebergOrder == nil {
 			break
 		}
@@ -8164,7 +8180,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string)), true
+		return e.complexity.Query.Epoch(childComplexity, args["id"].(*string), args["block"].(*string)), true
 
 	case "Query.epochRewardSummaries":
 		if e.complexity.Query.EpochRewardSummaries == nil {
@@ -11369,6 +11385,15 @@ func (ec *executionContext) field_Query_epoch_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["block"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("block"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["block"] = arg1
 	return args, nil
 }
 
@@ -21139,8 +21164,8 @@ func (ec *executionContext) fieldContext_Entities_orders(ctx context.Context, fi
 				return ec.fieldContext_Order_postOnly(ctx, field)
 			case "reduceOnly":
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
-			case "IcebergOrder":
-				return ec.fieldContext_Order_IcebergOrder(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_Order_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -25946,8 +25971,8 @@ func (ec *executionContext) fieldContext_HistorySegment_historySegmentId(ctx con
 	return fc, nil
 }
 
-func (ec *executionContext) _IcebergOrder_initialPeakSize(ctx context.Context, field graphql.CollectedField, obj *vega.IcebergOrder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_IcebergOrder_initialPeakSize(ctx, field)
+func (ec *executionContext) _IcebergOrder_peakSize(ctx context.Context, field graphql.CollectedField, obj *vega.IcebergOrder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_IcebergOrder_peakSize(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -25960,7 +25985,7 @@ func (ec *executionContext) _IcebergOrder_initialPeakSize(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.IcebergOrder().InitialPeakSize(rctx, obj)
+		return ec.resolvers.IcebergOrder().PeakSize(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25977,7 +26002,7 @@ func (ec *executionContext) _IcebergOrder_initialPeakSize(ctx context.Context, f
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_IcebergOrder_initialPeakSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_IcebergOrder_peakSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "IcebergOrder",
 		Field:      field,
@@ -25990,8 +26015,8 @@ func (ec *executionContext) fieldContext_IcebergOrder_initialPeakSize(ctx contex
 	return fc, nil
 }
 
-func (ec *executionContext) _IcebergOrder_minimumPeakSize(ctx context.Context, field graphql.CollectedField, obj *vega.IcebergOrder) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_IcebergOrder_minimumPeakSize(ctx, field)
+func (ec *executionContext) _IcebergOrder_minimumVisibleSize(ctx context.Context, field graphql.CollectedField, obj *vega.IcebergOrder) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_IcebergOrder_minimumVisibleSize(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -26004,7 +26029,7 @@ func (ec *executionContext) _IcebergOrder_minimumPeakSize(ctx context.Context, f
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.IcebergOrder().MinimumPeakSize(rctx, obj)
+		return ec.resolvers.IcebergOrder().MinimumVisibleSize(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26021,7 +26046,7 @@ func (ec *executionContext) _IcebergOrder_minimumPeakSize(ctx context.Context, f
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_IcebergOrder_minimumPeakSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_IcebergOrder_minimumVisibleSize(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "IcebergOrder",
 		Field:      field,
@@ -27771,8 +27796,8 @@ func (ec *executionContext) fieldContext_LiquidityOrderReference_order(ctx conte
 				return ec.fieldContext_Order_postOnly(ctx, field)
 			case "reduceOnly":
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
-			case "IcebergOrder":
-				return ec.fieldContext_Order_IcebergOrder(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_Order_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -28030,6 +28055,50 @@ func (ec *executionContext) _LiquidityProviderFeeShare_averageScore(ctx context.
 }
 
 func (ec *executionContext) fieldContext_LiquidityProviderFeeShare_averageScore(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LiquidityProviderFeeShare",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LiquidityProviderFeeShare_virtualStake(ctx context.Context, field graphql.CollectedField, obj *LiquidityProviderFeeShare) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LiquidityProviderFeeShare_virtualStake(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.VirtualStake, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LiquidityProviderFeeShare_virtualStake(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LiquidityProviderFeeShare",
 		Field:      field,
@@ -31948,6 +32017,8 @@ func (ec *executionContext) fieldContext_Market_data(ctx context.Context, field 
 				return ec.fieldContext_MarketData_liquidityProviderFeeShare(ctx, field)
 			case "nextMarkToMarket":
 				return ec.fieldContext_MarketData_nextMarkToMarket(ctx, field)
+			case "marketGrowth":
+				return ec.fieldContext_MarketData_marketGrowth(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
 		},
@@ -33762,6 +33833,8 @@ func (ec *executionContext) fieldContext_MarketData_liquidityProviderFeeShare(ct
 				return ec.fieldContext_LiquidityProviderFeeShare_averageEntryValuation(ctx, field)
 			case "averageScore":
 				return ec.fieldContext_LiquidityProviderFeeShare_averageScore(ctx, field)
+			case "virtualStake":
+				return ec.fieldContext_LiquidityProviderFeeShare_virtualStake(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LiquidityProviderFeeShare", field.Name)
 		},
@@ -33806,6 +33879,50 @@ func (ec *executionContext) fieldContext_MarketData_nextMarkToMarket(ctx context
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketData_marketGrowth(ctx context.Context, field graphql.CollectedField, obj *vega.MarketData) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MarketData_marketGrowth(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MarketGrowth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MarketData_marketGrowth(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketData",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -34102,6 +34219,8 @@ func (ec *executionContext) fieldContext_MarketDataEdge_node(ctx context.Context
 				return ec.fieldContext_MarketData_liquidityProviderFeeShare(ctx, field)
 			case "nextMarkToMarket":
 				return ec.fieldContext_MarketData_nextMarkToMarket(ctx, field)
+			case "marketGrowth":
+				return ec.fieldContext_MarketData_marketGrowth(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MarketData", field.Name)
 		},
@@ -42506,8 +42625,8 @@ func (ec *executionContext) fieldContext_Order_reduceOnly(ctx context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Order_IcebergOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Order_IcebergOrder(ctx, field)
+func (ec *executionContext) _Order_icebergOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_icebergOrder(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -42534,7 +42653,7 @@ func (ec *executionContext) _Order_IcebergOrder(ctx context.Context, field graph
 	return ec.marshalOIcebergOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐIcebergOrder(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Order_IcebergOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Order_icebergOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Order",
 		Field:      field,
@@ -42542,10 +42661,10 @@ func (ec *executionContext) fieldContext_Order_IcebergOrder(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "initialPeakSize":
-				return ec.fieldContext_IcebergOrder_initialPeakSize(ctx, field)
-			case "minimumPeakSize":
-				return ec.fieldContext_IcebergOrder_minimumPeakSize(ctx, field)
+			case "peakSize":
+				return ec.fieldContext_IcebergOrder_peakSize(ctx, field)
+			case "minimumVisibleSize":
+				return ec.fieldContext_IcebergOrder_minimumVisibleSize(ctx, field)
 			case "reservedRemaining":
 				return ec.fieldContext_IcebergOrder_reservedRemaining(ctx, field)
 			}
@@ -42734,8 +42853,8 @@ func (ec *executionContext) fieldContext_OrderEdge_node(ctx context.Context, fie
 				return ec.fieldContext_Order_postOnly(ctx, field)
 			case "reduceOnly":
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
-			case "IcebergOrder":
-				return ec.fieldContext_Order_IcebergOrder(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_Order_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -50689,7 +50808,7 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Epoch(rctx, fc.Args["id"].(*string))
+		return ec.resolvers.Query().Epoch(rctx, fc.Args["id"].(*string), fc.Args["block"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -52614,8 +52733,8 @@ func (ec *executionContext) fieldContext_Query_orderByID(ctx context.Context, fi
 				return ec.fieldContext_Order_postOnly(ctx, field)
 			case "reduceOnly":
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
-			case "IcebergOrder":
-				return ec.fieldContext_Order_IcebergOrder(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_Order_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -52715,8 +52834,8 @@ func (ec *executionContext) fieldContext_Query_orderByReference(ctx context.Cont
 				return ec.fieldContext_Order_postOnly(ctx, field)
 			case "reduceOnly":
 				return ec.fieldContext_Order_reduceOnly(ctx, field)
-			case "IcebergOrder":
-				return ec.fieldContext_Order_IcebergOrder(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_Order_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
 		},
@@ -72208,7 +72327,7 @@ func (ec *executionContext) _IcebergOrder(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("IcebergOrder")
-		case "initialPeakSize":
+		case "peakSize":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -72217,7 +72336,7 @@ func (ec *executionContext) _IcebergOrder(ctx context.Context, sel ast.Selection
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._IcebergOrder_initialPeakSize(ctx, field, obj)
+				res = ec._IcebergOrder_peakSize(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -72228,7 +72347,7 @@ func (ec *executionContext) _IcebergOrder(ctx context.Context, sel ast.Selection
 				return innerFunc(ctx)
 
 			})
-		case "minimumPeakSize":
+		case "minimumVisibleSize":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -72237,7 +72356,7 @@ func (ec *executionContext) _IcebergOrder(ctx context.Context, sel ast.Selection
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._IcebergOrder_minimumPeakSize(ctx, field, obj)
+				res = ec._IcebergOrder_minimumVisibleSize(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -72890,6 +73009,13 @@ func (ec *executionContext) _LiquidityProviderFeeShare(ctx context.Context, sel 
 		case "averageScore":
 
 			out.Values[i] = ec._LiquidityProviderFeeShare_averageScore(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "virtualStake":
+
+			out.Values[i] = ec._LiquidityProviderFeeShare_virtualStake(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -74455,6 +74581,13 @@ func (ec *executionContext) _MarketData(ctx context.Context, sel ast.SelectionSe
 				return innerFunc(ctx)
 
 			})
+		case "marketGrowth":
+
+			out.Values[i] = ec._MarketData_marketGrowth(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -77112,9 +77245,9 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 
 			out.Values[i] = ec._Order_reduceOnly(ctx, field, obj)
 
-		case "IcebergOrder":
+		case "icebergOrder":
 
-			out.Values[i] = ec._Order_IcebergOrder(ctx, field, obj)
+			out.Values[i] = ec._Order_icebergOrder(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

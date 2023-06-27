@@ -2,6 +2,7 @@ package stoporders_test
 
 import (
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/types"
@@ -41,7 +42,7 @@ func TestSingleStopOrders(t *testing.T) {
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 0)
 		assert.Equal(t, pool.Len(), 5)
-		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[0].ID, "b")
 	})
 
@@ -58,7 +59,7 @@ func TestSingleStopOrders(t *testing.T) {
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 0)
 		assert.Equal(t, pool.Len(), 4)
-		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[0].ID, "c")
 	})
 
@@ -75,9 +76,9 @@ func TestSingleStopOrders(t *testing.T) {
 		assert.Len(t, triggeredOrders, 2)
 		assert.Len(t, cancelledOrders, 0)
 		assert.Equal(t, pool.Len(), 2)
-		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[0].ID, "d")
-		assert.Equal(t, triggeredOrders[1].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[1].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, triggeredOrders[1].ID, "f")
 	})
 }
@@ -222,7 +223,7 @@ func TestOCOStopOrders(t *testing.T) {
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 1)
 		assert.Equal(t, pool.Len(), 4)
-		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, cancelledOrders[0].Status, types.StopOrderStatusStopped)
 		assert.Equal(t, triggeredOrders[0].ID, "b")
 		assert.Equal(t, cancelledOrders[0].ID, "a")
@@ -241,7 +242,7 @@ func TestOCOStopOrders(t *testing.T) {
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 1)
 		assert.Equal(t, pool.Len(), 2)
-		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, cancelledOrders[0].Status, types.StopOrderStatusStopped)
 		assert.Equal(t, triggeredOrders[0].ID, "c")
 		assert.Equal(t, cancelledOrders[0].ID, "d")
@@ -260,7 +261,7 @@ func TestOCOStopOrders(t *testing.T) {
 		assert.Len(t, triggeredOrders, 1)
 		assert.Len(t, cancelledOrders, 1)
 		assert.Equal(t, pool.Len(), 0)
-		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTiggered)
+		assert.Equal(t, triggeredOrders[0].Status, types.StopOrderStatusTriggered)
 		assert.Equal(t, cancelledOrders[0].Status, types.StopOrderStatusStopped)
 		assert.Equal(t, triggeredOrders[0].ID, "f")
 		assert.Equal(t, cancelledOrders[0].ID, "e")
@@ -277,13 +278,18 @@ func newPricedStopOrder(
 		Party:     party,
 		OCOLinkID: ocoLinkID,
 		Trigger:   types.NewPriceStopOrderTrigger(direction, price),
-
-		// the following are no needed for these tests / not cared for by the package
-		// OrderSubmission *OrderSubmission
-		// Expiry          *StopOrderExpiry
-		// Status          StopOrderStatus
-		// CreatedAt       time.Time
-		// UpdatedAt       time.Time
+		Expiry:    &types.StopOrderExpiry{}, // no expiry, not important here
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now().Add(10 * time.Second),
+		Status:    types.StopOrderStatusPending,
+		OrderSubmission: &types.OrderSubmission{
+			MarketID:    "some",
+			Type:        types.OrderTypeMarket,
+			ReduceOnly:  true,
+			Size:        10,
+			TimeInForce: types.OrderTimeInForceIOC,
+			Side:        types.SideBuy,
+		},
 	}
 }
 
@@ -298,12 +304,17 @@ func newTrailingStopOrder(
 		Party:     party,
 		OCOLinkID: ocoLinkID,
 		Trigger:   types.NewTrailingStopOrderTrigger(direction, offset),
-
-		// the following are no needed for these tests / not cared for by the package
-		// OrderSubmission *OrderSubmission
-		// Expiry          *StopOrderExpiry
-		// Status          StopOrderStatus
-		// CreatedAt       time.Time
-		// UpdatedAt       time.Time
+		Expiry:    &types.StopOrderExpiry{}, // no expiry, not important here
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now().Add(10 * time.Second),
+		Status:    types.StopOrderStatusPending,
+		OrderSubmission: &types.OrderSubmission{
+			MarketID:    "some",
+			Type:        types.OrderTypeMarket,
+			ReduceOnly:  true,
+			Size:        10,
+			TimeInForce: types.OrderTimeInForceIOC,
+			Side:        types.SideBuy,
+		},
 	}
 }

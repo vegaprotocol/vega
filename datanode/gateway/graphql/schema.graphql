@@ -27,10 +27,10 @@ type PeggedOrder {
 
 "Details of the iceberg order"
 type IcebergOrder {
-  "Size of the order that will be made visible if the iceberg order is refreshed after a trade has occurred"
-  initialPeakSize: String!
-  "Threshold at which the order's visible remaining size will be refreshed back to its initial peak size"
-  minimumPeakSize: String!
+  "Size of the order that will be made visible if the iceberg order is replenished after trading"
+  peakSize: String!
+  "If the visible size of the order falls below this value, it will be replenished back to the peak size using the reserved amount"
+  minimumVisibleSize: String!
   "Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed"
   reservedRemaining: String!
 }
@@ -252,6 +252,8 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
+  "The market growth factor for the last market time window"
+  marketGrowth: String!
 }
 
 "Live data of a Market"
@@ -330,12 +332,14 @@ type MarketTimestamps {
 type LiquidityProviderFeeShare {
   "The liquidity provider party ID"
   party: Party!
-  "The share owned by this liquidity provider (float)"
+  "The share owned by this liquidity provider"
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
   averageScore: String!
+  "The virtual stake for this liquidity provider"
+  virtualStake: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -413,7 +417,7 @@ type Query {
   entities(txHash: String!): Entities!
 
   "Get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
-  epoch(id: ID): Epoch!
+  epoch(id: ID, block: String): Epoch!
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
@@ -2373,7 +2377,7 @@ type Order {
   reduceOnly: Boolean
 
   "Details of an iceberg order"
-  IcebergOrder: IcebergOrder
+  icebergOrder: IcebergOrder
 }
 
 "An order update in Vega, if active it will be on the order book for the market"

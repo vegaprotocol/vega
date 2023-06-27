@@ -60,18 +60,18 @@ func testSubmittingIcebergOrders(t *testing.T) {
 		{
 			submission: commandspb.OrderSubmission{
 				IcebergOpts: &commandspb.IcebergOpts{
-					InitialPeakSize: 5,
-					MinimumPeakSize: 100,
+					PeakSize:           5,
+					MinimumVisibleSize: 100,
 				},
 			},
-			errString: "must be >= order_submission.iceberg_opts.minimum_peak_size",
-			field:     "order_submission.iceberg_opts.initial_peak_size",
+			errString: "must be >= order_submission.iceberg_opts.minimum_visible_size",
+			field:     "order_submission.iceberg_opts.peak_size",
 		},
 		{
 			submission: commandspb.OrderSubmission{
 				IcebergOpts: &commandspb.IcebergOpts{
-					InitialPeakSize: 100,
-					MinimumPeakSize: 10,
+					PeakSize:           100,
+					MinimumVisibleSize: 10,
 				},
 				TimeInForce: types.Order_TIME_IN_FORCE_FOK,
 			},
@@ -81,8 +81,8 @@ func testSubmittingIcebergOrders(t *testing.T) {
 		{
 			submission: commandspb.OrderSubmission{
 				IcebergOpts: &commandspb.IcebergOpts{
-					InitialPeakSize: 100,
-					MinimumPeakSize: 10,
+					PeakSize:           100,
+					MinimumVisibleSize: 10,
 				},
 				TimeInForce: types.Order_TIME_IN_FORCE_IOC,
 			},
@@ -92,8 +92,8 @@ func testSubmittingIcebergOrders(t *testing.T) {
 		{
 			submission: commandspb.OrderSubmission{
 				IcebergOpts: &commandspb.IcebergOpts{
-					InitialPeakSize: 100,
-					MinimumPeakSize: 10,
+					PeakSize:           100,
+					MinimumVisibleSize: 10,
 				},
 				Type: types.Order_TYPE_MARKET,
 			},
@@ -104,20 +104,20 @@ func testSubmittingIcebergOrders(t *testing.T) {
 			submission: commandspb.OrderSubmission{
 				Size: 50,
 				IcebergOpts: &commandspb.IcebergOpts{
-					InitialPeakSize: 100,
-					MinimumPeakSize: 10,
+					PeakSize:           100,
+					MinimumVisibleSize: 10,
 				},
 			},
 			errString: "must be <= order_submission.size",
-			field:     "order_submission.iceberg_opts.initial_peak_size",
+			field:     "order_submission.iceberg_opts.peak_size",
 		},
 		{
 			submission: commandspb.OrderSubmission{
 				Size:       200,
 				ReduceOnly: true,
 				IcebergOpts: &commandspb.IcebergOpts{
-					InitialPeakSize: 100,
-					MinimumPeakSize: 10,
+					PeakSize:           100,
+					MinimumVisibleSize: 10,
 				},
 			},
 			errString: "iceberg order must not be reduce-only",

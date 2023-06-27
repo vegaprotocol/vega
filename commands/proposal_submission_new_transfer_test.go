@@ -25,6 +25,8 @@ func TestCheckProposalSubmissionForNewTransfer(t *testing.T) {
 	t.Run("Submitting a new transfer change with an invalid fraction fails", testNewTransferChangeSubmissionInvalidFractionFails)
 	t.Run("Submitting a new transfer change with neither one off nor recurring fails", testNewTransferWithNoKind)
 	t.Run("Submitting a new transfer change with recurring end epoch before the start epoch", testNewRecurringGovernanceTransferInvalidEndEpoch)
+	t.Run("Submitting a new transfer change with identifal source/destination accounts", testNewTransferChangeSubmissionIneffectualTransferFails)
+	t.Run("Submitting a cancel transfer change with missing transfer id fails", testCancelTransferChangeSubmission)
 }
 
 func testNewRecurringGovernanceTransferInvalidEndEpoch(t *testing.T) {
@@ -245,6 +247,53 @@ func testNewTransferChangeSubmissionInvalidDestinationFails(t *testing.T) {
 	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrIsNotValid)
 }
 
+func testCancelTransferChangeSubmission(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_CancelTransfer{},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.cancel_transfer"), commands.ErrIsRequired)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_CancelTransfer{
+				CancelTransfer: &types.CancelTransfer{},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.cancel_transfer.changes"), commands.ErrIsRequired)
+
+	err = checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_CancelTransfer{
+				CancelTransfer: &types.CancelTransfer{
+					Changes: &types.CancelTransferConfiguration{},
+				},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.cancel_transfer.changes.transferId"), commands.ErrIsRequired)
+}
+
+func testNewTransferChangeSubmissionIneffectualTransferFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &types.ProposalTerms{
+			Change: &types.ProposalTerms_NewTransfer{
+				NewTransfer: &types.NewTransfer{
+					Changes: &types.NewTransferConfiguration{
+						SourceType:      types.AccountType_ACCOUNT_TYPE_INSURANCE,
+						DestinationType: types.AccountType_ACCOUNT_TYPE_INSURANCE,
+						Source:          "some destination",
+						Destination:     "some destination",
+					},
+				},
+			},
+		},
+	})
+	require.Contains(t, err.Get("proposal_submission.terms.change.new_transfer.changes.destination"), commands.ErrIsNotValid)
+}
+
 func testNewTransferChangeSubmissionInvalidTransferTypeFails(t *testing.T) {
 	expectation := map[types.GovernanceTransferType]bool{
 		types.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED:    true,
@@ -372,9 +421,10 @@ func testNewTransferChangeSubmissionInvalidAseetFails(t *testing.T) {
 
 func testNewTransferChangeSubmissionInvalidFractionFails(t *testing.T) {
 	expectation := map[string]error{
-		"":    commands.ErrIsRequired,
-		"abc": commands.ErrIsNotValid,
-		"-1":  commands.ErrMustBePositive,
+		"":     commands.ErrIsRequired,
+		"abc":  commands.ErrIsNotValid,
+		"-1":   commands.ErrMustBePositive,
+		"1.01": commands.ErrMustBeLTE1,
 	}
 
 	transfer := &types.NewTransferConfiguration{

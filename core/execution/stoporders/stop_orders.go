@@ -7,6 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/logging"
+	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"golang.org/x/exp/maps"
 )
 
@@ -28,6 +29,49 @@ func New(log *logging.Logger) *Pool {
 		priced:       NewPricedStopOrders(),
 		trailing:     NewTrailingStopOrders(),
 	}
+}
+
+func NewFromProto(log *logging.Logger, p *v1.StopOrders) *Pool {
+	pool := New(log)
+
+	for _, porder := range p.StopOrders {
+		order := types.NewStopOrderFromProto(porder)
+
+		if party, ok := pool.orders[order.Party]; ok {
+			if _, ok := party[order.ID]; ok {
+				pool.log.Panic("stop order already exists", logging.String("id", order.ID))
+			}
+		} else {
+			pool.orders[order.Party] = map[string]*types.StopOrder{}
+		}
+
+		pool.orders[order.Party][order.ID] = order
+		pool.orderToParty[order.ID] = order.Party
+	}
+
+	pool.priced = NewPricedStopOrdersFromProto(p.PricedStopOrders)
+	pool.trailing = NewTrailingStopOrdersFromProto(p.TrailingStopOrders)
+
+	return pool
+}
+
+func (p *Pool) ToProto() *v1.StopOrders {
+	out := &v1.StopOrders{}
+
+	for _, v := range p.orders {
+		for _, order := range v {
+			out.StopOrders = append(out.StopOrders, order.ToProtoEvent())
+		}
+	}
+
+	sort.Slice(out.StopOrders, func(i, j int) bool {
+		return out.StopOrders[i].StopOrder.Id < out.StopOrders[j].StopOrder.Id
+	})
+
+	out.PricedStopOrders = p.priced.ToProto()
+	out.TrailingStopOrders = p.trailing.ToProto()
+
+	return out
 }
 
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
@@ -60,7 +104,7 @@ func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.S
 				logging.String("party-id", pid), logging.String("order-id", v))
 		}
 
-		sorder.Status = types.StopOrderStatusTiggered
+		sorder.Status = types.StopOrderStatusTriggered
 		triggered = append(triggered, sorder)
 
 		// now we can cleanup

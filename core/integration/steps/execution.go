@@ -37,4 +37,10 @@ type Execution interface {
 	BlockEnd(ctx context.Context)
 	GetMarket(parentID string, settled bool) (types.Market, bool)
 	SucceedMarket(ctx context.Context, successor, parent string) error
+
+	// even though the batch processing is done above the execution engine, from the feature test point of view
+	// it is part of the execution engine
+	StartBatch(party string) error
+	AddSubmitOrderToBatch(submission *types.OrderSubmission, party string) error
+	ProcessBatch(ctx context.Context, party string) error
 }

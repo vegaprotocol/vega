@@ -56,6 +56,7 @@ func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transactio
 
 func (s *Store) ListTransactions(ctx context.Context,
 	filters map[string]string,
+	cmdTypes, exclCmdTypes, parties []string,
 	limit uint32,
 	before *entities.TxCursor,
 	after *entities.TxCursor,
@@ -76,6 +77,22 @@ func (s *Store) ListTransactions(ctx context.Context,
 		index := nextBindVar(&args, after.TxIndex)
 		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index > %s))", block, block, index)
 		predicates = append(predicates, predicate)
+	}
+
+	if len(cmdTypes) > 0 {
+		predicates = append(predicates, fmt.Sprintf("tx_results.cmd_type = ANY(%s)", nextBindVar(&args, cmdTypes)))
+	}
+
+	if len(exclCmdTypes) > 0 {
+		predicates = append(predicates, fmt.Sprintf("tx_results.cmd_type != ALL(%s)", nextBindVar(&args, exclCmdTypes)))
+	}
+
+	if len(parties) > 0 {
+		partiesBytes := make([][]byte, len(parties))
+		for i, p := range parties {
+			partiesBytes[i] = []byte(p)
+		}
+		predicates = append(predicates, fmt.Sprintf("tx_results.submitter = ANY(%s)", nextBindVar(&args, partiesBytes)))
 	}
 
 	for key, value := range filters {

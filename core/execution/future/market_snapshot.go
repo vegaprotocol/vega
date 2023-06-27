@@ -20,6 +20,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/execution/common"
+	"code.vegaprotocol.io/vega/core/execution/stoporders"
 	"code.vegaprotocol.io/vega/core/fee"
 	"code.vegaprotocol.io/vega/core/liquidity"
 	"code.vegaprotocol.io/vega/core/liquidity/target"
@@ -124,6 +125,15 @@ func NewMarketFromSnapshot(
 
 	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, timeService, broker, tradableInstrument.RiskModel, pMonitor, book, asset, mkt.ID, stateVarEngine, priceFactor.Clone(), positionFactor)
 
+	// backward compatibility check for nil
+	stopOrders := stoporders.New(log)
+	if em.StopOrders != nil {
+		stopOrders = stoporders.NewFromProto(log, em.StopOrders)
+	} else {
+		// use the last markPrice for the market to initialise stopOrders price
+		stopOrders.PriceUpdated(em.CurrentMarkPrice.Clone())
+	}
+
 	now := timeService.GetTimeNow()
 	market := &Market{
 		log:                        log,
@@ -165,6 +175,7 @@ func NewMarketFromSnapshot(
 		linearSlippageFactor:       mkt.LinearSlippageFactor,
 		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
 		settlementAsset:            asset,
+		stopOrders:                 stopOrders,
 	}
 
 	for _, p := range em.Parties {
@@ -181,7 +192,10 @@ func NewMarketFromSnapshot(
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
-		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
+	}
+	if mkt.State == types.MarketStateSettled {
+		market.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
 
 	if em.Closed {
@@ -229,6 +243,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		Parties:                    parties,
 		Closed:                     m.closed,
 		IsSucceeded:                m.succeeded,
+		StopOrders:                 m.stopOrders.ToProto(),
 	}
 
 	return em
