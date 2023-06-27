@@ -48,6 +48,9 @@ var (
 
 	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
 	ErrInvalidStopOrdersCancellation = errors.New("invalid stop orders cancellation")
+
+	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
+	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
 )
 
 // Engine is the execution engine.
@@ -700,7 +703,7 @@ func (e *Engine) CancelStopOrders(
 ) error {
 	// ensure that if orderID is specified marketId is as well
 	if len(cancel.OrderID) > 0 && len(cancel.MarketID) <= 0 {
-		return ErrInvalidOrderCancellation
+		return ErrMarketIDRequiredWhenOrderIDSpecified
 	}
 
 	if len(cancel.MarketID) > 0 {

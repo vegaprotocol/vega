@@ -1458,7 +1458,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
 			ctx, fallsBellow.OrderSubmission, party, idgen, fallsBellow.OrderID, true,
 		)
-		if err != nil {
+		if err != nil && confirmation != nil {
 			fallsBellow.OrderID = confirmation.Order.ID
 		}
 	case risesAboveTriggered:
@@ -1470,7 +1470,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
 			ctx, risesAbove.OrderSubmission, party, idgen, risesAbove.OrderID, true,
 		)
-		if err != nil {
+		if err != nil && confirmation != nil {
 			risesAbove.OrderID = confirmation.Order.ID
 		}
 	}

@@ -238,7 +238,7 @@ func (p *BMIProcessor) ProcessBatch(
 				}
 
 				conf, err := p.exec.SubmitStopOrders(ctx, submit, party, idgen, id1, id2)
-				if err != nil && conf != nil {
+				if err == nil && conf != nil {
 					stats.AddCurrentTradesInBatch(uint64(len(conf.Trades)))
 					stats.AddTotalTrades(uint64(len(conf.Trades)))
 					stats.IncCurrentOrdersInBatch()
