@@ -236,7 +236,7 @@ func (e *Engine) Hash() []byte {
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
-func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, error) {
+func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 	ret := []int{}
 	if e.log.IsDebug() {
 		e.log.Debug("reject market", logging.MarketID(marketID))
@@ -244,11 +244,11 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 
 	mkt, ok := e.markets[marketID]
 	if !ok {
-		return nil, ErrMarketDoesNotExist
+		return ErrMarketDoesNotExist
 	}
 
 	if err := mkt.Reject(ctx); err != nil {
-		return nil, err
+		return err
 	}
 
 	idx := e.removeMarket(marketID)
@@ -260,9 +260,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 	if successors, ok := e.successors[marketID]; ok {
 		delete(e.successors, marketID)
 		for _, sID := range successors {
-			if i, _ := e.RejectMarket(ctx, sID); len(i) > 0 {
-				ret = append(ret, i...)
-			}
+			e.RejectMarket(ctx, sID)
 			delete(e.isSuccessor, sID)
 		}
 	}
@@ -270,7 +268,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 	delete(e.isSuccessor, marketID)
 	// and clear out any state that may exist
 	delete(e.marketCPStates, marketID)
-	return ret, nil
+	return nil
 }
 
 // StartOpeningAuction will start the opening auction of the given market.
@@ -1013,12 +1011,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	toDelete := []string{}
 	parentStates := e.getParentStates()
 	evts := make([]events.Event, 0, len(e.marketsCpy))
-	rejected := map[int]struct{}{}
+	maxI := len(e.marketsCpy) - 1
 	for i, mkt := range e.marketsCpy {
-		if _, ok := rejected[i]; ok {
-			// successor markets were rejected, because of how golang iterates over slices, this loop
-			// will still iterate over rejected markets, these markets must be skipped
-			continue
+		// when a successor market kicks in, the marketsCpy slice is updated
+		// this loop will still iterate over N elements, even if the slice has shrunk
+		if i >= maxI {
+			break
 		}
 		mkt := mkt
 		id := mkt.GetID()
@@ -1072,10 +1070,8 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 				if id == sid {
 					continue
 				}
-				skip, _ := e.RejectMarket(ctx, sid)
-				for _, sk := range skip {
-					rejected[sk] = struct{}{}
-				}
+				e.RejectMarket(ctx, sid)
+				maxI = len(e.marketsCpy) - 1
 			}
 			// remove data used to indicate that the parent market has pending successors
 			delete(e.successors, pid)

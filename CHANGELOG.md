@@ -109,6 +109,7 @@
 - [8335](https://github.com/vegaprotocol/vega/issues/8335) - Validate asset for metrics in transfers to be an actual asset
 - [8603](https://github.com/vegaprotocol/vega/issues/8603) - Restore `lastTradedPrice` of `nil` as `nil` in market snapshot
 - [8617](https://github.com/vegaprotocol/vega/issues/8617) - Fix panic with order gauge in future market
+- [8596](https://github.com/vegaprotocol/vega/issues/8596) - Fix panic when rejecting markets on time update.
 
 ## 0.71.0
 
