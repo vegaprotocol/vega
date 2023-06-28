@@ -84,7 +84,6 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 	case OneOff:
 		proto.Kind = &eventspb.Transfer_OneOff{OneOff: &eventspb.OneOffTransfer{DeliverOn: t.DeliverOn.UnixNano()}}
 	case Recurring:
-
 		recurringTransfer := &eventspb.RecurringTransfer{
 			StartEpoch: *t.StartEpoch,
 			Factor:     t.Factor.String(),
@@ -103,7 +102,18 @@ func (t *Transfer) ToProto(ctx context.Context, accountSource AccountSource) (*e
 		}
 
 		proto.Kind = &eventspb.Transfer_Recurring{Recurring: recurringTransfer}
+	case GovernanceOneOff:
+		proto.Kind = &eventspb.Transfer_OneOffGovernance{OneOffGovernance: &eventspb.OneOffGovernanceTransfer{DeliverOn: t.DeliverOn.UnixNano()}}
+	case GovernanceRecurring:
+		recurringTransfer := &eventspb.RecurringGovernanceTransfer{
+			StartEpoch: *t.StartEpoch,
+		}
 
+		if t.EndEpoch != nil {
+			endEpoch := *t.EndEpoch
+			recurringTransfer.EndEpoch = &endEpoch
+		}
+		proto.Kind = &eventspb.Transfer_RecurringGovernance{RecurringGovernance: recurringTransfer}
 	case Unknown:
 		// leave Kind as nil
 	}
@@ -170,6 +180,19 @@ func TransferFromProto(ctx context.Context, t *eventspb.Transfer, txHash TxHash,
 		if v.OneOff != nil {
 			deliverOn := time.Unix(0, v.OneOff.DeliverOn)
 			transfer.DeliverOn = &deliverOn
+		}
+	case *eventspb.Transfer_OneOffGovernance:
+		transfer.TransferType = GovernanceOneOff
+		if v.OneOffGovernance != nil {
+			deliverOn := time.Unix(0, v.OneOffGovernance.DeliverOn)
+			transfer.DeliverOn = &deliverOn
+		}
+	case *eventspb.Transfer_RecurringGovernance:
+		transfer.TransferType = GovernanceRecurring
+		transfer.StartEpoch = &v.RecurringGovernance.StartEpoch
+		if v.RecurringGovernance.EndEpoch != nil {
+			endEpoch := *v.RecurringGovernance.EndEpoch
+			transfer.EndEpoch = &endEpoch
 		}
 	case *eventspb.Transfer_Recurring:
 		transfer.TransferType = Recurring

@@ -231,12 +231,16 @@ const (
 	Unknown TransferType = iota
 	OneOff
 	Recurring
+	GovernanceOneOff
+	GovernanceRecurring
 )
 
 const (
-	OneOffStr    = "OneOff"
-	RecurringStr = "Recurring"
-	UnknownStr   = "Unknown"
+	OneOffStr              = "OneOff"
+	RecurringStr           = "Recurring"
+	GovernanceOneOffStr    = "GovernanceOneOff"
+	GovernanceRecurringStr = "GovernanceRecurring"
+	UnknownStr             = "Unknown"
 )
 
 func (m TransferType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -246,6 +250,10 @@ func (m TransferType) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error)
 		mode = OneOffStr
 	case Recurring:
 		mode = RecurringStr
+	case GovernanceOneOff:
+		mode = GovernanceOneOffStr
+	case GovernanceRecurring:
+		mode = GovernanceRecurringStr
 	}
 
 	return append(buf, []byte(mode)...), nil
@@ -258,6 +266,10 @@ func (m *TransferType) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 		val = OneOff
 	case RecurringStr:
 		val = Recurring
+	case GovernanceOneOffStr:
+		val = GovernanceOneOff
+	case GovernanceRecurringStr:
+		val = GovernanceRecurring
 	}
 
 	*m = val
