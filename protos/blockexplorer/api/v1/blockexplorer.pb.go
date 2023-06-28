@@ -237,10 +237,10 @@ type ListTransactionsRequest struct {
 	ExcludeCmdTypes []string `protobuf:"bytes,6,rep,name=exclude_cmd_types,json=excludeCmdTypes,proto3" json:"exclude_cmd_types,omitempty"`
 	// Party IDs filter, can be sender or receiver
 	Parties []string `protobuf:"bytes,7,rep,name=parties,proto3" json:"parties,omitempty"`
-	// Number of transaction to be returned from the blockchain. Use in conjunction with the `after` cursor to paginate forwards.
+	// Number of transactions to be returned from the blockchain. Use in conjunction with the `after` cursor to paginate forwards.
 	// On its own, this will return the first `first` transactions.
 	First uint32 `protobuf:"varint,8,opt,name=first,proto3" json:"first,omitempty"`
-	// Number of transaction to be returned from the blockchain. Use in conjunction with the `before` cursor to paginate backwards.
+	// Number of transactions to be returned from the blockchain. Use in conjunction with the `before` cursor to paginate backwards.
 	// On its own, this will return the last `last` transactions.
 	Last uint32 `protobuf:"varint,9,opt,name=last,proto3" json:"last,omitempty"`
 }
