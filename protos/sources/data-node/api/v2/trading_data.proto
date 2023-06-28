@@ -90,7 +90,8 @@ service TradingDataService {
 
   // Get stop order
   //
-  // Get an order by its ID. An order's ID will be the SHA3-256 hash of the signature that the order was submitted with
+  // Get a stop order by its ID. A stop order's ID will be the SHA3-256 hash of the signature that the order was submitted with.
+  // A stop order's ID is likely to be different from the ID of the order that will be submitted when the stop is triggered.
   rpc GetStopOrder(GetStopOrderRequest) returns (GetStopOrderResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
   }

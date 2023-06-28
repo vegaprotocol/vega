@@ -55,7 +55,8 @@ type TradingDataServiceClient interface {
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
 	// Get stop order
 	//
-	// Get an order by its ID. An order's ID will be the SHA3-256 hash of the signature that the order was submitted with
+	// Get a stop order by its ID. A stop order's ID will be the SHA3-256 hash of the signature that the order was submitted with.
+	// A stop order's ID is likely to be different from the ID of the order that will be submitted when the stop is triggered.
 	GetStopOrder(ctx context.Context, in *GetStopOrderRequest, opts ...grpc.CallOption) (*GetStopOrderResponse, error)
 	// List stop orders
 	//
@@ -1717,7 +1718,8 @@ type TradingDataServiceServer interface {
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
 	// Get stop order
 	//
-	// Get an order by its ID. An order's ID will be the SHA3-256 hash of the signature that the order was submitted with
+	// Get a stop order by its ID. A stop order's ID will be the SHA3-256 hash of the signature that the order was submitted with.
+	// A stop order's ID is likely to be different from the ID of the order that will be submitted when the stop is triggered.
 	GetStopOrder(context.Context, *GetStopOrderRequest) (*GetStopOrderResponse, error)
 	// List stop orders
 	//
