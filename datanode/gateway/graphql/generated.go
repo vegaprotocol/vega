@@ -1221,6 +1221,7 @@ type ComplexityRoot struct {
 	OrderUpdate struct {
 		CreatedAt            func(childComplexity int) int
 		ExpiresAt            func(childComplexity int) int
+		IcebergOrder         func(childComplexity int) int
 		Id                   func(childComplexity int) int
 		LiquidityProvisionId func(childComplexity int) int
 		MarketId             func(childComplexity int) int
@@ -7142,6 +7143,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OrderUpdate.ExpiresAt(childComplexity), true
+
+	case "OrderUpdate.icebergOrder":
+		if e.complexity.OrderUpdate.IcebergOrder == nil {
+			break
+		}
+
+		return e.complexity.OrderUpdate.IcebergOrder(childComplexity), true
 
 	case "OrderUpdate.id":
 		if e.complexity.OrderUpdate.Id == nil {
@@ -44881,6 +44889,55 @@ func (ec *executionContext) fieldContext_OrderUpdate_liquidityProvisionId(ctx co
 	return fc, nil
 }
 
+func (ec *executionContext) _OrderUpdate_icebergOrder(ctx context.Context, field graphql.CollectedField, obj *vega.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OrderUpdate_icebergOrder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IcebergOrder, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.IcebergOrder)
+	fc.Result = res
+	return ec.marshalOIcebergOrder2ᚖcodeᚗvegaprotocolᚗioᚋvegaᚋprotosᚋvegaᚐIcebergOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OrderUpdate_icebergOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OrderUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "peakSize":
+				return ec.fieldContext_IcebergOrder_peakSize(ctx, field)
+			case "minimumVisibleSize":
+				return ec.fieldContext_IcebergOrder_minimumVisibleSize(ctx, field)
+			case "reservedRemaining":
+				return ec.fieldContext_IcebergOrder_reservedRemaining(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type IcebergOrder", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *v2.PageInfo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_hasNextPage(ctx, field)
 	if err != nil {
@@ -61136,6 +61193,8 @@ func (ec *executionContext) fieldContext_Subscription_orders(ctx context.Context
 				return ec.fieldContext_OrderUpdate_peggedOrder(ctx, field)
 			case "liquidityProvisionId":
 				return ec.fieldContext_OrderUpdate_liquidityProvisionId(ctx, field)
+			case "icebergOrder":
+				return ec.fieldContext_OrderUpdate_icebergOrder(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type OrderUpdate", field.Name)
 		},
@@ -79777,6 +79836,10 @@ func (ec *executionContext) _OrderUpdate(ctx context.Context, sel ast.SelectionS
 		case "liquidityProvisionId":
 
 			out.Values[i] = ec._OrderUpdate_liquidityProvisionId(ctx, field, obj)
+
+		case "icebergOrder":
+
+			out.Values[i] = ec._OrderUpdate_icebergOrder(ctx, field, obj)
 
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
