@@ -70,12 +70,12 @@ func TestEngine(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure engine has a previous block to compare to
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 
 	// Every commit advances chain time 10 seconds.
 	// This one shouldn't trigger our call because we're set to fire every 20 seconds
 	tc.client.Commit()
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 
 	// But this one should
 	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
@@ -87,7 +87,7 @@ func TestEngine(t *testing.T) {
 		assert.Equal(t, cc.SpecId, "testid")
 	})
 	tc.client.Commit()
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 
 	// Now try advancing advancing eth time 40 seconds through a two triggers and
 	// check that we get called twice given a single call to OnTick()
@@ -110,7 +110,7 @@ func TestEngine(t *testing.T) {
 		assert.Equal(t, cc.BlockTime, uint64(70))
 	})
 
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 }
 
 func TestEngineWithErrorSpec(t *testing.T) {
@@ -162,12 +162,12 @@ func TestEngineWithErrorSpec(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure engine has a previous block to compare to
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 
 	// Every commit advances chain time 10 seconds.
 	// This one shouldn't trigger our call because we're set to fire every 20 seconds
 	tc.client.Commit()
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 
 	// But this one should
 	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
@@ -180,5 +180,5 @@ func TestEngineWithErrorSpec(t *testing.T) {
 		assert.NotNil(t, cc.Error)
 	})
 	tc.client.Commit()
-	e.OnTick(ctx, time.Now())
+	e.Poll(ctx, time.Now())
 }

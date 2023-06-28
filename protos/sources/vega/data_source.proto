@@ -29,7 +29,9 @@ message DataSourceSpecConfigurationTime {
 // data sources. It contains one of any of the defined `SourceType` variants.
 message DataSourceDefinitionInternal {
   // Types of internal data sources
-  oneof source_type { DataSourceSpecConfigurationTime time = 1; }
+  oneof source_type {
+    DataSourceSpecConfigurationTime time = 1;
+  }
 }
 
 // DataSourceDefinitionExternal is the top level object used for all external
@@ -90,7 +92,9 @@ message EthCallSpec {
 
 // Determines when the contract method should be called.
 message EthCallTrigger {
-  oneof trigger { EthTimeTrigger time_trigger = 1; }
+  oneof trigger {
+    EthTimeTrigger time_trigger = 1;
+  }
 }
 
 // Trigger for an Ethereum call based on the Ethereum block timestamp. Can be
@@ -135,4 +139,6 @@ message DataSourceSpec {
   }
 }
 
-message ExternalDataSourceSpec { DataSourceSpec spec = 1; }
+message ExternalDataSourceSpec {
+  DataSourceSpec spec = 1;
+}
