@@ -237,7 +237,6 @@ func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers
 		e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, transfer)
 		e.recurringGovernanceTransfersMap[transfer.ID] = transfer
 		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
-		e.log.Info("loaded recurring governance transfer from snapshot/checkpoint", logging.String("transfer", v.String()))
 	}
 	return evts
 }

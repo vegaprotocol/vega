@@ -74,6 +74,10 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		for _, id := range doneIDs {
 			e.deleteGovTransfer(id)
 		}
+		for _, d := range transfersDone {
+			e.log.Info("transfersDone", logging.String("event", d.StreamMessage().String()))
+		}
+
 		e.broker.SendBatch(transfersDone)
 	}
 }
@@ -168,7 +172,12 @@ func (e *Engine) processGovernanceTransfer(
 	references := []string{gTransfer.Reference, gTransfer.Reference}
 	tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
 	if err != nil {
+		e.log.Error("error transferring governance transfer funds", logging.Error(err))
 		return num.UintZero(), err
+	}
+
+	for _, lm := range tresps {
+		e.log.Info("processGovernanceTransfer", logging.String("ledger-movement", lm.IntoProto().String()))
 	}
 
 	e.broker.Send(events.NewLedgerMovements(ctx, tresps))
