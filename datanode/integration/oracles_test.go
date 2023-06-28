@@ -29,7 +29,6 @@ func TestOracles(t *testing.T) {
 	}
 
 	queries = map[string]string{
-		//"OracleDataSourceExternalEthereum": `{ oracleSpecsConnection { edges { node { dataSourceSpec { spec { id createdAt updatedAt status data { sourceType { ... on DataSourceDefinitionExternal { sourceType { ... on EthCallSpec { address abi method args trigger requiredConfirmations filters } } } } } } } } } } }`,
 		"OracleDataConnectionExternalEthereum": `{ oracleSpecsConnection { edges { node { dataConnection { edges { node { externalData { data { matchedSpecIds broadcastAt } } } } } } } } }`,
 	}
 
