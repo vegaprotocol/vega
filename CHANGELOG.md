@@ -1,10 +1,25 @@
 # Changelog
 
-## Unreleased 0.72.0
+## Unreleased 0.73.0
 
 ### 🚨 Breaking changes
 
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🗑️ Deprecation
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🛠 Improvements
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+### 🐛 Fixes
+
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.72.0
 
 ### 🗑️ Deprecation
 
