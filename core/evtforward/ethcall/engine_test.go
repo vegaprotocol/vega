@@ -88,6 +88,29 @@ func TestEngine(t *testing.T) {
 	})
 	tc.client.Commit()
 	e.OnTick(ctx, time.Now())
+
+	// Now try advancing advancing eth time 40 seconds through a two triggers and
+	// check that we get called twice given a single call to OnTick()
+	tc.client.Commit()
+	tc.client.Commit()
+	tc.client.Commit()
+	tc.client.Commit()
+
+	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
+		cc := ce.GetContractCall()
+		require.NotNil(t, cc)
+		assert.Equal(t, cc.BlockHeight, uint64(5))
+		assert.Equal(t, cc.BlockTime, uint64(50))
+	})
+
+	forwarder.EXPECT().ForwardFromSelf(gomock.Any()).Return().Do(func(ce *commandspb.ChainEvent) {
+		cc := ce.GetContractCall()
+		require.NotNil(t, cc)
+		assert.Equal(t, cc.BlockHeight, uint64(7))
+		assert.Equal(t, cc.BlockTime, uint64(70))
+	})
+
+	e.OnTick(ctx, time.Now())
 }
 
 func TestEngineWithErrorSpec(t *testing.T) {
