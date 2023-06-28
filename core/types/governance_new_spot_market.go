@@ -199,9 +199,13 @@ func NewSpotMarketConfigurationFromProto(p *vegapb.NewSpotMarketConfiguration) (
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
+	var err error
 	var instrument *InstrumentConfiguration
 	if p.Instrument != nil {
-		instrument = InstrumentConfigurationFromProto(p.Instrument)
+		instrument, err = InstrumentConfigurationFromProto(p.Instrument)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse instrument configuration: %w", err)
+		}
 	}
 
 	var priceMonitoring *PriceMonitoringParameters
