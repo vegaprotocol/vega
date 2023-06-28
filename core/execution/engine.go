@@ -246,8 +246,15 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 		return ErrMarketDoesNotExist
 	}
 
+	wasPending := mkt.GetMarketState() == types.MarketStatePending
 	if err := mkt.Reject(ctx); err != nil {
 		return err
+	}
+
+	// send market data event so market data and markets API are consistent.
+	// only send this event if the rejected market was pending, not proposed.
+	if wasPending {
+		e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
 
 	e.removeMarket(marketID)
