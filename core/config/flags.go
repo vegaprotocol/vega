@@ -36,7 +36,7 @@ var (
 )
 
 type OutputFlag struct {
-	Output Output `long:"output" description:"Specify the output format: json,human" default:"human" required:"true"`
+	Output Output `default:"human" description:"Specify the output format: json,human" long:"output" required:"true"`
 }
 
 func (f OutputFlag) GetOutput() (Output, error) {
@@ -70,11 +70,11 @@ func (o Output) IsJSON() bool {
 }
 
 type VegaHomeFlag struct {
-	VegaHome string `long:"home" description:"Path to the custom home for vega"`
+	VegaHome string `description:"Path to the custom home for vega" long:"home"`
 }
 
 type PassphraseFlag struct {
-	PassphraseFile Passphrase `short:"p" long:"passphrase-file" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+	PassphraseFile Passphrase `description:"A file containing the passphrase for the wallet, if empty will prompt for input" long:"passphrase-file" short:"p"`
 }
 
 type Passphrase string

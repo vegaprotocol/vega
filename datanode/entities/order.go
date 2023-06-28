@@ -58,9 +58,9 @@ type Order struct {
 	ReduceOnly      bool
 
 	// Iceberg fields
-	ReservedRemaining *int64
-	InitialPeakSize   *int64
-	MinimumPeakSize   *int64
+	ReservedRemaining  *int64
+	PeakSize           *int64
+	MinimumVisibleSize *int64
 }
 
 func (o Order) ToProto() *vega.Order {
@@ -78,11 +78,11 @@ func (o Order) ToProto() *vega.Order {
 	}
 
 	var icebergOrder *vega.IcebergOrder
-	if o.InitialPeakSize != nil {
+	if o.PeakSize != nil {
 		icebergOrder = &vega.IcebergOrder{
-			ReservedRemaining: uint64(*o.ReservedRemaining),
-			InitialPeakSize:   uint64(*o.InitialPeakSize),
-			MinimumPeakSize:   uint64(*o.MinimumPeakSize),
+			ReservedRemaining:  uint64(*o.ReservedRemaining),
+			PeakSize:           uint64(*o.PeakSize),
+			MinimumVisibleSize: uint64(*o.MinimumVisibleSize),
 		}
 	}
 
@@ -166,52 +166,52 @@ func OrderFromProto(po *vega.Order, seqNum uint64, txHash TxHash) (Order, error)
 		reason = *po.Reason
 	}
 
-	var initialPeakSize, minimumPeakSize, reservedRemaining *int64
+	var PeakSize, MinimumVisibleSize, reservedRemaining *int64
 	if po.IcebergOrder != nil {
 		if po.IcebergOrder.ReservedRemaining > math.MaxInt64 {
 			return Order{}, fmt.Errorf("iceberg reserved remaining is larger than a 64-bit integer: %v", po.Remaining)
 		}
 		reservedRemaining = ptr.From(int64(po.IcebergOrder.ReservedRemaining))
 
-		if po.IcebergOrder.InitialPeakSize > math.MaxInt64 {
-			return Order{}, fmt.Errorf("iceberg initial peak size is larger than a 64-bit integer: %v", po.Remaining)
+		if po.IcebergOrder.PeakSize > math.MaxInt64 {
+			return Order{}, fmt.Errorf("iceberg peak size is larger than a 64-bit integer: %v", po.Remaining)
 		}
-		initialPeakSize = ptr.From(int64(po.IcebergOrder.InitialPeakSize))
+		PeakSize = ptr.From(int64(po.IcebergOrder.PeakSize))
 
-		if po.IcebergOrder.MinimumPeakSize > math.MaxInt64 {
-			return Order{}, fmt.Errorf("iceberg minimum peak size is larger than a 64-bit integer: %v", po.Remaining)
+		if po.IcebergOrder.MinimumVisibleSize > math.MaxInt64 {
+			return Order{}, fmt.Errorf("iceberg minimum visible size is larger than a 64-bit integer: %v", po.Remaining)
 		}
-		minimumPeakSize = ptr.From(int64(po.IcebergOrder.MinimumPeakSize))
+		MinimumVisibleSize = ptr.From(int64(po.IcebergOrder.MinimumVisibleSize))
 	}
 
 	o := Order{
-		ID:                OrderID(po.Id),
-		MarketID:          MarketID(po.MarketId),
-		PartyID:           PartyID(po.PartyId),
-		Side:              po.Side,
-		Price:             price,
-		Size:              size,
-		Remaining:         remaining,
-		TimeInForce:       po.TimeInForce,
-		Type:              po.Type,
-		Status:            po.Status,
-		Reference:         po.Reference,
-		Reason:            reason,
-		Version:           version,
-		PeggedOffset:      peggedOffset,
-		BatchID:           batchID,
-		PeggedReference:   peggedReference,
-		LpID:              lpID,
-		CreatedAt:         NanosToPostgresTimestamp(po.CreatedAt),
-		UpdatedAt:         NanosToPostgresTimestamp(po.UpdatedAt),
-		ExpiresAt:         NanosToPostgresTimestamp(po.ExpiresAt),
-		SeqNum:            seqNum,
-		TxHash:            txHash,
-		PostOnly:          po.PostOnly,
-		ReduceOnly:        po.ReduceOnly,
-		ReservedRemaining: reservedRemaining,
-		InitialPeakSize:   initialPeakSize,
-		MinimumPeakSize:   minimumPeakSize,
+		ID:                 OrderID(po.Id),
+		MarketID:           MarketID(po.MarketId),
+		PartyID:            PartyID(po.PartyId),
+		Side:               po.Side,
+		Price:              price,
+		Size:               size,
+		Remaining:          remaining,
+		TimeInForce:        po.TimeInForce,
+		Type:               po.Type,
+		Status:             po.Status,
+		Reference:          po.Reference,
+		Reason:             reason,
+		Version:            version,
+		PeggedOffset:       peggedOffset,
+		BatchID:            batchID,
+		PeggedReference:    peggedReference,
+		LpID:               lpID,
+		CreatedAt:          NanosToPostgresTimestamp(po.CreatedAt),
+		UpdatedAt:          NanosToPostgresTimestamp(po.UpdatedAt),
+		ExpiresAt:          NanosToPostgresTimestamp(po.ExpiresAt),
+		SeqNum:             seqNum,
+		TxHash:             txHash,
+		PostOnly:           po.PostOnly,
+		ReduceOnly:         po.ReduceOnly,
+		ReservedRemaining:  reservedRemaining,
+		PeakSize:           PeakSize,
+		MinimumVisibleSize: MinimumVisibleSize,
 	}
 
 	return o, nil
@@ -234,7 +234,7 @@ func (o Order) ToRow() []interface{} {
 		o.Reference, o.Reason, o.Version, o.PeggedOffset, o.BatchID,
 		o.PeggedReference, o.LpID, o.CreatedAt, o.UpdatedAt, o.ExpiresAt,
 		o.TxHash, o.VegaTime, o.SeqNum, o.PostOnly, o.ReduceOnly, o.ReservedRemaining,
-		o.InitialPeakSize, o.MinimumPeakSize,
+		o.PeakSize, o.MinimumVisibleSize,
 	}
 }
 
@@ -244,7 +244,7 @@ var OrderColumns = []string{
 	"reference", "reason", "version", "pegged_offset", "batch_id",
 	"pegged_reference", "lp_id", "created_at", "updated_at", "expires_at",
 	"tx_hash", "vega_time", "seq_num", "post_only", "reduce_only", "reserved_remaining",
-	"initial_peak_size", "minimum_peak_size",
+	"peak_size", "minimum_visible_size",
 }
 
 type OrderCursor struct {

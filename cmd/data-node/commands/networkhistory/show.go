@@ -24,7 +24,7 @@ type showCmd struct {
 	config.Config
 	coreConfig.OutputFlag
 
-	AllSegments bool `short:"s" long:"segments" description:"show all segments for each contiguous history"`
+	AllSegments bool `description:"show all segments for each contiguous history" long:"segments" short:"s"`
 }
 
 type showOutput struct {

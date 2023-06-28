@@ -14,9 +14,9 @@ package steps
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/num"
 )
 
 // the interface for execution engine. The execution engine itself will be wrapped
@@ -27,14 +27,21 @@ type Execution interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
 	SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
+	SubmitStopOrder(ctx context.Context, submission *types.StopOrdersSubmission, party string) (*types.OrderConfirmation, error)
 	SubmitLiquidityProvision(ctx context.Context, submission *types.LiquidityProvisionSubmission, party string, lpID string,
 		deterministicID string) error
 	AmendLiquidityProvision(ctx context.Context, amendment *types.LiquidityProvisionAmendment, party string) error
 	CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) error
-	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	BlockEnd(ctx context.Context)
 	GetMarket(parentID string, settled bool) (types.Market, bool)
-	SucceedMarket(ctx context.Context, successor, parent string, fraction num.Decimal) error
+	SucceedMarket(ctx context.Context, successor, parent string) error
+
+	// even though the batch processing is done above the execution engine, from the feature test point of view
+	// it is part of the execution engine
+	StartBatch(party string) error
+	AddSubmitOrderToBatch(submission *types.OrderSubmission, party string) error
+	ProcessBatch(ctx context.Context, party string) error
 }

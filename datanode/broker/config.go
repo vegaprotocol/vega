@@ -24,14 +24,14 @@ const namedLogger = "broker"
 // Config represents the configuration of the broker.
 type Config struct {
 	Level                          encoding.LogLevel         `long:"log-level"`
-	SocketConfig                   SocketConfig              `group:"Socket" namespace:"socket"`
+	SocketConfig                   SocketConfig              `group:"Socket"                                                                           namespace:"socket"`
 	SocketServerInboundBufferSize  int                       `long:"socket-server-inbound-buffer-size"`
 	SocketServerOutboundBufferSize int                       `long:"socket-server-outbound-buffer-size"`
-	FileEventSourceConfig          FileEventSourceConfig     `group:"FileEventSourceConfig" namespace:"fileeventsource"`
-	UseEventFile                   encoding.Bool             `long:"use-event-file" description:"set to true to source events from a file"`
-	PanicOnError                   encoding.Bool             `long:"panic-on-error" description:"if an error occurs on event push the broker will panic, else log the error"`
-	UseBufferedEventSource         encoding.Bool             `long:"use-buffered-event-source" description:"if true datanode will buffer events"`
-	BufferedEventSourceConfig      BufferedEventSourceConfig `group:"BufferedEventSource" namespace:"bufferedeventsource"`
+	FileEventSourceConfig          FileEventSourceConfig     `group:"FileEventSourceConfig"                                                            namespace:"fileeventsource"`
+	UseEventFile                   encoding.Bool             `description:"set to true to source events from a file"                                   long:"use-event-file"`
+	PanicOnError                   encoding.Bool             `description:"if an error occurs on event push the broker will panic, else log the error" long:"panic-on-error"`
+	UseBufferedEventSource         encoding.Bool             `description:"if true datanode will buffer events"                                        long:"use-buffered-event-source"`
+	BufferedEventSourceConfig      BufferedEventSourceConfig `group:"BufferedEventSource"                                                              namespace:"bufferedeventsource"`
 	EventBusClientBufferSize       int                       `long:"event-bus-client-buffer-size"`
 }
 
@@ -66,21 +66,21 @@ func NewDefaultConfig() Config {
 }
 
 type FileEventSourceConfig struct {
-	Directory             string            `long:"directory" description:"the directory container the event files"`
-	TimeBetweenBlocks     encoding.Duration `string:"time-between-blocks" description:"the time between sending blocks"`
-	SendChannelBufferSize int               `long:"send-buffer-size" description:"size of channel buffer used to send events to broker "`
+	Directory             string            `description:"the directory container the event files"               long:"directory"`
+	TimeBetweenBlocks     encoding.Duration `description:"the time between sending blocks"                       string:"time-between-blocks"`
+	SendChannelBufferSize int               `description:"size of channel buffer used to send events to broker " long:"send-buffer-size"`
 }
 
 type SocketConfig struct {
-	IP                 string `long:"ip" description:" "`
-	Port               int    `long:"port" description:" "`
+	IP                 string `description:" "             long:"ip"`
+	Port               int    `description:" "             long:"port"`
 	MaxReceiveTimeouts int    `long:"max-receive-timeouts"`
 	TransportType      string `long:"transport-type"`
 }
 
 type BufferedEventSourceConfig struct {
-	EventsPerFile           int   `long:"events-per-file" description:"the number of events to store in a file buffer, set to 0 to disable the buffer"`
-	SendChannelBufferSize   int   `long:"send-buffer-size" description:"sink event channel buffer size"`
-	Archive                 bool  `long:"archive" description:"archives event buffer files after they have been read, default false"`
-	ArchiveMaximumSizeBytes int64 `long:"archive-maximum-size" description:"the maximum size of the archive directory"`
+	EventsPerFile           int   `description:"the number of events to store in a file buffer, set to 0 to disable the buffer" long:"events-per-file"`
+	SendChannelBufferSize   int   `description:"sink event channel buffer size"                                                 long:"send-buffer-size"`
+	Archive                 bool  `description:"archives event buffer files after they have been read, default false"           long:"archive"`
+	ArchiveMaximumSizeBytes int64 `description:"the maximum size of the archive directory"                                      long:"archive-maximum-size"`
 }

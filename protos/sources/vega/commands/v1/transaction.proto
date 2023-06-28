@@ -68,6 +68,10 @@ message InputData {
     AnnounceNode announce_node = 1014;
     // Command to submit a batch of order instructions to a market.
     BatchMarketInstructions batch_market_instructions = 1015;
+    // Command to submit a pair of stop orders.
+    StopOrdersSubmission stop_orders_submission = 1016;
+    // Command to cancel stop orders.
+    StopOrdersCancellation stop_orders_cancellation = 1017;
 
     // Validator commands
 

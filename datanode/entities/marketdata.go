@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/libs/num"
 	v2 "code.vegaprotocol.io/vega/protos/data-node/api/v2"
 	types "code.vegaprotocol.io/vega/protos/vega"
 	"github.com/shopspring/decimal"
@@ -93,6 +94,11 @@ type MarketData struct {
 	SeqNum uint64
 	// NextMarkToMarket is the next timestamp when the market wil be marked to market
 	NextMarkToMarket time.Time
+	// market growth for the last market window
+	MarketGrowth num.Decimal
+	// Last traded price, as an integer, for example `123456` is a correctly
+	// formatted price of `1.23456` assuming market configured to 5 decimal places
+	LastTradedPrice decimal.Decimal
 }
 
 type PriceMonitoringTrigger struct {
@@ -116,10 +122,13 @@ func (trigger PriceMonitoringTrigger) ToProto() *types.PriceMonitoringTrigger {
 }
 
 func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, error) {
-	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake decimal.Decimal
+	var mark, bid, offer, staticBid, staticOffer, mid, staticMid, indicative, targetStake, suppliedStake, growth, lastTradedPrice decimal.Decimal
 	var err error
 
 	if mark, err = parseDecimal(data.MarkPrice); err != nil {
+		return nil, err
+	}
+	if lastTradedPrice, err = parseDecimal(data.LastTradedPrice); err != nil {
 		return nil, err
 	}
 	if bid, err = parseDecimal(data.BestBidPrice); err != nil {
@@ -149,9 +158,13 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 	if suppliedStake, err = parseDecimal(data.SuppliedStake); err != nil {
 		return nil, err
 	}
+	if growth, err = parseDecimal(data.MarketGrowth); err != nil {
+		return nil, err
+	}
 	nextMTM := time.Unix(0, data.NextMarkToMarket)
 
 	marketData := &MarketData{
+		LastTradedPrice:            lastTradedPrice,
 		MarkPrice:                  mark,
 		BestBidPrice:               bid,
 		BestBidVolume:              data.BestBidVolume,
@@ -180,6 +193,7 @@ func MarketDataFromProto(data *types.MarketData, txHash TxHash) (*MarketData, er
 		LiquidityProviderFeeShares: data.LiquidityProviderFeeShare,
 		TxHash:                     txHash,
 		NextMarkToMarket:           nextMTM,
+		MarketGrowth:               growth,
 	}
 
 	return marketData, nil
@@ -199,7 +213,8 @@ func parseDecimal(input string) (decimal.Decimal, error) {
 }
 
 func (md MarketData) Equal(other MarketData) bool {
-	return md.MarkPrice.Equals(other.MarkPrice) &&
+	return md.LastTradedPrice.Equals(other.LastTradedPrice) &&
+		md.MarkPrice.Equals(other.MarkPrice) &&
 		md.BestBidPrice.Equals(other.BestBidPrice) &&
 		md.BestOfferPrice.Equals(other.BestOfferPrice) &&
 		md.BestStaticBidPrice.Equals(other.BestStaticBidPrice) &&
@@ -226,7 +241,8 @@ func (md MarketData) Equal(other MarketData) bool {
 		liquidityProviderFeeShareMatches(md.LiquidityProviderFeeShares, other.LiquidityProviderFeeShares) &&
 		md.TxHash == other.TxHash &&
 		md.MarketState == other.MarketState &&
-		md.NextMarkToMarket.Equal(other.NextMarkToMarket)
+		md.NextMarkToMarket.Equal(other.NextMarkToMarket) &&
+		md.MarketGrowth.Equal(other.MarketGrowth)
 }
 
 func priceMonitoringBoundsMatches(bounds, other []*types.PriceMonitoringBounds) bool {
@@ -276,6 +292,7 @@ func liquidityProviderFeeShareMatches(feeShares, other []*types.LiquidityProvide
 
 func (md MarketData) ToProto() *types.MarketData {
 	result := types.MarketData{
+		LastTradedPrice:           md.LastTradedPrice.String(),
 		MarkPrice:                 md.MarkPrice.String(),
 		BestBidPrice:              md.BestBidPrice.String(),
 		BestBidVolume:             md.BestBidVolume,
@@ -304,6 +321,7 @@ func (md MarketData) ToProto() *types.MarketData {
 		MarketValueProxy:          md.MarketValueProxy,
 		LiquidityProviderFeeShare: md.LiquidityProviderFeeShares,
 		NextMarkToMarket:          md.NextMarkToMarket.UnixNano(),
+		MarketGrowth:              md.MarketGrowth.String(),
 	}
 
 	return &result

@@ -67,6 +67,10 @@ const (
 	IssueSignatures Command = 0x59
 	// ProtocolUpgradeCommand Command ...
 	BatchMarketInstructions Command = 0x5A
+	// StopOrdersSubmissionCommand ...
+	StopOrdersSubmissionCommand Command = 0x5B
+	// StopOrdersSubmissionCommand ...
+	StopOrdersCancellationCommand Command = 0x5C
 )
 
 var commandName = map[Command]string{
@@ -95,6 +99,8 @@ var commandName = map[Command]string{
 	ProtocolUpgradeCommand:             "Protocol Upgrade",
 	IssueSignatures:                    "Issue Signatures",
 	BatchMarketInstructions:            "Batch Market Instructions",
+	StopOrdersSubmissionCommand:        "Stop Orders Submission",
+	StopOrdersCancellationCommand:      "Stop Orders Cancellation",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

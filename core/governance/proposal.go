@@ -210,11 +210,16 @@ func (t *ToSubmit) InsurancePoolFraction() *num.Decimal {
 }
 
 type ToSubmitNewMarket struct {
-	m *types.Market
+	m   *types.Market
+	oos time.Time // opening auction start
 }
 
 func (t *ToSubmitNewMarket) Market() *types.Market {
 	return t.m
+}
+
+func (t *ToSubmitNewMarket) OpeningAuctionStart() time.Time {
+	return t.oos
 }
 
 type VoteClosed struct {

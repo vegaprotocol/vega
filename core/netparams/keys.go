@@ -24,7 +24,7 @@ const (
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
 	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
-	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
+	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
 	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
 	MarketMinProbabilityOfTradingForLPOrders        = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
@@ -34,6 +34,15 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
+
+	// Parameters for liquidity framework version 2.
+	MarketLiquidityV2BondPenaltyParameter              = "market.liquidityV2.bondPenaltyParameter"
+	MarketLiquidityV2EarlyExitPenalty                  = "market.liquidityV2.earlyExitPenalty"
+	MarketLiquidityV2MaximumLiquidityFeeFactorLevel    = "market.liquidityV2.maximumLiquidityFeeFactorLevel"
+	MarketLiquidityV2SLANonPerformanceBondPenaltyMax   = "market.liquidityV2.sla.nonPerformanceBondPenaltyMax"
+	MarketLiquidityV2SLANonPerformanceBondPenaltySlope = "market.liquidityV2.sla.nonPerformanceBondPenaltySlope"
+	MarketLiquidityV2StakeToCCYVolume                  = "market.liquidityV2.stakeToCcyVolume"
 
 	RewardAsset = "reward.asset"
 
@@ -133,6 +142,7 @@ const (
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
+	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -163,7 +173,6 @@ const (
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
-	SuccessorLaunchWindow              = "network.liquidity.successorLaunchWindowLength"
 
 	// proof of work.
 	SpamPoWNumberOfPastBlocks   = "spam.pow.numberOfPastBlocks"
@@ -210,8 +219,14 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityBondPenaltyParameter:                      {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:            {},
 	MarketLiquidityStakeToCCYVolume:                          {},
-	MarketLiquidityProvidersFeeDistribitionTimeStep:          {},
+	MarketLiquidityProvidersFeeDistributionTimeStep:          {},
 	MarketLiquidityTargetStakeTriggeringRatio:                {},
+	MarketLiquidityV2BondPenaltyParameter:                    {},
+	MarketLiquidityV2EarlyExitPenalty:                        {},
+	MarketLiquidityV2MaximumLiquidityFeeFactorLevel:          {},
+	MarketLiquidityV2SLANonPerformanceBondPenaltySlope:       {},
+	MarketLiquidityV2SLANonPerformanceBondPenaltyMax:         {},
+	MarketLiquidityV2StakeToCCYVolume:                        {},
 	MarketTargetStakeTimeWindow:                              {},
 	MarketTargetStakeScalingFactor:                           {},
 	MarketPriceMonitoringDefaultParameters:                   {},
@@ -323,5 +338,6 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                        {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
 	SpamProtectionMinMultisigUpdates:                         {},
-	SuccessorLaunchWindow:                                    {},
+	MarketSuccessorLaunchWindow:                              {},
+	SpamProtectionMaxStopOrdersPerMarket:                     {},
 }

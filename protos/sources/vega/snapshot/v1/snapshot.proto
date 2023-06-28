@@ -468,6 +468,40 @@ message Market {
   repeated string parties = 21;
   bool closed = 22;
   bool succeeded = 23;
+  StopOrders stop_orders = 24;
+  repeated vega.Order expiring_stop_orders = 25;
+}
+
+message OrdersAtPrice {
+  string price = 1;
+  repeated string orders = 2;
+}
+
+message PricedStopOrders {
+  repeated OrdersAtPrice falls_bellow = 1;
+  repeated OrdersAtPrice rises_above = 2;
+}
+
+message TrailingStopOrders {
+  string last_seen_price = 1;
+  repeated OffsetsAtPrice falls_bellow = 2;
+  repeated OffsetsAtPrice rises_above = 3;
+}
+
+message OrdersAtOffset {
+  string offset = 1;
+  repeated string orders = 2;
+}
+
+message OffsetsAtPrice {
+  string price = 1;
+  repeated OrdersAtOffset offsets = 2;
+}
+
+message StopOrders {
+  repeated events.v1.StopOrderEvent stop_orders = 1;
+  PricedStopOrders priced_stop_orders = 2;
+  TrailingStopOrders trailing_stop_orders = 3;
 }
 
 message PeggedOrders {
@@ -477,6 +511,7 @@ message PeggedOrders {
 message ExecutionMarkets {
   repeated Market markets = 1;
   repeated SpotMarket spot_markets = 2;
+  repeated vega.checkpoint.v1.MarketState settled_markets = 3;
 }
 
 message Position {

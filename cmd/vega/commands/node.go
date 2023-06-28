@@ -29,14 +29,14 @@ import (
 )
 
 type StartCmd struct {
-	config.Passphrase `long:"nodewallet-passphrase-file" description:"A file contain the passphrase to decrypt the node wallet"`
+	config.Passphrase `description:"A file contain the passphrase to decrypt the node wallet" long:"nodewallet-passphrase-file"`
 	config.VegaHomeFlag
 	config.Config
 
-	TendermintHome string `long:"tendermint-home" description:"Directory for tendermint config and data (default: $HOME/.cometbft)"`
+	TendermintHome string `description:"Directory for tendermint config and data (default: $HOME/.cometbft)" long:"tendermint-home"`
 
-	Network    string `long:"network" description:"The network to start this node with"`
-	NetworkURL string `long:"network-url" description:"The URL to a genesis file to start this node with"`
+	Network    string `description:"The network to start this node with"               long:"network"`
+	NetworkURL string `description:"The URL to a genesis file to start this node with" long:"network-url"`
 }
 
 var startCmd StartCmd

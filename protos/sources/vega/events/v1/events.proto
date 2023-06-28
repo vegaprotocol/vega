@@ -13,6 +13,11 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+message StopOrderEvent {
+  commands.v1.OrderSubmission submission = 1;
+  vega.StopOrder stop_order = 2;
+}
+
 message ERC20MultiSigSignerAdded {
   // ID of the signature bundle
   string signature_id = 1;
@@ -267,6 +272,8 @@ message TransactionResult {
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
     commands.v1.KeyRotateSubmission key_rotate_submission = 120;
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
+    commands.v1.StopOrdersSubmission stop_order_submission = 122;
+    commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
   }
 
   // extra details about the transaction processing
@@ -744,6 +751,9 @@ enum BusEventType {
   // Event indicating a spot liquidity provision has been created or updated.
   BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION = 59;
 
+  // Event indicating a stop order has been submitted or updated.
+  BUS_EVENT_TYPE_STOP_ORDER = 60;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -871,6 +881,8 @@ message BusEvent {
     ExpiredOrders expired_orders = 156;
     // Open positions on the market that are/were distressed
     DistressedPositions distressed_positions = 157;
+    // A stop order event
+    StopOrderEvent stop_order = 158;
 
     // Market tick events
     MarketEvent market = 1001;

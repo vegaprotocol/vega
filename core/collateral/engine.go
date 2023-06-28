@@ -350,6 +350,17 @@ func (e *Engine) SuccessorInsuranceFraction(ctx context.Context, successor, pare
 		Type:      types.TransferTypeSuccessorInsuranceFraction,
 	}
 	le, _ := e.getLedgerEntries(ctx, req)
+	if le == nil {
+		return nil
+	}
+	for _, bal := range le.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return le
+		}
+	}
 	return le
 }
 
@@ -2084,8 +2095,8 @@ func (e *Engine) getTransferRequest(p *types.Transfer, settle, insurance *types.
 }
 
 // this builds a TransferResponse for a specific request, we collect all of them and aggregate.
-func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferRequest) (*types.LedgerMovement, error) {
-	ret := types.LedgerMovement{
+func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferRequest) (ret *types.LedgerMovement, err error) {
+	ret = &types.LedgerMovement{
 		Entries:  []*types.LedgerEntry{},
 		Balances: make([]*types.PostTransferBalance, 0, len(req.ToAccount)),
 	}
@@ -2139,7 +2150,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 				to.Balance.AddSum(remainder)
 				to.Account.Balance.AddSum(remainder)
 			}
-			return &ret, nil
+			return ret, nil
 		}
 		if !acc.Balance.IsZero() {
 			amount.Sub(amount, acc.Balance)
@@ -2172,7 +2183,7 @@ func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferReques
 			break
 		}
 	}
-	return &ret, nil
+	return ret, nil
 }
 
 func (e *Engine) clearAccount(
@@ -2216,7 +2227,7 @@ func (e *Engine) clearAccount(
 
 // ClearMarket will remove all monies or accounts for parties allocated for a market (margin accounts)
 // when the market reach end of life (maturity).
-func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.LedgerMovement, error) {
+func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties []string, keepInsurance bool) ([]*types.LedgerMovement, error) {
 	// create a transfer request that we will reuse all the time in order to make allocations smaller
 	req := &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
@@ -2305,12 +2316,38 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		// add entries to the response
 		resps = append(resps, ledgerEntries)
 	}
+	if lpFeeLE := e.clearRemainingLPFees(ctx, mktID, asset, keepInsurance); len(lpFeeLE) > 0 {
+		resps = append(resps, lpFeeLE...)
+	}
+
+	if keepInsurance {
+		return resps, nil
+	}
+	insLM, err := e.ClearInsurancepool(ctx, mktID, asset, false)
+	if err != nil {
+		return nil, err
+	}
+	if insLM == nil {
+		return resps, nil
+	}
+	return append(resps, insLM...), nil
+}
+
+func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, keepFeeAcc bool) []*types.LedgerMovement {
 	// we need a market insurance pool regardless
 	marketInsuranceAcc := e.GetOrCreateMarketInsurancePoolAccount(ctx, mktID, asset)
-	marketInsuranceID := marketInsuranceAcc.ID
 	// any remaining balance in the fee account gets transferred over to the insurance account
 	lpFeeAccID := e.accountID(mktID, "", asset, types.AccountTypeFeesLiquidity)
-	if lpFeeAcc, ok := e.accs[lpFeeAccID]; ok {
+	ret := make([]*types.LedgerMovement, 0, 4)
+	req := &types.TransferRequest{
+		FromAccount: make([]*types.Account, 1),
+		ToAccount:   make([]*types.Account, 1),
+		Asset:       asset,
+		Type:        types.TransferTypeClearAccount,
+	}
+
+	lpFeeAcc, exists := e.accs[lpFeeAccID]
+	if exists && !lpFeeAcc.Balance.IsZero() {
 		req.FromAccount[0] = lpFeeAcc
 		req.ToAccount[0] = marketInsuranceAcc
 		req.Amount = lpFeeAcc.Balance.Clone()
@@ -2318,16 +2355,87 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		if err != nil {
 			e.log.Panic("unable to redistribute remainder of LP fee account funds", logging.Error(err))
 		}
-		resps = append(resps, lpFeeLE)
-		// remove the account once it's drained
+
+		for _, bal := range lpFeeLE.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil
+			}
+		}
+		ret = append(ret, lpFeeLE)
+	}
+
+	// only remove this account when the market is ready to be fully cleared
+	if exists && !keepFeeAcc {
 		e.removeAccount(lpFeeAccID)
 	}
 
+	// clear remaining maker fees
+	makerAcc, err := e.GetMarketMakerFeeAccount(mktID, asset)
+	if err == nil && makerAcc != nil && !makerAcc.Balance.IsZero() {
+		req.FromAccount[0] = makerAcc
+		req.Amount = makerAcc.Balance.Clone()
+		mLE, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Panic("unable to redistribute remainder of maker fee account funds", logging.Error(err))
+		}
+		if !keepFeeAcc {
+			e.removeAccount(makerAcc.ID)
+		}
+		for _, bal := range mLE.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil
+			}
+		}
+		ret = append(ret, mLE)
+	}
+	// clear settlement balance (if any)
+	settle, _, _ := e.getSystemAccounts(mktID, asset)
+	if settle == nil || settle.Balance.IsZero() {
+		return ret
+	}
+	req.FromAccount[0] = settle
+	req.Amount = settle.Balance.Clone()
+	scLE, err := e.getLedgerEntries(ctx, req)
+	if err != nil {
+		e.log.Panic("unable to clear remaining settlement balance", logging.Error(err))
+	}
+	for _, bal := range scLE.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil
+		}
+	}
+	return append(ret, scLE)
+}
+
+func (e *Engine) ClearInsurancepool(ctx context.Context, mktID, asset string, clearFees bool) ([]*types.LedgerMovement, error) {
+	resp := make([]*types.LedgerMovement, 0, 3)
+	if clearFees {
+		if r := e.clearRemainingLPFees(ctx, mktID, asset, false); len(r) > 0 {
+			resp = append(resp, r...)
+		}
+	}
+	req := &types.TransferRequest{
+		FromAccount: make([]*types.Account, 1),
+		ToAccount:   make([]*types.Account, 1),
+		Asset:       asset,
+		Type:        types.TransferTypeClearAccount,
+	}
+	marketInsuranceAcc := e.GetOrCreateMarketInsurancePoolAccount(ctx, mktID, asset)
+	marketInsuranceID := marketInsuranceAcc.ID
 	// redistribute the remaining funds in the market insurance account between other markets insurance accounts and global insurance account
 	if marketInsuranceAcc.Balance.IsZero() {
 		// if there's no market insurance account or it has no balance, nothing to do here
 		e.removeAccount(marketInsuranceID)
-		return resps, nil
+		return nil, nil
 	}
 
 	// get all other market insurance accounts for the same asset
@@ -2341,7 +2449,6 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	// add the network treasury, if it doesn't exist yet, create it
 	globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
 	insuranceAccounts = append(insuranceAccounts, globalRewardPool)
-
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
@@ -2358,11 +2465,10 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 			return nil, err
 		}
 	}
-
-	// remove the insurance account for the market
+	resp = append(resp, insuranceLedgerEntries)
 	e.removeAccount(marketInsuranceID)
 
-	return append(resps, insuranceLedgerEntries), nil
+	return resp, nil
 }
 
 func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) bool {
@@ -2770,10 +2876,13 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	if err != nil {
 		return nil, err
 	}
-	// increment the external account
-	// this could probably be done more generically using the response
-	if err := e.IncrementBalance(ctx, req.ToAccount[0].ID, amount); err != nil {
-		return nil, err
+	for _, bal := range res.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil, err
+		}
 	}
 
 	return res, nil
@@ -2820,9 +2929,13 @@ func (e *Engine) RestoreCheckpointBalance(
 	if err != nil {
 		return nil, err
 	}
-
-	if err := e.IncrementBalance(ctx, acc.ID, amount); err != nil {
-		return nil, err
+	for _, bal := range lms.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil, err
+		}
 	}
 
 	return lms, nil
@@ -2873,9 +2986,13 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	if err != nil {
 		return nil, err
 	}
-	// we need to call increment balance here, because we're working on a copy, acc.Balance will still be 100 if we just use Update
-	if err := e.IncrementBalance(ctx, acc.ID, amount); err != nil {
-		return nil, err
+	for _, bal := range res.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil, err
+		}
 	}
 
 	return res, nil

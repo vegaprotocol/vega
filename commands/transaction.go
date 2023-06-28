@@ -225,6 +225,10 @@ func CheckInputData(rawInputData []byte) (*commandspb.InputData, Errors) {
 			errs.Merge(checkIssueSignatures(cmd.IssueSignatures))
 		case *commandspb.InputData_BatchMarketInstructions:
 			errs.Merge(checkBatchMarketInstructions(cmd.BatchMarketInstructions))
+		case *commandspb.InputData_StopOrdersSubmission:
+			errs.Merge(checkStopOrdersSubmission(cmd.StopOrdersSubmission))
+		case *commandspb.InputData_StopOrdersCancellation:
+			errs.Merge(checkStopOrdersCancellation(cmd.StopOrdersCancellation))
 		default:
 			errs.AddForProperty("tx.input_data.command", ErrIsNotSupported)
 		}

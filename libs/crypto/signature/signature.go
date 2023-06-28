@@ -64,6 +64,33 @@ func VerifyEthereumSignature(message, signature []byte, hexAddress string) error
 	return nil
 }
 
+func RecoverEthereumAddress(message, signature []byte) (common.Address, error) {
+	hash := ecrypto.Keccak256(message)
+
+	if len(signature) <= ecrypto.RecoveryIDOffset {
+		return common.Address{}, ErrEthInvalidSignature
+	}
+
+	// see reference in multisig control signature verification for more details
+	if signature[ecrypto.RecoveryIDOffset] == 27 || signature[ecrypto.RecoveryIDOffset] == 28 {
+		signature[ecrypto.RecoveryIDOffset] -= 27
+	}
+
+	// get the pubkey from the signature
+	pubkey, err := ecrypto.SigToPub(hash, signature)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	// verify the signature
+	signatureNoID := signature[:len(signature)-1]
+	if !ecrypto.VerifySignature(ecrypto.CompressPubkey(pubkey), hash, signatureNoID) {
+		return common.Address{}, ErrEthInvalidSignature
+	}
+
+	return ecrypto.PubkeyToAddress(*pubkey), nil
+}
+
 func VerifyVegaSignature(message, signature, pubkey []byte) error {
 	alg := wcrypto.NewEd25519()
 	ok, err := alg.Verify(pubkey, message, signature)

@@ -24,8 +24,8 @@ const namedLogger = "broker"
 // Config represents the configuration of the broker.
 type Config struct {
 	Level                    encoding.LogLevel `long:"log-level"`
-	Socket                   SocketConfig      `group:"Socket" namespace:"socket"`
-	File                     FileConfig        `group:"File" namespace:"file"`
+	Socket                   SocketConfig      `group:"Socket"                      namespace:"socket"`
+	File                     FileConfig        `group:"File"                        namespace:"file"`
 	EventBusClientBufferSize int               `long:"event-bus-client-buffer-size"`
 }
 
@@ -53,22 +53,22 @@ func NewDefaultConfig() Config {
 }
 
 type SocketConfig struct {
-	DialTimeout        encoding.Duration `long:"dial-timeout" description:" "`
-	DialRetryInterval  encoding.Duration `long:"dial-retry-interval" description:" "`
-	SocketQueueTimeout encoding.Duration `long:"socket-queue-timeout" description:" "`
+	DialTimeout        encoding.Duration `description:" " long:"dial-timeout"`
+	DialRetryInterval  encoding.Duration `description:" " long:"dial-retry-interval"`
+	SocketQueueTimeout encoding.Duration `description:" " long:"socket-queue-timeout"`
 
-	EventChannelBufferSize  int `long:"event-channel-buffer-size" description:" "`
-	SocketChannelBufferSize int `long:"socket-channel-buffer-size" description:" "`
+	EventChannelBufferSize  int `description:" " long:"event-channel-buffer-size"`
+	SocketChannelBufferSize int `description:" " long:"socket-channel-buffer-size"`
 
-	MaxSendTimeouts int `long:"max-send-timeouts" description:" "`
+	MaxSendTimeouts int `description:" " long:"max-send-timeouts"`
 
-	Address   string        `long:"address" description:"Data node's address"`
-	Port      int           `long:"port" description:"Data node port"`
-	Enabled   encoding.Bool `long:"enabled" description:"Enable streaming of bus events over socket"`
-	Transport string        `long:"transport" description:"Transport of socket. tcp/inproc are allowed. Default is TCP"`
+	Address   string        `description:"Data node's address"                                         long:"address"`
+	Port      int           `description:"Data node port"                                              long:"port"`
+	Enabled   encoding.Bool `description:"Enable streaming of bus events over socket"                  long:"enabled"`
+	Transport string        `description:"Transport of socket. tcp/inproc are allowed. Default is TCP" long:"transport"`
 }
 
 type FileConfig struct {
-	Enabled encoding.Bool `long:"enabled" description:"Enable streaming of bus events to a file"`
-	File    string        `long:"file" description:"Path of a file to write event log to"`
+	Enabled encoding.Bool `description:"Enable streaming of bus events to a file" long:"enabled"`
+	File    string        `description:"Path of a file to write event log to"     long:"file"`
 }

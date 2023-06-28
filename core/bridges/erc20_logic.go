@@ -18,6 +18,7 @@ import (
 	"math/big"
 	"time"
 
+	crypto "code.vegaprotocol.io/vega/libs/crypto/signature"
 	"code.vegaprotocol.io/vega/libs/num"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -113,6 +114,117 @@ func (e ERC20Logic) ListAsset(
 	return sign(e.signer, msg)
 }
 
+func (e ERC20Logic) buildListAssetMessage(
+	tokenAddress string,
+	vegaAssetID string,
+	lifetimeLimit *num.Uint,
+	withdrawThreshold *num.Uint,
+	nonce *num.Uint,
+) ([]byte, error) {
+	typAddr, err := abi.NewType("address", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typBytes32, err := abi.NewType("bytes32", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typString, err := abi.NewType("string", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typU256, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "address",
+			Type: typAddr,
+		},
+		{
+			Name: "vega_asset_id",
+			Type: typBytes32,
+		},
+		{
+			Name: "lifetime_limit",
+			Type: typU256,
+		},
+		{
+			Name: "withdraw_treshold",
+			Type: typU256,
+		},
+		{
+			Name: "nonce",
+			Type: typU256,
+		},
+		{
+			Name: "func_name",
+			Type: typString,
+		},
+	})
+
+	tokenAddressEth := ethcmn.HexToAddress(tokenAddress)
+	vegaAssetIDBytes, _ := hex.DecodeString(vegaAssetID)
+	var vegaAssetIDArray [32]byte
+	copy(vegaAssetIDArray[:], vegaAssetIDBytes[:32])
+	buf, err := args.Pack([]interface{}{
+		tokenAddressEth,
+		vegaAssetIDArray,
+		lifetimeLimit.BigInt(),
+		withdrawThreshold.BigInt(),
+		nonce.BigInt(),
+		"list_asset",
+	}...)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	return msg, nil
+}
+
+func (e ERC20Logic) VerifyListAsset(
+	tokenAddress string,
+	vegaAssetID string,
+	lifetimeLimit *num.Uint,
+	withdrawThreshold *num.Uint,
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	msg, err := e.buildListAssetMessage(
+		tokenAddress, vegaAssetID, lifetimeLimit, withdrawThreshold, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
+}
+
 func (e ERC20Logic) RemoveAsset(
 	tokenAddress string,
 	nonce *num.Uint,
@@ -168,6 +280,23 @@ func (e ERC20Logic) WithdrawAsset(
 	creation time.Time,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
+	msg, err := e.buildWithdrawAssetMessage(
+		tokenAddress, amount, ethPartyAddress, creation, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return sign(e.signer, msg)
+}
+
+func (e ERC20Logic) buildWithdrawAssetMessage(
+	tokenAddress string,
+	amount *num.Uint,
+	ethPartyAddress string,
+	creation time.Time,
+	nonce *num.Uint,
+) ([]byte, error) {
 	typAddr, err := abi.NewType("address", "", nil)
 	if err != nil {
 		return nil, err
@@ -224,12 +353,43 @@ func (e ERC20Logic) WithdrawAsset(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	return packBufAndSubmitter(buf, e.bridgeAddr)
+}
+
+func (e ERC20Logic) VerifyWithdrawAsset(
+	tokenAddress string,
+	amount *num.Uint,
+	ethPartyAddress string,
+	creation time.Time,
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	msg, err := e.buildWithdrawAssetMessage(
+		tokenAddress, amount, ethPartyAddress, creation, nonce,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+		return nil, err
 	}
 
-	return sign(e.signer, msg)
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
 }
 
 func (e ERC20Logic) SetAssetLimits(
@@ -294,10 +454,121 @@ func (e ERC20Logic) SetAssetLimits(
 	return sign(e.signer, msg)
 }
 
+func (e ERC20Logic) buildSetAssetLimitsMessage(
+	tokenAddress string,
+	lifetimeLimit *num.Uint,
+	withdrawThreshold *num.Uint,
+	nonce *num.Uint,
+) ([]byte, error) {
+	typAddr, err := abi.NewType("address", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typString, err := abi.NewType("string", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typU256, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "address",
+			Type: typAddr,
+		},
+		{
+			Name: "uint256",
+			Type: typU256,
+		},
+		{
+			Name: "uint256",
+			Type: typU256,
+		},
+		{
+			Name: "uint256",
+			Type: typU256,
+		},
+		{
+			Name: "func_name",
+			Type: typString,
+		},
+	})
+
+	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
+	buf, err := args.Pack([]interface{}{
+		ethTokenAddr,
+		lifetimeLimit.BigInt(),
+		withdrawThreshold.BigInt(),
+		nonce.BigInt(),
+		"set_asset_limits",
+	}...)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	return msg, nil
+}
+
+func (e ERC20Logic) VerifySetAssetLimits(
+	tokenAddress string,
+	lifetimeLimit *num.Uint,
+	withdrawThreshold *num.Uint,
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	msg, err := e.buildSetAssetLimitsMessage(
+		tokenAddress, lifetimeLimit, withdrawThreshold, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
+}
+
 func (e ERC20Logic) SetWithdrawDelay(
 	delay time.Duration,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
+	msg, err := e.buildWithdrawDelayMessage(
+		delay, nonce,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return sign(e.signer, msg)
+}
+
+func (e ERC20Logic) buildWithdrawDelayMessage(
+	delay time.Duration,
+	nonce *num.Uint,
+) ([]byte, error) {
 	typString, err := abi.NewType("string", "", nil)
 	if err != nil {
 		return nil, err
@@ -332,12 +603,40 @@ func (e ERC20Logic) SetWithdrawDelay(
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
-	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	return packBufAndSubmitter(buf, e.bridgeAddr)
+}
+
+func (e ERC20Logic) VerifyWithdrawDelay(
+	delay time.Duration,
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	msg, err := e.buildWithdrawDelayMessage(
+		delay, nonce,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+		return nil, err
 	}
 
-	return sign(e.signer, msg)
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
 }
 
 func (e ERC20Logic) GlobalStop(
@@ -416,4 +715,62 @@ func (e ERC20Logic) GlobalResume(
 	}
 
 	return sign(e.signer, msg)
+}
+
+func (e ERC20Logic) VerifyGlobalResume(
+	nonce *num.Uint,
+	signatures string,
+) ([]string, error) {
+	typString, err := abi.NewType("string", "", nil)
+	if err != nil {
+		return nil, err
+	}
+	typU256, err := abi.NewType("uint256", "", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	args := abi.Arguments([]abi.Argument{
+		{
+			Name: "uint256",
+			Type: typU256,
+		},
+		{
+			Name: "func_name",
+			Type: typString,
+		},
+	})
+
+	buf, err := args.Pack([]interface{}{
+		nonce.BigInt(),
+		"global_resume",
+	}...)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
+	}
+
+	addresses := []string{}
+	var hexCurrent string
+	signatures = signatures[2:]
+	for len(signatures) > 0 {
+		hexCurrent, signatures = signatures[0:130], signatures[130:]
+		current, err := hex.DecodeString(hexCurrent)
+		if err != nil {
+			return nil, fmt.Errorf("invalid signature format: %w", err)
+		}
+
+		address, err := crypto.RecoverEthereumAddress(msg, current)
+		if err != nil {
+			return nil, fmt.Errorf("error recovering ethereum address: %w", err)
+		}
+
+		addresses = append(addresses, address.Hex())
+	}
+
+	return addresses, nil
 }
