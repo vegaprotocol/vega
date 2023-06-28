@@ -53,9 +53,8 @@ message NodeHash {
 message Metadata {
   int64 version = 1;
   repeated string chunk_hashes = 2;
-  repeated NodeHash node_hashes =
-      3; // hashes used by snapshot engine, different to chunk hash if data was
-         // split up, or combined into a single chunk
+  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was
+  // split up, or combined into a single chunk
 }
 
 // Chunk is simply an as-is chunk belonging to a snapshot
@@ -169,7 +168,9 @@ message LiquiditySupplied {
   repeated LiquidityOffsetProbabilityPair ask_cache = 4;
 }
 
-message OracleDataBatch { repeated OracleData oracle_data = 1; }
+message OracleDataBatch {
+  repeated OracleData oracle_data = 1;
+}
 
 message OracleData {
   repeated vega.data.v1.Signer signers = 1;
@@ -182,7 +183,9 @@ message OracleDataPair {
   string value = 2;
 }
 
-message Witness { repeated Resource resources = 1; }
+message Witness {
+  repeated Resource resources = 1;
+}
 
 message Resource {
   string id = 1;
@@ -191,17 +194,29 @@ message Resource {
   uint32 state = 4;
 }
 
-message EventForwarder { repeated string acked_events = 1; }
+message EventForwarder {
+  repeated string acked_events = 1;
+}
 
-message CollateralAccounts { repeated vega.Account accounts = 1; }
+message CollateralAccounts {
+  repeated vega.Account accounts = 1;
+}
 
-message CollateralAssets { repeated vega.Asset assets = 1; }
+message CollateralAssets {
+  repeated vega.Asset assets = 1;
+}
 
-message ActiveAssets { repeated vega.Asset assets = 1; }
+message ActiveAssets {
+  repeated vega.Asset assets = 1;
+}
 
-message PendingAssets { repeated vega.Asset assets = 1; }
+message PendingAssets {
+  repeated vega.Asset assets = 1;
+}
 
-message PendingAssetUpdates { repeated vega.Asset assets = 1; }
+message PendingAssetUpdates {
+  repeated vega.Asset assets = 1;
+}
 
 message Withdrawal {
   string ref = 1;
@@ -220,9 +235,13 @@ message TxRef {
   uint64 log_index = 4;
 }
 
-message BankingWithdrawals { repeated Withdrawal withdrawals = 1; }
+message BankingWithdrawals {
+  repeated Withdrawal withdrawals = 1;
+}
 
-message BankingDeposits { repeated Deposit deposit = 1; }
+message BankingDeposits {
+  repeated Deposit deposit = 1;
+}
 
 message BankingSeen {
   repeated string refs = 1;
@@ -246,24 +265,33 @@ message BankingRecurringGovernanceTransfers {
 }
 
 message BankingScheduledGovernanceTransfers {
-  repeated vega.checkpoint.v1.ScheduledGovernanceTransferAtTime
-      transfers_at_time = 1;
+  repeated vega.checkpoint.v1.ScheduledGovernanceTransferAtTime transfers_at_time = 1;
 }
 
-message BankingBridgeState { vega.checkpoint.v1.BridgeState bridge_state = 1; }
+message BankingBridgeState {
+  vega.checkpoint.v1.BridgeState bridge_state = 1;
+}
 
-message Checkpoint { int64 next_cp = 1; }
+message Checkpoint {
+  int64 next_cp = 1;
+}
 
-message DelegationLastReconciliationTime { int64 last_reconciliation_time = 1; }
+message DelegationLastReconciliationTime {
+  int64 last_reconciliation_time = 1;
+}
 
-message DelegationActive { repeated vega.Delegation delegations = 1; }
+message DelegationActive {
+  repeated vega.Delegation delegations = 1;
+}
 
 message DelegationPending {
   repeated vega.Delegation delegations = 1;
   repeated vega.Delegation undelegation = 2;
 }
 
-message DelegationAuto { repeated string parties = 1; }
+message DelegationAuto {
+  repeated string parties = 1;
+}
 
 message ProposalData {
   vega.Proposal proposal = 1;
@@ -272,11 +300,17 @@ message ProposalData {
   repeated vega.Vote invalid = 4;
 }
 
-message GovernanceEnacted { repeated ProposalData proposals = 1; }
+message GovernanceEnacted {
+  repeated ProposalData proposals = 1;
+}
 
-message GovernanceActive { repeated ProposalData proposals = 1; }
+message GovernanceActive {
+  repeated ProposalData proposals = 1;
+}
 
-message GovernanceNode { repeated vega.Proposal proposals = 1; }
+message GovernanceNode {
+  repeated vega.Proposal proposals = 1;
+}
 
 message StakingAccount {
   string party = 1;
@@ -299,7 +333,9 @@ message MatchingBook {
   uint64 batch_id = 6;
 }
 
-message NetParams { repeated vega.NetworkParameter params = 1; }
+message NetParams {
+  repeated vega.NetworkParameter params = 1;
+}
 
 message DecimalMap {
   int64 key = 1;
@@ -475,7 +511,9 @@ message StopOrders {
   TrailingStopOrders trailing_stop_orders = 3;
 }
 
-message PeggedOrders { repeated vega.Order parked_orders = 2; }
+message PeggedOrders {
+  repeated vega.Order parked_orders = 2;
+}
 
 message ExecutionMarkets {
   repeated Market markets = 1;
@@ -628,7 +666,9 @@ message NotarySigs {
   bool pending = 5;
 }
 
-message Notary { repeated NotarySigs notary_sigs = 1; }
+message Notary {
+  repeated NotarySigs notary_sigs = 1;
+}
 
 message StakeVerifierDeposited {
   repeated StakeVerifierPending pending_deposited = 1;
@@ -834,8 +874,7 @@ message ERC20MultiSigTopologyVerified {
 
 message ERC20MultiSigTopologyPending {
   repeated vega.events.v1.ERC20MultiSigSignerEvent pending_signers = 1;
-  repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set =
-      2;
+  repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set = 2;
   repeated string witnessed_signers = 3;
   repeated string witnessed_threshold_sets = 4;
 }
@@ -865,7 +904,9 @@ message ProofOfWorkParams {
   int64 until_block = 7;
 }
 
-message ProofOfWorkState { repeated ProofOfWorkBlockState pow_state = 1; }
+message ProofOfWorkState {
+  repeated ProofOfWorkBlockState pow_state = 1;
+}
 
 message ProofOfWorkBlockState {
   uint64 block_height = 1;
