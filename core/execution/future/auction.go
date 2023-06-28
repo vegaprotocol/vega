@@ -16,11 +16,12 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/logging"
 )
 
-func (m *Market) checkAuction(ctx context.Context, now time.Time) {
+func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.IDGenerator) {
 	if !m.as.InAuction() {
 		// new block, check liquidity, start auction if needed
 		m.checkLiquidity(ctx, nil, true)
@@ -29,6 +30,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		}
 		return
 	}
+
+	// here we are in auction, we'll want to check
+	// the triggers if we are leaving
+	defer func() {
+		m.triggerStopOrders(ctx, idgen)
+	}()
 
 	// as soon as we have an indicative uncrossing price in opening auction it needs to be passed into the price monitoring engine so statevar calculation can start
 	isOpening := m.as.IsOpeningAuction()

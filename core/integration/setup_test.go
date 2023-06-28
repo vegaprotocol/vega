@@ -226,6 +226,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
 	)
 	return execsetup
 }

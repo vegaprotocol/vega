@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 )
 
@@ -65,6 +66,26 @@ func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmissi
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto(), "submitOrder"))
 	}
+	return conf, err
+}
+
+func (e *exEng) SubmitStopOrder(
+	ctx context.Context,
+	submission *types.StopOrdersSubmission,
+	party string,
+) (*types.OrderConfirmation, error) {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	var fallsBellowID, risesAboveID *string
+	if submission.FallsBelow != nil {
+		fallsBellowID = ptr.From(idgen.NextID())
+	}
+	if submission.RisesAbove != nil {
+		risesAboveID = ptr.From(idgen.NextID())
+	}
+	conf, err := e.Engine.SubmitStopOrders(ctx, submission, party, idgen, fallsBellowID, risesAboveID)
+	// if err != nil {
+	// 	e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto(), "submitOrder"))
+	// }
 	return conf, err
 }
 

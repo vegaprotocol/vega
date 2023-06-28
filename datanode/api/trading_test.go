@@ -148,6 +148,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 	sqlLedgerService := service.NewLedger(sqlstore.NewLedger(sqlConn), logger)
 	sqlProtocolUpgradeService := service.NewProtocolUpgrade(sqlstore.NewProtocolUpgradeProposals(sqlConn), logger)
 	sqlCoreSnapshotService := service.NewSnapshotData(sqlstore.NewCoreSnapshotData(sqlConn))
+	stopOrderService := service.NewStopOrders(sqlstore.NewStopOrders(sqlConn))
 
 	g := api.NewGRPCServer(
 		logger,
@@ -190,6 +191,7 @@ func getTestGRPCServer(t *testing.T, ctx context.Context) (tidy func(), conn *gr
 		sqlProtocolUpgradeService,
 		mockNetworkHistoryService,
 		sqlCoreSnapshotService,
+		stopOrderService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

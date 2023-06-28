@@ -45,6 +45,12 @@ var (
 
 	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
 	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
+
+	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
+	ErrInvalidStopOrdersCancellation = errors.New("invalid stop orders cancellation")
+
+	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
+	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
 )
 
 // Engine is the execution engine.
@@ -659,17 +665,93 @@ func (e *Engine) SubmitStopOrders(
 	idgen common.IDGenerator,
 	fallsBelowID *string,
 	risesAboveID *string,
-) error {
-	return errors.New("stop order submission not supported yet")
+) (*types.OrderConfirmation, error) {
+	var market string
+	if submission.FallsBelow != nil {
+		market = submission.FallsBelow.OrderSubmission.MarketID
+	} else {
+		market = submission.RisesAbove.OrderSubmission.MarketID
+	}
+
+	mkt, ok := e.markets[market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+
+	conf, err := mkt.SubmitStopOrdersWithIDGeneratorAndOrderIDs(
+		ctx, submission, party, idgen, fallsBelowID, risesAboveID)
+	if err != nil {
+		return nil, err
+	}
+
+	// not necessary going to trade on submission, could be nil
+	if conf != nil {
+		// increasing the gauge, just because we reuse the
+		// decrement function, and it required the order + passive
+		metrics.OrderGaugeAdd(1, market)
+		e.decrementOrderGaugeMetrics(market, conf.Order, conf.PassiveOrdersAffected)
+	}
+
+	return conf, nil
 }
 
 func (e *Engine) CancelStopOrders(
 	ctx context.Context,
-	cancellation *types.StopOrdersCancellation,
+	cancel *types.StopOrdersCancellation,
 	party string,
 	idgen common.IDGenerator,
 ) error {
-	return errors.New("stop order cancellation not supported yet")
+	// ensure that if orderID is specified marketId is as well
+	if len(cancel.OrderID) > 0 && len(cancel.MarketID) <= 0 {
+		return ErrMarketIDRequiredWhenOrderIDSpecified
+	}
+
+	if len(cancel.MarketID) > 0 {
+		if len(cancel.OrderID) > 0 {
+			return e.cancelStopOrders(ctx, party, cancel.MarketID, cancel.OrderID, idgen)
+		}
+		return e.cancelStopOrdersByMarket(ctx, party, cancel.MarketID)
+	}
+	return e.cancelAllPartyStopOrders(ctx, party)
+}
+
+func (e *Engine) cancelStopOrders(
+	ctx context.Context,
+	party, market, orderID string,
+	_ common.IDGenerator,
+) error {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+	err := mkt.CancelStopOrder(ctx, party, orderID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Engine) cancelStopOrdersByMarket(ctx context.Context, party, market string) error {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+	err := mkt.CancelAllStopOrders(ctx, party)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *Engine) cancelAllPartyStopOrders(ctx context.Context, party string) error {
+	for _, mkt := range e.marketsCpy {
+		err := mkt.CancelAllStopOrders(ctx, party)
+		if err != nil && err != common.ErrTradingNotAllowed {
+			return err
+		}
+	}
+	return nil
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
@@ -700,7 +782,7 @@ func (e *Engine) SubmitOrder(
 
 	metrics.OrderGaugeAdd(1, submission.MarketID)
 	conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
-		ctx, submission, party, idgen, orderID)
+		ctx, submission, party, idgen, orderID, true)
 	if err != nil {
 		return nil, err
 	}

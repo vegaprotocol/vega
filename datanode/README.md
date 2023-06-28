@@ -1,22 +1,19 @@
 # Data node
 
-Version 0.60.0
-
 A service exposing read only APIs built on top of [Vega](https://github.com/vegaprotocol/vega) platform.
 
 **Data node** provides the following core features:
 
 - Consume all events from Vega core
 - Aggregates received events and stores the aggregated data
-- Serves stored data via [APIs](#apis)
+- Serves stored data via [APIs](https://docs.vega.xyz/mainnet/api/overview)
 - Allows advanced configuration [Configure a node](#configuration)
 
 ## Links
 
 - For **new developers**, see [Getting Started](../GETTING_STARTED.md).
 - For **updates**, see the [Change log](../CHANGELOG.md) for major updates.
-- For **architecture**, please read the [documentation](docs/index.md) to learn about the design for the system and its architecture.
-- Please [open an issue](https://github.com/vegaprotocol/data-node/issues/new) if anything is missing or unclear in this documentation.
+- Please [open an issue](https://github.com/vegaprotocol/vega/issues/new) if anything is missing or unclear in this documentation.
 
 <details>
   <summary><strong>Table of Contents</strong> (click to expand)</summary>

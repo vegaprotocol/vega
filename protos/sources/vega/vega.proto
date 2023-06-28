@@ -38,6 +38,8 @@ message StopOrder {
     STATUS_TRIGGERED = 4;
     // Stop order has expired
     STATUS_EXPIRED = 5;
+    // Stop order was rejected at submission
+    STATUS_REJECTED = 6;
   }
 
   // ID of this stop order
@@ -59,8 +61,10 @@ message StopOrder {
   optional int64 updated_at = 8;
   // ID of the order created once the trigger is hit.
   string order_id = 9;
-  // The party that submitted this stop order
-  string party = 10;
+  // ID of the party that submitted this stop order.
+  string party_id = 10;
+  // ID of the market the stop order is submitted to.
+  string market_id = 11;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
@@ -68,6 +72,7 @@ message StopOrder {
     // Fixed price at which the order will be submitted.
     string price = 100;
     // Trailing percentage at which the order will be submitted.
+    // This should be expressed as a decimal value between 0 and 1, e.g. 0.01 for 1%
     string trailing_percent_offset = 101;
   }
 }

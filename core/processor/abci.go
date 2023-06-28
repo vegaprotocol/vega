@@ -1338,7 +1338,7 @@ func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, det
 		risesAbove = ptr.From(idgen.NextID())
 	}
 
-	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
+	_, err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
 	if err != nil {
 		app.log.Error("could not submit stop order",
 			logging.StopOrderSubmission(os), logging.Error(err))
@@ -1777,7 +1777,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsNewTransfer():
 			app.enactNewTransfer(ctx, prop)
 		case toEnact.IsCancelTransfer():
-			app.enactCancelTransfer(prop)
+			app.enactCancelTransfer(ctx, prop)
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -1897,11 +1897,16 @@ func (app *App) enactNewTransfer(ctx context.Context, prop *types.Proposal) {
 	app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
 }
 
-func (app *App) enactCancelTransfer(prop *types.Proposal) {
+func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 	transferID := prop.Terms.GetCancelTransfer().Changes.TransferID
 	if err := app.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
 		app.log.Error("failed to enact governance transfer cancellation - invalid transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
+		return
+	}
+	if err := app.banking.CancelGovTransfer(ctx, transferID); err != nil {
+		app.log.Error("failed to enact governance transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
 		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
 		return
 	}

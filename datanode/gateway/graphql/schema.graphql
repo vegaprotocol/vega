@@ -1,4 +1,4 @@
-## VEGA - GraphQL schema
+# VEGA - GraphQL schema
 
 schema {
   query: Query
@@ -254,6 +254,8 @@ type MarketData {
   nextMarkToMarket: String!
   "The market growth factor for the last market time window"
   marketGrowth: String!
+  "The last traded price (an unsigned integer)"
+  lastTradedPrice: String!
 }
 
 "Live data of a Market"
@@ -314,6 +316,10 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
+  "The market growth factor for the last market time window"
+  marketGrowth: String!
+  "The last traded price (an unsigned integer)"
+  lastTradedPrice: String!
 }
 
 "Timestamps for when the market changes state"
@@ -690,6 +696,17 @@ type Query {
 
   "Get statistics about the Vega node"
   statistics: Statistics!
+
+  "Get stop order by ID"
+  stopOrder(id: ID!): StopOrder
+
+  "Get a list of stop orders. If provided, the filter will be applied to the list of stop orders to restrict the results."
+  stopOrders(
+    "Optional filter to restrict the results of the list."
+    filter: StopOrderFilter,
+    "Optional pagination information"
+    pagination: Pagination
+  ): StopOrderConnection
 
   "List markets in a succession line"
   successorMarkets(
@@ -2380,6 +2397,74 @@ type Order {
   icebergOrder: IcebergOrder
 }
 
+union StopOrderTrigger = StopOrderPrice | StopOrderTrailingPercentOffset
+
+"Price at which a stop order will trigger"
+type StopOrderPrice {
+  price: String!
+}
+
+"Percentage movement in the price at which a stop order will trigger."
+type StopOrderTrailingPercentOffset {
+  trailingPercentOffset: String!
+}
+
+"A stop order in Vega"
+type StopOrder {
+  "Hash of the stop order data"
+  id: ID!
+  "If OCO (one-cancels-other) order, the ID of the associated order."
+  ocoLinkId: ID
+  "Time at which the order will expire if an expiry time is set."
+  expiresAt: Timestamp
+  "If an expiry is set, what should the stop order do when it expires."
+  expiryStrategy: StopOrderExpiryStrategy
+  "Direction the price is moving to trigger the stop order."
+  triggerDirection: StopOrderTriggerDirection!
+  "Status of the stop order"
+  status: StopOrderStatus!
+  "Time the stop order was created."
+  createdAt: Timestamp!
+  "Time the stop order was last updated."
+  updatedAt: Timestamp
+  "Party that submitted the stop order."
+  partyId: ID!
+  "Market the stop order is for."
+  marketId: ID!
+  "Price movement that will trigger the stop order"
+  trigger: StopOrderTrigger
+  "Order to submit when the stop order is triggered."
+  submission: OrderSubmission!
+}
+
+"Details of the order that will be submitted when the stop order is triggered."
+type OrderSubmission {
+  "Market the order is for."
+  marketId: ID!
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
+  price: String!
+  "Total number of units that may be bought or sold (immutable) (uint64)"
+  size: String!
+  "Whether the order is to buy or sell"
+  side: Side!
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
+  timeInForce: OrderTimeInForce!
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  expiresAt: Timestamp!
+  "The order type"
+  type: OrderType!
+  "The external reference (if available) for the order"
+  reference: String
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
+  "Is this a post only order"
+  postOnly: Boolean
+  "Is this a reduce only order"
+  reduceOnly: Boolean
+  "Details of an iceberg order"
+  icebergOrder: IcebergOrder
+}
+
 "An order update in Vega, if active it will be on the order book for the market"
 type OrderUpdate {
   "Hash of the order data"
@@ -2909,6 +2994,42 @@ enum OrderStatus {
 
   "This order has been removed from the order book because the market is in auction, the reference price doesn't exist, or the order needs to be repriced and can't. Applies to pegged orders only"
   STATUS_PARKED
+}
+
+"Valid stop order statuses, these determine several states for a stop order that cannot be expressed with other fields in StopOrder."
+enum StopOrderStatus {
+  "Stop order has been submitted to the network but does not have a status yet"
+  STATUS_UNSPECIFIED
+  "Stop order is pending. This means the stop order has been accepted in the network, but the trigger conditions have not been met."
+  STATUS_PENDING
+  "Stop order has been cancelled. This could be by the trader or by the network."
+  STATUS_CANCELLED
+  "Stop order has been stopped. This means the trigger conditions have been met, but the stop order was not executed, and stopped."
+  STATUS_STOPPED
+  "Stop order has been triggered. This means the trigger conditions have been met, and the stop order was executed."
+  STATUS_TRIGGERED
+  "Stop order has expired. This means the trigger conditions have not been met and the stop order has expired."
+  STATUS_EXPIRED
+  "Stop order has been rejected. This means the stop order was not accepted by the network."
+  STATUS_REJECTED
+}
+
+"Valid stop order expiry strategies. The expiry strategy determines what happens to a stop order when it expires."
+enum StopOrderExpiryStrategy {
+  "The stop order expiry strategy has not been specified by the trader."
+  EXPIRY_STRATEGY_UNSPECIFIED
+  "The stop order will be cancelled when it expires."
+  EXPIRY_STRATEGY_CANCELS
+  "The stop order will be submitted when the expiry time is reached."
+  EXPIRY_STRATEGY_SUBMIT
+}
+
+"Valid stop order trigger direction. The trigger direction determines whether the price should rise above or fall below the stop order trigger."
+enum StopOrderTriggerDirection {
+  "The price should rise above the trigger."
+  TRIGGER_DIRECTION_RISES_ABOVE
+  "The price should fall below the trigger."
+  TRIGGER_DIRECTION_FALLS_BELOW
 }
 
 "Why the proposal was rejected by the core node"
@@ -4250,6 +4371,14 @@ type OrderEdge {
   cursor: String
 }
 
+"Edge type containing the stop order and cursor information returned by a StopOrderConnection"
+type StopOrderEdge {
+  "The stop order"
+  node: StopOrder
+  "The cursor for this stop order"
+  cursor: String
+}
+
 input OrderFilter {
   status: [OrderStatus!]
   types: [OrderType!]
@@ -4262,6 +4391,20 @@ input OrderFilter {
   as per https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0024-OSTA-order_status.md
   """
   liveOnly: Boolean
+}
+
+"Filter to be applied when querying a list of stop orders. If multiple criteria are specified, e.g. parties and markets, then the filter is applied as an AND."
+input StopOrderFilter {
+  "Zero or more party IDs to filter by"
+  parties: [ID!]
+  "Zero or more market IDs to filter by"
+  markets: [ID!]
+  "Zero or more order status to filter by"
+  status: [StopOrderStatus!]
+  "Zero or more expiry strategies to filter by"
+  expiryStrategy: [StopOrderExpiryStrategy!]
+  "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+  dateRange: DateRange
 }
 
 input OrderByPartyIdsFilter {
@@ -4286,6 +4429,14 @@ type OrderConnection {
   edges: [OrderEdge!]
   "The pagination information"
   pageInfo: PageInfo
+}
+
+"Connection type for retrieving cursory-based paginated stop order information"
+type StopOrderConnection {
+  "The stop orders in this connection"
+  edges: [StopOrderEdge!]
+  "The pagination information"
+    pageInfo: PageInfo
 }
 
 "Edge type containing the position and cursor information returned by a PositionConnection"

@@ -435,11 +435,12 @@ func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, a
 }
 
 // SubmitStopOrders mocks base method.
-func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common.IDGenerator, arg4, arg5 *string) error {
+func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common.IDGenerator, arg4, arg5 *string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitStopOrders", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*types.OrderConfirmation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // SubmitStopOrders indicates an expected call of SubmitStopOrders.
@@ -1465,6 +1466,20 @@ func (m *MockBanking) BridgeStopped(arg0 context.Context, arg1 bool, arg2 string
 func (mr *MockBankingMockRecorder) BridgeStopped(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeStopped", reflect.TypeOf((*MockBanking)(nil).BridgeStopped), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// CancelGovTransfer mocks base method.
+func (m *MockBanking) CancelGovTransfer(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelGovTransfer", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelGovTransfer indicates an expected call of CancelGovTransfer.
+func (mr *MockBankingMockRecorder) CancelGovTransfer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelGovTransfer", reflect.TypeOf((*MockBanking)(nil).CancelGovTransfer), arg0, arg1)
 }
 
 // CancelTransferFunds mocks base method.

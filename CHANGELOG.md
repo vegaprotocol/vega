@@ -60,6 +60,8 @@
 - [8472](https://github.com/vegaprotocol/vega/issues/8472) - Add support for stop orders with batch market instructions
 - [8567](https://github.com/vegaprotocol/vega/issues/8567) - Add virtual stake and market growth to market data.
 - [8508](https://github.com/vegaprotocol/vega/issues/8508) - Add network parameters for SLA.
+- [8468](https://github.com/vegaprotocol/vega/issues/8468) - Wire in stop orders in markets
+- [8528](https://github.com/vegaprotocol/vega/issues/8528) - Add support for Stop Orders in the data node.
 
 ### 🐛 Fixes
 
@@ -101,6 +103,10 @@
 - [8580](https://github.com/vegaprotocol/vega/issues/8580) - Fix wallet `CLI` ignoring max-request-duration
 - [8583](https://github.com/vegaprotocol/vega/issues/8583) - Fix validation of ineffectual transfer
 - [8586](https://github.com/vegaprotocol/vega/issues/8586) - Fix cancel governance transfer proposal validation
+- [8597](https://github.com/vegaprotocol/vega/issues/8597) - Enact governance transfer cancellation
+- [8428](https://github.com/vegaprotocol/vega/issues/8428) - Add missing `LastTradedPrice` field in market data
+- [8335](https://github.com/vegaprotocol/vega/issues/8335) - Validate asset for metrics in transfers to be an actual asset
+- [8603](https://github.com/vegaprotocol/vega/issues/8603) - Restore `lastTradedPrice` of `nil` as `nil` in market snapshot
 
 ## 0.71.0
 

@@ -54,6 +54,10 @@ type SignerKind interface {
 	IsSignerKind()
 }
 
+type StopOrderTrigger interface {
+	IsStopOrderTrigger()
+}
+
 type TransferKind interface {
 	IsTransferKind()
 }
@@ -585,6 +589,20 @@ type StakingSummary struct {
 	// The list of all stake link/unlink for the party
 	Linkings *v2.StakesConnection `json:"linkings"`
 }
+
+// Price at which a stop order will trigger
+type StopOrderPrice struct {
+	Price string `json:"price"`
+}
+
+func (StopOrderPrice) IsStopOrderTrigger() {}
+
+// Percentage movement in the price at which a stop order will trigger.
+type StopOrderTrailingPercentOffset struct {
+	TrailingPercentOffset string `json:"trailingPercentOffset"`
+}
+
+func (StopOrderTrailingPercentOffset) IsStopOrderTrigger() {}
 
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
