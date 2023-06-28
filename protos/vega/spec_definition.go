@@ -14,7 +14,7 @@ const (
 	DataSourceContentTypeInternalTimeTermination
 )
 
-func (d DataSourceDefinition) DeepClone() *DataSourceDefinition { // TODO: Test this
+func (d DataSourceDefinition) DeepClone() *DataSourceDefinition {
 	cpy := &DataSourceDefinition{}
 
 	if d.SourceType != nil {
