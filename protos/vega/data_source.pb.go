@@ -447,11 +447,10 @@ type EthCallSpec struct {
 	Trigger *EthCallTrigger `protobuf:"bytes,5,opt,name=trigger,proto3" json:"trigger,omitempty"`
 	// Number of confirmations required before the query is considered verified
 	RequiredConfirmations uint64 `protobuf:"varint,6,opt,name=required_confirmations,json=requiredConfirmations,proto3" json:"required_confirmations,omitempty"`
-	// Below - is this common across all sources? so should be on DataSourceDefinitionExternal?
-	// Filters describes which source data are considered of interest
+	// Filters the data returned from the contract method
 	Filters []*v1.Filter `protobuf:"bytes,7,rep,name=filters,proto3" json:"filters,omitempty"`
-	// TODO - nice docs if this works out
-	Normalisers map[string]string `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // EthNormaliser normaliser = 8;
+	// Normalisers are used to convert the data returned from the contract method into a standard format.
+	Normalisers map[string]string `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *EthCallSpec) Reset() {
@@ -618,9 +617,11 @@ type EthTimeTrigger struct {
 
 	// Trigger when the Ethereum time is greater or equal to this time, in Unix seconds.
 	Initial *uint64 `protobuf:"varint,1,opt,name=initial,proto3,oneof" json:"initial,omitempty"`
-	// Repeat the call every n seconds after the inital call. If no time for initial call was specified, begin repeating immediately.
+	// Repeat the call every n seconds after the initial call. If no time for initial call was specified, begin repeating
+	// immediately.
 	Every *uint64 `protobuf:"varint,2,opt,name=every,proto3,oneof" json:"every,omitempty"`
-	// If repeating, stop once Ethereum time is greater than this time, in Unix seconds. If not set, then repeat indefinitely.
+	// If repeating, stop once Ethereum time is greater than this time, in Unix seconds. If not set, then repeat
+	// indefinitely.
 	Until *uint64 `protobuf:"varint,3,opt,name=until,proto3,oneof" json:"until,omitempty"`
 }
 

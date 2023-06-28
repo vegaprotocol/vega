@@ -161,7 +161,6 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 }
 
 func (s *EthereumOracleVerifier) checkCallEventResult(callEvent types.EthContractCallEvent) error {
-	// Maybe TODO; can we do better than this? Might want to cancel on shutdown or something..
 	ctx := context.Background()
 	checkResult, err := s.ethEngine.CallSpec(ctx, callEvent.SpecId, callEvent.BlockHeight)
 	if callEvent.Error != nil {
