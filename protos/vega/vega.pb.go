@@ -1774,9 +1774,9 @@ type StopOrder struct {
 	UpdatedAt *int64 `protobuf:"varint,8,opt,name=updated_at,json=updatedAt,proto3,oneof" json:"updated_at,omitempty"`
 	// ID of the order created once the trigger is hit.
 	OrderId string `protobuf:"bytes,9,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	// The party that submitted this stop order.
+	// ID of the party that submitted this stop order.
 	PartyId string `protobuf:"bytes,10,opt,name=party_id,json=partyId,proto3" json:"party_id,omitempty"`
-	// The market the stop order is submitted to.
+	// ID of the market the stop order is submitted to.
 	MarketId string `protobuf:"bytes,11,opt,name=market_id,json=marketId,proto3" json:"market_id,omitempty"`
 	// Trigger that will need to be breached for the order
 	// to be submitted to the book.
@@ -1929,6 +1929,7 @@ type StopOrder_Price struct {
 
 type StopOrder_TrailingPercentOffset struct {
 	// Trailing percentage at which the order will be submitted.
+	// This should be expressed as a decimal value between 0 and 1, e.g. 0.01 for 1%
 	TrailingPercentOffset string `protobuf:"bytes,101,opt,name=trailing_percent_offset,json=trailingPercentOffset,proto3,oneof"`
 }
 
