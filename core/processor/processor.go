@@ -79,7 +79,7 @@ type ExecutionEngine interface {
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	RejectMarket(ctx context.Context, marketid string) ([]int, error)
+	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 	SucceedMarket(ctx context.Context, successor, parent string) error
 
