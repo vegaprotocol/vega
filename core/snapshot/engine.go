@@ -127,7 +127,7 @@ type Engine struct {
 	versionHeight    map[uint64]int64
 
 	snapshot  *types.Snapshot
-	snapRetry int
+	snapRetry uint
 
 	// the general snapshot info this engine is responsible for
 	wrap *types.PayloadAppState
@@ -177,18 +177,12 @@ var nodeOrder = []types.SnapshotNamespace{
 
 // New returns a new snapshot engine.
 func New(ctx context.Context, vegaPath paths.Paths, conf Config, log *logging.Logger, tm TimeService, stats StatsService) (*Engine, error) {
-	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
-	// A single version kept in memory is pretty harmless.
-	if conf.KeepRecent < 1 {
-		conf.KeepRecent = 1
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
-
-	if err := conf.validate(); err != nil {
-		return nil, fmt.Errorf("invalid configuration: %w", err)
-	}
 
 	sctx, cfunc := context.WithCancel(ctx)
 	appPL := &types.PayloadAppState{

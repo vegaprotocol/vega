@@ -436,7 +436,7 @@ func testRejectSnapshot(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 
-	for i := 0; i < engine.RetryLimit; i++ {
+	for i := 0; i < int(engine.RetryLimit); i++ {
 		err := engine.RejectSnapshot()
 		assert.ErrorIs(t, types.ErrUnknownSnapshot, err)
 	}

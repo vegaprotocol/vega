@@ -25,8 +25,8 @@ const (
 
 type Config struct {
 	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                    choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
-	KeepRecent  int               `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
-	RetryLimit  int               `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
+	KeepRecent  uint              `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
+	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
 	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                choice:"memory"               description:"Storage type to use" long:"storage"`
 	StartHeight int64             `description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync" long:"load-from-block-height"`
 }
@@ -43,9 +43,14 @@ func NewDefaultConfig() Config {
 	}
 }
 
-// validate checks the values in the config file are sensible, and returns the path
-// which is create/load the snapshots from.
-func (c *Config) validate() error {
+// Validate checks the values in the config file are sensible.
+func (c *Config) Validate() error {
+	// default to min 1 version, just so we don't have to account for nil slice.
+	// A single version kept in memory is pretty harmless.
+	if c.KeepRecent < 1 {
+		c.KeepRecent = 1
+	}
+
 	switch c.Storage {
 	case InMemoryDB, LevelDB:
 		return nil
