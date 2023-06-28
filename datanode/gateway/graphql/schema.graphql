@@ -2520,6 +2520,9 @@ type OrderUpdate {
 
   "The liquidity provision this order was created from"
   liquidityProvisionId: ID
+
+  "Details of an iceberg order"
+  icebergOrder: IcebergOrder
 }
 
 "Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"

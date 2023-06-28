@@ -92,23 +92,26 @@ func NewEmptyPosition(marketID MarketID, partyID PartyID) Position {
 	}
 }
 
-func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, sf num.Decimal) {
+func (p *Position) UpdateWithTrade(trade vega.Trade, seller bool, pf num.Decimal) {
 	// we have to ensure that we know the price/position factor
 	size := int64(trade.Size)
 	if seller {
 		size *= -1
 	}
-	price, _ := num.DecimalFromString(trade.Price) // this is market price
+	marketPrice, _ := num.DecimalFromString(trade.Price) // this is market price
+	// Scale the trade to the correct size
+	positionPrice := marketPrice.Mul(pf)
 	opened, closed := CalculateOpenClosedVolume(p.PendingOpenVolume, size)
-	realisedPnlDelta := price.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed))
+	realisedPnlDelta := positionPrice.Sub(p.PendingAverageEntryPrice).Mul(num.DecimalFromInt64(closed)).Div(pf)
 	p.PendingRealisedPnl = p.PendingRealisedPnl.Add(realisedPnlDelta)
 	p.PendingOpenVolume -= closed
 
-	priceUint, _ := num.UintFromDecimal(price)
-	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, priceUint.Clone())
-	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, priceUint)
+	positionPriceUint, _ := num.UintFromDecimal(positionPrice)
+	marketPriceUint, _ := num.UintFromDecimal(marketPrice)
+	p.PendingAverageEntryPrice = updateVWAP(p.PendingAverageEntryPrice, p.PendingOpenVolume, opened, positionPriceUint)
+	p.PendingAverageEntryMarketPrice = updateVWAP(p.PendingAverageEntryMarketPrice, p.PendingOpenVolume, opened, marketPriceUint)
 	p.PendingOpenVolume += opened
-	p.pendingMTM(price, sf)
+	p.pendingMTM(positionPrice, pf)
 }
 
 func (p *Position) UpdateOrdersClosed() {

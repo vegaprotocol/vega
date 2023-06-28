@@ -92,6 +92,7 @@
 - [8453](https://github.com/vegaprotocol/vega/issues/8453) - Do not verify termination timestamp in update market when pre-enacting proposal
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
+- [8362](https://github.com/vegaprotocol/vega/issues/8362) - Fix `PnL` flickering bug.
 - [8565](https://github.com/vegaprotocol/vega/issues/8565) - Unsubscribe all data sources when restoring a settled market from a snapshot
 - [8578](https://github.com/vegaprotocol/vega/issues/8578) - Add iceberg option fields to live orders trigger
 - [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
@@ -100,6 +101,7 @@
 - [8551](https://github.com/vegaprotocol/vega/issues/8551) - Reload market checkpoint data on snapshot loaded.
 - [8486](https://github.com/vegaprotocol/vega/issues/8486) - Fix enactment timestamp being lost in checkpoints.
 - [8572](https://github.com/vegaprotocol/vega/issues/8572) - Fix governance fraction validation
+- [8618](https://github.com/vegaprotocol/vega/issues/8618) - Add iceberg fields to GraphQL `OrderUpdate`
 - [8580](https://github.com/vegaprotocol/vega/issues/8580) - Fix wallet `CLI` ignoring max-request-duration
 - [8583](https://github.com/vegaprotocol/vega/issues/8583) - Fix validation of ineffectual transfer
 - [8586](https://github.com/vegaprotocol/vega/issues/8586) - Fix cancel governance transfer proposal validation
@@ -107,6 +109,9 @@
 - [8428](https://github.com/vegaprotocol/vega/issues/8428) - Add missing `LastTradedPrice` field in market data
 - [8335](https://github.com/vegaprotocol/vega/issues/8335) - Validate asset for metrics in transfers to be an actual asset
 - [8603](https://github.com/vegaprotocol/vega/issues/8603) - Restore `lastTradedPrice` of `nil` as `nil` in market snapshot
+- [8617](https://github.com/vegaprotocol/vega/issues/8617) - Fix panic with order gauge in future market
+- [8596](https://github.com/vegaprotocol/vega/issues/8596) - Fix panic when rejecting markets on time update.
+- [8545](https://github.com/vegaprotocol/vega/issues/6545) - Block explorer does not page backwards correctly.
 
 ## 0.71.0
 
