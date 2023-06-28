@@ -310,6 +310,7 @@ func (e *Engine) ClearAndInitialise() error {
 			if err := os.RemoveAll(p); err != nil {
 				return err
 			}
+			e.initialised = false
 		}
 	}
 	if err := e.initialiseTree(); err != nil {
