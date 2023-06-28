@@ -3,6 +3,7 @@ package ethcall
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -14,13 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 )
 
-// Still TODO
-//   - on tick check every block since last tick not just current
-//   - submit some sort of error event if call fails
-//   - know when datasources stop being active and remove them
-//     -- because e.g. market is dead, or amended to have different source
-//     -- or because trigger will never fire again
-//   - what to do about catching up e.g. if node is restarted
 type EthReaderCaller interface {
 	ethereum.ContractCaller
 	ethereum.ChainReader
@@ -36,16 +30,16 @@ type blockish interface {
 	Time() uint64
 }
 
-type blockishImpl struct {
+type restoredBlock struct {
 	number uint64
 	time   uint64
 }
 
-func (b blockishImpl) NumberU64() uint64 {
+func (b restoredBlock) NumberU64() uint64 {
 	return b.number
 }
 
-func (b blockishImpl) Time() uint64 {
+func (b restoredBlock) Time() uint64 {
 	return b.time
 }
 
@@ -94,7 +88,7 @@ func (e *Engine) Start() {
 func (e *Engine) UpdatePreviousEthBlock(height uint64, time uint64) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.prevEthBlock = blockishImpl{number: height, time: time}
+	e.prevEthBlock = restoredBlock{number: height, time: time}
 }
 
 func (e *Engine) Stop() {
@@ -175,39 +169,50 @@ func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	ethBlock, err := e.client.BlockByNumber(ctx, nil)
+	lastEthBlock, err := e.client.BlockByNumber(ctx, nil)
 	if err != nil {
 		e.log.Errorf("failed to get current block header: %w", err)
 		return
 	}
 
 	e.log.Info("tick",
-		logging.Time("vegaTime", wallTime),
-		logging.BigInt("ethBlock", ethBlock.Number()),
-		logging.Time("ethTime", time.Unix(int64(ethBlock.Time()), 0)))
+		logging.Time("wallTime", wallTime),
+		logging.BigInt("ethBlock", lastEthBlock.Number()),
+		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time()), 0)))
 
+	// If this is the first time we're running, just set the previous block and return
 	if e.prevEthBlock == nil {
-		e.prevEthBlock = ethBlock
+		e.prevEthBlock = lastEthBlock
 		return
 	}
 
-	for specID, call := range e.calls {
-		if call.triggered(e.prevEthBlock, ethBlock) {
-			res, err := call.Call(ctx, e.client, ethBlock.NumberU64())
-			if err != nil {
-				e.log.Errorf("failed to call contract: %w", err)
-				event := makeErrorChainEvent(err.Error(), specID, ethBlock)
-				e.forwarder.ForwardFromSelf(event)
-				continue
-			}
+	// Go through an eth blocks one at a time until we get to the most recent one
+	for e.prevEthBlock.NumberU64() < lastEthBlock.NumberU64() {
+		nextBlockNum := big.NewInt(0).SetUint64(e.prevEthBlock.NumberU64() + 1)
+		nextEthBlock, err := e.client.BlockByNumber(ctx, nextBlockNum)
+		if err != nil {
+			e.log.Errorf("failed to get next block header: %w", err)
+			return
+		}
 
-			if res.PassesFilters {
-				event := makeChainEvent(res, specID, ethBlock)
-				e.forwarder.ForwardFromSelf(event)
+		for specID, call := range e.calls {
+			if call.triggered(e.prevEthBlock, nextEthBlock) {
+				res, err := call.Call(ctx, e.client, nextEthBlock.NumberU64())
+				if err != nil {
+					e.log.Errorf("failed to call contract: %w", err)
+					event := makeErrorChainEvent(err.Error(), specID, nextEthBlock)
+					e.forwarder.ForwardFromSelf(event)
+					continue
+				}
+
+				if res.PassesFilters {
+					event := makeChainEvent(res, specID, nextEthBlock)
+					e.forwarder.ForwardFromSelf(event)
+				}
 			}
 		}
+		e.prevEthBlock = nextEthBlock
 	}
-	e.prevEthBlock = ethBlock
 }
 
 func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
