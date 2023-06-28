@@ -668,7 +668,7 @@ func (m *Market) OnTick(ctx context.Context, t time.Time) bool {
 				}
 			}
 		}
-		metrics.OrderGaugeAdd(-stopsExpired)
+		metrics.OrderGaugeAdd(-stopsExpired, m.GetID())
 	}
 
 	// some engines still needs to get updates:
