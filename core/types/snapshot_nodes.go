@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
+	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -123,6 +124,14 @@ type PayloadBankingRecurringTransfers struct {
 
 type PayloadBankingScheduledTransfers struct {
 	BankingScheduledTransfers []*checkpointpb.ScheduledTransferAtTime
+}
+
+type PayloadBankingRecurringGovernanceTransfers struct {
+	BankingRecurringGovernanceTransfers []*checkpointpb.GovernanceTransfer
+}
+
+type PayloadBankingScheduledGovernanceTransfers struct {
+	BankingScheduledGovernanceTransfers []*checkpointpb.ScheduledGovernanceTransferAtTime
 }
 
 type PayloadCheckpoint struct {
@@ -323,8 +332,9 @@ type MatchingBook struct {
 }
 
 type ExecutionMarkets struct {
-	Markets     []*ExecMarket
-	SpotMarkets []*ExecSpotMarket
+	Markets        []*ExecMarket
+	SpotMarkets    []*ExecSpotMarket
+	SettledMarkets []*CPMarketState
 }
 
 type ExecMarket struct {
@@ -351,6 +361,8 @@ type ExecMarket struct {
 	Parties                    []string
 	Closed                     bool
 	IsSucceeded                bool
+	StopOrders                 *snapshot.StopOrders
+	ExpiringStopOrders         []*Order
 }
 
 type ExecSpotMarket struct {
@@ -819,6 +831,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
 	case *snapshot.Payload_BankingScheduledTransfers:
 		ret.Data = PayloadBankingScheduledTransfersFromProto(dt)
+	case *snapshot.Payload_BankingRecurringGovernanceTransfers:
+		ret.Data = PayloadBankingRecurringGovernanceTransfersFromProto(dt)
+	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
+		ret.Data = PayloadBankingScheduledGovernanceTransfersFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = PayloadERC20MultiSigTopologyPendingFromProto(dt)
 	case *snapshot.Payload_Erc20MultisigTopologyVerified:
@@ -957,6 +973,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_BankingRecurringTransfers:
 		ret.Data = dt
 	case *snapshot.Payload_BankingScheduledTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingRecurringGovernanceTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingScheduledGovernanceTransfers:
 		ret.Data = dt
 	case *snapshot.Payload_Erc20MultisigTopologyPending:
 		ret.Data = dt
@@ -1334,6 +1354,34 @@ func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
+func PayloadBankingRecurringGovernanceTransfersFromProto(pbd *snapshot.Payload_BankingRecurringGovernanceTransfers) *PayloadBankingRecurringGovernanceTransfers {
+	return &PayloadBankingRecurringGovernanceTransfers{
+		BankingRecurringGovernanceTransfers: pbd.BankingRecurringGovernanceTransfers.RecurringTransfers,
+	}
+}
+
+func (p PayloadBankingRecurringGovernanceTransfers) IntoProto() *snapshot.Payload_BankingRecurringGovernanceTransfers {
+	return &snapshot.Payload_BankingRecurringGovernanceTransfers{
+		BankingRecurringGovernanceTransfers: &snapshot.BankingRecurringGovernanceTransfers{
+			RecurringTransfers: p.BankingRecurringGovernanceTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingRecurringGovernanceTransfers) isPayload() {}
+
+func (p *PayloadBankingRecurringGovernanceTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingRecurringGovernanceTransfers) Key() string {
+	return "recurringGovernanceTransfers"
+}
+
+func (*PayloadBankingRecurringGovernanceTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
 func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
 	return &PayloadBankingRecurringTransfers{
 		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTransfers,
@@ -1387,6 +1435,34 @@ func (*PayloadBankingScheduledTransfers) Key() string {
 }
 
 func (*PayloadBankingScheduledTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingScheduledGovernanceTransfersFromProto(pbd *snapshot.Payload_BankingScheduledGovernanceTransfers) *PayloadBankingScheduledGovernanceTransfers {
+	return &PayloadBankingScheduledGovernanceTransfers{
+		BankingScheduledGovernanceTransfers: pbd.BankingScheduledGovernanceTransfers.TransfersAtTime,
+	}
+}
+
+func (p PayloadBankingScheduledGovernanceTransfers) IntoProto() *snapshot.Payload_BankingScheduledGovernanceTransfers {
+	return &snapshot.Payload_BankingScheduledGovernanceTransfers{
+		BankingScheduledGovernanceTransfers: &snapshot.BankingScheduledGovernanceTransfers{
+			TransfersAtTime: p.BankingScheduledGovernanceTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingScheduledGovernanceTransfers) isPayload() {}
+
+func (p *PayloadBankingScheduledGovernanceTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingScheduledGovernanceTransfers) Key() string {
+	return "scheduledGovernanceTransfers"
+}
+
+func (*PayloadBankingScheduledGovernanceTransfers) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
@@ -3000,7 +3076,6 @@ func ExecSpotMarketFromProto(em *snapshot.SpotMarket) *ExecSpotMarket {
 	}
 
 	m, _ := MarketFromProto(em.Market)
-
 	ret := ExecSpotMarket{
 		Market:                     m,
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -3064,8 +3139,14 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	lastBA, _ = num.UintFromString(em.LastBestAsk, 10)
 	lastMB, _ = num.UintFromString(em.LastMidBid, 10)
 	lastMA, _ = num.UintFromString(em.LastMidAsk, 10)
-	markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
-	lastTradedPrice, _ = num.UintFromString(em.LastTradedPrice, 10)
+
+	if len(em.CurrentMarkPrice) > 0 {
+		markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
+	}
+
+	if len(em.LastTradedPrice) > 0 {
+		lastTradedPrice, _ = num.UintFromString(em.LastTradedPrice, 10)
+	}
 
 	shortRF, _ := num.DecimalFromString(em.RiskFactorShort)
 	longRF, _ := num.DecimalFromString(em.RiskFactorLong)
@@ -3083,7 +3164,6 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	}
 
 	m, _ := MarketFromProto(em.Market)
-
 	ret := ExecMarket{
 		Market:                     m,
 		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
@@ -3108,10 +3188,14 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		Parties:                    em.Parties,
 		Closed:                     em.Closed,
 		IsSucceeded:                em.Succeeded,
+		StopOrders:                 em.StopOrders,
 	}
 	for _, o := range em.ExpiringOrders {
 		or, _ := OrderFromProto(o)
 		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
+	}
+	for _, o := range em.ExpiringStopOrders {
+		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &Order{ID: o.Id, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }
@@ -3130,20 +3214,31 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		LastMidAsk:                 e.LastMidAsk.String(),
 		LastMidBid:                 e.LastMidBid.String(),
 		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
-		CurrentMarkPrice:           e.CurrentMarkPrice.String(),
 		RiskFactorShort:            e.ShortRiskFactor.String(),
 		RiskFactorLong:             e.LongRiskFactor.String(),
 		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		SettlementData:             num.NumericToString(e.SettlementData),
 		NextMarkToMarket:           e.NextMTM,
-		LastTradedPrice:            e.LastTradedPrice.String(),
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
 		Succeeded:                  e.IsSucceeded,
+		StopOrders:                 e.StopOrders,
 	}
+
+	if e.CurrentMarkPrice != nil {
+		ret.CurrentMarkPrice = e.CurrentMarkPrice.String()
+	}
+
+	if e.LastTradedPrice != nil {
+		ret.LastTradedPrice = e.LastTradedPrice.String()
+	}
+
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
+	}
+	for _, o := range e.ExpiringStopOrders {
+		ret.ExpiringStopOrders = append(ret.ExpiringOrders, &vega.Order{Id: o.ID, ExpiresAt: o.ExpiresAt})
 	}
 	return &ret
 }
@@ -3159,9 +3254,15 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 		spots = append(spots, ExecSpotMarketFromProto(m))
 	}
 
+	settled := make([]*CPMarketState, 0, len(em.SettledMarkets))
+	for _, m := range em.SettledMarkets {
+		settled = append(settled, NewMarketStateFromProto(m))
+	}
+
 	return &ExecutionMarkets{
-		Markets:     mkts,
-		SpotMarkets: spots,
+		Markets:        mkts,
+		SpotMarkets:    spots,
+		SettledMarkets: settled,
 	}
 }
 
@@ -3174,9 +3275,14 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 	for _, m := range e.SpotMarkets {
 		spots = append(spots, m.IntoProto())
 	}
+	settled := make([]*checkpoint.MarketState, 0, len(e.SettledMarkets))
+	for _, m := range e.SettledMarkets {
+		settled = append(settled, m.IntoProto())
+	}
 	return &snapshot.ExecutionMarkets{
-		Markets:     mkts,
-		SpotMarkets: spots,
+		Markets:        mkts,
+		SpotMarkets:    spots,
+		SettledMarkets: settled,
 	}
 }
 

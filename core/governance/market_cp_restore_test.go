@@ -193,7 +193,9 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 
 	witness := mocks.NewMockWitness(ctrl)
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
+	banking := mocks.NewMockBanking(ctrl)
 
+	gov := governance.NewEngine(log, governance.NewDefaultConfig(), accounts, timeService, broker, asset, witness, exec, netp, banking)
 	valFake := fakeCPComponent{
 		name: types.ValidatorsCheckpoint,
 	}
@@ -215,7 +217,6 @@ func createExecutionEngine(t *testing.T, tm time.Time) (*execution.Engine, *gove
 	bankFake := fakeCPComponent{
 		name: types.BankingCheckpoint,
 	}
-	gov := governance.NewEngine(log, governance.NewDefaultConfig(), accounts, timeService, broker, asset, witness, exec, netp)
 	cpEngine, _ := checkpoint.New(log, checkpoint.NewDefaultConfig(), gov, netp, asset, collateralService, marketTracker, exec, valFake, epochFake, msFake, stakeFake, delFake, prFake, bankFake)
 
 	return exec, gov, cpEngine

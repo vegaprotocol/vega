@@ -26,19 +26,19 @@ const namedLogger = "candlesV2"
 // Config represent the configuration of the candle v2 package.
 type Config struct {
 	Level         encoding.LogLevel   `long:"log-level"`
-	CandleStore   CandleStoreConfig   `group:"CandleStore" namespace:"candlestore"`
+	CandleStore   CandleStoreConfig   `group:"CandleStore"   namespace:"candlestore"`
 	CandleUpdates CandleUpdatesConfig `group:"CandleUpdates" namespace:"candleupdates"`
 }
 
 type CandleStoreConfig struct {
-	DefaultCandleIntervals string `string:"default-candle-intervals" description:"candles with the given intervals will always be created and exist by default"`
+	DefaultCandleIntervals string `description:"candles with the given intervals will always be created and exist by default" string:"default-candle-intervals"`
 }
 
 type CandleUpdatesConfig struct {
-	CandleUpdatesStreamBufferSize                int               `long:"candle-updates-stream-buffer-size" description:"buffer size used by the candle events stream for the per client per candle channel"`
-	CandleUpdatesStreamInterval                  encoding.Duration `long:"candle-updates-stream-interval" description:"The time between sending updated candles"`
-	CandlesFetchTimeout                          encoding.Duration `long:"candles-fetch-timeout" description:"Maximum time permissible to fetch candles"`
-	CandleUpdatesStreamSubscriptionMsgBufferSize int               `long:"candle-updates-stream-subscription-buffer-size" description:"size of the buffer used to hold pending subcribe/unsubscribe requests"`
+	CandleUpdatesStreamBufferSize                int               `description:"buffer size used by the candle events stream for the per client per candle channel" long:"candle-updates-stream-buffer-size"`
+	CandleUpdatesStreamInterval                  encoding.Duration `description:"The time between sending updated candles"                                           long:"candle-updates-stream-interval"`
+	CandlesFetchTimeout                          encoding.Duration `description:"Maximum time permissible to fetch candles"                                          long:"candles-fetch-timeout"`
+	CandleUpdatesStreamSubscriptionMsgBufferSize int               `description:"size of the buffer used to hold pending subcribe/unsubscribe requests"              long:"candle-updates-stream-subscription-buffer-size"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

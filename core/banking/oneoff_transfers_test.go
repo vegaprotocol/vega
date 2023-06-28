@@ -289,7 +289,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)
-		}).Times(3)
+		}).AnyTimes()
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -372,7 +372,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(10, 0)
-		}).Times(1)
+		}).Times(2)
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
@@ -452,7 +452,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(11, 0)
-		}).Times(1)
+		}).Times(2)
 
 	e.OnTick(context.Background(), time.Unix(11, 0))
 
@@ -460,10 +460,10 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
 		func() time.Time {
 			return time.Unix(12, 0)
-		}).Times(1)
+		}).Times(2)
 
 	// assert the calculation of fees and transfer request are correct
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		func(ctx context.Context,
 			transfers []*types.Transfer,
@@ -490,6 +490,6 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	e.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	e.OnTick(context.Background(), time.Unix(12, 0))
 }

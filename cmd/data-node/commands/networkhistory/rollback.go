@@ -20,7 +20,7 @@ type rollbackCmd struct {
 	config.VegaHomeFlag
 	config.Config
 
-	Force bool `short:"f" long:"force" description:"do not prompt for confirmation"`
+	Force bool `description:"do not prompt for confirmation" long:"force" short:"f"`
 }
 
 func (cmd *rollbackCmd) Execute(args []string) error {

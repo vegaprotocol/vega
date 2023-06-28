@@ -324,21 +324,28 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 		}
 	}
 	if p.Successor != nil {
-		r.Successor = SuccessorConfigFromProto(p.Successor)
+		s, err := SuccessorConfigFromProto(p.Successor)
+		if err != nil {
+			return nil, err
+		}
+		r.Successor = s
 	}
 	return r, nil
 }
 
-func SuccessorConfigFromProto(p *vegapb.SuccessorConfiguration) *SuccessorConfig {
+func SuccessorConfigFromProto(p *vegapb.SuccessorConfiguration) (*SuccessorConfig, error) {
 	// successor config is optional, but make sure that, if provided, it's not set to empty parent market ID
 	if len(p.ParentMarketId) == 0 {
-		return nil
+		return nil, nil
 	}
-	f, _ := num.DecimalFromString(p.InsurancePoolFraction)
+	f, err := num.DecimalFromString(p.InsurancePoolFraction)
+	if err != nil {
+		return nil, err
+	}
 	return &SuccessorConfig{
 		ParentID:              p.ParentMarketId,
 		InsurancePoolFraction: f,
-	}
+	}, nil
 }
 
 func (s *SuccessorConfig) IntoProto() *vegapb.SuccessorConfiguration {

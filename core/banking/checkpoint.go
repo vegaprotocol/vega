@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
@@ -33,10 +34,12 @@ func (e *Engine) Name() types.CheckpointName {
 
 func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &checkpoint.Banking{
-		TransfersAtTime:    e.getScheduledTransfers(),
-		RecurringTransfers: e.getRecurringTransfers(),
-		BridgeState:        e.getBridgeState(),
-		LastSeenEthBlock:   e.lastSeenEthBlock,
+		TransfersAtTime:              e.getScheduledTransfers(),
+		RecurringTransfers:           e.getRecurringTransfers(),
+		GovernanceTransfersAtTime:    e.getScheduledGovernanceTransfers(),
+		RecurringGovernanceTransfers: e.getRecurringGovernanceTransfers(),
+		BridgeState:                  e.getBridgeState(),
+		LastSeenEthBlock:             e.lastSeenEthBlock,
 	}
 
 	msg.SeenRefs = make([]string, 0, e.seen.Size())
@@ -69,6 +72,9 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	}
 
 	evts = append(evts, e.loadRecurringTransfers(ctx, b.RecurringTransfers)...)
+
+	evts = append(evts, e.loadScheduledGovernanceTransfers(ctx, b.GovernanceTransfersAtTime)...)
+	evts = append(evts, e.loadRecurringGovernanceTransfers(ctx, b.RecurringGovernanceTransfers)...)
 
 	e.loadBridgeState(b.BridgeState)
 
@@ -177,6 +183,20 @@ func (e *Engine) loadBridgeState(state *checkpoint.BridgeState) {
 	}
 }
 
+func (e *Engine) loadScheduledGovernanceTransfers(ctx context.Context, r []*checkpoint.ScheduledGovernanceTransferAtTime) []events.Event {
+	evts := []events.Event{}
+	for _, v := range r {
+		transfers := make([]*types.GovernanceTransfer, 0, len(v.Transfers))
+		for _, g := range v.Transfers {
+			transfer := types.GovernanceTransferFromProto(g)
+			transfers = append(transfers, transfer)
+			evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
+		}
+		e.scheduledGovernanceTransfers[v.DeliverOn] = transfers
+	}
+	return evts
+}
+
 func (e *Engine) loadScheduledTransfers(
 	ctx context.Context, r []*checkpoint.ScheduledTransferAtTime,
 ) ([]events.Event, error) {
@@ -210,6 +230,17 @@ func (e *Engine) loadRecurringTransfers(
 	return evts
 }
 
+func (e *Engine) loadRecurringGovernanceTransfers(ctx context.Context, transfers []*checkpoint.GovernanceTransfer) []events.Event {
+	evts := []events.Event{}
+	for _, v := range transfers {
+		transfer := types.GovernanceTransferFromProto(v)
+		e.recurringGovernanceTransfers = append(e.recurringGovernanceTransfers, transfer)
+		e.recurringGovernanceTransfersMap[transfer.ID] = transfer
+		evts = append(evts, events.NewGovTransferFundsEvent(ctx, transfer, num.UintZero()))
+	}
+	return evts
+}
+
 func (e *Engine) getBridgeState() *checkpoint.BridgeState {
 	return &checkpoint.BridgeState{
 		Active:      e.bridgeState.active,
@@ -230,6 +261,14 @@ func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
 	return out
 }
 
+func (e *Engine) getRecurringGovernanceTransfers() []*checkpoint.GovernanceTransfer {
+	out := make([]*checkpoint.GovernanceTransfer, 0, len(e.recurringGovernanceTransfers))
+	for _, v := range e.recurringGovernanceTransfers {
+		out = append(out, v.IntoProto())
+	}
+	return out
+}
+
 func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 	out := make([]*checkpoint.ScheduledTransferAtTime, 0, len(e.scheduledTransfers))
 
@@ -243,6 +282,20 @@ func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 
 	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
 
+	return out
+}
+
+func (e *Engine) getScheduledGovernanceTransfers() []*checkpoint.ScheduledGovernanceTransferAtTime {
+	out := make([]*checkpoint.ScheduledGovernanceTransferAtTime, 0, len(e.scheduledGovernanceTransfers))
+
+	for k, v := range e.scheduledGovernanceTransfers {
+		transfers := make([]*checkpoint.GovernanceTransfer, 0, len(v))
+		for _, v := range v {
+			transfers = append(transfers, v.IntoProto())
+		}
+		out = append(out, &checkpoint.ScheduledGovernanceTransferAtTime{DeliverOn: k, Transfers: transfers})
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
 	return out
 }
 

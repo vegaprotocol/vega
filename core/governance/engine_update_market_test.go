@@ -33,7 +33,7 @@ func TestProposalForMarketUpdate(t *testing.T) {
 	t.Run("Submitting a proposal for market update with internal time termination succeeds", testSubmittingProposalForMarketUpdateWithInternalTimeTerminationSucceeds)
 	t.Run("Submitting a proposal for market update with internal settling fails", testSubmittingProposalForMarketUpdateWithInternalTimeSetllingFails)
 	t.Run("Submitting a proposal for market update with internal time termination and 'less than' condition fails", testSubmittingProposalForMarketUpdateWithInternalTimeTerminationWithLessThanConditionFails)
-	t.Run("Submitting a proposal for market update with termination in the past succeeds", TestSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds)
+	t.Run("Submitting a proposal for market update with termination in the past succeeds", testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds)
 	t.Run("Submitting a proposal for market update with external termination using internal time key succeeds", testSubmittingProposalForMarketUpdateWithExternalSourceUsingInternalKeyTimeForTerminationSucceeds)
 	t.Run("Submitting a proposal for market update with empty settlement data fails", testSubmittingProposalForMarketUpdateWithEmptySettlementDataFails)
 	t.Run("Submitting a proposal for market update with empty termination data fails", testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails)
@@ -582,10 +582,11 @@ func testSubmittingProposalForMarketUpdateWithEmptyTerminationDataFails(t *testi
 	require.Nil(t, toSubmit)
 }
 
-func TestSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testing.T) {
+func testSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
+	// Submit proposal.
 	// given
 	proposer := vgrand.RandomStr(5)
 	proposal := eng.newProposalForMarketUpdate("market-1", proposer, eng.tsvc.GetTimeNow(), nil, nil, true)
@@ -601,7 +602,7 @@ func TestSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 				Conditions: []*types.DataSourceSpecCondition{
 					{
 						Operator: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
-						Value:    "0",
+						Value:    "0", // change to internal timestamp that is in the past
 					},
 				},
 			},
@@ -610,19 +611,96 @@ func TestSubmittingProposalForMarketUpdateWithEarlyTerminationSucceeds(t *testin
 	proposal.Terms.Change.(*types.ProposalTermsUpdateMarket).UpdateMarket.Changes.Instrument.Product.(*types.UpdateInstrumentConfigurationFuture).Future.DataSourceSpecBinding.TradingTerminationProperty = "vegaprotocol.builtin.timestamp"
 
 	// setup
-	eng.ensureTokenBalanceForParty(t, proposer, 1000)
-	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.1)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, proposer, 0.7)
 	eng.ensureExistingMarket(t, marketID)
+	eng.ensureTokenBalanceForParty(t, proposer, 1)
+	eng.ensureAllAssetEnabled(t)
 
 	// expect
 	eng.expectOpenProposalEvent(t, proposer, proposal.ID)
 
 	// when
-	toSubmit, err := eng.submitProposal(t, proposal)
+	_, err := eng.submitProposal(t, proposal)
 
 	// then
 	require.NoError(t, err)
-	require.NotNil(t, toSubmit)
+
+	// Vote 'YES' with 10 tokens.
+	// given
+	voterWithToken1 := vgrand.RandomStr(5)
+
+	// setup
+	eng.ensureTokenBalanceForParty(t, voterWithToken1, 10)
+	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, voterWithToken1, 0)
+
+	// expect
+	eng.expectVoteEvent(t, voterWithToken1, proposal.ID)
+
+	// when
+	err = eng.addYesVote(t, voterWithToken1, proposal.ID)
+
+	// then
+	require.NoError(t, err)
+
+	// Vote 'NO' with 2 tokens.
+	// given
+	voterWithToken2 := vgrand.RandomStr(5)
+
+	// Close the proposal.
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.ensureStakingAssetTotalSupply(t, 13)
+	eng.ensureTokenBalanceForParty(t, voterWithToken1, 10)
+	eng.ensureTokenBalanceForParty(t, voterWithToken2, 2)
+
+	// expect
+	eng.expectPassedProposalEvent(t, proposal.ID)
+	eng.expectVoteEvents(t)
+	eng.expectGetMarketState(t, marketID)
+
+	// when
+	eng.OnTick(context.Background(), afterClosing)
+
+	// Enact the proposal.
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+	existingMarket := types.Market{
+		ID: marketID,
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: &types.Instrument{
+				Name: vgrand.RandomStr(10),
+				Product: &types.InstrumentFuture{
+					Future: &types.Future{
+						SettlementAsset: "BTC",
+					},
+				},
+			},
+		},
+		DecimalPlaces:         3,
+		PositionDecimalPlaces: 4,
+		OpeningAuction: &types.AuctionDuration{
+			Duration: 42,
+		},
+	}
+
+	// setup
+	eng.ensureGetMarket(t, marketID, existingMarket)
+
+	// when
+	enacted, _ := eng.OnTick(context.Background(), afterEnactment)
+
+	// then
+	require.NotEmpty(t, enacted)
+	require.True(t, enacted[0].IsUpdateMarket())
+	updatedMarket := enacted[0].UpdateMarket()
+	assert.Equal(t, existingMarket.ID, updatedMarket.ID)
+	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Name, updatedMarket.TradableInstrument.Instrument.Name)
+	assert.Equal(t, existingMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset, updatedMarket.TradableInstrument.Instrument.Product.(*types.InstrumentFuture).Future.SettlementAsset)
+	assert.Equal(t, existingMarket.DecimalPlaces, updatedMarket.DecimalPlaces)
+	assert.Equal(t, existingMarket.PositionDecimalPlaces, updatedMarket.PositionDecimalPlaces)
+	assert.Equal(t, existingMarket.OpeningAuction.Duration, updatedMarket.OpeningAuction.Duration)
 }
 
 func testSubmittingProposalForMarketUpdateForUnknownMarketFails(t *testing.T) {

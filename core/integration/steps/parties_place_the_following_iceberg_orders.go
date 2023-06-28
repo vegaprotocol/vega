@@ -43,8 +43,8 @@ func PartiesPlaceTheFollowingIcebergOrders(
 			TimeInForce: row.TimeInForce(),
 			Reference:   row.Reference(),
 			IcebergOrder: &types.IcebergOrder{
-				InitialPeakSize: row.InitialPeak(),
-				MinimumPeakSize: row.MinimumPeak(),
+				PeakSize:           row.InitialPeak(),
+				MinimumVisibleSize: row.MinimumPeak(),
 			},
 		}
 		only := row.Only()
@@ -79,6 +79,42 @@ func PartiesPlaceTheFollowingIcebergOrders(
 	return nil
 }
 
+func PartyAddsTheFollowingIcebergOrdersToABatch(party string, exec Execution, time *stubs.TimeStub, table *godog.Table) error {
+	// ensure time is set + idgen is not nil
+	now := time.GetTimeNow()
+	time.SetTime(now)
+	for _, r := range parseAddIcebergOrderToBatchTable(table) {
+		row := submitIcebergOrderRow{r}
+
+		orderSubmission := types.OrderSubmission{
+			MarketID:    row.MarketID(),
+			Side:        row.Side(),
+			Price:       row.Price(),
+			Size:        row.Volume(),
+			ExpiresAt:   row.ExpirationDate(now),
+			Type:        row.OrderType(),
+			TimeInForce: row.TimeInForce(),
+			Reference:   row.Reference(),
+			IcebergOrder: &types.IcebergOrder{
+				PeakSize:           row.InitialPeak(),
+				MinimumVisibleSize: row.MinimumPeak(),
+			},
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
+		}
+
+		if err := exec.AddSubmitOrderToBatch(&orderSubmission, party); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func parseSubmitIcebergOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
@@ -88,12 +124,30 @@ func parseSubmitIcebergOrderTable(table *godog.Table) []RowWrapper {
 		"price",
 		"type",
 		"tif",
-		"initial peak",
-		"minimum peak",
+		"peak size",
+		"minimum visible size",
 	}, []string{
 		"reference",
 		"error",
 		"resulting trades",
+		"expires in",
+		"only",
+	})
+}
+
+func parseAddIcebergOrderToBatchTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"market id",
+		"side",
+		"volume",
+		"price",
+		"type",
+		"tif",
+		"peak size",
+		"minimum visible size",
+	}, []string{
+		"reference",
+		"error",
 		"expires in",
 		"only",
 	})
@@ -176,9 +230,9 @@ func (r submitIcebergOrderRow) Only() Only {
 }
 
 func (r submitIcebergOrderRow) MinimumPeak() uint64 {
-	return r.row.MustU64("minimum peak")
+	return r.row.MustU64("minimum visible size")
 }
 
 func (r submitIcebergOrderRow) InitialPeak() uint64 {
-	return r.row.MustU64("initial peak")
+	return r.row.MustU64("peak size")
 }

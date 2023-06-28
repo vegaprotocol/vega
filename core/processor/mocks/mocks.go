@@ -19,7 +19,6 @@ import (
 	vega "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	gomock "github.com/golang/mock/gomock"
-	decimal "github.com/shopspring/decimal"
 	types0 "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -335,6 +334,20 @@ func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1, arg2, arg3 in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1, arg2, arg3)
 }
 
+// CancelStopOrders mocks base method.
+func (m *MockExecutionEngine) CancelStopOrders(arg0 context.Context, arg1 *types.StopOrdersCancellation, arg2 string, arg3 common.IDGenerator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelStopOrders", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelStopOrders indicates an expected call of CancelStopOrders.
+func (mr *MockExecutionEngineMockRecorder) CancelStopOrders(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).CancelStopOrders), arg0, arg1, arg2, arg3)
+}
+
 // Hash mocks base method.
 func (m *MockExecutionEngine) Hash() []byte {
 	m.ctrl.T.Helper()
@@ -350,11 +363,12 @@ func (mr *MockExecutionEngineMockRecorder) Hash() *gomock.Call {
 }
 
 // RejectMarket mocks base method.
-func (m *MockExecutionEngine) RejectMarket(arg0 context.Context, arg1 string) error {
+func (m *MockExecutionEngine) RejectMarket(arg0 context.Context, arg1 string) ([]int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RejectMarket", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // RejectMarket indicates an expected call of RejectMarket.
@@ -392,17 +406,17 @@ func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, 
 }
 
 // SubmitMarket mocks base method.
-func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *types.Market, arg2 string) error {
+func (m *MockExecutionEngine) SubmitMarket(arg0 context.Context, arg1 *types.Market, arg2 string, arg3 time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SubmitMarket", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitMarket indicates an expected call of SubmitMarket.
-func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarket), arg0, arg1, arg2, arg3)
 }
 
 // SubmitOrder mocks base method.
@@ -420,18 +434,33 @@ func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3, arg4)
 }
 
-// SucceedMarket mocks base method.
-func (m *MockExecutionEngine) SucceedMarket(arg0 context.Context, arg1, arg2 string, arg3 decimal.Decimal) error {
+// SubmitStopOrders mocks base method.
+func (m *MockExecutionEngine) SubmitStopOrders(arg0 context.Context, arg1 *types.StopOrdersSubmission, arg2 string, arg3 common.IDGenerator, arg4, arg5 *string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SucceedMarket", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "SubmitStopOrders", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret0, _ := ret[0].(*types.OrderConfirmation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitStopOrders indicates an expected call of SubmitStopOrders.
+func (mr *MockExecutionEngineMockRecorder) SubmitStopOrders(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitStopOrders", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitStopOrders), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// SucceedMarket mocks base method.
+func (m *MockExecutionEngine) SucceedMarket(arg0 context.Context, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SucceedMarket", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SucceedMarket indicates an expected call of SucceedMarket.
-func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SucceedMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SucceedMarket", reflect.TypeOf((*MockExecutionEngine)(nil).SucceedMarket), arg0, arg1, arg2)
 }
 
 // UpdateMarket mocks base method.
@@ -1439,6 +1468,20 @@ func (mr *MockBankingMockRecorder) BridgeStopped(arg0, arg1, arg2, arg3, arg4, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BridgeStopped", reflect.TypeOf((*MockBanking)(nil).BridgeStopped), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// CancelGovTransfer mocks base method.
+func (m *MockBanking) CancelGovTransfer(arg0 context.Context, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelGovTransfer", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelGovTransfer indicates an expected call of CancelGovTransfer.
+func (mr *MockBankingMockRecorder) CancelGovTransfer(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelGovTransfer", reflect.TypeOf((*MockBanking)(nil).CancelGovTransfer), arg0, arg1)
+}
+
 // CancelTransferFunds mocks base method.
 func (m *MockBanking) CancelTransferFunds(arg0 context.Context, arg1 *types.CancelTransferFunds) error {
 	m.ctrl.T.Helper()
@@ -1537,6 +1580,20 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// NewGovernanceTransfer mocks base method.
+func (m *MockBanking) NewGovernanceTransfer(arg0 context.Context, arg1, arg2 string, arg3 *types.NewTransferConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NewGovernanceTransfer", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NewGovernanceTransfer indicates an expected call of NewGovernanceTransfer.
+func (mr *MockBankingMockRecorder) NewGovernanceTransfer(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).NewGovernanceTransfer), arg0, arg1, arg2, arg3)
+}
+
 // TransferFunds mocks base method.
 func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferFunds) error {
 	m.ctrl.T.Helper()
@@ -1563,6 +1620,34 @@ func (m *MockBanking) UpdateERC20(arg0 context.Context, arg1 *types.ERC20AssetLi
 func (mr *MockBankingMockRecorder) UpdateERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateERC20", reflect.TypeOf((*MockBanking)(nil).UpdateERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+}
+
+// VerifyCancelGovernanceTransfer mocks base method.
+func (m *MockBanking) VerifyCancelGovernanceTransfer(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyCancelGovernanceTransfer", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyCancelGovernanceTransfer indicates an expected call of VerifyCancelGovernanceTransfer.
+func (mr *MockBankingMockRecorder) VerifyCancelGovernanceTransfer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyCancelGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).VerifyCancelGovernanceTransfer), arg0)
+}
+
+// VerifyGovernanceTransfer mocks base method.
+func (m *MockBanking) VerifyGovernanceTransfer(arg0 *types.NewTransferConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyGovernanceTransfer", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyGovernanceTransfer indicates an expected call of VerifyGovernanceTransfer.
+func (mr *MockBankingMockRecorder) VerifyGovernanceTransfer(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyGovernanceTransfer", reflect.TypeOf((*MockBanking)(nil).VerifyGovernanceTransfer), arg0)
 }
 
 // WithdrawBuiltinAsset mocks base method.

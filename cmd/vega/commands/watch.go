@@ -24,7 +24,7 @@ import (
 )
 
 type watch struct {
-	Address    string `short:"a" long:"address" description:"Node address" default:"tcp://0.0.0.0:26657"`
+	Address    string `default:"tcp://0.0.0.0:26657" description:"Node address" long:"address" short:"a"`
 	Positional struct {
 		Filters []string `positional-arg-name:"<FILTERS>"`
 	} `positional-args:"true"`

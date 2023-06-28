@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"code.vegaprotocol.io/vega/core/config"
 	"code.vegaprotocol.io/vega/core/protocolupgrade"
@@ -35,8 +36,8 @@ type ProposeUpgradeCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"passphrase-file"`
 
-	VegaReleaseTag     string `short:"v" long:"vega-release-tag" required:"true" description:"A valid vega core release tag for the upgrade proposal"`
-	UpgradeBlockHeight uint64 `short:"h" long:"height" required:"true" description:"The block height at which the upgrade should be made"`
+	VegaReleaseTag     string `description:"A valid vega core release tag for the upgrade proposal" long:"vega-release-tag" required:"true" short:"v"`
+	UpgradeBlockHeight uint64 `description:"The block height at which the upgrade should be made"   long:"height"           required:"true" short:"h"`
 }
 
 var proposeUpgradeCmd ProposeUpgradeCmd
@@ -64,6 +65,10 @@ func (opts *ProposeUpgradeCmd) Execute(_ []string) error {
 
 	if !conf.IsValidator() {
 		return errors.New("node is not a validator")
+	}
+
+	if !strings.HasPrefix(opts.VegaReleaseTag, "v") {
+		return errors.New("invalid vega release tag, expected prefix 'v' (example: v0.71.9)")
 	}
 
 	cmd := commandspb.ProtocolUpgradeProposal{

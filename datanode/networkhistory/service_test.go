@@ -62,8 +62,6 @@ var (
 	eventsDir          string
 	eventsFile         string
 
-	networkHistoryService *networkhistory.Service
-
 	goldenSourceHistorySegment map[int64]segment.Full
 
 	expectedHistorySegmentsFromHeights = []int64{1, 1001, 2001, 2501, 3001, 4001}
@@ -314,18 +312,18 @@ func TestMain(t *testing.M) {
 		datanodeConfig := config2.NewDefaultConfig()
 		cfg := networkhistory.NewDefaultConfig()
 
-		networkHistoryService, err = networkhistory.NewWithStore(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
+		_, err = networkhistory.NewWithStore(outerCtx, log, chainID, cfg, networkHistoryConnPool, snapshotService,
 			networkHistoryStore, datanodeConfig.API.Port, snapshotCopyToPath)
 
 		if err != nil {
 			panic(err)
 		}
 
-		start := time.Now()
+		startTime := time.Now()
 		timeout := 1 * time.Minute
 
 		for {
-			if time.Now().After(start.Add(timeout)) {
+			if time.Now().After(startTime.Add(timeout)) {
 				panic(fmt.Sprintf("history not found in network store after %s", timeout))
 			}
 
@@ -365,12 +363,12 @@ func TestMain(t *testing.M) {
 		log.Infof("%s", goldenSourceHistorySegment[4000].HistorySegmentID)
 		log.Infof("%s", goldenSourceHistorySegment[5000].HistorySegmentID)
 
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmZHHbqd1KWHiz3ddc7fRNttZsiHUcjvZWPuorSqFfKEGD", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmYQJqgoVtEzsQRp5kTdxDUUPGTjSvPAAgRevGGLwQnzR2", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmfYJQToHaPUWMa33BGEcBBiVBVJpi9Zm4MwCV4bgVA48z", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmUrteLsNc7NwRo4U7KvqBGi5rZG9B4sN6XrnJyAmbWmYn", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTJqiu1FqX1AYSFSrnbchBHiaizPaEaP2Vh3Euc5ruvTt", snapshots)
-		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmXYcSFEjFnuzPFuyb3aF5Lt8BmPd9gvqBFTAKwqQSceDx", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[1000].HistorySegmentID, "QmYaayisS5MWzzZcGs4nugtuf1GuQq4nmrjdBp8ck3Taw9", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2000].HistorySegmentID, "QmX8f9rHQCy4ELSiwgnaymt7SR2Eh1r5ZSNYhcTiUfZAno", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[2500].HistorySegmentID, "QmXPqc8im14BYUP6AHnATgQoRhrqhZGw2HtipqXDDXZ8Qj", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[3000].HistorySegmentID, "QmTM3omt4A9jXwTcwrQGecH4qByFRFH8dfL8v5KYkxvTZT", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[4000].HistorySegmentID, "QmTsrPBPn7K1Sby5Uo6dtL9NpfXEfbNBQXobaZN4CgxDzC", snapshots)
+		panicIfHistorySegmentIdsNotEqual(goldenSourceHistorySegment[5000].HistorySegmentID, "QmPKaXCYvL1f4C7LqMTRV6NZNeFPqij5nEKGPJoVdgQiC8", snapshots)
 	}, postgresRuntimePath, sqlFs)
 
 	if exitCode != 0 {
@@ -396,7 +394,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 
 	log := logging.NewTestLogger()
 
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
 	snapshotCopyToPath := t.TempDir()
@@ -503,7 +501,7 @@ func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 
 	log := logging.NewTestLogger()
 
@@ -534,7 +532,7 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
 
 	// Now try to load in history from 0 to 5000
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 	snapshotCopyToPath = t.TempDir()
 	inputSnapshotService = setupSnapshotService(snapshotCopyToPath)
 
@@ -567,7 +565,7 @@ func TestRestoringNodeWithDataOlderAndNewerThanItContainsLoadsTheNewerData(t *te
 func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 
 	log := logging.NewTestLogger()
 
@@ -597,7 +595,7 @@ func TestRestoringNodeWithHistoryOnlyFromBeforeTheNodesOldestBlockFails(t *testi
 	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
 
 	// Now try to load in history from 1000 to 2000
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 	snapshotCopyToPath = t.TempDir()
 	inputSnapshotService = setupSnapshotService(snapshotCopyToPath)
 
@@ -624,7 +622,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 
 	log := logging.NewTestLogger()
 
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
 	snapshotCopyToPath := t.TempDir()
@@ -681,7 +679,7 @@ func TestRestoringNodeWithExistingDataFailsWhenLoadingWouldResultInNonContiguous
 func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 
 	log := logging.NewTestLogger()
 
@@ -724,7 +722,7 @@ func TestRestoringFromDifferentHeightsWithFullHistory(t *testing.T) {
 func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 
 	var err error
 	log := logging.NewTestLogger()
@@ -813,7 +811,7 @@ func TestRestoreFromPartialHistoryAndProcessEvents(t *testing.T) {
 func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 
 	var err error
 	log := logging.NewTestLogger()
@@ -916,7 +914,7 @@ func TestRestoreFromFullHistorySnapshotAndProcessEvents(t *testing.T) {
 func TestRestoreFromFullHistorySnapshotWithIndexesAndOrderTriggersAndProcessEvents(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 
 	var err error
 	log := logging.NewTestLogger()
@@ -1045,7 +1043,7 @@ func TestRollingBackToHeightAcrossSchemaUpdateBoundary(t *testing.T) {
 
 	log := logging.NewTestLogger()
 
-	networkHistoryStore.ResetIndex()
+	require.NoError(t, networkHistoryStore.ResetIndex())
 	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
 
 	snapshotCopyToPath := t.TempDir()
@@ -1496,7 +1494,7 @@ func setupTestSQLMigrations() (int64, fs.FS) {
 		panic(err)
 	}
 
-	if os.Mkdir(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), fs.ModePerm); err != nil {
+	if err := os.Mkdir(filepath.Join(testMigrationsDir, sqlstore.SQLMigrationsDir), fs.ModePerm); err != nil {
 		panic(fmt.Errorf("failed to create migrations dir: %w", err))
 	}
 

@@ -29,8 +29,8 @@ import (
 type updateCmd struct {
 	Config nodewallets.Config
 
-	DryRun bool   `long:"dry-run" description:"Display the genesis file without writing it"`
-	TmHome string `short:"t" long:"tm-home" description:"The home path of tendermint"`
+	DryRun bool   `description:"Display the genesis file without writing it" long:"dry-run"`
+	TmHome string `description:"The home path of tendermint"                 long:"tm-home" short:"t"`
 }
 
 func (opts *updateCmd) Execute(_ []string) error {

@@ -1,4 +1,4 @@
-## VEGA - GraphQL schema
+# VEGA - GraphQL schema
 
 schema {
   query: Query
@@ -23,6 +23,16 @@ type PeggedOrder {
   reference: PeggedReference!
   "Price offset from the peg"
   offset: String!
+}
+
+"Details of the iceberg order"
+type IcebergOrder {
+  "Size of the order that will be made visible if the iceberg order is replenished after trading"
+  peakSize: String!
+  "If the visible size of the order falls below this value, it will be replenished back to the peak size using the reserved amount"
+  minimumVisibleSize: String!
+  "Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed"
+  reservedRemaining: String!
 }
 
 "Subscriptions allow a caller to receive new information as it is available from the Vega network."
@@ -242,6 +252,10 @@ type MarketData {
   liquidityProviderFeeShare: [LiquidityProviderFeeShare!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
+  "The market growth factor for the last market time window"
+  marketGrowth: String!
+  "The last traded price (an unsigned integer)"
+  lastTradedPrice: String!
 }
 
 "Live data of a Market"
@@ -302,6 +316,10 @@ type ObservableMarketData {
   liquidityProviderFeeShare: [ObservableLiquidityProviderFeeShare!]
   "RFC3339Nano time indicating the next time positions will be marked to market"
   nextMarkToMarket: String!
+  "The market growth factor for the last market time window"
+  marketGrowth: String!
+  "The last traded price (an unsigned integer)"
+  lastTradedPrice: String!
 }
 
 "Timestamps for when the market changes state"
@@ -320,12 +338,14 @@ type MarketTimestamps {
 type LiquidityProviderFeeShare {
   "The liquidity provider party ID"
   party: Party!
-  "The share owned by this liquidity provider (float)"
+  "The share owned by this liquidity provider"
   equityLikeShare: String!
   "The average entry valuation of the liquidity provider for the market"
   averageEntryValuation: String!
   "The average liquidity score"
   averageScore: String!
+  "The virtual stake for this liquidity provider"
+  virtualStake: String!
 }
 
 "The equity like share of liquidity fee for each liquidity provider"
@@ -403,7 +423,7 @@ type Query {
   entities(txHash: String!): Entities!
 
   "Get data for a specific epoch, if ID omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
-  epoch(id: ID): Epoch!
+  epoch(id: ID, block: String): Epoch!
 
   "List reward summary per epoch by asset, market, reward type"
   epochRewardSummaries(
@@ -618,7 +638,7 @@ type Query {
     "ID for an order"
     id: ID!
 
-    "Version of the order (omitted or 0 for most recent; 1 for original; 2 for first amendment, etc)"
+    "Order version number, starting at 1 for the original order and incrementing by 1 for each successful amendment; omitted for the most recent version."
     version: Int
   ): Order!
 
@@ -677,6 +697,17 @@ type Query {
   "Get statistics about the Vega node"
   statistics: Statistics!
 
+  "Get stop order by ID"
+  stopOrder(id: ID!): StopOrder
+
+  "Get a list of stop orders. If provided, the filter will be applied to the list of stop orders to restrict the results."
+  stopOrders(
+    "Optional filter to restrict the results of the list."
+    filter: StopOrderFilter,
+    "Optional pagination information"
+    pagination: Pagination
+  ): StopOrderConnection
+
   "List markets in a succession line"
   successorMarkets(
     "Market ID of any market in the succession line"
@@ -687,7 +718,9 @@ type Query {
     When false, only the requested market and its children are returned.
     """
     fullHistory: Boolean,
-  ): [Market]
+    "Optional pagination information"
+    pagination: Pagination
+  ): SuccessorMarketConnection
 
   "Get a list of all trades and apply any given filters to the results"
   trades(
@@ -1866,6 +1899,9 @@ type Market {
   Optional: When a successor market is created, a fraction of the parent market's insurance pool can be transferred to the successor market
   """
   insurancePoolFraction: String
+
+  "Optional: Market ID of the successor to this market if one exists"
+  successorMarketID: ID
 }
 
 """
@@ -1962,7 +1998,6 @@ type ObservableMarketDepthUpdate {
   "Sequence number of the last update sent; useful for checking that no updates were missed."
   previousSequenceNumber: String!
 }
-
 
 "Represents a price on either the buy or sell side and all the orders at that price"
 type PriceLevel {
@@ -2359,6 +2394,77 @@ type Order {
 
   "Is this a reduce only order"
   reduceOnly: Boolean
+
+  "Details of an iceberg order"
+  icebergOrder: IcebergOrder
+}
+
+union StopOrderTrigger = StopOrderPrice | StopOrderTrailingPercentOffset
+
+"Price at which a stop order will trigger"
+type StopOrderPrice {
+  price: String!
+}
+
+"Percentage movement in the price at which a stop order will trigger."
+type StopOrderTrailingPercentOffset {
+  trailingPercentOffset: String!
+}
+
+"A stop order in Vega"
+type StopOrder {
+  "Hash of the stop order data"
+  id: ID!
+  "If OCO (one-cancels-other) order, the ID of the associated order."
+  ocoLinkId: ID
+  "Time at which the order will expire if an expiry time is set."
+  expiresAt: Timestamp
+  "If an expiry is set, what should the stop order do when it expires."
+  expiryStrategy: StopOrderExpiryStrategy
+  "Direction the price is moving to trigger the stop order."
+  triggerDirection: StopOrderTriggerDirection!
+  "Status of the stop order"
+  status: StopOrderStatus!
+  "Time the stop order was created."
+  createdAt: Timestamp!
+  "Time the stop order was last updated."
+  updatedAt: Timestamp
+  "Party that submitted the stop order."
+  partyId: ID!
+  "Market the stop order is for."
+  marketId: ID!
+  "Price movement that will trigger the stop order"
+  trigger: StopOrderTrigger
+  "Order to submit when the stop order is triggered."
+  submission: OrderSubmission!
+}
+
+"Details of the order that will be submitted when the stop order is triggered."
+type OrderSubmission {
+  "Market the order is for."
+  marketId: ID!
+  "The worst price the order will trade at (e.g. buy for price or less, sell for price or more) (uint64)"
+  price: String!
+  "Total number of units that may be bought or sold (immutable) (uint64)"
+  size: String!
+  "Whether the order is to buy or sell"
+  side: Side!
+  "The timeInForce of order (determines how and if it executes, and whether it persists on the book)"
+  timeInForce: OrderTimeInForce!
+  "Expiration time of this order (ISO-8601 RFC3339+Nano formatted date)"
+  expiresAt: Timestamp!
+  "The order type"
+  type: OrderType!
+  "The external reference (if available) for the order"
+  reference: String
+  "PeggedOrder contains the details about a pegged order"
+  peggedOrder: PeggedOrder
+  "Is this a post only order"
+  postOnly: Boolean
+  "Is this a reduce only order"
+  reduceOnly: Boolean
+  "Details of an iceberg order"
+  icebergOrder: IcebergOrder
 }
 
 "An order update in Vega, if active it will be on the order book for the market"
@@ -2892,6 +2998,42 @@ enum OrderStatus {
   STATUS_PARKED
 }
 
+"Valid stop order statuses, these determine several states for a stop order that cannot be expressed with other fields in StopOrder."
+enum StopOrderStatus {
+  "Stop order has been submitted to the network but does not have a status yet"
+  STATUS_UNSPECIFIED
+  "Stop order is pending. This means the stop order has been accepted in the network, but the trigger conditions have not been met."
+  STATUS_PENDING
+  "Stop order has been cancelled. This could be by the trader or by the network."
+  STATUS_CANCELLED
+  "Stop order has been stopped. This means the trigger conditions have been met, but the stop order was not executed, and stopped."
+  STATUS_STOPPED
+  "Stop order has been triggered. This means the trigger conditions have been met, and the stop order was executed."
+  STATUS_TRIGGERED
+  "Stop order has expired. This means the trigger conditions have not been met and the stop order has expired."
+  STATUS_EXPIRED
+  "Stop order has been rejected. This means the stop order was not accepted by the network."
+  STATUS_REJECTED
+}
+
+"Valid stop order expiry strategies. The expiry strategy determines what happens to a stop order when it expires."
+enum StopOrderExpiryStrategy {
+  "The stop order expiry strategy has not been specified by the trader."
+  EXPIRY_STRATEGY_UNSPECIFIED
+  "The stop order will be cancelled when it expires."
+  EXPIRY_STRATEGY_CANCELS
+  "The stop order will be submitted when the expiry time is reached."
+  EXPIRY_STRATEGY_SUBMIT
+}
+
+"Valid stop order trigger direction. The trigger direction determines whether the price should rise above or fall below the stop order trigger."
+enum StopOrderTriggerDirection {
+  "The price should rise above the trigger."
+  TRIGGER_DIRECTION_RISES_ABOVE
+  "The price should fall below the trigger."
+  TRIGGER_DIRECTION_FALLS_BELOW
+}
+
 "Why the proposal was rejected by the core node"
 enum ProposalRejectionReason {
   "The specified close time is too early based on network parameters"
@@ -2972,6 +3114,18 @@ enum ProposalRejectionReason {
   PROPOSAL_ERROR_INVALID_FREEFORM
   "The ERC-20 address specified by this proposal is already in use by another asset"
   PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE
+  "The governance transfer proposal is invalid"
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID
+  "The governance transfer proposal has failed"
+  PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED
+  "The proposal for cancellation of an active governance transfer has failed"
+  PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID
+  "Validation of spot market proposal failed"
+  PROPOSAL_ERROR_INVALID_SPOT
+  "Spot trading is disabled"
+  PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
+  "Validation of successor market has failed"
+  PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
 }
 
 "Why the order was rejected by the core node"
@@ -3939,7 +4093,7 @@ type LiquidityOrderReference {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvision {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   party: Party!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -3967,7 +4121,7 @@ type LiquidityProvision {
 "The command to be sent to the chain for a liquidity provision submission"
 type LiquidityProvisionUpdate {
   "Unique identifier for the order (set by the system after consensus)"
-  id: ID
+  id: ID!
   "The party making this commitment"
   partyID: ID!
   "When the liquidity provision was initially created (formatted RFC3339)"
@@ -4197,7 +4351,7 @@ type PartyConnection {
   pageInfo: PageInfo!
 }
 
-"Edge type containing the order and cursor information returned by a OrderConnection"
+"Edge type containing the market and cursor information returned by a MarketConnection"
 type MarketEdge {
   "The market"
   node: Market!
@@ -4213,11 +4367,42 @@ type MarketConnection {
   pageInfo: PageInfo!
 }
 
+type SuccessorMarket {
+  "The market"
+  market: Market!
+  "Proposals for child markets"
+  proposals: [Proposal]
+}
+
+"Edge type containing the market and cursor information returned by a MarketConnection"
+type SuccessorMarketEdge {
+  "The market"
+  node: SuccessorMarket!
+  "The cursor for this market"
+  cursor: String!
+}
+
+"Connection type for retrieving cursor-based paginated market information"
+type SuccessorMarketConnection {
+  "The markets in this connection"
+  edges: [SuccessorMarketEdge!]!
+  "The pagination information"
+  pageInfo: PageInfo!
+}
+
 "Edge type containing the order and cursor information returned by a OrderConnection"
 type OrderEdge {
   "The order"
   node: Order!
   "The cursor for this order"
+  cursor: String
+}
+
+"Edge type containing the stop order and cursor information returned by a StopOrderConnection"
+type StopOrderEdge {
+  "The stop order"
+  node: StopOrder
+  "The cursor for this stop order"
   cursor: String
 }
 
@@ -4233,6 +4418,20 @@ input OrderFilter {
   as per https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0024-OSTA-order_status.md
   """
   liveOnly: Boolean
+}
+
+"Filter to be applied when querying a list of stop orders. If multiple criteria are specified, e.g. parties and markets, then the filter is applied as an AND."
+input StopOrderFilter {
+  "Zero or more party IDs to filter by"
+  parties: [ID!]
+  "Zero or more market IDs to filter by"
+  markets: [ID!]
+  "Zero or more order status to filter by"
+  status: [StopOrderStatus!]
+  "Zero or more expiry strategies to filter by"
+  expiryStrategy: [StopOrderExpiryStrategy!]
+  "Date range to retrieve order from/to. Start and end time should be expressed as an integer value of nano-seconds past the Unix epoch"
+  dateRange: DateRange
 }
 
 input OrderByPartyIdsFilter {
@@ -4257,6 +4456,14 @@ type OrderConnection {
   edges: [OrderEdge!]
   "The pagination information"
   pageInfo: PageInfo
+}
+
+"Connection type for retrieving cursory-based paginated stop order information"
+type StopOrderConnection {
+  "The stop orders in this connection"
+  edges: [StopOrderEdge!]
+  "The pagination information"
+    pageInfo: PageInfo
 }
 
 "Edge type containing the position and cursor information returned by a PositionConnection"

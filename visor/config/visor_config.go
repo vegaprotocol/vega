@@ -36,14 +36,14 @@ const (
 )
 
 /*
-description: Allows you to define the name of the asset to be downloaded.
+description: Defines the name of the asset to be downloaded.
 */
 type AssetsConfig struct {
-	// description: Name of the asset on Github.
+	// description: Name of the asset file on Github.
 	Name string `toml:"name"`
 	/*
 		description: |
-			Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
+			Name of the binary if the asset is a zip file and the binary is included inside of it.
 	*/
 	BinaryName *string `toml:"binaryName"`
 }
@@ -57,7 +57,7 @@ func (a AssetsConfig) GetBinaryPath() string {
 }
 
 /*
-description: Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
+description: Determines if the assets should be automatically downloaded and installed. If so this defines the assets that should be downloaded from GitHub for a specific release.
 
 example:
 
@@ -73,7 +73,7 @@ example:
 */
 type AutoInstallConfig struct {
 	/*
-		description: Whether or not autoinstall should be used
+		description: Auto Install flag
 		default: true
 	*/
 	Enabled bool `toml:"enabled"`
@@ -88,7 +88,9 @@ type AutoInstallConfig struct {
 	*/
 	GithubRepository string `toml:"repository"`
 	/*
-		description: Definitions of the asset that should be downloaded from the GitHub repository.
+		description: |
+			Definition of the asset that should be downloaded from the GitHub repository.
+			If the asset is contained in a zip file, the name of the binary is given.
 		example:
 			type: toml
 			value: |
@@ -127,8 +129,7 @@ type VisorConfigFile struct {
 	MaxNumberOfFirstConnectionRetries int `toml:"maxNumberOfFirstConnectionRetries,optional"`
 	/*
 		description: |
-			Visor starts and manages the processes of provided binaries.
-			This allows a user to define the maximum number of restarts in case any of
+			Defines the maximum number of restarts in case any of
 			the processes have failed before the Visor process fails.
 		note: |
 			The amount of time Visor waits between restarts can be set by `restartsDelaySeconds`.
@@ -143,9 +144,9 @@ type VisorConfigFile struct {
 	RestartsDelaySeconds int `toml:"restartsDelaySeconds,optional"`
 	/*
 		description: |
-			Number of seconds that Visor waits before it sends termination signal (SIGTERM) to running processes
+			Number of seconds that Visor waits before it sends a termination signal (SIGTERM) to running processes
 			that are ready for upgrade.
-			After the time has elapsed Visor stop the running binaries (SIGTERM).
+			After the time has elapsed Visor stops the running binaries (SIGTERM).
 		default: 0
 	*/
 	StopDelaySeconds int `toml:"stopDelaySeconds,optional"`
@@ -173,7 +174,7 @@ type VisorConfigFile struct {
 
 	/*
 		description: |
-			Allows you to define the assets that should be automatically downloaded from Github for a specific release.
+			Defines the assets that should be automatically downloaded from Github for a specific release.
 
 		example:
 			type: toml

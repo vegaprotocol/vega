@@ -25,13 +25,15 @@ import (
 )
 
 var (
-	withdrawalsKey        = (&types.PayloadBankingWithdrawals{}).Key()
-	depositsKey           = (&types.PayloadBankingDeposits{}).Key()
-	seenKey               = (&types.PayloadBankingSeen{}).Key()
-	assetActionsKey       = (&types.PayloadBankingAssetActions{}).Key()
-	recurringTransfersKey = (&types.PayloadBankingRecurringTransfers{}).Key()
-	scheduledTransfersKey = (&types.PayloadBankingScheduledTransfers{}).Key()
-	bridgeStateKey        = (&types.PayloadBankingBridgeState{}).Key()
+	withdrawalsKey           = (&types.PayloadBankingWithdrawals{}).Key()
+	depositsKey              = (&types.PayloadBankingDeposits{}).Key()
+	seenKey                  = (&types.PayloadBankingSeen{}).Key()
+	assetActionsKey          = (&types.PayloadBankingAssetActions{}).Key()
+	recurringTransfersKey    = (&types.PayloadBankingRecurringTransfers{}).Key()
+	scheduledTransfersKey    = (&types.PayloadBankingScheduledTransfers{}).Key()
+	bridgeStateKey           = (&types.PayloadBankingBridgeState{}).Key()
+	recurringGovTransfersKey = (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
+	scheduledGovTransfersKey = (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
 
 	hashKeys = []string{
 		withdrawalsKey,
@@ -41,17 +43,21 @@ var (
 		recurringTransfersKey,
 		scheduledTransfersKey,
 		bridgeStateKey,
+		recurringGovTransfersKey,
+		scheduledGovTransfersKey,
 	}
 )
 
 type bankingSnapshotState struct {
-	serialisedWithdrawals        []byte
-	serialisedDeposits           []byte
-	serialisedSeen               []byte
-	serialisedAssetActions       []byte
-	serialisedRecurringTransfers []byte
-	serialisedScheduledTransfers []byte
-	serialisedBridgeState        []byte
+	serialisedWithdrawals           []byte
+	serialisedDeposits              []byte
+	serialisedSeen                  []byte
+	serialisedAssetActions          []byte
+	serialisedRecurringTransfers    []byte
+	serialisedScheduledTransfers    []byte
+	serialisedBridgeState           []byte
+	serialisedGovRecurringTransfers []byte
+	serialisedGovScheduledTransfers []byte
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -94,6 +100,26 @@ func (e *Engine) serialiseScheduledTransfers() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadBankingScheduledTransfers{
 			BankingScheduledTransfers: e.getScheduledTransfers(),
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (e *Engine) serialiseRecurringGovernanceTransfers() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingRecurringGovernanceTransfers{
+			BankingRecurringGovernanceTransfers: e.getRecurringGovernanceTransfers(),
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (e *Engine) serialiseScheduledGovernanceTransfers() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingScheduledGovernanceTransfers{
+			BankingScheduledGovernanceTransfers: e.getScheduledGovernanceTransfers(),
 		},
 	}
 
@@ -194,6 +220,10 @@ func (e *Engine) serialise(k string) ([]byte, error) {
 		return e.serialiseK(e.serialiseRecurringTransfers, &e.bss.serialisedRecurringTransfers)
 	case scheduledTransfersKey:
 		return e.serialiseK(e.serialiseScheduledTransfers, &e.bss.serialisedScheduledTransfers)
+	case recurringGovTransfersKey:
+		return e.serialiseK(e.serialiseRecurringGovernanceTransfers, &e.bss.serialisedGovRecurringTransfers)
+	case scheduledGovTransfersKey:
+		return e.serialiseK(e.serialiseScheduledGovernanceTransfers, &e.bss.serialisedGovScheduledTransfers)
 	case bridgeStateKey:
 		return e.serialiseK(e.serialiseBridgeState, &e.bss.serialisedBridgeState)
 	default:
@@ -224,6 +254,10 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers, p)
 	case *types.PayloadBankingScheduledTransfers:
 		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers, p)
+	case *types.PayloadBankingRecurringGovernanceTransfers:
+		return nil, e.restoreRecurringGovernanceTransfers(ctx, pl.BankingRecurringGovernanceTransfers, p)
+	case *types.PayloadBankingScheduledGovernanceTransfers:
+		return nil, e.restoreScheduledGovernanceTransfers(ctx, pl.BankingScheduledGovernanceTransfers, p)
 	case *types.PayloadBankingBridgeState:
 		return nil, e.restoreBridgeState(pl.BankingBridgeState, p)
 	default:
@@ -240,6 +274,13 @@ func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *check
 	return err
 }
 
+func (e *Engine) restoreRecurringGovernanceTransfers(ctx context.Context, transfers []*checkpoint.GovernanceTransfer, p *types.Payload) error {
+	var err error
+	_ = e.loadRecurringGovernanceTransfers(ctx, transfers)
+	e.bss.serialisedGovRecurringTransfers, err = proto.Marshal(p.IntoProto())
+	return err
+}
+
 func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*checkpoint.ScheduledTransferAtTime, p *types.Payload) error {
 	var err error
 
@@ -249,6 +290,13 @@ func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*che
 		return err
 	}
 	e.bss.serialisedScheduledTransfers, err = proto.Marshal(p.IntoProto())
+	return err
+}
+
+func (e *Engine) restoreScheduledGovernanceTransfers(ctx context.Context, transfers []*checkpoint.ScheduledGovernanceTransferAtTime, p *types.Payload) error {
+	var err error
+	e.loadScheduledGovernanceTransfers(ctx, transfers)
+	e.bss.serialisedGovScheduledTransfers, err = proto.Marshal(p.IntoProto())
 	return err
 }
 

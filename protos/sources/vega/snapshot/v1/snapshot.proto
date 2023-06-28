@@ -32,8 +32,9 @@ message Snapshot {
   bytes metadata = 5;
 }
 
-// NodeHash represents an exported node from the AVL tree and contains all the data necessary to reconstruct an identical copy of the
-// AVL tree after it's been serialised
+// NodeHash represents an exported node from the AVL tree and contains all the
+// data necessary to reconstruct an identical copy of the AVL tree after it's
+// been serialised
 message NodeHash {
   // Node's full key, for example epoch.all
   string key = 3;
@@ -41,16 +42,20 @@ message NodeHash {
   string hash = 4;
   // Height of the node in the tree
   int32 height = 5;
-  // Version of that node i.e., how many times its value has changed during tree updates
+  // Version of that node i.e., how many times its value has changed during tree
+  // updates
   int64 version = 6;
-  // Whether or not the node contains a snapshot payload, only leaf nodes in the AVL contain payloads
+  // Whether or not the node contains a snapshot payload, only leaf nodes in the
+  // AVL contain payloads
   bool is_leaf = 7;
 }
 
 message Metadata {
   int64 version = 1;
   repeated string chunk_hashes = 2;
-  repeated NodeHash node_hashes = 3; // hashes used by snapshot engine, different to chunk hash if data was split up, or combined into a single chunk
+  repeated NodeHash node_hashes =
+      3; // hashes used by snapshot engine, different to chunk hash if data was
+         // split up, or combined into a single chunk
 }
 
 // Chunk is simply an as-is chunk belonging to a snapshot
@@ -117,8 +122,12 @@ message Payload {
     SettlementState settlement_state = 57;
     LiquidityScores liquidity_scores = 58;
     SpotLiquidityTarget spot_liquidity_target = 59;
-    EthContractCallResults eth_contract_call_results = 60;
-    EthOracleVerifierLastBlock eth_oracle_verifier_last_block = 61;
+    BankingRecurringGovernanceTransfers banking_recurring_governance_transfers =
+        60;
+    BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers =
+        61;
+    EthContractCallResults eth_contract_call_results = 62;
+    EthOracleVerifierLastBlock eth_oracle_verifier_last_block = 63;
   }
 }
 
@@ -162,9 +171,7 @@ message LiquiditySupplied {
   repeated LiquidityOffsetProbabilityPair ask_cache = 4;
 }
 
-message OracleDataBatch {
-  repeated OracleData oracle_data = 1;
-}
+message OracleDataBatch { repeated OracleData oracle_data = 1; }
 
 message OracleData {
   repeated vega.data.v1.Signer signers = 1;
@@ -177,9 +184,7 @@ message OracleDataPair {
   string value = 2;
 }
 
-message Witness {
-  repeated Resource resources = 1;
-}
+message Witness { repeated Resource resources = 1; }
 
 message Resource {
   string id = 1;
@@ -188,29 +193,17 @@ message Resource {
   uint32 state = 4;
 }
 
-message EventForwarder {
-  repeated string acked_events = 1;
-}
+message EventForwarder { repeated string acked_events = 1; }
 
-message CollateralAccounts {
-  repeated vega.Account accounts = 1;
-}
+message CollateralAccounts { repeated vega.Account accounts = 1; }
 
-message CollateralAssets {
-  repeated vega.Asset assets = 1;
-}
+message CollateralAssets { repeated vega.Asset assets = 1; }
 
-message ActiveAssets {
-  repeated vega.Asset assets = 1;
-}
+message ActiveAssets { repeated vega.Asset assets = 1; }
 
-message PendingAssets {
-  repeated vega.Asset assets = 1;
-}
+message PendingAssets { repeated vega.Asset assets = 1; }
 
-message PendingAssetUpdates {
-  repeated vega.Asset assets = 1;
-}
+message PendingAssetUpdates { repeated vega.Asset assets = 1; }
 
 message Withdrawal {
   string ref = 1;
@@ -229,13 +222,9 @@ message TxRef {
   uint64 log_index = 4;
 }
 
-message BankingWithdrawals {
-  repeated Withdrawal withdrawals = 1;
-}
+message BankingWithdrawals { repeated Withdrawal withdrawals = 1; }
 
-message BankingDeposits {
-  repeated Deposit deposit = 1;
-}
+message BankingDeposits { repeated Deposit deposit = 1; }
 
 message BankingSeen {
   repeated string refs = 1;
@@ -254,30 +243,29 @@ message BankingScheduledTransfers {
   repeated vega.checkpoint.v1.ScheduledTransferAtTime transfers_at_time = 1;
 }
 
-message BankingBridgeState {
-  vega.checkpoint.v1.BridgeState bridge_state = 1;
+message BankingRecurringGovernanceTransfers {
+  repeated vega.checkpoint.v1.GovernanceTransfer recurring_transfers = 1;
 }
 
-message Checkpoint {
-  int64 next_cp = 1;
+message BankingScheduledGovernanceTransfers {
+  repeated vega.checkpoint.v1.ScheduledGovernanceTransferAtTime
+      transfers_at_time = 1;
 }
 
-message DelegationLastReconciliationTime {
-  int64 last_reconciliation_time = 1;
-}
+message BankingBridgeState { vega.checkpoint.v1.BridgeState bridge_state = 1; }
 
-message DelegationActive {
-  repeated vega.Delegation delegations = 1;
-}
+message Checkpoint { int64 next_cp = 1; }
+
+message DelegationLastReconciliationTime { int64 last_reconciliation_time = 1; }
+
+message DelegationActive { repeated vega.Delegation delegations = 1; }
 
 message DelegationPending {
   repeated vega.Delegation delegations = 1;
   repeated vega.Delegation undelegation = 2;
 }
 
-message DelegationAuto {
-  repeated string parties = 1;
-}
+message DelegationAuto { repeated string parties = 1; }
 
 message ProposalData {
   vega.Proposal proposal = 1;
@@ -286,17 +274,11 @@ message ProposalData {
   repeated vega.Vote invalid = 4;
 }
 
-message GovernanceEnacted {
-  repeated ProposalData proposals = 1;
-}
+message GovernanceEnacted { repeated ProposalData proposals = 1; }
 
-message GovernanceActive {
-  repeated ProposalData proposals = 1;
-}
+message GovernanceActive { repeated ProposalData proposals = 1; }
 
-message GovernanceNode {
-  repeated vega.Proposal proposals = 1;
-}
+message GovernanceNode { repeated vega.Proposal proposals = 1; }
 
 message StakingAccount {
   string party = 1;
@@ -319,9 +301,7 @@ message MatchingBook {
   uint64 batch_id = 6;
 }
 
-message NetParams {
-  repeated vega.NetworkParameter params = 1;
-}
+message NetParams { repeated vega.NetworkParameter params = 1; }
 
 message DecimalMap {
   int64 key = 1;
@@ -461,15 +441,48 @@ message Market {
   repeated string parties = 21;
   bool closed = 22;
   bool succeeded = 23;
+  StopOrders stop_orders = 24;
+  repeated vega.Order expiring_stop_orders = 25;
 }
 
-message PeggedOrders {
-  repeated vega.Order parked_orders = 2;
+message OrdersAtPrice {
+  string price = 1;
+  repeated string orders = 2;
 }
+
+message PricedStopOrders {
+  repeated OrdersAtPrice falls_bellow = 1;
+  repeated OrdersAtPrice rises_above = 2;
+}
+
+message TrailingStopOrders {
+  string last_seen_price = 1;
+  repeated OffsetsAtPrice falls_bellow = 2;
+  repeated OffsetsAtPrice rises_above = 3;
+}
+
+message OrdersAtOffset {
+  string offset = 1;
+  repeated string orders = 2;
+}
+
+message OffsetsAtPrice {
+  string price = 1;
+  repeated OrdersAtOffset offsets = 2;
+}
+
+message StopOrders {
+  repeated events.v1.StopOrderEvent stop_orders = 1;
+  PricedStopOrders priced_stop_orders = 2;
+  TrailingStopOrders trailing_stop_orders = 3;
+}
+
+message PeggedOrders { repeated vega.Order parked_orders = 2; }
 
 message ExecutionMarkets {
   repeated Market markets = 1;
   repeated SpotMarket spot_markets = 2;
+  repeated vega.checkpoint.v1.MarketState settled_markets = 3;
 }
 
 message Position {
@@ -617,9 +630,7 @@ message NotarySigs {
   bool pending = 5;
 }
 
-message Notary {
-  repeated NotarySigs notary_sigs = 1;
-}
+message Notary { repeated NotarySigs notary_sigs = 1; }
 
 message StakeVerifierDeposited {
   repeated StakeVerifierPending pending_deposited = 1;
@@ -825,7 +836,8 @@ message ERC20MultiSigTopologyVerified {
 
 message ERC20MultiSigTopologyPending {
   repeated vega.events.v1.ERC20MultiSigSignerEvent pending_signers = 1;
-  repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set = 2;
+  repeated vega.events.v1.ERC20MultiSigThresholdSetEvent pending_threshold_set =
+      2;
   repeated string witnessed_signers = 3;
   repeated string witnessed_threshold_sets = 4;
 }
@@ -855,9 +867,7 @@ message ProofOfWorkParams {
   int64 until_block = 7;
 }
 
-message ProofOfWorkState {
-  repeated ProofOfWorkBlockState pow_state = 1;
-}
+message ProofOfWorkState { repeated ProofOfWorkBlockState pow_state = 1; }
 
 message ProofOfWorkBlockState {
   uint64 block_height = 1;

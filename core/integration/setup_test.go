@@ -60,10 +60,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-var (
-	marketConfig    = market.NewMarketConfig()
-	successorConfig = market.NewSuccessorConfig()
-)
+var marketConfig = market.NewMarketConfig()
 
 type executionTestSetup struct {
 	cfg              execution.Config
@@ -228,6 +225,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
 	)
 	return execsetup
 }
@@ -272,7 +273,7 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
 			Watcher: e.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
 		netparams.WatchParam{
@@ -287,6 +288,32 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
 		},
+		// Liquidity version 2.
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Watcher: e.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Watcher: e.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Watcher: e.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		// End of liquidity version 2.
 		netparams.WatchParam{
 			Param:   netparams.MarketAuctionMinimumDuration,
 			Watcher: e.executionEngine.OnMarketAuctionMinimumDurationUpdate,
@@ -338,6 +365,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: e.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketSuccessorLaunchWindow,
+			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)
 }

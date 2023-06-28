@@ -123,6 +123,7 @@ type GRPCServer struct {
 	protocolUpgradeService     *service.ProtocolUpgrade
 	networkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
+	stopOrderService           *service.StopOrders
 
 	eventObserver *eventObserver
 
@@ -173,6 +174,7 @@ func NewGRPCServer(
 	protocolUpgradeService *service.ProtocolUpgrade,
 	networkHistoryService NetworkHistoryService,
 	coreSnapshotService *service.SnapshotData,
+	stopOrderService *service.StopOrders,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -220,6 +222,7 @@ func NewGRPCServer(
 		protocolUpgradeService:     protocolUpgradeService,
 		networkHistoryService:      networkHistoryService,
 		coreSnapshotService:        coreSnapshotService,
+		stopOrderService:           stopOrderService,
 
 		eventObserver: &eventObserver{
 			log:          log,
@@ -422,6 +425,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		protocolUpgradeService:     g.protocolUpgradeService,
 		NetworkHistoryService:      g.networkHistoryService,
 		coreSnapshotService:        g.coreSnapshotService,
+		stopOrderService:           g.stopOrderService,
 	}
 
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvcV2)

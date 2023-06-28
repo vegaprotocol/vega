@@ -12,14 +12,14 @@ const namedLogger = "admin.server"
 
 // ServerConfig contains the configuration for the admin server.
 type ServerConfig struct {
-	SocketPath string `long:"socket-path" description:"Listen for connection on UNIX socket path <file-path>"`
-	HTTPPath   string `long:"http-path" description:"Http path of the socket HTTP RPC server"`
+	SocketPath string `description:"Listen for connection on UNIX socket path <file-path>" long:"socket-path"`
+	HTTPPath   string `description:"Http path of the socket HTTP RPC server"               long:"http-path"`
 }
 
 // Config represents the configuration of the admin package.
 type Config struct {
 	Level  encoding.LogLevel `long:"log-level"`
-	Server ServerConfig      `group:"Server" namespace:"server"`
+	Server ServerConfig      `group:"Server"   namespace:"server"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.

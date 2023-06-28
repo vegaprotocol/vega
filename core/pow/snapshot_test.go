@@ -162,7 +162,7 @@ func TestSnapshotViaEngine(t *testing.T) {
 	snap.ClearAndInitialise()
 	defer snap.Close()
 
-	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(2))
 	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
 	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
 	e.UpdateSpamPoWNumberOfTxPerBlock(context.Background(), num.NewUint(1))

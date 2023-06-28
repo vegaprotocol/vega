@@ -148,6 +148,19 @@ message RecurringTransfers {
   repeated vega.events.v1.Transfer recurring_transfers = 1;
 }
 
+message GovernanceTransfer {
+  string id = 1;
+  string reference = 2;
+  vega.events.v1.Transfer.Status status = 3;
+  int64 timestamp = 4;
+  vega.NewTransferConfiguration config = 5;
+}
+
+message ScheduledGovernanceTransferAtTime {
+  int64 deliver_on = 1;
+  repeated GovernanceTransfer transfers = 2;
+}
+
 message Banking {
   repeated ScheduledTransferAtTime transfers_at_time = 1;
   RecurringTransfers recurring_transfers = 2;
@@ -155,6 +168,8 @@ message Banking {
   repeated AssetAction asset_actions = 4;
   uint64 last_seen_eth_block = 5;
   repeated string seen_refs = 6;
+  repeated ScheduledGovernanceTransferAtTime governance_transfers_at_time = 7;
+  repeated GovernanceTransfer recurring_governance_transfers = 8;
 }
 
 message BridgeState {

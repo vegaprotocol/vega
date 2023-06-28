@@ -50,7 +50,7 @@ var (
 	ErrParentMarketAlreadySucceeded              = errors.New("the market was already succeeded by a prior proposal")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/governance Markets,StakingAccounts,Assets,TimeService,Witness,NetParams,Banking
 
 // Broker - event bus.
 type Broker interface {
@@ -69,6 +69,7 @@ type Markets interface {
 	StartOpeningAuction(ctx context.Context, marketID string) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	SpotsMarketsEnabled() bool
+	IsSucceeded(mktID string) bool
 }
 
 // StakingAccounts ...
@@ -85,6 +86,11 @@ type Assets interface {
 	SetPendingListing(ctx context.Context, assetID string) error
 	ValidateAsset(assetID string) error
 	ExistsForEthereumAddress(address string) bool
+}
+
+type Banking interface {
+	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
+	VerifyCancelGovernanceTransfer(transferID string) error
 }
 
 // TimeService ...
@@ -121,6 +127,7 @@ type Engine struct {
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
+	banking                Banking
 
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
@@ -142,6 +149,7 @@ func NewEngine(
 	witness Witness,
 	markets Markets,
 	netp NetParams,
+	banking Banking,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
@@ -159,6 +167,7 @@ func NewEngine(
 		markets:                markets,
 		netp:                   netp,
 		gss:                    &governanceSnapshotState{},
+		banking:                banking,
 	}
 	return e
 }
@@ -268,6 +277,10 @@ func (e *Engine) preEnactProposal(ctx context.Context, p *proposal) (te *ToEnact
 		te.updatedAsset = asset
 	case types.ProposalTermsTypeNewFreeform:
 		te.f = &ToEnactFreeform{}
+	case types.ProposalTermsTypeNewTransfer:
+		te.t = &ToEnactTransfer{}
+	case types.ProposalTermsTypeCancelTransfer:
+		te.c = &ToEnactCancelTransfer{}
 	}
 	return //nolint:nakedret
 }
@@ -585,15 +598,22 @@ func (e *Engine) intoToSubmit(ctx context.Context, p *types.Proposal, enct *enac
 				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketDoesNotExist)
 				return nil, fmt.Errorf("%w, %v", ErrParentMarketDoesNotExist, types.ProposalErrorInvalidSuccessorMarket)
 			}
+			// proposal to succeed a market that was already succeeded
+			if e.markets.IsSucceeded(suc.ParentID) {
+				e.rejectProposal(ctx, p, types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
+				return nil, fmt.Errorf("%w, %v", ErrParentMarketAlreadySucceeded, types.ProposalErrorInvalidSuccessorMarket)
+			}
 			parent = &pm
 		}
-		closeTime := e.timeService.GetTimeNow().Truncate(time.Second)
+		closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
 		enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
 		auctionDuration := enactTime.Sub(closeTime)
 		if perr, err := validateNewMarketChange(newMarket, e.assets, true, e.netp, auctionDuration, enct, parent); err != nil {
 			e.rejectProposal(ctx, p, perr, err)
 			return nil, fmt.Errorf("%w, %v", err, perr)
 		}
+		// closeTime = e.timeService.GetTimeNow().Round(time.Second)
+		// auctionDuration = enactTime.Sub(closeTime)
 		mkt, perr, err := buildMarketFromProposal(p.ID, newMarket, e.netp, auctionDuration)
 		if err != nil {
 			e.rejectProposal(ctx, p, perr, err)
@@ -673,6 +693,11 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getUpdateNetworkParameterProposalParameters(), nil
 	case types.ProposalTermsTypeNewFreeform:
 		return e.getNewFreeformProposalParameters(), nil
+	case types.ProposalTermsTypeNewTransfer:
+		return e.getNewTransferProposalParameters(), nil
+	case types.ProposalTermsTypeCancelTransfer:
+		// for governance transfer cancellation reuse the governance transfer proposal params
+		return e.getNewTransferProposalParameters(), nil
 	case types.ProposalTermsTypeNewSpotMarket:
 		return e.getNewSpotMarketProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateSpotMarket:
@@ -973,6 +998,10 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return terms.GetUpdateAsset().Validate()
 	case types.ProposalTermsTypeUpdateNetworkParameter:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
+	case types.ProposalTermsTypeNewTransfer:
+		return e.validateGovernanceTransfer(terms.GetNewTransfer())
+	case types.ProposalTermsTypeCancelTransfer:
+		return e.validateCancelGovernanceTransfer(terms.GetCancelTransfer().Changes.TransferID)
 	case types.ProposalTermsTypeNewSpotMarket:
 		if !e.markets.SpotsMarketsEnabled() {
 			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
@@ -985,6 +1014,20 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	default:
 		return types.ProposalErrorUnspecified, nil
 	}
+}
+
+func (e *Engine) validateGovernanceTransfer(newTransfer *types.NewTransfer) (types.ProposalError, error) {
+	if err := e.banking.VerifyGovernanceTransfer(newTransfer.Changes); err != nil {
+		return types.ProporsalErrorInvalidGovernanceTransfer, err
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func (e *Engine) validateCancelGovernanceTransfer(transferID string) (types.ProposalError, error) {
+	if err := e.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
+		return types.ProporsalErrorFailedGovernanceTransferCancel, err
+	}
+	return types.ProposalErrorUnspecified, nil
 }
 
 func (e *Engine) validateNewAssetProposal(newAsset *types.NewAsset) (types.ProposalError, error) {
@@ -1165,7 +1208,7 @@ func (e *Engine) updatedMarketFromProposal(p *proposal) (*types.Market, types.Pr
 		return nil, types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
 
-	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp}); err != nil {
+	if perr, err := validateUpdateMarketChange(terms, &enactmentTime{current: p.Terms.EnactmentTimestamp, shouldNotVerify: true}); err != nil {
 		return nil, perr, err
 	}
 

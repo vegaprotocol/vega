@@ -22,10 +22,8 @@ import (
 
 type epochResolver VegaResolverRoot
 
-func (r *epochResolver) ID(ctx context.Context, obj *proto.Epoch) (string, error) {
-	id := strconv.FormatUint(obj.Seq, 10)
-
-	return id, nil
+func (r *epochResolver) ID(_ context.Context, obj *proto.Epoch) (string, error) {
+	return strconv.FormatUint(obj.Seq, 10), nil
 }
 
 func (r *epochResolver) ValidatorsConnection(ctx context.Context, epoch *proto.Epoch, pagination *v2.Pagination) (*v2.NodesConnection, error) {

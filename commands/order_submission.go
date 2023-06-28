@@ -99,16 +99,16 @@ func checkOrderSubmission(cmd *commandspb.OrderSubmission) Errors {
 	// iceberg checks
 	if cmd.IcebergOpts != nil {
 		iceberg := cmd.IcebergOpts
-		if iceberg.InitialPeakSize < iceberg.MinimumPeakSize {
-			errs.AddForProperty("order_submission.iceberg_opts.initial_peak_size", errors.New("must be >= order_submission.iceberg_opts.minimum_peak_size"))
+		if iceberg.PeakSize < iceberg.MinimumVisibleSize {
+			errs.AddForProperty("order_submission.iceberg_opts.peak_size", errors.New("must be >= order_submission.iceberg_opts.minimum_visible_size"))
 		}
 
-		if iceberg.MinimumPeakSize <= 0 {
-			errs.AddForProperty("order_submission.iceberg_opts.minimum_peak_size", ErrMustBePositive)
+		if iceberg.MinimumVisibleSize <= 0 {
+			errs.AddForProperty("order_submission.iceberg_opts.minimum_visible_size", ErrMustBePositive)
 		}
 
-		if iceberg.InitialPeakSize > cmd.Size {
-			errs.AddForProperty("order_submission.iceberg_opts.initial_peak_size", errors.New("must be <= order_submission.size"))
+		if iceberg.PeakSize > cmd.Size {
+			errs.AddForProperty("order_submission.iceberg_opts.peak_size", errors.New("must be <= order_submission.size"))
 		}
 
 		if cmd.Type != types.Order_TYPE_LIMIT {

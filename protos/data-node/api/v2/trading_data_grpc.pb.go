@@ -53,6 +53,15 @@ type TradingDataServiceClient interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(ctx context.Context, in *ObserveOrdersRequest, opts ...grpc.CallOption) (TradingDataService_ObserveOrdersClient, error)
+	// Get stop order
+	//
+	// Get a stop order by its ID. A stop order's ID will be the SHA3-256 hash of the signature that the order was submitted with.
+	// A stop order's ID is likely to be different from the ID of the order that will be submitted when the stop is triggered.
+	GetStopOrder(ctx context.Context, in *GetStopOrderRequest, opts ...grpc.CallOption) (*GetStopOrderResponse, error)
+	// List stop orders
+	//
+	// Get a list of stop orders that match the given filters
+	ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: List positions
 	//
@@ -593,6 +602,24 @@ func (x *tradingDataServiceObserveOrdersClient) Recv() (*ObserveOrdersResponse, 
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *tradingDataServiceClient) GetStopOrder(ctx context.Context, in *GetStopOrderRequest, opts ...grpc.CallOption) (*GetStopOrderResponse, error) {
+	out := new(GetStopOrderResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/GetStopOrder", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingDataServiceClient) ListStopOrders(ctx context.Context, in *ListStopOrdersRequest, opts ...grpc.CallOption) (*ListStopOrdersResponse, error) {
+	out := new(ListStopOrdersResponse)
+	err := c.cc.Invoke(ctx, "/datanode.api.v2.TradingDataService/ListStopOrders", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 // Deprecated: Do not use.
@@ -1689,6 +1716,15 @@ type TradingDataServiceServer interface {
 	//
 	// Subscribe to a stream of orders
 	ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error
+	// Get stop order
+	//
+	// Get a stop order by its ID. A stop order's ID will be the SHA3-256 hash of the signature that the order was submitted with.
+	// A stop order's ID is likely to be different from the ID of the order that will be submitted when the stop is triggered.
+	GetStopOrder(context.Context, *GetStopOrderRequest) (*GetStopOrderResponse, error)
+	// List stop orders
+	//
+	// Get a list of stop orders that match the given filters
+	ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error)
 	// Deprecated: Do not use.
 	// Deprecated: List positions
 	//
@@ -2140,6 +2176,12 @@ func (UnimplementedTradingDataServiceServer) ListOrderVersions(context.Context, 
 func (UnimplementedTradingDataServiceServer) ObserveOrders(*ObserveOrdersRequest, TradingDataService_ObserveOrdersServer) error {
 	return status.Errorf(codes.Unimplemented, "method ObserveOrders not implemented")
 }
+func (UnimplementedTradingDataServiceServer) GetStopOrder(context.Context, *GetStopOrderRequest) (*GetStopOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStopOrder not implemented")
+}
+func (UnimplementedTradingDataServiceServer) ListStopOrders(context.Context, *ListStopOrdersRequest) (*ListStopOrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListStopOrders not implemented")
+}
 func (UnimplementedTradingDataServiceServer) ListPositions(context.Context, *ListPositionsRequest) (*ListPositionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPositions not implemented")
 }
@@ -2529,6 +2571,42 @@ type tradingDataServiceObserveOrdersServer struct {
 
 func (x *tradingDataServiceObserveOrdersServer) Send(m *ObserveOrdersResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _TradingDataService_GetStopOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStopOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).GetStopOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/GetStopOrder",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).GetStopOrder(ctx, req.(*GetStopOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingDataService_ListStopOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStopOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingDataServiceServer).ListStopOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/datanode.api.v2.TradingDataService/ListStopOrders",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingDataServiceServer).ListStopOrders(ctx, req.(*ListStopOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _TradingDataService_ListPositions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -4080,6 +4158,14 @@ var TradingDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListOrderVersions",
 			Handler:    _TradingDataService_ListOrderVersions_Handler,
+		},
+		{
+			MethodName: "GetStopOrder",
+			Handler:    _TradingDataService_GetStopOrder_Handler,
+		},
+		{
+			MethodName: "ListStopOrders",
+			Handler:    _TradingDataService_ListStopOrders_Handler,
 		},
 		{
 			MethodName: "ListPositions",

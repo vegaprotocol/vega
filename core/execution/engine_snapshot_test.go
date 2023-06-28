@@ -15,7 +15,9 @@ package execution_test
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"testing"
+	"time"
 
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 
@@ -27,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/execution/common/mocks"
 	"code.vegaprotocol.io/vega/core/types"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -99,6 +102,8 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService := mocks.NewMockCollateral(ctrl)
 	collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
 	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
+	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
 	oracleService := mocks.NewMockOracleEngine(ctrl)
 	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -270,7 +275,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NotNil(t, engine)
 
 	marketConfig := getMarketConfig()
-	err := engine.SubmitMarket(ctx, marketConfig, "")
+	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
 
 	keys := engine.Keys()
@@ -326,4 +331,75 @@ func TestValidMarketSnapshot(t *testing.T) {
 			assert.True(t, bytes.Equal(b, b2))
 		}
 	}
+}
+
+func TestValidSettledMarketSnapshot(t *testing.T) {
+	ctx := vgcontext.WithTraceID(context.Background(), hex.EncodeToString([]byte("0deadbeef")))
+	engine, ctrl := createEngine(t)
+	defer ctrl.Finish()
+	assert.NotNil(t, engine)
+
+	marketConfig := getMarketConfig()
+	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
+	assert.NoError(t, err)
+	// fake settled market
+	marketConfig.State = types.MarketStateSettled
+	engine.OnTick(ctx, time.Now())
+
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
+
+	// Take the snapshot and hash
+	b, providers, err := engine.GetState(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, b)
+	assert.Len(t, providers, 5)
+
+	// Turn the bytes back into a payload and restore to a new engine
+	engine2, ctrl := createEngine(t)
+
+	defer ctrl.Finish()
+	assert.NotNil(t, engine2)
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(b, snap)
+	assert.NoError(t, err)
+	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
+	assert.Len(t, loadStateProviders, 5)
+	assert.NoError(t, err)
+
+	providerMap := map[string]map[string]types.StateProvider{}
+	for _, p := range loadStateProviders {
+		providerMap[p.Namespace().String()] = map[string]types.StateProvider{}
+		for _, k := range p.Keys() {
+			providerMap[p.Namespace().String()][k] = p
+		}
+	}
+
+	// Check the hashes are the same
+	state2, _, err := engine2.GetState(key)
+	assert.NoError(t, err)
+	assert.True(t, bytes.Equal(b, state2))
+
+	// now load the providers state
+	for _, p := range providers {
+		for _, k := range p.Keys() {
+			b, _, err := p.GetState(k)
+			require.NoError(t, err)
+
+			snap := &snapshot.Payload{}
+			err = proto.Unmarshal(b, snap)
+			assert.NoError(t, err)
+
+			toRestore := providerMap[p.Namespace().String()][k]
+			_, err = toRestore.LoadState(ctx, types.PayloadFromProto(snap))
+			require.NoError(t, err)
+			b2, _, err := toRestore.GetState(k)
+			require.NoError(t, err)
+			assert.True(t, bytes.Equal(b, b2))
+		}
+	}
+	// ensure the market is restored as settled
+	_, ok := engine2.GetMarket(marketConfig.ID, true)
+	require.True(t, ok)
 }

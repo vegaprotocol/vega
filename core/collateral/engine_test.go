@@ -2332,29 +2332,52 @@ func TestClearMarket(t *testing.T) {
 	party := "okparty"
 
 	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(10)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(12)
 
 	eng.IncrementBalance(context.Background(), eng.marketInsuranceID, num.NewUint(1000))
 
-	acc, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
-	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
-	_, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	_, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.Nil(t, err)
+	acc, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
+	assert.Nil(t, err)
+
+	// increment the balance on the lpFee account so we can check it gets cleared
+	liqAcc, _ := eng.GetMarketLiquidityFeeAccount(testMarketID, testMarketAsset)
+	eng.IncrementBalance(context.Background(), liqAcc.ID, num.NewUint(250))
 
 	parties := []string{party}
 
-	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
+	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties, false)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(responses))
 
+	// this will be from the margin account to the general account
 	assert.Equal(t, 1, len(responses[0].Entries))
-	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
-	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+	entry := responses[0].Entries[0]
+	assert.Equal(t, types.AccountTypeMargin, entry.FromAccount.Type)
+	assert.Equal(t, types.AccountTypeGeneral, entry.ToAccount.Type)
+	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
+	assert.Equal(t, num.NewUint(500), entry.ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), entry.Amount)
 
+	// This will be liquidity fees being cleared into the insurance account
 	assert.Equal(t, 1, len(responses[1].Entries))
-	assert.Equal(t, num.NewUint(1000), responses[1].Entries[0].ToAccountBalance)
-	assert.Equal(t, num.NewUint(1000), responses[1].Entries[0].ToAccountBalance)
+	entry = responses[1].Entries[0]
+	assert.Equal(t, types.AccountTypeFeesLiquidity, entry.FromAccount.Type)
+	assert.Equal(t, types.AccountTypeInsurance, entry.ToAccount.Type)
+	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
+	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
+	assert.Equal(t, num.NewUint(250), entry.Amount)
+
+	// This will be the insurance account going into the global rewards pool
+	entry = responses[2].Entries[0]
+	assert.Equal(t, types.AccountTypeInsurance, entry.FromAccount.Type)
+	assert.Equal(t, types.AccountTypeGlobalReward, entry.ToAccount.Type)
+	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
+	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
+	assert.Equal(t, num.NewUint(1250), entry.Amount)
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
@@ -2363,16 +2386,17 @@ func TestClearMarketNoMargin(t *testing.T) {
 	party := "okparty"
 
 	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	acc, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
 
 	parties := []string{party}
 
-	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
+	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties, false)
 
+	// we expect no ledger movements as all accounts to clear were empty
 	assert.NoError(t, err)
-	assert.Equal(t, len(responses), 1)
+	assert.Equal(t, len(responses), 0)
 }
 
 func TestRewardDepositOK(t *testing.T) {

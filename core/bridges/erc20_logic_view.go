@@ -113,6 +113,7 @@ func (e *ERC20LogicView) FindAssetList(
 	al *types.ERC20AssetList,
 	blockNumber,
 	logIndex uint64,
+	txHash string,
 ) error {
 	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
 		e.clt.CollateralBridgeAddress(), e.clt)
@@ -147,7 +148,8 @@ func (e *ERC20LogicView) FindAssetList(
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == logIndex {
+			uint64(iter.Event.Raw.Index) == logIndex &&
+			iter.Event.Raw.TxHash.Hex() == txHash {
 			event = iter.Event
 
 			break
@@ -172,6 +174,7 @@ func (e *ERC20LogicView) FindBridgeStopped(
 	al *types.ERC20EventBridgeStopped,
 	blockNumber,
 	logIndex uint64,
+	txHash string,
 ) error {
 	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
 		e.clt.CollateralBridgeAddress(), e.clt)
@@ -202,7 +205,8 @@ func (e *ERC20LogicView) FindBridgeStopped(
 
 	for iter.Next() {
 		if iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == logIndex {
+			uint64(iter.Event.Raw.Index) == logIndex &&
+			iter.Event.Raw.TxHash.Hex() == txHash {
 			event = iter.Event
 
 			break
@@ -227,6 +231,7 @@ func (e *ERC20LogicView) FindBridgeResumed(
 	al *types.ERC20EventBridgeResumed,
 	blockNumber,
 	logIndex uint64,
+	txHash string,
 ) error {
 	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
 		e.clt.CollateralBridgeAddress(), e.clt)
@@ -257,7 +262,8 @@ func (e *ERC20LogicView) FindBridgeResumed(
 
 	for iter.Next() {
 		if iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == logIndex {
+			uint64(iter.Event.Raw.Index) == logIndex &&
+			iter.Event.Raw.TxHash.Hex() == txHash {
 			event = iter.Event
 
 			break
@@ -280,6 +286,7 @@ func (e *ERC20LogicView) FindDeposit(
 	d *types.ERC20Deposit,
 	blockNumber, logIndex uint64,
 	ethAssetAddress string,
+	txHash string,
 ) error {
 	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
 		e.clt.CollateralBridgeAddress(), e.clt)
@@ -317,7 +324,8 @@ func (e *ERC20LogicView) FindDeposit(
 		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == targetPartyID &&
 			iter.Event.Amount.Cmp(depamount) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == logIndex {
+			uint64(iter.Event.Raw.Index) == logIndex &&
+			iter.Event.Raw.TxHash.Hex() == txHash {
 			event = iter.Event
 			break
 		}
@@ -339,6 +347,7 @@ func (e *ERC20LogicView) FindWithdrawal(
 	w *types.ERC20Withdrawal,
 	blockNumber, logIndex uint64,
 	ethAssetAddress string,
+	txHash string,
 ) (*big.Int, string, uint, error) {
 	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
 		e.clt.CollateralBridgeAddress(), e.clt)
@@ -378,7 +387,8 @@ func (e *ERC20LogicView) FindWithdrawal(
 	for iter.Next() {
 		if nonce.Cmp(iter.Event.Nonce) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == logIndex {
+			uint64(iter.Event.Raw.Index) == logIndex &&
+			iter.Event.Raw.TxHash.Hex() == txHash {
 			event = iter.Event
 
 			break
@@ -401,6 +411,7 @@ func (e *ERC20LogicView) FindAssetLimitsUpdated(
 	update *types.ERC20AssetLimitsUpdated,
 	blockNumber uint64, logIndex uint64,
 	ethAssetAddress string,
+	txHash string,
 ) error {
 	bf, err := bridgecontract.NewErc20BridgeLogicRestrictedFilterer(
 		e.clt.CollateralBridgeAddress(), e.clt)
@@ -436,7 +447,8 @@ func (e *ERC20LogicView) FindAssetLimitsUpdated(
 		if update.LifetimeLimits.EQ(eventLifetimeLimit) &&
 			update.WithdrawThreshold.EQ(eventWithdrawThreshold) &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
-			uint64(iter.Event.Raw.Index) == logIndex {
+			uint64(iter.Event.Raw.Index) == logIndex &&
+			iter.Event.Raw.TxHash.Hex() == txHash {
 			event = iter.Event
 			break
 		}

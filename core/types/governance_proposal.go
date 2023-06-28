@@ -101,6 +101,12 @@ const (
 	ProposalErrorLinearSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_LINEAR_SLIPPAGE_FACTOR_OUT_OF_RANGE
 	// ProposalErrorSquaredSlippageOutOfRange squared slippage factor is negative or too large.
 	ProposalErrorQuadraticSlippageOutOfRange ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_QUADRATIC_SLIPPAGE_FACTOR_OUT_OF_RANGE
+	// ProporsalErrorInvalidGovernanceTransfer governance transfer invalid.
+	ProporsalErrorInvalidGovernanceTransfer ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID
+	// ProporsalErrorFailedGovernanceTransfer governance transfer failed.
+	ProporsalErrorFailedGovernanceTransfer ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED
+	// ProporsalErrorFailedGovernanceTransferCancel governance transfer cancellation is invalid.
+	ProporsalErrorFailedGovernanceTransferCancel ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID
 	// ProposalErrorInvalidFreeform Validation failed for spot proposal.
 	ProposalErrorInvalidSpot ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SPOT
 	// ProposalErrorSpotNotEnabled is returned when spots are not enabled.
@@ -139,8 +145,10 @@ const (
 	ProposalTermsTypeNewAsset
 	ProposalTermsTypeNewFreeform
 	ProposalTermsTypeUpdateAsset
+	ProposalTermsTypeNewTransfer
 	ProposalTermsTypeNewSpotMarket
 	ProposalTermsTypeUpdateSpotMarket
+	ProposalTermsTypeCancelTransfer
 )
 
 type ProposalSubmission struct {
@@ -476,6 +484,10 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		r.Change = ch
 	case *vegapb.ProposalTerms_NewFreeform:
 		r.Change = ch
+	case *vegapb.ProposalTerms_NewTransfer:
+		r.Change = ch
+	case *vegapb.ProposalTerms_CancelTransfer:
+		r.Change = ch
 	case *vegapb.ProposalTerms_NewSpotMarket:
 		r.Change = ch
 	case *vegapb.ProposalTerms_UpdateSpotMarket:
@@ -498,6 +510,24 @@ func (p ProposalTerms) String() string {
 		p.EnactmentTimestamp,
 		reflectPointerToString(p.Change),
 	)
+}
+
+func (p *ProposalTerms) GetNewTransfer() *NewTransfer {
+	switch c := p.Change.(type) {
+	case *ProposalTermsNewTransfer:
+		return c.NewTransfer
+	default:
+		return nil
+	}
+}
+
+func (p *ProposalTerms) GetCancelTransfer() *CancelTransfer {
+	switch c := p.Change.(type) {
+	case *ProposalTermsCancelTransfer:
+		return c.CancelTransfer
+	default:
+		return nil
+	}
 }
 
 func (p *ProposalTerms) GetNewAsset() *NewAsset {
@@ -595,6 +625,10 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change, err = NewNewSpotMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateSpotMarket:
 			change, err = UpdateSpotMarketFromProto(ch)
+		case *vegapb.ProposalTerms_NewTransfer:
+			change, err = NewNewTransferFromProto(ch)
+		case *vegapb.ProposalTerms_CancelTransfer:
+			change, err = NewCancelGovernanceTransferFromProto(ch)
 		}
 	}
 	if err != nil {
