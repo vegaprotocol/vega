@@ -1009,7 +1009,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	for i, mkt := range e.marketsCpy {
 		// when a successor market kicks in, the marketsCpy slice is updated
 		// this loop will still iterate over N elements, even if the slice has shrunk
-		if i >= maxI {
+		if i > maxI {
 			break
 		}
 		mkt := mkt
