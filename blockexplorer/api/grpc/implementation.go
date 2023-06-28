@@ -77,8 +77,27 @@ func (b *blockExplorerAPI) GetTransaction(ctx context.Context, req *pb.GetTransa
 func (b *blockExplorerAPI) ListTransactions(ctx context.Context, req *pb.ListTransactionsRequest) (*pb.ListTransactionsResponse, error) {
 	var before, after *entities.TxCursor
 
+	if req.First > 0 && req.Last > 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("cannot specify both first and last"))
+	}
+
 	limit := b.MaxPageSizeDefault
-	if req.Limit > 0 {
+	if req.First > 0 {
+		limit = req.First
+		if req.After == nil && req.Before != nil {
+			return nil, apiError(codes.InvalidArgument, errors.New("cannot specify before when using first"))
+		}
+	}
+
+	if req.Last > 0 {
+		limit = req.Last
+		if req.Before == nil && req.After != nil {
+			return nil, apiError(codes.InvalidArgument, errors.New("cannot specify after when using last"))
+		}
+	}
+
+	// Temporary for now, until we have fully deprecated the limit field in the request.
+	if req.Limit > 0 && req.First == 0 && req.Last == 0 {
 		limit = req.Limit
 	}
 
