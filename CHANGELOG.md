@@ -105,6 +105,7 @@
 - [8597](https://github.com/vegaprotocol/vega/issues/8597) - Enact governance transfer cancellation
 - [8428](https://github.com/vegaprotocol/vega/issues/8428) - Add missing `LastTradedPrice` field in market data
 - [8335](https://github.com/vegaprotocol/vega/issues/8335) - Validate asset for metrics in transfers to be an actual asset
+- [8603](https://github.com/vegaprotocol/vega/issues/8603) - Restore `lastTradedPrice` of `nil` as `nil` in market snapshot
 
 ## 0.71.0
 

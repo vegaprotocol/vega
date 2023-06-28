@@ -92,6 +92,33 @@ func TestRestoreTerminatedMarket(t *testing.T) {
 	assert.False(t, closed)
 }
 
+func TestRestoreNilLastTradedPrice(t *testing.T) {
+	now := time.Unix(10, 0)
+	tm := getTestMarket(t, now, nil, nil)
+	defer tm.ctrl.Finish()
+
+	em := tm.market.GetState()
+	assert.Nil(t, em.LastTradedPrice)
+	assert.Nil(t, em.CurrentMarkPrice)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	oracleEngine := mocks.NewMockOracleEngine(ctrl)
+
+	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) {
+	}
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+
+	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
+	require.NoError(t, err)
+	require.NotEmpty(t, snap)
+
+	em2 := tm.market.GetState()
+	assert.Nil(t, em2.LastTradedPrice)
+	assert.Nil(t, em2.CurrentMarkPrice)
+}
+
 func getTerminatedMarket(t *testing.T) *testMarket {
 	t.Helper()
 	pubKeys := []*types.Signer{
