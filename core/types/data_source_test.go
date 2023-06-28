@@ -22,9 +22,6 @@ func TestNewDataSourceDefinitionWith(t *testing.T) {
 			assert.Nil(t, nds.Content())
 		})
 
-		t.Run("non-empty oracle", func(t *testing.T) {
-			// Do we need to test that?
-		})
 	})
 
 	t.Run("ethereum oracle", func(t *testing.T) {
