@@ -21,7 +21,7 @@ import (
 func TestBatchMarketInstructionsErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 
 	batch := commandspb.BatchMarketInstructions{
 		Amendments:  []*commandspb.OrderAmendment{{}},
@@ -44,7 +44,7 @@ func TestBatchMarketInstructionsErrors(t *testing.T) {
 func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
@@ -90,7 +90,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
@@ -219,7 +219,7 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{

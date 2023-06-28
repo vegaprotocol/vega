@@ -82,8 +82,8 @@ func TestVotes(t *testing.T) {
 
 	party1 := addTestParty(t, ctx, partyStore, block1)
 	party2 := addTestParty(t, ctx, partyStore, block1)
-	prop1 := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, helpers.GenerateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}})
-	prop2 := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, helpers.GenerateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}})
+	prop1 := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, helpers.GenerateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}}, entities.ProposalErrorUnspecified)
+	prop2 := addTestProposal(t, ctx, propStore, helpers.GenerateID(), party1, helpers.GenerateID(), block1, entities.ProposalStateEnacted, entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl2.com", Description: "desc"}}, entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}}, entities.ProposalErrorUnspecified)
 
 	party1ID := party1.ID.String()
 	prop1ID := prop1.ID.String()
@@ -188,6 +188,7 @@ func setupPaginationTestVotes(t *testing.T, ctx context.Context) (*sqlstore.Vote
 			entities.ProposalStateEnacted,
 			entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: fmt.Sprintf("myurl%02d.com", i+1), Description: "desc"}},
 			entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{}}},
+			entities.ProposalErrorUnspecified,
 		)
 
 		voteValue := entities.VoteValueYes

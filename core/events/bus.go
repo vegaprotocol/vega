@@ -140,6 +140,7 @@ const (
 	DistressedOrdersClosedEvent
 	ExpiredOrdersEvent
 	DistressedPositionsEvent
+	StopOrderEvent
 )
 
 var (
@@ -211,7 +212,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED:         DistressedOrdersClosedEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS:                   ExpiredOrdersEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS:             DistressedPositionsEvent,
-
+		eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER:                       StopOrderEvent,
 		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
@@ -274,6 +275,8 @@ var (
 		DistressedOrdersClosedEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_ORDERS_CLOSED,
 		ExpiredOrdersEvent:                eventspb.BusEventType_BUS_EVENT_TYPE_EXPIRED_ORDERS,
 		DistressedPositionsEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_DISTRESSED_POSITIONS,
+		StopOrderEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_STOP_ORDER,
+		// If adding a type here, please also add it to data-node/broker/convert.go
 	}
 
 	eventStrings = map[Type]string{
@@ -336,6 +339,7 @@ var (
 		DistressedOrdersClosedEvent:       "DistressedOrdersClosedEvent",
 		ExpiredOrdersEvent:                "ExpiredOrdersEvent",
 		DistressedPositionsEvent:          "DistressedPositionsEvent",
+		StopOrderEvent:                    "StopOrderEvent",
 	}
 )
 

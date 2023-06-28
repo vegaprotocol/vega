@@ -8,11 +8,11 @@ import (
 type checkpointCmd struct {
 	config.OutputFlag
 
-	InPath   string `short:"f" long:"file" required:"true" description:"input file to parse"`
-	OutPath  string `short:"o" long:"out" description:"output file to write to [default is STDOUT]"`
-	Validate bool   `short:"v" long:"validate" description:"validate contents of the checkpoint file"`
-	Generate bool   `short:"g" long:"generate" description:"The chain to be imported"`
-	Dummy    bool   `short:"d" long:"dummy" description:"generate a dummy file [added for debugging, but could be useful]"`
+	InPath   string `description:"input file to parse"                                              long:"file"     required:"true" short:"f"`
+	OutPath  string `description:"output file to write to [default is STDOUT]"                      long:"out"      short:"o"`
+	Validate bool   `description:"validate contents of the checkpoint file"                         long:"validate" short:"v"`
+	Generate bool   `description:"The chain to be imported"                                         long:"generate" short:"g"`
+	Dummy    bool   `description:"generate a dummy file [added for debugging, but could be useful]" long:"dummy"    short:"d"`
 }
 
 func (opts *checkpointCmd) Execute(_ []string) error {

@@ -511,6 +511,12 @@ const (
 	ProposalErrorTooManyMarketDecimalPlaces       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_MARKET_DECIMAL_PLACES)
 	ProposalErrorTooManyPriceMonitoringTriggers   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_TOO_MANY_PRICE_MONITORING_TRIGGERS)
 	ProposalErrorERC20AddressAlreadyInUse         = ProposalError(vega.ProposalError_PROPOSAL_ERROR_ERC20_ADDRESS_ALREADY_IN_USE)
+	ProporsalErrorInvalidGovernanceTransfer       = ProposalError(vega.ProposalError_PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID)
+	ProporsalErrorFailedGovernanceTransfer        = ProposalError(vega.ProposalError_PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_FAILED)
+	ProporsalErrorFailedGovernanceTransferCancel  = ProposalError(vega.ProposalError_PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID)
+	ProposalErrorInvalidSpot                      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SPOT)
+	ProposalErrorSpotNotEnabled                   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED)
+	ProposalErrorInvalidSuccessorMarket           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -803,5 +809,84 @@ func (ps *ProtocolUpgradeProposalStatus) DecodeText(_ *pgtype.ConnInfo, src []by
 		return fmt.Errorf("unknown protocol upgrade proposal status: %s", src)
 	}
 	*ps = ProtocolUpgradeProposalStatus(val)
+	return nil
+}
+
+type StopOrderExpiryStrategy vega.StopOrder_ExpiryStrategy
+
+const (
+	StopOrderExpiryStrategyUnspecified = StopOrderExpiryStrategy(vega.StopOrder_EXPIRY_STRATEGY_UNSPECIFIED)
+	StopOrderExpiryStrategyCancels     = StopOrderExpiryStrategy(vega.StopOrder_EXPIRY_STRATEGY_CANCELS)
+	StopOrderExpiryStrategySubmit      = StopOrderExpiryStrategy(vega.StopOrder_EXPIRY_STRATEGY_SUBMIT)
+)
+
+func (s StopOrderExpiryStrategy) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.StopOrder_ExpiryStrategy_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stop order expiry strategy: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *StopOrderExpiryStrategy) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.StopOrder_ExpiryStrategy_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stop order expiry strategy: %s", src)
+	}
+	*s = StopOrderExpiryStrategy(val)
+	return nil
+}
+
+type StopOrderTriggerDirection vega.StopOrder_TriggerDirection
+
+const (
+	StopOrderTriggerDirectionUnspecified = StopOrderTriggerDirection(vega.StopOrder_TRIGGER_DIRECTION_UNSPECIFIED)
+	StopOrderTriggerDirectionRisesAbove  = StopOrderTriggerDirection(vega.StopOrder_TRIGGER_DIRECTION_RISES_ABOVE)
+	StopOrderTriggerDirectionFallsBelow  = StopOrderTriggerDirection(vega.StopOrder_TRIGGER_DIRECTION_FALLS_BELOW)
+)
+
+func (s StopOrderTriggerDirection) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.StopOrder_TriggerDirection_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stop order trigger direction: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *StopOrderTriggerDirection) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.StopOrder_TriggerDirection_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stop order trigger direction: %s", src)
+	}
+	*s = StopOrderTriggerDirection(val)
+	return nil
+}
+
+type StopOrderStatus vega.StopOrder_Status
+
+const (
+	StopOrderStatusUnspecified = StopOrderStatus(vega.StopOrder_STATUS_UNSPECIFIED)
+	StopOrderStatusPending     = StopOrderStatus(vega.StopOrder_STATUS_PENDING)
+	StopOrderStatusCancelled   = StopOrderStatus(vega.StopOrder_STATUS_CANCELLED)
+	StopOrderStatusStopped     = StopOrderStatus(vega.StopOrder_STATUS_STOPPED)
+	StopOrderStatusTriggered   = StopOrderStatus(vega.StopOrder_STATUS_TRIGGERED)
+	StopOrderStatusExpired     = StopOrderStatus(vega.StopOrder_STATUS_EXPIRED)
+	StopOrderStatusRejected    = StopOrderStatus(vega.StopOrder_STATUS_REJECTED)
+)
+
+func (s StopOrderStatus) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+	str, ok := vega.StopOrder_Status_name[int32(s)]
+	if !ok {
+		return buf, fmt.Errorf("unknown stop order status: %v", s)
+	}
+	return append(buf, []byte(str)...), nil
+}
+
+func (s *StopOrderStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
+	val, ok := vega.StopOrder_Status_value[string(src)]
+	if !ok {
+		return fmt.Errorf("unknown stop order status: %s", src)
+	}
+	*s = StopOrderStatus(val)
 	return nil
 }

@@ -58,8 +58,8 @@ func TestEpochs(t *testing.T) {
 
 	epoch1Start := time.Date(2022, 1, 1, 0, 0, 0, 0, time.Local)
 	epoch1Expire := epoch1Start.Add(time.Minute)
-	epoch1End := epoch1Start
-	epoch2Start := epoch1End.Add(time.Second)
+	epoch1End := epoch1Start.Add(time.Second)
+	epoch2Start := epoch1End
 	epoch2Expire := epoch2Start.Add(time.Minute)
 	epoch2End := epoch2Start.Add(time.Second)
 	epoch3Start := epoch2End
@@ -71,7 +71,7 @@ func TestEpochs(t *testing.T) {
 
 	// Insert one epoch that gets updated in the same block
 	epoch1 := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, nil, block1)
-	epoch1b := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, &epoch1End, block1)
+	epoch1b := addTestEpoch(t, ctx, es, 1, epoch1Start, epoch1Expire, &epoch1End, block2)
 	epoch1b.FirstBlock = epoch1.FirstBlock
 
 	// And another which is updated in a subsequent block
@@ -81,9 +81,6 @@ func TestEpochs(t *testing.T) {
 
 	// And finally one which isn't updated (e.g. hasn't ended yet)
 	epoch3 := addTestEpoch(t, ctx, es, 3, epoch3Start, epoch3Expire, nil, block3)
-
-	_ = epoch1
-	_ = epoch2
 
 	t.Run("GetAll", func(t *testing.T) {
 		expected := []entities.Epoch{epoch1b, epoch2b, epoch3}
@@ -100,6 +97,12 @@ func TestEpochs(t *testing.T) {
 
 	t.Run("Get", func(t *testing.T) {
 		actual, err := es.Get(ctx, 2)
+		require.NoError(t, err)
+		assert.Equal(t, epoch2b, actual)
+	})
+
+	t.Run("GetByBlock", func(t *testing.T) {
+		actual, err := es.GetByBlock(ctx, uint64(block2.Height))
 		require.NoError(t, err)
 		assert.Equal(t, epoch2b, actual)
 	})

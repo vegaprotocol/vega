@@ -19,6 +19,7 @@ import (
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	checkpointpb "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
@@ -106,6 +107,81 @@ func (t *TransferBase) IsValid() error {
 	}
 
 	return nil
+}
+
+type GovernanceTransfer struct {
+	ID        string // NB: this is the ID of the proposal
+	Reference string
+	Config    *NewTransferConfiguration
+	Status    TransferStatus
+	Timestamp time.Time
+}
+
+func (g *GovernanceTransfer) IntoProto() *checkpointpb.GovernanceTransfer {
+	return &checkpointpb.GovernanceTransfer{
+		Id:        g.ID,
+		Reference: g.Reference,
+		Timestamp: g.Timestamp.UnixNano(),
+		Status:    g.Status,
+		Config:    g.Config.IntoProto(),
+	}
+}
+
+func GovernanceTransferFromProto(g *checkpointpb.GovernanceTransfer) *GovernanceTransfer {
+	c, _ := NewTransferConfigurationFromProto(g.Config)
+	return &GovernanceTransfer{
+		ID:        g.Id,
+		Reference: g.Reference,
+		Timestamp: time.Unix(0, g.Timestamp),
+		Status:    g.Status,
+		Config:    c,
+	}
+}
+
+func (g *GovernanceTransfer) IntoEvent(amount *num.Uint, reason *string) *eventspb.Transfer {
+	// Not sure if this symbology gonna work for datanode
+	from := "0000000000000000000000000000000000000000000000000000000000000000"
+	if len(g.Config.Source) > 0 {
+		from = g.Config.Source
+	}
+	to := g.Config.Destination
+	if g.Config.DestinationType == AccountTypeGlobalReward {
+		to = "0000000000000000000000000000000000000000000000000000000000000000"
+	}
+
+	out := &eventspb.Transfer{
+		Id:              g.ID,
+		From:            from,
+		FromAccountType: g.Config.SourceType,
+		To:              to,
+		ToAccountType:   g.Config.DestinationType,
+		Asset:           g.Config.Asset,
+		Amount:          amount.String(),
+		Reference:       g.Reference,
+		Status:          g.Status,
+		Timestamp:       g.Timestamp.UnixNano(),
+		Reason:          reason,
+	}
+
+	if g.Config.OneOffTransferConfig != nil {
+		out.Kind = &eventspb.Transfer_OneOffGovernance{}
+		if g.Config.OneOffTransferConfig.DeliverOn > 0 {
+			out.Kind = &eventspb.Transfer_OneOffGovernance{
+				OneOffGovernance: &eventspb.OneOffGovernanceTransfer{
+					DeliverOn: g.Config.OneOffTransferConfig.DeliverOn,
+				},
+			}
+		}
+	} else {
+		out.Kind = &eventspb.Transfer_RecurringGovernance{
+			RecurringGovernance: &eventspb.RecurringGovernanceTransfer{
+				StartEpoch: g.Config.RecurringTransferConfig.StartEpoch,
+				EndEpoch:   g.Config.RecurringTransferConfig.EndEpoch,
+			},
+		}
+	}
+
+	return out
 }
 
 type OneOffTransfer struct {

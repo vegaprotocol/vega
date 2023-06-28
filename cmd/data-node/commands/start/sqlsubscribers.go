@@ -50,6 +50,7 @@ type SQLSubscribers struct {
 	chainStore                *sqlstore.Chain
 	pupStore                  *sqlstore.ProtocolUpgradeProposals
 	snapStore                 *sqlstore.CoreSnapshotData
+	stopOrderStore            *sqlstore.StopOrders
 
 	// Services
 	candleService               *candlesv2.Svc
@@ -88,6 +89,7 @@ type SQLSubscribers struct {
 	chainService                *service.Chain
 	protocolUpgradeService      *service.ProtocolUpgrade
 	coreSnapshotService         *service.SnapshotData
+	stopOrderService            *service.StopOrders
 
 	// Subscribers
 	accountSub              *sqlsubscribers.Account
@@ -124,6 +126,7 @@ type SQLSubscribers struct {
 	nodeSub                 *sqlsubscribers.Node
 	pupSub                  *sqlsubscribers.ProtocolUpgrade
 	snapSub                 *sqlsubscribers.SnapshotData
+	stopOrdersSub           *sqlsubscribers.StopOrder
 }
 
 func (s *SQLSubscribers) GetSQLSubscribers() []broker.SQLBrokerSubscriber {
@@ -208,6 +211,7 @@ func (s *SQLSubscribers) CreateAllStores(ctx context.Context, Log *logging.Logge
 	s.chainStore = sqlstore.NewChain(transactionalConnectionSource)
 	s.pupStore = sqlstore.NewProtocolUpgradeProposals(transactionalConnectionSource)
 	s.snapStore = sqlstore.NewCoreSnapshotData(transactionalConnectionSource)
+	s.stopOrderStore = sqlstore.NewStopOrders(transactionalConnectionSource)
 }
 
 func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger, candlesConfig candlesv2.Config) error {
@@ -247,6 +251,7 @@ func (s *SQLSubscribers) SetupServices(ctx context.Context, log *logging.Logger,
 	s.chainService = service.NewChain(s.chainStore)
 	s.protocolUpgradeService = service.NewProtocolUpgrade(s.pupStore, log)
 	s.coreSnapshotService = service.NewSnapshotData(s.snapStore)
+	s.stopOrderService = service.NewStopOrders(s.stopOrderStore)
 
 	toInit := []interface{ Initialise(context.Context) error }{
 		s.marketDepthService,
@@ -298,4 +303,5 @@ func (s *SQLSubscribers) SetupSQLSubscribers() {
 	s.nodeSub = sqlsubscribers.NewNode(s.nodeService)
 	s.pupSub = sqlsubscribers.NewProtocolUpgrade(s.protocolUpgradeService)
 	s.snapSub = sqlsubscribers.NewSnapshotData(s.coreSnapshotService)
+	s.stopOrdersSub = sqlsubscribers.NewStopOrder(s.stopOrderService)
 }

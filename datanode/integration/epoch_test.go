@@ -19,6 +19,7 @@ func TestEpochs(t *testing.T) {
 		"CurrentEpoch":     `{ epoch{ id timestamps{ start, expiry, end, firstBlock, lastBlock } } }`,
 		"EpochDelegations": `{ epoch{ delegationsConnection { edges { node { node { id }, party {id}, amount } } } } }`,
 		"SpecificEpoch":    `{ epoch(id:"10") { id timestamps{ start, expiry, end, firstBlock, lastBlock } } }`,
+		"EpochByBlock":     `{ epoch(block: "121") { id timestamps{ start, expiry, end, firstBlock, lastBlock } } }`,
 	}
 
 	for name, query := range queries {

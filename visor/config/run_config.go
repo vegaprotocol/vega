@@ -19,7 +19,7 @@ import (
 )
 
 /*
-description: Allows you to configure a binary and its arguments.
+description: Configuration options for the Vega binary and its arguments.
 example:
 
 	type: toml
@@ -29,7 +29,7 @@ example:
 */
 type BinaryConfig struct {
 	/*
-		description: Path to the binary.
+		description: Path to the Vega binary.
 		note: |
 			The absolute or relative path can be used.
 			Relative path is relative to a parent folder of this config file.
@@ -44,7 +44,7 @@ type BinaryConfig struct {
 }
 
 /*
-description: Allows you to configure a connection to a core node's exposed UNIX socket RPC API.
+description: Configures a connection to a core node's exposed UNIX socket RPC API.
 example:
 
 	type: toml
@@ -56,18 +56,18 @@ example:
 type RPCConfig struct {
 	/*
 		description: Path of the mounted socket.
-		note: This path can be configured in Vega core node configuration.
+		note: This path can be configured in the Vega core node configuration and can be found in the [Admin.Server] section.
 	*/
 	SocketPath string `toml:"socketPath"`
 	/*
 		description: HTTP path of the socket path.
-		note: This path can be configured in Vega core node configuration.
+		note: This path can be configured in the Vega core node configuration and can be found in the [Admin.Server] section.
 	*/
 	HTTPPath string `toml:"httpPath"`
 }
 
 /*
-description: Allows you to configure the Vega binary and its arguments.
+description: Configuration options for the Vega binary and its arguments.
 example:
 
 	type: toml
@@ -82,7 +82,7 @@ example:
 */
 type VegaConfig struct {
 	/*
-		description: Configuration of Vega binary to be run.
+		description: Configuration of Vega binary and the arguments to run it.
 		example:
 			type: toml
 			value: |
@@ -94,8 +94,9 @@ type VegaConfig struct {
 
 	/*
 		description: |
-			Visor communicates with the core node via RPC API that runs over UNIX socket.
-			This parameter allows you to configure the UNIX socket to match the core node configuration.
+			Visor communicates with the core node via RPC API that runs over a UNIX socket.
+			This parameter configures the UNIX socket to match the core node configuration.
+			This value can be found in the config.toml file used by the core node under the heading [Admin.Server]
 		example:
 			type: toml
 			value: |
@@ -107,7 +108,7 @@ type VegaConfig struct {
 }
 
 /*
-description: Allows you to configure a data node binary and its arguments.
+description: Configures a data node binary and its arguments.
 example:
 
 	type: toml
@@ -140,7 +141,10 @@ example:
 type RunConfig struct {
 	/*
 		description: Name of the upgrade.
-		note: It is recommended that you use the upgrade version as the name.
+		note: |
+			It is recommended to use the Vega version you wish to upgrade to as the name. These can be found in the releases list of the Vega Github repository
+			(https://github.com/vegaprotocol/vega/releases).
+
 	*/
 	Name string `toml:"name"`
 	// description: Configuration of a Vega node.

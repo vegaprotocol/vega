@@ -29,7 +29,7 @@ func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context
 	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(d)
 }
 
-func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, d num.Decimal) {
+func (m *Market) BondPenaltyFactorUpdate(_ context.Context, d num.Decimal) {
 	m.bondPenaltyFactor = d
 }
 
@@ -114,4 +114,8 @@ func (m *Market) OnMarkPriceUpdateMaximumFrequency(ctx context.Context, d time.D
 	}
 	m.nextMTM = m.nextMTM.Add(d)
 	m.mtmDelta = d
+}
+
+func (m *Market) OnMarketPartiesMaximumStopOrdersUpdate(ctx context.Context, u *num.Uint) {
+	m.maxStopOrdersPerParties = u.Clone()
 }

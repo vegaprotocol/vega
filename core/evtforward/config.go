@@ -34,7 +34,7 @@ type Config struct {
 	Level     encoding.LogLevel `long:"log-level"`
 	RetryRate encoding.Duration `long:"retry-rate"`
 	// a list of allowlisted blockchain queue public keys
-	BlockchainQueueAllowlist []string `long:"blockchain-queue-allowlist" description:" "`
+	BlockchainQueueAllowlist []string `description:" " long:"blockchain-queue-allowlist"`
 	// Ethereum groups the configuration related to Ethereum implementation of
 	// the Event Forwarder.
 	Ethereum ethereum.Config `group:"Ethereum" namespace:"ethereum"`

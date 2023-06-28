@@ -13,6 +13,11 @@ import "vega/vega.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega/events/v1";
 
+message StopOrderEvent {
+  commands.v1.OrderSubmission submission = 1;
+  vega.StopOrder stop_order = 2;
+}
+
 message ERC20MultiSigSignerAdded {
   // ID of the signature bundle
   string signature_id = 1;
@@ -86,7 +91,13 @@ message Transfer {
   oneof kind {
     OneOffTransfer one_off = 101;
     RecurringTransfer recurring = 102;
+    OneOffGovernanceTransfer one_off_governance = 103;
+    RecurringGovernanceTransfer recurring_governance = 104;
   }
+}
+
+message OneOffGovernanceTransfer {
+  int64 deliver_on = 1;
 }
 
 message OneOffTransfer {
@@ -98,6 +109,11 @@ message RecurringTransfer {
   optional uint64 end_epoch = 2;
   string factor = 3;
   DispatchStrategy dispatch_strategy = 4;
+}
+
+message RecurringGovernanceTransfer {
+  uint64 start_epoch = 1;
+  optional uint64 end_epoch = 2;
 }
 
 // StakeLinking - an event notifying of stake being deposited or removed for a given party
@@ -256,6 +272,8 @@ message TransactionResult {
     commands.v1.BatchMarketInstructions batch_market_instructions = 119;
     commands.v1.KeyRotateSubmission key_rotate_submission = 120;
     commands.v1.EthereumKeyRotateSubmission ethereum_key_rotate_submission = 121;
+    commands.v1.StopOrdersSubmission stop_order_submission = 122;
+    commands.v1.StopOrdersCancellation stop_order_cancellation = 123;
   }
 
   // extra details about the transaction processing
@@ -733,6 +751,9 @@ enum BusEventType {
   // Event indicating a spot liquidity provision has been created or updated.
   BUS_EVENT_TYPE_SPOT_LIQUIDITY_PROVISION = 59;
 
+  // Event indicating a stop order has been submitted or updated.
+  BUS_EVENT_TYPE_STOP_ORDER = 60;
+
   // Event indicating a market related event, for example when a market opens
   BUS_EVENT_TYPE_MARKET = 101;
   // Event used to report failed transactions back to a user, this is excluded from the ALL type
@@ -860,6 +881,8 @@ message BusEvent {
     ExpiredOrders expired_orders = 156;
     // Open positions on the market that are/were distressed
     DistressedPositions distressed_positions = 157;
+    // A stop order event
+    StopOrderEvent stop_order = 158;
 
     // Market tick events
     MarketEvent market = 1001;

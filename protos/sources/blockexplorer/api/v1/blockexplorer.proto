@@ -67,6 +67,12 @@ message ListTransactionsRequest {
   optional string after = 3;
   // Filters to apply to the request
   map<string, string> filters = 4;
+  // Transaction command types filter, for listing transactions with specified command types
+  repeated string cmd_types = 5;
+  // Transaction command types exclusion filter, for listing all the transactions except the ones with specified command types
+  repeated string exclude_cmd_types = 6;
+  // Party IDs filter, can be sender or receiver
+  repeated string parties = 7;
 }
 
 message ListTransactionsResponse {

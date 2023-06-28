@@ -93,8 +93,8 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 	var iceberg *commandspb.IcebergOpts
 	if o.IcebergOrder != nil {
 		iceberg = &commandspb.IcebergOpts{
-			InitialPeakSize: o.IcebergOrder.InitialPeakSize,
-			MinimumPeakSize: o.IcebergOrder.MinimumPeakSize,
+			PeakSize:           o.IcebergOrder.PeakSize,
+			MinimumVisibleSize: o.IcebergOrder.MinimumVisibleSize,
 		}
 	}
 
@@ -133,8 +133,8 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmissio
 	var iceberg *IcebergOrder
 	if p.IcebergOpts != nil {
 		iceberg = &IcebergOrder{
-			InitialPeakSize: p.IcebergOpts.InitialPeakSize,
-			MinimumPeakSize: p.IcebergOpts.MinimumPeakSize,
+			PeakSize:           p.IcebergOpts.PeakSize,
+			MinimumVisibleSize: p.IcebergOpts.MinimumVisibleSize,
 		}
 	}
 
@@ -175,8 +175,8 @@ func (o OrderSubmission) IntoOrder(party string) *Order {
 	var iceberg *IcebergOrder
 	if o.IcebergOrder != nil {
 		iceberg = &IcebergOrder{
-			InitialPeakSize: o.IcebergOrder.InitialPeakSize,
-			MinimumPeakSize: o.IcebergOrder.MinimumPeakSize,
+			PeakSize:           o.IcebergOrder.PeakSize,
+			MinimumVisibleSize: o.IcebergOrder.MinimumVisibleSize,
 		}
 	}
 

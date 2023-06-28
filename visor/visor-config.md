@@ -35,8 +35,7 @@ Default value: <code>10</code>
 
 <dd>
 
-Visor starts and manages the processes of provided binaries.
-This allows a user to define the maximum number of restarts in case any of
+Defines the maximum number of restarts in case any of
 the processes have failed before the Visor process fails.
 
 
@@ -66,9 +65,9 @@ Default value: <code>5</code>
 
 <dd>
 
-Number of seconds that Visor waits before it sends termination signal (SIGTERM) to running processes
+Number of seconds that Visor waits before it sends a termination signal (SIGTERM) to running processes
 that are ready for upgrade.
-After the time has elapsed Visor stop the running binaries (SIGTERM).
+After the time has elapsed Visor stops the running binaries (SIGTERM).
 
 
 
@@ -108,7 +107,7 @@ If a custom mapping is provided, during the upgrade Visor uses the folder given 
 
 <dd>
 
-Allows you to define the assets that should be automatically downloaded from Github for a specific release.
+Defines the assets that should be automatically downloaded from Github for a specific release.
 
 
 </dd>
@@ -137,7 +136,7 @@ restartsDelaySeconds = 5
 
 
 ## *AutoInstallConfig*
-Allows you to define the assets that should be automatically downloaded from GitHub for a specific release.
+Determines if the assets should be automatically downloaded and installed. If so this defines the assets that should be downloaded from GitHub for a specific release.
 
 
 ### Fields
@@ -149,7 +148,7 @@ Allows you to define the assets that should be automatically downloaded from Git
 
 <dd>
 
-Whether or not autoinstall should be used
+Auto Install flag
 
 
 Default value: <code>true</code>
@@ -185,7 +184,9 @@ Default value: <code>vega</code>
 
 <dd>
 
-Definitions of the asset that should be downloaded from the GitHub repository.
+Definition of the asset that should be downloaded from the GitHub repository.
+If the asset is contained in a zip file, the name of the binary is given.
+
 
 </dd>
 
@@ -212,7 +213,7 @@ Definitions of the asset that should be downloaded from the GitHub repository.
 
 
 ## *AssetsConfig*
-Allows you to define the name of the asset to be downloaded.
+Defines the name of the asset to be downloaded.
 
 
 ### Fields
@@ -224,7 +225,7 @@ Allows you to define the name of the asset to be downloaded.
 
 <dd>
 
-Name of the asset on Github.
+Name of the asset file on Github.
 
 </dd>
 
@@ -234,7 +235,7 @@ Name of the asset on Github.
 
 <dd>
 
-Binary name definition can be used if the asset is a zip file and the binary is included inside of it.
+Name of the binary if the asset is a zip file and the binary is included inside of it.
 
 
 </dd>

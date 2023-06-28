@@ -42,6 +42,14 @@ var (
 	ErrIsNotValidEthereumMethodName                 = errors.New("is not valid ethereum method name")
 	ErrNoEthereumOracleNormalisers                  = errors.New("one or more normalisers are required")
 	ErrEthereumOracleRequiredConfirmationIsNegative = errors.New("required confirmations is negative")
+	ErrMustBeWithinRange01                          = errors.New("must be between 0 and 1")
+	ErrMustBeLTE1                                   = errors.New("must be less than or equal to 1")
+	ErrMustBeReduceOnly                             = errors.New("must be reduce only")
+	ErrExpiryStrategyRequiredWhenExpiresAtSet       = errors.New("expiry strategy required when expires_at set")
+	ErrMustHaveAtLeastOneOfRisesAboveOrFallsBelow   = errors.New("must have at least one of rises above or falls bellow")
+	ErrMustHaveAStopOrderTrigger                    = errors.New("must have a stop order trigger")
+	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame  = errors.New("falls below and rises above market id must be the same")
+	ErrTrailingPercentOffsetMinimalIncrementMustBe  = errors.New("trailing percent offset minimal increment must be >= 0.001")
 )
 
 type Errors map[string][]error

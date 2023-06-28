@@ -42,12 +42,12 @@ type AnnounceNodeCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"passphrase-file"`
 
-	InfoURL          string `short:"i" long:"info-url" required:"true" description:"An url to the website / information about this validator"`
-	Country          string `short:"c" long:"country" required:"true" description:"The country from which the validator is operating"`
-	Name             string `short:"n" long:"name" required:"true" description:"The name of this validator"`
-	AvatarURL        string `short:"a" long:"avatar-url" required:"true" description:"A link to an avatar picture for this validator"`
-	FromEpoch        uint64 `short:"f" long:"from-epoch" required:"true" description:"The epoch from which this validator should be ready to validate blocks" `
-	SubmitterAddress string `short:"s" long:"submitter-address" description:"Ethereum address to use as a submitter to contract changes" `
+	InfoURL          string `description:"An url to the website / information about this validator"               long:"info-url"          required:"true" short:"i"`
+	Country          string `description:"The country from which the validator is operating"                      long:"country"           required:"true" short:"c"`
+	Name             string `description:"The name of this validator"                                             long:"name"              required:"true" short:"n"`
+	AvatarURL        string `description:"A link to an avatar picture for this validator"                         long:"avatar-url"        required:"true" short:"a"`
+	FromEpoch        uint64 `description:"The epoch from which this validator should be ready to validate blocks" long:"from-epoch"        required:"true" short:"f"`
+	SubmitterAddress string `description:"Ethereum address to use as a submitter to contract changes"             long:"submitter-address" short:"s"`
 }
 
 var announceNodeCmd AnnounceNodeCmd
@@ -189,7 +189,13 @@ func getNodeWalletCommander(log *logging.Logger, registryPass string, vegaPaths 
 		return nil, nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
 
-	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.RPCAddr)
+	rpcAddr := cfg.Blockchain.Tendermint.RPCAddr
+	if len(rpcAddr) <= 0 {
+		rpcAddr = "tcp://127.0.0.1:26657"
+		log.Warn("Blockchain.Tendermint.RPCAddr is empty, using default", logging.String("address", rpcAddr))
+	}
+
+	abciClient, err := abci.NewClient(rpcAddr)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}

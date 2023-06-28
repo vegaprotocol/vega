@@ -967,8 +967,10 @@ func TestSuccessorMarkets(t *testing.T) {
 }
 
 func testMarketLineageCreated(t *testing.T) {
-	bs, md := setupMarketsTest(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
+	bs, md := setupMarketsTest(t)
 	parentMarket := entities.Market{
 		ID:           entities.MarketID("deadbeef01"),
 		InstrumentID: "deadbeef01",
@@ -986,8 +988,6 @@ func testMarketLineageCreated(t *testing.T) {
 		ParentMarketID: successorMarketA.ID,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	conn := connectionSource.Connection
 	var rowCount int64
 
@@ -1075,40 +1075,86 @@ func testMarketLineageCreated(t *testing.T) {
 }
 
 func testListSuccessorMarkets(t *testing.T) {
-	md, entries := setupSuccessorMarkets(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	md, markets, proposals := setupSuccessorMarkets(t, ctx)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
-	defer cancel()
+	successors := []entities.SuccessorMarket{
+		{
+			Market: markets[5],
+			Proposals: []*entities.Proposal{
+				&proposals[1],
+				&proposals[2],
+			},
+		},
+		{
+			Market: markets[6],
+			Proposals: []*entities.Proposal{
+				&proposals[3],
+				&proposals[4],
+			},
+		},
+		{
+			Market: markets[8],
+		},
+	}
 
 	t.Run("should list the full history if children only is false", func(t *testing.T) {
-		got, err := md.ListSuccessorMarkets(ctx, "deadbeef02", true)
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef02", true, entities.CursorPagination{})
 		require.NoError(t, err)
-		want := []entities.Market{
-			entries[5],
-			entries[6],
-			entries[8],
-		}
-
+		want := successors[:]
 		assert.Equal(t, want, got)
 	})
 
 	t.Run("should list only the successor markets if children only is true", func(t *testing.T) {
-		got, err := md.ListSuccessorMarkets(ctx, "deadbeef02", false)
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef02", false, entities.CursorPagination{})
 		require.NoError(t, err)
-		want := []entities.Market{
-			entries[6],
-			entries[8],
-		}
+		want := successors[1:]
 
 		assert.Equal(t, want, got)
+	})
+
+	t.Run("should paginate results if pagination is provided", func(t *testing.T) {
+		first := int32(2)
+		after := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: markets[5].VegaTime,
+				ID:       markets[5].ID,
+			}.String(),
+		).Encode()
+		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+		require.NoError(t, err)
+		got, pageInfo, err := md.ListSuccessorMarkets(ctx, "deadbeef01", true, pagination)
+		require.NoError(t, err)
+		want := successors[1:]
+
+		assert.Equal(t, want, got, "paged successor markets do not match")
+		wantStartCursor := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: markets[6].VegaTime,
+				ID:       markets[6].ID,
+			}.String(),
+		).Encode()
+		wantEndCursor := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: markets[8].VegaTime,
+				ID:       markets[8].ID,
+			}.String(),
+		).Encode()
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: true,
+			StartCursor:     wantStartCursor,
+			EndCursor:       wantEndCursor,
+		}, pageInfo)
 	})
 }
 
 func testGetMarketWithParentAndSuccessor(t *testing.T) {
-	md, _ := setupSuccessorMarkets(t)
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Minute)
-	defer cancel()
+	md, _, _ := setupSuccessorMarkets(t, ctx)
 
 	t.Run("should return successor market id only if the first market in a succession line", func(t *testing.T) {
 		got, err := md.GetByID(ctx, "deadbeef01")
@@ -1132,10 +1178,12 @@ func testGetMarketWithParentAndSuccessor(t *testing.T) {
 	})
 }
 
-func setupSuccessorMarkets(t *testing.T) (*sqlstore.Markets, []entities.Market) {
+func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets, []entities.Market, []entities.Proposal) {
 	t.Helper()
 
 	bs, md := setupMarketsTest(t)
+	ps := sqlstore.NewProposals(connectionSource)
+	ts := sqlstore.NewParties(connectionSource)
 
 	parentMarket := entities.Market{
 		ID:           entities.MarketID("deadbeef01"),
@@ -1167,11 +1215,112 @@ func setupSuccessorMarkets(t *testing.T) (*sqlstore.Markets, []entities.Market) 
 
 	successorMarketA.SuccessorMarketID = successorMarketB.ID
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	source := &testBlockSource{bs, time.Now()}
 
-	upserts := []struct {
+	block := source.getNextBlock(t, ctx)
+
+	pt1 := addTestParty(t, ctx, ts, block)
+	pt2 := addTestParty(t, ctx, ts, block)
+
+	proposals := []struct {
+		id        string
+		party     entities.Party
+		reference string
+		block     entities.Block
+		state     entities.ProposalState
+		rationale entities.ProposalRationale
+		terms     entities.ProposalTerms
+		reason    entities.ProposalError
+	}{
+		{
+			id:        "deadbeef01",
+			party:     pt1,
+			reference: "deadbeef01",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms:     entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}},
+			reason:    entities.ProposalErrorUnspecified,
+		},
+		{
+			id:        "deadbeef02",
+			party:     pt1,
+			reference: "deadbeef02",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef01",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorUnspecified,
+		},
+		{
+			id:        "deadbeefaa",
+			party:     pt2,
+			reference: "deadbeefaa",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef01",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorParticipationThresholdNotReached,
+		},
+		{
+			id:        "deadbeef03",
+			party:     pt1,
+			reference: "deadbeef03",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef02",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorUnspecified,
+		},
+		{
+			id:        "deadbeefbb",
+			party:     pt2,
+			reference: "deadbeefbb",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef02",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorParticipationThresholdNotReached,
+		},
+	}
+
+	props := []entities.Proposal{}
+	for _, p := range proposals {
+		p := addTestProposal(t, ctx, ps, p.id, p.party, p.reference, p.block, p.state,
+			p.rationale, p.terms, p.reason)
+
+		props = append(props, p)
+	}
+
+	markets := []struct {
 		market entities.Market
 		state  entities.MarketState
 	}{
@@ -1213,9 +1362,9 @@ func setupSuccessorMarkets(t *testing.T) (*sqlstore.Markets, []entities.Market) 
 		},
 	}
 
-	entries := make([]entities.Market, 0, len(upserts))
+	entries := make([]entities.Market, 0, len(markets))
 
-	for _, u := range upserts {
+	for _, u := range markets {
 		block := source.getNextBlock(t, ctx)
 		u.market.VegaTime = block.VegaTime
 		u.market.State = u.state
@@ -1224,5 +1373,5 @@ func setupSuccessorMarkets(t *testing.T) (*sqlstore.Markets, []entities.Market) 
 		require.NoError(t, err)
 	}
 
-	return md, entries
+	return md, entries, props
 }

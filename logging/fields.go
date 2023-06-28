@@ -327,6 +327,16 @@ func OrderSubmission(os fmt.Stringer) zap.Field {
 	return zap.String("order-submission", os.String())
 }
 
+// StopOrderSubmission constructs a single string field to contain all the object information.
+func StopOrderSubmission(os fmt.Stringer) zap.Field {
+	return zap.String("stop-order-submission", os.String())
+}
+
+// StopOrderCanmcellation constructs a single string field to contain all the object information.
+func StopOrderCancellation(os fmt.Stringer) zap.Field {
+	return zap.String("stop-order-cancellation", os.String())
+}
+
 func OrderCancellation(oc fmt.Stringer) zap.Field {
 	return zap.String("order-cancellation", oc.String())
 }

@@ -15,17 +15,17 @@ import (
 
 type Config struct {
 	// Mandatory Setting, must be set
-	PeerID  string `long:"peer-id" description:"the ipfs peer id of this node"`
-	PrivKey string `long:"priv-key" description:"the ipfs priv key of this node"`
+	PeerID  string `description:"the ipfs peer id of this node"  long:"peer-id"`
+	PrivKey string `description:"the ipfs priv key of this node" long:"priv-key"`
 
 	// Optional Settings
-	BootstrapPeers []string `long:"bootstrap-peers" description:"a list of the multiaddress of bootstrap peers, will be used in addition to the ipfs default peers if enabled"`
-	SwarmPort      int      `long:"swarm-port" description:"ipfs swarm port"`
+	BootstrapPeers []string `description:"a list of the multiaddress of bootstrap peers, will be used in addition to the ipfs default peers if enabled" long:"bootstrap-peers"`
+	SwarmPort      int      `description:"ipfs swarm port"                                                                                              long:"swarm-port"`
 
 	// Without this there would be no way to isolate an environment if needed and process a given chains data (e.g. for dev)
-	SwarmKeyOverride string `long:"swarm-key-override" description:"optional swarm key override, the default behaviour is to use the datanode's chain id'"`
+	SwarmKeyOverride string `description:"optional swarm key override, the default behaviour is to use the datanode's chain id'" long:"swarm-key-override"`
 
-	HistoryRetentionBlockSpan int64 `long:"history-retention-block-span" description:"the block span of history, from the most recent history segment, that should be retained"`
+	HistoryRetentionBlockSpan int64 `description:"the block span of history, from the most recent history segment, that should be retained" long:"history-retention-block-span"`
 }
 
 func NewDefaultConfig() Config {

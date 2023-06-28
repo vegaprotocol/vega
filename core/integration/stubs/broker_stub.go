@@ -387,6 +387,29 @@ func (b *BrokerStub) GetMarket(marketID string) *types.Market {
 	return nil
 }
 
+func (b *BrokerStub) GetLastMarketUpdateState(marketID string) *types.Market {
+	batch := b.GetBatch(events.MarketUpdatedEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	var r *types.Market
+	for _, evt := range batch {
+		switch me := evt.(type) {
+		case *events.MarketUpdated:
+			if me.MarketID() == marketID {
+				t := me.Proto()
+				r = &t
+			}
+		case events.MarketUpdated:
+			if me.MarketID() == marketID {
+				t := me.Proto()
+				r = &t
+			}
+		}
+	}
+	return r
+}
+
 func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Order {
 	orders := b.GetOrderEvents()
 	ret := []types.Order{}
@@ -395,6 +418,26 @@ func (b *BrokerStub) GetOrdersByPartyAndMarket(party, market string) []types.Ord
 			ret = append(ret, *o)
 		}
 	}
+	return ret
+}
+
+func (b *BrokerStub) GetStopOrderEvents() []events.StopOrder {
+	batch := b.GetBatch(events.StopOrderEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+	ret := make([]events.StopOrder, 0, len(batch))
+	for _, e := range batch {
+		switch et := e.(type) {
+		case *events.StopOrder:
+			// o := vtypes.NewStopOrderFromProto(et.StopOrder())
+			ret = append(ret, *et)
+		case events.StopOrder:
+			// o := vtypes.NewStopOrderFromProto(et.StopOrder())
+			ret = append(ret, et)
+		}
+	}
+
 	return ret
 }
 

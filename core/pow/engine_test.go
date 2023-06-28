@@ -391,6 +391,36 @@ func TestAllowTransactionsAcrossMultipleBlocks(t *testing.T) {
 	require.Equal(t, 1, len(e.bannedParties))
 }
 
+func TestEdgeCase1(t *testing.T) {
+	ts := mocks.NewMockTimeService(gomock.NewController(t))
+	e := New(logging.NewTestLogger(), NewDefaultConfig(), ts)
+	e.UpdateSpamPoWDifficulty(context.Background(), num.NewUint(20))
+	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(100))
+	e.UpdateSpamPoWHashFunction(context.Background(), crypto.Sha3)
+	ts.EXPECT().GetTimeNow().AnyTimes()
+
+	e.BeginBlock(1, "9DF61AC8AD2178E2E2FD2D94E0F07A4B8AA141213179B03C184F8EAD898A9336")
+	e.EndOfBlock()
+	e.BeginBlock(50, "1D5839A6F7BF1CDB681590890E9D50ECFA222C41F57D1F05229ED3DED533F59A")
+	nonce, _, _ := crypto.PoW("9DF61AC8AD2178E2E2FD2D94E0F07A4B8AA141213179B03C184F8EAD898A9336", "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", 20, "sha3_24_rounds")
+	// a transaction signed with block 1 is executed in block 50
+	require.NoError(t, e.DeliverTx(&testTx{txID: "5CCCE01E56B9666F39F007BF577F10BB46987CFE1B1BE80AAC1DBBF51F9C45FE", party: "zohar", blockHeight: 1, powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: nonce}))
+	e.EndOfBlock()
+
+	// come block 100
+	e.BeginBlock(100, "2D2E4EC3DA3584F3FD4AD1BD1C0700E3C8DFB7BB1C307312AB35F18940836FC4")
+	e.EndOfBlock()
+
+	// block 100 ended, block 101 is being prepared, at this point transactions from block 1 are not valid anymore.
+	// we've cleared the state of the 100th oldest block seen tx (aka block 1) - now with the modified check for distance in verify - checktx should not allow the transaction in
+	require.Error(t, e.CheckTx(&testTx{txID: "5CCCE01E56B9666F39F007BF577F10BB46987CFE1B1BE80AAC1DBBF51F9C45FE", party: "zohar", blockHeight: 2261296, powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: nonce}))
+	e.BeginBlock(101, "2D2E4EC3DA3584F3FD4AD1BD1C0700E3C8DFB7BB1C307312AB35F18940836FC4")
+	e.EndOfBlock()
+
+	// verify for fun that we can't get the transaction at this point either.
+	require.Error(t, e.CheckTx(&testTx{txID: "5CCCE01E56B9666F39F007BF577F10BB46987CFE1B1BE80AAC1DBBF51F9C45FE", party: "zohar", blockHeight: 2261296, powTxID: "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4", powNonce: nonce}))
+}
+
 func TestEndBlock(t *testing.T) {
 	e := New(logging.NewTestLogger(), NewDefaultConfig(), mocks.NewMockTimeService(gomock.NewController(t)))
 	e.UpdateSpamPoWNumberOfPastBlocks(context.Background(), num.NewUint(1))

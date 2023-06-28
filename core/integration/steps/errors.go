@@ -148,3 +148,7 @@ func errOrderEventsNotFound(party, marketID string, side types.Side, size, price
 func errNoWatchersSpecified(netparam string) error {
 	return fmt.Errorf("no watchers specified for network parameter `%v`", netparam)
 }
+
+func errStopOrderEventsNotFound(party, marketID string, status types.StopOrder_Status) error {
+	return fmt.Errorf("no matching stop order event found %v, %v, %v", party, marketID, status.String())
+}

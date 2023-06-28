@@ -1,6 +1,8 @@
 package entities
 
-import "code.vegaprotocol.io/vega/protos/vega"
+import (
+	"code.vegaprotocol.io/vega/protos/vega"
+)
 
 type OrderFilter struct {
 	Statuses         []vega.Order_Status
@@ -12,4 +14,12 @@ type OrderFilter struct {
 	LiveOnly         bool
 	PartyIDs         []string
 	MarketIDs        []string
+}
+
+type StopOrderFilter struct {
+	Statuses       []StopOrderStatus
+	ExpiryStrategy []StopOrderExpiryStrategy
+	DateRange      *DateRange
+	PartyIDs       []string
+	MarketIDs      []string
 }

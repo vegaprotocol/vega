@@ -23,13 +23,13 @@ import (
 )
 
 type VegaHomeFlag struct {
-	VegaHome string `long:"home" description:"Path to the custom home for vega"`
+	VegaHome string `description:"Path to the custom home for vega" long:"home"`
 }
 
 type Config struct {
 	API     api.Config
 	Store   store.Config
-	Logging logging.Config `namespace:"logging" group:"logging"`
+	Logging logging.Config `group:"logging" namespace:"logging"`
 }
 
 func NewDefaultConfig() Config {

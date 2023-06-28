@@ -32,7 +32,7 @@ type reloadCmd struct {
 
 	Config admin.Config
 
-	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum"`
+	Chain string `choice:"vega" choice:"ethereum" description:"The chain to be imported" long:"chain" required:"true" short:"c"`
 }
 
 func (opts *reloadCmd) Execute(_ []string) error {

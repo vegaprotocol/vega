@@ -7,13 +7,13 @@ import (
 
 type streamCmd struct {
 	config.OutputFlag
-	BatchSize uint     `short:"b" long:"batch-size" description:"size of the event stream batch of events"`
-	Party     string   `short:"p" long:"party" description:"name of the party to listen for updates"`
-	Market    string   `short:"m" long:"market" description:"name of the market to listen for updates"`
-	Address   string   `short:"a" long:"address" required:"true" description:"address of the grpc server"`
-	LogFormat string   `long:"log-format" default:"raw" description:"output stream data in specified format. Allowed values: raw (default), text, json"`
-	Reconnect bool     `short:"r" long:"reconnect" description:"if connection dies, attempt to reconnect"`
-	Type      []string `short:"t" long:"type" default:"" description:"one or more event types to subscribe to (default=ALL)"`
+	BatchSize uint     `description:"size of the event stream batch of events" long:"batch-size"                                                                               short:"b"`
+	Party     string   `description:"name of the party to listen for updates"  long:"party"                                                                                    short:"p"`
+	Market    string   `description:"name of the market to listen for updates" long:"market"                                                                                   short:"m"`
+	Address   string   `description:"address of the grpc server"               long:"address"                                                                                  required:"true"   short:"a"`
+	LogFormat string   `default:"raw"                                          description:"output stream data in specified format. Allowed values: raw (default), text, json" long:"log-format"`
+	Reconnect bool     `description:"if connection dies, attempt to reconnect" long:"reconnect"                                                                                short:"r"`
+	Type      []string `default:""                                             description:"one or more event types to subscribe to (default=ALL)"                             long:"type"       short:"t"`
 }
 
 func (opts *streamCmd) Execute(_ []string) error {

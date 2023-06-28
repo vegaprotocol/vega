@@ -137,7 +137,7 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 	}
 	// Update the values
 	pl.totalOrders--
-	pl.totalVolume -= order.Remaining
+	pl.totalVolume -= order.TrueRemaining()
 
 	// See if we can remove this price level
 	if pl.totalOrders == 0 {
@@ -155,7 +155,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 	pl := &priceLevel{
 		price:       order.Price.Clone(),
 		totalOrders: 1,
-		totalVolume: order.Remaining,
+		totalVolume: order.TrueRemaining(),
 		side:        order.Side,
 	}
 
@@ -197,7 +197,7 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 		pl = md.createNewPriceLevel(order)
 	} else {
 		pl.totalOrders++
-		pl.totalVolume += order.Remaining
+		pl.totalVolume += order.TrueRemaining()
 	}
 	md.changes = append(md.changes, pl)
 }
@@ -205,19 +205,24 @@ func (md *MarketDepth) addOrder(order *types.Order) {
 func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 	// If the price is the same, we can update the original order
 	if originalOrder.Price.EQ(newOrder.Price) {
-		if newOrder.Remaining == 0 {
+		if newOrder.TrueRemaining() == 0 {
 			md.removeOrder(newOrder)
 		} else {
 			// Update
 			pl := md.getPriceLevel(originalOrder.Side, originalOrder.Price)
-			pl.totalVolume += newOrder.Remaining - originalOrder.Remaining
+			pl.totalVolume += newOrder.TrueRemaining() - originalOrder.TrueRemaining()
 			originalOrder.Remaining = newOrder.Remaining
 			originalOrder.Size = newOrder.Size
+
+			// copy across iceberg reserves
+			if originalOrder.IcebergOrder != nil {
+				originalOrder.IcebergOrder = newOrder.IcebergOrder.Clone()
+			}
 			md.changes = append(md.changes, pl)
 		}
 	} else {
 		md.removeOrder(originalOrder)
-		if newOrder.Remaining > 0 {
+		if newOrder.TrueRemaining() > 0 {
 			md.addOrder(newOrder)
 		}
 	}
@@ -310,7 +315,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 			md.updateOrder(originalOrder, order)
 		}
 	} else {
-		if order.Remaining > 0 && order.Status == types.OrderStatusActive {
+		if order.TrueRemaining() > 0 && order.Status == types.OrderStatusActive {
 			md.addOrder(order)
 		}
 	}

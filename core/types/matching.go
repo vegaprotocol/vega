@@ -79,7 +79,7 @@ func (o *Order) TrueRemaining() uint64 {
 }
 
 // IcebergNeedsRefresh returns whether the given iceberg order's visible peak has
-// dropped below the minimum peak value, and there is hidden volume available to
+// dropped below the minimum visible size, and there is hidden volume available to
 // restore it.
 func (o *Order) IcebergNeedsRefresh() bool {
 	if o.IcebergOrder == nil {
@@ -92,7 +92,7 @@ func (o *Order) IcebergNeedsRefresh() bool {
 		return false
 	}
 
-	if o.Remaining >= o.IcebergOrder.MinimumPeakSize {
+	if o.Remaining >= o.IcebergOrder.MinimumVisibleSize {
 		// not under the minimum
 		return false
 	}
@@ -107,8 +107,16 @@ func (o *Order) SetIcebergPeaks() {
 		return
 	}
 
+	if o.Remaining > o.IcebergOrder.PeakSize && o.IcebergOrder.ReservedRemaining == 0 {
+		// iceberg is at full volume and so set its visible amount to its peak size
+		peak := num.MinV(o.Remaining, o.IcebergOrder.PeakSize)
+		o.IcebergOrder.ReservedRemaining = o.Remaining - peak
+		o.Remaining = peak
+		return
+	}
+
 	// calculate the refill amount
-	refill := o.IcebergOrder.InitialPeakSize - o.Remaining
+	refill := o.IcebergOrder.PeakSize - o.Remaining
 	refill = num.MinV(refill, o.IcebergOrder.ReservedRemaining)
 
 	o.Remaining += refill
@@ -129,8 +137,8 @@ func (o Order) IntoSubmission() *OrderSubmission {
 	}
 	if o.IcebergOrder != nil {
 		sub.IcebergOrder = &IcebergOrder{
-			InitialPeakSize: o.IcebergOrder.InitialPeakSize,
-			MinimumPeakSize: o.IcebergOrder.MinimumPeakSize,
+			PeakSize:           o.IcebergOrder.PeakSize,
+			MinimumVisibleSize: o.IcebergOrder.MinimumVisibleSize,
 		}
 	}
 	if o.Price != nil {
@@ -390,9 +398,9 @@ func (p PeggedOrder) String() string {
 }
 
 type IcebergOrder struct {
-	ReservedRemaining uint64
-	InitialPeakSize   uint64
-	MinimumPeakSize   uint64
+	ReservedRemaining  uint64
+	PeakSize           uint64
+	MinimumVisibleSize uint64
 }
 
 func (i IcebergOrder) Clone() *IcebergOrder {
@@ -405,17 +413,17 @@ func NewIcebergOrderFromProto(i *proto.IcebergOrder) (*IcebergOrder, error) {
 		return nil, nil
 	}
 	return &IcebergOrder{
-		ReservedRemaining: i.ReservedRemaining,
-		InitialPeakSize:   i.InitialPeakSize,
-		MinimumPeakSize:   i.MinimumPeakSize,
+		ReservedRemaining:  i.ReservedRemaining,
+		PeakSize:           i.PeakSize,
+		MinimumVisibleSize: i.MinimumVisibleSize,
 	}, nil
 }
 
 func (i IcebergOrder) IntoProto() *proto.IcebergOrder {
 	return &proto.IcebergOrder{
-		ReservedRemaining: i.ReservedRemaining,
-		InitialPeakSize:   i.InitialPeakSize,
-		MinimumPeakSize:   i.MinimumPeakSize,
+		ReservedRemaining:  i.ReservedRemaining,
+		PeakSize:           i.PeakSize,
+		MinimumVisibleSize: i.MinimumVisibleSize,
 	}
 }
 
@@ -423,8 +431,8 @@ func (i IcebergOrder) String() string {
 	return fmt.Sprintf(
 		"reserved-remaining(%d) initial-peak-size(%d) minimum-peak-size(%d)",
 		i.ReservedRemaining,
-		i.InitialPeakSize,
-		i.MinimumPeakSize,
+		i.PeakSize,
+		i.MinimumVisibleSize,
 	)
 }
 

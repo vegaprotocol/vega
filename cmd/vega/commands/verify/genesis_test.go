@@ -27,17 +27,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test(t *testing.T) {
+func TestGenesis(t *testing.T) {
 	t.Run("verify default genesis", testVerifyDefaultGenesis)
 	t.Run("verify ERC20 assets", testVerifyERC20Assets)
 	t.Run("verify builtin assets", testVerifyBuiltinAssets)
 	t.Run("verify netparams", testVerifyNetworkParams)
 	t.Run("verify validators", TestVerifyValidators)
-	t.Run("verify unknown appstate field", testUnknownAppstateField)
+	t.Run("verify unknown appstate field", testUnknownAppStateField)
 }
 
 func testVerifyDefaultGenesis(t *testing.T) {
-	testFile := getFileFromAppstate(t, genesis.DefaultState())
+	testFile := writeGenesisFileWithState(t, genesis.DefaultState())
 
 	cmd := verify.GenesisCmd{}
 	assert.NoError(t, cmd.Execute([]string{testFile}))
@@ -57,7 +57,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 		},
 	}
 
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Max faucet amount not a bignum
 	gs = genesis.DefaultState()
@@ -70,7 +70,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 		},
 	}
 
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Completely Valid
 	gs = genesis.DefaultState()
@@ -83,7 +83,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.NoError(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 }
 
 func testVerifyERC20Assets(t *testing.T) {
@@ -99,7 +99,7 @@ func testVerifyERC20Assets(t *testing.T) {
 			},
 		},
 	}
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Invalid contract address
 	gs = genesis.DefaultState()
@@ -111,7 +111,7 @@ func testVerifyERC20Assets(t *testing.T) {
 			},
 		},
 	}
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Completely valid
 	gs = genesis.DefaultState()
@@ -124,7 +124,7 @@ func testVerifyERC20Assets(t *testing.T) {
 		},
 	}
 
-	assert.NoError(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.NoError(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 }
 
 func testVerifyNetworkParams(t *testing.T) {
@@ -133,24 +133,24 @@ func testVerifyNetworkParams(t *testing.T) {
 	// Check for invalid network parameter
 	gs := genesis.DefaultState()
 	gs.NetParams["NOTREAL"] = "something"
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Check for network parameter with bad value
 	gs = genesis.DefaultState()
 	gs.NetParams["snapshot.interval.length"] = "always"
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Check for invalid checkpoint overwrite network parameter
 	gs = genesis.DefaultState()
 	gs.NetParamsOverwrite = []string{"NOTREAL"}
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Check for deprecated parameter in genesis
 	gs = genesis.DefaultState()
 	for k := range netparams.Deprecated {
 		gs.NetParams[k] = "hello"
 	}
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 }
 
 func TestVerifyValidators(t *testing.T) {
@@ -166,36 +166,36 @@ func TestVerifyValidators(t *testing.T) {
 	// Valid validator information
 	gs := genesis.DefaultState()
 	gs.Validators[valid.TmPubKey] = valid
-	assert.NoError(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.NoError(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Mismatch TM key
 	gs = genesis.DefaultState()
 	gs.Validators["WRONG"] = valid
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// Invalid pubkey index
 	gs = genesis.DefaultState()
 	invalid := valid
 	invalid.VegaPubKeyIndex = 0
 	gs.Validators[valid.TmPubKey] = invalid
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// invalid ID
 	gs = genesis.DefaultState()
 	invalid = valid
 	invalid.ID = "too short"
 	gs.Validators[valid.TmPubKey] = invalid
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 
 	// invalid pubkey
 	gs = genesis.DefaultState()
 	invalid = valid
 	invalid.VegaPubKey = "too short"
 	gs.Validators[valid.TmPubKey] = invalid
-	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+	assert.Error(t, cmd.Execute([]string{writeGenesisFileWithState(t, gs)}))
 }
 
-func testUnknownAppstateField(t *testing.T) {
+func testUnknownAppStateField(t *testing.T) {
 	cmd := verify.GenesisCmd{}
 	gs := genesis.DefaultState()
 
@@ -226,12 +226,12 @@ func testUnknownAppstateField(t *testing.T) {
 	assert.Error(t, cmd.Execute([]string{testFile}))
 }
 
-func getFileFromAppstate(t *testing.T, gs genesis.State) string {
+func writeGenesisFileWithState(t *testing.T, gs genesis.State) string {
 	t.Helper()
 
-	testFile := filepath.Join(t.TempDir(), "genesistest.json")
+	genesisFilePath := filepath.Join(t.TempDir(), "genesistest.json")
 
-	genesis := struct {
+	genesisPayload := struct {
 		AppState        genesis.State `json:"app_state"`
 		ConsensusParams struct {
 			Block struct {
@@ -239,13 +239,13 @@ func getFileFromAppstate(t *testing.T, gs genesis.State) string {
 			} `json:"block"`
 		} `json:"consensus_params"`
 	}{AppState: gs}
-	genesis.ConsensusParams.Block.TimeIotaMs = "1"
-	// marshall it
-	file, _ := json.MarshalIndent(genesis, "", " ")
+	genesisPayload.ConsensusParams.Block.TimeIotaMs = "1"
 
-	err := os.WriteFile(testFile, file, 0o644)
-
-	// write to file
+	file, err := json.MarshalIndent(genesisPayload, "", " ")
 	require.NoError(t, err)
-	return testFile
+
+	err = os.WriteFile(genesisFilePath, file, 0o644)
+	require.NoError(t, err)
+
+	return genesisFilePath
 }
