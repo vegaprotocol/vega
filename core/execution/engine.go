@@ -638,6 +638,7 @@ func (e *Engine) removeMarket(mktID string) {
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
+			return
 		}
 	}
 }
@@ -1005,12 +1006,11 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	toDelete := []string{}
 	parentStates := e.getParentStates()
 	evts := make([]events.Event, 0, len(e.marketsCpy))
-	maxI := len(e.marketsCpy) - 1
+	toSkip := map[int]string{}
 	for i, mkt := range e.marketsCpy {
-		// when a successor market kicks in, the marketsCpy slice is updated
-		// this loop will still iterate over N elements, even if the slice has shrunk
-		if i > maxI {
-			break
+		// we can skip successor markets which reference a parent market that has been succeeded
+		if _, ok := toSkip[i]; ok {
+			continue
 		}
 		mkt := mkt
 		id := mkt.GetID()
@@ -1058,16 +1058,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 					e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 				}
 			}
-			// reject other pending successors
-			for _, sid := range e.successors[pid] {
-				delete(e.isSuccessor, sid)
-				if id == sid {
-					continue
-				}
-				e.RejectMarket(ctx, sid)
-				maxI = len(e.marketsCpy) - 1
-			}
+			// add other markets that need to be rejected to the skip list
+			toSkip = e.getPendingSuccessorsToReject(pid, id, toSkip)
 			// remove data used to indicate that the parent market has pending successors
+			delete(e.isSuccessor, id)
 			delete(e.successors, pid)
 			delete(e.marketCPStates, pid)
 		} else if isSuccessor {
@@ -1088,6 +1082,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
 	e.broker.SendBatch(evts)
+	// reject successor markets in the toSkip list
+	for _, sid := range toSkip {
+		e.RejectMarket(ctx, sid)
+	}
 
 	rmCPStates := make([]string, 0, len(toDelete))
 	for _, id := range toDelete {
@@ -1133,6 +1131,29 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 
 	timer.EngineTimeCounterAdd()
+}
+
+func (e *Engine) getPendingSuccessorsToReject(parent, successor string, toSkip map[int]string) map[int]string {
+	ss, ok := e.successors[parent]
+	if !ok {
+		return toSkip
+	}
+	// iterate over all pending successors for the given parent
+	for _, sid := range ss {
+		// ignore the actual successor
+		if sid == successor {
+			continue
+		}
+		if _, ok := e.markets[sid]; !ok {
+			continue
+		}
+		for i, mkt := range e.marketsCpy {
+			if mkt.GetID() == sid {
+				toSkip[i] = sid
+			}
+		}
+	}
+	return toSkip
 }
 
 func (e *Engine) getParentStates() map[string]*types.CPMarketState {
