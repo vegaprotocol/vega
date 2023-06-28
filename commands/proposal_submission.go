@@ -758,27 +758,28 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		}
 
 		t := tp.Internal.GetTime()
-		if t == nil {
-			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal", parentProperty, name), ErrIsRequired)
-		}
+		if t != nil {
+			if len(t.Conditions) == 0 {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
+			}
 
-		if len(t.Conditions) == 0 {
-			errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions", parentProperty, name), ErrIsRequired)
-		}
+			if len(t.Conditions) != 0 {
+				for j, condition := range t.Conditions {
+					if len(condition.Value) == 0 {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
+					}
+					if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
+					}
 
-		if len(t.Conditions) != 0 {
-			for j, condition := range t.Conditions {
-				if len(condition.Value) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.value", parentProperty, name, j), ErrIsRequired)
-				}
-				if condition.Operator == datapb.Condition_OPERATOR_UNSPECIFIED {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsRequired)
-				}
-
-				if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+					if _, ok := datapb.Condition_Operator_name[int32(condition.Operator)]; !ok {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.internal.time.conditions.%d.operator", parentProperty, name, j), ErrIsNotValid)
+					}
 				}
 			}
+
+		} else {
+			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal.time", parentProperty, name), ErrIsRequired)
 		}
 
 	case *vegapb.DataSourceDefinition_External:
@@ -787,42 +788,51 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 		case *vegapb.DataSourceDefinitionExternal_Oracle:
 			// If data source type is external - check if the signers are present first.
 			o := tp.External.GetOracle()
-
-			signers := o.Signers
-			if len(signers) == 0 {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
-			}
-
-			for i, key := range signers {
-				signer := types.SignerFromProto(key)
-				if signer.IsEmpty() {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
-				} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
-				} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+			if o != nil {
+				signers := o.Signers
+				if len(signers) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers", parentProperty, name), ErrIsRequired)
 				}
+
+				for i, key := range signers {
+					signer := types.SignerFromProto(key)
+					if signer.IsEmpty() {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValid)
+					} else if pubkey := signer.GetSignerPubKey(); pubkey != nil && !crypto.IsValidVegaPubKey(pubkey.Key) {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidVegaPubkey)
+					} else if address := signer.GetSignerETHAddress(); address != nil && !crypto.EthereumIsValidAddress(address.Address) {
+						errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle.signers.%d", parentProperty, name, i), ErrIsNotValidEthereumAddress)
+					}
+				}
+
+				filters := o.Filters
+				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
+
+			} else {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
 
-			filters := o.Filters
-			errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
 		case *vegapb.DataSourceDefinitionExternal_EthOracle:
 			ethOracle := tp.External.GetEthOracle()
 
-			if !crypto.EthereumIsValidAddress(ethOracle.Address) {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
-			}
+			if ethOracle != nil {
+				if !crypto.EthereumIsValidAddress(ethOracle.Address) {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
+				}
 
-			if len(ethOracle.Abi.Values) == 0 {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsNotValidEthereumAbi)
-			}
+				if len(ethOracle.Abi.Values) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsNotValidEthereumAbi)
+				}
 
-			if len(strings.TrimSpace(ethOracle.Method)) == 0 {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsNotValidEthereumMethodName)
-			}
+				if len(strings.TrimSpace(ethOracle.Method)) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsNotValidEthereumMethodName)
+				}
 
-			if len(ethOracle.Normalisers) == 0 {
-				errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrNoEthereumOracleNormalisers)
+				if len(ethOracle.Normalisers) == 0 {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrNoEthereumOracleNormalisers)
+				}
+			} else {
+				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
 		}
 	}
