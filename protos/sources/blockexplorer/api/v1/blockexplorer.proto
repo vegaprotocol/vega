@@ -74,10 +74,10 @@ message ListTransactionsRequest {
   repeated string exclude_cmd_types = 6;
   // Party IDs filter, can be sender or receiver
   repeated string parties = 7;
-  // Number of transaction to be returned from the blockchain. Use in conjunction with the `after` cursor to paginate forwards.
+  // Number of transactions to be returned from the blockchain. Use in conjunction with the `after` cursor to paginate forwards.
   // On its own, this will return the first `first` transactions.
   uint32 first = 8;
-  // Number of transaction to be returned from the blockchain. Use in conjunction with the `before` cursor to paginate backwards.
+  // Number of transactions to be returned from the blockchain. Use in conjunction with the `before` cursor to paginate backwards.
   // On its own, this will return the last `last` transactions.
   uint32 last = 9;
 }
