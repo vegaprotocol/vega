@@ -204,9 +204,13 @@ func UpdateMarketConfigurationFromProto(p *vegapb.UpdateMarketConfiguration) (*U
 	md := make([]string, 0, len(p.Metadata))
 	md = append(md, p.Metadata...)
 
+	var err error
 	var instrument *UpdateInstrumentConfiguration
 	if p.Instrument != nil {
-		instrument = UpdateInstrumentConfigurationFromProto(p.Instrument)
+		instrument, err = UpdateInstrumentConfigurationFromProto(p.Instrument)
+		if err != nil {
+			return nil, fmt.Errorf("error getting update instrument configuration from proto: %s", err)
+		}
 	}
 
 	var priceMonitoring *PriceMonitoringParameters
@@ -330,21 +334,21 @@ func (i UpdateInstrumentConfigurationFuture) IntoProto() *vegapb.UpdateInstrumen
 	}
 }
 
-func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) *UpdateInstrumentConfiguration {
+func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) (*UpdateInstrumentConfiguration, error) {
 	r := &UpdateInstrumentConfiguration{
 		Code: p.Code,
 	}
 
 	switch pr := p.Product.(type) {
 	case *vegapb.UpdateInstrumentConfiguration_Future:
-		settl, _ := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
-		//if err != nil {
-		//
-		//}
-		term, _ := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
-		//if err != nil {
-		//
-		//}
+		settl, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
+		}
+		term, err := DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse trading termination data source spec: %w", err)
+		}
 		r.Product = &UpdateInstrumentConfigurationFuture{
 			Future: &UpdateFutureProduct{
 				QuoteName:                           pr.Future.QuoteName,
@@ -354,7 +358,7 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 			},
 		}
 	}
-	return r
+	return r, nil
 }
 
 type UpdateFutureProduct struct {
