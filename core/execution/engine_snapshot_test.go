@@ -360,6 +360,8 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	})
 	// create a market
 	marketConfig := getMarketConfig()
+	// ensure CP state doesn't get invalidated the moment the market is settled
+	engine.OnSuccessorMarketTimeWindowUpdate(ctx, time.Hour)
 	// now let's set up the settlement and trading terminated callbacks
 	var ttCB, sCB oracles.OnMatchedOracleData
 	ttData := oracles.OracleData{
@@ -405,10 +407,12 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	b, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, b)
-	assert.Len(t, providers, 5)
+	// this is now empty, the market is settled, no state providers required
+	assert.Len(t, providers, 0)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
+	engine2.OnSuccessorMarketTimeWindowUpdate(ctx, time.Hour)
 
 	defer ctrl.Finish()
 	assert.NotNil(t, engine2)
@@ -416,7 +420,7 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
 	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 5)
+	assert.Len(t, loadStateProviders, 0)
 	assert.NoError(t, err)
 
 	providerMap := map[string]map[string]types.StateProvider{}
