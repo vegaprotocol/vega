@@ -455,3 +455,57 @@ func UnmarshalPositionStatus(v interface{}) (vega.PositionStatus, error) {
 	}
 	return vega.PositionStatus(t), nil
 }
+
+func MarshalStopOrderStatus(s vega.StopOrder_Status) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderStatus(v interface{}) (vega.StopOrder_Status, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.StopOrder_STATUS_UNSPECIFIED, fmt.Errorf("expected stop order status to be a string")
+	}
+	t, ok := vega.StopOrder_Status_value[s]
+	if !ok {
+		return vega.StopOrder_STATUS_UNSPECIFIED, fmt.Errorf("failed to convert stop order status to Proto: %v", s)
+	}
+	return vega.StopOrder_Status(t), nil
+}
+
+func MarshalStopOrderExpiryStrategy(s vega.StopOrder_ExpiryStrategy) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderExpiryStrategy(v interface{}) (vega.StopOrder_ExpiryStrategy, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.StopOrder_EXPIRY_STRATEGY_UNSPECIFIED, fmt.Errorf("expected stop order expiry strategy to be a string")
+	}
+	t, ok := vega.StopOrder_ExpiryStrategy_value[s]
+	if !ok {
+		return vega.StopOrder_EXPIRY_STRATEGY_UNSPECIFIED, fmt.Errorf("failed to convert stop order expiry strategy to Proto: %v", s)
+	}
+	return vega.StopOrder_ExpiryStrategy(t), nil
+}
+
+func MarshalStopOrderTriggerDirection(s vega.StopOrder_TriggerDirection) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write([]byte(strconv.Quote(s.String())))
+	})
+}
+
+func UnmarshalStopOrderTriggerDirection(v interface{}) (vega.StopOrder_TriggerDirection, error) {
+	s, ok := v.(string)
+	if !ok {
+		return vega.StopOrder_TRIGGER_DIRECTION_UNSPECIFIED, fmt.Errorf("expected stop order trigger direction to be a string")
+	}
+	t, ok := vega.StopOrder_TriggerDirection_value[s]
+	if !ok {
+		return vega.StopOrder_TRIGGER_DIRECTION_UNSPECIFIED, fmt.Errorf("failed to convert stop order trigger direction to Proto: %v", s)
+	}
+	return vega.StopOrder_TriggerDirection(t), nil
+}

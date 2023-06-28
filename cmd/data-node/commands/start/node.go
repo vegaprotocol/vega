@@ -221,6 +221,7 @@ func (l *NodeCommand) createGRPCServer(config api.Config) *api.GRPCServer {
 		l.protocolUpgradeService,
 		l.networkHistoryService,
 		l.coreSnapshotService,
+		l.stopOrderService,
 	)
 	return grpcServer
 }

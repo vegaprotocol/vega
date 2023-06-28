@@ -46,6 +46,8 @@ var (
 	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver.
 	ErrInvalidProposal = errors.New("invalid proposal")
+	// ErrInvalidStopOrder is returned when an invalid stop order is received by the stop order resolver.
+	ErrInvalidStopOrder = errors.New("invalid stop order")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2
@@ -401,6 +403,18 @@ func (r *VegaResolverRoot) ERC20MultiSigSignerRemovedBundle() ERC20MultiSigSigne
 
 func (r *VegaResolverRoot) IcebergOrder() IcebergOrderResolver {
 	return (*icebergOrderResolver)(r)
+}
+
+func (r *VegaResolverRoot) OrderSubmission() OrderSubmissionResolver {
+	return (*orderSubmissionResolver)(r)
+}
+
+func (r *VegaResolverRoot) StopOrder() StopOrderResolver {
+	return (*stopOrderResolver)(r)
+}
+
+func (r *VegaResolverRoot) StopOrderFilter() StopOrderFilterResolver {
+	return (*stopOrderFilterResolver)(r)
 }
 
 // RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
@@ -1331,6 +1345,33 @@ func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string,
 	}
 
 	return resp.GetMarkets(), nil
+}
+
+func (r *myQueryResolver) StopOrder(ctx context.Context, id string) (*eventspb.StopOrderEvent, error) {
+	req := &v2.GetStopOrderRequest{
+		OrderId: id,
+	}
+
+	resp, err := r.tradingDataClientV2.GetStopOrder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Order, nil
+}
+
+func (r *myQueryResolver) StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error) {
+	req := &v2.ListStopOrdersRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.ListStopOrders(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Orders, nil
 }
 
 // END: Root Resolver

@@ -105,6 +105,7 @@ type TradingDataServiceV2 struct {
 	protocolUpgradeService     *service.ProtocolUpgrade
 	NetworkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
+	stopOrderService           *service.StopOrders
 }
 
 // ListAccounts lists accounts matching the request.
@@ -3762,4 +3763,88 @@ func batch[T any](in []T, batchSize int) [][]T {
 	}
 	batches = append(batches, in)
 	return batches
+}
+
+func (t *TradingDataServiceV2) GetStopOrder(ctx context.Context, req *v2.GetStopOrderRequest) (*v2.GetStopOrderResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetStopOrder")()
+
+	if len(req.OrderId) == 0 {
+		return nil, formatE(ErrMissingOrderID)
+	}
+
+	if !crypto.IsValidVegaID(req.OrderId) {
+		return nil, formatE(ErrInvalidOrderID)
+	}
+
+	order, err := t.stopOrderService.GetStopOrder(ctx, req.OrderId)
+	if err != nil {
+		return nil, formatE(ErrOrderNotFound, errors.Wrapf(err, "orderID: %s", req.OrderId))
+	}
+
+	return &v2.GetStopOrderResponse{
+		Order: order.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListStopOrdersRequest) (*v2.ListStopOrdersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetStopOrder")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var filter entities.StopOrderFilter
+	if req.Filter != nil {
+		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
+		filter = entities.StopOrderFilter{
+			Statuses:       stopOrderStatusesFromProto(req.Filter.Statuses),
+			ExpiryStrategy: stopOrderExpiryStrategyFromProto(req.Filter.ExpiryStrategies),
+			PartyIDs:       req.Filter.PartyIds,
+			MarketIDs:      req.Filter.MarketIds,
+			DateRange:      &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
+		}
+		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more market id is invalid"))
+		}
+
+		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
+	}
+
+	orders, pageInfo, err := t.stopOrderService.ListStopOrders(ctx, filter, pagination)
+	if err != nil {
+		return nil, formatE(ErrOrderServiceGetOrders, err)
+	}
+
+	edges, err := makeEdges[*v2.StopOrderEdge](orders)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	ordersConnection := &v2.StopOrderConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListStopOrdersResponse{
+		Orders: ordersConnection,
+	}, nil
+}
+
+func stopOrderStatusesFromProto(statuses []vega.StopOrder_Status) []entities.StopOrderStatus {
+	s := make([]entities.StopOrderStatus, len(statuses))
+	for i := range statuses {
+		s[i] = entities.StopOrderStatus(statuses[i])
+	}
+	return s
+}
+
+func stopOrderExpiryStrategyFromProto(strategies []vega.StopOrder_ExpiryStrategy) []entities.StopOrderExpiryStrategy {
+	es := make([]entities.StopOrderExpiryStrategy, len(strategies))
+	for i := range strategies {
+		es[i] = entities.StopOrderExpiryStrategy(strategies[i])
+	}
+	return es
 }
