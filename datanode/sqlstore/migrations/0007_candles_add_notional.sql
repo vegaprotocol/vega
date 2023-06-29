@@ -131,9 +131,9 @@ SELECT market_id,  vega_time as period_start,
        max(price) AS high,
        min(price) AS low,
        sum(size) AS volume,
-       sum(size * price) as notional,
-       last(synthetic_time,
-            synthetic_time) AS last_update_in_period
+       last(synthetic_time, synthetic_time) AS last_update_in_period,
+       sum(size * price) as notional
+
 FROM trades
 GROUP BY market_id, vega_time;
 

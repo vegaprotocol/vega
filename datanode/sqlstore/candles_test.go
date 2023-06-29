@@ -106,6 +106,43 @@ func TestCandlesPagination(t *testing.T) {
 	assert.Equal(t, lastCandle, candles[0])
 }
 
+func TestNotional(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
+
+	startTime := time.Unix(StartTime, 0)
+	block := addTestBlockForTime(t, ctx, bs, startTime)
+
+	// Total notional here will be 1*10 + 2*15 = 40
+	insertTestTrade(t, ctx, tradeStore, 1, 10, block, 0)
+	insertTestTrade(t, ctx, tradeStore, 2, 15, block, 3)
+
+	nextTime := time.Unix(StartTime, 0).Add(10 * time.Minute)
+	block = addTestBlockForTime(t, ctx, bs, nextTime)
+	// Total notional here will be 3*20 + 4*25 = 160
+	insertTestTrade(t, ctx, tradeStore, 3, 20, block, 0)
+	insertTestTrade(t, ctx, tradeStore, 4, 25, block, 5)
+
+	_, candleID, err := candleStore.GetCandleIDForIntervalAndMarket(ctx, "1 Minute", testMarket)
+	if err != nil {
+		t.Fatalf("getting existing candleDescriptor id:%s", err)
+	}
+
+	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	candles, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candleID, &startTime,
+		nil, pagination)
+	if err != nil {
+		t.Fatalf("failed to get candles:%s", err)
+	}
+
+	assert.Equal(t, uint64(40), candles[0].Notional)
+	assert.Equal(t, uint64(160), candles[1].Notional)
+}
+
 func TestCandlesGetForEmptyInterval(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
