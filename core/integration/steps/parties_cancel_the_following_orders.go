@@ -33,7 +33,7 @@ func PartiesCancelTheFollowingOrders(
 
 		order, err := broker.GetByReference(party, row.Reference())
 		if err != nil {
-			return errOrderNotFound(party, row.Reference(), err)
+			return errOrderNotFound(row.Reference(), party, err)
 		}
 
 		cancel := types.OrderCancellation{
