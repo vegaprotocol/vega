@@ -479,6 +479,10 @@ func (m *Market) GetMarketData() types.MarketData {
 			b.MinValidPrice.AddSum(common.One) // ceil
 		}
 	}
+	mode := m.as.Mode()
+	if m.mkt.TradingMode == types.MarketTradingModeNoTrading {
+		mode = m.mkt.TradingMode
+	}
 
 	return types.MarketData{
 		Market:                    m.GetID(),
@@ -500,7 +504,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		IndicativeVolume:          indicativeVolume,
 		AuctionStart:              auctionStart,
 		AuctionEnd:                auctionEnd,
-		MarketTradingMode:         m.as.Mode(),
+		MarketTradingMode:         mode,
 		MarketState:               m.mkt.State,
 		Trigger:                   m.as.Trigger(),
 		ExtensionTrigger:          m.as.ExtensionTrigger(),

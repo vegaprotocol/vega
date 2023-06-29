@@ -113,6 +113,7 @@
 - [8596](https://github.com/vegaprotocol/vega/issues/8596) - Fix panic when rejecting markets on time update.
 - [8545](https://github.com/vegaprotocol/vega/issues/6545) - Block explorer does not page backwards correctly.
 - [8623](https://github.com/vegaprotocol/vega/issues/8623) - Send market data event when a market is rejected.
+- [8636](https://github.com/vegaprotocol/vega/issues/8636) - Trading mode in market data events should be set to `NO_TRADING` if the market is in a final state.
 
 ## 0.71.0
 
