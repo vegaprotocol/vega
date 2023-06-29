@@ -27,12 +27,20 @@ type LedgerEntryFilter struct {
 	TransferTypes []LedgerMovementType
 }
 
-func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) *LedgerEntryFilter {
-	filter := &LedgerEntryFilter{}
+func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) (*LedgerEntryFilter, error) {
+	filter := LedgerEntryFilter{}
 	if pbFilter != nil {
 		filter.CloseOnAccountFilters = CloseOnLimitOperation(pbFilter.CloseOnAccountFilters)
-		filter.FromAccountFilter = AccountFilterFromProto(pbFilter.FromAccountFilter)
-		filter.ToAccountFilter = AccountFilterFromProto(pbFilter.ToAccountFilter)
+
+		var err error
+		filter.FromAccountFilter, err = AccountFilterFromProto(pbFilter.FromAccountFilter)
+		if err != nil {
+			return nil, err
+		}
+		filter.ToAccountFilter, err = AccountFilterFromProto(pbFilter.ToAccountFilter)
+		if err != nil {
+			return nil, err
+		}
 
 		if len(pbFilter.TransferTypes) > 0 {
 			filter.TransferTypes = make([]LedgerMovementType, len(pbFilter.TransferTypes))
@@ -45,5 +53,5 @@ func LedgerEntryFilterFromProto(pbFilter *v2.LedgerEntryFilter) *LedgerEntryFilt
 		}
 	}
 
-	return filter
+	return &filter, nil
 }
