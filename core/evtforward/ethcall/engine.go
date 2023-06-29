@@ -3,6 +3,7 @@ package ethcall
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -14,13 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 )
 
-// Still TODO
-//   - on tick check every block since last tick not just current
-//   - submit some sort of error event if call fails
-//   - know when datasources stop being active and remove them
-//     -- because e.g. market is dead, or amended to have different source
-//     -- or because trigger will never fire again
-//   - what to do about catching up e.g. if node is restarted
 type EthReaderCaller interface {
 	ethereum.ContractCaller
 	ethereum.ChainReader
@@ -36,16 +30,16 @@ type blockish interface {
 	Time() uint64
 }
 
-type blockishImpl struct {
+type blockIndex struct {
 	number uint64
 	time   uint64
 }
 
-func (b blockishImpl) NumberU64() uint64 {
+func (b blockIndex) NumberU64() uint64 {
 	return b.number
 }
 
-func (b blockishImpl) Time() uint64 {
+func (b blockIndex) Time() uint64 {
 	return b.time
 }
 
@@ -87,14 +81,43 @@ func (e *Engine) Start() {
 	}
 
 	e.poller.Loop(func() {
-		e.OnTick(ctx, time.Now())
+		e.Poll(ctx, time.Now())
 	})
 }
 
 func (e *Engine) UpdatePreviousEthBlock(height uint64, time uint64) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.prevEthBlock = blockishImpl{number: height, time: time}
+	e.prevEthBlock = blockIndex{number: height, time: time}
+}
+
+func (e *Engine) initPreviousEthBlock(height uint64, time uint64) bool {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.prevEthBlock == nil {
+		e.prevEthBlock = blockIndex{number: height, time: time}
+		return true
+	}
+	return false
+}
+
+func (e *Engine) getPreviousEthBlock() blockish {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return blockIndex{
+		number: e.prevEthBlock.NumberU64(),
+		time:   e.prevEthBlock.Time(),
+	}
+}
+
+func (e *Engine) getCalls() map[string]Call {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	calls := map[string]Call{}
+	for specID, call := range e.calls {
+		calls[specID] = call
+	}
+	return calls
 }
 
 func (e *Engine) Stop() {
@@ -170,44 +193,55 @@ func (e *Engine) OnSpecDeactivated(ctx context.Context, spec types.OracleSpec) {
 	}
 }
 
-func (e *Engine) OnTick(ctx context.Context, wallTime time.Time) {
-	// TODO: maybe don't want to hold this lock all the time as eth call could be slow
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	ethBlock, err := e.client.BlockByNumber(ctx, nil)
+// Poll is called by the poller in it's own goroutine; it isn't part of the abci code path.
+func (e *Engine) Poll(ctx context.Context, wallTime time.Time) {
+	// Don't take the mutex here to avoid blocking abci engine while doing potentially lengthy ethereum calls
+	// Instead call methods on the engine that take the mutex for a small time where needed.
+	// We do need to make use direct use of of e.log, e.client and e.forwarder; but these are static after creation
+	// and the methods used are safe for concurrent access.
+	lastEthBlock, err := e.client.BlockByNumber(ctx, nil)
 	if err != nil {
 		e.log.Errorf("failed to get current block header: %w", err)
 		return
 	}
 
 	e.log.Info("tick",
-		logging.Time("vegaTime", wallTime),
-		logging.BigInt("ethBlock", ethBlock.Number()),
-		logging.Time("ethTime", time.Unix(int64(ethBlock.Time()), 0)))
+		logging.Time("wallTime", wallTime),
+		logging.BigInt("ethBlock", lastEthBlock.Number()),
+		logging.Time("ethTime", time.Unix(int64(lastEthBlock.Time()), 0)))
 
-	if e.prevEthBlock == nil {
-		e.prevEthBlock = ethBlock
+	// If this is the first time we're running, just set the previous block and return
+	if e.initPreviousEthBlock(lastEthBlock.NumberU64(), lastEthBlock.Time()) {
 		return
 	}
 
-	for specID, call := range e.calls {
-		if call.triggered(e.prevEthBlock, ethBlock) {
-			res, err := call.Call(ctx, e.client, ethBlock.NumberU64())
-			if err != nil {
-				e.log.Errorf("failed to call contract: %w", err)
-				event := makeErrorChainEvent(err.Error(), specID, ethBlock)
-				e.forwarder.ForwardFromSelf(event)
-				continue
-			}
+	// Go through an eth blocks one at a time until we get to the most recent one
+	for prevEthBlock := e.getPreviousEthBlock(); prevEthBlock.NumberU64() < lastEthBlock.NumberU64(); prevEthBlock = e.getPreviousEthBlock() {
+		nextBlockNum := big.NewInt(0).SetUint64(prevEthBlock.NumberU64() + 1)
+		nextEthBlock, err := e.client.BlockByNumber(ctx, nextBlockNum)
+		if err != nil {
+			e.log.Errorf("failed to get next block header: %w", err)
+			return
+		}
 
-			if res.PassesFilters {
-				event := makeChainEvent(res, specID, ethBlock)
-				e.forwarder.ForwardFromSelf(event)
+		for specID, call := range e.getCalls() {
+			if call.triggered(prevEthBlock, nextEthBlock) {
+				res, err := call.Call(ctx, e.client, nextEthBlock.NumberU64())
+				if err != nil {
+					e.log.Errorf("failed to call contract: %w", err)
+					event := makeErrorChainEvent(err.Error(), specID, nextEthBlock)
+					e.forwarder.ForwardFromSelf(event)
+					continue
+				}
+
+				if res.PassesFilters {
+					event := makeChainEvent(res, specID, nextEthBlock)
+					e.forwarder.ForwardFromSelf(event)
+				}
 			}
 		}
+		e.UpdatePreviousEthBlock(nextEthBlock.NumberU64(), nextEthBlock.Time())
 	}
-	e.prevEthBlock = ethBlock
 }
 
 func makeChainEvent(res Result, specID string, block blockish) *commandspb.ChainEvent {
