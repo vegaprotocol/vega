@@ -67,6 +67,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
 	t.Run("Submitting a proposal with internal time termination with non-existing account fails", testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails)
 	t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
+	t.Run("Submitting an update market proposal without enough stake and els fails", testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails)
 	t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
 
 	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
@@ -82,6 +83,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Updating voters key on votes with internal time termination succeeds", testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds)
 
 	t.Run("Computing the governance state hash is deterministic", testComputingGovernanceStateHashIsDeterministic)
+	t.Run("Submit proposal update market", testSubmitProposalMarketUpdate)
 }
 
 func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
@@ -240,9 +242,6 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 			name:     "For new market",
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
-			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
-		}, {
 			name:     "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
 		}, {
@@ -268,6 +267,38 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 	}
 }
 
+func testSubmitProposalMarketUpdate(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
+	tc := struct {
+		name     string
+		proposal types.Proposal
+	}{
+		name:     "For market update",
+		proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
+	}
+
+	// test that with no account but equity like share, a market update proposal goes through
+	t.Run(tc.name, func(tt *testing.T) {
+		// setup
+		eng.ensureAllAssetEnabled(tt)
+		eng.ensureNoAccountForParty(tt, party)
+		eng.expectOpenProposalEvent(tt, party, tc.proposal.ID)
+
+		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
+		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalOne(), true)
+		// when
+		_, err := eng.submitProposal(tt, tc.proposal)
+
+		// then
+		require.NoError(tt, err)
+	})
+}
+
 func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -283,9 +314,6 @@ func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFail
 		{
 			name:     "For new market",
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil, false),
-		}, {
-			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, false),
 		}, {
 			name:     "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -330,10 +358,6 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
 			proposal:                eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
-			name:                    "For market update",
-			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
-		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
 			proposal:                eng.newProposalForNewAsset(party, now),
@@ -362,6 +386,42 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 	}
 }
 
+func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
+
+	tc := struct {
+		name                    string
+		minProposerBalanceParam string
+		proposal                types.Proposal
+	}{
+		name:                    "For market update",
+		minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
+		proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
+	}
+
+	t.Run(tc.name, func(tt *testing.T) {
+		// setup
+		eng.ensureTokenBalanceForParty(tt, party, 10)
+		eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+		eng.ensureAllAssetEnabled(tt)
+		eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorInsufficientTokens)
+
+		// when
+		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
+		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalZero(), true)
+		_, err := eng.submitProposal(tt, tc.proposal)
+
+		// then
+		require.Error(tt, err)
+		assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+	})
+}
+
 func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -379,10 +439,6 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 			name:                    "For new market",
 			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
 			proposal:                eng.newProposalForNewMarket(party, now, nil, nil, false),
-		}, {
-			name:                    "For market update",
-			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, false),
 		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
