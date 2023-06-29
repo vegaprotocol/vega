@@ -531,6 +531,68 @@ Feature: stop orders
       | party  | market id | side | volume | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 0     | STATUS_FILLED | stop1     |
 
+  Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 1000000  |
+      | party2 | BTC   | 1000000  |
+      | party3 | BTC   | 1000000  |
+      | aux    | BTC   | 1000000  |
+      | aux2   | BTC   | 1000000  |
+      | aux3   | BTC   | 1000000  |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux3  | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Given time is updated to "2019-11-30T00:00:10Z"
+    # setup party1 position, open a 10 long position
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1| ETH/DEC19 | buy  | 20     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | sell | 20     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    # volume for the stop trade
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | buy  | 20     | 20    | 0                | TYPE_LIMIT | TIF_GTC |
+    # create party1 stop order, no trade resulting, expires in 10 secs
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error | reference | so expires in | so expiry strategy     |
+      | party1| ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 25               |       | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT |
+    
+    # trigger the stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2| ETH/DEC19 | buy  | 1      | 24    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3| ETH/DEC19 | sell | 1      | 24    | 1                | TYPE_LIMIT | TIF_GTC |
+    # check the stop order is filled
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
+
+    # add 20 secs, should expire
+    Given time is updated to "2019-11-30T00:00:30Z"
+    # check the stop order was not triggered a second at time T
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 10     | -300           | -300         |
+
   Scenario: A stop order set to trade volume x with a trigger set to Rises Above at a given price will trigger at the first trade at or above that price. At this time the order will be placed on the book if and only if it would reduce the trader's absolute position (buying if they are short or selling if they are long) if executed (i.e. will execute as a reduce-only order). (0014-ORDT-055)
 
     # setup accounts
