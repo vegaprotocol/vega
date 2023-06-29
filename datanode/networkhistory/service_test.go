@@ -388,6 +388,103 @@ func updateAllContinuousAggregateData(ctx context.Context) {
 	}
 }
 
+func TestLoadingDataFetchedAsynchronously(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	log := logging.NewTestLogger()
+
+	require.NoError(t, networkHistoryStore.ResetIndex())
+	emptyDatabaseAndSetSchemaVersion(highestMigrationNumber)
+
+	snapshotCopyToPath := t.TempDir()
+	snapshotService := setupSnapshotService(snapshotCopyToPath)
+
+	fetched, err := fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[4000].HistorySegmentID, 1000)
+	require.NoError(t, err)
+	require.Equal(t, int64(1000), fetched)
+
+	networkhistoryService := setupNetworkHistoryService(ctx, log, snapshotService, networkHistoryStore, snapshotCopyToPath)
+	segments, err := networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
+
+	chunk, err := segments.MostRecentContiguousHistory()
+	require.NoError(t, err)
+
+	loaded, err := networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, chunk, sqlConfig.ConnectionConfig, false, false)
+	require.NoError(t, err)
+	assert.Equal(t, int64(3001), loaded.LoadedFromHeight)
+	assert.Equal(t, int64(4000), loaded.LoadedToHeight)
+
+	dbSummary := getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[4].currentTableSummaries, dbSummary.currentTableSummaries)
+
+	// Run events to height 5000
+	ctxWithCancel, cancelFn := context.WithCancel(ctx)
+	evtSource := newTestEventSourceWithProtocolUpdateMessage()
+
+	pus := service.NewProtocolUpgrade(nil, log)
+	puh := networkhistory.NewProtocolUpgradeHandler(log, pus, evtSource, func(ctx context.Context, chainID string,
+		toHeight int64,
+	) error {
+		return nil
+	})
+
+	var md5Hash string
+	broker, err := setupSQLBroker(ctx, sqlConfig, snapshotService,
+		func(ctx context.Context, service *snapshot.Service, chainId string, lastCommittedBlockHeight int64, snapshotTaken bool) {
+			if lastCommittedBlockHeight > 0 && lastCommittedBlockHeight%snapshotInterval == 0 {
+				ss, err := service.CreateSnapshotAsynchronously(ctx, chainId, lastCommittedBlockHeight)
+				require.NoError(t, err)
+
+				waitForSnapshotToComplete(ss)
+
+				md5Hash, err = fsutil.Md5Hash(ss.ZipFilePath())
+				require.NoError(t, err)
+
+				fromEventHashes = append(fromEventHashes, md5Hash)
+			}
+
+			if lastCommittedBlockHeight == 5000 {
+				cancelFn()
+			}
+		},
+		evtSource, puh)
+	require.NoError(t, err)
+
+	err = broker.Receive(ctxWithCancel)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		require.NoError(t, err)
+	}
+
+	require.Equal(t, fromEventHashes[5], md5Hash)
+
+	networkhistoryService.PublishSegments(ctx)
+
+	// Now simulate the situation where the previous history segments were fetched asynchronously during event processing
+	// and full history is then subsequently loaded
+	emptyDatabaseAndSetSchemaVersion(0)
+
+	fetched, err = fetchBlocks(ctx, log, networkHistoryStore, goldenSourceHistorySegment[3000].HistorySegmentID, 3000)
+	require.NoError(t, err)
+	require.Equal(t, int64(3000), fetched)
+
+	segments, err = networkhistoryService.ListAllHistorySegments()
+	require.NoError(t, err)
+
+	segmentsInRange, err := segments.ContiguousHistoryInRange(1, 5000)
+	require.NoError(t, err)
+	loaded, err = networkhistoryService.LoadNetworkHistoryIntoDatanode(ctx, segmentsInRange, sqlConfig.ConnectionConfig, false, false)
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), loaded.LoadedFromHeight)
+	assert.Equal(t, int64(5000), loaded.LoadedToHeight)
+
+	dbSummary = getDatabaseDataSummary(ctx, sqlConfig.ConnectionConfig)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].currentTableSummaries, dbSummary.currentTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].historyTableSummaries, dbSummary.historyTableSummaries)
+	assertSummariesAreEqual(t, fromEventsDatabaseSummaries[5].caggSummaries, dbSummary.caggSummaries)
+}
+
 func TestRestoringNodeThatAlreadyContainsData(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

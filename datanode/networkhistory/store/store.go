@@ -664,22 +664,25 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 	return indexEntry, nil
 }
 
-func (p *Store) StagedSegment(s segment.Full) (segment.Staged, error) {
+func (p *Store) StagedSegment(ctx context.Context, s segment.Full) (segment.Staged, error) {
 	ss := segment.Staged{
 		Full:      s,
 		Directory: p.stagingDir,
 	}
 	if _, err := os.Stat(ss.ZipFilePath()); err != nil {
-		return segment.Staged{}, fmt.Errorf("segment %v not fetched into staging area:%w", s, err)
+		_, err = p.FetchHistorySegment(ctx, ss.HistorySegmentID)
+		if err != nil {
+			return segment.Staged{}, fmt.Errorf("failed to fetch history segment into staging area:%w", err)
+		}
 	}
 	return ss, nil
 }
 
-func (p *Store) StagedContiguousHistory(chunk segment.ContiguousHistory[segment.Full]) (segment.ContiguousHistory[segment.Staged], error) {
+func (p *Store) StagedContiguousHistory(ctx context.Context, chunk segment.ContiguousHistory[segment.Full]) (segment.ContiguousHistory[segment.Staged], error) {
 	staged := segment.ContiguousHistory[segment.Staged]{}
 
 	for _, s := range chunk.Segments {
-		ss, err := p.StagedSegment(s)
+		ss, err := p.StagedSegment(ctx, s)
 		if err != nil {
 			return segment.ContiguousHistory[segment.Staged]{}, err
 		}
