@@ -271,6 +271,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
   UpdateNetworkParameter:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
+  CancelTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
+  NewTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.NewTransfer
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
   SuccessorConfiguration:
@@ -372,6 +376,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransfer
   RecurringTransfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringTransfer
+  OneOffGovernanceTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffGovernanceTransfer
+  RecurringGovernanceTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringGovernanceTransfer
   Statistics:
     model: code.vegaprotocol.io/vega/protos/vega/api/v1.Statistics
   AccountType:
