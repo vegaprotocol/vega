@@ -73,13 +73,13 @@ type ExecutionEngine interface {
 	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)
 
 	// stop orders stuff
-	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator) error
+	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
 	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
-	RejectMarket(ctx context.Context, marketid string) ([]int, error)
+	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 	SucceedMarket(ctx context.Context, successor, parent string) error
 
@@ -208,6 +208,7 @@ type Banking interface {
 	NewGovernanceTransfer(ctx context.Context, ID, reference string, transferConfig *types.NewTransferConfiguration) error
 	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
 	VerifyCancelGovernanceTransfer(transferID string) error
+	CancelGovTransfer(ctx context.Context, ID string) error
 }
 
 // NetworkParameters ...

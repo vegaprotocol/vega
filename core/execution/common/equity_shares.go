@@ -39,6 +39,8 @@ type EquityShares struct {
 	totalPStake num.Decimal
 	// lps is a map of party id to lp (LiquidityProviders)
 	lps map[string]*lp
+	// used to restore own ELS from checkpoint
+	pendingLPs []*types.ELSShare
 
 	openingAuctionEnded bool
 }
@@ -75,6 +77,10 @@ func (es *EquityShares) InheritELS(shares []*types.ELSShare) {
 	}
 }
 
+func (es *EquityShares) RestoreELS(shares []*types.ELSShare) {
+	es.pendingLPs = shares
+}
+
 func (es *EquityShares) RollbackParentELS() {
 	// get all current stakes
 	current := es.lps
@@ -96,6 +102,7 @@ func (es *EquityShares) LpsToLiquidityProviderFeeShare(ls map[string]num.Decimal
 			EquityLikeShare:       v.share.String(),
 			AverageEntryValuation: v.avg.String(),
 			AverageScore:          ls[k].String(),
+			VirtualStake:          v.vStake.String(),
 		})
 	}
 
@@ -113,6 +120,10 @@ func (es *EquityShares) OpeningAuctionEnded() {
 	// we should never call this twice
 	if es.openingAuctionEnded {
 		panic("market already left opening auction")
+	}
+	if len(es.pendingLPs) > 0 {
+		es.InheritELS(es.pendingLPs)
+		es.pendingLPs = nil
 	}
 	es.openingAuctionEnded = true
 	es.r = num.DecimalZero()
@@ -142,6 +153,10 @@ func (es *EquityShares) UpdateVStake() {
 
 func (es *EquityShares) GetTotalVStake() num.Decimal {
 	return es.totalVStake
+}
+
+func (es *EquityShares) GetMarketGrowth() num.Decimal {
+	return es.r
 }
 
 func (es *EquityShares) AvgTradeValue(avg num.Decimal) *EquityShares {

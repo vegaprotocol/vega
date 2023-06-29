@@ -46,6 +46,7 @@ import (
 	signatures "code.vegaprotocol.io/vega/libs/crypto/signature"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -1208,7 +1209,7 @@ func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) er
 	}
 
 	maxBatchSize := app.maxBatchSize.Load()
-	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions))
+	size := uint64(len(bmi.Cancellations) + len(bmi.Amendments) + len(bmi.Submissions) + len(bmi.StopOrdersSubmission) + len(bmi.StopOrdersCancellation))
 	if size > maxBatchSize {
 		return ErrMarketBatchInstructionTooBig(size, maxBatchSize)
 	}
@@ -1226,7 +1227,7 @@ func (app *App) DeliverBatchMarketInstructions(
 		return err
 	}
 
-	return NewBMIProcessor(app.log, app.exec).
+	return NewBMIProcessor(app.log, app.exec, Validate{}).
 		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
 }
 
@@ -1329,7 +1330,15 @@ func (app *App) DeliverStopOrdersSubmission(ctx context.Context, tx abci.Tx, det
 
 	// Submit the create order request to the execution engine
 	idgen := idgeneration.New(deterministicID)
-	err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen)
+	var fallsBelow, risesAbove *string
+	if os.FallsBelow != nil {
+		fallsBelow = ptr.From(idgen.NextID())
+	}
+	if os.RisesAbove != nil {
+		risesAbove = ptr.From(idgen.NextID())
+	}
+
+	_, err = app.exec.SubmitStopOrders(ctx, os, tx.Party(), idgen, fallsBelow, risesAbove)
 	if err != nil {
 		app.log.Error("could not submit stop order",
 			logging.StopOrderSubmission(os), logging.Error(err))
@@ -1733,7 +1742,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if _, err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
 					app.log.Panic("unable to reject market",
 						logging.String("market-id", prop.ID),
 						logging.Error(err))
@@ -1768,7 +1777,7 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		case toEnact.IsNewTransfer():
 			app.enactNewTransfer(ctx, prop)
 		case toEnact.IsCancelTransfer():
-			app.enactCancelTransfer(prop)
+			app.enactCancelTransfer(ctx, prop)
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -1888,11 +1897,16 @@ func (app *App) enactNewTransfer(ctx context.Context, prop *types.Proposal) {
 	app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
 }
 
-func (app *App) enactCancelTransfer(prop *types.Proposal) {
+func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 	transferID := prop.Terms.GetCancelTransfer().Changes.TransferID
 	if err := app.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
 		app.log.Error("failed to enact governance transfer cancellation - invalid transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
+		return
+	}
+	if err := app.banking.CancelGovTransfer(ctx, transferID); err != nil {
+		app.log.Error("failed to enact governance transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
 		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
 		return
 	}

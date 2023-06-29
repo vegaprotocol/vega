@@ -88,6 +88,21 @@ service TradingDataService {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
   }
 
+  // Get stop order
+  //
+  // Get a stop order by its ID. A stop order's ID will be the SHA3-256 hash of the signature that the order was submitted with.
+  // A stop order's ID is likely to be different from the ID of the order that will be submitted when the stop is triggered.
+  rpc GetStopOrder(GetStopOrderRequest) returns (GetStopOrderResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
+  }
+
+  // List stop orders
+  //
+  // Get a list of stop orders that match the given filters
+  rpc ListStopOrders(ListStopOrdersRequest) returns (ListStopOrdersResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {tags: "Orders"};
+  }
+
   // Deprecated: List positions
   //
   // Get a list of positions by party's public key using cursor based pagination
@@ -1018,6 +1033,64 @@ message OrderSnapshotPage {
 message OrderUpdates {
   // List of orders data.
   repeated vega.Order orders = 1;
+}
+
+// Request that is sent when executing the query for getting a single stop order.
+message GetStopOrderRequest {
+  // Order ID to retrieve order information for.
+  string order_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response received from the query for getting a single stop order.
+message GetStopOrderResponse {
+  // Order details, if one was found.
+  vega.events.v1.StopOrderEvent order = 1;
+}
+
+// Request that is sent when executing a query for a list of stop orders.
+message ListStopOrdersRequest {
+  // Optional pagination control.
+  optional Pagination pagination = 2;
+  // Order filter contains all filtering conditions and values that are applied to the orders listing.
+  optional StopOrderFilter filter = 5;
+}
+
+// Stop order filter
+//
+// Stop order filter that contains all filtering conditions and values that are applied to the stop orders listing.
+message StopOrderFilter {
+  // Restrict orders to those with the given statuses.
+  repeated vega.StopOrder.Status statuses = 1;
+  // Restrict orders to those with the given expiry strategies.
+  repeated vega.StopOrder.ExpiryStrategy expiry_strategies = 2;
+  // Restrict orders to those placed during the given date range. If not set, all orders will be returned.
+  optional DateRange date_range = 3;
+  // Restrict orders to those placed by the given party IDs.
+  repeated string party_ids = 4;
+  // Restrict orders to those placed on the given market IDs.
+  repeated string market_ids = 5;
+}
+
+// Order data with the corresponding cursor.
+message StopOrderEdge {
+  // Data associated with an order submitted to a Vega node.
+  vega.events.v1.StopOrderEvent node = 1;
+  // Cursor that can be used to fetch further pages.
+  string cursor = 2;
+}
+
+// Page of stop orders data and corresponding page information.
+message StopOrderConnection {
+  // Page of stop orders and their corresponding cursors.
+  repeated StopOrderEdge edges = 1;
+  // Page information that is used for fetching further pages.
+  PageInfo page_info = 2;
+}
+
+// Response that is received from the query to list stop orders.
+message ListStopOrdersResponse {
+  // Page of stop orders data and corresponding page information.
+  StopOrderConnection orders = 1;
 }
 
 // -- Positions --
@@ -2669,9 +2742,13 @@ message NodeSignaturesConnection {
 // -- Epochs --
 
 // Request to fetch epoch data
+// Provide either the epoch ID or the block height to get the epoch for. If both are provided, the epoch ID will be used.
+// If both are omitted, the current epoch will be returned.
 message GetEpochRequest {
-  // Epoch ID to get, if provided. If omitted, data for the current epoch is returned.
+  // Epoch ID. If provided, returns the epoch with the given ID.
   optional uint64 id = 1;
+  // Block height. If provided, returns the epoch that the given block is in.
+  optional uint64 block = 2;
 }
 
 // Response from getting epoch

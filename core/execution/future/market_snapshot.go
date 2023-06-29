@@ -131,7 +131,14 @@ func NewMarketFromSnapshot(
 		stopOrders = stoporders.NewFromProto(log, em.StopOrders)
 	} else {
 		// use the last markPrice for the market to initialise stopOrders price
-		stopOrders.PriceUpdated(em.CurrentMarkPrice.Clone())
+		if em.LastTradedPrice != nil {
+			stopOrders.PriceUpdated(em.LastTradedPrice.Clone())
+		}
+	}
+
+	expiringStopOrders := common.NewExpiringOrders()
+	if em.ExpiringStopOrders != nil {
+		expiringStopOrders = common.NewExpiringOrdersFromState(em.ExpiringStopOrders)
 	}
 
 	now := timeService.GetTimeNow()
@@ -162,8 +169,8 @@ func NewMarketFromSnapshot(
 		lastBestAskPrice:           em.LastBestAsk.Clone(),
 		lastMidBuyPrice:            em.LastMidBid.Clone(),
 		lastMidSellPrice:           em.LastMidAsk.Clone(),
-		markPrice:                  em.CurrentMarkPrice.Clone(),
-		lastTradedPrice:            em.LastTradedPrice.Clone(),
+		markPrice:                  em.CurrentMarkPrice,
+		lastTradedPrice:            em.LastTradedPrice,
 		priceFactor:                priceFactor,
 		lastMarketValueProxy:       em.LastMarketValueProxy,
 		lastEquityShareDistributed: time.Unix(0, em.LastEquityShareDistributed),
@@ -176,6 +183,7 @@ func NewMarketFromSnapshot(
 		quadraticSlippageFactor:    mkt.QuadraticSlippageFactor,
 		settlementAsset:            asset,
 		stopOrders:                 stopOrders,
+		expiringStopOrders:         expiringStopOrders,
 	}
 
 	for _, p := range em.Parties {
@@ -192,7 +200,10 @@ func NewMarketFromSnapshot(
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
 
 	if mkt.State == types.MarketStateTradingTerminated {
-		market.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
+		market.tradableInstrument.Instrument.UnsubscribeTradingTerminated(ctx)
+	}
+	if mkt.State == types.MarketStateSettled {
+		market.tradableInstrument.Instrument.Unsubscribe(ctx)
 	}
 
 	if em.Closed {
@@ -227,8 +238,8 @@ func (m *Market) GetState() *types.ExecMarket {
 		LastMidBid:                 m.lastMidBuyPrice.Clone(),
 		LastMidAsk:                 m.lastMidSellPrice.Clone(),
 		LastMarketValueProxy:       m.lastMarketValueProxy,
-		CurrentMarkPrice:           m.getCurrentMarkPrice(),
-		LastTradedPrice:            m.getLastTradedPrice(),
+		CurrentMarkPrice:           m.markPrice,
+		LastTradedPrice:            m.lastTradedPrice,
 		LastEquityShareDistributed: m.lastEquityShareDistributed.UnixNano(),
 		EquityShare:                m.equityShares.GetState(),
 		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
@@ -241,6 +252,7 @@ func (m *Market) GetState() *types.ExecMarket {
 		Closed:                     m.closed,
 		IsSucceeded:                m.succeeded,
 		StopOrders:                 m.stopOrders.ToProto(),
+		ExpiringStopOrders:         m.expiringStopOrders.GetState(),
 	}
 
 	return em

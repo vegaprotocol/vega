@@ -29,7 +29,7 @@ func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context
 	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(d)
 }
 
-func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, d num.Decimal) {
+func (m *Market) BondPenaltyFactorUpdate(_ context.Context, d num.Decimal) {
 	m.bondPenaltyFactor = d
 }
 

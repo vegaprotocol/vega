@@ -54,5 +54,9 @@ var (
 	// ErrCannotRepriceDuringAuction.
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
 	// ErrPartyInsufficientAssetBalance is returned when a party does not have sufficient balance of the required asset to perform an action.
-	ErrPartyInsufficientAssetBalance = errors.New("party has insufficient balance in asset")
+	ErrPartyInsufficientAssetBalance                        = errors.New("party has insufficient balance in asset")
+	ErrMaxStopOrdersPerPartyReached                         = errors.New("max stop orders per party reached")
+	ErrStopOrderSubmissionNotAllowedWithoutExistingPosition = errors.New("stop order submission not allowed without existing position")
+	ErrStopOrderSideNotClosingThePosition                   = errors.New("side used in stop order does not close the position")
+	ErrStopOrderMustBeReduceOnly                            = errors.New("stop order must be reduce only")
 )

@@ -38,6 +38,8 @@ message StopOrder {
     STATUS_TRIGGERED = 4;
     // Stop order has expired
     STATUS_EXPIRED = 5;
+    // Stop order was rejected at submission
+    STATUS_REJECTED = 6;
   }
 
   // ID of this stop order
@@ -59,8 +61,10 @@ message StopOrder {
   optional int64 updated_at = 8;
   // ID of the order created once the trigger is hit.
   string order_id = 9;
-  // The party that submitted this stop order
-  string party = 10;
+  // ID of the party that submitted this stop order.
+  string party_id = 10;
+  // ID of the market the stop order is submitted to.
+  string market_id = 11;
 
   // Trigger that will need to be breached for the order
   // to be submitted to the book.
@@ -68,6 +72,7 @@ message StopOrder {
     // Fixed price at which the order will be submitted.
     string price = 100;
     // Trailing percentage at which the order will be submitted.
+    // This should be expressed as a decimal value between 0 and 1, e.g. 0.01 for 1%
     string trailing_percent_offset = 101;
   }
 }
@@ -1053,18 +1058,22 @@ message MarketData {
   int64 next_mark_to_market = 28;
   // Last traded price of the market. This field is an unsigned integer scaled to the market's decimal places.
   string last_traded_price = 29;
+  // Market growth at the last market time window.
+  string market_growth = 30;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
   // Liquidity provider party ID.
   string party = 1;
-  // Share own by this liquidity provider (float).
+  // Share own by this liquidity provider.
   string equity_like_share = 2;
   // Average entry valuation of the liquidity provider for the market.
   string average_entry_valuation = 3;
   // Average liquidity score.
   string average_score = 4;
+  // The virtual stake of this liquidity provider.
+  string virtual_stake = 5;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger

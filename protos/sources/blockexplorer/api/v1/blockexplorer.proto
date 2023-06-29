@@ -59,14 +59,27 @@ message GetTransactionResponse {
 }
 
 message ListTransactionsRequest {
-  // Number of transactions to be returned from the blockchain
-  uint32 limit = 1;
+  // Number of transactions to be returned from the blockchain.
+  // This is deprecated, use first and last instead.
+  uint32 limit = 1 [deprecated = true];
   // Optional cursor to paginate the request
   optional string before = 2;
   // Optional cursor to paginate the request
   optional string after = 3;
   // Filters to apply to the request
   map<string, string> filters = 4;
+  // Transaction command types filter, for listing transactions with specified command types
+  repeated string cmd_types = 5;
+  // Transaction command types exclusion filter, for listing all the transactions except the ones with specified command types
+  repeated string exclude_cmd_types = 6;
+  // Party IDs filter, can be sender or receiver
+  repeated string parties = 7;
+  // Number of transactions to be returned from the blockchain. Use in conjunction with the `after` cursor to paginate forwards.
+  // On its own, this will return the first `first` transactions.
+  uint32 first = 8;
+  // Number of transactions to be returned from the blockchain. Use in conjunction with the `before` cursor to paginate backwards.
+  // On its own, this will return the last `last` transactions.
+  uint32 last = 9;
 }
 
 message ListTransactionsResponse {

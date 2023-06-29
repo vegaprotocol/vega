@@ -23,6 +23,10 @@ http:
       get: "/api/v2/orders"
     - selector: datanode.api.v2.TradingDataService.ListOrderVersions
       get: "/api/v2/order/versions/{order_id}"
+    - selector: datanode.api.v2.TradingDataService.GetStopOrder
+      get: "/api/v2/stoporder/{order_id}"
+    - selector: datanode.api.v2.TradingDataService.ListStopOrders
+      get: "/api/v2/stoporders"
     - selector: datanode.api.v2.TradingDataService.ListAllPositions
       get: "/api/v2/positions"
     - selector: datanode.api.v2.TradingDataService.ListBalanceChanges

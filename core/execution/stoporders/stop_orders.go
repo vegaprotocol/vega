@@ -77,8 +77,8 @@ func (p *Pool) ToProto() *v1.StopOrders {
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(
-		p.priced.PriceUpdated(newPrice),
-		p.trailing.PriceUpdated(newPrice)...,
+		p.priced.PriceUpdated(newPrice.Clone()),
+		p.trailing.PriceUpdated(newPrice.Clone())...,
 	)
 
 	// first get all the orders which got triggered
@@ -255,4 +255,13 @@ func (p *Pool) RemoveExpired(orderIDs []string) []*types.StopOrder {
 	p.remove(orders)
 
 	return orders
+}
+
+func (p *Pool) CountForParty(party string) uint64 {
+	orders, ok := p.orders[party]
+	if !ok {
+		return 0
+	}
+
+	return uint64(len(orders))
 }

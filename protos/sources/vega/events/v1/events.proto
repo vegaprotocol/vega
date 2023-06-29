@@ -882,7 +882,7 @@ message BusEvent {
     // Open positions on the market that are/were distressed
     DistressedPositions distressed_positions = 157;
     // A stop order event
-    StopOrder stop_order = 158;
+    StopOrderEvent stop_order = 158;
 
     // Market tick events
     MarketEvent market = 1001;

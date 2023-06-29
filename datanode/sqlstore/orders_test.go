@@ -244,6 +244,21 @@ func TestOrders(t *testing.T) {
 			assert.Equal(t, berg.ReservedRemaining, o.ReservedRemaining)
 		}
 	})
+	t.Run("GetLiveOrders_Icebergs", func(t *testing.T) {
+		orders, err := os.GetLiveOrders(ctx)
+		require.NoError(t, err)
+		om := map[string]entities.Order{}
+		for _, o := range orders {
+			om[o.ID.String()] = o
+		}
+		for _, berg := range icebergs {
+			cmp, ok := om[berg.ID.String()]
+			require.True(t, ok)
+			assert.Equal(t, berg.PeakSize, cmp.PeakSize)
+			assert.Equal(t, berg.MinimumVisibleSize, cmp.MinimumVisibleSize)
+			assert.Equal(t, berg.ReservedRemaining, cmp.ReservedRemaining)
+		}
+	})
 }
 
 func generateTestBlocks(t *testing.T, ctx context.Context, numBlocks int, bs *sqlstore.Blocks) []entities.Block {

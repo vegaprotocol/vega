@@ -45,6 +45,12 @@ var (
 
 	// ErrParentMarketNotEnactedYEt is returned when trying to enact a successor market that is still in proposed state.
 	ErrParentMarketNotEnactedYet = errors.New("parent market in proposed state, can't enact successor")
+
+	// ErrInvalidStopOrdersCancellation is returned when an incomplete stop orders cancellation request is used.
+	ErrInvalidStopOrdersCancellation = errors.New("invalid stop orders cancellation")
+
+	// ErrMarketIDRequiredWhenOrderIDSpecified is returned when a stop order cancellation is emitted without an order id.
+	ErrMarketIDRequiredWhenOrderIDSpecified = errors.New("market id required when order id specified")
 )
 
 // Engine is the execution engine.
@@ -100,19 +106,28 @@ type netParamsValues struct {
 	marketCreationQuantumMultiple        num.Decimal
 	markPriceUpdateMaximumFrequency      time.Duration
 	marketPartiesMaximumStopOrdersUpdate *num.Uint
+
+	// Liquidity version 2.
+	liquidityV2BondPenaltyFactor                 num.Decimal
+	liquidityV2EarlyExitPenalty                  num.Decimal
+	liquidityV2MaxLiquidityFee                   num.Decimal
+	liquidityV2SLANonPerformanceBondPenaltyMax   num.Decimal
+	liquidityV2SLANonPerformanceBondPenaltySlope num.Decimal
+	liquidityV2SuppliedStakeToObligationFactor   num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
 	return netParamsValues{
-		shapesMaxSize:                        -1,
-		feeDistributionTimeStep:              -1,
-		marketValueWindowLength:              -1,
-		suppliedStakeToObligationFactor:      num.DecimalFromInt64(-1),
-		infrastructureFee:                    num.DecimalFromInt64(-1),
-		makerFee:                             num.DecimalFromInt64(-1),
-		scalingFactors:                       nil,
-		maxLiquidityFee:                      num.DecimalFromInt64(-1),
-		bondPenaltyFactor:                    num.DecimalFromInt64(-1),
+		shapesMaxSize:                   -1,
+		feeDistributionTimeStep:         -1,
+		marketValueWindowLength:         -1,
+		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
+		infrastructureFee:               num.DecimalFromInt64(-1),
+		makerFee:                        num.DecimalFromInt64(-1),
+		scalingFactors:                  nil,
+		maxLiquidityFee:                 num.DecimalFromInt64(-1),
+		bondPenaltyFactor:               num.DecimalFromInt64(-1),
+
 		auctionMinDuration:                   -1,
 		probabilityOfTradingTauScaling:       num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders:      num.DecimalFromInt64(-1),
@@ -120,6 +135,14 @@ func defaultNetParamsValues() netParamsValues {
 		marketCreationQuantumMultiple:        num.DecimalFromInt64(-1),
 		markPriceUpdateMaximumFrequency:      5 * time.Second, // default is 5 seconds, should come from net params though
 		marketPartiesMaximumStopOrdersUpdate: num.UintZero(),
+
+		// Liquidity version 2.
+		liquidityV2BondPenaltyFactor:                 num.DecimalFromInt64(-1),
+		liquidityV2EarlyExitPenalty:                  num.DecimalFromInt64(-1),
+		liquidityV2MaxLiquidityFee:                   num.DecimalFromInt64(-1),
+		liquidityV2SLANonPerformanceBondPenaltyMax:   num.DecimalFromInt64(-1),
+		liquidityV2SLANonPerformanceBondPenaltySlope: num.DecimalFromInt64(-1),
+		liquidityV2SuppliedStakeToObligationFactor:   num.DecimalFromInt64(-1),
 	}
 }
 
@@ -213,33 +236,30 @@ func (e *Engine) Hash() []byte {
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
-func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, error) {
-	ret := []int{}
+func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("reject market", logging.MarketID(marketID))
 	}
 
 	mkt, ok := e.markets[marketID]
 	if !ok {
-		return nil, ErrMarketDoesNotExist
+		return ErrMarketDoesNotExist
 	}
 
 	if err := mkt.Reject(ctx); err != nil {
-		return nil, err
+		return err
 	}
 
-	idx := e.removeMarket(marketID)
-	if idx > -1 {
-		ret = append(ret, idx)
-	}
+	// send market data event so market data and markets API are consistent.
+	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
+
+	e.removeMarket(marketID)
 	// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
 	// they should be purged here, and @TODO handle any errors
 	if successors, ok := e.successors[marketID]; ok {
 		delete(e.successors, marketID)
 		for _, sID := range successors {
-			if i, _ := e.RejectMarket(ctx, sID); len(i) > 0 {
-				ret = append(ret, i...)
-			}
+			e.RejectMarket(ctx, sID)
 			delete(e.isSuccessor, sID)
 		}
 	}
@@ -247,7 +267,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 	delete(e.isSuccessor, marketID)
 	// and clear out any state that may exist
 	delete(e.marketCPStates, marketID)
-	return ret, nil
+	return nil
 }
 
 // StartOpeningAuction will start the opening auction of the given market.
@@ -282,7 +302,7 @@ func (e *Engine) restoreOwnState(ctx context.Context, mID string) (bool, error) 
 	}
 	if state, ok := e.marketCPStates[mID]; ok {
 		// set ELS state and the like
-		mkt.InheritParent(ctx, state)
+		mkt.RestoreELS(ctx, state)
 		// if there was state of the market to restore, then check if this is a successor market
 		if pid := mkt.GetParentMarketID(); len(pid) > 0 {
 			// mark parent market as being succeeded
@@ -332,7 +352,7 @@ func (e *Engine) succeedOrRestore(ctx context.Context, successor, parent string,
 	// if parent market is active, mark as succeeded
 	if pmo, ok := e.markets[parent]; ok {
 		// succeeding a parent market before it was enacted is not allowed
-		if pmo.Mkt().State == types.MarketStateProposed {
+		if !restore && pmo.Mkt().State == types.MarketStateProposed {
 			e.RejectMarket(ctx, successor)
 			return ErrParentMarketNotEnactedYet
 		}
@@ -369,7 +389,8 @@ func (e *Engine) RestoreMarket(ctx context.Context, marketConfig *types.Market) 
 	if err := e.submitOrRestoreMarket(ctx, marketConfig, "", false, e.timeService.GetTimeNow()); err != nil {
 		return err
 	}
-	// attempt to restore market state. The restoreOwnState call handles both parent and successor markets
+	// attempt to restore market state from checkpoint, returns true if state (ELS) was restored
+	// error if the market doesn't exist
 	ok, err := e.restoreOwnState(ctx, marketConfig.ID)
 	if ok || err != nil {
 		return err
@@ -513,10 +534,37 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market, o
 	// is already proven to exists a few line before
 	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
 
-	return e.propagateInitialNetParams(ctx, mkt)
+	return e.propagateInitialNetParamsToFutureMarket(ctx, mkt)
 }
 
-func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Market) error {
+// TODO To wire to spot market initialisation.
+func (e *Engine) propagateInitialNetParamsToSpotMarket() { //nolint:unused
+	if !e.npv.liquidityV2BondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2EarlyExitPenalty.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2MaxLiquidityFee.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2SLANonPerformanceBondPenaltySlope.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2SLANonPerformanceBondPenaltyMax.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+
+	if !e.npv.liquidityV2SuppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) { //nolint:staticcheck
+		// TODO To propagate to spot market.
+	}
+}
+
+func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mkt *future.Market) error {
 	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
 	}
@@ -564,6 +612,7 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Mark
 	if !e.npv.suppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
+
 	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
 	}
@@ -579,7 +628,7 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *future.Mark
 	return nil
 }
 
-func (e *Engine) removeMarket(mktID string) int {
+func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
 
 	delete(e.markets, mktID)
@@ -592,10 +641,9 @@ func (e *Engine) removeMarket(mktID string) int {
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
-			return i
+			return
 		}
 	}
-	return -1
 }
 
 func (e *Engine) peggedOrderCountUpdated(added int64) {
@@ -611,17 +659,95 @@ func (e *Engine) SubmitStopOrders(
 	submission *types.StopOrdersSubmission,
 	party string,
 	idgen common.IDGenerator,
-) error {
-	return errors.New("stop order submission not supported yet")
+	fallsBelowID *string,
+	risesAboveID *string,
+) (*types.OrderConfirmation, error) {
+	var market string
+	if submission.FallsBelow != nil {
+		market = submission.FallsBelow.OrderSubmission.MarketID
+	} else {
+		market = submission.RisesAbove.OrderSubmission.MarketID
+	}
+
+	mkt, ok := e.markets[market]
+	if !ok {
+		return nil, types.ErrInvalidMarketID
+	}
+
+	conf, err := mkt.SubmitStopOrdersWithIDGeneratorAndOrderIDs(
+		ctx, submission, party, idgen, fallsBelowID, risesAboveID)
+	if err != nil {
+		return nil, err
+	}
+
+	// not necessary going to trade on submission, could be nil
+	if conf != nil {
+		// increasing the gauge, just because we reuse the
+		// decrement function, and it required the order + passive
+		metrics.OrderGaugeAdd(1, market)
+		e.decrementOrderGaugeMetrics(market, conf.Order, conf.PassiveOrdersAffected)
+	}
+
+	return conf, nil
 }
 
 func (e *Engine) CancelStopOrders(
 	ctx context.Context,
-	cancellation *types.StopOrdersCancellation,
+	cancel *types.StopOrdersCancellation,
 	party string,
 	idgen common.IDGenerator,
 ) error {
-	return errors.New("stop order cancellation not supported yet")
+	// ensure that if orderID is specified marketId is as well
+	if len(cancel.OrderID) > 0 && len(cancel.MarketID) <= 0 {
+		return ErrMarketIDRequiredWhenOrderIDSpecified
+	}
+
+	if len(cancel.MarketID) > 0 {
+		if len(cancel.OrderID) > 0 {
+			return e.cancelStopOrders(ctx, party, cancel.MarketID, cancel.OrderID, idgen)
+		}
+		return e.cancelStopOrdersByMarket(ctx, party, cancel.MarketID)
+	}
+	return e.cancelAllPartyStopOrders(ctx, party)
+}
+
+func (e *Engine) cancelStopOrders(
+	ctx context.Context,
+	party, market, orderID string,
+	_ common.IDGenerator,
+) error {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+	err := mkt.CancelStopOrder(ctx, party, orderID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *Engine) cancelStopOrdersByMarket(ctx context.Context, party, market string) error {
+	mkt, ok := e.markets[market]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+	err := mkt.CancelAllStopOrders(ctx, party)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *Engine) cancelAllPartyStopOrders(ctx context.Context, party string) error {
+	for _, mkt := range e.marketsCpy {
+		err := mkt.CancelAllStopOrders(ctx, party)
+		if err != nil && err != common.ErrTradingNotAllowed {
+			return err
+		}
+	}
+	return nil
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
@@ -652,7 +778,7 @@ func (e *Engine) SubmitOrder(
 
 	metrics.OrderGaugeAdd(1, submission.MarketID)
 	conf, err := mkt.SubmitOrderWithIDGeneratorAndOrderID(
-		ctx, submission, party, idgen, orderID)
+		ctx, submission, party, idgen, orderID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -883,11 +1009,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	toDelete := []string{}
 	parentStates := e.getParentStates()
 	evts := make([]events.Event, 0, len(e.marketsCpy))
-	rejected := map[int]struct{}{}
+	toSkip := map[int]string{}
 	for i, mkt := range e.marketsCpy {
-		if _, ok := rejected[i]; ok {
-			// successor markets were rejected, because of how golang iterates over slices, this loop
-			// will still iterate over rejected markets, these markets must be skipped
+		// we can skip successor markets which reference a parent market that has been succeeded
+		if _, ok := toSkip[i]; ok {
 			continue
 		}
 		mkt := mkt
@@ -936,18 +1061,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 					e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 				}
 			}
-			// reject other pending successors
-			for _, sid := range e.successors[pid] {
-				delete(e.isSuccessor, sid)
-				if id == sid {
-					continue
-				}
-				skip, _ := e.RejectMarket(ctx, sid)
-				for _, sk := range skip {
-					rejected[sk] = struct{}{}
-				}
-			}
+			// add other markets that need to be rejected to the skip list
+			toSkip = e.getPendingSuccessorsToReject(pid, id, toSkip)
 			// remove data used to indicate that the parent market has pending successors
+			delete(e.isSuccessor, id)
 			delete(e.successors, pid)
 			delete(e.marketCPStates, pid)
 		} else if isSuccessor {
@@ -968,24 +1085,41 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
 	e.broker.SendBatch(evts)
+	// reject successor markets in the toSkip list
+	for _, sid := range toSkip {
+		e.RejectMarket(ctx, sid)
+	}
 
+	rmCPStates := make([]string, 0, len(toDelete))
 	for _, id := range toDelete {
+		// a cancelled market cannot be succeeded, so remove it from the CP state immediately
+		if m, ok := e.markets[id]; ok && m.Mkt().State == types.MarketStateCancelled {
+			rmCPStates = append(rmCPStates, id)
+		}
 		e.removeMarket(id)
 	}
-	// clear slice
-	toDelete = make([]string, 0, len(toDelete))
 	// find state that should expire
 	for id, cpm := range e.marketCPStates {
 		// market field will be nil if the market is still current (ie not closed/settled)
-		if cpm.TTL.Before(t) && cpm.Market != nil {
-			toDelete = append(toDelete, id)
+		if !cpm.TTL.Before(t) {
+			// CP data has not expired yet
+			continue
+		}
+		if cpm.Market == nil {
+			// expired, and yet somehow the market is gone, this is stale data, must be removed
+			if _, ok := e.markets[id]; !ok {
+				rmCPStates = append(rmCPStates, id)
+			}
+		} else {
+			// market state was set, so this is a closed/settled market that was not succeeded in time
+			rmCPStates = append(rmCPStates, id)
 			assets, _ := cpm.Market.GetAssets()
 			if clearTransfers, _ := e.collateral.ClearInsurancepool(ctx, id, assets[0], true); len(clearTransfers) > 0 {
 				e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 			}
 		}
 	}
-	for _, id := range toDelete {
+	for _, id := range rmCPStates {
 		delete(e.marketCPStates, id)
 		if ss, ok := e.successors[id]; ok {
 			// parent market expired, remove parent ID
@@ -1000,6 +1134,29 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 
 	timer.EngineTimeCounterAdd()
+}
+
+func (e *Engine) getPendingSuccessorsToReject(parent, successor string, toSkip map[int]string) map[int]string {
+	ss, ok := e.successors[parent]
+	if !ok {
+		return toSkip
+	}
+	// iterate over all pending successors for the given parent
+	for _, sid := range ss {
+		// ignore the actual successor
+		if sid == successor {
+			continue
+		}
+		if _, ok := e.markets[sid]; !ok {
+			continue
+		}
+		for i, mkt := range e.marketsCpy {
+			if mkt.GetID() == sid {
+				toSkip[i] = sid
+			}
+		}
+	}
+	return toSkip
 }
 
 func (e *Engine) getParentStates() map[string]*types.CPMarketState {
@@ -1081,6 +1238,90 @@ func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, d num.D
 	}
 
 	e.npv.bondPenaltyFactor = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2BondPenaltyUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity bond penalty (liquidity v2)",
+			logging.Decimal("bond-penalty-factor", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2BondPenaltyFactor = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2EarlyExitPenaltyUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market liquidity early exit penalty (liquidity v2)",
+			logging.Decimal("early-exit-penalty", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2EarlyExitPenalty = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update liquidity provision max liquidity fee factor (liquidity v2)",
+			logging.Decimal("max-liquidity-fee", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2MaxLiquidityFee = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market SLA non performance bond penalty slope (liquidity v2)",
+			logging.Decimal("bond-penalty-slope", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SLANonPerformanceBondPenaltySlope = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update market SLA non performance bond penalty max (liquidity v2)",
+			logging.Decimal("bond-penalty-max", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SLANonPerformanceBondPenaltyMax = d
+
+	return nil
+}
+
+func (e *Engine) OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate(_ context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update supplied stake to obligation factor (liquidity v2)",
+			logging.Decimal("factor", d),
+		)
+	}
+
+	// TODO To propagate to spot markets.
+
+	e.npv.liquidityV2SuppliedStakeToObligationFactor = d
 
 	return nil
 }

@@ -20,7 +20,9 @@ Root of the config file
 Name of the upgrade.
 
 
-<blockquote>It is recommended to use an upgrade version as a name.</blockquote>
+<blockquote>It is recommended to use the Vega version you wish to upgrade to as the name. These can be found in the releases list of the Vega Github repository
+(https://github.com/vegaprotocol/vega/releases).
+</blockquote>
 </dd>
 
 <dt>
@@ -39,7 +41,7 @@ Configuration of a Vega node.
 
 <dd>
 
-Configuration of a Data node.
+Configuration of a data node.
 
 </dd>
 
@@ -68,7 +70,7 @@ name = "v1.65.0"
 
 
 ## *VegaConfig*
-Allows to configure Vega binary and it's arguments.
+Configuration options for the Vega binary and its arguments.
 
 
 ### Fields
@@ -80,7 +82,7 @@ Allows to configure Vega binary and it's arguments.
 
 <dd>
 
-Configuration of Vega binary to be run.
+Configuration of Vega binary and the arguments to run it.
 
 </dd>
 
@@ -90,8 +92,9 @@ Configuration of Vega binary to be run.
 
 <dd>
 
-Visor communicates with the core node via RPC API that runs over UNIX socket.
-This parameter allows to configure the UNIX socket to match the core node configuration.
+Visor communicates with the core node via RPC API that runs over a UNIX socket.
+This parameter configures the UNIX socket to match the core node configuration.
+This value can be found in the config.toml file used by the core node under the heading [Admin.Server]
 
 
 </dd>
@@ -119,7 +122,7 @@ This parameter allows to configure the UNIX socket to match the core node config
 
 
 ## *DataNodeConfig*
-Allows to configure Data node binary and it's arguments.
+Configures a data node binary and its arguments.
 
 
 ### Fields
@@ -155,7 +158,7 @@ Allows to configure Data node binary and it's arguments.
 
 
 ## *BinaryConfig*
-Allows to configure binary and it's arguments.
+Configuration options for the Vega binary and its arguments.
 
 
 ### Fields
@@ -167,10 +170,10 @@ Allows to configure binary and it's arguments.
 
 <dd>
 
-Path to the binary.
+Path to the Vega binary.
 
 
-<blockquote>Both absolute or relative path can be used.
+<blockquote>The absolute or relative path can be used.
 Relative path is relative to a parent folder of this config file.
 </blockquote>
 </dd>
@@ -184,7 +187,7 @@ Relative path is relative to a parent folder of this config file.
 Arguments that will be applied to the binary.
 
 
-<blockquote>Each element the list represents one space seperated argument.
+<blockquote>Each element the list represents one space separated argument.
 </blockquote>
 </dd>
 
@@ -206,7 +209,7 @@ args = ["--arg1", "val1", "--arg2"]
 
 
 ## *RPCConfig*
-Allows to configure connection to core node exposed UNIX socket RPC API.
+Configures a connection to a core nodes exposed UNIX socket RPC API.
 
 
 ### Fields
@@ -221,7 +224,7 @@ Allows to configure connection to core node exposed UNIX socket RPC API.
 Path of the mounted socket.
 
 
-<blockquote>This path can be configured in Vega core node configuration.</blockquote>
+<blockquote>This path can be configured in the Vega core node configuration and can be found in the [Admin.Server] section.</blockquote>
 </dd>
 
 <dt>
@@ -233,7 +236,7 @@ Path of the mounted socket.
 HTTP path of the socket path.
 
 
-<blockquote>This path can be configured in Vega core node configuration.</blockquote>
+<blockquote>This path can be configured in the Vega core node configuration and can be found in the [Admin.Server] section.</blockquote>
 </dd>
 
 

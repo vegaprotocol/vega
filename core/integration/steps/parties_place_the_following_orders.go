@@ -14,6 +14,7 @@ package steps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/libs/ptr"
 )
 
 type Only string
@@ -184,7 +186,22 @@ func PartiesPlaceTheFollowingOrders(
 			orderSubmission.ReduceOnly = true
 		}
 
-		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		// check for stop orders
+		stopOrderSubmission, err := buildStopOrder(&orderSubmission, row, now)
+		if err != nil {
+			return err
+		}
+
+		var resp *types.OrderConfirmation
+		if stopOrderSubmission != nil {
+			resp, err = exec.SubmitStopOrder(
+				context.Background(),
+				stopOrderSubmission,
+				row.Party(),
+			)
+		} else {
+			resp, err = exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
+		}
 		if ceerr := checkExpectedError(row, err, nil); ceerr != nil {
 			return ceerr
 		}
@@ -193,6 +210,9 @@ func PartiesPlaceTheFollowingOrders(
 			continue
 		}
 
+		if resp == nil {
+			continue
+		}
 		actualTradeCount := int64(len(resp.Trades))
 		if actualTradeCount != row.ResultingTrades() {
 			return formatDiff(fmt.Sprintf("the resulting trades didn't match the expectation for order \"%v\"", row.Reference()),
@@ -208,6 +228,135 @@ func PartiesPlaceTheFollowingOrders(
 	return nil
 }
 
+func PartyAddsTheFollowingOrdersToABatch(party string, exec Execution, time *stubs.TimeStub, table *godog.Table) error {
+	// ensure time is set + idgen is not nil
+	now := time.GetTimeNow()
+	time.SetTime(now)
+	for _, r := range parseAddOrderToBatchTable(table) {
+		row := newSubmitOrderRow(r)
+
+		orderSubmission := types.OrderSubmission{
+			MarketID:    row.MarketID(),
+			Side:        row.Side(),
+			Price:       row.Price(),
+			Size:        row.Volume(),
+			ExpiresAt:   row.ExpirationDate(now),
+			Type:        row.OrderType(),
+			TimeInForce: row.TimeInForce(),
+			Reference:   row.Reference(),
+		}
+		only := row.Only()
+		switch only {
+		case Post:
+			orderSubmission.PostOnly = true
+		case Reduce:
+			orderSubmission.ReduceOnly = true
+		}
+		if err := exec.AddSubmitOrderToBatch(&orderSubmission, party); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func PartySubmitsTheirBatchInstruction(party string, exec Execution) error {
+	return exec.ProcessBatch(context.Background(), party)
+}
+
+func PartyStartsABatchInstruction(party string, exec Execution) error {
+	return exec.StartBatch(party)
+}
+
+func buildStopOrder(
+	submission *types.OrderSubmission,
+	row submitOrderRow,
+	now time.Time,
+) (*types.StopOrdersSubmission, error) {
+	var (
+		fbPriced, raPriced     = row.FallsBellowPriceTrigger(), row.RisesAbovePriceTrigger()
+		fbTrailing, raTrailing = row.FallsBellowTrailing(), row.RisesAboveTrailing()
+	)
+
+	if fbPriced == nil && fbTrailing.IsZero() && raPriced == nil && raTrailing.IsZero() {
+		return nil, nil
+	}
+
+	if fbPriced != nil && !fbTrailing.IsZero() {
+		return nil, errors.New("cannot use bot trailing and priced trigger for falls below")
+	}
+
+	if raPriced != nil && !raTrailing.IsZero() {
+		return nil, errors.New("cannot use bot trailing and priced trigger for rises above")
+	}
+
+	sub := &types.StopOrdersSubmission{}
+
+	switch {
+	case fbPriced != nil:
+		sub.FallsBelow = &types.StopOrderSetup{
+			OrderSubmission: submission,
+			Expiry:          &types.StopOrderExpiry{},
+			Trigger: types.NewPriceStopOrderTrigger(
+				types.StopOrderTriggerDirectionFallsBelow,
+				fbPriced.Clone(),
+			),
+		}
+	case !fbTrailing.IsZero():
+		sub.FallsBelow = &types.StopOrderSetup{
+			OrderSubmission: submission,
+			Expiry:          &types.StopOrderExpiry{},
+			Trigger: types.NewTrailingStopOrderTrigger(
+				types.StopOrderTriggerDirectionFallsBelow,
+				fbTrailing,
+			),
+		}
+	}
+
+	var (
+		strategy        *types.StopOrderExpiryStrategy
+		stopOrderExpiry *time.Time
+	)
+	if stopOrderExp := row.StopOrderExpirationDate(now); stopOrderExp != 0 {
+		strategy = ptr.From(row.ExpiryStrategy())
+		stopOrderExpiry = ptr.From(time.Unix(0, stopOrderExp))
+	}
+
+	switch {
+	case raPriced != nil:
+		sub.RisesAbove = &types.StopOrderSetup{
+			OrderSubmission: ptr.From(*submission),
+			Expiry: &types.StopOrderExpiry{
+				ExpiryStrategy: strategy,
+				ExpiresAt:      stopOrderExpiry,
+			},
+			Trigger: types.NewPriceStopOrderTrigger(
+				types.StopOrderTriggerDirectionRisesAbove,
+				raPriced.Clone(),
+			),
+		}
+	case !raTrailing.IsZero():
+		sub.RisesAbove = &types.StopOrderSetup{
+			OrderSubmission: ptr.From(*submission),
+			Expiry: &types.StopOrderExpiry{
+				ExpiryStrategy: strategy,
+				ExpiresAt:      stopOrderExpiry,
+			},
+			Trigger: types.NewTrailingStopOrderTrigger(
+				types.StopOrderTriggerDirectionRisesAbove,
+				raTrailing,
+			),
+		}
+	}
+
+	// Handle OCO references
+	if sub.RisesAbove != nil && sub.FallsBelow != nil {
+		sub.FallsBelow.OrderSubmission.Reference += "-1"
+		sub.RisesAbove.OrderSubmission.Reference += "-2"
+	}
+
+	return sub, nil
+}
+
 func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
@@ -221,6 +370,28 @@ func parseSubmitOrderTable(table *godog.Table) []RowWrapper {
 		"reference",
 		"error",
 		"resulting trades",
+		"expires in",
+		"only",
+		"fb price trigger",
+		"fb trailing",
+		"ra price trigger",
+		"ra trailing",
+		"so expires in",
+		"so expiry strategy",
+	})
+}
+
+func parseAddOrderToBatchTable(table *godog.Table) []RowWrapper {
+	return StrictParseTable(table, []string{
+		"market id",
+		"side",
+		"volume",
+		"price",
+		"type",
+		"tif",
+	}, []string{
+		"reference",
+		"error",
 		"expires in",
 		"only",
 	})
@@ -312,4 +483,46 @@ func (r submitOrderRow) Only() Only {
 		panic(fmt.Errorf("unsupported type %v", v))
 	}
 	return t
+}
+
+func (r submitOrderRow) FallsBellowPriceTrigger() *num.Uint {
+	if !r.row.HasColumn("fb price trigger") {
+		return nil
+	}
+	return r.row.MustUint("fb price trigger")
+}
+
+func (r submitOrderRow) RisesAbovePriceTrigger() *num.Uint {
+	if !r.row.HasColumn("ra price trigger") {
+		return nil
+	}
+	return r.row.MustUint("ra price trigger")
+}
+
+func (r submitOrderRow) FallsBellowTrailing() num.Decimal {
+	if !r.row.HasColumn("fb trailing") {
+		return num.DecimalZero()
+	}
+	return r.row.MustDecimal("fb trailing")
+}
+
+func (r submitOrderRow) RisesAboveTrailing() num.Decimal {
+	if !r.row.HasColumn("ra trailing") {
+		return num.DecimalZero()
+	}
+	return r.row.MustDecimal("ra trailing")
+}
+
+func (r submitOrderRow) StopOrderExpirationDate(now time.Time) int64 {
+	if !r.row.HasColumn("so expires in") {
+		return 0
+	}
+	return now.Add(r.row.MustDurationSec("so expires in")).Local().UnixNano()
+}
+
+func (r submitOrderRow) ExpiryStrategy() types.StopOrderExpiryStrategy {
+	if !r.row.HasColumn("so expiry strategy") {
+		return types.StopOrderExpiryStrategyCancels
+	}
+	return r.row.MustExpiryStrategy("so expiry strategy")
 }

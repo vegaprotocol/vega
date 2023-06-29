@@ -118,7 +118,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	e.markets[marketConfig.ID] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
-	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
+	if err := e.propagateInitialNetParamsToFutureMarket(ctx, mkt); err != nil {
 		return nil, err
 	}
 	// ensure this is set correctly
@@ -223,6 +223,16 @@ func (e *Engine) OnStateLoaded(ctx context.Context) error {
 	for _, m := range e.markets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
+		}
+	}
+	// use the time as restored by the snapshot
+	t := e.timeService.GetTimeNow()
+	// restore marketCPStates through marketsCpy to ensure the order is preserved
+	for _, m := range e.marketsCpy {
+		if !m.IsSucceeded() {
+			cps := m.GetCPState()
+			cps.TTL = t.Add(e.successorWindow)
+			e.marketCPStates[m.GetID()] = cps
 		}
 	}
 	return nil
