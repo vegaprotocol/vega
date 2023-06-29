@@ -50,8 +50,8 @@ func TestRestoreSettledMarket(t *testing.T) {
 
 	var unsubs uint64
 	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) { unsubs++ }
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -78,8 +78,8 @@ func TestRestoreTerminatedMarket(t *testing.T) {
 			termUnsub = true
 		}
 	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)
@@ -107,8 +107,8 @@ func TestRestoreNilLastTradedPrice(t *testing.T) {
 
 	unsubscribe := func(_ context.Context, id oracles.SubscriptionID) {
 	}
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe)
-	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(1), unsubscribe, nil)
+	oracleEngine.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(oracles.SubscriptionID(2), unsubscribe, nil)
 
 	snap, err := newMarketFromSnapshot(t, ctrl, em, oracleEngine)
 	require.NoError(t, err)

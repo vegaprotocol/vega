@@ -936,7 +936,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 					}
 				}
 			}
-
 		} else {
 			return errs.FinalAddForProperty(fmt.Sprintf("%s.%s.internal.time", parentProperty, name), ErrIsRequired)
 		}
@@ -966,7 +965,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 
 				filters := o.Filters
 				errs.Merge(checkDataSourceSpecFilters(filters, fmt.Sprintf("%s.external.oracle", name), parentProperty))
-
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}

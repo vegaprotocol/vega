@@ -38,7 +38,7 @@ type Config struct {
 	// Ethereum groups the configuration related to Ethereum implementation of
 	// the Event Forwarder.
 	Ethereum ethereum.Config `group:"Ethereum" namespace:"ethereum"`
-	EthCall  ethcall.Config  `group:"EthCall" namespace:"ethcall"`
+	EthCall  ethcall.Config  `group:"EthCall"  namespace:"ethcall"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration.
