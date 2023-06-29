@@ -19,9 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"github.com/stretchr/testify/require"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
 
