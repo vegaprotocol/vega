@@ -182,13 +182,13 @@ Feature: stop orders
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
       | party1| ETH/DEC19 | buy  | 5      | 80    | 0                | TYPE_LIMIT | TIF_IOC | reduce | 75               |       | stop1     |
-    
+
     # now we trade at 75, this will breach the trigger
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
       | party3| ETH/DEC19 | buy  | 10     | 75    | 0                | TYPE_LIMIT | TIF_GTC |
       | party2| ETH/DEC19 | sell | 10     | 75    | 1                | TYPE_LIMIT | TIF_GTC |
-    
+
     # check that the order was triggered
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
@@ -417,7 +417,7 @@ Feature: stop orders
     Given the following network parameters are set:
       | name                                    | value |
       | network.markPriceUpdateMaximumFrequency | 1s    |
-    And the average block duration is "1" 
+    And the average block duration is "1"
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
@@ -465,7 +465,7 @@ Feature: stop orders
       | party2| ETH/DEC19 | buy  | 10     | 24    | 0                | TYPE_LIMIT | TIF_GTC |
       | party3| ETH/DEC19 | sell | 10     | 24    | 1                | TYPE_LIMIT | TIF_GTC |
     # check that the stop order was triggered despite the mark price not updating
-    Then the mark price should be "50" for the market "ETH/DEC19" 
+    Then the mark price should be "50" for the market "ETH/DEC19"
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        | reference |
       | party1 | ETH/DEC19 | sell | 10     | 0     | STATUS_FILLED | stop1     |
@@ -631,7 +631,7 @@ Feature: stop orders
     And the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type        | tif     | only   | fb price trigger | error | reference | so expires in | so expiry strategy     |
       | party1| ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 25               |       | stop1     | 10            | EXPIRY_STRATEGY_SUBMIT |
-    
+
     # trigger the stop order
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1376,6 +1376,47 @@ Feature: stop orders
 
     Then the network moves ahead "1" blocks
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+
+
+  Scenario: A Stop order that hasn't been triggered can be cancelled. (0014-ORDT-071)
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |
+      | party1| ETH/DEC19 | sell | 10     | 60    | 0                | TYPE_LIMIT | TIF_GTC |       |                  |       |           |
+      | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_GTC | reduce| 47               |       | stop1     |
+
+    Then the parties cancel the following orders:
+      | party  | reference | stop |
+      | party1 | stop1     | true |
 
     Then the stop orders should have the following states
       | party  | market id | status           | reference |

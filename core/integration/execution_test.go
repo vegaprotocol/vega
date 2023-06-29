@@ -107,6 +107,11 @@ func (e *exEng) CancelOrder(ctx context.Context, cancel *types.OrderCancellation
 	return conf, err
 }
 
+func (e *exEng) CancelStopOrder(ctx context.Context, cancel *types.StopOrdersCancellation, party string) error {
+	idgen := idgeneration.New(vgcrypto.RandomHash())
+	return e.Engine.CancelStopOrders(ctx, cancel, party, idgen)
+}
+
 func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID,
 	deterministicID string,
 ) error {

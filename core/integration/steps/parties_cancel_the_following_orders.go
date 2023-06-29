@@ -30,18 +30,30 @@ func PartiesCancelTheFollowingOrders(
 		row := cancelOrderRow{row: r}
 
 		party := row.Party()
+		var err error
 
-		order, err := broker.GetByReference(party, row.Reference())
-		if err != nil {
-			return errOrderNotFound(row.Reference(), party, err)
+		if row.Stop() {
+			order, err := broker.GetStopByReference(party, row.Reference())
+			if err != nil {
+				return errOrderNotFound(row.Reference(), party, err)
+			}
+			cancel := types.StopOrdersCancellation{
+				OrderID:  order.StopOrder.Id,
+				MarketID: order.StopOrder.MarketId,
+			}
+			err = exec.CancelStopOrder(context.Background(), &cancel, party)
+		} else {
+			order, err := broker.GetByReference(party, row.Reference())
+			if err != nil {
+				return errOrderNotFound(row.Reference(), party, err)
+			}
+			cancel := types.OrderCancellation{
+				OrderID:  order.Id,
+				MarketID: order.MarketId,
+			}
+			_, err = exec.CancelOrder(context.Background(), &cancel, party)
 		}
 
-		cancel := types.OrderCancellation{
-			OrderID:  order.Id,
-			MarketID: order.MarketId,
-		}
-
-		_, err = exec.CancelOrder(context.Background(), &cancel, party)
 		err = checkExpectedError(row, err, nil)
 		if err != nil {
 			return err
@@ -61,6 +73,7 @@ func parseCancelOrderTable(table *godog.Table) []RowWrapper {
 		"reference",
 	}, []string{
 		"error",
+		"stop",
 	})
 }
 
@@ -82,4 +95,12 @@ func (r cancelOrderRow) Error() string {
 
 func (r cancelOrderRow) ExpectError() bool {
 	return r.row.HasColumn("error")
+}
+
+func (r cancelOrderRow) Stop() bool {
+	if !r.row.HasColumn("stop") {
+		return false
+	}
+
+	return r.row.Bool("stop")
 }
