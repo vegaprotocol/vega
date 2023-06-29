@@ -21,7 +21,6 @@ func TestNewDataSourceDefinitionWith(t *testing.T) {
 			assert.IsType(t, &types.DataSourceDefinition{}, nds)
 			assert.Nil(t, nds.Content())
 		})
-
 	})
 
 	t.Run("ethereum oracle", func(t *testing.T) {

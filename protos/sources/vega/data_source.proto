@@ -8,9 +8,9 @@ import "vega/data/v1/spec.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
-// DataSourceDefinition represents the top level object that deals with data sources.
-// DataSourceDefinition can be external or internal, with whatever number of data sources are defined
-// for each type in the child objects below.
+// DataSourceDefinition represents the top level object that deals with data
+// sources. DataSourceDefinition can be external or internal, with whatever
+// number of data sources are defined for each type in the child objects below.
 message DataSourceDefinition {
   oneof source_type {
     DataSourceDefinitionInternal internal = 1;
@@ -18,23 +18,22 @@ message DataSourceDefinition {
   }
 }
 
-// DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
+// DataSourceSpecConfigurationTime is the internal data source used for emitting
+// timestamps.
 message DataSourceSpecConfigurationTime {
   // Conditions that the timestamps should meet in order to be considered.
   repeated vega.data.v1.Condition conditions = 1;
 }
 
-// DataSourceDefinitionInternal is the top level object used for all internal data sources.
-// It contains one of any of the defined `SourceType` variants.
+// DataSourceDefinitionInternal is the top level object used for all internal
+// data sources. It contains one of any of the defined `SourceType` variants.
 message DataSourceDefinitionInternal {
   // Types of internal data sources
-  oneof source_type {
-    DataSourceSpecConfigurationTime time = 1;
-  }
+  oneof source_type { DataSourceSpecConfigurationTime time = 1; }
 }
 
-// DataSourceDefinitionExternal is the top level object used for all external data sources.
-// It contains one of any of the defined `SourceType` variants.
+// DataSourceDefinitionExternal is the top level object used for all external
+// data sources. It contains one of any of the defined `SourceType` variants.
 message DataSourceDefinitionExternal {
   // Types of External data sources
   oneof source_type {
@@ -44,12 +43,14 @@ message DataSourceDefinitionExternal {
   }
 }
 
-// All types of external data sources use the same configuration set for meeting requirements
-// in order for the data to be useful for Vega - valid signatures and matching filters.
+// All types of external data sources use the same configuration set for meeting
+// requirements in order for the data to be useful for Vega - valid signatures
+// and matching filters.
 message DataSourceSpecConfiguration {
   // Signers is the list of authorized signatures that signed the data for this
-  // source. All the signatures in the data source data should be contained in this
-  // external source. All the signatures in the data should be contained in this list.
+  // source. All the signatures in the data source data should be contained in
+  // this external source. All the signatures in the data should be contained in
+  // this list.
   repeated vega.data.v1.Signer signers = 1;
 
   // Filters describes which source data are considered of interest or not for
@@ -57,7 +58,8 @@ message DataSourceSpecConfiguration {
   repeated vega.data.v1.Filter filters = 2;
 }
 
-// Specifies a data source that derives its content from calling a read method on an Ethereum contract.
+// Specifies a data source that derives its content from calling a read method
+// on an Ethereum contract.
 message EthCallSpec {
   // Ethereum address of the contract to call.
   string address = 1;
@@ -66,7 +68,8 @@ message EthCallSpec {
   // Name of the method on the contract to call.
   string method = 3;
   // List of arguments to pass to method call.
-  // Protobuf 'Value' wraps an arbitrary JSON type that is mapped to an Ethereum type according to the ABI.
+  // Protobuf 'Value' wraps an arbitrary JSON type that is mapped to an Ethereum
+  // type according to the ABI.
   repeated google.protobuf.Value args = 4;
   // Conditions for determining when to call the contract method.
   EthCallTrigger trigger = 5;
@@ -74,43 +77,39 @@ message EthCallSpec {
   uint64 required_confirmations = 6;
   // Filters the data returned from the contract method
   repeated vega.data.v1.Filter filters = 7;
-  // Normalisers are used to convert the data returned from the contract method into a standard format.
+  // Normalisers are used to convert the data returned from the contract method
+  // into a standard format. The key of the map is the name of the property,
+  // which identifies the specific piece of data to other parts of the data
+  // sourcing framework, for example filters. The value is a JSONPath expression
+  // for expressing where in the contract call result the required data is
+  // located, for example $[0] indicates the first result. $[1].price would look
+  // in the second result returned from the contract for a structure with a key
+  // called 'price' and use that if it exists.
   map<string, string> normalisers = 8;
 }
 
 // Determines when the contract method should be called.
 message EthCallTrigger {
-  oneof trigger {
-    EthTimeTrigger time_trigger = 1;
-  }
+  oneof trigger { EthTimeTrigger time_trigger = 1; }
 }
 
-// Trigger for an Ethereum call based on the Ethereum block timestamp. Can be one-off or repeating.
+// Trigger for an Ethereum call based on the Ethereum block timestamp. Can be
+// one-off or repeating.
 message EthTimeTrigger {
-  // Trigger when the Ethereum time is greater or equal to this time, in Unix seconds.
+  // Trigger when the Ethereum time is greater or equal to this time, in Unix
+  // seconds.
   optional uint64 initial = 1;
-  // Repeat the call every n seconds after the initial call. If no time for initial call was specified, begin repeating
-  // immediately.
+  // Repeat the call every n seconds after the initial call. If no time for
+  // initial call was specified, begin repeating immediately.
   optional uint64 every = 2;
-  // If repeating, stop once Ethereum time is greater than this time, in Unix seconds. If not set, then repeat
-  // indefinitely.
+  // If repeating, stop once Ethereum time is greater than this time, in Unix
+  // seconds. If not set, then repeat indefinitely.
   optional uint64 until = 3;
 }
 
-// Describes the types of normalisers used for different data sources.
-message Normaliser {
-  oneof normaliser {
-    EthDecimalsNormaliser eth_decimals_normaliser = 1;
-  }
-}
-
-message EthDecimalsNormaliser {
-  int64 decimals = 1;
-}
-
-// Data source spec describes the data source base that a product or a risk model
-// wants to get from the data source engine.
-// This message contains additional information used by the API.
+// Data source spec describes the data source base that a product or a risk
+// model wants to get from the data source engine. This message contains
+// additional information used by the API.
 message DataSourceSpec {
   // Hash generated from the DataSpec data.
   string id = 1;
@@ -130,12 +129,10 @@ message DataSourceSpec {
     STATUS_UNSPECIFIED = 0;
     // STATUS_ACTIVE describes an active data source spec.
     STATUS_ACTIVE = 1;
-    // STATUS_DEACTIVATED describes an data source spec that is not listening to data
-    // anymore.
+    // STATUS_DEACTIVATED describes an data source spec that is not listening to
+    // data anymore.
     STATUS_DEACTIVATED = 2;
   }
 }
 
-message ExternalDataSourceSpec {
-  DataSourceSpec spec = 1;
-}
+message ExternalDataSourceSpec { DataSourceSpec spec = 1; }

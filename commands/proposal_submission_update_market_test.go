@@ -51,6 +51,7 @@ func TestCheckProposalSubmissionForUpdateMarket(t *testing.T) {
 	t.Run("Submitting a future market change with quote name succeeds", testUpdateFutureMarketChangeSubmissionWithQuoteNameSucceeds)
 	t.Run("Submitting a future market change without oracle spec fails", testUpdateFutureMarketChangeSubmissionWithoutOracleSpecFails)
 	t.Run("Submitting a future market change without either of the required oracle spec fails", testUpdateFutureMarketChangeSubmissionMissingSingleOracleSpecFails)
+	t.Run("Submitting a future market change without a public key fails", testUpdateFutureMarketSettlementDataChangeSubmissionWithoutPubKeysFails)
 	t.Run("Submitting a future market change with empty oracle spec fails", testUpdateFutureMarketChangeSubmissionWithEmptyOracleSpecFails)
 	t.Run("Submitting a future market change with empty oracle spec type fails", testUpdateFutureMarketChangeSubmissionWithEmptyOracleSpecTypeFails)
 	t.Run("Submitting a future market change with empty internal oracle spec type fails", testUpdateFutureMarketChangeSubmissionWithEmptyInternalOracleSpecTypeFails)
