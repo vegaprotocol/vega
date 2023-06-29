@@ -315,7 +315,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | prices.ETH.value | 70000 |
 
     # settlement price is 70000 which is outside price monitoring bounds, and this will not trigger auction
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC21"
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC21"
     And the network moves ahead "6" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"

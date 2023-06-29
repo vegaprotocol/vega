@@ -397,6 +397,10 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 	ttCB(ctx, ttData)
 	sCB(ctx, sData)
 	require.Equal(t, marketConfig.State, types.MarketStateSettled)
+	// ensure the market data returns no trading
+	md, err := engine.GetMarketData(marketConfig.ID)
+	require.NoError(t, err)
+	require.Equal(t, types.MarketTradingModeNoTrading, md.MarketTradingMode)
 	engine.OnTick(ctx, time.Now())
 
 	keys := engine.Keys()
