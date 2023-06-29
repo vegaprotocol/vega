@@ -21,7 +21,6 @@ func TestNewDataSourceDefinitionWith(t *testing.T) {
 			assert.IsType(t, &types.DataSourceDefinition{}, nds)
 			assert.Nil(t, nds.Content())
 		})
-
 	})
 
 	t.Run("ethereum oracle", func(t *testing.T) {
@@ -412,12 +411,10 @@ func TestUpdateFilters(t *testing.T) {
 				SourceType: &vegapb.DataSourceDefinition_External{},
 			}
 
-			dsdt, _ := types.DataSourceDefinitionFromProto(dsd)
-			//if err != nil {
-			//
-			//}
+			dsdt, err := types.DataSourceDefinitionFromProto(dsd)
+			assert.NoError(t, err)
 
-			err := dsdt.(*types.DataSourceDefinition).UpdateFilters([]*types.DataSourceSpecFilter{})
+			err = dsdt.(*types.DataSourceDefinition).UpdateFilters([]*types.DataSourceSpecFilter{})
 			assert.NoError(t, err)
 			filters := dsdt.(*types.DataSourceDefinition).GetFilters()
 			assert.Equal(t, 0, len(filters))
@@ -432,10 +429,8 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, _ = types.DataSourceDefinitionFromProto(dsd)
-			//if err != nil {
-			//
-			//}
+			dsdt, err = types.DataSourceDefinitionFromProto(dsd)
+			assert.NoError(t, err)
 			filters = dsdt.(*types.DataSourceDefinition).GetFilters()
 			assert.Equal(t, 0, len(filters))
 		})
@@ -457,12 +452,10 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, _ := types.DataSourceDefinitionFromProto(dsd)
-			//if err != nil {
-			//
-			//}
+			dsdt, err := types.DataSourceDefinitionFromProto(dsd)
+			assert.NoError(t, err)
 			dst := types.NewDataSourceDefinitionWith(dsdt)
-			err := dst.UpdateFilters(
+			err = dst.UpdateFilters(
 				[]*types.DataSourceSpecFilter{
 					{
 						Key: &types.DataSourceSpecPropertyKey{
@@ -520,12 +513,21 @@ func TestUpdateFilters(t *testing.T) {
 		})
 
 		t.Run("NotEmpty EthOracle", func(t *testing.T) {
+			timeNow := uint64(time.Now().UnixNano())
 			dsd := &vegapb.DataSourceDefinition{
 				SourceType: &vegapb.DataSourceDefinition_External{
 					External: &vegapb.DataSourceDefinitionExternal{
 						SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
 							EthOracle: &vegapb.EthCallSpec{
 								Address: "some-eth-address",
+								Trigger: &vegapb.EthCallTrigger{
+									Trigger: &vegapb.EthCallTrigger_TimeTrigger{
+										TimeTrigger: &vegapb.EthTimeTrigger{
+											Initial: &timeNow,
+										},
+									},
+								},
+
 								Filters: []*datapb.Filter{
 									{
 										Key: &datapb.PropertyKey{
@@ -540,12 +542,10 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, _ := types.DataSourceDefinitionFromProto(dsd)
-			//if err != nil {
-			//
-			//}
+			dsdt, err := types.DataSourceDefinitionFromProto(dsd)
+			assert.NoError(t, err)
 			dst := types.NewDataSourceDefinitionWith(dsdt)
-			err := dst.UpdateFilters(
+			err = dst.UpdateFilters(
 				[]*types.DataSourceSpecFilter{
 					{
 						Key: &types.DataSourceSpecPropertyKey{
@@ -614,12 +614,10 @@ func TestUpdateFilters(t *testing.T) {
 				},
 			}
 
-			dsdt, _ := types.DataSourceDefinitionFromProto(dsd)
-			//if err != nil {
-			//
-			//}
+			dsdt, err := types.DataSourceDefinitionFromProto(dsd)
+			assert.NoError(t, err)
 			dst := types.NewDataSourceDefinitionWith(dsdt)
-			err := dst.UpdateFilters(
+			err = dst.UpdateFilters(
 				[]*types.DataSourceSpecFilter{
 					{
 						Conditions: []*types.DataSourceSpecCondition{
@@ -652,12 +650,10 @@ func TestUpdateFilters(t *testing.T) {
 				SourceType: &vegapb.DataSourceDefinition_Internal{},
 			}
 
-			dsdt, _ := types.DataSourceDefinitionFromProto(dsd)
-			//if err != nil {
-			//
-			//}
+			dsdt, err := types.DataSourceDefinitionFromProto(dsd)
+			assert.NoError(t, err)
 			dst := types.NewDataSourceDefinitionWith(dsdt)
-			err := dst.UpdateFilters(
+			err = dst.UpdateFilters(
 				[]*types.DataSourceSpecFilter{},
 			)
 

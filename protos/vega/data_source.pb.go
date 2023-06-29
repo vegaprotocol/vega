@@ -30,8 +30,8 @@ const (
 	DataSourceSpec_STATUS_UNSPECIFIED DataSourceSpec_Status = 0
 	// STATUS_ACTIVE describes an active data source spec.
 	DataSourceSpec_STATUS_ACTIVE DataSourceSpec_Status = 1
-	// STATUS_DEACTIVATED describes an data source spec that is not listening to data
-	// anymore.
+	// STATUS_DEACTIVATED describes an data source spec that is not listening to
+	// data anymore.
 	DataSourceSpec_STATUS_DEACTIVATED DataSourceSpec_Status = 2
 )
 
@@ -73,12 +73,12 @@ func (x DataSourceSpec_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use DataSourceSpec_Status.Descriptor instead.
 func (DataSourceSpec_Status) EnumDescriptor() ([]byte, []int) {
-	return file_vega_data_source_proto_rawDescGZIP(), []int{10, 0}
+	return file_vega_data_source_proto_rawDescGZIP(), []int{8, 0}
 }
 
-// DataSourceDefinition represents the top level object that deals with data sources.
-// DataSourceDefinition can be external or internal, with whatever number of data sources are defined
-// for each type in the child objects below.
+// DataSourceDefinition represents the top level object that deals with data
+// sources. DataSourceDefinition can be external or internal, with whatever
+// number of data sources are defined for each type in the child objects below.
 type DataSourceDefinition struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -160,7 +160,8 @@ func (*DataSourceDefinition_Internal) isDataSourceDefinition_SourceType() {}
 
 func (*DataSourceDefinition_External) isDataSourceDefinition_SourceType() {}
 
-// DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
+// DataSourceSpecConfigurationTime is the internal data source used for emitting
+// timestamps.
 type DataSourceSpecConfigurationTime struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -209,8 +210,8 @@ func (x *DataSourceSpecConfigurationTime) GetConditions() []*v1.Condition {
 	return nil
 }
 
-// DataSourceDefinitionInternal is the top level object used for all internal data sources.
-// It contains one of any of the defined `SourceType` variants.
+// DataSourceDefinitionInternal is the top level object used for all internal
+// data sources. It contains one of any of the defined `SourceType` variants.
 type DataSourceDefinitionInternal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -280,8 +281,8 @@ type DataSourceDefinitionInternal_Time struct {
 
 func (*DataSourceDefinitionInternal_Time) isDataSourceDefinitionInternal_SourceType() {}
 
-// DataSourceDefinitionExternal is the top level object used for all external data sources.
-// It contains one of any of the defined `SourceType` variants.
+// DataSourceDefinitionExternal is the top level object used for all external
+// data sources. It contains one of any of the defined `SourceType` variants.
 type DataSourceDefinitionExternal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -366,16 +367,18 @@ func (*DataSourceDefinitionExternal_Oracle) isDataSourceDefinitionExternal_Sourc
 
 func (*DataSourceDefinitionExternal_EthOracle) isDataSourceDefinitionExternal_SourceType() {}
 
-// All types of external data sources use the same configuration set for meeting requirements
-// in order for the data to be useful for Vega - valid signatures and matching filters.
+// All types of external data sources use the same configuration set for meeting
+// requirements in order for the data to be useful for Vega - valid signatures
+// and matching filters.
 type DataSourceSpecConfiguration struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	// Signers is the list of authorized signatures that signed the data for this
-	// source. All the signatures in the data source data should be contained in this
-	// external source. All the signatures in the data should be contained in this list.
+	// source. All the signatures in the data source data should be contained in
+	// this external source. All the signatures in the data should be contained in
+	// this list.
 	Signers []*v1.Signer `protobuf:"bytes,1,rep,name=signers,proto3" json:"signers,omitempty"`
 	// Filters describes which source data are considered of interest or not for
 	// the product (or the risk model).
@@ -428,7 +431,8 @@ func (x *DataSourceSpecConfiguration) GetFilters() []*v1.Filter {
 	return nil
 }
 
-// Specifies a data source that derives its content from calling a read method on an Ethereum contract.
+// Specifies a data source that derives its content from calling a read method
+// on an Ethereum contract.
 type EthCallSpec struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -441,17 +445,24 @@ type EthCallSpec struct {
 	// Name of the method on the contract to call.
 	Method string `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
 	// List of arguments to pass to method call.
-	// Protobuf 'Value' wraps an arbitrary JSON type that is mapped to an Ethereum type according to the ABI.
+	// Protobuf 'Value' wraps an arbitrary JSON type that is mapped to an Ethereum
+	// type according to the ABI.
 	Args []*structpb.Value `protobuf:"bytes,4,rep,name=args,proto3" json:"args,omitempty"`
 	// Conditions for determining when to call the contract method.
 	Trigger *EthCallTrigger `protobuf:"bytes,5,opt,name=trigger,proto3" json:"trigger,omitempty"`
 	// Number of confirmations required before the query is considered verified
 	RequiredConfirmations uint64 `protobuf:"varint,6,opt,name=required_confirmations,json=requiredConfirmations,proto3" json:"required_confirmations,omitempty"`
-	// Below - is this common across all sources? so should be on DataSourceDefinitionExternal?
-	// Filters describes which source data are considered of interest
+	// Filters the data returned from the contract method
 	Filters []*v1.Filter `protobuf:"bytes,7,rep,name=filters,proto3" json:"filters,omitempty"`
-	// TODO - nice docs if this works out
-	Normalisers map[string]string `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"` // EthNormaliser normaliser = 8;
+	// Normalisers are used to convert the data returned from the contract method
+	// into a standard format. The key of the map is the name of the property,
+	// which identifies the specific piece of data to other parts of the data
+	// sourcing framework, for example filters. The value is a JSONPath expression
+	// for expressing where in the contract call result the required data is
+	// located, for example $[0] indicates the first result. $[1].price would look
+	// in the second result returned from the contract for a structure with a key
+	// called 'price' and use that if it exists.
+	Normalisers map[string]string `protobuf:"bytes,8,rep,name=normalisers,proto3" json:"normalisers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *EthCallSpec) Reset() {
@@ -610,17 +621,21 @@ type EthCallTrigger_TimeTrigger struct {
 
 func (*EthCallTrigger_TimeTrigger) isEthCallTrigger_Trigger() {}
 
-// Trigger for an Ethereum call based on the Ethereum block timestamp. Can be one-off or repeating.
+// Trigger for an Ethereum call based on the Ethereum block timestamp. Can be
+// one-off or repeating.
 type EthTimeTrigger struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// Trigger when the Ethereum time is greater or equal to this time, in Unix seconds.
+	// Trigger when the Ethereum time is greater or equal to this time, in Unix
+	// seconds.
 	Initial *uint64 `protobuf:"varint,1,opt,name=initial,proto3,oneof" json:"initial,omitempty"`
-	// Repeat the call every n seconds after the inital call. If no time for initial call was specified, begin repeating immediately.
+	// Repeat the call every n seconds after the initial call. If no time for
+	// initial call was specified, begin repeating immediately.
 	Every *uint64 `protobuf:"varint,2,opt,name=every,proto3,oneof" json:"every,omitempty"`
-	// If repeating, stop once Ethereum time is greater than this time, in Unix seconds. If not set, then repeat indefinitely.
+	// If repeating, stop once Ethereum time is greater than this time, in Unix
+	// seconds. If not set, then repeat indefinitely.
 	Until *uint64 `protobuf:"varint,3,opt,name=until,proto3,oneof" json:"until,omitempty"`
 }
 
@@ -677,124 +692,9 @@ func (x *EthTimeTrigger) GetUntil() uint64 {
 	return 0
 }
 
-// Describes the types of normalisers used for different data sources.
-type Normaliser struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	// Types that are assignable to Normaliser:
-	//
-	//	*Normaliser_EthDecimalsNormaliser
-	Normaliser isNormaliser_Normaliser `protobuf_oneof:"normaliser"`
-}
-
-func (x *Normaliser) Reset() {
-	*x = Normaliser{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_data_source_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Normaliser) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Normaliser) ProtoMessage() {}
-
-func (x *Normaliser) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_data_source_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Normaliser.ProtoReflect.Descriptor instead.
-func (*Normaliser) Descriptor() ([]byte, []int) {
-	return file_vega_data_source_proto_rawDescGZIP(), []int{8}
-}
-
-func (m *Normaliser) GetNormaliser() isNormaliser_Normaliser {
-	if m != nil {
-		return m.Normaliser
-	}
-	return nil
-}
-
-func (x *Normaliser) GetEthDecimalsNormaliser() *EthDecimalsNormaliser {
-	if x, ok := x.GetNormaliser().(*Normaliser_EthDecimalsNormaliser); ok {
-		return x.EthDecimalsNormaliser
-	}
-	return nil
-}
-
-type isNormaliser_Normaliser interface {
-	isNormaliser_Normaliser()
-}
-
-type Normaliser_EthDecimalsNormaliser struct {
-	EthDecimalsNormaliser *EthDecimalsNormaliser `protobuf:"bytes,1,opt,name=eth_decimals_normaliser,json=ethDecimalsNormaliser,proto3,oneof"`
-}
-
-func (*Normaliser_EthDecimalsNormaliser) isNormaliser_Normaliser() {}
-
-type EthDecimalsNormaliser struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Decimals int64 `protobuf:"varint,1,opt,name=decimals,proto3" json:"decimals,omitempty"`
-}
-
-func (x *EthDecimalsNormaliser) Reset() {
-	*x = EthDecimalsNormaliser{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_data_source_proto_msgTypes[9]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *EthDecimalsNormaliser) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EthDecimalsNormaliser) ProtoMessage() {}
-
-func (x *EthDecimalsNormaliser) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_data_source_proto_msgTypes[9]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EthDecimalsNormaliser.ProtoReflect.Descriptor instead.
-func (*EthDecimalsNormaliser) Descriptor() ([]byte, []int) {
-	return file_vega_data_source_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *EthDecimalsNormaliser) GetDecimals() int64 {
-	if x != nil {
-		return x.Decimals
-	}
-	return 0
-}
-
-// Data source spec describes the data source base that a product or a risk model
-// wants to get from the data source engine.
-// This message contains additional information used by the API.
+// Data source spec describes the data source base that a product or a risk
+// model wants to get from the data source engine. This message contains
+// additional information used by the API.
 type DataSourceSpec struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -814,7 +714,7 @@ type DataSourceSpec struct {
 func (x *DataSourceSpec) Reset() {
 	*x = DataSourceSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_data_source_proto_msgTypes[10]
+		mi := &file_vega_data_source_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -827,7 +727,7 @@ func (x *DataSourceSpec) String() string {
 func (*DataSourceSpec) ProtoMessage() {}
 
 func (x *DataSourceSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_data_source_proto_msgTypes[10]
+	mi := &file_vega_data_source_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -840,7 +740,7 @@ func (x *DataSourceSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataSourceSpec.ProtoReflect.Descriptor instead.
 func (*DataSourceSpec) Descriptor() ([]byte, []int) {
-	return file_vega_data_source_proto_rawDescGZIP(), []int{10}
+	return file_vega_data_source_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DataSourceSpec) GetId() string {
@@ -889,7 +789,7 @@ type ExternalDataSourceSpec struct {
 func (x *ExternalDataSourceSpec) Reset() {
 	*x = ExternalDataSourceSpec{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_vega_data_source_proto_msgTypes[11]
+		mi := &file_vega_data_source_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -902,7 +802,7 @@ func (x *ExternalDataSourceSpec) String() string {
 func (*ExternalDataSourceSpec) ProtoMessage() {}
 
 func (x *ExternalDataSourceSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_vega_data_source_proto_msgTypes[11]
+	mi := &file_vega_data_source_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -915,7 +815,7 @@ func (x *ExternalDataSourceSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExternalDataSourceSpec.ProtoReflect.Descriptor instead.
 func (*ExternalDataSourceSpec) Descriptor() ([]byte, []int) {
-	return file_vega_data_source_proto_rawDescGZIP(), []int{11}
+	return file_vega_data_source_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ExternalDataSourceSpec) GetSpec() *DataSourceSpec {
@@ -1017,42 +917,32 @@ var file_vega_data_source_proto_rawDesc = []byte{
 	0x12, 0x19, 0x0a, 0x05, 0x75, 0x6e, 0x74, 0x69, 0x6c, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04, 0x48,
 	0x02, 0x52, 0x05, 0x75, 0x6e, 0x74, 0x69, 0x6c, 0x88, 0x01, 0x01, 0x42, 0x0a, 0x0a, 0x08, 0x5f,
 	0x69, 0x6e, 0x69, 0x74, 0x69, 0x61, 0x6c, 0x42, 0x08, 0x0a, 0x06, 0x5f, 0x65, 0x76, 0x65, 0x72,
-	0x79, 0x42, 0x08, 0x0a, 0x06, 0x5f, 0x75, 0x6e, 0x74, 0x69, 0x6c, 0x22, 0x71, 0x0a, 0x0a, 0x4e,
-	0x6f, 0x72, 0x6d, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x72, 0x12, 0x55, 0x0a, 0x17, 0x65, 0x74, 0x68,
-	0x5f, 0x64, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x5f, 0x6e, 0x6f, 0x72, 0x6d, 0x61, 0x6c,
-	0x69, 0x73, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x76, 0x65, 0x67,
-	0x61, 0x2e, 0x45, 0x74, 0x68, 0x44, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x4e, 0x6f, 0x72,
-	0x6d, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x72, 0x48, 0x00, 0x52, 0x15, 0x65, 0x74, 0x68, 0x44, 0x65,
-	0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x4e, 0x6f, 0x72, 0x6d, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x72,
-	0x42, 0x0c, 0x0a, 0x0a, 0x6e, 0x6f, 0x72, 0x6d, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x72, 0x22, 0x33,
-	0x0a, 0x15, 0x45, 0x74, 0x68, 0x44, 0x65, 0x63, 0x69, 0x6d, 0x61, 0x6c, 0x73, 0x4e, 0x6f, 0x72,
-	0x6d, 0x61, 0x6c, 0x69, 0x73, 0x65, 0x72, 0x12, 0x1a, 0x0a, 0x08, 0x64, 0x65, 0x63, 0x69, 0x6d,
-	0x61, 0x6c, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x64, 0x65, 0x63, 0x69, 0x6d,
-	0x61, 0x6c, 0x73, 0x22, 0x90, 0x02, 0x0a, 0x0e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72,
-	0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1d, 0x0a, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65,
-	0x64, 0x5f, 0x61, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61,
-	0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64,
-	0x5f, 0x61, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x75, 0x70, 0x64, 0x61, 0x74,
-	0x65, 0x64, 0x41, 0x74, 0x12, 0x2e, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x44, 0x65, 0x66, 0x69, 0x6e, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x04,
-	0x64, 0x61, 0x74, 0x61, 0x12, 0x33, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x05,
-	0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44, 0x61, 0x74, 0x61,
-	0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x4b, 0x0a, 0x06, 0x53, 0x74, 0x61,
-	0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e,
-	0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x11, 0x0a, 0x0d, 0x53,
-	0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x41, 0x43, 0x54, 0x49, 0x56, 0x45, 0x10, 0x01, 0x12, 0x16,
-	0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x44, 0x45, 0x41, 0x43, 0x54, 0x49, 0x56,
-	0x41, 0x54, 0x45, 0x44, 0x10, 0x02, 0x22, 0x42, 0x0a, 0x16, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e,
-	0x61, 0x6c, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63,
-	0x12, 0x28, 0x0a, 0x04, 0x73, 0x70, 0x65, 0x63, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14,
-	0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x53, 0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70, 0x65, 0x63, 0x42, 0x27, 0x5a, 0x25, 0x63, 0x6f,
-	0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e,
-	0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76,
-	0x65, 0x67, 0x61, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x79, 0x42, 0x08, 0x0a, 0x06, 0x5f, 0x75, 0x6e, 0x74, 0x69, 0x6c, 0x22, 0x90, 0x02, 0x0a, 0x0e,
+	0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x12, 0x0e,
+	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x1d,
+	0x0a, 0x0a, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x09, 0x63, 0x72, 0x65, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1d, 0x0a,
+	0x0a, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x5f, 0x61, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x03, 0x52, 0x09, 0x75, 0x70, 0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x2e, 0x0a, 0x04,
+	0x64, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x76, 0x65, 0x67,
+	0x61, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x44, 0x65, 0x66, 0x69,
+	0x6e, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x12, 0x33, 0x0a, 0x06,
+	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1b, 0x2e, 0x76,
+	0x65, 0x67, 0x61, 0x2e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70,
+	0x65, 0x63, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x22, 0x4b, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x16, 0x0a, 0x12, 0x53,
+	0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45,
+	0x44, 0x10, 0x00, 0x12, 0x11, 0x0a, 0x0d, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53, 0x5f, 0x41, 0x43,
+	0x54, 0x49, 0x56, 0x45, 0x10, 0x01, 0x12, 0x16, 0x0a, 0x12, 0x53, 0x54, 0x41, 0x54, 0x55, 0x53,
+	0x5f, 0x44, 0x45, 0x41, 0x43, 0x54, 0x49, 0x56, 0x41, 0x54, 0x45, 0x44, 0x10, 0x02, 0x22, 0x42,
+	0x0a, 0x16, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x12, 0x28, 0x0a, 0x04, 0x73, 0x70, 0x65, 0x63,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x14, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x2e, 0x44, 0x61,
+	0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x53, 0x70, 0x65, 0x63, 0x52, 0x04, 0x73, 0x70,
+	0x65, 0x63, 0x42, 0x27, 0x5a, 0x25, 0x63, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x65, 0x67, 0x61, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x69, 0x6f, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x2f,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x73, 0x2f, 0x76, 0x65, 0x67, 0x61, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1068,7 +958,7 @@ func file_vega_data_source_proto_rawDescGZIP() []byte {
 }
 
 var file_vega_data_source_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_vega_data_source_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_vega_data_source_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_vega_data_source_proto_goTypes = []interface{}{
 	(DataSourceSpec_Status)(0),              // 0: vega.DataSourceSpec.Status
 	(*DataSourceDefinition)(nil),            // 1: vega.DataSourceDefinition
@@ -1079,41 +969,38 @@ var file_vega_data_source_proto_goTypes = []interface{}{
 	(*EthCallSpec)(nil),                     // 6: vega.EthCallSpec
 	(*EthCallTrigger)(nil),                  // 7: vega.EthCallTrigger
 	(*EthTimeTrigger)(nil),                  // 8: vega.EthTimeTrigger
-	(*Normaliser)(nil),                      // 9: vega.Normaliser
-	(*EthDecimalsNormaliser)(nil),           // 10: vega.EthDecimalsNormaliser
-	(*DataSourceSpec)(nil),                  // 11: vega.DataSourceSpec
-	(*ExternalDataSourceSpec)(nil),          // 12: vega.ExternalDataSourceSpec
-	nil,                                     // 13: vega.EthCallSpec.NormalisersEntry
-	(*v1.Condition)(nil),                    // 14: vega.data.v1.Condition
-	(*v1.Signer)(nil),                       // 15: vega.data.v1.Signer
-	(*v1.Filter)(nil),                       // 16: vega.data.v1.Filter
-	(*structpb.ListValue)(nil),              // 17: google.protobuf.ListValue
-	(*structpb.Value)(nil),                  // 18: google.protobuf.Value
+	(*DataSourceSpec)(nil),                  // 9: vega.DataSourceSpec
+	(*ExternalDataSourceSpec)(nil),          // 10: vega.ExternalDataSourceSpec
+	nil,                                     // 11: vega.EthCallSpec.NormalisersEntry
+	(*v1.Condition)(nil),                    // 12: vega.data.v1.Condition
+	(*v1.Signer)(nil),                       // 13: vega.data.v1.Signer
+	(*v1.Filter)(nil),                       // 14: vega.data.v1.Filter
+	(*structpb.ListValue)(nil),              // 15: google.protobuf.ListValue
+	(*structpb.Value)(nil),                  // 16: google.protobuf.Value
 }
 var file_vega_data_source_proto_depIdxs = []int32{
 	3,  // 0: vega.DataSourceDefinition.internal:type_name -> vega.DataSourceDefinitionInternal
 	4,  // 1: vega.DataSourceDefinition.external:type_name -> vega.DataSourceDefinitionExternal
-	14, // 2: vega.DataSourceSpecConfigurationTime.conditions:type_name -> vega.data.v1.Condition
+	12, // 2: vega.DataSourceSpecConfigurationTime.conditions:type_name -> vega.data.v1.Condition
 	2,  // 3: vega.DataSourceDefinitionInternal.time:type_name -> vega.DataSourceSpecConfigurationTime
 	5,  // 4: vega.DataSourceDefinitionExternal.oracle:type_name -> vega.DataSourceSpecConfiguration
 	6,  // 5: vega.DataSourceDefinitionExternal.eth_oracle:type_name -> vega.EthCallSpec
-	15, // 6: vega.DataSourceSpecConfiguration.signers:type_name -> vega.data.v1.Signer
-	16, // 7: vega.DataSourceSpecConfiguration.filters:type_name -> vega.data.v1.Filter
-	17, // 8: vega.EthCallSpec.abi:type_name -> google.protobuf.ListValue
-	18, // 9: vega.EthCallSpec.args:type_name -> google.protobuf.Value
+	13, // 6: vega.DataSourceSpecConfiguration.signers:type_name -> vega.data.v1.Signer
+	14, // 7: vega.DataSourceSpecConfiguration.filters:type_name -> vega.data.v1.Filter
+	15, // 8: vega.EthCallSpec.abi:type_name -> google.protobuf.ListValue
+	16, // 9: vega.EthCallSpec.args:type_name -> google.protobuf.Value
 	7,  // 10: vega.EthCallSpec.trigger:type_name -> vega.EthCallTrigger
-	16, // 11: vega.EthCallSpec.filters:type_name -> vega.data.v1.Filter
-	13, // 12: vega.EthCallSpec.normalisers:type_name -> vega.EthCallSpec.NormalisersEntry
+	14, // 11: vega.EthCallSpec.filters:type_name -> vega.data.v1.Filter
+	11, // 12: vega.EthCallSpec.normalisers:type_name -> vega.EthCallSpec.NormalisersEntry
 	8,  // 13: vega.EthCallTrigger.time_trigger:type_name -> vega.EthTimeTrigger
-	10, // 14: vega.Normaliser.eth_decimals_normaliser:type_name -> vega.EthDecimalsNormaliser
-	1,  // 15: vega.DataSourceSpec.data:type_name -> vega.DataSourceDefinition
-	0,  // 16: vega.DataSourceSpec.status:type_name -> vega.DataSourceSpec.Status
-	11, // 17: vega.ExternalDataSourceSpec.spec:type_name -> vega.DataSourceSpec
-	18, // [18:18] is the sub-list for method output_type
-	18, // [18:18] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	1,  // 14: vega.DataSourceSpec.data:type_name -> vega.DataSourceDefinition
+	0,  // 15: vega.DataSourceSpec.status:type_name -> vega.DataSourceSpec.Status
+	9,  // 16: vega.ExternalDataSourceSpec.spec:type_name -> vega.DataSourceSpec
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_vega_data_source_proto_init() }
@@ -1219,30 +1106,6 @@ func file_vega_data_source_proto_init() {
 			}
 		}
 		file_vega_data_source_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Normaliser); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_vega_data_source_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*EthDecimalsNormaliser); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_vega_data_source_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*DataSourceSpec); i {
 			case 0:
 				return &v.state
@@ -1254,7 +1117,7 @@ func file_vega_data_source_proto_init() {
 				return nil
 			}
 		}
-		file_vega_data_source_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
+		file_vega_data_source_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ExternalDataSourceSpec); i {
 			case 0:
 				return &v.state
@@ -1282,16 +1145,13 @@ func file_vega_data_source_proto_init() {
 		(*EthCallTrigger_TimeTrigger)(nil),
 	}
 	file_vega_data_source_proto_msgTypes[7].OneofWrappers = []interface{}{}
-	file_vega_data_source_proto_msgTypes[8].OneofWrappers = []interface{}{
-		(*Normaliser_EthDecimalsNormaliser)(nil),
-	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_vega_data_source_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   13,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
