@@ -15,7 +15,6 @@ package protocol
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"code.vegaprotocol.io/vega/core/evtforward/ethcall"
 
@@ -76,11 +75,6 @@ type EthCallEngine interface {
 	UpdatePreviousEthBlock(height uint64, timestamp uint64)
 }
 
-type EthOracleVerifier interface {
-	ProcessEthereumContractCallResult(callEvent types.EthContractCallEvent) error
-	OnTick(ctx context.Context, t time.Time)
-}
-
 type allServices struct {
 	ctx             context.Context
 	log             *logging.Logger
@@ -117,7 +111,7 @@ type allServices struct {
 	pow                     processor.PoWEngine
 	builtinOracle           *oracles.Builtin
 	codec                   abci.Codec
-	ethereumOraclesVerifier EthOracleVerifier
+	ethereumOraclesVerifier *oracles.EthereumOracleVerifier
 
 	assets                *assets.Service
 	topology              *validators.Topology
@@ -328,7 +322,7 @@ func newServices(
 
 	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
-		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine)
+		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier)
 
 	if svcs.spam != nil {
 		svcs.snapshot.AddProviders(svcs.spam)
