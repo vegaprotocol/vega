@@ -16,6 +16,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/protos/vega"
+	eventspb "code.vegaprotocol.io/vega/protos/vega/events/v1"
 )
 
 type cancelTransferResolver VegaResolverRoot
@@ -65,9 +66,20 @@ func (r *newTransferResolver) TransferType(ctx context.Context, obj *vega.NewTra
 func (r *newTransferResolver) Kind(ctx context.Context, obj *vega.NewTransfer) (GovernanceTransferKind, error) {
 	switch obj.Changes.GetKind().(type) {
 	case *vega.NewTransferConfiguration_OneOff:
-		return obj.Changes.GetOneOff(), nil
+		// Need the concrete type specified in gqlgen.yml, which is vega/events/v1.RecurringTransfer not
+		// vega.RecurringTransfer that is in our NewTransfer or else gqlgen won't be able to map it.
+		govTransfer := obj.Changes.GetOneOff()
+		evtTransfer := &eventspb.OneOffGovernanceTransfer{
+			DeliverOn: govTransfer.DeliverOn,
+		}
+		return evtTransfer, nil
 	case *vega.NewTransferConfiguration_Recurring:
-		return obj.Changes.GetRecurring(), nil
+		govTransfer := obj.Changes.GetRecurring()
+		evtTransfer := &eventspb.RecurringGovernanceTransfer{
+			StartEpoch: govTransfer.StartEpoch,
+			EndEpoch:   govTransfer.EndEpoch,
+		}
+		return evtTransfer, nil
 	default:
 		return nil, ErrUnsupportedTransferKind
 	}
