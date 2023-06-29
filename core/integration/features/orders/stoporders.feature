@@ -355,6 +355,69 @@ Feature: stop orders
       | party  | market id | side | volume | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 0     | STATUS_FILLED | stop1     |
 
+  Scenario: With a last traded price at 50, a stop order placed with any trigger price which does not trigger immediately will trigger as soon as a trade occurs at a trigger price, and will not wait until the next mark price update to trigger. (0014-ORDT-051)
+
+    # setup network parameters
+    Given the following network parameters are set:
+      | name                                    | value |
+      | network.markPriceUpdateMaximumFrequency | 1s    |
+    And the average block duration is "1" 
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 90000             | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 5      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    # setup party1 position, open a 10 long position
+    Given the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1| ETH/DEC19 | buy  | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | sell | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+
+    # place volume to trade with stop order
+    Given the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | buy  | 10     | 20    | 0                | TYPE_LIMIT | TIF_GTC |
+    # place stop order
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | fb price trigger | error | reference |
+      | party1| ETH/DEC19 | sell | 10     | 0     | 0                | TYPE_MARKET| TIF_IOC | reduce | 25               |       | stop1     |
+    # trigger stop order
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2| ETH/DEC19 | buy  | 10     | 24    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3| ETH/DEC19 | sell | 10     | 24    | 1                | TYPE_LIMIT | TIF_GTC |
+    # check that the stop order was triggered despite the mark price not updating
+    Then the mark price should be "50" for the market "ETH/DEC19" 
+    Then the orders should have the following states:
+      | party  | market id | side | volume | price | status        | reference |
+      | party1 | ETH/DEC19 | sell | 10     | 0     | STATUS_FILLED | stop1     |
+
+    # check the mark price is later updated correctly
+    Given the network moves ahead "2" blocks
+    Then the mark price should be "20" for the market "ETH/DEC19"
+
   Scenario: A stop order with expiration time T set to expire at that time will expire at time T if reached without being triggered. (0014-ORDT-052)
 
     # setup accounts
