@@ -141,6 +141,62 @@ Feature: stop orders
       # this next one goes over the top
       | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_GTC | reduce| 47               | max stop orders per party reached  |
 
+  Scenario: A stop order wrapping a limit order will, once triggered, place the limit order as if it just arrived as an order without the stop order wrapping. (0014-ORDT-045)
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 1000000  |
+      | party2 | BTC   | 1000000  |
+      | party3 | BTC   | 1000000  |
+      | aux    | BTC   | 1000000  |
+      | aux2   | BTC   | 1000000  |
+      | lpprov | BTC   | 90000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC19"
+    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    # setup party1 position, open a 10 short position
+    Given the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1| ETH/DEC19 | sell | 10     | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | buy  | 10     | 50    | 1                | TYPE_LIMIT | TIF_GTC |
+    # place an order to match with the limit order then check the stop is filled
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | sell  | 10    | 80    | 0                | TYPE_LIMIT | TIF_GTC |
+    # create party1 stop order
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only   | ra price trigger | error | reference |
+      | party1| ETH/DEC19 | buy  | 5      | 80    | 0                | TYPE_LIMIT | TIF_IOC | reduce | 75               |       | stop1     |
+    
+    # now we trade at 75, this will breach the trigger
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | party3| ETH/DEC19 | buy  | 10     | 75    | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2| ETH/DEC19 | sell | 10     | 75    | 1                | TYPE_LIMIT | TIF_GTC |
+    
+    # check that the order was triggered
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_TRIGGERED | stop1     |
+    And the orders should have the following states:
+      | party  | market id | side | volume | price | status        | reference |
+      | party1 | ETH/DEC19 | buy  | 5      | 80    | STATUS_FILLED | stop1     |
+
   Scenario: With a last traded price at 50, a stop order placed with Rises Above setting at 75 will be triggered by any trade at price 75 or higher. (0014-ORDT-047)
 
     # setup accounts
