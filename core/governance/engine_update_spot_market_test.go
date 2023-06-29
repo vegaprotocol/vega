@@ -142,19 +142,19 @@ func testSubmittingProposalForSpotMarketUpdateWithInsufficientEquityLikeShareFai
 	marketID := proposal.MarketUpdate().MarketID
 
 	// setup
-	eng.ensureTokenBalanceForParty(t, party, 100)
+	// eng.ensureTokenBalanceForParty(t, party, 100)
 	eng.ensureExistingMarket(t, marketID)
 	eng.ensureEquityLikeShareForMarketAndParty(t, marketID, party, 0.05)
 
 	// expect
-	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInsufficientEquityLikeShare)
+	eng.expectRejectedProposalEvent(t, party, proposal.ID, types.ProposalErrorInsufficientTokens)
 
 	// when
 	toSubmit, err := eng.submitProposal(t, proposal)
 
 	// then
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "proposer have insufficient equity-like share, expected >=")
+	assert.Contains(t, err.Error(), "no balance for party")
 	require.Nil(t, toSubmit)
 }
 

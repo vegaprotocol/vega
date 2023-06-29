@@ -48,7 +48,7 @@ func (a *LevelDBAdapter) Clear() error {
 }
 
 func NewLevelDBAdapter(vegaPaths paths.Paths) (*LevelDBAdapter, error) {
-	filePath := vegaPaths.StatePathFor(paths.SnapshotMetadataDBStateFile)
+	filePath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
 
 	underlyingAdapter, err := initializeUnderlyingAdapter(filePath)
 	if err != nil {

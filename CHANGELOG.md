@@ -63,6 +63,7 @@
 - [8508](https://github.com/vegaprotocol/vega/issues/8508) - Add network parameters for SLA.
 - [8468](https://github.com/vegaprotocol/vega/issues/8468) - Wire in stop orders in markets
 - [8528](https://github.com/vegaprotocol/vega/issues/8528) - Add support for Stop Orders in the data node.
+- [8635](https://github.com/vegaprotocol/vega/issues/8635) - Allow market update proposal with ELS only
 
 ### 🐛 Fixes
 
