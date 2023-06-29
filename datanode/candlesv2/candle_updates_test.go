@@ -87,7 +87,7 @@ func TestUnsubscribeAfterTransientFailure(t *testing.T) {
 	sub1Id, out1, _ := updates.Subscribe()
 	sub2Id, out2, _ := updates.Subscribe()
 
-	firstCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
+	firstCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 200)
 	testCandleSource.candles <- []entities.Candle{firstCandle}
 
 	candle1 := <-out1
