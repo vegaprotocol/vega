@@ -246,16 +246,12 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 		return ErrMarketDoesNotExist
 	}
 
-	notProposed := mkt.GetMarketState() != types.MarketStateProposed
 	if err := mkt.Reject(ctx); err != nil {
 		return err
 	}
 
 	// send market data event so market data and markets API are consistent.
-	// do not send this event if the market is rejected when proposed (ie the proposal did not pass the vote)
-	if notProposed {
-		e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
-	}
+	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 
 	e.removeMarket(marketID)
 	// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
