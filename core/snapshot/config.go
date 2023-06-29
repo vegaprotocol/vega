@@ -13,27 +13,21 @@
 package snapshot
 
 import (
-	"errors"
-	"os"
-
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/paths"
 )
 
 const (
-	namedLogger = "snapshot"
-	goLevelDB   = "GOLevelDB"
-	memDB       = "memory"
+	LevelDB    = "GOLevelDB"
+	InMemoryDB = "memory"
 )
 
 type Config struct {
 	Level       encoding.LogLevel `choice:"debug"                                                                                                                                                                    choice:"info"                 choice:"warning"                  choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)" long:"log-level"`
-	KeepRecent  int               `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
-	RetryLimit  int               `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
+	KeepRecent  uint              `description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"                                                                                    long:"snapshot-keep-recent"`
+	RetryLimit  uint              `description:"Maximum number of times to try and apply snapshot chunk"                                                                                                             long:"max-retries"`
 	Storage     string            `choice:"GOLevelDB"                                                                                                                                                                choice:"memory"               description:"Storage type to use" long:"storage"`
-	DBPath      string            `description:"Path to database"                                                                                                                                                    long:"db-path"`
 	StartHeight int64             `description:"Load from a snapshot at the given block-height. Setting to -1 will load from the latest snapshot available, 0 will force the chain to replay if not using statesync" long:"load-from-block-height"`
 }
 
@@ -44,44 +38,23 @@ func NewDefaultConfig() Config {
 		Level:       encoding.LogLevel{Level: logging.InfoLevel},
 		KeepRecent:  10,
 		RetryLimit:  5,
-		Storage:     goLevelDB,
+		Storage:     LevelDB,
 		StartHeight: -1,
 	}
 }
 
-func NewTestConfig() Config {
-	cfg := NewDefaultConfig()
-	cfg.Storage = memDB
-	return cfg
-}
-
-// validate checks the values in the config file are sensible, and returns the path
-// which is create/load the snapshots from.
-func (c *Config) validate(vegapath paths.Paths) (string, error) {
-	if len(c.DBPath) != 0 && c.Storage == memDB {
-		return "", errors.New("dbpath cannot be set when storage method is in-memory")
+// Validate checks the values in the config file are sensible.
+func (c *Config) Validate() error {
+	// default to min 1 version, just so we don't have to account for nil slice.
+	// A single version kept in memory is pretty harmless.
+	if c.KeepRecent < 1 {
+		c.KeepRecent = 1
 	}
 
 	switch c.Storage {
-	case memDB:
-		return "", nil
-	case goLevelDB:
-
-		if len(c.DBPath) == 0 {
-			return vegapath.StatePathFor(paths.SnapshotStateHome), nil
-		}
-
-		stat, err := os.Stat(c.DBPath)
-		if err != nil {
-			return "", err
-		}
-
-		if !stat.IsDir() {
-			return "", errors.New("snapshot DB path is not a directory")
-		}
-
-		return c.DBPath, nil
+	case InMemoryDB, LevelDB:
+		return nil
 	default:
-		return "", types.ErrInvalidSnapshotStorageMethod
+		return types.ErrInvalidSnapshotStorageMethod
 	}
 }

@@ -18,35 +18,34 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/vega/core/metrics"
+	metadatadb "code.vegaprotocol.io/vega/core/snapshot/databases/metadata"
+	snapshotdb "code.vegaprotocol.io/vega/core/snapshot/databases/snapshot"
 	"code.vegaprotocol.io/vega/core/types"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"golang.org/x/exp/slices"
 
 	"github.com/cosmos/iavl"
-	"github.com/syndtr/goleveldb/leveldb/filter"
-	"github.com/syndtr/goleveldb/leveldb/opt"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	db "github.com/tendermint/tm-db"
+	tmdb "github.com/tendermint/tm-db"
 )
 
 const (
-	SnapshotDBName     = "snapshot"
-	SnapshotMetaDBName = "snapshot_meta"
-	numWorkers         = 1000
+	namedLogger = "snapshot"
+	numWorkers  = 1000
 )
+
+var ErrCouldNotCleanlyCloseDatabases = errors.New("could not cleanly close the databases")
 
 type StateProviderT interface {
 	// Namespace this provider operates in, basically a prefix for the keys
@@ -83,6 +82,18 @@ type StatsService interface {
 	SetHeight(uint64)
 }
 
+type MetadataDatabase interface {
+	Save(int64, *tmtypes.Snapshot) error
+	Load(int64) (*tmtypes.Snapshot, error)
+	Close() error
+	Clear() error
+}
+
+type Database interface {
+	tmdb.DB
+	Clear() error
+}
+
 // Engine the snapshot engine.
 type Engine struct {
 	Config
@@ -93,9 +104,9 @@ type Engine struct {
 	initialised  bool
 	timeService  TimeService
 	statsService StatsService
-	db           db.DB
-	metadb       *MetaDB
-	dbPath       string
+
+	db     Database
+	metadb MetadataDatabase
 
 	avl             *iavl.MutableTree
 	namespaces      []types.SnapshotNamespace
@@ -116,7 +127,7 @@ type Engine struct {
 	versionHeight    map[uint64]int64
 
 	snapshot  *types.Snapshot
-	snapRetry int
+	snapRetry uint
 
 	// the general snapshot info this engine is responsible for
 	wrap *types.PayloadAppState
@@ -165,19 +176,13 @@ var nodeOrder = []types.SnapshotNamespace{
 }
 
 // New returns a new snapshot engine.
-func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService, stats StatsService) (*Engine, error) {
-	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
-	// A single version kept in memory is pretty harmless.
-	if conf.KeepRecent < 1 {
-		conf.KeepRecent = 1
+func New(ctx context.Context, vegaPath paths.Paths, conf Config, log *logging.Logger, tm TimeService, stats StatsService) (*Engine, error) {
+	if err := conf.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
+
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
-
-	dbPath, err := conf.validate(vegapath)
-	if err != nil {
-		return nil, err
-	}
 
 	sctx, cfunc := context.WithCancel(ctx)
 	appPL := &types.PayloadAppState{
@@ -191,7 +196,6 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		cfunc:        cfunc,
 		timeService:  tm,
 		statsService: stats,
-		dbPath:       dbPath,
 		namespaces:   []types.SnapshotNamespace{},
 		nsKeys: map[types.SnapshotNamespace][]string{
 			app: {appPL.Key()},
@@ -211,6 +215,11 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		interval:        1, // default to every block
 		current:         -1,
 	}
+
+	if err := eng.initializeDatabases(vegaPath); err != nil {
+		return nil, fmt.Errorf("could not initialize databases: %w", err)
+	}
+
 	return eng, nil
 }
 
@@ -226,7 +235,7 @@ func (e *Engine) ReloadConfig(cfg Config) {
 	e.Config = cfg
 }
 
-// List returns all snapshots available.
+// ListMeta returns all snapshots available.
 func (e *Engine) ListMeta() ([]*tmtypes.Snapshot, error) {
 	e.avlLock.Lock()
 	defer e.avlLock.Unlock()
@@ -297,21 +306,15 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 // and ensuring any pre-existing snapshot database is removed first. It is to be called
 // by a chain that is starting from block 0.
 func (e *Engine) ClearAndInitialise() error {
-	for _, name := range []string{SnapshotDBName, SnapshotMetaDBName} {
-		p := filepath.Join(e.dbPath, name+".db")
-
-		exists, err := vgfs.PathExists(p)
-		if err != nil {
-			return err
-		}
-
-		if exists {
-			e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
-			if err := os.RemoveAll(p); err != nil {
-				return err
-			}
-		}
+	if err := e.db.Clear(); err != nil {
+		return fmt.Errorf("could not clear the snapshot database: %w", err)
 	}
+	if err := e.metadb.Clear(); err != nil {
+		return fmt.Errorf("could not clear the metadata database: %w", err)
+	}
+
+	e.initialised = false
+
 	if err := e.initialiseTree(); err != nil {
 		return err
 	}
@@ -378,8 +381,6 @@ func (e *Engine) CheckLoaded() (bool, error) {
 	if startHeight == 0 {
 		// forced chain replay, we need to remove all old snapshots and start again
 		e.initialised = false
-		e.db.Close()
-		e.metadb.Close()
 		return false, e.ClearAndInitialise()
 	}
 
@@ -433,40 +434,34 @@ func (e *Engine) CheckLoaded() (bool, error) {
 	return false, types.ErrNoSnapshot
 }
 
+func (e *Engine) initializeDatabases(vegaPaths paths.Paths) error {
+	switch e.Storage {
+	case InMemoryDB:
+		e.db = snapshotdb.NewInMemoryDatabase()
+		e.metadb = metadatadb.NewDatabase(metadatadb.NewInMemoryAdapter())
+	case LevelDB:
+		db, err := snapshotdb.NewLevelDBDatabase(vegaPaths)
+		if err != nil {
+			return fmt.Errorf("could not initialize snapshot database: %w", err)
+		}
+		e.db = db
+		leveldbAdapter, err := metadatadb.NewLevelDBAdapter(vegaPaths)
+		if err != nil {
+			return fmt.Errorf("could not initialize metadata database: %w", err)
+		}
+		e.metadb = metadatadb.NewDatabase(leveldbAdapter)
+	default:
+		return types.ErrInvalidSnapshotStorageMethod
+	}
+	return nil
+}
+
 // initialiseTree connects to the snapshotdb and sets the engine's state to
 // point to the latest version of the tree.
 func (e *Engine) initialiseTree() error {
 	// prevent re-initialising the tree several times over
 	if e.initialised {
 		return nil
-	}
-	switch e.Storage {
-	case memDB:
-		e.db = db.NewMemDB()
-		e.metadb = NewMetaDB(NewMetaMemDB())
-	case goLevelDB:
-		conn, err := db.NewGoLevelDBWithOpts(SnapshotDBName, e.dbPath,
-			&opt.Options{
-				Filter:          filter.NewBloomFilter(10),
-				BlockCacher:     opt.NoCacher,
-				OpenFilesCacher: opt.NoCacher,
-			})
-		if err != nil {
-			return fmt.Errorf("could not open goleveldb: %w", err)
-		}
-		e.db = conn
-
-		metaConn, err := db.NewGoLevelDBWithOpts(SnapshotMetaDBName, e.dbPath,
-			&opt.Options{
-				BlockCacher:     opt.NoCacher,
-				OpenFilesCacher: opt.NoCacher,
-			})
-		if err != nil {
-			return fmt.Errorf("could not open meta goleveldb: %w", err)
-		}
-		e.metadb = NewMetaDB(NewMetaGoLevelDB(metaConn))
-	default:
-		return types.ErrInvalidSnapshotStorageMethod
 	}
 
 	tree, err := iavl.NewMutableTree(e.db, 0, false)
@@ -1137,7 +1132,7 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 }
 
 func (e *Engine) Close() error {
-	// we need to lock incase a snapshot-write is still happening when we try to close the DB
+	// we need to lock in case a snapshot-write is still happening when we try to close the DB
 	e.avlLock.Lock()
 	defer e.avlLock.Unlock()
 
@@ -1149,23 +1144,31 @@ func (e *Engine) Close() error {
 			p.Sync()
 		}
 	}
+
+	var dbErr error
 	if e.db != nil {
-		dbErr := e.db.Close()
-		metaErr := e.metadb.Close()
-		if dbErr != nil || metaErr != nil {
-			if dbErr != nil {
-				e.log.Error("could not close cleanly snapshot db", logging.Error(dbErr))
-			}
-			if metaErr != nil {
-				e.log.Error("could not close cleanly meta snapshot db", logging.Error(metaErr))
-			}
-			return errors.New("unable to close dbs cleanly")
+		dbErr = e.db.Close()
+		if dbErr != nil {
+			e.log.Error("could not cleanly close the snapshot database", logging.Error(dbErr))
 		}
 	}
+
+	var metadbErr error
+	if e.metadb != nil {
+		metadbErr = e.metadb.Close()
+		if metadbErr != nil {
+			e.log.Error("could not cleanly close the metadata database", logging.Error(metadbErr))
+		}
+	}
+
+	if dbErr != nil || metadbErr != nil {
+		return ErrCouldNotCleanlyCloseDatabases
+	}
+
 	return nil
 }
 
-func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
+func (e *Engine) OnSnapshotIntervalUpdate(_ context.Context, interval int64) error {
 	if interval < e.current || e.current < 0 {
 		e.current = interval
 	} else if interval > e.interval {
@@ -1178,18 +1181,9 @@ func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) e
 func uniqueSubset(have, add []string) []string {
 	ret := make([]string, 0, len(add))
 	for _, a := range add {
-		if !inSlice(have, a) {
+		if !slices.Contains(have, a) {
 			ret = append(ret, a)
 		}
 	}
 	return ret
-}
-
-func inSlice(s []string, v string) bool {
-	for _, sv := range s {
-		if sv == v {
-			return true
-		}
-	}
-	return false
 }
