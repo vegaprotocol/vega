@@ -587,7 +587,7 @@ Feature: stop orders
       | party  | market id | side | volume | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 10     | 0     | STATUS_FILLED | stop1     |
 
-  Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054)
+  Scenario: If the order is triggered before reaching time T, the order will have been removed and will not trigger at time T. (0014-ORDT-054) (0014-ORDT-041)
 
     # setup accounts
     Given time is updated to "2019-11-30T00:00:00Z"
