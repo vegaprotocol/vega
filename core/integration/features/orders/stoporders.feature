@@ -197,7 +197,7 @@ Feature: stop orders
       | party  | market id | side | volume | price | status        | reference |
       | party1 | ETH/DEC19 | buy  | 5      | 80    | STATUS_FILLED | stop1     |
 
-  Scenario: With a last traded price at 50, a stop order placed with Rises Above setting at 75 will be triggered by any trade at price 75 or higher. (0014-ORDT-047)
+  Scenario: With a last traded price at 50, a stop order placed with Rises Above setting at 75 will be triggered by any trade at price 75 or higher. (0014-ORDT-047) (0014-ORDT-046)
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
