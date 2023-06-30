@@ -2936,7 +2936,7 @@ type Candle struct {
 	Volume uint64 `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
 	// Time interval for the candle.
 	Interval Interval `protobuf:"varint,8,opt,name=interval,proto3,enum=vega.Interval" json:"interval,omitempty"`
-	// Total notional value (size * price) traded during the candle interval.
+	// Total notional value traded during the candle interval.
 	Notional uint64 `protobuf:"varint,9,opt,name=notional,proto3" json:"notional,omitempty"`
 }
 

@@ -5396,7 +5396,7 @@ type Candle struct {
 	Close string `protobuf:"bytes,6,opt,name=close,proto3" json:"close,omitempty"`
 	// Total trading volume during the candle interval.
 	Volume uint64 `protobuf:"varint,7,opt,name=volume,proto3" json:"volume,omitempty"`
-	// Total notional value (size * price) traded during the candle interval.
+	// Total notional value traded during the candle interval.
 	Notional uint64 `protobuf:"varint,8,opt,name=notional,proto3" json:"notional,omitempty"`
 }
 
