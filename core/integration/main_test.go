@@ -205,6 +205,12 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties cancel the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
 	})
+	s.Step(`^the party "([^"]*)" cancels all their stop orders for the market "([^"]*)"$`, func(partyId, marketId string) error {
+		return steps.PartyCancelsAllTheirStopOrdersForTheMarket(execsetup.executionEngine, partyId, marketId)
+	})
+	s.Step(`^the party "([^"]*)" cancels all their stop orders`, func(partyId string) error {
+		return steps.PartyCancelsAllTheirStopOrders(execsetup.executionEngine, partyId)
+	})
 	s.Step(`^the parties cancel all their orders for the markets:$`, func(table *godog.Table) error {
 		return steps.PartiesCancelAllTheirOrdersForTheMarkets(execsetup.broker, execsetup.executionEngine, table)
 	})
