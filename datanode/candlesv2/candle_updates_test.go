@@ -87,7 +87,7 @@ func TestUnsubscribeAfterTransientFailure(t *testing.T) {
 	sub1Id, out1, _ := updates.Subscribe()
 	sub2Id, out2, _ := updates.Subscribe()
 
-	firstCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	firstCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 200)
 	testCandleSource.candles <- []entities.Candle{firstCandle}
 
 	candle1 := <-out1
@@ -112,7 +112,7 @@ func TestSubscribeAfterTransientFailure(t *testing.T) {
 	_, out1, _ := updates.Subscribe()
 	_, out2, _ := updates.Subscribe()
 
-	firstCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	firstCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
 	testCandleSource.candles <- []entities.Candle{firstCandle}
 
 	candle1 := <-out1
@@ -128,7 +128,7 @@ func TestSubscribeAfterTransientFailure(t *testing.T) {
 	candle3 := <-out3
 	assert.Equal(t, firstCandle, candle3)
 
-	secondCandle := createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20)
+	secondCandle := createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20, 100)
 	testCandleSource.candles <- []entities.Candle{secondCandle}
 
 	candle1 = <-out1
@@ -151,7 +151,7 @@ func TestSubscribe(t *testing.T) {
 	_, out1, _ := updates.Subscribe()
 	_, out2, _ := updates.Subscribe()
 
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 := <-out1
@@ -160,7 +160,7 @@ func TestSubscribe(t *testing.T) {
 	candle2 := <-out2
 	assert.Equal(t, expectedCandle, candle2)
 
-	expectedCandle = createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20)
+	expectedCandle = createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 = <-out1
@@ -179,7 +179,7 @@ func TestUnsubscribe(t *testing.T) {
 
 	id, out1, _ := updates.Subscribe()
 
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 := <-out1
@@ -200,7 +200,7 @@ func TestNewSubscriberAlwaysGetsLastCandle(t *testing.T) {
 
 	_, out1, _ := updates.Subscribe()
 
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 := <-out1
@@ -221,7 +221,7 @@ func TestSubscribeWithNonZeroSubscribeBuffer(t *testing.T) {
 	_, out1, _ := updates.Subscribe()
 	_, out2, _ := updates.Subscribe()
 
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 := <-out1
@@ -230,7 +230,7 @@ func TestSubscribeWithNonZeroSubscribeBuffer(t *testing.T) {
 	candle2 := <-out2
 	assert.Equal(t, expectedCandle, candle2)
 
-	expectedCandle = createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20)
+	expectedCandle = createCandle(startTime.Add(1*time.Minute), startTime.Add(1*time.Minute), 2, 2, 2, 2, 20, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 = <-out1
@@ -249,7 +249,7 @@ func TestUnsubscribeWithNonZeroSubscribeBuffer(t *testing.T) {
 
 	id, out1, _ := updates.Subscribe()
 
-	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10)
+	expectedCandle := createCandle(startTime, startTime, 1, 1, 1, 1, 10, 100)
 	testCandleSource.candles <- []entities.Candle{expectedCandle}
 
 	candle1 := <-out1
@@ -286,7 +286,7 @@ func newTestCandleConfig(subscribeBufferSize int) candlesv2.Config {
 	return conf
 }
 
-func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close int, high int, low int, volume int) entities.Candle {
+func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close int, high int, low int, volume, notional int) entities.Candle {
 	return entities.Candle{
 		PeriodStart:        periodStart,
 		LastUpdateInPeriod: lastUpdate,
@@ -295,5 +295,6 @@ func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close i
 		High:               decimal.NewFromInt(int64(high)),
 		Low:                decimal.NewFromInt(int64(low)),
 		Volume:             uint64(volume),
+		Notional:           uint64(notional),
 	}
 }

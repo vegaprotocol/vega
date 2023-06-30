@@ -2056,6 +2056,10 @@ func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, er
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
 
+func (r *myCandleResolver) Notional(_ context.Context, obj *v2.Candle) (string, error) {
+	return strconv.FormatUint(obj.Notional, 10), nil
+}
+
 // END: Candle Resolver
 
 // BEGIN: DataSourceSpecConfiguration Resolver.

@@ -26,8 +26,9 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"code.vegaprotocol.io/vega/datanode/entities"
 	"github.com/georgysavva/scany/pgxscan"
+
+	"code.vegaprotocol.io/vega/datanode/entities"
 )
 
 const (
@@ -88,7 +89,7 @@ func (cs *Candles) GetCandleDataForTimeSpan(ctx context.Context, candleID string
 
 	var candles []entities.Candle
 
-	query := fmt.Sprintf("SELECT period_start, open, close, high, low, volume, last_update_in_period FROM %s WHERE market_id = $1",
+	query := fmt.Sprintf("SELECT period_start, open, close, high, low, volume, notional, last_update_in_period FROM %s WHERE market_id = $1",
 		descriptor.view)
 
 	marketAsBytes, err := hex.DecodeString(descriptor.market)

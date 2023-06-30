@@ -12,6 +12,7 @@
 
 ### 🛠 Improvements
 
+- [8409](https://github.com/vegaprotocol/vega/issues/8409) - Add `total notional value` to the candles.
 - [7684](https://github.com/vegaprotocol/vega/issues/7684) - Add filters for `Block Explorer` transactions `API` for multiple command types (inclusive and exclusive) and multiple parties
 - [7592](https://github.com/vegaprotocol/vega/issues/7592) - Add `block` parameter to `epoch` query.
 - [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.

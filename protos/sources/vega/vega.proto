@@ -541,6 +541,8 @@ message Candle {
   uint64 volume = 7;
   // Time interval for the candle.
   Interval interval = 8;
+  // Total notional value traded during the candle interval.
+  uint64 notional = 9;
 }
 
 // Represents a price level from market depth or order book data

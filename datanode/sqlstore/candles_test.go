@@ -19,9 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"code.vegaprotocol.io/vega/datanode/candlesv2"
 	"code.vegaprotocol.io/vega/datanode/sqlstore/helpers"
-	"github.com/stretchr/testify/require"
 
 	types "code.vegaprotocol.io/vega/protos/vega"
 
@@ -106,6 +107,43 @@ func TestCandlesPagination(t *testing.T) {
 	assert.Equal(t, lastCandle, candles[0])
 }
 
+func TestNotional(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	candleStore := sqlstore.NewCandles(ctx, connectionSource, candlesv2.NewDefaultConfig().CandleStore)
+	tradeStore := sqlstore.NewTrades(connectionSource)
+	bs := sqlstore.NewBlocks(connectionSource)
+
+	startTime := time.Unix(StartTime, 0)
+	block := addTestBlockForTime(t, ctx, bs, startTime)
+
+	// Total notional here will be 1*10 + 2*15 = 40
+	insertTestTrade(t, ctx, tradeStore, 1, 10, block, 0)
+	insertTestTrade(t, ctx, tradeStore, 2, 15, block, 3)
+
+	nextTime := time.Unix(StartTime, 0).Add(10 * time.Minute)
+	block = addTestBlockForTime(t, ctx, bs, nextTime)
+	// Total notional here will be 3*20 + 4*25 = 160
+	insertTestTrade(t, ctx, tradeStore, 3, 20, block, 0)
+	insertTestTrade(t, ctx, tradeStore, 4, 25, block, 5)
+
+	_, candleID, err := candleStore.GetCandleIDForIntervalAndMarket(ctx, "1 Minute", testMarket)
+	if err != nil {
+		t.Fatalf("getting existing candleDescriptor id:%s", err)
+	}
+
+	pagination, _ := entities.NewCursorPagination(nil, nil, nil, nil, false)
+	candles, _, err := candleStore.GetCandleDataForTimeSpan(ctx, candleID, &startTime,
+		nil, pagination)
+	if err != nil {
+		t.Fatalf("failed to get candles:%s", err)
+	}
+
+	assert.Equal(t, uint64(40), candles[0].Notional)
+	assert.Equal(t, uint64(160), candles[1].Notional)
+}
+
 func TestCandlesGetForEmptyInterval(t *testing.T) {
 	ctx, rollback := tempTransaction(t)
 	defer rollback()
@@ -140,11 +178,11 @@ func TestCandlesGetForEmptyInterval(t *testing.T) {
 	assert.Equal(t, 2, len(candles))
 
 	firstCandle := createCandle(startTime,
-		startTime.Add(3*time.Microsecond), 1, 2, 2, 1, 20)
+		startTime.Add(3*time.Microsecond), 1, 2, 2, 1, 20, 30)
 	assert.Equal(t, firstCandle, candles[0])
 
 	secondCandle := createCandle(startTime.Add(10*time.Minute),
-		startTime.Add(10*time.Minute).Add(5*time.Microsecond), 3, 4, 4, 3, 40)
+		startTime.Add(10*time.Minute).Add(5*time.Microsecond), 3, 4, 4, 3, 40, 140)
 	assert.Equal(t, secondCandle, candles[1])
 }
 
@@ -171,8 +209,7 @@ func TestCandlesGetLatest(t *testing.T) {
 	assert.Equal(t, 1, len(candles))
 
 	lastCandle := createCandle(startTime.Add(60*time.Second),
-		startTime.Add(89*time.Second).Add(2*time.Microsecond), 181, 270, 270, 181,
-		900)
+		startTime.Add(89*time.Second).Add(2*time.Microsecond), 181, 270, 270, 181, 900, 202950)
 	assert.Equal(t, lastCandle, candles[0])
 }
 
@@ -259,12 +296,12 @@ func testInterval(t *testing.T, ctx context.Context, tradeDataStartTime time.Tim
 		expectedCandle := createCandle(periodStart,
 			periodStart.Add(time.Duration(tradesPerBlock-1)*time.Microsecond).Add(intervalDur).Add(-1*blockIntervalDur),
 			startPrice+tradesAtOpen, tradesAtClose, tradesAtClose, startPrice+tradesAtOpen,
-			expectedVolume)
+			expectedVolume, candle.Notional)
 		assert.Equal(t, expectedCandle, candle)
 	}
 }
 
-func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close int, high int, low int, volume int) entities.Candle {
+func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close int, high int, low int, volume int, notional uint64) entities.Candle {
 	return entities.Candle{
 		PeriodStart:        periodStart,
 		LastUpdateInPeriod: lastUpdate,
@@ -273,6 +310,7 @@ func createCandle(periodStart time.Time, lastUpdate time.Time, open int, close i
 		High:               decimal.NewFromInt(int64(high)),
 		Low:                decimal.NewFromInt(int64(low)),
 		Volume:             uint64(volume),
+		Notional:           notional,
 	}
 }
 
