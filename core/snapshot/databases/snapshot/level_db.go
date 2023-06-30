@@ -1,4 +1,4 @@
-package metadata
+package snapshot
 
 import (
 	"fmt"

@@ -23,7 +23,11 @@ func (a *LevelDBAdapter) Save(version []byte, state []byte) error {
 }
 
 func (a *LevelDBAdapter) Load(version []byte) ([]byte, error) {
-	return a.underlyingAdapter.Get(version)
+	loadedData, err := a.underlyingAdapter.Get(version)
+	if loadedData == nil && err == nil {
+		return nil, noMetadataForSnapshotVersion(version)
+	}
+	return loadedData, err
 }
 
 func (a *LevelDBAdapter) Close() error {
