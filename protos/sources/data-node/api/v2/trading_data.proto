@@ -1587,7 +1587,7 @@ message Candle {
   string close = 6;
   // Total trading volume during the candle interval.
   uint64 volume = 7;
-  // Total notional value (size * price) traded during the candle interval.
+  // Total notional value traded during the candle interval.
   uint64 notional = 8;
 }
 
