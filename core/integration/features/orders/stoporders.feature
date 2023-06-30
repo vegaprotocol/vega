@@ -1477,3 +1477,56 @@ Scenario: All stop orders for a specific party can be cancelled by a single stop
       | party1 | ETH/DEC20 | STATUS_CANCELLED | stop3     |
       | party1 | ETH/DEC20 | STATUS_CANCELLED | stop4     |
 
+Scenario: All stop orders for a specific party for a specific market can be cancelled by a single stop order cancellation. (0014-ORDT-073)
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount    |
+      | party1 | BTC   | 1000000   |
+      | party2 | BTC   | 1000000   |
+      | aux    | BTC   | 1000000   |
+      | aux2   | BTC   | 1000000   |
+      | lpprov | BTC   | 900000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC19 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC19 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 50    | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the opening auction period ends for market "ETH/DEC19"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC20"
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | only  | fb price trigger | error | reference |
+      | party1| ETH/DEC19 | sell | 10     | 60    | 0                | TYPE_LIMIT | TIF_GTC |       |                  |       |           |
+      | party1| ETH/DEC19 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_GTC | reduce| 47               |       | stop1     |
+      | party1| ETH/DEC19 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_GTC | reduce| 48               |       | stop2     |
+      | party1| ETH/DEC20 | sell | 10     | 60    | 0                | TYPE_LIMIT | TIF_GTC |       |                  |       |           |
+      | party1| ETH/DEC20 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_GTC | reduce| 49               |       | stop3     |
+      | party1| ETH/DEC20 | buy  | 2      | 0     | 0                | TYPE_MARKET| TIF_GTC | reduce| 49               |       | stop4     |
+
+    Then the party "party1" cancels all their stop orders for the market "ETH/DEC19"
+
+    Then the stop orders should have the following states
+      | party  | market id | status           | reference |
+      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop1     |
+      | party1 | ETH/DEC19 | STATUS_CANCELLED | stop2     |
+      | party1 | ETH/DEC20 | STATUS_PENDING   | stop3     |
+      | party1 | ETH/DEC20 | STATUS_PENDING   | stop4     |
