@@ -2544,7 +2544,7 @@ type OrderUpdate {
   icebergOrder: IcebergOrder
 }
 
-"Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"
+"Response for the estimate of the margin level and, if available, collateral was provided in the request, liquidation price for the specified position"
 type PositionEstimate {
     "Margin level range estimate for the specified position"
     margin: MarginEstimate!
