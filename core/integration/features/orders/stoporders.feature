@@ -1415,9 +1415,9 @@ Feature: stop orders
       | party1| ETH/DEC19 | sell | 10     | 60    | 0                | TYPE_LIMIT | TIF_GTC |       |                  |       |           |
       | party1| ETH/DEC19 | buy  | 10     |  0    | 0                | TYPE_MARKET| TIF_GTC | reduce| 47               |       | stop1     |
 
-    Then the parties cancel the following orders:
-      | party  | reference | stop |
-      | party1 | stop1     | true |
+    Then the parties cancel the following stop orders:
+      | party  | reference |
+      | party1 | stop1     |
 
     Then the stop orders should have the following states
       | party  | market id | status           | reference |
