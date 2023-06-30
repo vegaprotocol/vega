@@ -187,6 +187,14 @@ func WrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.S
 		data.Command = &commandspb.InputData_BatchMarketInstructions{
 			BatchMarketInstructions: req.GetBatchMarketInstructions(),
 		}
+	case *walletpb.SubmitTransactionRequest_StopOrdersSubmission:
+		data.Command = &commandspb.InputData_StopOrdersSubmission{
+			StopOrdersSubmission: req.GetStopOrdersSubmission(),
+		}
+	case *walletpb.SubmitTransactionRequest_StopOrdersCancellation:
+		data.Command = &commandspb.InputData_StopOrdersCancellation{
+			StopOrdersCancellation: req.GetStopOrdersCancellation(),
+		}
 	default:
 		panic(fmt.Sprintf("command %v is not supported", cmd))
 	}
