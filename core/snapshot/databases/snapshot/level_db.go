@@ -15,6 +15,7 @@ const dbName = "snapshot"
 type LevelDBDatabase struct {
 	*db.GoLevelDB
 
+	dbPath   string
 	filePath string
 }
 
@@ -23,7 +24,7 @@ func (d *LevelDBDatabase) Clear() error {
 		return fmt.Errorf("could not close the connection: %w", err)
 	}
 
-	if err := os.RemoveAll(d.filePath); err != nil {
+	if err := os.RemoveAll(d.dbPath); err != nil {
 		return fmt.Errorf("could not remove the database file: %w", err)
 	}
 
@@ -38,6 +39,7 @@ func (d *LevelDBDatabase) Clear() error {
 
 func NewLevelDBDatabase(vegaPaths paths.Paths) (*LevelDBDatabase, error) {
 	filePath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	dbPath := vegaPaths.StatePathFor(paths.SnapshotDBStateFile)
 
 	adapter, err := initializeUnderlyingAdapter(filePath)
 	if err != nil {
@@ -45,6 +47,7 @@ func NewLevelDBDatabase(vegaPaths paths.Paths) (*LevelDBDatabase, error) {
 	}
 
 	return &LevelDBDatabase{
+		dbPath:    dbPath,
 		filePath:  filePath,
 		GoLevelDB: adapter,
 	}, nil
