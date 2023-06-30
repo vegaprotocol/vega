@@ -542,6 +542,10 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Depo
 type myQueryResolver VegaResolverRoot
 
 func (r *myQueryResolver) Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error) {
+	if filter == nil {
+		filter = &TradesFilter{}
+	}
+
 	resp, err := r.tradingDataClientV2.ListTrades(ctx, &v2.ListTradesRequest{
 		MarketIds:  filter.MarketIds,
 		OrderIds:   filter.OrderIds,
