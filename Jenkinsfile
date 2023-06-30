@@ -162,6 +162,17 @@ pipeline {
                         sh 'printenv'
                     }
                 }
+            }
+        }
+        //
+        // End LINTERS
+        //
+
+        //
+        // Begin TESTS
+        //
+        stage('Tests') {
+            parallel {
                 stage('approbation') {
                     when {
                         anyOf {
@@ -178,17 +189,6 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-        //
-        // End LINTERS
-        //
-
-        //
-        // Begin TESTS
-        //
-        stage('Tests') {
-            parallel {
                 stage('unit tests') {
                     options { retry(3) }
                     steps {
