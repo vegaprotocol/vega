@@ -21,27 +21,27 @@ import (
 	"github.com/cucumber/godog"
 )
 
-func PartiesCancelTheFollowingOrders(
+func PartiesCancelTheFollowingStopOrders(
 	broker *stubs.BrokerStub,
 	exec Execution,
 	table *godog.Table,
 ) error {
-	for _, r := range parseCancelOrderTable(table) {
-		row := cancelOrderRow{row: r}
+	for _, r := range parseCancelStopOrderTable(table) {
+		row := cancelStopOrderRow{row: r}
 
 		party := row.Party()
+		var err error
 
-		order, err := broker.GetByReference(party, row.Reference())
+		order, err := broker.GetStopByReference(party, row.Reference())
 		if err != nil {
 			return errOrderNotFound(row.Reference(), party, err)
 		}
-
-		cancel := types.OrderCancellation{
-			OrderID:  order.Id,
-			MarketID: order.MarketId,
+		cancel := types.StopOrdersCancellation{
+			OrderID:  order.StopOrder.Id,
+			MarketID: order.StopOrder.MarketId,
 		}
+		err = exec.CancelStopOrder(context.Background(), &cancel, party)
 
-		_, err = exec.CancelOrder(context.Background(), &cancel, party)
 		err = checkExpectedError(row, err, nil)
 		if err != nil {
 			return err
@@ -51,11 +51,36 @@ func PartiesCancelTheFollowingOrders(
 	return nil
 }
 
-type cancelOrderRow struct {
+func PartyCancelsAllTheirStopOrders(
+	exec Execution,
+	partyID string,
+) error {
+	cancel := types.StopOrdersCancellation{
+		OrderID:  "",
+		MarketID: "",
+	}
+	_ = exec.CancelStopOrder(context.Background(), &cancel, partyID)
+	return nil
+}
+
+func PartyCancelsAllTheirStopOrdersForTheMarket(
+	exec Execution,
+	partyID string,
+	marketID string,
+) error {
+	cancel := types.StopOrdersCancellation{
+		OrderID:  "",
+		MarketID: marketID,
+	}
+	_ = exec.CancelStopOrder(context.Background(), &cancel, partyID)
+	return nil
+}
+
+type cancelStopOrderRow struct {
 	row RowWrapper
 }
 
-func parseCancelOrderTable(table *godog.Table) []RowWrapper {
+func parseCancelStopOrderTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
 		"reference",
@@ -64,22 +89,18 @@ func parseCancelOrderTable(table *godog.Table) []RowWrapper {
 	})
 }
 
-func (r cancelOrderRow) Party() string {
+func (r cancelStopOrderRow) Party() string {
 	return r.row.MustStr("party")
 }
 
-func (r cancelOrderRow) HasMarketID() bool {
-	return r.row.HasColumn("market id")
-}
-
-func (r cancelOrderRow) Reference() string {
+func (r cancelStopOrderRow) Reference() string {
 	return r.row.Str("reference")
 }
 
-func (r cancelOrderRow) Error() string {
+func (r cancelStopOrderRow) Error() string {
 	return r.row.Str("error")
 }
 
-func (r cancelOrderRow) ExpectError() bool {
+func (r cancelStopOrderRow) ExpectError() bool {
 	return r.row.HasColumn("error")
 }

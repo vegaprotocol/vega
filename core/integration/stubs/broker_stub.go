@@ -886,6 +886,24 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	return types.Order{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
 }
 
+func (b *BrokerStub) GetStopByReference(party, ref string) (eventspb.StopOrderEvent, error) {
+	data := b.GetStopOrderEvents()
+
+	var last eventspb.StopOrderEvent // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
+	matched := false
+	for _, o := range data {
+		v := o.StopOrder()
+		if v.Submission.Reference == ref && v.StopOrder.PartyId == party {
+			last = *v
+			matched = true
+		}
+	}
+	if matched {
+		return last, nil
+	}
+	return eventspb.StopOrderEvent{}, fmt.Errorf("no order for party %v and reference %v", party, ref)
+}
+
 func (b *BrokerStub) GetTxErrors() []events.TxErr {
 	batch := b.GetBatch(events.TxErrEvent)
 	if len(batch) == 0 {
