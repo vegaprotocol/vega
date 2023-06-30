@@ -12,6 +12,7 @@ import (
 const metaDBName = "snapshot_meta"
 
 type LevelDBAdapter struct {
+	dbPath   string
 	filePath string
 
 	underlyingAdapter *db.GoLevelDB
@@ -34,7 +35,7 @@ func (a *LevelDBAdapter) Clear() error {
 		return fmt.Errorf("could not close the connection: %w", err)
 	}
 
-	if err := os.RemoveAll(a.filePath); err != nil {
+	if err := os.RemoveAll(a.dbPath); err != nil {
 		return fmt.Errorf("could not remove the database file: %w", err)
 	}
 
@@ -49,6 +50,7 @@ func (a *LevelDBAdapter) Clear() error {
 
 func NewLevelDBAdapter(vegaPaths paths.Paths) (*LevelDBAdapter, error) {
 	filePath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	dbPath := vegaPaths.StatePathFor(paths.SnapshotMetadataDBStateFile)
 
 	underlyingAdapter, err := initializeUnderlyingAdapter(filePath)
 	if err != nil {
@@ -56,6 +58,7 @@ func NewLevelDBAdapter(vegaPaths paths.Paths) (*LevelDBAdapter, error) {
 	}
 
 	return &LevelDBAdapter{
+		dbPath:            dbPath,
 		filePath:          filePath,
 		underlyingAdapter: underlyingAdapter,
 	}, nil
