@@ -719,6 +719,10 @@ func TestMarketClosing(t *testing.T) {
 		Data:    properties,
 	})
 	require.NoError(t, err)
+
+	assert.Equal(t, closingAt.UnixNano(), tm.market.Mkt().MarketTimestamps.Close)
+	assert.Equal(t, types.MarketStateSettled, tm.market.State())
+
 	closingAt = closingAt.Add(time.Second)
 	tm.now = closingAt
 	closed = tm.market.OnTick(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), closingAt)

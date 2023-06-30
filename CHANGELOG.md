@@ -95,6 +95,7 @@
 - [8453](https://github.com/vegaprotocol/vega/issues/8453) - Do not verify termination timestamp in update market when pre-enacting proposal
 - [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
 - [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
+- [8655](https://github.com/vegaprotocol/vega/issues/8655) - Set market close timestamp when market closes
 - [8362](https://github.com/vegaprotocol/vega/issues/8362) - Fix `PnL` flickering bug.
 - [8565](https://github.com/vegaprotocol/vega/issues/8565) - Unsubscribe all data sources when restoring a settled market from a snapshot
 - [8578](https://github.com/vegaprotocol/vega/issues/8578) - Add iceberg option fields to live orders trigger

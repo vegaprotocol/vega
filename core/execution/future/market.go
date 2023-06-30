@@ -843,6 +843,7 @@ func (m *Market) cleanMarketWithState(ctx context.Context, mktState types.Market
 
 	m.mkt.State = mktState
 	m.mkt.TradingMode = types.MarketTradingModeNoTrading
+	m.mkt.MarketTimestamps.Close = m.timeService.GetTimeNow().UnixNano()
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
