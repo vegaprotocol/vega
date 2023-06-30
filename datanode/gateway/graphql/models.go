@@ -30,6 +30,10 @@ type ExternalDataSourceKind interface {
 	IsExternalDataSourceKind()
 }
 
+type GovernanceTransferKind interface {
+	IsGovernanceTransferKind()
+}
+
 type InternalDataSourceKind interface {
 	IsInternalDataSourceKind()
 }
@@ -800,6 +804,52 @@ func (e *DataSourceSpecStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DataSourceSpecStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type GovernanceTransferType string
+
+const (
+	// Default value, always invalid
+	GovernanceTransferTypeGovernanceTransferTypeUnspecified GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED"
+	// Transfers the specified amount or does not transfer anything
+	GovernanceTransferTypeGovernanceTransferTypeAllOrNothing GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING"
+	// Transfers the specified amount or the max allowable amount if this is less than the specified amount
+	GovernanceTransferTypeGovernanceTransferTypeBestEffort GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT"
+)
+
+var AllGovernanceTransferType = []GovernanceTransferType{
+	GovernanceTransferTypeGovernanceTransferTypeUnspecified,
+	GovernanceTransferTypeGovernanceTransferTypeAllOrNothing,
+	GovernanceTransferTypeGovernanceTransferTypeBestEffort,
+}
+
+func (e GovernanceTransferType) IsValid() bool {
+	switch e {
+	case GovernanceTransferTypeGovernanceTransferTypeUnspecified, GovernanceTransferTypeGovernanceTransferTypeAllOrNothing, GovernanceTransferTypeGovernanceTransferTypeBestEffort:
+		return true
+	}
+	return false
+}
+
+func (e GovernanceTransferType) String() string {
+	return string(e)
+}
+
+func (e *GovernanceTransferType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GovernanceTransferType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GovernanceTransferType", str)
+	}
+	return nil
+}
+
+func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

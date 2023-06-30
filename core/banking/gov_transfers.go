@@ -44,11 +44,14 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 	)
 
 	for _, gTransfer := range e.recurringGovernanceTransfers {
+		e.log.Info("distributeRecurringGovernanceTransfers", logging.Uint64("epoch", e.currentEpoch), logging.String("transfer", gTransfer.IntoProto().String()))
 		if gTransfer.Config.RecurringTransferConfig.StartEpoch > e.currentEpoch {
 			continue
 		}
 
 		amount, err := e.processGovernanceTransfer(ctx, gTransfer)
+		e.log.Info("processed transfer", logging.String("amount", amount.String()))
+
 		if err != nil {
 			e.log.Error("error calculating transfer amount for governance transfer", logging.Error(err))
 			gTransfer.Status = types.TransferStatusStopped
@@ -61,6 +64,7 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 			gTransfer.Status = types.TransferStatusDone
 			transfersDone = append(transfersDone, events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
 			doneIDs = append(doneIDs, gTransfer.ID)
+			e.log.Info("recurrent transfer is done", logging.String("transfer ID", gTransfer.ID))
 			continue
 		}
 		e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, amount))
@@ -70,6 +74,10 @@ func (e *Engine) distributeRecurringGovernanceTransfers(ctx context.Context) {
 		for _, id := range doneIDs {
 			e.deleteGovTransfer(id)
 		}
+		for _, d := range transfersDone {
+			e.log.Info("transfersDone", logging.String("event", d.StreamMessage().String()))
+		}
+
 		e.broker.SendBatch(transfersDone)
 	}
 }
@@ -164,7 +172,12 @@ func (e *Engine) processGovernanceTransfer(
 	references := []string{gTransfer.Reference, gTransfer.Reference}
 	tresps, err := e.col.GovernanceTransferFunds(ctx, transfers, accountTypes, references)
 	if err != nil {
+		e.log.Error("error transferring governance transfer funds", logging.Error(err))
 		return num.UintZero(), err
+	}
+
+	for _, lm := range tresps {
+		e.log.Info("processGovernanceTransfer", logging.String("ledger-movement", lm.IntoProto().String()))
 	}
 
 	e.broker.Send(events.NewLedgerMovements(ctx, tresps))

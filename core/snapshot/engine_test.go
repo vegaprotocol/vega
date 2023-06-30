@@ -41,6 +41,12 @@ type tstEngine struct {
 	stats *mocks.MockStatsService
 }
 
+func newTestConfig() snapshot.Config {
+	cfg := snapshot.NewDefaultConfig()
+	cfg.Storage = snapshot.InMemoryDB
+	return cfg
+}
+
 func getTestEngine(t *testing.T) *tstEngine {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -48,7 +54,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
-	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
+	eng, err := snapshot.New(context.Background(), nil, newTestConfig(), logging.NewTestLogger(), time, stats)
 	require.NoError(t, err)
 
 	if err := eng.ClearAndInitialise(); err != nil {
@@ -430,7 +436,7 @@ func testRejectSnapshot(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 
-	for i := 0; i < engine.RetryLimit; i++ {
+	for i := 0; i < int(engine.RetryLimit); i++ {
 		err := engine.RejectSnapshot()
 		assert.ErrorIs(t, types.ErrUnknownSnapshot, err)
 	}
@@ -496,7 +502,7 @@ func testClosingEngineDoesNotPanicWhenNotInitialised(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
-	config := snapshot.NewTestConfig()
+	config := newTestConfig()
 	logger := logging.NewTestLogger()
 
 	// when

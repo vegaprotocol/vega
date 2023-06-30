@@ -792,34 +792,40 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime.UTC(), enactTime.UTC())
 	}
 
-	proposerTokens, err := getGovernanceTokens(e.accs, proposal.Party)
-	if err != nil {
-		e.log.Debug("proposer have no governance token",
-			logging.PartyID(proposal.Party),
-			logging.ProposalID(proposal.ID))
-		return types.ProposalErrorInsufficientTokens, err
-	}
-	if proposerTokens.LT(params.MinProposerBalance) {
-		e.log.Debug("proposer have insufficient governance token",
-			logging.BigUint("expect-balance", params.MinProposerBalance),
-			logging.String("proposer-balance", proposerTokens.String()),
-			logging.PartyID(proposal.Party),
-			logging.ProposalID(proposal.ID))
-		return types.ProposalErrorInsufficientTokens,
-			fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
-	}
+	checkProposerToken := true
 
 	if proposal.IsMarketUpdate() {
 		proposalError, err := e.validateMarketUpdate(proposal, params)
-		if err != nil {
+		if err != nil && proposalError != types.ProposalErrorInsufficientEquityLikeShare {
 			return proposalError, err
 		}
+		checkProposerToken = proposalError == types.ProposalErrorInsufficientEquityLikeShare
 	}
 
 	if proposal.IsSpotMarketUpdate() {
 		proposalError, err := e.validateSpotMarketUpdate(proposal, params)
-		if err != nil {
+		if err != nil && proposalError != types.ProposalErrorInsufficientEquityLikeShare {
 			return proposalError, err
+		}
+		checkProposerToken = proposalError == types.ProposalErrorInsufficientEquityLikeShare
+	}
+
+	if checkProposerToken {
+		proposerTokens, err := getGovernanceTokens(e.accs, proposal.Party)
+		if err != nil {
+			e.log.Debug("proposer have no governance token",
+				logging.PartyID(proposal.Party),
+				logging.ProposalID(proposal.ID))
+			return types.ProposalErrorInsufficientTokens, err
+		}
+		if proposerTokens.LT(params.MinProposerBalance) {
+			e.log.Debug("proposer have insufficient governance token",
+				logging.BigUint("expect-balance", params.MinProposerBalance),
+				logging.String("proposer-balance", proposerTokens.String()),
+				logging.PartyID(proposal.Party),
+				logging.ProposalID(proposal.ID))
+			return types.ProposalErrorInsufficientTokens,
+				fmt.Errorf("proposer have insufficient governance token, expected >= %v got %v", params.MinProposerBalance, proposerTokens)
 		}
 	}
 

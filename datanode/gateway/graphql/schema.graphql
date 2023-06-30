@@ -809,7 +809,21 @@ type Transfer {
   reason: String
 }
 
-union TransferKind = OneOffTransfer | RecurringTransfer
+union TransferKind = OneOffTransfer | RecurringTransfer | OneOffGovernanceTransfer | RecurringGovernanceTransfer
+
+"The specific details for a one-off governance transfer"
+type OneOffGovernanceTransfer {
+  "An optional time when the transfer should be delivered"
+  deliverOn: Timestamp
+}
+
+"The specific details for a recurring governance transfer"
+type RecurringGovernanceTransfer {
+  "The epoch at which this recurring transfer will start"
+  startEpoch: Int!
+  "An optional epoch at which this transfer will stop"
+  endEpoch: Int
+}
 
 "The specific details for a one-off transfer"
 type OneOffTransfer {
@@ -2522,6 +2536,9 @@ type OrderUpdate {
 
   "The liquidity provision this order was created from"
   liquidityProvisionId: ID
+
+  "Details of an iceberg order"
+  icebergOrder: IcebergOrder
 }
 
 "Response for the estimate of the margin level and, if available, collateral was provided in the request, liqudation price for the specified position"
@@ -3658,6 +3675,44 @@ type NewFreeform {
   _doNotUse: Boolean
 }
 
+enum GovernanceTransferType {
+  "Default value, always invalid"
+  GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED
+  "Transfers the specified amount or does not transfer anything"
+  GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING
+  "Transfers the specified amount or the max allowable amount if this is less than the specified amount"
+  GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT
+}
+
+type NewTransfer {
+  "The source account"
+  source: String! 
+  "The type of source account"
+  sourceType: AccountType!
+  "The destination account"
+  destination: String!
+  "The type of destination account"
+  destinationType: AccountType!
+  "The asset to transfer"
+  asset: Asset!
+  "The fraction of the balance to be transferred"
+  fraction_of_balance: String!
+  "The maximum amount to be transferred"
+  amount: String!
+  "The type of the governance transfer"
+  transferType: GovernanceTransferType!
+  "The type of governance transfer being made, i.e. a one-off or recurring transfer"
+  kind: GovernanceTransferKind!
+}
+
+union GovernanceTransferKind = OneOffGovernanceTransfer | RecurringGovernanceTransfer
+
+"Allows for cancellation of an existing governance transfer"
+type CancelTransfer {
+  "The governance transfer to cancel"
+  transferId: ID!
+}
+
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
   networkParameter: NetworkParameter!
@@ -3678,6 +3733,8 @@ union ProposalChange =
   | NewAsset
   | UpdateAsset
   | NewFreeform
+  | NewTransfer
+  | CancelTransfer
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalRationale {

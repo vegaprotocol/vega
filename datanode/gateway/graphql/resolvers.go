@@ -273,6 +273,14 @@ func (r *VegaResolverRoot) NewFreeform() NewFreeformResolver {
 	return (*newFreeformResolver)(r)
 }
 
+func (r *VegaResolverRoot) NewTransfer() NewTransferResolver {
+	return (*newTransferResolver)(r)
+}
+
+func (r *VegaResolverRoot) CancelTransfer() CancelTransferResolver {
+	return (*cancelTransferResolver)(r)
+}
+
 func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
 	return (*oracleSpecResolver)(r)
 }
@@ -355,6 +363,10 @@ func (r *VegaResolverRoot) Transfer() TransferResolver {
 
 func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
 	return (*recurringTransferResolver)(r)
+}
+
+func (r *VegaResolverRoot) RecurringGovernanceTransfer() RecurringGovernanceTransferResolver {
+	return (*recurringGovernanceTransferResolver)(r)
 }
 
 func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfigurationResolver {

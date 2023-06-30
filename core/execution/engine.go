@@ -236,33 +236,30 @@ func (e *Engine) Hash() []byte {
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
-func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, error) {
-	ret := []int{}
+func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("reject market", logging.MarketID(marketID))
 	}
 
 	mkt, ok := e.markets[marketID]
 	if !ok {
-		return nil, ErrMarketDoesNotExist
+		return ErrMarketDoesNotExist
 	}
 
 	if err := mkt.Reject(ctx); err != nil {
-		return nil, err
+		return err
 	}
 
-	idx := e.removeMarket(marketID)
-	if idx > -1 {
-		ret = append(ret, idx)
-	}
+	// send market data event so market data and markets API are consistent.
+	e.broker.Send(events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
+
+	e.removeMarket(marketID)
 	// a market rejection can have a knock-on effect for proposed markets which were supposed to succeed this market
 	// they should be purged here, and @TODO handle any errors
 	if successors, ok := e.successors[marketID]; ok {
 		delete(e.successors, marketID)
 		for _, sID := range successors {
-			if i, _ := e.RejectMarket(ctx, sID); len(i) > 0 {
-				ret = append(ret, i...)
-			}
+			e.RejectMarket(ctx, sID)
 			delete(e.isSuccessor, sID)
 		}
 	}
@@ -270,7 +267,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) ([]int, erro
 	delete(e.isSuccessor, marketID)
 	// and clear out any state that may exist
 	delete(e.marketCPStates, marketID)
-	return ret, nil
+	return nil
 }
 
 // StartOpeningAuction will start the opening auction of the given market.
@@ -631,7 +628,7 @@ func (e *Engine) propagateInitialNetParamsToFutureMarket(ctx context.Context, mk
 	return nil
 }
 
-func (e *Engine) removeMarket(mktID string) int {
+func (e *Engine) removeMarket(mktID string) {
 	e.log.Debug("removing market", logging.String("id", mktID))
 
 	delete(e.markets, mktID)
@@ -644,10 +641,9 @@ func (e *Engine) removeMarket(mktID string) int {
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
 			e.marketActivityTracker.RemoveMarket(mktID)
 			e.log.Debug("removed in total", logging.String("id", mktID))
-			return i
+			return
 		}
 	}
-	return -1
 }
 
 func (e *Engine) peggedOrderCountUpdated(added int64) {
@@ -1013,11 +1009,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	toDelete := []string{}
 	parentStates := e.getParentStates()
 	evts := make([]events.Event, 0, len(e.marketsCpy))
-	rejected := map[int]struct{}{}
+	toSkip := map[int]string{}
 	for i, mkt := range e.marketsCpy {
-		if _, ok := rejected[i]; ok {
-			// successor markets were rejected, because of how golang iterates over slices, this loop
-			// will still iterate over rejected markets, these markets must be skipped
+		// we can skip successor markets which reference a parent market that has been succeeded
+		if _, ok := toSkip[i]; ok {
 			continue
 		}
 		mkt := mkt
@@ -1066,18 +1061,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 					e.broker.Send(events.NewLedgerMovements(ctx, clearTransfers))
 				}
 			}
-			// reject other pending successors
-			for _, sid := range e.successors[pid] {
-				delete(e.isSuccessor, sid)
-				if id == sid {
-					continue
-				}
-				skip, _ := e.RejectMarket(ctx, sid)
-				for _, sk := range skip {
-					rejected[sk] = struct{}{}
-				}
-			}
+			// add other markets that need to be rejected to the skip list
+			toSkip = e.getPendingSuccessorsToReject(pid, id, toSkip)
 			// remove data used to indicate that the parent market has pending successors
+			delete(e.isSuccessor, id)
 			delete(e.successors, pid)
 			delete(e.marketCPStates, pid)
 		} else if isSuccessor {
@@ -1098,6 +1085,10 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		evts = append(evts, events.NewMarketDataEvent(ctx, mkt.GetMarketData()))
 	}
 	e.broker.SendBatch(evts)
+	// reject successor markets in the toSkip list
+	for _, sid := range toSkip {
+		e.RejectMarket(ctx, sid)
+	}
 
 	rmCPStates := make([]string, 0, len(toDelete))
 	for _, id := range toDelete {
@@ -1143,6 +1134,29 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 
 	timer.EngineTimeCounterAdd()
+}
+
+func (e *Engine) getPendingSuccessorsToReject(parent, successor string, toSkip map[int]string) map[int]string {
+	ss, ok := e.successors[parent]
+	if !ok {
+		return toSkip
+	}
+	// iterate over all pending successors for the given parent
+	for _, sid := range ss {
+		// ignore the actual successor
+		if sid == successor {
+			continue
+		}
+		if _, ok := e.markets[sid]; !ok {
+			continue
+		}
+		for i, mkt := range e.marketsCpy {
+			if mkt.GetID() == sid {
+				toSkip[i] = sid
+			}
+		}
+	}
+	return toSkip
 }
 
 func (e *Engine) getParentStates() map[string]*types.CPMarketState {
