@@ -106,7 +106,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	collateralService.EXPECT().GetMarketLiquidityFeeAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&types.Account{Balance: num.UintZero()}, nil)
 	collateralService.EXPECT().GetInsurancePoolBalance(gomock.Any(), gomock.Any()).AnyTimes().Return(num.UintZero(), true)
 	oracleService := mocks.NewMockOracleEngine(ctrl)
-	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {})
+	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}, nil)
 	oracleService.EXPECT().Unsubscribe(gomock.Any(), gomock.Any()).AnyTimes()
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
@@ -405,13 +405,13 @@ func TestValidSettledMarketSnapshot(t *testing.T) {
 			"prices.ETH.value": "100000",
 		},
 	}
-	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, spec oracles.OracleSpec, cb oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber) {
+	engine.oracle.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().DoAndReturn(func(_ context.Context, spec oracles.OracleSpec, cb oracles.OnMatchedOracleData) (oracles.SubscriptionID, oracles.Unsubscriber, error) {
 		if ok, _ := spec.MatchData(ttData); ok {
 			ttCB = cb
 		} else if ok, _ := spec.MatchData(sData); ok {
 			sCB = cb
 		}
-		return oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}
+		return oracles.SubscriptionID(0), func(_ context.Context, _ oracles.SubscriptionID) {}, nil
 	})
 	defer engine.ctrl.Finish()
 	assert.NotNil(t, engine)
