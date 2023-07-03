@@ -274,6 +274,7 @@ func newServices(
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		svcs.codec = &processor.NullBlockchainTxCodec{}
 		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
+		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
 		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 	} else {
@@ -333,39 +334,39 @@ func newServices(
 	}
 	powWatchers := []netparams.WatchParam{}
 
-	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-		svcs.pow = pow.NewNoop()
-	} else {
-		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
-		svcs.pow = pow
-		svcs.snapshotEngine.AddProviders(pow)
-		powWatchers = []netparams.WatchParam{
-			{
-				Param:   netparams.SpamPoWNumberOfPastBlocks,
-				Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
-			},
-			{
-				Param:   netparams.SpamPoWDifficulty,
-				Watcher: pow.UpdateSpamPoWDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWHashFunction,
-				Watcher: pow.UpdateSpamPoWHashFunction,
-			},
-			{
-				Param:   netparams.SpamPoWIncreasingDifficulty,
-				Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
-			},
-			{
-				Param:   netparams.SpamPoWNumberOfTxPerBlock,
-				Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
-			},
-			{
-				Param:   netparams.ValidatorsEpochLength,
-				Watcher: pow.OnEpochDurationChanged,
-			},
-		}
+	// if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+	// 	svcs.pow = pow.NewNoop()
+	// } else {
+	pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
+	svcs.pow = pow
+	svcs.snapshotEngine.AddProviders(pow)
+	powWatchers = []netparams.WatchParam{
+		{
+			Param:   netparams.SpamPoWNumberOfPastBlocks,
+			Watcher: pow.UpdateSpamPoWNumberOfPastBlocks,
+		},
+		{
+			Param:   netparams.SpamPoWDifficulty,
+			Watcher: pow.UpdateSpamPoWDifficulty,
+		},
+		{
+			Param:   netparams.SpamPoWHashFunction,
+			Watcher: pow.UpdateSpamPoWHashFunction,
+		},
+		{
+			Param:   netparams.SpamPoWIncreasingDifficulty,
+			Watcher: pow.UpdateSpamPoWIncreasingDifficulty,
+		},
+		{
+			Param:   netparams.SpamPoWNumberOfTxPerBlock,
+			Watcher: pow.UpdateSpamPoWNumberOfTxPerBlock,
+		},
+		{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: pow.OnEpochDurationChanged,
+		},
 	}
+	// }
 
 	// setup config reloads for all engines / services /etc
 	svcs.registerConfigWatchers()

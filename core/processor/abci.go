@@ -412,7 +412,8 @@ func NewApp(
 
 	app.time.NotifyOnTick(app.onTick)
 
-	app.nilPow = app.pow == nil || reflect.ValueOf(app.pow).IsNil()
+	app.nilPow = app.pow == nil ||
+		reflect.ValueOf(app.pow).IsNil()
 	app.nilSpam = app.spam == nil || reflect.ValueOf(app.spam).IsNil()
 	app.ensureConfig()
 	return app
