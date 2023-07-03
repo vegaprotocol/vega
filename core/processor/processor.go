@@ -76,12 +76,16 @@ type ExecutionEngine interface {
 	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
 	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
 
-	// market stuff
+	// Future stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
 	SucceedMarket(ctx context.Context, successor, parent string) error
+
+	// Spot stuff
+	SubmitSpotMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
+	UpdateSpotMarket(ctx context.Context, marketConfig *types.Market) error
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
@@ -236,6 +240,7 @@ type OracleAdaptors interface {
 type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
+	CanProposeSpotMarket() bool
 	CanTrade() bool
 }
 

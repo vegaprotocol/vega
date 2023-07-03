@@ -41,6 +41,7 @@ func (e *Engine) serialiseLimits() ([]byte, error) {
 				CanProposeAsset:          e.canProposeAsset,
 				GenesisLoaded:            e.genesisLoaded,
 				ProposeMarketEnabled:     e.proposeMarketEnabled,
+				ProposeSpotMarketEnabled: e.proposeSpotMarketEnabled,
 				ProposeAssetEnabled:      e.proposeAssetEnabled,
 				ProposeMarketEnabledFrom: e.proposeMarketEnabledFrom,
 				ProposeAssetEnabledFrom:  e.proposeAssetEnabledFrom,

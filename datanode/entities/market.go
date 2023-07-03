@@ -115,7 +115,7 @@ func NewMarketFromProto(market *vega.Market, txHash TxHash, vegaTime time.Time) 
 	}
 
 	lppr, err := num.DecimalFromString(market.LpPriceRange)
-	if err != nil || lppr.IsNegative() || lppr.IsZero() || lppr.GreaterThan(num.DecimalFromInt64(100)) {
+	if err != nil || lppr.IsNegative() || lppr.GreaterThan(num.DecimalFromInt64(100)) {
 		return nil, fmt.Errorf("%v is not a valid number for LP price range", market.LpPriceRange)
 	}
 

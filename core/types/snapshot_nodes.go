@@ -208,6 +208,21 @@ type SettlementTrade struct {
 	Party              string
 }
 
+type PayloadHoldingAccountTracker struct {
+	HoldingAccountTracker *HoldingAccountTracker
+}
+
+type HoldingAccountTracker struct {
+	MarketID                 string
+	HoldingAccountQuantities []*HoldingAccountQuantity
+}
+
+type HoldingAccountQuantity struct {
+	ID          string
+	Quantity    *num.Uint
+	FeeQuantity *num.Uint
+}
+
 type PayloadMatchingBook struct {
 	MatchingBook *MatchingBook
 }
@@ -376,6 +391,7 @@ type ExecSpotMarket struct {
 	NextMTM                    int64
 	Parties                    []string
 	Closed                     bool
+	HasTraded                  bool
 }
 
 type PriceMonitor struct {
@@ -463,6 +479,7 @@ type LimitState struct {
 	CanProposeAsset          bool
 	GenesisLoaded            bool
 	ProposeMarketEnabled     bool
+	ProposeSpotMarketEnabled bool
 	ProposeAssetEnabled      bool
 	ProposeMarketEnabledFrom time.Time
 	ProposeAssetEnabledFrom  time.Time
@@ -835,6 +852,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadSettlementFromProto(dt)
 	case *snapshot.Payload_LiquidityScores:
 		ret.Data = PayloadLiquidityScoresFromProto(dt)
+	case *snapshot.Payload_HoldingAccountTracker:
+		ret.Data = PayloadHoldingAccountTrackerFromProto(dt)
 	}
 
 	return ret
@@ -977,6 +996,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_SettlementState:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityScores:
+		ret.Data = dt
+	case *snapshot.Payload_HoldingAccountTracker:
 		ret.Data = dt
 	}
 	return &ret
@@ -1960,6 +1981,70 @@ func (*PayloadMatchingBook) Namespace() SnapshotNamespace {
 	return MatchingSnapshot
 }
 
+func PayloadHoldingAccountTrackerFromProto(pmb *snapshot.Payload_HoldingAccountTracker) *PayloadHoldingAccountTracker {
+	orderHolding := make([]*HoldingAccountQuantity, 0, len(pmb.HoldingAccountTracker.OrderHolding))
+	for _, ohq := range pmb.HoldingAccountTracker.OrderHolding {
+		q := num.UintZero()
+		if len(ohq.Quantity) > 0 {
+			q, _ = num.UintFromString(ohq.Quantity, 10)
+		}
+		fee := num.UintZero()
+		if len(ohq.Fee) > 0 {
+			fee, _ = num.UintFromString(ohq.Fee, 10)
+		}
+		orderHolding = append(orderHolding, &HoldingAccountQuantity{
+			ID:          ohq.Id,
+			Quantity:    q,
+			FeeQuantity: fee,
+		})
+	}
+	return &PayloadHoldingAccountTracker{
+		HoldingAccountTracker: &HoldingAccountTracker{
+			MarketID:                 pmb.HoldingAccountTracker.MarketId,
+			HoldingAccountQuantities: orderHolding,
+		},
+	}
+}
+
+func (p PayloadHoldingAccountTracker) IntoProto() *snapshot.Payload_HoldingAccountTracker {
+	orderHolding := make([]*snapshot.OrderHoldingQuantities, 0, len(p.HoldingAccountTracker.HoldingAccountQuantities))
+	for _, haq := range p.HoldingAccountTracker.HoldingAccountQuantities {
+		q := ""
+		if haq.Quantity != nil && !haq.Quantity.IsZero() {
+			q = haq.Quantity.String()
+		}
+		fee := ""
+		if haq.FeeQuantity != nil && !haq.FeeQuantity.IsZero() {
+			fee = haq.FeeQuantity.String()
+		}
+		orderHolding = append(orderHolding, &snapshot.OrderHoldingQuantities{
+			Id:       haq.ID,
+			Quantity: q,
+			Fee:      fee,
+		})
+	}
+	return &snapshot.Payload_HoldingAccountTracker{
+		HoldingAccountTracker: &snapshot.HoldingAccountTracker{
+			MarketId:     p.HoldingAccountTracker.MarketID,
+			OrderHolding: orderHolding,
+		},
+	}
+}
+
+func (*PayloadHoldingAccountTracker) isPayload() {}
+
+func (p *PayloadHoldingAccountTracker) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadHoldingAccountTracker) Key() string {
+	return p.HoldingAccountTracker.MarketID
+}
+
+func (*PayloadHoldingAccountTracker) Namespace() SnapshotNamespace {
+	return HoldingAccountTrackerSnapshot
+}
+
 func PayloadExecutionMarketsFromProto(pem *snapshot.Payload_ExecutionMarkets) *PayloadExecutionMarkets {
 	return &PayloadExecutionMarkets{
 		ExecutionMarkets: ExecutionMarketsFromProto(pem.ExecutionMarkets),
@@ -2042,6 +2127,7 @@ func LimitFromProto(l *snapshot.LimitState) *LimitState {
 		GenesisLoaded:            l.GenesisLoaded,
 		ProposeMarketEnabled:     l.ProposeMarketEnabled,
 		ProposeAssetEnabled:      l.ProposeAssetEnabled,
+		ProposeSpotMarketEnabled: l.ProposeSpotMarketEnabled,
 		ProposeAssetEnabledFrom:  time.Time{},
 		ProposeMarketEnabledFrom: time.Time{},
 	}
@@ -2817,6 +2903,7 @@ func (l *LimitState) IntoProto() *snapshot.LimitState {
 		CanProposeAsset:          l.CanProposeAsset,
 		GenesisLoaded:            l.GenesisLoaded,
 		ProposeMarketEnabled:     l.ProposeMarketEnabled,
+		ProposeSpotMarketEnabled: l.ProposeSpotMarketEnabled,
 		ProposeAssetEnabled:      l.ProposeAssetEnabled,
 		ProposeMarketEnabledFrom: l.ProposeMarketEnabledFrom.UnixNano(),
 		ProposeAssetEnabledFrom:  l.ProposeAssetEnabledFrom.UnixNano(),
@@ -3101,15 +3188,20 @@ func (e ExecSpotMarket) IntoProto() *snapshot.SpotMarket {
 		LastMidAsk:                 e.LastMidAsk.String(),
 		LastMidBid:                 e.LastMidBid.String(),
 		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
-		CurrentMarkPrice:           e.CurrentMarkPrice.String(),
 		FeeSplitter:                e.FeeSplitter.IntoProto(),
 		NextMarkToMarket:           e.NextMTM,
-		LastTradedPrice:            e.LastTradedPrice.String(),
 		Parties:                    e.Parties,
 		Closed:                     e.Closed,
 	}
 	for _, o := range e.ExpiringOrders {
 		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
+	}
+	if e.CurrentMarkPrice != nil {
+		ret.CurrentMarkPrice = e.CurrentMarkPrice.String()
+	}
+
+	if e.LastTradedPrice != nil {
+		ret.LastTradedPrice = e.LastTradedPrice.String()
 	}
 	return &ret
 }

@@ -91,6 +91,34 @@ func (e *Engine) SetLiquidityFee(v num.Decimal) {
 	e.f.liquidityFee = v
 }
 
+// ConsolidatePaidFeePayoutOnBuyer changes the given fees transfers such that they are all taken from the given buyer.
+func (e *Engine) ConsolidatePaidFeePayoutOnBuyer(fees events.FeesTransfer, buyer string) events.FeesTransfer {
+	total := num.UintZero()
+	buyerFees := &feesTransfer{
+		totalFeesAmountsPerParty: map[string]*num.Uint{buyer: total},
+		transfers:                []*types.Transfer{},
+	}
+	for _, u := range fees.TotalFeesAmountPerParty() {
+		total.Add(total, u)
+	}
+	for _, t := range fees.Transfers() {
+		if t.Type == types.TransferTypeMakerFeeReceive {
+			buyerFees.transfers = append(buyerFees.transfers, t)
+			continue
+		}
+		buyerFees.transfers = append(buyerFees.transfers, &types.Transfer{
+			Type:  t.Type,
+			Owner: buyer,
+			Amount: &types.FinancialAmount{
+				Asset:  t.Amount.Asset,
+				Amount: t.Amount.Amount.Clone(),
+			},
+			MinAmount: t.Amount.Amount.Clone(),
+		})
+	}
+	return buyerFees
+}
+
 // CalculateForContinuousMode calculate the fee for
 // trades which were produced from a market running
 // in continuous trading mode.

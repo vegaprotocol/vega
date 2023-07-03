@@ -119,7 +119,19 @@ message Payload {
     SpotLiquidityTarget spot_liquidity_target = 59;
     BankingRecurringGovernanceTransfers banking_recurring_governance_transfers = 60;
     BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
+    HoldingAccountTracker holding_account_tracker = 62;
   }
+}
+
+message OrderHoldingQuantities {
+  string id = 1;
+  string quantity = 2;
+  string fee = 3;
+}
+
+message HoldingAccountTracker {
+  string market_id = 1;
+  repeated OrderHoldingQuantities order_holding = 2;
 }
 
 message TimestampedTotalStake {
@@ -609,6 +621,7 @@ message LimitState {
   bool propose_asset_enabled = 6;
   int64 propose_market_enabled_from = 7;
   int64 propose_asset_enabled_from = 8;
+  bool propose_spot_market_enabled = 9;
 }
 
 message VoteSpamPolicy {

@@ -279,6 +279,21 @@ func (mr *MockCollateralMockRecorder) ClearPartyMarginAccount(arg0, arg1, arg2, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearPartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).ClearPartyMarginAccount), arg0, arg1, arg2, arg3)
 }
 
+// ClearSpotMarket mocks base method.
+func (m *MockCollateral) ClearSpotMarket(arg0 context.Context, arg1, arg2 string) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ClearSpotMarket", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ClearSpotMarket indicates an expected call of ClearSpotMarket.
+func (mr *MockCollateralMockRecorder) ClearSpotMarket(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearSpotMarket", reflect.TypeOf((*MockCollateral)(nil).ClearSpotMarket), arg0, arg1, arg2)
+}
+
 // CreateMarketAccounts mocks base method.
 func (m *MockCollateral) CreateMarketAccounts(arg0 context.Context, arg1, arg2 string) (string, string, error) {
 	m.ctrl.T.Helper()
@@ -308,6 +323,20 @@ func (m *MockCollateral) CreatePartyMarginAccount(arg0 context.Context, arg1, ar
 func (mr *MockCollateralMockRecorder) CreatePartyMarginAccount(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).CreatePartyMarginAccount), arg0, arg1, arg2, arg3)
+}
+
+// CreateSpotMarketAccounts mocks base method.
+func (m *MockCollateral) CreateSpotMarketAccounts(arg0 context.Context, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSpotMarketAccounts", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateSpotMarketAccounts indicates an expected call of CreateSpotMarketAccounts.
+func (mr *MockCollateralMockRecorder) CreateSpotMarketAccounts(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSpotMarketAccounts", reflect.TypeOf((*MockCollateral)(nil).CreateSpotMarketAccounts), arg0, arg1, arg2)
 }
 
 // Deposit mocks base method.
@@ -551,6 +580,35 @@ func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3)
 }
 
+// PartyHasSufficientBalance mocks base method.
+func (m *MockCollateral) PartyHasSufficientBalance(arg0, arg1 string, arg2 *num.Uint) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PartyHasSufficientBalance", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PartyHasSufficientBalance indicates an expected call of PartyHasSufficientBalance.
+func (mr *MockCollateralMockRecorder) PartyHasSufficientBalance(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyHasSufficientBalance", reflect.TypeOf((*MockCollateral)(nil).PartyHasSufficientBalance), arg0, arg1, arg2)
+}
+
+// ReleaseFromHoldingAccount mocks base method.
+func (m *MockCollateral) ReleaseFromHoldingAccount(arg0 context.Context, arg1 *types.Transfer) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReleaseFromHoldingAccount", arg0, arg1)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReleaseFromHoldingAccount indicates an expected call of ReleaseFromHoldingAccount.
+func (mr *MockCollateralMockRecorder) ReleaseFromHoldingAccount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReleaseFromHoldingAccount", reflect.TypeOf((*MockCollateral)(nil).ReleaseFromHoldingAccount), arg0, arg1)
+}
+
 // RemoveBondAccount mocks base method.
 func (m *MockCollateral) RemoveBondAccount(arg0, arg1, arg2 string) error {
 	m.ctrl.T.Helper()
@@ -637,6 +695,66 @@ func (m *MockCollateral) TransferFeesContinuousTrading(arg0 context.Context, arg
 func (mr *MockCollateralMockRecorder) TransferFeesContinuousTrading(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFeesContinuousTrading", reflect.TypeOf((*MockCollateral)(nil).TransferFeesContinuousTrading), arg0, arg1, arg2, arg3)
+}
+
+// TransferSpot mocks base method.
+func (m *MockCollateral) TransferSpot(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferSpot", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferSpot indicates an expected call of TransferSpot.
+func (mr *MockCollateralMockRecorder) TransferSpot(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferSpot", reflect.TypeOf((*MockCollateral)(nil).TransferSpot), arg0, arg1, arg2, arg3, arg4)
+}
+
+// TransferSpotFees mocks base method.
+func (m *MockCollateral) TransferSpotFees(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferSpotFees", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferSpotFees indicates an expected call of TransferSpotFees.
+func (mr *MockCollateralMockRecorder) TransferSpotFees(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferSpotFees", reflect.TypeOf((*MockCollateral)(nil).TransferSpotFees), arg0, arg1, arg2, arg3)
+}
+
+// TransferSpotFeesContinuousTrading mocks base method.
+func (m *MockCollateral) TransferSpotFeesContinuousTrading(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferSpotFeesContinuousTrading", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferSpotFeesContinuousTrading indicates an expected call of TransferSpotFeesContinuousTrading.
+func (mr *MockCollateralMockRecorder) TransferSpotFeesContinuousTrading(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferSpotFeesContinuousTrading", reflect.TypeOf((*MockCollateral)(nil).TransferSpotFeesContinuousTrading), arg0, arg1, arg2, arg3)
+}
+
+// TransferToHoldingAccount mocks base method.
+func (m *MockCollateral) TransferToHoldingAccount(arg0 context.Context, arg1 *types.Transfer) (*types.LedgerMovement, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferToHoldingAccount", arg0, arg1)
+	ret0, _ := ret[0].(*types.LedgerMovement)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferToHoldingAccount indicates an expected call of TransferToHoldingAccount.
+func (mr *MockCollateralMockRecorder) TransferToHoldingAccount(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferToHoldingAccount", reflect.TypeOf((*MockCollateral)(nil).TransferToHoldingAccount), arg0, arg1)
 }
 
 // Withdraw mocks base method.
