@@ -49,7 +49,7 @@ func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return state, nil, err
 }
 
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+func (e *Engine) LoadState(_ context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}

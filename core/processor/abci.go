@@ -27,7 +27,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/snapshot"
 	protoapi "code.vegaprotocol.io/vega/protos/vega/api/v1"
+	"go.uber.org/zap"
 
 	"code.vegaprotocol.io/vega/commands"
 	"code.vegaprotocol.io/vega/core/api"
@@ -61,17 +63,15 @@ import (
 const AppVersion = 1
 
 var (
-	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction without balance")
-	ErrUnexpectedTxPubKey                            = errors.New("no one listens to the public keys that signed this oracle data")
-	ErrTradingDisabled                               = errors.New("trading disabled")
-	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
-	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
-	ErrEthOraclesDisabled                            = errors.New("ethereum oracles disabled")
-	ErrAwaitingCheckpointRestore                     = errors.New("transactions not allowed while waiting for checkpoint restore")
-	ErrOracleNoSubscribers                           = errors.New("there are no subscribes to the oracle data")
-	ErrSpotMarketProposalDisabled                    = errors.New("spot market proposal disabled")
-	ErrPerpsMarketProposalDisabled                   = errors.New("perps market proposal disabled")
-	ErrOracleDataNormalization                       = func(err error) error {
+	ErrUnexpectedTxPubKey          = errors.New("no one listens to the public keys that signed this oracle data")
+	ErrTradingDisabled             = errors.New("trading disabled")
+	ErrMarketProposalDisabled      = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled       = errors.New("asset proposal disabled")
+	ErrEthOraclesDisabled          = errors.New("ethereum oracles disabled")
+	ErrOracleNoSubscribers         = errors.New("there are no subscribes to the oracle data")
+	ErrSpotMarketProposalDisabled  = errors.New("spot market proposal disabled")
+	ErrPerpsMarketProposalDisabled = errors.New("perps market proposal disabled")
+	ErrOracleDataNormalization     = func(err error) error {
 		return fmt.Errorf("error normalizing incoming oracle data: %w", err)
 	}
 )
@@ -98,23 +98,20 @@ type PoWEngine interface {
 }
 
 //nolint:interfacebloat
-type Snapshot interface {
+type SnapshotEngine interface {
 	Info() ([]byte, int64, string)
-	Snapshot(ctx context.Context) ([]byte, error)
-	SnapshotNow(ctx context.Context) (b []byte, errlol error)
-	AddProviders(provs ...types.StateProvider)
-	CheckLoaded() (bool, error)
-	ClearAndInitialise() error
+	Snapshot(context.Context) ([]byte, snapshot.DoneCh, error)
+	SnapshotNow(context.Context) ([]byte, error)
+	AddProviders(...types.StateProvider)
+	HasSnapshots() (bool, error)
 
-	// Calls related to statesync
-	ListMeta() ([]*tmtypes.Snapshot, error)
-	ReceiveSnapshot(snap *types.Snapshot) error
-	RejectSnapshot() error
-	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
-	GetMissingChunks() []uint32
-	ApplySnapshot(ctx context.Context) error
-	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
-	IsWillingToAcceptSnapshotFromStateSync() bool
+	// Calls related to state-sync
+
+	ListLatestSnapshots() ([]*tmtypes.Snapshot, error)
+	ReceiveSnapshot(*types.Snapshot) tmtypes.ResponseOfferSnapshot
+	ReceiveSnapshotChunk(context.Context, *types.RawChunk, string) tmtypes.ResponseApplySnapshotChunk
+	RetrieveSnapshotChunk(uint64, uint32, uint32) (*types.RawChunk, error)
+	HasRestoredStateAlready() bool
 }
 
 type StateVarEngine interface {
@@ -181,7 +178,7 @@ type App struct {
 	spam                   SpamEngine
 	pow                    PoWEngine
 	epoch                  EpochService
-	snapshot               Snapshot
+	snapshotEngine         SnapshotEngine
 	stateVar               StateVarEngine
 	protocolUpgradeService ProtocolUpgradeService
 	erc20MultiSigTopology  ERC20MultiSigTopology
@@ -221,7 +218,7 @@ func NewApp(
 	spam SpamEngine,
 	pow PoWEngine,
 	stakingAccounts StakingAccounts,
-	snapshot Snapshot,
+	snapshot SnapshotEngine,
 	stateVarEngine StateVarEngine,
 	blockchainClient BlockchainClient,
 	erc20MultiSigTopology ERC20MultiSigTopology,
@@ -267,7 +264,7 @@ func NewApp(
 		pow:                    pow,
 		stakingAccounts:        stakingAccounts,
 		epoch:                  epoch,
-		snapshot:               snapshot,
+		snapshotEngine:         snapshot,
 		stateVar:               stateVarEngine,
 		version:                version,
 		blockchainClient:       blockchainClient,
@@ -421,7 +418,7 @@ func NewApp(
 	return app
 }
 
-func (app *App) OnSpamProtectionMaxBatchSizeUpdate(ctx context.Context, u *num.Uint) error {
+func (app *App) OnSpamProtectionMaxBatchSizeUpdate(_ context.Context, u *num.Uint) error {
 	app.maxBatchSize.Store(u.Uint64())
 	return nil
 }
@@ -557,18 +554,22 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	// returns whether or not we have loaded from a snapshot (and may even do the loading)
 	old := app.broker.SetStreaming(false)
 	defer app.broker.SetStreaming(old)
-	loaded, err := app.snapshot.CheckLoaded()
-	if err != nil {
-		app.log.Panic("failed to check if snapshot has been loaded", logging.Error(err))
-	}
 
 	resp := tmtypes.ResponseInfo{
 		AppVersion: AppVersion,
 		Version:    app.version,
 	}
 
-	if loaded {
-		hash, height, chainID := app.snapshot.Info()
+	hasSnapshots, err := app.snapshotEngine.HasSnapshots()
+	if err != nil {
+		app.log.Panic("Failed to verify if the snapshot engine has stored snapshots", logging.Error(err))
+	}
+
+	// If the snapshot engine has snapshots stored, the node can safely advertise
+	// its chain info. This comes from the snapshot engine because it is
+	// its responsibility to store it.
+	if hasSnapshots {
+		hash, height, chainID := app.snapshotEngine.Info()
 		resp.LastBlockHeight = height
 		resp.LastBlockAppHash = hash
 		app.abci.SetChainID(chainID)
@@ -586,126 +587,81 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
 	app.log.Debug("ABCI service ListSnapshots requested")
-	snapshots, err := app.snapshot.ListMeta()
-	resp := tmtypes.ResponseListSnapshots{}
+
+	latestSnapshots, err := app.snapshotEngine.ListLatestSnapshots()
 	if err != nil {
-		app.log.Error("Could not list snapshots", logging.Error(err))
-		return resp
+		app.log.Error("Could not list latest snapshots", logging.Error(err))
+		return tmtypes.ResponseListSnapshots{}
 	}
-	resp.Snapshots = snapshots
-	return resp
+
+	return tmtypes.ResponseListSnapshots{
+		Snapshots: latestSnapshots,
+	}
 }
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
 	app.log.Debug("ABCI service OfferSnapshot start")
 
-	if !app.snapshot.IsWillingToAcceptSnapshotFromStateSync() {
-		app.log.Warn("the snapshot engine refused the snapshot from state-sync since it started from the local snapshots")
+	if app.snapshotEngine.HasRestoredStateAlready() {
+		app.log.Warn("The snapshot engine aborted the snapshot offer from state-sync since the state has already been restored")
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_ABORT,
 		}
 	}
 
-	snap, err := types.SnapshotFromTM(req.Snapshot)
+	deserializedSnapshot, err := types.SnapshotFromTM(req.Snapshot)
 	if err != nil {
-		app.log.Error("failed to convert snapshot", logging.Error(err))
+		app.log.Error("Could not deserialize snapshot", logging.Error(err))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
 		}
 	}
 
 	// check that our unpacked snapshot's hash matches that which tendermint thinks it sent
-	if !bytes.Equal(snap.Hash, req.AppHash) {
-		app.log.Error("hash mismatch",
-			logging.String("snap.Hash", hex.EncodeToString(snap.Hash)),
-			logging.String("rep.AppHash", hex.EncodeToString(req.AppHash)))
+	if !bytes.Equal(deserializedSnapshot.Hash, req.AppHash) {
+		app.log.Error("The hashes from the request and the deserialized snapshot mismatch",
+			logging.String("deserialized-hash", hex.EncodeToString(deserializedSnapshot.Hash)),
+			logging.String("request-hash", hex.EncodeToString(req.AppHash)))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
 	}
 
-	// see what the snapshot engine thinks
-	if err := app.snapshot.ReceiveSnapshot(snap); err != nil {
-		ret := tmtypes.ResponseOfferSnapshot{
-			Result: tmtypes.ResponseOfferSnapshot_REJECT,
-		}
-		if err == types.ErrSnapshotMetaMismatch {
-			// hashes match, but the meta doesn't, do not trust
-			ret.Result = tmtypes.ResponseOfferSnapshot_REJECT_SENDER
-		}
-		app.log.Error("snapshot rejected", logging.Error(err))
-		return ret
-	}
-
-	return tmtypes.ResponseOfferSnapshot{
-		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
-	}
+	return app.snapshotEngine.ReceiveSnapshot(deserializedSnapshot)
 }
 
 func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
 	app.log.Debug("ABCI service ApplySnapshotChunk start")
 
-	if !app.snapshot.IsWillingToAcceptSnapshotFromStateSync() {
-		app.log.Warn("the snapshot engine refused the snapshot chunk from state-sync since it started from the local snapshots")
+	if app.snapshotEngine.HasRestoredStateAlready() {
+		app.log.Warn("The snapshot engine aborted the snapshot chunk from state-sync since the state has already been restored")
 		return tmtypes.ResponseApplySnapshotChunk{
 			Result: tmtypes.ResponseApplySnapshotChunk_ABORT,
 		}
 	}
 
-	chunk := types.RawChunk{
+	chunk := &types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
 	}
-	resp := tmtypes.ResponseApplySnapshotChunk{}
-	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
-	if err != nil {
-		app.log.Error("could not apply snapshot chunk", logging.Error(err))
 
-		switch err {
-		case types.ErrUnknownSnapshot:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?
-		case types.ErrChunkOutOfRange:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT // try another snapshot
-		case types.ErrSnapshotMetaMismatch:
-			// refetch the chunk from someone else
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
-			resp.RejectSenders = []string{req.Sender}
-		case types.ErrMissingChunks:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
-			resp.RefetchChunks = app.snapshot.GetMissingChunks()
-		default:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-			// @TODO panic?
-		}
-		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
-			if err := app.snapshot.RejectSnapshot(); err == types.ErrSnapshotRetryLimit {
-				app.log.Error("Applying snapshot chunk has reaching the retry limit, aborting")
-				resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-				defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
-			}
-		}
-		return resp
-	}
-	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
-	if ready {
-		err = app.snapshot.ApplySnapshot(ctx)
-		if err != nil {
-			app.log.Error("failed to apply snapshot", logging.Error(err))
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-		}
-	}
-	return resp
+	return app.snapshotEngine.ReceiveSnapshotChunk(ctx, chunk, req.Sender)
 }
 
 func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
 	app.log.Debug("ABCI service LoadSnapshotChunk start")
-	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
+
+	rawChunk, err := app.snapshotEngine.RetrieveSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
-		app.log.Error("failed to load snapshot chunk", logging.Error(err), logging.Uint64("height", req.Height))
+		app.log.Error("Could not load a snapshot chunk from snapshot engine",
+			logging.Uint64("height", req.Height),
+			logging.Error(err),
+		)
 		return tmtypes.ResponseLoadSnapshotChunk{}
 	}
+
 	return tmtypes.ResponseLoadSnapshotChunk{
-		Chunk: raw.Data,
+		Chunk: rawChunk.Data,
 	}
 }
 
@@ -840,8 +796,12 @@ func (app *App) OnBeginBlock(
 }
 
 func (app *App) startProtocolUpgrade(ctx context.Context) {
-	// Stop blockchain server so it doesn't acceptc transactions and it doesn't times out.
-	go func() { app.stopBlockchain() }()
+	// Stop blockchain server so it doesn't accept transactions and it doesn't times out.
+	go func() {
+		if err := app.stopBlockchain(); err != nil {
+			app.log.Error("an error occurred while stopping the blockchain", zap.Error(err))
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -906,12 +866,12 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	// if there is an approved protocol upgrade proposal and the current block height is later than the proposal's block height then take a snapshot and wait to be killed by the process manager
 	if app.protocolUpgradeService.TimeForUpgrade() {
 		app.protocolUpgradeService.Cleanup(app.blockCtx)
-		snapHash, err = app.snapshot.SnapshotNow(app.blockCtx)
+		snapHash, err = app.snapshotEngine.SnapshotNow(app.blockCtx)
 		if err == nil {
 			app.protocolUpgradeService.SetCoreReadyForUpgrade()
 		}
 	} else {
-		snapHash, err = app.snapshot.Snapshot(app.blockCtx)
+		snapHash, _, err = app.snapshotEngine.Snapshot(app.blockCtx)
 	}
 
 	if err != nil {
@@ -1259,14 +1219,14 @@ func (app *App) CheckProtocolUpgradeProposal(ctx context.Context, tx abci.Tx) er
 	return app.protocolUpgradeService.IsValidProposal(ctx, tx.PubKeyHex(), pu.UpgradeBlockHeight, pu.VegaReleaseTag)
 }
 
-func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
+func (app *App) RequireValidatorPubKey(_ context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil
 }
 
-func (app *App) CheckBatchMarketInstructions(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckBatchMarketInstructions(_ context.Context, tx abci.Tx) error {
 	bmi := &commandspb.BatchMarketInstructions{}
 	if err := tx.Unmarshal(bmi); err != nil {
 		return err
@@ -1295,7 +1255,7 @@ func (app *App) DeliverBatchMarketInstructions(
 		ProcessBatch(ctx, batch, tx.Party(), deterministicID, app.stats)
 }
 
-func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
+func (app *App) RequireValidatorMasterPubKey(_ context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorNodeID(tx.PubKeyHex()) {
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
@@ -1336,7 +1296,7 @@ func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error
 	return app.top.ProcessValidatorHeartbeat(ctx, an, signatures.VerifyVegaSignature, signatures.VerifyEthereumSignature)
 }
 
-func (app *App) CheckTransferCommand(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckTransferCommand(_ context.Context, tx abci.Tx) error {
 	tfr := &commandspb.Transfer{}
 	if err := tx.Unmarshal(tfr); err != nil {
 		return err
@@ -1555,7 +1515,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) CheckPropose(ctx context.Context, tx abci.Tx) error {
+func (app *App) CheckPropose(_ context.Context, tx abci.Tx) error {
 	p := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(p); err != nil {
 		return err
@@ -1995,7 +1955,7 @@ func (app *App) enactNewTransfer(ctx context.Context, prop *types.Proposal) {
 		return
 	}
 
-	app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
+	_ = app.banking.NewGovernanceTransfer(ctx, prop.ID, prop.Reference, proposal)
 }
 
 func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {

@@ -37,7 +37,6 @@ type accState struct {
 }
 
 var (
-	ErrSnapshotKeyDoesNotExist  = errors.New("unknown key for collateral snapshot")
 	ErrInvalidSnapshotNamespace = errors.New("invalid snapshot namespace")
 	ErrUnknownSnapshotType      = errors.New("snapshot data type not known")
 )

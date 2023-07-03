@@ -13,53 +13,103 @@
 package netparams_test
 
 import (
-	"context"
 	"testing"
+	"time"
 
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/netparams"
-	"code.vegaprotocol.io/vega/core/types"
-	"code.vegaprotocol.io/vega/libs/proto"
-	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
-
+	"code.vegaprotocol.io/vega/core/snapshot"
+	"code.vegaprotocol.io/vega/core/stats"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/paths"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSnapshotRestoreDependentNetparams(t *testing.T) {
-	netp := getTestNetParams(t)
-	defer netp.ctrl.Finish()
-	ctx := context.Background()
+func TestSnapshotRestoreDependentNetParams(t *testing.T) {
+	ctx := vgtest.VegaContext("chainid", 100)
 
-	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	engine1 := getTestNetParams(t)
+	engine1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	// get the original default value
-	err := netp.Update(
-		context.Background(), netparams.MarketAuctionMinimumDuration, "1s")
-	assert.NoError(t, err)
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	vegaPath := paths.New(t.TempDir())
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	config := snapshot.DefaultConfig()
 
-	// now change max
-	err = netp.Update(
-		context.Background(), netparams.MarketAuctionMaximumDuration, "10s")
-	assert.NoError(t, err)
+	snapshotEngine1, err := snapshot.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+	snapshotEngine1.AddProviders(engine1)
+	snapshotEngine1CloseFn := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer snapshotEngine1CloseFn()
 
-	// now snapshot restore
-	data, _, err := netp.GetState("all")
+	require.NoError(t, snapshotEngine1.Start(ctx))
+
+	require.NoError(t, engine1.Update(ctx, netparams.MarketAuctionMinimumDuration, "1s"))
+	marketAuctionMinimumDurationV1, err := engine1.Get(netparams.MarketAuctionMinimumDuration)
+	require.NoError(t, err)
+	require.Equal(t, "1s", marketAuctionMinimumDurationV1)
+
+	require.NoError(t, engine1.Update(ctx, netparams.DelegationMinAmount, "100"))
+	delegationMinAmountV1, err := engine1.Get(netparams.DelegationMinAmount)
+	require.NoError(t, err)
+	require.Equal(t, "100", delegationMinAmountV1)
+
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
 
-	snap := &snapshot.Payload{}
-	err = proto.Unmarshal(data, snap)
-	require.Nil(t, err)
+	require.NoError(t, engine1.Update(ctx, netparams.GovernanceProposalMarketMinClose, "2h"))
 
-	snapNetp := getTestNetParams(t)
-	snapNetp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	_, err = snapNetp.LoadState(ctx, types.PayloadFromProto(snap))
+	state1 := map[string][]byte{}
+	for _, key := range engine1.Keys() {
+		state, additionalProvider, err := engine1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	snapshotEngine1CloseFn()
+
+	engine2 := getTestNetParams(t)
+	engine2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	snapshotEngine2, err := snapshot.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+	defer snapshotEngine2.Close()
+
+	snapshotEngine2.AddProviders(engine2)
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	marketAuctionMinimumDurationV2, err := engine2.Get(netparams.MarketAuctionMinimumDuration)
+	require.NoError(t, err)
+	delegationMinAmountV2, err := engine2.Get(netparams.DelegationMinAmount)
 	require.NoError(t, err)
 
-	v1, err := snapNetp.Get(netparams.MarketAuctionMaximumDuration)
-	require.NoError(t, err)
-	v2, err := netp.Get(netparams.MarketAuctionMaximumDuration)
-	require.NoError(t, err)
+	require.Equal(t, marketAuctionMinimumDurationV1, marketAuctionMinimumDurationV2)
+	require.Equal(t, delegationMinAmountV1, delegationMinAmountV2)
 
-	require.Equal(t, v1, v2)
+	require.NoError(t, engine2.Update(ctx, netparams.GovernanceProposalMarketMinClose, "2h"))
+
+	state2 := map[string][]byte{}
+	for _, key := range engine2.Keys() {
+		state, additionalProvider, err := engine2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }

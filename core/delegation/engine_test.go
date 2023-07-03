@@ -29,9 +29,9 @@ import (
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/core/validators"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
@@ -119,8 +119,8 @@ func Test(t *testing.T) {
 	t.Run("auto delegation interrupted by manual delegations", testPartyInAutoDelegateModeWithManualIntervention)
 	// test checkpoints
 	t.Run("sorting consistently active delegations for checkpoint", testSortActive)
-	t.Run("test roundtrip of checkpoint calculation with no pending delegations", testCheckpointRoundtripNoPending)
-	t.Run("test roundtrip of checkpoint calculation with no active delegations", testCheckpointRoundtripOnlyPending)
+	t.Run("test roundtrip of checkpoint calculation with no pending delegations", testCheckpointRoundTripNoPending)
+	t.Run("test roundtrip of checkpoint calculation with no active delegations", testCheckpointRoundTripOnlyPending)
 
 	// test snapshots
 	t.Run("test roundtrip snapshot for active delegations", testActiveSnapshotRoundTrip)
@@ -129,73 +129,87 @@ func Test(t *testing.T) {
 	t.Run("test roundtrip snapshot for last reconciliation time delegations", testLastReconTimeRoundTrip)
 }
 
-func TestSnapshotRoundtripViaEngine(t *testing.T) {
-	testEngine := getEngine(t)
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	setupDefaultDelegationState(testEngine, 10, 5)
-	now := testEngine.engine.lastReconciliation.Add(30 * time.Second)
-	testEngine.engine.OnTick(context.Background(), now)
-	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+func TestSnapshotRoundTripViaEngine(t *testing.T) {
+	delegationEngine1 := getEngine(t)
+	delegationEngine1.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	setupDefaultDelegationState(delegationEngine1, 10, 5)
+	now := delegationEngine1.engine.lastReconciliation.Add(30 * time.Second)
+	delegationEngine1.engine.OnTick(context.Background(), now)
+	delegationEngine1.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
+	ctx := vgtest.VegaContext("chainid", 100)
+
+	vegaPath := paths.New(t.TempDir())
 	log := logging.NewTestLogger()
 	timeService := stubs.NewTimeStub()
 	timeService.SetTime(now)
 	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngine.AddProviders(testEngine.engine)
-	snapshotEngine.ClearAndInitialise()
-	defer snapshotEngine.Close()
-
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
-
-	_, err := snapshotEngine.Snapshot(ctx)
+	config := snp.DefaultConfig()
+	snapshotEngine1, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
-	snaps, err := snapshotEngine.List()
+	snapshotEngine1CloseFn := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer snapshotEngine1CloseFn()
+
+	snapshotEngine1.AddProviders(delegationEngine1.engine)
+
+	require.NoError(t, snapshotEngine1.Start(ctx))
+
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
-	snap1 := snaps[0]
 
-	testEngineLoad := getEngine(t)
-	testEngineLoad.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngineLoad.AddProviders(testEngineLoad.engine)
-	snapshotEngineLoad.ClearAndInitialise()
-	snapshotEngineLoad.ReceiveSnapshot(snap1)
-	snapshotEngineLoad.ApplySnapshot(ctx)
-	snapshotEngineLoad.CheckLoaded()
-	defer snapshotEngineLoad.Close()
+	delegationEngine1.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	require.NoError(t, delegationEngine1.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3)))
+	require.NoError(t, delegationEngine1.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2)))
 
-	// check that with no changes they still match
-	b, err := snapshotEngine.Snapshot(ctx)
+	delegationEngine1.engine.OnTick(context.Background(), now.Add(30*time.Second))
+
+	state1 := map[string][]byte{}
+	for _, key := range delegationEngine1.engine.Keys() {
+		state, additionalProvider, err := delegationEngine1.engine.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	snapshotEngine1CloseFn()
+
+	delegationEngine2 := getEngine(t)
+	delegationEngine2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
-	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
+	defer snapshotEngine2.Close()
 
-	testEngineLoad.topology.nodeToIsValidator["node1"] = true
-	testEngineLoad.topology.nodeToIsValidator["node2"] = true
-	testEngineLoad.stakingAccounts.partyToStake["party1"] = testEngine.stakingAccounts.partyToStake["party1"]
-	testEngineLoad.stakingAccounts.partyToStake["party2"] = testEngine.stakingAccounts.partyToStake["party2"]
+	snapshotEngine2.AddProviders(delegationEngine2.engine)
 
-	// make changes to active, pending, auto delegations and to recon time
-	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
-	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
-	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
-	testEngine.engine.OnTick(context.Background(), now.Add(30*time.Second))
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
 
-	testEngineLoad.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
-	testEngineLoad.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
-	testEngineLoad.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
-	testEngineLoad.engine.OnTick(context.Background(), now.Add(30*time.Second))
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
 
-	// verify snapshot still matches
-	b, err = snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
+	delegationEngine2.topology.nodeToIsValidator["node1"] = true
+	delegationEngine2.topology.nodeToIsValidator["node2"] = true
+	delegationEngine2.stakingAccounts.partyToStake["party1"] = delegationEngine1.stakingAccounts.partyToStake["party1"]
+	delegationEngine2.stakingAccounts.partyToStake["party2"] = delegationEngine1.stakingAccounts.partyToStake["party2"]
+
+	delegationEngine2.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	require.NoError(t, delegationEngine2.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3)))
+	require.NoError(t, delegationEngine2.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2)))
+
+	delegationEngine2.engine.OnTick(context.Background(), now.Add(30*time.Second))
+
+	state2 := map[string][]byte{}
+	for _, key := range delegationEngine2.engine.Keys() {
+		state, additionalProvider, err := delegationEngine2.engine.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }
 
 func testLastReconTimeRoundTrip(t *testing.T) {
@@ -1911,7 +1925,7 @@ func testSortActive(t *testing.T) {
 	}
 }
 
-func testCheckpointRoundtripNoPending(t *testing.T) {
+func testCheckpointRoundTripNoPending(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 100; i++ {
 		testEngine := getEngine(t)
@@ -1928,7 +1942,7 @@ func testCheckpointRoundtripNoPending(t *testing.T) {
 	}
 }
 
-func testCheckpointRoundtripOnlyPending(t *testing.T) {
+func testCheckpointRoundTripOnlyPending(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 100; i++ {
 		testEngine := getEngine(t)

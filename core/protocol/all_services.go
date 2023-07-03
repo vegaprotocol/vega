@@ -99,7 +99,7 @@ type allServices struct {
 
 	marketActivityTracker   *common.MarketActivityTracker
 	statevar                *statevar.Engine
-	snapshot                *snapshot.Engine
+	snapshotEngine          *snapshot.Engine
 	executionEngine         *execution.Engine
 	governance              *governance.Engine
 	collateral              *collateral.Engine
@@ -316,20 +316,20 @@ func newServices(
 		svcs.checkpoint.UponGenesis,
 	)
 
-	svcs.snapshot, err = snapshot.New(svcs.ctx, svcs.vegaPaths, svcs.conf.Snapshot, svcs.log, svcs.timeService, svcs.stats.Blockchain)
+	svcs.snapshotEngine, err = snapshot.NewEngine(svcs.vegaPaths, svcs.conf.Snapshot, svcs.log, svcs.timeService, svcs.stats.Blockchain)
 	if err != nil {
-		return nil, fmt.Errorf("failed to start snapshot engine: %w", err)
+		return nil, fmt.Errorf("could not initialize the snapshot engine: %w", err)
 	}
 
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	svcs.topology.NotifyOnKeyChange(svcs.governance.ValidatorKeyChanged)
 
-	svcs.snapshot.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
+	svcs.snapshotEngine.AddProviders(svcs.checkpoint, svcs.collateral, svcs.governance, svcs.delegation, svcs.netParams, svcs.epochService, svcs.assets, svcs.banking, svcs.witness,
 		svcs.notary, svcs.stakingAccounts, svcs.stakeVerifier, svcs.limits, svcs.topology, svcs.eventForwarder, svcs.executionEngine, svcs.marketActivityTracker, svcs.statevar,
 		svcs.erc20MultiSigTopology, svcs.protocolUpgradeEngine, svcs.ethereumOraclesVerifier)
 
 	if svcs.spam != nil {
-		svcs.snapshot.AddProviders(svcs.spam)
+		svcs.snapshotEngine.AddProviders(svcs.spam)
 	}
 	powWatchers := []netparams.WatchParam{}
 
@@ -338,7 +338,7 @@ func newServices(
 	} else {
 		pow := pow.New(svcs.log, svcs.conf.PoW, svcs.timeService)
 		svcs.pow = pow
-		svcs.snapshot.AddProviders(pow)
+		svcs.snapshotEngine.AddProviders(pow)
 		powWatchers = []netparams.WatchParam{
 			{
 				Param:   netparams.SpamPoWNumberOfPastBlocks,
@@ -406,7 +406,7 @@ func (svcs *allServices) registerTimeServiceCallbacks() {
 func (svcs *allServices) Stop() {
 	svcs.confWatcher.Unregister(svcs.confListenerIDs)
 	svcs.eventForwarderEngine.Stop()
-	svcs.snapshot.Close()
+	svcs.snapshotEngine.Close()
 	svcs.ethCallEngine.Stop()
 }
 
@@ -694,7 +694,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		},
 		{
 			Param:   netparams.SnapshotIntervalLength,
-			Watcher: svcs.snapshot.OnSnapshotIntervalUpdate,
+			Watcher: svcs.snapshotEngine.OnSnapshotIntervalUpdate,
 		},
 		{
 			Param:   netparams.ValidatorsVoteRequired,

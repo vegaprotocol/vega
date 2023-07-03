@@ -28,7 +28,7 @@ import (
 )
 
 func TestOracleSpec(t *testing.T) {
-	t.Run("Creating builtin oracle without pubkeys succeeeds", testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds)
+	t.Run("Creating builtin oracle without public keys succeeds", testBuiltInOracleSpecCreatingWithoutPubKeysSucceeds)
 	t.Run("Creating with filters but without key fails", testOracleSpecCreatingWithFiltersWithoutKeyFails)
 	t.Run("Creating with split filters with same type works", testOracleSpecCreatingWithSplitFiltersWithSameTypeFails)
 	t.Run("Creating with filters with inconvertible type fails", testOracleSpecCreatingWithFiltersWithInconvertibleTypeFails)

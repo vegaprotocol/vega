@@ -23,13 +23,14 @@ import (
 	snp "code.vegaprotocol.io/vega/core/snapshot"
 	"code.vegaprotocol.io/vega/core/stats"
 	"code.vegaprotocol.io/vega/core/types"
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/proto"
+	vgtest "code.vegaprotocol.io/vega/libs/test"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
 	vgproto "code.vegaprotocol.io/vega/protos/vega"
 	snapshotpb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -553,7 +554,7 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party1", scores[0].Party)
 
-	// New epoch should scrub the state an produce a difference hash
+	// NewEngine epoch should scrub the state an produce a difference hash
 	epochEngineLoad.target(context.Background(), types.Epoch{Seq: 2, Action: vgproto.EpochAction_EPOCH_ACTION_START})
 	state4, _, err := trackerLoad.GetState(key)
 	require.NoError(t, err)
@@ -640,71 +641,86 @@ func setupDefaultTrackerForTest(t *testing.T) *common.MarketActivityTracker {
 	return tracker
 }
 
-func TestSnapshotRoundtripViaEngine(t *testing.T) {
-	ctx := vgcontext.WithTraceID(vgcontext.WithBlockHeight(context.Background(), 100), "0xDEADBEEF")
-	ctx = vgcontext.WithChainID(ctx, "chainid")
-	tracker := setupDefaultTrackerForTest(t)
-	now := time.Now()
-	log := logging.NewTestLogger()
-	timeService := stubs.NewTimeStub()
-	timeService.SetTime(now)
-	statsData := stats.New(log, stats.NewDefaultConfig())
-	config := snp.NewDefaultConfig()
-	config.Storage = "memory"
-	snapshotEngine, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngine.AddProviders(tracker)
-	snapshotEngine.ClearAndInitialise()
-	defer snapshotEngine.Close()
-
-	_, err := snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	snaps, err := snapshotEngine.List()
-	require.NoError(t, err)
-	snap1 := snaps[0]
-
-	trackerLoad := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{})
-	tracker.SetEligibilityChecker(&EligibilityChecker{})
-	snapshotEngineLoad, _ := snp.New(context.Background(), &paths.DefaultPaths{}, config, log, timeService, statsData.Blockchain)
-	snapshotEngineLoad.AddProviders(trackerLoad)
-	snapshotEngineLoad.ClearAndInitialise()
-	snapshotEngineLoad.ReceiveSnapshot(snap1)
-	snapshotEngineLoad.ApplySnapshot(ctx)
-	snapshotEngineLoad.CheckLoaded()
-	defer snapshotEngineLoad.Close()
-
-	b, err := snapshotEngine.Snapshot(ctx)
-	require.NoError(t, err)
-	bLoad, err := snapshotEngineLoad.Snapshot(ctx)
-	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
-
-	// now lets get some activity going and verify they still match
-	tracker.MarketProposed("asset1", "market5", "meeeee")
-	tracker.MarketProposed("asset2", "market6", "meeeeeee")
-	trackerLoad.MarketProposed("asset1", "market5", "meeeee")
-	trackerLoad.MarketProposed("asset2", "market6", "meeeeeee")
-
+func TestSnapshotRoundTripViaEngine(t *testing.T) {
 	transfersM5 := []*types.Transfer{
 		{Owner: "party3", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(100)}},
 		{Owner: "party3", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 		{Owner: "party3", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset1", Amount: num.NewUint(200)}},
 	}
-	tracker.UpdateFeesFromTransfers("market5", transfersM5)
-	trackerLoad.UpdateFeesFromTransfers("market5", transfersM5)
-
 	transfersM6 := []*types.Transfer{
 		{Owner: "party4", Type: types.TransferTypeMakerFeeReceive, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(500)}},
 		{Owner: "party4", Type: types.TransferTypeMakerFeePay, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
 		{Owner: "party4", Type: types.TransferTypeLiquidityFeeDistribute, Amount: &types.FinancialAmount{Asset: "asset2", Amount: num.NewUint(1500)}},
 	}
-	tracker.UpdateFeesFromTransfers("market6", transfersM6)
-	trackerLoad.UpdateFeesFromTransfers("market6", transfersM6)
 
-	b, err = snapshotEngine.Snapshot(ctx)
+	ctx := vgtest.VegaContext("chainid", 100)
+	tracker1 := setupDefaultTrackerForTest(t)
+	now := time.Now()
+	log := logging.NewTestLogger()
+	timeService := stubs.NewTimeStub()
+	timeService.SetTime(now)
+	statsData := stats.New(log, stats.NewDefaultConfig())
+	config := snp.DefaultConfig()
+	vegaPath := paths.New(t.TempDir())
+
+	snapshotEngine1, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
 	require.NoError(t, err)
-	bLoad, err = snapshotEngineLoad.Snapshot(ctx)
+	snapshotEngine1CloseFn := vgtest.OnlyOnce(snapshotEngine1.Close)
+	defer snapshotEngine1CloseFn()
+
+	snapshotEngine1.AddProviders(tracker1)
+
+	require.NoError(t, snapshotEngine1.Start(ctx))
+
+	hash1, err := snapshotEngine1.SnapshotNow(ctx)
 	require.NoError(t, err)
-	require.True(t, bytes.Equal(b, bLoad))
+
+	tracker1.SetEligibilityChecker(&EligibilityChecker{})
+	tracker1.MarketProposed("asset1", "market5", "meeeee")
+	tracker1.MarketProposed("asset2", "market6", "meeeeeee")
+	tracker1.UpdateFeesFromTransfers("market5", transfersM5)
+	tracker1.UpdateFeesFromTransfers("market6", transfersM6)
+
+	state1 := map[string][]byte{}
+	for _, key := range tracker1.Keys() {
+		state, additionalProvider, err := tracker1.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state1[key] = state
+	}
+
+	snapshotEngine1CloseFn()
+
+	tracker2 := common.NewMarketActivityTracker(logging.NewTestLogger(), &TestEpochEngine{})
+	snapshotEngine2, err := snp.NewEngine(vegaPath, config, log, timeService, statsData.Blockchain)
+	require.NoError(t, err)
+	defer snapshotEngine2.Close()
+
+	snapshotEngine2.AddProviders(tracker2)
+
+	// This triggers the state restoration from the local snapshot.
+	require.NoError(t, snapshotEngine2.Start(ctx))
+
+	// Comparing the hash after restoration, to ensure it produces the same result.
+	hash2, _, _ := snapshotEngine2.Info()
+	require.Equal(t, hash1, hash2)
+
+	tracker2.MarketProposed("asset1", "market5", "meeeee")
+	tracker2.MarketProposed("asset2", "market6", "meeeeeee")
+	tracker2.UpdateFeesFromTransfers("market5", transfersM5)
+	tracker2.UpdateFeesFromTransfers("market6", transfersM6)
+
+	state2 := map[string][]byte{}
+	for _, key := range tracker2.Keys() {
+		state, additionalProvider, err := tracker2.GetState(key)
+		require.NoError(t, err)
+		assert.Empty(t, additionalProvider)
+		state2[key] = state
+	}
+
+	for key := range state1 {
+		assert.Equalf(t, state1[key], state2[key], "Key %q does not have the same data", key)
+	}
 }
 
 func TestMarketProposerBonusScenarios(t *testing.T) {

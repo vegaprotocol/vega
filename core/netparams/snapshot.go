@@ -67,7 +67,7 @@ func (s *snapState) Keys() []string {
 	}
 }
 
-func (s snapState) Namespace() types.SnapshotNamespace {
+func (s *snapState) Namespace() types.SnapshotNamespace {
 	return s.t.Namespace()
 }
 

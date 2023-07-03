@@ -965,7 +965,7 @@ func (i *Uint) GetDispatch() func(context.Context, interface{}) error {
 
 func (i *Uint) CheckDispatch(fn interface{}) error {
 	if _, ok := fn.(func(context.Context, *num.Uint) error); !ok {
-		return errors.New("invalid type, expected func(context.Context, int64) error")
+		return errors.New("invalid type, expected func(context.Context, *num.Uint) error")
 	}
 	return nil
 }
