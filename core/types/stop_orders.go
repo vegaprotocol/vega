@@ -341,7 +341,7 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 	var updatedAt *int64
 	if s.UpdatedAt != (time.Time{}) {
-		updatedAt = ptr.From(s.UpdatedAt.Unix())
+		updatedAt = ptr.From(s.UpdatedAt.UnixNano())
 	}
 
 	var ocoLinkID *string
@@ -358,14 +358,14 @@ func (s *StopOrder) ToProtoEvent() *eventspb.StopOrderEvent {
 			OrderId:          s.OrderID,
 			OcoLinkId:        ocoLinkID,
 			Status:           s.Status,
-			CreatedAt:        s.CreatedAt.Unix(),
+			CreatedAt:        s.CreatedAt.UnixNano(),
 			UpdatedAt:        updatedAt,
 			TriggerDirection: s.Trigger.Direction,
 		},
 	}
 
 	if s.Expiry.Expires() {
-		ev.StopOrder.ExpiresAt = ptr.From(s.Expiry.ExpiresAt.Unix())
+		ev.StopOrder.ExpiresAt = ptr.From(s.Expiry.ExpiresAt.UnixNano())
 		ev.StopOrder.ExpiryStrategy = s.Expiry.ExpiryStrategy
 	}
 
