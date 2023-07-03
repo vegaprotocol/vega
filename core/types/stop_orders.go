@@ -171,7 +171,7 @@ func StopOrderSetupFromProto(
 
 	expiry := &StopOrderExpiry{}
 	if psetup.ExpiresAt != nil {
-		expiry.ExpiresAt = ptr.From(time.Unix(*psetup.ExpiresAt, 0))
+		expiry.ExpiresAt = ptr.From(time.Unix(0, *psetup.ExpiresAt))
 		expiry.ExpiryStrategy = psetup.ExpiryStrategy
 	}
 
@@ -319,7 +319,7 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 
 	expiry := &StopOrderExpiry{}
 	if p.StopOrder.ExpiresAt != nil {
-		expiry.ExpiresAt = ptr.From(time.Unix(*p.StopOrder.ExpiresAt, 0))
+		expiry.ExpiresAt = ptr.From(time.Unix(0, *p.StopOrder.ExpiresAt))
 		expiry.ExpiryStrategy = p.StopOrder.ExpiryStrategy
 	}
 
@@ -330,8 +330,8 @@ func NewStopOrderFromProto(p *eventspb.StopOrderEvent) *StopOrder {
 		OrderID:         p.StopOrder.OrderId,
 		OCOLinkID:       ptr.UnBox(p.StopOrder.OcoLinkId),
 		Status:          p.StopOrder.Status,
-		CreatedAt:       time.Unix(p.StopOrder.CreatedAt, 0),
-		UpdatedAt:       time.Unix(ptr.UnBox(p.StopOrder.UpdatedAt), 0),
+		CreatedAt:       time.Unix(0, p.StopOrder.CreatedAt),
+		UpdatedAt:       time.Unix(0, ptr.UnBox(p.StopOrder.UpdatedAt)),
 		OrderSubmission: sub,
 		Trigger:         trigger,
 		Expiry:          expiry,

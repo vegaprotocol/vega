@@ -78,7 +78,7 @@
 - [8668](https://github.com/vegaprotocol/vega/issues/8668) - Market data migration scripts fix 
 - [8225](https://github.com/vegaprotocol/vega/issues/8225) - Better error handling in `ListEntities`
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
-- [8357](https://github.com/vegaprotocol/vega/issues/8357) - Load network history segments into staging area prior to load if not already present 
+- [8357](https://github.com/vegaprotocol/vega/issues/8357) - Load network history segments into staging area prior to load if not already present
 - [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
 - [8471](https://github.com/vegaprotocol/vega/issues/8471) - Restore network parameters from snapshot without validation to avoid order dependence.
 - [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
@@ -123,6 +123,7 @@
 - [8636](https://github.com/vegaprotocol/vega/issues/8636) - Trading mode in market data events should be set to `NO_TRADING` if the market is in a final state.
 - [8651](https://github.com/vegaprotocol/vega/issues/8651) - Wallet support for stop orders
 - [8630](https://github.com/vegaprotocol/vega/issues/8630) - Fix duplicate stake linking due to `re-org`
+- [8664](https://github.com/vegaprotocol/vega/issues/8664) - Stop order invalid expiry
 
 ## 0.71.0
 

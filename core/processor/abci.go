@@ -1112,7 +1112,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	}()
 
 	switch tx.Command() {
-	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand:
+	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand, txn.StopOrdersCancellationCommand, txn.StopOrdersSubmissionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}

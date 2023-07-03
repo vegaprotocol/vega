@@ -2712,7 +2712,7 @@ func (m *Market) removeCancelledExpiringStopOrders(
 ) {
 	for _, o := range stopOrders {
 		if o.Expiry.Expires() {
-			m.expiringStopOrders.RemoveOrder(o.Expiry.ExpiresAt.Unix(), o.ID)
+			m.expiringStopOrders.RemoveOrder(o.Expiry.ExpiresAt.UnixNano(), o.ID)
 		}
 	}
 }
