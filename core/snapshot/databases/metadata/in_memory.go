@@ -1,9 +1,5 @@
 package metadata
 
-import "errors"
-
-var ErrUnknownSnapshotVersion = errors.New("unknown snapshot version")
-
 type InMemoryAdapter struct {
 	store map[string][]byte
 }
@@ -16,7 +12,7 @@ func (a *InMemoryAdapter) Save(version []byte, state []byte) error {
 func (a *InMemoryAdapter) Load(version []byte) (state []byte, err error) {
 	s, ok := a.store[string(version)]
 	if !ok {
-		return nil, ErrUnknownSnapshotVersion
+		return nil, noMetadataForSnapshotVersion(version)
 	}
 	return s, nil
 }

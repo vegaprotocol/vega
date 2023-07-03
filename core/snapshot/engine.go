@@ -249,13 +249,11 @@ func (e *Engine) ListMeta() ([]*tmtypes.Snapshot, error) {
 	for j := len(e.versions); i < j; i++ {
 		v := e.versions[i]
 
-		// use the meta db
 		snap, err := e.metadb.Load(v)
 		if err != nil {
-			e.log.Error("could not list snapshot",
-				logging.Int64("version", v),
-				logging.Error(err))
-			continue // if we have a borked snapshot we just won't list it
+			e.log.Error("could not load snapshot metadata", logging.Int64("version", v), logging.Error(err))
+			// We ignore broken snapshot state.
+			continue
 		}
 
 		// then save the version for height
@@ -963,7 +961,8 @@ func (e *Engine) saveCurrentTree() error {
 		return err
 	}
 
-	return e.metadb.Save(v, tmSnap)
+	return e.metadb.
+		Save(v, tmSnap)
 }
 
 func worker(e *Engine, nsInputChan chan nsInput, resChan chan<- nsSnapResult, wg *sync.WaitGroup, cnt *atomic.Int64) {

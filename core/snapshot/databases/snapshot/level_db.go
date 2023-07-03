@@ -1,4 +1,4 @@
-package metadata
+package snapshot
 
 import (
 	"fmt"
@@ -15,8 +15,8 @@ const dbName = "snapshot"
 type LevelDBDatabase struct {
 	*db.GoLevelDB
 
-	dbPath   string
-	filePath string
+	dbFile      string
+	dbDirectory string
 }
 
 func (d *LevelDBDatabase) Clear() error {
@@ -24,11 +24,11 @@ func (d *LevelDBDatabase) Clear() error {
 		return fmt.Errorf("could not close the connection: %w", err)
 	}
 
-	if err := os.RemoveAll(d.dbPath); err != nil {
+	if err := os.RemoveAll(d.dbFile); err != nil {
 		return fmt.Errorf("could not remove the database file: %w", err)
 	}
 
-	adapter, err := initializeUnderlyingAdapter(d.filePath)
+	adapter, err := initializeUnderlyingAdapter(d.dbDirectory)
 	if err != nil {
 		return err
 	}
@@ -38,24 +38,27 @@ func (d *LevelDBDatabase) Clear() error {
 }
 
 func NewLevelDBDatabase(vegaPaths paths.Paths) (*LevelDBDatabase, error) {
-	filePath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
-	dbPath := vegaPaths.StatePathFor(paths.SnapshotDBStateFile)
+	dbDirectory := vegaPaths.StatePathFor(paths.SnapshotStateHome)
 
-	adapter, err := initializeUnderlyingAdapter(filePath)
+	// This has to be in sync with the `dbName` constant.
+	dbFile := vegaPaths.StatePathFor(paths.SnapshotDBStateFile)
+
+	adapter, err := initializeUnderlyingAdapter(dbDirectory)
 	if err != nil {
 		return nil, err
 	}
 
 	return &LevelDBDatabase{
-		dbPath:    dbPath,
-		filePath:  filePath,
-		GoLevelDB: adapter,
+		dbFile:      dbFile,
+		dbDirectory: dbDirectory,
+		GoLevelDB:   adapter,
 	}, nil
 }
 
-func initializeUnderlyingAdapter(filePath string) (*db.GoLevelDB, error) {
+func initializeUnderlyingAdapter(dbDirectory string) (*db.GoLevelDB, error) {
 	adapter, err := db.NewGoLevelDBWithOpts(
-		dbName, filePath,
+		dbName,
+		dbDirectory,
 		&opt.Options{
 			Filter:          filter.NewBloomFilter(10),
 			BlockCacher:     opt.NoCacher,

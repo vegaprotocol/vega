@@ -12,8 +12,8 @@ import (
 const metaDBName = "snapshot_meta"
 
 type LevelDBAdapter struct {
-	dbPath   string
-	filePath string
+	dbFile      string
+	dbDirectory string
 
 	underlyingAdapter *db.GoLevelDB
 }
@@ -23,7 +23,11 @@ func (a *LevelDBAdapter) Save(version []byte, state []byte) error {
 }
 
 func (a *LevelDBAdapter) Load(version []byte) ([]byte, error) {
-	return a.underlyingAdapter.Get(version)
+	loadedData, err := a.underlyingAdapter.Get(version)
+	if loadedData == nil && err == nil {
+		return nil, noMetadataForSnapshotVersion(version)
+	}
+	return loadedData, err
 }
 
 func (a *LevelDBAdapter) Close() error {
@@ -35,11 +39,11 @@ func (a *LevelDBAdapter) Clear() error {
 		return fmt.Errorf("could not close the connection: %w", err)
 	}
 
-	if err := os.RemoveAll(a.dbPath); err != nil {
+	if err := os.RemoveAll(a.dbFile); err != nil {
 		return fmt.Errorf("could not remove the database file: %w", err)
 	}
 
-	underlyingAdapter, err := initializeUnderlyingAdapter(a.filePath)
+	underlyingAdapter, err := initializeUnderlyingAdapter(a.dbDirectory)
 	if err != nil {
 		return err
 	}
@@ -49,25 +53,27 @@ func (a *LevelDBAdapter) Clear() error {
 }
 
 func NewLevelDBAdapter(vegaPaths paths.Paths) (*LevelDBAdapter, error) {
-	filePath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
-	dbPath := vegaPaths.StatePathFor(paths.SnapshotMetadataDBStateFile)
+	dbDirectory := vegaPaths.StatePathFor(paths.SnapshotStateHome)
 
-	underlyingAdapter, err := initializeUnderlyingAdapter(filePath)
+	// This has to be in sync with the `metaDBName` constant.
+	dbFile := vegaPaths.StatePathFor(paths.SnapshotMetadataDBStateFile)
+
+	underlyingAdapter, err := initializeUnderlyingAdapter(dbDirectory)
 	if err != nil {
 		return nil, err
 	}
 
 	return &LevelDBAdapter{
-		dbPath:            dbPath,
-		filePath:          filePath,
+		dbFile:            dbFile,
+		dbDirectory:       dbDirectory,
 		underlyingAdapter: underlyingAdapter,
 	}, nil
 }
 
-func initializeUnderlyingAdapter(filePath string) (*db.GoLevelDB, error) {
+func initializeUnderlyingAdapter(dbDirectory string) (*db.GoLevelDB, error) {
 	underlyingAdapter, err := db.NewGoLevelDBWithOpts(
 		metaDBName,
-		filePath,
+		dbDirectory,
 		&opt.Options{
 			BlockCacher:     opt.NoCacher,
 			OpenFilesCacher: opt.NoCacher,
