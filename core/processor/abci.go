@@ -1742,7 +1742,9 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+				// RejectMarket can return an error if the proposed successor market was rejected because its parent
+				// was already rejected
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil && !prop.IsSuccessorMarket() {
 					app.log.Panic("unable to reject market",
 						logging.String("market-id", prop.ID),
 						logging.Error(err))

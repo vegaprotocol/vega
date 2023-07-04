@@ -341,6 +341,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 	// use map internally for O(1) lookups
 	ignoreSuccession := map[string]struct{}{}
 	for _, proposal := range e.activeProposals {
+		if _, ok := e.markets.GetMarket(proposal.ID, false); !ok && proposal.IsSuccessorMarket() {
+			// successor proposal for a successor market which cannot be enacted anymore -> remove the proposal
+			proposal.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
+			// ensure the event is sent
+			e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+		}
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
 			voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
