@@ -1358,13 +1358,13 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	m.idgen = idgen
 	defer func() { m.idgen = nil }()
 
-	fallsBellow, risesAbove := submission.IntoStopOrders(
+	fallsBelow, risesAbove := submission.IntoStopOrders(
 		party, ptr.UnBox(fallsBelowID), ptr.UnBox(risesAboveID), m.timeService.GetTimeNow())
 
 	defer func() {
 		evts := []events.Event{}
-		if fallsBellow != nil {
-			evts = append(evts, events.NewStopOrderEvent(ctx, fallsBellow))
+		if fallsBelow != nil {
+			evts = append(evts, events.NewStopOrderEvent(ctx, fallsBelow))
 		}
 		if risesAbove != nil {
 			evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
@@ -1376,13 +1376,13 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}()
 
 	if !m.canTrade() {
-		rejectStopOrders(fallsBellow, risesAbove)
+		rejectStopOrders(fallsBelow, risesAbove)
 		return nil, common.ErrTradingNotAllowed
 	}
 
 	orderCnt := 0
-	if fallsBellow != nil {
-		if !fallsBellow.OrderSubmission.ReduceOnly {
+	if fallsBelow != nil {
+		if !fallsBelow.OrderSubmission.ReduceOnly {
 			return nil, common.ErrStopOrderMustBeReduceOnly
 		}
 		orderCnt++
@@ -1396,7 +1396,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 
 	// now check if that party hasn't exceeded the max amount per market
 	if m.stopOrders.CountForParty(party)+uint64(orderCnt) > m.maxStopOrdersPerParties.Uint64() {
-		rejectStopOrders(fallsBellow, risesAbove)
+		rejectStopOrders(fallsBelow, risesAbove)
 		return nil, common.ErrMaxStopOrdersPerPartyReached
 	}
 
@@ -1407,7 +1407,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	}
 
 	if len(positions) < 1 {
-		rejectStopOrders(fallsBellow, risesAbove)
+		rejectStopOrders(fallsBelow, risesAbove)
 		return nil, common.ErrStopOrderSubmissionNotAllowedWithoutExistingPosition
 	}
 
@@ -1419,8 +1419,8 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	size := pos.Size()
 
 	var stopOrderSide types.Side
-	if fallsBellow != nil {
-		stopOrderSide = fallsBellow.OrderSubmission.Side
+	if fallsBelow != nil {
+		stopOrderSide = fallsBelow.OrderSubmission.Side
 	} else {
 		stopOrderSide = risesAbove.OrderSubmission.Side
 	}
@@ -1428,25 +1428,25 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	switch stopOrderSide {
 	case types.SideBuy:
 		if potentialSize >= 0 && size >= 0 {
-			rejectStopOrders(fallsBellow, risesAbove)
+			rejectStopOrders(fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	case types.SideSell:
 		if potentialSize <= 0 && size <= 0 {
-			rejectStopOrders(fallsBellow, risesAbove)
+			rejectStopOrders(fallsBelow, risesAbove)
 			return nil, common.ErrStopOrderSideNotClosingThePosition
 		}
 	}
 
-	fallsBellowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBellow),
+	fallsBelowTriggered, risesAboveTriggered := m.stopOrderWouldTriggerAtSubmission(fallsBelow),
 		m.stopOrderWouldTriggerAtSubmission(risesAbove)
-	triggered := fallsBellowTriggered || risesAboveTriggered
+	triggered := fallsBelowTriggered || risesAboveTriggered
 
 	// if we are in an auction
 	// or no order is triggered
 	// let's just submit it straight away
 	if m.as.InAuction() || !triggered {
-		m.poolStopOrders(ctx, fallsBellow, risesAbove)
+		m.poolStopOrders(fallsBelow, risesAbove)
 		return nil, nil
 	}
 
@@ -1454,22 +1454,22 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	var err error
 	// now would the order get trigger straight away?
 	switch {
-	case fallsBellowTriggered:
-		fallsBellow.Status = types.StopOrderStatusTriggered
+	case fallsBelowTriggered:
+		fallsBelow.Status = types.StopOrderStatusTriggered
 		if risesAbove != nil {
 			risesAbove.Status = types.StopOrderStatusStopped
 		}
-		fallsBellow.OrderID = idgen.NextID()
+		fallsBelow.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
-			ctx, fallsBellow.OrderSubmission, party, idgen, fallsBellow.OrderID, true,
+			ctx, fallsBelow.OrderSubmission, party, idgen, fallsBelow.OrderID, true,
 		)
 		if err != nil && confirmation != nil {
-			fallsBellow.OrderID = confirmation.Order.ID
+			fallsBelow.OrderID = confirmation.Order.ID
 		}
 	case risesAboveTriggered:
 		risesAbove.Status = types.StopOrderStatusTriggered
-		if fallsBellow != nil {
-			fallsBellow.Status = types.StopOrderStatusStopped
+		if fallsBelow != nil {
+			fallsBelow.Status = types.StopOrderStatusStopped
 		}
 		risesAbove.OrderID = idgen.NextID()
 		confirmation, err = m.SubmitOrderWithIDGeneratorAndOrderID(
@@ -1484,26 +1484,20 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 }
 
 func (m *Market) poolStopOrders(
-	ctx context.Context,
-	fallsBellow, risesAbove *types.StopOrder,
+	fallsBelow, risesAbove *types.StopOrder,
 ) {
-	evts := []events.Event{}
-	if fallsBellow != nil {
-		m.stopOrders.Insert(fallsBellow)
-		if fallsBellow.Expiry.Expires() {
-			m.expiringStopOrders.Insert(fallsBellow.ID, fallsBellow.CreatedAt.UnixNano())
+	if fallsBelow != nil {
+		m.stopOrders.Insert(fallsBelow)
+		if fallsBelow.Expiry.Expires() {
+			m.expiringStopOrders.Insert(fallsBelow.ID, fallsBelow.Expiry.ExpiresAt.UnixNano())
 		}
-		evts = append(evts, events.NewStopOrderEvent(ctx, fallsBellow))
 	}
 	if risesAbove != nil {
 		m.stopOrders.Insert(risesAbove)
 		if risesAbove.Expiry.Expires() {
-			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.CreatedAt.UnixNano())
+			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.Expiry.ExpiresAt.UnixNano())
 		}
-		evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
 	}
-
-	m.broker.SendBatch(evts)
 }
 
 func (m *Market) stopOrderWouldTriggerAtSubmission(
@@ -2712,7 +2706,7 @@ func (m *Market) removeCancelledExpiringStopOrders(
 ) {
 	for _, o := range stopOrders {
 		if o.Expiry.Expires() {
-			m.expiringStopOrders.RemoveOrder(o.Expiry.ExpiresAt.Unix(), o.ID)
+			m.expiringStopOrders.RemoveOrder(o.Expiry.ExpiresAt.UnixNano(), o.ID)
 		}
 	}
 }
@@ -3445,9 +3439,12 @@ func (m *Market) removeExpiredStopOrders(
 	toExpire := m.expiringStopOrders.Expire(timestamp)
 	stopOrders := m.stopOrders.RemoveExpired(toExpire)
 
+	updatedAt := m.timeService.GetTimeNow()
+
 	evts := []events.Event{}
 	filteredOCO := []*types.StopOrder{}
 	for _, v := range stopOrders {
+		v.UpdatedAt = updatedAt
 		if v.Expiry.Expires() && *v.Expiry.ExpiryStrategy == types.StopOrderExpiryStrategySubmit && len(v.OCOLinkID) <= 0 {
 			filteredOCO = append(filteredOCO, v)
 			continue

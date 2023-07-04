@@ -18,6 +18,7 @@ var (
 	ErrMustBeAtMost100                             = errors.New("must be at most 100")
 	ErrMustBeWithinRange7                          = errors.New("must be between -7 and 7")
 	ErrIsNotValid                                  = errors.New("is not a valid value")
+	ErrIsNotValidWithOCO                           = errors.New("is not a valid with one cancel other")
 	ErrIsNotValidNumber                            = errors.New("is not a valid number")
 	ErrIsNotSupported                              = errors.New("is not supported")
 	ErrIsUnauthorised                              = errors.New("is unauthorised")

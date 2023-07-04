@@ -75,14 +75,14 @@ func (e *exEng) SubmitStopOrder(
 	party string,
 ) (*types.OrderConfirmation, error) {
 	idgen := idgeneration.New(vgcrypto.RandomHash())
-	var fallsBellowID, risesAboveID *string
+	var fallsBelowID, risesAboveID *string
 	if submission.FallsBelow != nil {
-		fallsBellowID = ptr.From(idgen.NextID())
+		fallsBelowID = ptr.From(idgen.NextID())
 	}
 	if submission.RisesAbove != nil {
 		risesAboveID = ptr.From(idgen.NextID())
 	}
-	conf, err := e.Engine.SubmitStopOrders(ctx, submission, party, idgen, fallsBellowID, risesAboveID)
+	conf, err := e.Engine.SubmitStopOrders(ctx, submission, party, idgen, fallsBelowID, risesAboveID)
 	// if err != nil {
 	// 	e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto(), "submitOrder"))
 	// }
