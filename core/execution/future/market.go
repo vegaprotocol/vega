@@ -1446,7 +1446,7 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 	// or no order is triggered
 	// let's just submit it straight away
 	if m.as.InAuction() || !triggered {
-		m.poolStopOrders(ctx, fallsBelow, risesAbove)
+		m.poolStopOrders(fallsBelow, risesAbove)
 		return nil, nil
 	}
 
@@ -1484,26 +1484,20 @@ func (m *Market) SubmitStopOrdersWithIDGeneratorAndOrderIDs(
 }
 
 func (m *Market) poolStopOrders(
-	ctx context.Context,
 	fallsBelow, risesAbove *types.StopOrder,
 ) {
-	evts := []events.Event{}
 	if fallsBelow != nil {
 		m.stopOrders.Insert(fallsBelow)
 		if fallsBelow.Expiry.Expires() {
 			m.expiringStopOrders.Insert(fallsBelow.ID, fallsBelow.Expiry.ExpiresAt.UnixNano())
 		}
-		evts = append(evts, events.NewStopOrderEvent(ctx, fallsBelow))
 	}
 	if risesAbove != nil {
 		m.stopOrders.Insert(risesAbove)
 		if risesAbove.Expiry.Expires() {
 			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.Expiry.ExpiresAt.UnixNano())
 		}
-		evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
 	}
-
-	m.broker.SendBatch(evts)
 }
 
 func (m *Market) stopOrderWouldTriggerAtSubmission(
