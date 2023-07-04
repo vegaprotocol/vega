@@ -1140,7 +1140,7 @@ func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2
 	}
 
 	return &v2.ListSuccessorMarketsResponse{
-		Markets: marketsConnection,
+		SuccessorMarkets: marketsConnection,
 	}, nil
 }
 

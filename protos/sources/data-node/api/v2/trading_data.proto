@@ -2098,7 +2098,7 @@ message SuccessorMarketConnection {
 // Response from a list successor markets request.
 message ListSuccessorMarketsResponse {
   // List of markets in the succession line.
-  SuccessorMarketConnection markets = 1;
+  SuccessorMarketConnection successor_markets = 1;
 }
 
 // -- Parties --
