@@ -1491,14 +1491,14 @@ func (m *Market) poolStopOrders(
 	if fallsBelow != nil {
 		m.stopOrders.Insert(fallsBelow)
 		if fallsBelow.Expiry.Expires() {
-			m.expiringStopOrders.Insert(fallsBelow.ID, fallsBelow.CreatedAt.UnixNano())
+			m.expiringStopOrders.Insert(fallsBelow.ID, fallsBelow.Expiry.ExpiresAt.UnixNano())
 		}
 		evts = append(evts, events.NewStopOrderEvent(ctx, fallsBelow))
 	}
 	if risesAbove != nil {
 		m.stopOrders.Insert(risesAbove)
 		if risesAbove.Expiry.Expires() {
-			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.CreatedAt.UnixNano())
+			m.expiringStopOrders.Insert(risesAbove.ID, risesAbove.Expiry.ExpiresAt.UnixNano())
 		}
 		evts = append(evts, events.NewStopOrderEvent(ctx, risesAbove))
 	}
