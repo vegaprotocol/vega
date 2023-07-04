@@ -3,6 +3,9 @@
 ALTER TABLE market_data ADD COLUMN last_traded_price HUGEINT;
 ALTER TABLE current_market_data ADD COLUMN last_traded_price HUGEINT;
 
+UPDATE market_data SET last_traded_price = 0;
+UPDATE current_market_data SET last_traded_price = 0;
+
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_current_market_data()
     RETURNS TRIGGER
