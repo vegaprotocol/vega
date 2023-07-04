@@ -53,6 +53,7 @@ type Engine struct {
 	cancelEthereumQueries context.CancelFunc
 	poller                *poller
 	mu                    sync.Mutex
+	started               bool
 }
 
 func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarder Forwarder) *Engine {
@@ -71,6 +72,14 @@ func NewEngine(log *logging.Logger, cfg Config, client EthReaderCaller, forwarde
 // Start starts the polling of the Ethereum bridges, listens to the events
 // they emit and forward it to the network.
 func (e *Engine) Start() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if e.started {
+		return
+	}
+	e.started = true
+
 	ctx, cancelEthereumQueries := context.WithCancel(context.Background())
 	defer cancelEthereumQueries()
 
@@ -121,12 +130,16 @@ func (e *Engine) getCalls() map[string]Call {
 }
 
 func (e *Engine) Stop() {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
 	// Notify to stop on next iteration.
 	e.poller.Stop()
 	// Cancel any ongoing queries against Ethereum.
 	if e.cancelEthereumQueries != nil {
 		e.cancelEthereumQueries()
 	}
+	e.started = false
 }
 
 func (e *Engine) GetSpec(id string) (types.EthCallSpec, bool) {

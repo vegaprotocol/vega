@@ -222,10 +222,6 @@ func newServices(
 
 	svcs.ethCallEngine = ethcall.NewEngine(svcs.log, svcs.conf.EvtForward.EthCall, svcs.ethClient, svcs.eventForwarder)
 
-	if svcs.conf.IsValidator() {
-		go svcs.ethCallEngine.Start()
-	}
-
 	svcs.ethereumOraclesVerifier = oracles.NewEthereumOracleVerifier(svcs.log, svcs.witness, svcs.timeService, svcs.broker,
 		svcs.oracle, svcs.ethCallEngine, svcs.ethConfirmations)
 
@@ -572,6 +568,15 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 				}
 
 				return svcs.eventForwarderEngine.SetupEthereumEngine(svcs.ethClient, svcs.eventForwarder, svcs.conf.EvtForward.Ethereum, ethCfg, svcs.assets)
+			},
+		},
+		{
+			Param: netparams.EthereumOraclesEnabled,
+			Watcher: func(ctx context.Context, isEnabled int64) error {
+				if isEnabled == 1 && svcs.conf.IsValidator() {
+					go svcs.ethCallEngine.Start()
+				}
+				return nil
 			},
 		},
 		{

@@ -54,6 +54,8 @@ var (
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
 	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
+	// ErrEthOraclesDisabled is returned if ethereum oracles are not enabled via network parameter and someone tries to propose a market that uses them
+	ErrEthOraclesDisabled = errors.New("ethereum oracles are disabled by network parameter")
 )
 
 func assignProduct(
@@ -588,6 +590,9 @@ func validateNewMarketChange(
 	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
 		return perr, err
 	}
+	if perr, err := validateUseOfEthOracles(terms, netp); err != nil {
+		return perr, err
+	}
 	// verify opening auction duration, works the same for successor markets
 	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); !etu.cpLoad && err != nil {
 		return perr, err
@@ -611,6 +616,24 @@ func validateNewMarketChange(
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
 		return perr, err
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateUseOfEthOracles(terms *types.NewMarket, netp NetParams) (types.ProposalError, error) {
+	if terms.Changes.Instrument.Product == nil {
+		return types.ProposalErrorNoProduct, ErrMissingProduct
+	}
+
+	ethOracleEnabled, _ := netp.GetInt(netparams.EthereumOraclesEnabled)
+
+	switch product := terms.Changes.Instrument.Product.(type) {
+	case *types.InstrumentConfigurationFuture:
+		terminatedWithEthOracle := !product.Future.DataSourceSpecForTradingTermination.GetEthCallSpec().IsZero()
+		settledWithEthOracle := !product.Future.DataSourceSpecForSettlementData.GetEthCallSpec().IsZero()
+		if (terminatedWithEthOracle || settledWithEthOracle) && ethOracleEnabled != 1 {
+			return types.ProposalErrorUnsupportedProduct, ErrEthOraclesDisabled
+		}
 	}
 	return types.ProposalErrorUnspecified, nil
 }
