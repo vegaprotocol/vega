@@ -1748,10 +1748,18 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 						logging.Error(err))
 				}
 			} else if nm.StartAuction() {
-				if err := app.exec.StartOpeningAuction(ctx, prop.ID); err != nil {
-					app.log.Panic("unable to start market opening auction",
-						logging.String("market-id", prop.ID),
-						logging.Error(err))
+				err := app.exec.StartOpeningAuction(ctx, prop.ID)
+				if err != nil {
+					if prop.IsSuccessorMarket() {
+						app.log.Warn("parent market was already succeeded, market rejected",
+							logging.String("market-id", prop.ID),
+						)
+						prop.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
+					} else {
+						app.log.Panic("unable to start market opening auction",
+							logging.String("market-id", prop.ID),
+							logging.Error(err))
+					}
 				}
 			}
 		}

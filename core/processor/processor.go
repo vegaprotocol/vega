@@ -43,6 +43,7 @@ var (
 	ErrMarketBatchInstructionTooBig           = func(got, expected uint64) error {
 		return fmt.Errorf("market batch instructions too big, got(%d), expected(%d)", got, expected)
 	}
+	ErrParentMarketAlreadySucceeded = errors.New("parent market already was already succeeded")
 )
 
 type TimeService interface {
