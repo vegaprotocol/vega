@@ -50,7 +50,7 @@ func TestDepositFinalisedAfterCheckpoint(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// now we take a checkpoint

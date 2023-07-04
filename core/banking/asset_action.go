@@ -13,6 +13,7 @@
 package banking
 
 import (
+	"context"
 	"errors"
 	"sync/atomic"
 
@@ -129,7 +130,7 @@ func (t *assetAction) String() string {
 	}
 }
 
-func (t *assetAction) Check() error {
+func (t *assetAction) Check(ctx context.Context) error {
 	switch {
 	case t.IsBuiltinAssetDeposit():
 		return t.checkBuiltinAssetDeposit()

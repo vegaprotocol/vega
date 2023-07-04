@@ -62,7 +62,7 @@ type ValidatorTopology interface {
 type Resource interface {
 	GetID() string
 	GetType() commandspb.NodeVote_Type
-	Check() error
+	Check(ctx context.Context) error
 }
 
 const (
@@ -139,6 +139,7 @@ func (r *res) votePassed(t ValidatorTopology, requiredMajority num.Decimal) bool
 type Witness struct {
 	log *logging.Logger
 	cfg Config
+	ctx context.Context
 	now time.Time
 	top ValidatorTopology
 	cmd Commander
@@ -152,11 +153,12 @@ type Witness struct {
 	wss                    *witnessSnapshotState
 }
 
-func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
+func NewWitness(ctx context.Context, log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	return &Witness{
+		ctx:                    ctx,
 		log:                    log,
 		cfg:                    cfg,
 		now:                    tsvc.GetTimeNow(),
@@ -233,7 +235,7 @@ func (w *Witness) StartCheck(
 		return err
 	}
 
-	ctx, cfunc := context.WithDeadline(context.Background(), checkUntil)
+	ctx, cfunc := context.WithDeadline(w.ctx, checkUntil)
 	rs := &res{
 		res:        r,
 		checkUntil: checkUntil,
@@ -288,7 +290,7 @@ func (w *Witness) start(ctx context.Context, r *res) {
 		w.log.Debug("Checking the resource",
 			logging.String("asset-source", r.res.GetID()),
 		)
-		err := r.res.Check()
+		err := r.res.Check(ctx)
 		if err != nil {
 			w.log.Debug("error checking resource", logging.Error(err))
 			// dump error
