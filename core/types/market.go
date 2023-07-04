@@ -884,6 +884,8 @@ func (m Market) DeepClone() *Market {
 		LPPriceRange:            m.LPPriceRange,
 		LinearSlippageFactor:    m.LinearSlippageFactor,
 		QuadraticSlippageFactor: m.QuadraticSlippageFactor,
+		ParentMarketID:          m.ParentMarketID,
+		InsurancePoolFraction:   m.InsurancePoolFraction,
 	}
 
 	if m.TradableInstrument != nil {

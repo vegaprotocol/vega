@@ -113,6 +113,20 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	}
 	if em.IsSucceeded {
 		mkt.SetSucceeded()
+		for _, sid := range e.successors[marketConfig.ID] {
+			delete(e.isSuccessor, sid)
+		}
+		delete(e.successors, marketConfig.ID)
+	} else if pid := mkt.GetParentMarketID(); len(pid) > 0 {
+		// parent market is not yet restored or not yet succeeded
+		if pmkt, ok := e.markets[pid]; !ok || !pmkt.IsSucceeded() {
+			e.isSuccessor[marketConfig.ID] = pid
+			c, ok := e.successors[pid]
+			if !ok {
+				c = []string{}
+			}
+			e.successors[pid] = append(c, marketConfig.ID)
+		}
 	}
 
 	e.markets[marketConfig.ID] = mkt
@@ -220,28 +234,10 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
-	succeeded := make(map[string]struct{}, len(e.markets))
 	for _, m := range e.markets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}
-		id := m.GetID()
-		if m.IsSucceeded() {
-			succeeded[id] = struct{}{}
-		} else if pid := m.GetParentMarketID(); len(pid) > 0 {
-			e.isSuccessor[id] = pid
-			c, ok := e.successors[pid]
-			if !ok {
-				c = []string{}
-			}
-			e.successors[pid] = append(c, id)
-		}
-	}
-	for id := range succeeded {
-		for _, sid := range e.successors[id] {
-			delete(e.isSuccessor, sid)
-		}
-		delete(e.successors, id)
 	}
 	// use the time as restored by the snapshot
 	t := e.timeService.GetTimeNow()
