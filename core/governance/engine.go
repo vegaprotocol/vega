@@ -345,7 +345,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) ([]*ToEnact, []*VoteCl
 			// successor proposal for a successor market which cannot be enacted anymore -> remove the proposal
 			proposal.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
 			// ensure the event is sent
-			e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+			e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 		}
 		if proposal.ShouldClose(now) {
 			e.closeProposal(ctx, proposal)
