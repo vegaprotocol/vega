@@ -190,7 +190,7 @@ func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 func (s *Snapshot) TreeFromSnapshot(tree *iavl.MutableTree) error {
 	importer, err := tree.Import(s.Meta.Version)
 	if err != nil {
-		return fmt.Errorf("failed instantiate iavl tree importer: %w", err)
+		return fmt.Errorf("failed instantiate AVL tree importer: %w", err)
 	}
 	defer importer.Close()
 
@@ -258,7 +258,10 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 		Nodes: []*Payload{},
 	}
 
-	exporter := tree.Export()
+	exporter, err := tree.Export()
+	if err != nil {
+		return nil, fmt.Errorf("could not export the current AVL tree: %w", err)
+	}
 	defer exporter.Close()
 
 	exportedNode, err := exporter.Next()
@@ -303,13 +306,13 @@ func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 		exportedNode, err = exporter.Next()
 	}
 
-	if err != iavl.ExportDone {
+	if !errors.Is(err, iavl.ErrorExportDone) {
 		// either an error occurred while traversing, or we never reached the end
-		return nil, fmt.Errorf("failed to export iavl tree: %w", err)
+		return nil, fmt.Errorf("failed to export AVL tree: %w", err)
 	}
 
 	if snap.Height == 0 {
-		return nil, fmt.Errorf("failed to export iavl tree: %w", ErrMissingAppstateNode)
+		return nil, fmt.Errorf("failed to export AVL tree: %w", ErrMissingAppstateNode)
 	}
 
 	// set chunks, ready to send in case we need it

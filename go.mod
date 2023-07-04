@@ -6,7 +6,7 @@ require (
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cosmos/iavl v0.19.4
+	github.com/cosmos/iavl v0.20.0
 	github.com/cucumber/godog v0.12.5
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/fatih/color v1.13.0
@@ -294,7 +294,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.2.1 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
-	github.com/confio/ics23/go v0.7.0 // indirect
+	github.com/confio/ics23/go v0.9.0 // indirect
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect

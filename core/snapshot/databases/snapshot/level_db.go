@@ -5,15 +5,15 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/paths"
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
-	db "github.com/tendermint/tm-db"
 )
 
 const dbName = "snapshot"
 
 type LevelDBDatabase struct {
-	*db.GoLevelDB
+	*cometbftdb.GoLevelDB
 
 	dbFile      string
 	dbDirectory string
@@ -55,8 +55,8 @@ func NewLevelDBDatabase(vegaPaths paths.Paths) (*LevelDBDatabase, error) {
 	}, nil
 }
 
-func initializeUnderlyingAdapter(dbDirectory string) (*db.GoLevelDB, error) {
-	adapter, err := db.NewGoLevelDBWithOpts(
+func initializeUnderlyingAdapter(dbDirectory string) (*cometbftdb.GoLevelDB, error) {
+	adapter, err := cometbftdb.NewGoLevelDBWithOpts(
 		dbName,
 		dbDirectory,
 		&opt.Options{

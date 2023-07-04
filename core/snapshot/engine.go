@@ -35,9 +35,9 @@ import (
 	snappb "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"golang.org/x/exp/slices"
 
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
-	tmdb "github.com/tendermint/tm-db"
 )
 
 const (
@@ -90,7 +90,7 @@ type MetadataDatabase interface {
 }
 
 type Database interface {
-	tmdb.DB
+	cometbftdb.DB
 	Clear() error
 }
 
