@@ -3789,6 +3789,8 @@ func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState
 			// we have trades, and the market has been closed. Perform MTM sequence now so the final settlement
 			// works as expected.
 			m.markPrice = mp
+			// send market data event with the updated mark price
+			m.broker.Send(events.NewMarketDataEvent(ctx, m.GetMarketData()))
 			m.confirmMTM(ctx, true)
 		}
 		m.mkt.State = types.MarketStateTradingTerminated
