@@ -3192,7 +3192,7 @@ func applyOrderAmendmentSizeIceberg(order *types.Order, delta int64) {
 
 	diff := dec - order.IcebergOrder.ReservedRemaining
 	if order.Remaining > diff {
-		order.Remaining = dec - order.IcebergOrder.ReservedRemaining
+		order.Remaining -= dec - order.IcebergOrder.ReservedRemaining
 	} else {
 		order.Remaining = 0
 	}
