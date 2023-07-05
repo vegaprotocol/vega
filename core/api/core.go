@@ -157,9 +157,11 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 		return nil, apiError(codes.Internal, err)
 	}
 
+	reason := protoapi.TransactionError(txResult.Code)
 	return &protoapi.SubmitTransactionResponse{
 		Success: txResult.Code == 0,
 		Code:    txResult.Code,
+		Reason:  &reason,
 		Data:    string(txResult.Data.Bytes()),
 		Log:     txResult.Log,
 		Height:  0,

@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -75,11 +76,16 @@ type TimeService interface {
 	GetTimeNow() time.Time
 }
 
+type ban struct {
+	duration time.Time
+	reason   string
+}
+
 type Engine struct {
 	timeService   TimeService
-	activeParams  []*params            // active sets of parameters
-	activeStates  []*state             // active states corresponding to the sets of parameters
-	bannedParties map[string]time.Time // banned party -> release time
+	activeParams  []*params      // active sets of parameters
+	activeStates  []*state       // active states corresponding to the sets of parameters
+	bannedParties map[string]ban // banned party -> release time + reason
 
 	currentBlock uint64              // the current block height
 	blockHeight  [ringSize]uint64    // block heights in scope ring buffer - this has a fixed size which is equal to the maximum value of the network parameter
@@ -103,7 +109,7 @@ func New(log *logging.Logger, config Config, timeService TimeService) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		bannedParties:  map[string]time.Time{},
+		bannedParties:  map[string]ban{},
 		log:            log,
 		hashKeys:       []string{(&types.PayloadProofOfWork{}).Key()},
 		activeParams:   []*params{},
@@ -145,7 +151,7 @@ func (e *Engine) BeginBlock(blockHeight uint64, blockHash string) {
 
 	// check if there are banned parties who can be released
 	for k, v := range e.bannedParties {
-		if !tm.Before(v) {
+		if !tm.Before(v.duration) {
 			delete(e.bannedParties, k)
 			e.log.Info("released proof of work spam ban from", logging.String("party", k))
 		}
@@ -293,8 +299,12 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 
 	// if we've seen already enough transactions and `spamPoWIncreasingDifficulty` is not enabled then fail the transaction and ban the party
 	if !params.spamPoWIncreasingDifficulty {
-		e.bannedParties[tx.Party()] = e.timeService.GetTimeNow().Add(e.banDuration)
-		return errors.New("too many transactions per block")
+		reason := "banning party for too many transactions per block"
+		e.bannedParties[tx.Party()] = ban{
+			duration: e.timeService.GetTimeNow().Add(e.banDuration),
+			reason:   reason,
+		}
+		return errors.New(reason)
 	}
 
 	// calculate the expected difficulty - allow spamPoWNumberOfTxPerBlock for every level of increased difficulty
@@ -303,9 +313,13 @@ func (e *Engine) DeliverTx(tx abci.Tx) error {
 	// if the observed difficulty sum is less than the expected difficulty, ban the party and reject the tx
 	if partyState.observedDifficulty+uint(d) < totalExpectedDifficulty {
 		banTime := e.timeService.GetTimeNow().Add(e.banDuration)
-		e.bannedParties[tx.Party()] = banTime
+		reason := "not respecting required difficulty rules"
+		e.bannedParties[tx.Party()] = ban{
+			duration: banTime,
+			reason:   reason,
+		}
 		e.log.Info("banning party for not respecting required difficulty rules", logging.String("party", tx.Party()), logging.Time("until", banTime))
-		return errors.New("too many transactions per block")
+		return errors.New("banning party for " + reason)
 	}
 
 	partyState.observedDifficulty += +uint(d)
@@ -371,14 +385,14 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 	defer e.lock.RUnlock()
 	var h byte
 
-	// check if the party is banned for the epoch
-	if _, ok := e.bannedParties[tx.Party()]; ok {
-		e.log.Error("party is banned", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
-		return h, errors.New("party is banned from sending transactions")
-	}
-
 	// check if the transaction was seen in scope
 	txHash := hex.EncodeToString(tx.Hash())
+
+	// check if the party is banned for the epoch
+	if b, ok := e.bannedParties[tx.Party()]; ok {
+		e.log.Error("party is banned", logging.String("tid", tx.GetPoWTID()), logging.String("party", tx.Party()))
+		return h, errors.New("party is banned from sending transactions, tx: " + txHash + ", command:" + tx.Command().String() + ", party:" + tx.Party() + ", reason: " + b.reason)
+	}
 
 	// check for replay attacks
 	if _, ok := e.seenTx[txHash]; ok {
@@ -407,7 +421,7 @@ func (e *Engine) verify(tx abci.Tx) (byte, error) {
 		if e.log.IsDebug() {
 			e.log.Debug("unknown block height", logging.Uint64("current-block-height", e.currentBlock), logging.String("tx-hash", txHash), logging.String("tid", tx.GetPoWTID()), logging.Uint64("tx-block-height", tx.BlockHeight()), logging.Uint64("index", idx), logging.String("command", tx.Command().String()), logging.String("party", tx.Party()))
 		}
-		return h, errors.New("unknown block height for tx:" + txHash + ", command:" + tx.Command().String() + ", party:" + tx.Party())
+		return h, errors.New("unknown block height: " + fmt.Sprint(tx.BlockHeight()) + " for tx:" + txHash + ", expected block height: " + fmt.Sprint(e.currentBlock) + ", command:" + tx.Command().String() + ", party:" + tx.Party())
 	}
 
 	// check if the tid was seen in scope
@@ -646,7 +660,7 @@ func (e *Engine) GetSpamStatistics(partyID string) *protoapi.PoWStatistic {
 		})
 	}
 
-	until := e.bannedParties[partyID].UnixNano()
+	until := e.bannedParties[partyID].duration.UnixNano()
 
 	var bannedUntil *string
 

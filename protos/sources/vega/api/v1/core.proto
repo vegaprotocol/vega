@@ -126,6 +126,19 @@ message SubmitTransactionResponse {
   string log = 5;
   // Height for commit
   int64 height = 6;
+  // Further details for why an order with status `STATUS_REJECTED` was rejected.
+  optional TransactionError reason = 7;
+}
+
+// TransactionError is the error type returned by SubmitTransaction if the transaction has failed.
+enum TransactionError {
+  // Default value, no error reported
+  TRANSACTION_ERROR_UNSPECIFIED = 0;
+  // Transaction was submitted by a banned party
+  TRANSACTION_ERROR_PARTY_BANNED = 1;
+  // Transaction was submitted with an unknown block height
+  TRANSACTION_ERROR_UNKNOWN_BLOCK_HEIGHT = 2;
+  // TODO: ...
 }
 
 // Request for checking a transaction v2 on Vega
