@@ -22,10 +22,9 @@ Feature: Penalties for Liquidity providers on spot market
       | lpprov | ETH   | 500000 |
       | lpprov | BTC   | 500000 |
     
-    And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type    |
-      | lp1 | lpprov| BTC/ETH   | 500               | 0.001 | buy  | BID              | 1          | 10     | submission |
-      | lp1 | lpprov| BTC/ETH   | 500               | 0.001 | sell | ASK              | 1          | 10     | submission |
+    And the parties submit the following liquidity commitment:
+      | id  | party | market id | commitment amount | fee   | lp type    | reference |
+      | lp1 | lpprov| BTC/ETH   | 500               | 0.001 | submission | lp1_commitment |
     
     # place orders and generate trades
     And the parties place the following orders:

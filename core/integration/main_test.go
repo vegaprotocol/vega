@@ -270,6 +270,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
+	s.Step(`^the parties submit the following liquidity commitment:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitLiquidityCommitment(execsetup.executionEngine, table)
+	})
 	s.Step(`^party "([^"]+)" cancels their liquidity provision for market "([^"]+)"$`, func(party, marketID string) error {
 		return steps.PartyCancelsTheirLiquidityProvision(execsetup.executionEngine, marketID, party)
 	})
