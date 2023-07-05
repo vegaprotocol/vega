@@ -46,10 +46,16 @@ func testSavingAndLoadingSnapshotMetadataSucceeds(t *testing.T) {
 				require.NoError(tt, db.Close())
 			}()
 
+			// Verifying a new database is empty.
+			assert.False(tt, db.ContainsMetadata(), "the database should not contain data")
+
 			// Loading 2 snapshots to verify they are properly saved, and do not
 			// override each other.
 			require.NoError(tt, db.Save(1, snapshotV1))
 			require.NoError(tt, db.Save(2, snapshotV2))
+
+			// Verifying the database correctly states it's not empty when not.
+			assert.True(tt, db.ContainsMetadata(), "the database should contain data")
 
 			// Verify both snapshot can be retrieve and match the originals.
 			loadedSnapshotV1, err := db.Load(1)
@@ -62,6 +68,9 @@ func testSavingAndLoadingSnapshotMetadataSucceeds(t *testing.T) {
 
 			// Removing the snapshots from the database.
 			require.NoError(tt, db.Clear())
+
+			// Verifying the database correctly states it's empty when is.
+			assert.False(tt, db.ContainsMetadata(), "the database should not contain data")
 
 			// Verify both snapshot can no longer be retrieved from the database.
 			loadedSnapshotV1AfterClear, err := db.Load(1)

@@ -14,6 +14,7 @@ type Adapter interface {
 	Load(version []byte) (state []byte, err error)
 	Close() error
 	Clear() error
+	ContainsMetadata() bool
 }
 
 type Database struct {
