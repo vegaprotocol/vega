@@ -1592,6 +1592,7 @@ func (e *Engine) GetMarketCounters() map[string]*types.MarketCounters {
 	counters := map[string]*types.MarketCounters{}
 	for k, m := range e.markets {
 		counters[k] = &types.MarketCounters{
+			StopOrderCounter:    m.GetTotalStopOrderCount(),
 			PeggedOrderCounter:  m.GetTotalPeggedOrderCount(),
 			OrderbookLevelCount: m.GetTotalOrderBookLevelCount(),
 			PositionCount:       m.GetTotalOpenPositionCount(),

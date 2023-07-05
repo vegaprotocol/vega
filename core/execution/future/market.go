@@ -3870,6 +3870,11 @@ func (m *Market) GetTotalPeggedOrderCount() uint64 {
 	return m.matching.GetPeggedOrdersCount()
 }
 
+// GetTotalStopOrderCount returns the total number of stop orders.
+func (m *Market) GetTotalStopOrderCount() uint64 {
+	return m.stopOrders.GetStopOrderCount()
+}
+
 // GetTotalOpenPositionCount returns the total number of open positions.
 func (m *Market) GetTotalOpenPositionCount() uint64 {
 	return m.position.GetOpenPositionCount()
