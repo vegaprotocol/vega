@@ -14,7 +14,7 @@ import (
 const (
 	batchFactor       = 0.5
 	pegCostFactor     = uint64(50)
-	stopCostFactor    = uint64(50)
+	stopCostFactor    = 0.2
 	lpShapeCostFactor = uint64(100)
 	positionFactor    = uint64(1)
 	levelFactor       = 0.1
@@ -234,7 +234,7 @@ func (g *Gastimator) orderGastimate(marketID string) uint64 {
 	if marketCounters, ok := g.marketCounters[marketID]; ok {
 		return uint64(math.Min(float64(
 			g.defaultGas+
-				stopCostFactor*marketCounters.StopOrderCounter+
+				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
@@ -252,7 +252,7 @@ func (g *Gastimator) cancelOrderGastimate(marketID string) uint64 {
 	if marketCounters, ok := g.marketCounters[marketID]; ok {
 		return uint64(math.Min(float64(
 			g.defaultGas+
-				stopCostFactor*marketCounters.StopOrderCounter+
+				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				uint64(0.1*float64(marketCounters.OrderbookLevelCount))),
@@ -270,7 +270,7 @@ func (g *Gastimator) lpGastimate(marketID string) uint64 {
 	if marketCounters, ok := g.marketCounters[marketID]; ok {
 		return uint64(math.Min(float64(
 			g.defaultGas+
-				stopCostFactor*marketCounters.StopOrderCounter+
+				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
