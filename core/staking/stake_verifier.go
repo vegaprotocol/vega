@@ -89,18 +89,18 @@ type pendingSD struct {
 	check func() error
 }
 
-func (p pendingSD) GetID() string               { return p.ID }
-func (p pendingSD) GetType() types.NodeVoteType { return types.NodeVoteTypeStakeDeposited }
-func (p *pendingSD) Check() error               { return p.check() }
+func (p pendingSD) GetID() string                    { return p.ID }
+func (p pendingSD) GetType() types.NodeVoteType      { return types.NodeVoteTypeStakeDeposited }
+func (p *pendingSD) Check(ctx context.Context) error { return p.check() }
 
 type pendingSR struct {
 	*types.StakeRemoved
 	check func() error
 }
 
-func (p pendingSR) GetID() string               { return p.ID }
-func (p pendingSR) GetType() types.NodeVoteType { return types.NodeVoteTypeStakeRemoved }
-func (p *pendingSR) Check() error               { return p.check() }
+func (p pendingSR) GetID() string                    { return p.ID }
+func (p pendingSR) GetType() types.NodeVoteType      { return types.NodeVoteTypeStakeRemoved }
+func (p *pendingSR) Check(ctx context.Context) error { return p.check() }
 
 func NewStakeVerifier(
 	log *logging.Logger,

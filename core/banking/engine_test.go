@@ -116,7 +116,7 @@ func testDepositSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// then we call time update, which should call the collateral to
@@ -146,7 +146,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// then we call time update, which should call the collateral to
@@ -161,7 +161,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// then we call time update, which should call the collateral to
@@ -191,7 +191,7 @@ func testDepositFailure(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, false)
 
 	// then we call time update, expect collateral to never be called
