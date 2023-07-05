@@ -65,6 +65,7 @@
 - [8609](https://github.com/vegaprotocol/vega/issues/8609) - Add `graphQL` support for governance transfers
 - [8528](https://github.com/vegaprotocol/vega/issues/8528) - Add support for Stop Orders in the data node.
 - [8635](https://github.com/vegaprotocol/vega/issues/8635) - Allow market update proposal with ELS only
+- [8675](https://github.com/vegaprotocol/vega/issues/8675) - Fix inconsistent naming for successor markets.
 
 ### 🐛 Fixes
 

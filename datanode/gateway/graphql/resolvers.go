@@ -1360,7 +1360,7 @@ func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string,
 		return nil, err
 	}
 
-	return resp.GetMarkets(), nil
+	return resp.GetSuccessorMarkets(), nil
 }
 
 func (r *myQueryResolver) StopOrder(ctx context.Context, id string) (*eventspb.StopOrderEvent, error) {
