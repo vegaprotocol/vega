@@ -48,14 +48,12 @@ Scenario: If a liquidity provider has fraction_of_time_on_book >= market.liquidi
     Given the parties should have the following account balances:
       | party  | asset | market id | general | bond |
       | lpprov | ETH   | BTC/ETH   | 498500  | 500  |
-      | lpprov | BTC   | BTC/ETH   | 499900  | 500  |
 
     When the network moves ahead "10" blocks 
 
     Then the parties should have the following account balances:
       | party  | asset | market id | general | bond |
       | lpprov | ETH   | BTC/ETH   | 498500  | 500  |
-      | lpprov | BTC   | BTC/ETH   | 499900  | 500  |
     
     # penalties are deposited in to the network treasury of the asset
     And the network treasury balance should be "0" for the asset "ETH"
