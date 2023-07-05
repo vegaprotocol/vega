@@ -74,6 +74,10 @@ func (p *Pool) ToProto() *v1.StopOrders {
 	return out
 }
 
+func (p *Pool) GetStopOrderCount() uint64 {
+	return uint64(len(p.orderToParty))
+}
+
 func (p *Pool) PriceUpdated(newPrice *num.Uint) (triggered, cancelled []*types.StopOrder) {
 	// first update prices and get triggered orders
 	ids := append(
