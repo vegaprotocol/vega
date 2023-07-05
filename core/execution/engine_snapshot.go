@@ -220,10 +220,28 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 }
 
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	succeeded := make(map[string]struct{}, len(e.markets))
 	for _, m := range e.markets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
 		}
+		id := m.GetID()
+		if m.IsSucceeded() {
+			succeeded[id] = struct{}{}
+		} else if pid := m.GetParentMarketID(); len(pid) > 0 {
+			e.isSuccessor[id] = pid
+			c, ok := e.successors[pid]
+			if !ok {
+				c = []string{}
+			}
+			e.successors[pid] = append(c, id)
+		}
+	}
+	for id := range succeeded {
+		for _, sid := range e.successors[id] {
+			delete(e.isSuccessor, sid)
+		}
+		delete(e.successors, id)
 	}
 	// use the time as restored by the snapshot
 	t := e.timeService.GetTimeNow()
