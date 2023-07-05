@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/events"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	lmon "code.vegaprotocol.io/vega/core/monitor/liquidity"
 	"code.vegaprotocol.io/vega/core/monitor/price"
 	"code.vegaprotocol.io/vega/core/oracles"
@@ -17,7 +18,7 @@ import (
 
 var One = num.UintOne()
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/core/execution/common TimeService,Assets,StateVarEngine,Collateral,OracleEngine,EpochEngine,AuctionState,LiquidityEngine,EquityLikeShares
 
 // InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
@@ -122,6 +123,7 @@ type Collateral interface {
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
 	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error)
+	BondSpotUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.LedgerMovement, error)
 	RemoveBondAccount(partyID, marketID, asset string) error
 	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.LedgerMovement, events.Margin, error)
 	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
@@ -137,6 +139,8 @@ type Collateral interface {
 	Hash() []byte
 	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	TransferSpotFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
+	TransferSpotFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.LedgerMovement, error)
 	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.LedgerMovement, []events.Margin, []events.Margin, error)
 	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.LedgerMovement, error)
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.LedgerMovement, error)
@@ -147,4 +151,38 @@ type Collateral interface {
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
 	SuccessorInsuranceFraction(ctx context.Context, successor, parent, asset string, fraction num.Decimal) *types.LedgerMovement
 	ClearInsurancepool(ctx context.Context, marketID string, asset string, clearFees bool) ([]*types.LedgerMovement, error)
+	GetOrCreatePartyLiquidityFeeAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
+	GetPartyLiquidityFeeAccount(market, partyID, asset string) (*types.Account, error)
+	GetLiquidityFeesBonusDistributionAccount(marketID, asset string) (*types.Account, error)
+	CreateSpotMarketAccounts(ctx context.Context, marketID, quoteAsset string) error
+	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
+	GetOrCreateLiquidityFeesBonusDistributionAccount(ctx context.Context, marketID, asset string) (*types.Account, error)
+}
+
+type LiquidityEngine interface {
+	ResetSLAEpoch(t time.Time, markPrice *num.Uint, positionFactor num.Decimal)
+	ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision
+	PendingProvision() map[string]*types.LiquidityProvision
+	PendingProvisionByPartyID(party string) *types.LiquidityProvision
+	CalculateSLAPenalties(time.Time) liquidity.SlaPenalties
+	ResetAverageLiquidityScores()
+	UpdateAverageLiquidityScores(num.Decimal, num.Decimal, *num.Uint, *num.Uint)
+	GetAverageLiquidityScores() map[string]num.Decimal
+	SubmitLiquidityProvision(context.Context, *types.LiquidityProvisionSubmission, string, liquidity.IDGen) (bool, error)
+	RejectLiquidityProvision(context.Context, string) error
+	AmendLiquidityProvision(context.Context, *types.LiquidityProvisionAmendment, string) error
+	ValidateLiquidityProvisionAmendment(*types.LiquidityProvisionAmendment) error
+	IsLiquidityProvider(string) bool
+	ProvisionsPerParty() liquidity.ProvisionsPerParty
+	LiquidityProvisionByPartyID(string) *types.LiquidityProvision
+	CalculateSuppliedStake() *num.Uint
+	CalculateSuppliedStakeWithoutPending() *num.Uint
+	UpdatePartyCommitment(string, *num.Uint) (*types.LiquidityProvision, error)
+	EndBlock()
+	TxProcessed(txCount int, markPrice *num.Uint, positionFactor num.Decimal)
+}
+
+type EquityLikeShares interface {
+	AllShares() map[string]num.Decimal
+	SetPartyStake(id string, newStakeU *num.Uint)
 }

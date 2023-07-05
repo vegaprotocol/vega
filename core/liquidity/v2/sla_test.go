@@ -54,6 +54,8 @@ func newTestEngine(t *testing.T) *testEngine {
 
 	auctionState := mmocks.NewMockAuctionState(ctrl)
 
+	auctionState.EXPECT().IsOpeningAuction().Return(false).AnyTimes()
+
 	targetStakeFunc := func() *num.Uint {
 		return num.UintOne()
 	}
@@ -145,32 +147,32 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 		{
 			desc:                 "Meets commitment with fraction_of_time_on_book=0.75 and slaCompetitionFactor=1, 0042-LIQF-037",
 			epochLength:          4,
-			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18}, {15, 15, 17, 18}, {15, 15, 17, 18}, {}},
-			sellsOrdersPerBlock:  [][]uint64{{12, 12, 12}, {12, 12, 12}, {12, 12, 12}, {}},
+			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}},
+			sellsOrdersPerBlock:  [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}},
 			slaCompetitionFactor: toPoint(num.DecimalFromFloat(1)),
 			expectedPenalty:      num.DecimalFromFloat(0.5),
 		},
 		{
 			desc:                 "Meets commitment with fraction_of_time_on_book=0.75 and slaCompetitionFactor=1, 0042-LIQF-038",
 			epochLength:          4,
-			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18}, {}, {15, 15, 17, 18}, {15, 15, 17, 18}},
-			sellsOrdersPerBlock:  [][]uint64{{12, 12, 12}, {}, {12, 12, 12}, {12, 12, 12}},
+			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
+			sellsOrdersPerBlock:  [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
 			slaCompetitionFactor: toPoint(num.DecimalFromFloat(1)),
 			expectedPenalty:      num.DecimalFromFloat(0.5),
 		},
 		{
 			desc:                 "Meets commitment with fraction_of_time_on_book=0.75 and slaCompetitionFactor=0, 0042-LIQF-041",
 			epochLength:          4,
-			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18}, {15, 15, 17, 18}, {15, 15, 17, 18}, {}},
-			sellsOrdersPerBlock:  [][]uint64{{12, 12, 12}, {12, 12, 12}, {12, 12, 12}, {}},
+			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}},
+			sellsOrdersPerBlock:  [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}},
 			slaCompetitionFactor: toPoint(num.DecimalFromFloat(0)),
 			expectedPenalty:      num.DecimalFromFloat(0.0),
 		},
 		{
 			desc:                 "Meets commitment with fraction_of_time_on_book=0.75 and slaCompetitionFactor=0.5, 0042-LIQF-042",
 			epochLength:          4,
-			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18}, {15, 15, 17, 18}, {15, 15, 17, 18}, {}},
-			sellsOrdersPerBlock:  [][]uint64{{12, 12, 12}, {12, 12, 12}, {12, 12, 12}, {}},
+			buyOrdersPerBlock:    [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}},
+			sellsOrdersPerBlock:  [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}},
 			slaCompetitionFactor: toPoint(num.DecimalFromFloat(0.5)),
 			expectedPenalty:      num.DecimalFromFloat(0.25),
 		},
@@ -178,16 +180,16 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 			desc:                        "Meets commitment with fraction_of_time_on_book=1 and performanceHysteresisEpochs=0, 0042-LIQF-035",
 			performanceHysteresisEpochs: toPoint[uint](0),
 			epochLength:                 3,
-			buyOrdersPerBlock:           [][]uint64{{15, 15, 17, 18}, {15, 15, 17, 18}, {15, 15, 17, 18}},
-			sellsOrdersPerBlock:         [][]uint64{{12, 12, 12}, {12, 12, 12}, {12, 12, 12}},
+			buyOrdersPerBlock:           [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
+			sellsOrdersPerBlock:         [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
 			expectedPenalty:             num.DecimalFromFloat(0),
 		},
 		{
 			desc:                        "Does not meet commitment with fraction_of_time_on_book=0.5 and performanceHysteresisEpochs=0, 0042-LIQF-036",
 			performanceHysteresisEpochs: toPoint[uint](0),
 			epochLength:                 6,
-			buyOrdersPerBlock:           [][]uint64{{15, 15, 17, 18}, {}, {15, 15, 17, 18}, {}, {}, {15, 15, 17, 18}},
-			sellsOrdersPerBlock:         [][]uint64{{12, 12, 12}, {}, {12, 12, 12}, {}, {}, {12, 12, 12}},
+			buyOrdersPerBlock:           [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {}, {15, 15, 17, 18, 12, 12, 12}, {}, {}, {15, 15, 17, 18, 12, 12, 12}},
+			sellsOrdersPerBlock:         [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {}, {15, 15, 17, 18, 12, 12, 12}, {}, {}, {15, 15, 17, 18, 12, 12, 12}},
 			expectedPenalty:             num.DecimalFromFloat(1),
 		},
 	}
@@ -230,7 +232,7 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 					Reference:        fmt.Sprintf("provision-by-%s", party),
 				}
 
-				err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
+				_, err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
 				require.NoError(t, err)
 
 				te.auctionState.EXPECT().InAuction().Return(inAuction).AnyTimes()
@@ -238,8 +240,6 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 				te.orderbook.EXPECT().GetLastTradedPrice().Return(num.NewUint(15)).AnyTimes()
 				te.orderbook.EXPECT().GetIndicativePrice().Return(num.NewUint(15)).AnyTimes()
 
-				te.orderbook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(20), nil).AnyTimes()
-				te.orderbook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(10), nil).AnyTimes()
 				orders := []*types.Order{}
 				te.orderbook.EXPECT().GetOrdersPerParty(party).DoAndReturn(func(party string) []*types.Order {
 					return orders
@@ -251,22 +251,22 @@ func TestSLAPerformanceSingleEpochFeePenalty(t *testing.T) {
 
 				orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[0], tC.sellsOrdersPerBlock[0])
 
-				te.engine.ResetSLAEpoch(epochStart)
-				txs := []liquidity.TX{{ID: "1"}, {ID: "2"}, {ID: "3"}}
+				one := num.UintOne()
+				positionFactor := num.DecimalOne()
+				midPrice := num.NewUint(15)
 
-				k := te.engine.GenerateKSla(txs)
+				te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+				te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 				for i := 0; i < tC.epochLength; i++ {
 					orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[i], tC.sellsOrdersPerBlock[i])
 
 					te.tsvc.SetTime(epochStart.Add(time.Duration(i) * time.Second))
-					te.engine.BeginBlock(txs)
-					te.engine.TxProcessed(k)
+					te.engine.EndBlock(one, midPrice, positionFactor)
 				}
 
-				te.engine.CalculateSLAPenalties(epochEnd)
-
-				sla := te.engine.GetSLAPenalties()[party]
+				penalties := te.engine.CalculateSLAPenalties(epochEnd)
+				sla := penalties.PenaltiesPerParty[party]
 
 				fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
 				require.True(t, sla.Fee.Equal(tC.expectedPenalty))
@@ -322,7 +322,7 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 				Reference:        fmt.Sprintf("provision-by-%s", partyID),
 			}
 
-			err := te.engine.SubmitLiquidityProvision(ctx, lps, partyID, idGen)
+			_, err := te.engine.SubmitLiquidityProvision(ctx, lps, partyID, idGen)
 			require.NoError(t, err)
 
 			te.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
@@ -330,8 +330,6 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			te.orderbook.EXPECT().GetLastTradedPrice().Return(num.NewUint(15)).AnyTimes()
 			te.orderbook.EXPECT().GetIndicativePrice().Return(num.NewUint(15)).AnyTimes()
 
-			te.orderbook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(20), nil).AnyTimes()
-			te.orderbook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(10), nil).AnyTimes()
 			orders := []*types.Order{}
 			te.orderbook.EXPECT().GetOrdersPerParty(partyID).DoAndReturn(func(party string) []*types.Order {
 				return orders
@@ -341,25 +339,26 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			epochStart := time.Now().Add(-epochLength)
 			epochEnd := epochStart.Add(epochLength)
 
-			txs := []liquidity.TX{{ID: "1"}, {ID: "2"}, {ID: "3"}}
-			k := te.engine.GenerateKSla(txs)
-
 			firstEpochIters := tC.epochsOffBook
 			secondEpochIters := tC.epochsOnBook
 
 			if tC.startWithOnBook {
-				orders = generateOrders(*idGen, te.marketID, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
+				orders = generateOrders(*idGen, te.marketID, []uint64{15, 15, 17, 18, 12, 12, 12}, []uint64{15, 15, 17, 18, 12, 12, 12})
 				firstEpochIters = tC.epochsOnBook
 				secondEpochIters = tC.epochsOffBook
 			}
 
+			one := num.UintOne()
+			positionFactor := num.DecimalOne()
+			midPrice := num.NewUint(15)
+
 			for i := 0; i < firstEpochIters; i++ {
-				te.engine.ResetSLAEpoch(epochStart)
+				te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+				te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 				for j := 0; j < int(epochLength.Seconds()); j++ {
 					te.tsvc.SetTime(epochStart.Add(time.Duration(j) * time.Second))
-					te.engine.BeginBlock(txs)
-					te.engine.TxProcessed(k)
+					te.engine.EndBlock(one, midPrice, positionFactor)
 				}
 
 				te.engine.CalculateSLAPenalties(epochEnd)
@@ -368,23 +367,23 @@ func TestSLAPerformanceMultiEpochFeePenalty(t *testing.T) {
 			if tC.startWithOnBook {
 				orders = []*types.Order{}
 			} else {
-				orders = generateOrders(*idGen, te.marketID, []uint64{15, 15, 17, 18}, []uint64{12, 12, 12})
+				orders = generateOrders(*idGen, te.marketID, []uint64{15, 15, 17, 18, 12, 12, 12}, []uint64{15, 15, 17, 18, 12, 12, 12})
 			}
 
 			for i := 0; i < secondEpochIters; i++ {
-				te.engine.ResetSLAEpoch(epochStart)
+				te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+				te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 				for j := 0; j < int(epochLength.Seconds()); j++ {
 					te.tsvc.SetTime(epochStart.Add(time.Duration(j) * time.Second))
-					te.engine.BeginBlock(txs)
-					te.engine.TxProcessed(k)
+					te.engine.EndBlock(one, midPrice, positionFactor)
 				}
 
 				te.engine.CalculateSLAPenalties(epochEnd)
 			}
 
-			te.engine.CalculateSLAPenalties(epochEnd)
-			sla := te.engine.GetSLAPenalties()[partyID]
+			penalties := te.engine.CalculateSLAPenalties(epochEnd)
+			sla := penalties.PenaltiesPerParty[partyID]
 
 			fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Fee, tC.expectedPenalty)
 			require.True(t, sla.Fee.Equal(tC.expectedPenalty))
@@ -413,8 +412,8 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 		{
 			desc:                      "Bond account penalty is 0 when commitment is met, 0044-LIME-013",
 			epochLength:               3,
-			buyOrdersPerBlock:         [][]uint64{{15, 15, 17, 18}, {15, 15, 17, 18}, {15, 15, 17, 18}},
-			sellsOrdersPerBlock:       [][]uint64{{12, 12, 12}, {12, 12, 12}, {12, 12, 12}},
+			buyOrdersPerBlock:         [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
+			sellsOrdersPerBlock:       [][]uint64{{15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}},
 			commitmentMinTimeFraction: toPoint(num.NewDecimalFromFloat(0.6)),
 			expectedPenalty:           num.DecimalFromFloat(0),
 		},
@@ -422,10 +421,10 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			desc:        "Bond account penalty is 35%, 0044-LIME-014",
 			epochLength: 10,
 			buyOrdersPerBlock: [][]uint64{
-				{}, {}, {15, 15, 17, 18}, {15, 15, 17, 18}, {15, 15, 17, 18}, {}, {}, {}, {}, {},
+				{}, {}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}, {}, {}, {}, {},
 			},
 			sellsOrdersPerBlock: [][]uint64{
-				{}, {}, {12, 12, 12}, {12, 12, 12}, {12, 12, 12}, {}, {}, {}, {}, {},
+				{}, {}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {15, 15, 17, 18, 12, 12, 12}, {}, {}, {}, {}, {},
 			},
 			commitmentMinTimeFraction:      toPoint(num.NewDecimalFromFloat(0.6)),
 			nonPerformanceBondPenaltySlope: toPoint(num.NewDecimalFromFloat(0.7)),
@@ -482,7 +481,7 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 				Reference:        fmt.Sprintf("provision-by-%s", party),
 			}
 
-			err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
+			_, err := te.engine.SubmitLiquidityProvision(ctx, lps, party, idGen)
 			require.NoError(t, err)
 
 			te.auctionState.EXPECT().InAuction().Return(false).AnyTimes()
@@ -490,8 +489,6 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 			te.orderbook.EXPECT().GetLastTradedPrice().Return(num.NewUint(15)).AnyTimes()
 			te.orderbook.EXPECT().GetIndicativePrice().Return(num.NewUint(15)).AnyTimes()
 
-			te.orderbook.EXPECT().GetBestStaticBidPrice().Return(num.NewUint(20), nil).AnyTimes()
-			te.orderbook.EXPECT().GetBestStaticAskPrice().Return(num.NewUint(10), nil).AnyTimes()
 			orders := []*types.Order{}
 			te.orderbook.EXPECT().GetOrdersPerParty(party).DoAndReturn(func(party string) []*types.Order {
 				return orders
@@ -503,22 +500,22 @@ func TestSLAPerformanceBondPenalty(t *testing.T) {
 
 			orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[0], tC.sellsOrdersPerBlock[0])
 
-			te.engine.ResetSLAEpoch(epochStart)
-			txs := []liquidity.TX{{ID: "1"}, {ID: "2"}, {ID: "3"}}
+			one := num.UintOne()
+			positionFactor := num.DecimalOne()
+			midPrice := num.NewUint(15)
 
-			k := te.engine.GenerateKSla(txs)
+			te.engine.ResetSLAEpoch(ctx, epochStart, one, midPrice, positionFactor)
+			te.engine.ApplyPendingProvisions(ctx, time.Now())
 
 			for i := 0; i < tC.epochLength; i++ {
 				orders = generateOrders(*idGen, te.marketID, tC.buyOrdersPerBlock[i], tC.sellsOrdersPerBlock[i])
 
 				te.tsvc.SetTime(epochStart.Add(time.Duration(i) * time.Second))
-				te.engine.BeginBlock(txs)
-				te.engine.TxProcessed(k)
+				te.engine.EndBlock(one, midPrice, positionFactor)
 			}
 
-			te.engine.CalculateSLAPenalties(epochEnd)
-
-			sla := te.engine.GetSLAPenalties()[party]
+			penalties := te.engine.CalculateSLAPenalties(epochEnd)
+			sla := penalties.PenaltiesPerParty[party]
 
 			fmt.Printf("actual penalty: %s, expected penalty: %s \n", sla.Bond, tC.expectedPenalty)
 			require.True(t, sla.Bond.Equal(tC.expectedPenalty))

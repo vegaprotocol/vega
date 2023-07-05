@@ -1,27 +1,28 @@
 package liquidity
 
 import (
-	"encoding/binary"
-	"math/rand"
+	"context"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/num"
 )
 
-// TODO karel - real Tendermint txs should be used.
-type TX struct {
-	ID string
-}
-
-func (t TX) Hash() []byte {
-	return crypto.Hash([]byte(t.ID))
-}
-
 // ResetSLAEpoch should be called at the beginning of epoch to reset per epoch performance calculations.
-func (e *Engine) ResetSLAEpoch(now time.Time) {
+// Returns a newly added/amended liquidity provisions (pending provisions are automatically applied and the start of a new epoch).
+func (e *Engine) ResetSLAEpoch(
+	ctx context.Context,
+	now time.Time,
+	markPrice *num.Uint,
+	midPrice *num.Uint,
+	positionFactor num.Decimal,
+) {
+	if e.auctionState.IsOpeningAuction() {
+		return
+	}
+
 	for party, commitment := range e.slaPerformance {
-		if e.doesLPMeetsCommitment(party) {
+		if e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor) {
 			commitment.start = now
 		}
 
@@ -31,18 +32,14 @@ func (e *Engine) ResetSLAEpoch(now time.Time) {
 	e.slaEpochStart = now
 }
 
-func (e *Engine) BeginBlock(txs []TX) {
-	e.kSla = e.GenerateKSla(txs)
-}
-
-func (e *Engine) TxProcessed(txCount int) {
+func (e *Engine) EndBlock(markPrice *num.Uint, midPrice *num.Uint, positionFactor num.Decimal) {
 	// Check if the k transaction has been processed
-	if e.kSla != txCount {
+	if e.auctionState.IsOpeningAuction() {
 		return
 	}
 
 	for party, commitment := range e.slaPerformance {
-		meetsCommitment := e.doesLPMeetsCommitment(party)
+		meetsCommitment := e.doesLPMeetsCommitment(party, markPrice, midPrice, positionFactor)
 
 		// if LP started meeting commitment
 		if meetsCommitment {
@@ -61,11 +58,13 @@ func (e *Engine) TxProcessed(txCount int) {
 }
 
 // CalculateSLAPenalties should be called at the and of epoch to calculate SLA penalties based on LP performance in the epoch.
-func (e *Engine) CalculateSLAPenalties(now time.Time) {
+func (e *Engine) CalculateSLAPenalties(now time.Time) SlaPenalties {
 	observedEpochLength := now.Sub(e.slaEpochStart)
 
-	penaltiesPerParty := map[string]*SlaPenalty{}
+	one := num.DecimalOne()
+	partiesWithFullFeePenaltyCount := 0
 
+	penaltiesPerParty := map[string]*SlaPenalty{}
 	for party, commitment := range e.slaPerformance {
 		if !commitment.start.IsZero() {
 			commitment.s += now.Sub(commitment.start)
@@ -80,56 +79,41 @@ func (e *Engine) CalculateSLAPenalties(now time.Time) {
 		// if LP meets commitment
 		// else LP does not meet commitment
 		if timeBookFraction.LessThan(e.commitmentMinTimeFraction) {
-			feePenalty = num.DecimalOne()
+			feePenalty = one
 			bondPenalty = e.calculateBondPenalty(timeBookFraction)
 		} else {
 			feePenalty = e.calculateCurrentFeePenalty(timeBookFraction)
 			bondPenalty = num.DecimalZero()
 		}
 
-		commitment.allEpochsPenalties = append(commitment.allEpochsPenalties, feePenalty)
-		previousPenalties := commitment.allEpochsPenalties[:len(commitment.allEpochsPenalties)-1]
-
 		penaltiesPerParty[party] = &SlaPenalty{
 			Bond: bondPenalty,
-			Fee:  e.calculateHysteresisFeePenalty(feePenalty, previousPenalties),
+			Fee:  e.calculateHysteresisFeePenalty(feePenalty, commitment.previousPenalties.Slice()),
+		}
+
+		commitment.previousPenalties.Add(&feePenalty)
+
+		if penaltiesPerParty[party].Fee.Equal(one) {
+			partiesWithFullFeePenaltyCount++
 		}
 	}
 
-	e.slaPenalties = penaltiesPerParty
+	return SlaPenalties{
+		AllPartiesHaveFullFeePenalty: partiesWithFullFeePenaltyCount == len(penaltiesPerParty),
+		PenaltiesPerParty:            penaltiesPerParty,
+	}
 }
 
-func (e *Engine) GetSLAPenalties() map[string]*SlaPenalty {
-	return e.slaPenalties
-}
-
-func (e *Engine) getMidPrice() (*num.Uint, error) {
-	bestBid, err := e.orderBook.GetBestStaticBidPrice()
-	if err != nil {
-		return nil, err
-	}
-
-	bestAsk, err := e.orderBook.GetBestStaticAskPrice()
-	if err != nil {
-		return nil, err
-	}
-
-	two := num.NewUint(2)
-	midPrice := num.UintZero()
-	if !bestBid.IsZero() && !bestAsk.IsZero() {
-		midPrice = midPrice.Div(num.Sum(bestBid, bestAsk), two)
-	}
-
-	return midPrice, nil
-}
-
-func (e *Engine) doesLPMeetsCommitment(party string) bool {
+func (e *Engine) doesLPMeetsCommitment(
+	party string,
+	markPrice *num.Uint,
+	midPrice *num.Uint,
+	positionFactor num.Decimal,
+) bool {
 	lp, ok := e.provisions.Get(party)
 	if !ok {
 		return false
 	}
-
-	one := num.DecimalOne()
 
 	var minPrice, maxPrice num.Decimal
 	if e.auctionState.InAuction() {
@@ -137,38 +121,43 @@ func (e *Engine) doesLPMeetsCommitment(party string) bool {
 		maxPriceFactor := num.Max(e.orderBook.GetLastTradedPrice(), e.orderBook.GetIndicativePrice()).ToDecimal()
 
 		// (1.0-market.liquidity.priceRange) x min(last trade price, indicative uncrossing price)
-		minPrice = one.Sub(e.priceRange).Mul(minPriceFactor)
+		minPrice = e.openMinusPriceRange.Mul(minPriceFactor)
 		// (1.0+market.liquidity.priceRange) x max(last trade price, indicative uncrossing price)
-		maxPrice = one.Add(e.priceRange).Mul(maxPriceFactor)
+		maxPrice = e.openPlusPriceRange.Mul(maxPriceFactor)
 	} else {
-		mid, err := e.getMidPrice()
 		// if there is no mid price then LP is not meeting their committed volume of notional.
-		if err != nil || mid.IsZero() {
+		if midPrice.IsZero() {
 			return false
 		}
-
-		midD := mid.ToDecimal()
+		midD := midPrice.ToDecimal()
 		// (1.0 - market.liquidity.priceRange) x mid
-		minPrice = one.Sub(e.priceRange).Mul(midD)
+		minPrice = e.openMinusPriceRange.Mul(midD)
 		// (1.0 + market.liquidity.priceRange) x mid
-		maxPrice = one.Add(e.priceRange).Mul(midD)
+		maxPrice = e.openPlusPriceRange.Mul(midD)
 	}
 
-	notionalVolume := num.DecimalZero()
+	notionalVolumeBuys := num.DecimalZero()
+	notionalVolumeSells := num.DecimalZero()
 	orders := e.getAllActiveOrders(party)
 
 	for _, o := range orders {
 		price := o.Price.ToDecimal()
 		// this order is in range and does contribute to the volume on notional
 		if price.GreaterThanOrEqual(minPrice) && price.LessThanOrEqual(maxPrice) {
-			orderVolume := num.NewUint(o.TrueRemaining()).ToDecimal()
+			orderVolume := num.UintZero().Mul(markPrice, num.NewUint(o.TrueRemaining())).ToDecimal().Div(positionFactor)
 
-			notionalVolume = notionalVolume.Add(orderVolume)
+			if o.Side == types.SideSell {
+				notionalVolumeSells = notionalVolumeSells.Add(orderVolume)
+			} else {
+				notionalVolumeBuys = notionalVolumeBuys.Add(orderVolume)
+			}
 		}
 	}
 
 	requiredLiquidity := e.stakeToCcyVolume.Mul(lp.CommitmentAmount.ToDecimal())
-	return notionalVolume.GreaterThanOrEqual(requiredLiquidity)
+
+	return notionalVolumeBuys.GreaterThanOrEqual(requiredLiquidity) &&
+		notionalVolumeSells.GreaterThanOrEqual(requiredLiquidity)
 }
 
 func (e *Engine) calculateCurrentFeePenalty(timeBookFraction num.Decimal) num.Decimal {
@@ -191,43 +180,25 @@ func (e *Engine) calculateBondPenalty(timeBookFraction num.Decimal) num.Decimal 
 	return num.MaxD(num.DecimalZero(), min)
 }
 
-func (e *Engine) calculateHysteresisFeePenalty(currentPenalty num.Decimal, previousPenalties []num.Decimal) num.Decimal {
-	l := len(previousPenalties)
-	if l < 1 {
+func (e *Engine) calculateHysteresisFeePenalty(currentPenalty num.Decimal, previousPenalties []*num.Decimal) num.Decimal {
+	one := num.DecimalOne()
+	previousPenaltiesCount := num.DecimalZero()
+	periodAveragePenalty := num.DecimalZero()
+
+	for _, p := range previousPenalties {
+		if p == nil {
+			continue
+		}
+
+		periodAveragePenalty = periodAveragePenalty.Add(*p)
+		previousPenaltiesCount = previousPenaltiesCount.Add(one)
+	}
+
+	if previousPenaltiesCount.IsZero() {
 		return currentPenalty
 	}
 
-	// Select window windowStart for hysteresis period
-	windowStart := l - int(e.performanceHysteresisEpochs)
-	if windowStart < 0 {
-		windowStart = 0
-	}
-
-	periodAveragePenalty := num.DecimalZero()
-	for _, p := range previousPenalties[windowStart:] {
-		periodAveragePenalty = periodAveragePenalty.Add(p)
-	}
-
-	// Window length <= performanceHysteresisEpochs - we want to get arithmetic average.
-	windowLen := num.DecimalFromFloat(float64(len(previousPenalties[windowStart:])))
-
-	periodAveragePenalty = periodAveragePenalty.Div(windowLen)
+	periodAveragePenalty = periodAveragePenalty.Div(previousPenaltiesCount)
 
 	return num.MaxD(currentPenalty, periodAveragePenalty)
-}
-
-func (e *Engine) GenerateKSla(txs []TX) int {
-	bytes := []byte{}
-	for _, tx := range txs {
-		bytes = append(bytes, tx.Hash()...)
-	}
-
-	hash := crypto.Hash(bytes)
-	seed := binary.BigEndian.Uint64(hash)
-
-	rand.Seed(int64(seed))
-
-	min := 1
-	max := len(txs)
-	return rand.Intn(max-min+1) + min
 }

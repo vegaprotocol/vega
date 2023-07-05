@@ -2977,6 +2977,7 @@ func TestClearSpotMarket(t *testing.T) {
 func TestCreateSpotMarketAccounts(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	err := eng.CreateSpotMarketAccounts(context.Background(), testMarketID, "BTC")
 	require.NoError(t, err)

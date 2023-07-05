@@ -194,4 +194,11 @@ const (
 	TransferTypeSpot                       TransferType = proto.TransferType_TRANSFER_TYPE_SPOT
 	TransferTypeHoldingAccount             TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_LOCK
 	TransferTypeReleaseHoldingAccount      TransferType = proto.TransferType_TRANSFER_TYPE_HOLDING_RELEASE
+	// Liquidity fees.
+	TransferTypeLiquidityFeeAllocate          TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE
+	TransferTypeLiquidityFeeNetDistribute     TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_NET_DISTRIBUTE
+	TransferTypeSLAPenaltyBondApply           TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PENALTY_BOND_APPLY
+	TransferTypeSLAPenaltyLpFeeApply          TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY
+	TransferTypeLiquidityFeeUnpaidCollect     TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT
+	TransferTypeSlaPerformanceBonusDistribute TransferType = proto.TransferType_TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE
 )
