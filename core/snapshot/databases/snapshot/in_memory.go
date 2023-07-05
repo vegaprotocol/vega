@@ -1,20 +1,20 @@
 package snapshot
 
 import (
-	db "github.com/tendermint/tm-db"
+	cometbftdb "github.com/cometbft/cometbft-db"
 )
 
 type InMemoryDatabase struct {
-	*db.MemDB
+	*cometbftdb.MemDB
 }
 
 func (d *InMemoryDatabase) Clear() error {
-	d.MemDB = db.NewMemDB()
+	d.MemDB = cometbftdb.NewMemDB()
 	return nil
 }
 
 func NewInMemoryDatabase() *InMemoryDatabase {
 	return &InMemoryDatabase{
-		MemDB: db.NewMemDB(),
+		MemDB: cometbftdb.NewMemDB(),
 	}
 }

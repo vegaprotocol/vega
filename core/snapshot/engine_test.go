@@ -25,11 +25,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	db "github.com/tendermint/tm-db"
 )
 
 type tstEngine struct {
@@ -107,7 +107,7 @@ func getPopulatedTree(t *testing.T) *iavl.MutableTree {
 		},
 	}
 
-	tree, err := iavl.NewMutableTree(db.NewMemDB(), 0, false)
+	tree, err := iavl.NewMutableTree(cometbftdb.NewMemDB(), 0, false)
 	tree.Load()
 	require.NoError(t, err)
 
@@ -159,7 +159,7 @@ func testTreeExportImport(t *testing.T) {
 	// via TM to the node restoring from a snapshot
 
 	// Make a new tree waiting to import the snapshot
-	importedTree, err := iavl.NewMutableTree(db.NewMemDB(), 0, false)
+	importedTree, err := iavl.NewMutableTree(cometbftdb.NewMemDB(), 0, false)
 	importedTree.Load()
 	require.NoError(t, err)
 
