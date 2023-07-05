@@ -1742,16 +1742,26 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			// anyway...
 			nm := voteClosed.NewMarket()
 			if nm.Rejected() {
-				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil {
+				// RejectMarket can return an error if the proposed successor market was rejected because its parent
+				// was already rejected
+				if err := app.exec.RejectMarket(ctx, prop.ID); err != nil && !prop.IsSuccessorMarket() {
 					app.log.Panic("unable to reject market",
 						logging.String("market-id", prop.ID),
 						logging.Error(err))
 				}
 			} else if nm.StartAuction() {
-				if err := app.exec.StartOpeningAuction(ctx, prop.ID); err != nil {
-					app.log.Panic("unable to start market opening auction",
-						logging.String("market-id", prop.ID),
-						logging.Error(err))
+				err := app.exec.StartOpeningAuction(ctx, prop.ID)
+				if err != nil {
+					if prop.IsSuccessorMarket() {
+						app.log.Warn("parent market was already succeeded, market rejected",
+							logging.String("market-id", prop.ID),
+						)
+						prop.FailWithErr(types.ProposalErrorInvalidSuccessorMarket, ErrParentMarketAlreadySucceeded)
+					} else {
+						app.log.Panic("unable to start market opening auction",
+							logging.String("market-id", prop.ID),
+							logging.Error(err))
+					}
 				}
 			}
 		}
