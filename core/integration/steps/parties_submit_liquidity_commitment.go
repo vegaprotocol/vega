@@ -78,7 +78,20 @@ func PartiesSubmitLiquidityCommitment(exec Execution, table *godog.Table) error 
 			return errors.New("party for LP not found")
 		}
 
-		if lp.LpType == "submission" {
+		if lp.LpType == "amendment" {
+			// TODO: Check the type when SLA is merged
+			lpa := &types.LiquidityProvisionAmendment{
+				MarketID:         lp.MarketID,
+				CommitmentAmount: lp.CommitmentAmount,
+				Fee:              lp.Fee,
+				Reference:        lp.Reference,
+			}
+
+			err := exec.AmendLiquidityProvision(context.Background(), lpa, party)
+			if ceerr := checkExpectedError(errRow, err, errAmendingLiquidityProvision(lpa, party, err)); ceerr != nil {
+				return ceerr
+			}
+		} else if lp.LpType == "submission" {
 			// TODO: Check the type when SLA is merged
 			sub := &types.LiquidityProvisionSubmission{
 				MarketID:         lp.MarketID,
@@ -89,6 +102,15 @@ func PartiesSubmitLiquidityCommitment(exec Execution, table *godog.Table) error 
 			deterministicID := hex.EncodeToString(crypto.Hash([]byte(id + party + lp.MarketID)))
 			err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, deterministicID)
 			if ceerr := checkExpectedError(errRow, err, errSubmittingLiquidityProvision(sub, party, id, err)); ceerr != nil {
+				return ceerr
+			}
+		} else if lp.LpType == "cancellation" {
+			// TODO: Check the type when SLA is merged
+			cancel := types.LiquidityProvisionCancellation{
+				MarketID: lp.MarketID,
+			}
+			err := exec.CancelLiquidityProvision(context.Background(), &cancel, party)
+			if ceerr := checkExpectedError(errRow, err, errCancelLiquidityProvision(party, lp.MarketID, err)); ceerr != nil {
 				return ceerr
 			}
 		}
