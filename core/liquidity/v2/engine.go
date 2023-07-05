@@ -79,14 +79,20 @@ type StateVarEngine interface {
 
 type AuctionState interface {
 	InAuction() bool
+	IsOpeningAuction() bool
 }
 
 type TargetStateFunc func() *num.Uint
 
 type slaPerformance struct {
-	s                  time.Duration
-	start              time.Time
-	allEpochsPenalties []num.Decimal
+	s                 time.Duration
+	start             time.Time
+	previousPenalties *sliceRing[*num.Decimal]
+}
+
+type SlaPenalties struct {
+	AllPartiesHaveFullFeePenalty bool
+	PenaltiesPerParty            map[string]*SlaPenalty
 }
 
 type SlaPenalty struct {
@@ -104,7 +110,8 @@ type Engine struct {
 	auctionState   AuctionState
 
 	// state
-	provisions *SnapshotableProvisionsPerParty
+	provisions        *SnapshotableProvisionsPerParty
+	pendingProvisions PendingProvision
 
 	// this is the max fee that can be specified
 	maxFee num.Decimal
@@ -113,24 +120,21 @@ type Engine struct {
 	avgScores map[string]num.Decimal
 	nAvg      int64 // counter for the liquidity score running average
 
-	getTargetStake TargetStateFunc
-
 	// sla related net params
 	stakeToCcyVolume               num.Decimal
-	priceRange                     num.Decimal
 	commitmentMinTimeFraction      num.Decimal
 	slaCompetitionFactor           num.Decimal
 	nonPerformanceBondPenaltySlope num.Decimal
 	nonPerformanceBondPenaltyMax   num.Decimal
 
+	openPlusPriceRange  num.Decimal
+	openMinusPriceRange num.Decimal
+
 	performanceHysteresisEpochs uint
 
 	// fields related to SLA commitment
 	slaPerformance map[string]*slaPerformance
-	slaPenalties   map[string]*SlaPenalty
-	kSla           int
-
-	slaEpochStart time.Time
+	slaEpochStart  time.Time
 }
 
 // NewEngine returns a new Liquidity Engine.
@@ -157,6 +161,9 @@ func NewEngine(config Config,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+
+	one := num.DecimalOne()
+
 	e := &Engine{
 		marketID:    marketID,
 		log:         log,
@@ -171,15 +178,15 @@ func NewEngine(config Config,
 		maxFee: num.DecimalFromInt64(1),
 
 		// provisions related state
-		provisions: newSnapshotableProvisionsPerParty(),
-
-		getTargetStake: getTargetStake,
+		provisions:        newSnapshotableProvisionsPerParty(),
+		pendingProvisions: map[string]*types.LiquidityProvision{},
 
 		// SLA commitment
 		slaPerformance: map[string]*slaPerformance{},
 
 		stakeToCcyVolume:               stakeToCcyVolume,
-		priceRange:                     priceRange,
+		openPlusPriceRange:             one.Add(priceRange),
+		openMinusPriceRange:            one.Sub(priceRange),
 		commitmentMinTimeFraction:      commitmentMinTimeFraction,
 		slaCompetitionFactor:           slaCompetitionFactor,
 		nonPerformanceBondPenaltySlope: nonPerformanceBondPenaltySlope,
@@ -192,27 +199,24 @@ func NewEngine(config Config,
 }
 
 // SubmitLiquidityProvision handles a new liquidity provision submission.
-// It's used to create, update or delete a LiquidityProvision.
-// The LiquidityProvision is created if submitted for the first time, updated if a
-// previous one was created for the same PartyId or deleted (if exists) when
-// the CommitmentAmount is set to 0.
+// Returns whether or not submission has been applied immediately.
 func (e *Engine) SubmitLiquidityProvision(
 	ctx context.Context,
 	lps *types.LiquidityProvisionSubmission,
 	party string,
 	idgen IDGen,
-) error {
+) (bool, error) {
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, idgen.NextID())
-		return err
+		return false, err
 	}
 
 	if foundLp := e.LiquidityProvisionByPartyID(party); foundLp != nil {
-		return ErrLiquidityProvisionAlreadyExists
+		return false, ErrLiquidityProvisionAlreadyExists
 	}
 
 	now := e.timeService.GetTimeNow().UnixNano()
-	lp := &types.LiquidityProvision{
+	provision := &types.LiquidityProvision{
 		ID:               idgen.NextID(),
 		MarketID:         lps.MarketID,
 		Party:            party,
@@ -225,11 +229,60 @@ func (e *Engine) SubmitLiquidityProvision(
 		UpdatedAt:        now,
 	}
 
-	e.provisions.Set(party, lp)
-	e.slaPerformance[party] = &slaPerformance{}
+	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
 
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-	return nil
+	// add immediately during the opening auction
+	// otherwise schedule to be added at the beginning of new epoch
+	if e.auctionState.IsOpeningAuction() {
+		e.provisions.Set(party, provision)
+		e.slaPerformance[party] = &slaPerformance{
+			previousPenalties: NewSliceRing[*num.Decimal](e.performanceHysteresisEpochs),
+		}
+		return true, nil
+	}
+
+	provision.Status = types.LiquidityProvisionStatusPending
+	e.pendingProvisions[party] = provision
+	return false, nil
+}
+
+func (e *Engine) ApplyPendingProvisions(ctx context.Context, now time.Time) map[string]*types.LiquidityProvision {
+	updatedProvisionsPerParty := make(map[string]*types.LiquidityProvision, len(e.pendingProvisions))
+
+	for _, party := range e.pendingProvisions.sortedKeys() {
+		provision := e.pendingProvisions[party]
+		updatedProvisionsPerParty[party] = provision
+		provision.UpdatedAt = now.UnixNano()
+
+		// if commitment was reduced to 0, all party provision related data can be deleted
+		// otherwise we apply the new commitment
+		if provision.CommitmentAmount.IsZero() {
+			provision.Status = types.LiquidityProvisionStatusStopped
+			e.destroyProvision(party)
+		} else {
+			provision.Status = types.LiquidityProvisionStatusActive
+			e.provisions.Set(party, provision)
+			if _, ok := e.slaPerformance[party]; !ok {
+				e.slaPerformance[party] = &slaPerformance{
+					previousPenalties: NewSliceRing[*num.Decimal](e.performanceHysteresisEpochs),
+				}
+			}
+		}
+
+		e.broker.Send(events.NewLiquidityProvisionEvent(ctx, provision))
+	}
+
+	e.pendingProvisions = map[string]*types.LiquidityProvision{}
+	return updatedProvisionsPerParty
+}
+
+func (e *Engine) PendingProvisionByPartyID(party string) *types.LiquidityProvision {
+	provision := e.pendingProvisions[party]
+	return provision
+}
+
+func (e *Engine) PendingProvision() map[string]*types.LiquidityProvision {
+	return e.pendingProvisions
 }
 
 // RejectLiquidityProvision removes a parties commitment of liquidity.
@@ -288,10 +341,15 @@ func (e *Engine) stopLiquidityProvision(
 	lp.UpdatedAt = now
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 
-	// now delete all stuff
+	// now delete all party related data stuff
+	e.destroyProvision(party)
+	return nil
+}
+
+func (e *Engine) destroyProvision(party string) {
 	e.provisions.Delete(party)
 	delete(e.slaPerformance, party)
-	return nil
+	delete(e.pendingProvisions, party)
 }
 
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
@@ -327,13 +385,57 @@ func (e *Engine) LiquidityProvisionByPartyID(partyID string) *types.LiquidityPro
 	return lp
 }
 
-// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
-func (e *Engine) CalculateSuppliedStake() *num.Uint {
-	ss := num.UintZero()
-	for _, v := range e.provisions.ProvisionsPerParty {
-		ss.AddSum(v.CommitmentAmount)
+// UpdatePartyCommitment allows to change party commitment.
+// It should be used for synchronizing commitment with bond account.
+func (e *Engine) UpdatePartyCommitment(partyID string, newCommitment *num.Uint) (*types.LiquidityProvision, error) {
+	lp, ok := e.provisions.Get(partyID)
+	if !ok {
+		return nil, ErrLiquidityProvisionDoesNotExist
 	}
-	return ss
+
+	lp.CommitmentAmount = newCommitment.Clone()
+
+	e.provisions.Set(partyID, lp)
+
+	return lp, nil
+}
+
+// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
+// Includes pending commitment if they are greater then the original one.
+func (e *Engine) CalculateSuppliedStake() *num.Uint {
+	supplied := num.UintZero()
+
+	for party, pending := range e.pendingProvisions {
+		provision, ok := e.provisions.Get(party)
+		if ok && pending.CommitmentAmount.LT(provision.CommitmentAmount) {
+			supplied.AddSum(provision.CommitmentAmount)
+			continue
+		}
+		supplied.AddSum(pending.CommitmentAmount)
+	}
+
+	for party, provision := range e.provisions.ProvisionsPerParty {
+		_, ok := e.pendingProvisions[party]
+		if ok {
+			continue
+		}
+
+		supplied.AddSum(provision.CommitmentAmount)
+	}
+
+	return supplied
+}
+
+// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
+// Dost not include pending commitments.
+func (e *Engine) CalculateSuppliedStakeWithoutPending() *num.Uint {
+	supplied := num.UintZero()
+
+	for _, provision := range e.provisions.ProvisionsPerParty {
+		supplied.AddSum(provision.CommitmentAmount)
+	}
+
+	return supplied
 }
 
 func (e *Engine) IsPoTInitialised() bool {
@@ -365,7 +467,9 @@ func (e *Engine) OnStakeToCcyVolumeUpdate(stakeToCcyVolume num.Decimal) {
 }
 
 func (e *Engine) OnPriceRangeUpdate(priceRange num.Decimal) {
-	e.priceRange = priceRange
+	one := num.DecimalOne()
+	e.openPlusPriceRange = one.Add(priceRange)
+	e.openMinusPriceRange = one.Sub(priceRange)
 }
 
 func (e *Engine) OnCommitmentMinTimeFractionUpdate(commitmentMinTimeFraction num.Decimal) {
@@ -386,4 +490,8 @@ func (e *Engine) OnNonPerformanceBondPenaltyMaxUpdate(nonPerformanceBondPenaltyM
 
 func (e *Engine) OnPerformanceHysteresisEpochsUpdate(performanceHysteresisEpochs uint) {
 	e.performanceHysteresisEpochs = performanceHysteresisEpochs
+
+	for _, performance := range e.slaPerformance {
+		performance.previousPenalties.ModifySize(e.performanceHysteresisEpochs)
+	}
 }

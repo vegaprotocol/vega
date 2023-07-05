@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 
-	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
 )
 
@@ -31,21 +30,37 @@ func (e *Engine) AmendLiquidityProvision(
 		return err
 	}
 
-	// LP exists, checked in the previous func
+	// LP exists, checked in the previous func.
 	lp, _ := e.provisions.Get(party)
+	updatedLp := e.createAmendedProvision(lp, lpa)
 
-	// update the LP
-	lp.UpdatedAt = e.timeService.GetTimeNow().UnixNano()
-	lp.CommitmentAmount = lpa.CommitmentAmount.Clone()
-	lp.Fee = lpa.Fee
-	lp.Reference = lpa.Reference
+	// add to pending provision since the change in CommitmentAmount should be reflected at the beginning of next epoch.
+	if lp.CommitmentAmount.NEQ(lpa.CommitmentAmount) {
+		e.pendingProvisions[party] = updatedLp
+		return nil
+	}
 
-	// update version
-	lp.Version++
-
-	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
-	e.provisions.Set(party, lp)
+	// we can update immediately since the commitment amount has not changed.
+	e.provisions.Set(party, updatedLp)
 	return nil
+}
+
+func (e *Engine) createAmendedProvision(
+	currentProvision *types.LiquidityProvision,
+	amendment *types.LiquidityProvisionAmendment,
+) *types.LiquidityProvision {
+	return &types.LiquidityProvision{
+		ID:               currentProvision.ID,
+		MarketID:         currentProvision.MarketID,
+		Party:            currentProvision.Party,
+		CreatedAt:        currentProvision.CreatedAt,
+		Status:           types.LiquidityProvisionStatusActive,
+		Fee:              amendment.Fee,
+		Reference:        amendment.Reference,
+		Version:          currentProvision.Version + 1,
+		CommitmentAmount: amendment.CommitmentAmount.Clone(),
+		UpdatedAt:        e.timeService.GetTimeNow().UnixNano(),
+	}
 }
 
 func (e *Engine) CanAmend(

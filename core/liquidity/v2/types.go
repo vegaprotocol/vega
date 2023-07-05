@@ -129,3 +129,72 @@ func (ords Orders) ByParty() []PartyOrders {
 	})
 	return partyOrders
 }
+
+type PendingProvision map[string]*types.LiquidityProvision
+
+func (p PendingProvision) sortedKeys() []string {
+	keys := make([]string, 0, len(p))
+	for key := range p {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
+}
+
+type sliceRing[T any] struct {
+	s   []T
+	pos int
+}
+
+func NewSliceRing[T any](size uint) *sliceRing[T] {
+	return &sliceRing[T]{
+		s:   make([]T, size),
+		pos: 0,
+	}
+}
+
+func (r *sliceRing[T]) Add(val T) {
+	if len(r.s) == 0 {
+		return
+	}
+
+	r.s[r.pos] = val
+
+	if r.pos == cap(r.s)-1 {
+		r.pos = 0
+		return
+	}
+	r.pos++
+}
+
+func (r *sliceRing[T]) ModifySize(newSize uint) {
+	currentCap := cap(r.s)
+	currentCapUint := uint(currentCap)
+	if currentCapUint == newSize {
+		return
+	}
+
+	newS := make([]T, newSize)
+
+	// decrease
+	if newSize < currentCapUint {
+		newS = r.s[currentCapUint-newSize:]
+		r.s = newS
+		r.pos = 0
+		return
+	}
+
+	// increase
+	for i := 0; i < currentCap; i++ {
+		newS[i] = r.s[i]
+	}
+
+	r.s = newS
+	r.pos = currentCap
+}
+
+func (r sliceRing[T]) Slice() []T {
+	return r.s
+}

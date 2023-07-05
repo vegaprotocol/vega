@@ -15,7 +15,7 @@ package liquidity_test
 import (
 	"testing"
 
-	"code.vegaprotocol.io/vega/core/liquidity"
+	"code.vegaprotocol.io/vega/core/liquidity/v2"
 	"code.vegaprotocol.io/vega/libs/num"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

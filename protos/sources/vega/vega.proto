@@ -781,6 +781,12 @@ enum AccountType {
   // Per asset account for holding in-flight unfilled orders' funds
   ACCOUNT_TYPE_HOLDING = 18;
 
+  // Network controlled liquidity provider's account, per market, to hold accrued liquidity fees.
+  ACCOUNT_TYPE_LP_LIQUIDITY_FEES = 19;
+
+  // Network controlled liquidity fees bonus distribution account, per market.
+  ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION = 20;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -872,6 +878,18 @@ enum TransferType {
   TRANSFER_TYPE_HOLDING_RELEASE = 28;
   // Insurance pool fraction transfer from parent to successor market.
   TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION = 29;
+  // Allocates liquidity fee earnings to each liquidity provider's network controlled liquidity fee account.
+  TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE = 30;
+  // Distributes net fee earnings from liquidity provider's fee account to their general account.
+  TRANSFER_TYPE_LIQUIDITY_FEE_NET_DISTRIBUTE = 31;
+  // Applies SLA penalty by moving funds from party's bond account to market's insurance pool.
+  TRANSFER_TYPE_SLA_PENALTY_BOND_APPLY = 32;
+  // Applies SLA penalty by moving funds from the liquidity provider's fee account to market insurance pool.
+  TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY = 33;
+  // Collects penalties from the liquidity provider's fee account before the fee revenue is paid, and transfers it to the market's bonus distribution account.
+  TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT = 34;
+  // Distributes performance bonus from market bonus to liquidity provider's general account.
+  TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE = 35;
 }
 
 // Represents a financial transfer within Vega
