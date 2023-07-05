@@ -113,20 +113,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*futu
 	}
 	if em.IsSucceeded {
 		mkt.SetSucceeded()
-		for _, sid := range e.successors[marketConfig.ID] {
-			delete(e.isSuccessor, sid)
-		}
-		delete(e.successors, marketConfig.ID)
-	} else if pid := mkt.GetParentMarketID(); len(pid) > 0 {
-		// parent market is not yet restored or not yet succeeded
-		if pmkt, ok := e.markets[pid]; !ok || !pmkt.IsSucceeded() {
-			e.isSuccessor[marketConfig.ID] = pid
-			c, ok := e.successors[pid]
-			if !ok {
-				c = []string{}
-			}
-			e.successors[pid] = append(c, marketConfig.ID)
-		}
 	}
 
 	e.markets[marketConfig.ID] = mkt
@@ -173,6 +159,16 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 	// ensure the states are sorted
 	sort.SliceStable(cpStates, func(i, j int) bool {
 		return cpStates[i].Market.ID > cpStates[j].Market.ID
+	})
+	successors := make([]*types.Successors, 0, len(e.successors))
+	for pid, ids := range e.successors {
+		successors = append(successors, &types.Successors{
+			ParentMarket:     pid,
+			SuccessorMarkets: ids,
+		})
+	}
+	sort.SliceStable(successors, func(i, j int) bool {
+		return successors[i].ParentMarket > successors[j].ParentMarket
 	})
 
 	pl := types.Payload{
@@ -226,10 +222,20 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 			cpy := m
 			e.marketCPStates[m.Market.ID] = cpy
 		}
+		e.restoreSuccessorMaps(pl.ExecutionMarkets.Successors)
 		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
 		return providers, err
 	default:
 		return nil, types.ErrUnknownSnapshotType
+	}
+}
+
+func (e *Engine) restoreSuccessorMaps(successors []*types.Successors) {
+	for _, suc := range successors {
+		e.successors[suc.ParentMarket] = suc.SuccessorMarkets
+		for _, s := range suc.SuccessorMarkets {
+			e.isSuccessor[s] = suc.ParentMarket
+		}
 	}
 }
 
