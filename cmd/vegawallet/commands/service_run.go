@@ -727,6 +727,8 @@ func yesOrNo(ctx context.Context, controlCh <-chan error, question *printer.Form
 				return
 			}
 
+			answer = strings.ToLower(answer)
+
 			switch answer {
 			case "yes", "y":
 				choiceCh <- true
@@ -768,8 +770,7 @@ func readString(reader cancelreader.CancelReader) (string, error) {
 		}
 	}
 
-	line = strings.ToLower(strings.Trim(line, " \r\n\t"))
-	return line, nil
+	return strings.Trim(line, " \r\n\t"), nil
 }
 
 // ensureNotRunningInMsys verifies if the underlying shell is not running on
