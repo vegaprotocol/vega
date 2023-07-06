@@ -27,6 +27,7 @@
 - [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
 - [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
+- [8592](https://github.com/vegaprotocol/vega/issues/8592) - Remove oracle data current state table 
 - [8398](https://github.com/vegaprotocol/vega/issues/8398) - Implement iceberg orders in data node
 - [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core

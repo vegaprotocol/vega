@@ -53,10 +53,10 @@ func (od *OracleData) Add(ctx context.Context, oracleData *entities.OracleData) 
 	return nil
 }
 
-func (od *OracleData) GetOracleDataBySpecID(ctx context.Context, id string, pagination entities.Pagination) ([]entities.OracleData, entities.PageInfo, error) {
+func (od *OracleData) ListOracleData(ctx context.Context, id string, pagination entities.Pagination) ([]entities.OracleData, entities.PageInfo, error) {
 	switch p := pagination.(type) {
 	case entities.CursorPagination:
-		return getOracleDataBySpecIDCursorPagination(ctx, od.Connection, id, p)
+		return listOracleDataBySpecIDCursorPagination(ctx, od.Connection, id, p)
 	default:
 		panic("unsupported pagination")
 	}
@@ -98,7 +98,7 @@ func scannedDataToOracleData(scanned []entities.Data) []entities.OracleData {
 	return oracleData
 }
 
-func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection, id string, pagination entities.CursorPagination) (
+func listOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection, id string, pagination entities.CursorPagination) (
 	[]entities.OracleData, entities.PageInfo, error,
 ) {
 	var (
@@ -110,9 +110,15 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 		err      error
 	)
 
-	specID := entities.SpecID(id)
-	query := fmt.Sprintf(`select %s
+	query := ""
+	if len(id) > 0 {
+		specID := entities.SpecID(id)
+		query = fmt.Sprintf(`select %s
 	from oracle_data where %s = ANY(matched_spec_ids)`, sqlOracleDataColumns, nextBindVar(&bindVars, specID))
+	} else {
+		query = fmt.Sprintf(`select %s
+	from oracle_data`, sqlOracleDataColumns)
+	}
 
 	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
 	if err != nil {
@@ -129,47 +135,4 @@ func getOracleDataBySpecIDCursorPagination(ctx context.Context, conn Connection,
 
 	oracleData, pageInfo = entities.PageEntities[*v2.OracleDataEdge](oracleData, pagination)
 	return oracleData, pageInfo, nil
-}
-
-func (od *OracleData) ListOracleData(ctx context.Context, pagination entities.Pagination) ([]entities.OracleData, entities.PageInfo, error) {
-	switch p := pagination.(type) {
-	case entities.CursorPagination:
-		return listOracleDataCursorPagination(ctx, od.Connection, p)
-	default:
-		panic("unsupported pagination")
-	}
-}
-
-func listOracleDataCursorPagination(ctx context.Context, conn Connection, pagination entities.CursorPagination) (
-	[]entities.OracleData, entities.PageInfo, error,
-) {
-	var (
-		data       []entities.Data
-		oracleData []entities.OracleData
-		pageInfo   entities.PageInfo
-		bindVars   []interface{}
-		err        error
-	)
-
-	query := selectOracleData()
-
-	query, bindVars, err = PaginateQuery[entities.OracleDataCursor](query, bindVars, oracleDataOrdering, pagination)
-	if err != nil {
-		return oracleData, pageInfo, err
-	}
-
-	defer metrics.StartSQLQuery("OracleData", "ListOracleData")()
-	// NOTE: If any error during the scan occurred, we return empty oracle data object.
-	if err = pgxscan.Select(ctx, conn, &data, query, bindVars...); err != nil {
-		return oracleData, pageInfo, err
-	}
-
-	oracleData = scannedDataToOracleData(data)
-	oracleData, pageInfo = entities.PageEntities[*v2.OracleDataEdge](oracleData, pagination)
-	return oracleData, pageInfo, nil
-}
-
-func selectOracleData() string {
-	return fmt.Sprintf(`select %s
-from oracle_data_current`, sqlOracleDataColumns)
 }

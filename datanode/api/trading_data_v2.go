@@ -1802,11 +1802,9 @@ func (t *TradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 		pageInfo entities.PageInfo
 	)
 
-	if oracleSpecID := ptr.UnBox(req.OracleSpecId); oracleSpecID != "" {
-		data, pageInfo, err = t.oracleDataService.GetOracleDataBySpecID(ctx, oracleSpecID, pagination)
-	} else {
-		data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, pagination)
-	}
+	oracleSpecID := ptr.UnBox(req.OracleSpecId)
+	data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, oracleSpecID, pagination)
+
 	if err != nil {
 		return nil, formatE(ErrOracleDataServiceGet, err)
 	}
