@@ -282,6 +282,13 @@ func TestValidMarketSnapshot(t *testing.T) {
 	err := engine.SubmitMarket(ctx, marketConfig, "", time.Now())
 	assert.NoError(t, err)
 
+	// submit successor
+	marketConfig2 := getMarketConfig()
+	marketConfig2.ParentMarketID = marketConfig.ID
+	marketConfig2.InsurancePoolFraction = num.DecimalOne()
+	err = engine.SubmitMarket(ctx, marketConfig2, "", time.Now())
+	assert.NoError(t, err)
+
 	keys := engine.Keys()
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
@@ -300,8 +307,17 @@ func TestValidMarketSnapshot(t *testing.T) {
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(b, snap)
 	assert.NoError(t, err)
+
+	// check expected successors are in there
+	tt, ok := snap.Data.(*snapshot.Payload_ExecutionMarkets)
+	require.True(t, ok)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors))
+	require.Equal(t, marketConfig.ID, tt.ExecutionMarkets.Successors[0].ParentMarket)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors[0].SuccessorMarkets))
+	require.Equal(t, marketConfig2.ID, tt.ExecutionMarkets.Successors[0].SuccessorMarkets[0])
+
 	loadStateProviders, err := engine2.LoadState(ctx, types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 5)
+	assert.Len(t, loadStateProviders, 10)
 	assert.NoError(t, err)
 
 	providerMap := map[string]map[string]types.StateProvider{}
@@ -316,6 +332,16 @@ func TestValidMarketSnapshot(t *testing.T) {
 	state2, _, err := engine2.GetState(key)
 	assert.NoError(t, err)
 	assert.True(t, bytes.Equal(b, state2))
+
+	snap = &snapshot.Payload{}
+	err = proto.Unmarshal(b, snap)
+	assert.NoError(t, err)
+	tt, ok = snap.Data.(*snapshot.Payload_ExecutionMarkets)
+	require.True(t, ok)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors))
+	require.Equal(t, marketConfig.ID, tt.ExecutionMarkets.Successors[0].ParentMarket)
+	require.Equal(t, 1, len(tt.ExecutionMarkets.Successors[0].SuccessorMarkets))
+	require.Equal(t, marketConfig2.ID, tt.ExecutionMarkets.Successors[0].SuccessorMarkets[0])
 
 	// now load the providers state
 	for _, p := range providers {
@@ -335,6 +361,10 @@ func TestValidMarketSnapshot(t *testing.T) {
 			assert.True(t, bytes.Equal(b, b2))
 		}
 	}
+
+	m2, ok := engine2.GetMarket(marketConfig2.ID, false)
+	require.True(t, ok)
+	require.NotEmpty(t, marketConfig2.ParentMarketID, m2.ParentMarketID)
 }
 
 func TestValidSettledMarketSnapshot(t *testing.T) {

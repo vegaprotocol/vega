@@ -176,6 +176,7 @@ func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, 
 			ExecutionMarkets: &types.ExecutionMarkets{
 				Markets:        mkts,
 				SettledMarkets: cpStates,
+				Successors:     successors,
 			},
 		},
 	}
