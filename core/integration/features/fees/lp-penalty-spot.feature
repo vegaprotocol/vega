@@ -56,3 +56,40 @@ Scenario: If a liquidity provider has fraction_of_time_on_book >= market.liquidi
     
     # penalties are deposited in to the network treasury of the asset
     And the network treasury balance should be "0" for the asset "ETH"
+
+Scenario: If a liquidity provider has fraction_of_time_on_book = 0.3, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 35% of their bond stake, which will be transferred into the network treasury (0044-LIME-014)
+
+    Given the following network parameters are set:
+      | name                                        | value |
+    #   | market.liquidity.committmentMinTimeFraction | 0.6   | commented until param is in spot-execution branch
+      | network.markPriceUpdateMaximumFrequency     | 0s    |
+    #   | market.liquidity.providers.fee.calculationTimeStep | 10s | commented until param is in spot-execution branch
+    #  | market.liquidity.sla.nonPerformanceBondPenaltySlope | 0.7 |
+    #  | market.liquidity.sla.nonPerformanceBondPenaltyMax | 0.6 |
+    | validators.epoch.length | 10s |
+
+    And the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |
+      | lpprov   | BTC/ETH   | buy  | 100      | 15  | 0                | TYPE_LIMIT | TIF_GTC | lp1-order1  |
+      | lpprov   | BTC/ETH   | sell | 100      | 25  | 0                | TYPE_LIMIT | TIF_GTC | lp1-order2  |
+
+    When the opening auction period ends for market "BTC/ETH"
+    Then the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "BTC/ETH"
+
+    When the network moves ahead "5" blocks 
+    Then the parties cancel the following orders:
+      | party  | reference  |
+      | lpprov | lp1-order1 |
+      | lpprov | lp1-order2 |
+
+    When the network moves ahead "5" blocks
+
+    # update the account balances
+    Then the parties should have the following account balances:
+      | party  | asset | market id | general | bond |
+      | lpprov | ETH   | BTC/ETH   | 498500  | 500  |
+    
+    # penalties are deposited in to the network treasury of the asset
+    #  TODO: update the balance
+    And the network treasury balance should be "100" for the asset "ETH"
+    
