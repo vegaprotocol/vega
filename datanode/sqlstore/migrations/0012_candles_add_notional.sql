@@ -19,7 +19,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT refresh_continuous_aggregate('trades_candle_1_minute', null, null);
+
 SELECT add_continuous_aggregate_policy('trades_candle_1_minute', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
 
 SELECT remove_continuous_aggregate_policy('trades_candle_5_minutes');
@@ -41,7 +41,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT refresh_continuous_aggregate('trades_candle_5_minutes', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_5_minutes', start_offset => INTERVAL '1 day', end_offset => INTERVAL '5 minutes', schedule_interval => INTERVAL '5 minutes');
 
 SELECT remove_continuous_aggregate_policy('trades_candle_15_minutes');
@@ -63,7 +62,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT refresh_continuous_aggregate('trades_candle_15_minutes', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_15_minutes', start_offset => INTERVAL '1 day', end_offset => INTERVAL '15 minutes', schedule_interval => INTERVAL '15 minutes');
 
 SELECT remove_continuous_aggregate_policy('trades_candle_1_hour');
@@ -85,7 +83,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT refresh_continuous_aggregate('trades_candle_1_hour', null, null);
+
 SELECT add_continuous_aggregate_policy('trades_candle_1_hour', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
 
 SELECT remove_continuous_aggregate_policy('trades_candle_6_hours');
@@ -107,7 +105,6 @@ GROUP BY market_id, period_start WITH NO DATA;
 
 -- start_offset is set to a day, as data is append only this does not impact the processing time and ensures
 -- that the CAGG data will be correct on recovery in the event of a transient outage ( < 1 day )
-SELECT refresh_continuous_aggregate('trades_candle_6_hours', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_6_hours', start_offset => INTERVAL '1 day', end_offset => INTERVAL '6 hours', schedule_interval => INTERVAL '6 hours');
 
 SELECT remove_continuous_aggregate_policy('trades_candle_1_day');
@@ -127,7 +124,6 @@ SELECT market_id, time_bucket('1 day', synthetic_time) AS period_start,
 FROM trades
 GROUP BY market_id, period_start WITH NO DATA;
 
-SELECT refresh_continuous_aggregate('trades_candle_1_day', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_1_day', start_offset => INTERVAL '3 days', end_offset => INTERVAL '1 day', schedule_interval => INTERVAL '1 day');
 
 CREATE OR REPLACE VIEW trades_candle_block AS
