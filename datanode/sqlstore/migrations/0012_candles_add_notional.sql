@@ -1,6 +1,6 @@
 -- +goose Up
 
-SELECT remove_continuous_aggregate_policy('trades_candle_1_minute', if_exists := true);
+SELECT remove_continuous_aggregate_policy('trades_candle_1_minute');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_1_minute;
 
 CREATE MATERIALIZED VIEW trades_candle_1_minute
@@ -22,7 +22,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 SELECT refresh_continuous_aggregate('trades_candle_1_minute', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_1_minute', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 minute', schedule_interval => INTERVAL '1 minute');
 
-SELECT remove_continuous_aggregate_policy('trades_candle_5_minutes', if_exists := true);
+SELECT remove_continuous_aggregate_policy('trades_candle_5_minutes');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_5_minutes;
 
 CREATE MATERIALIZED VIEW trades_candle_5_minutes
@@ -44,7 +44,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 SELECT refresh_continuous_aggregate('trades_candle_5_minutes', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_5_minutes', start_offset => INTERVAL '1 day', end_offset => INTERVAL '5 minutes', schedule_interval => INTERVAL '5 minutes');
 
-SELECT remove_continuous_aggregate_policy('trades_candle_15_minutes', if_exists := true);
+SELECT remove_continuous_aggregate_policy('trades_candle_15_minutes');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_15_minutes;
 
 CREATE MATERIALIZED VIEW trades_candle_15_minutes
@@ -66,7 +66,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 SELECT refresh_continuous_aggregate('trades_candle_15_minutes', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_15_minutes', start_offset => INTERVAL '1 day', end_offset => INTERVAL '15 minutes', schedule_interval => INTERVAL '15 minutes');
 
-SELECT remove_continuous_aggregate_policy('trades_candle_1_hour', if_exists := true);
+SELECT remove_continuous_aggregate_policy('trades_candle_1_hour');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_1_hour;
 
 CREATE MATERIALIZED VIEW trades_candle_1_hour
@@ -88,7 +88,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 SELECT refresh_continuous_aggregate('trades_candle_1_hour', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_1_hour', start_offset => INTERVAL '1 day', end_offset => INTERVAL '1 hour', schedule_interval => INTERVAL '1 hour');
 
-SELECT remove_continuous_aggregate_policy('trades_candle_6_hours', if_exists := true);
+SELECT remove_continuous_aggregate_policy('trades_candle_6_hours');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_6_hours;
 
 CREATE MATERIALIZED VIEW trades_candle_6_hours
@@ -110,7 +110,7 @@ GROUP BY market_id, period_start WITH NO DATA;
 SELECT refresh_continuous_aggregate('trades_candle_6_hours', null, null);
 SELECT add_continuous_aggregate_policy('trades_candle_6_hours', start_offset => INTERVAL '1 day', end_offset => INTERVAL '6 hours', schedule_interval => INTERVAL '6 hours');
 
-SELECT remove_continuous_aggregate_policy('trades_candle_1_day', if_exists := true);
+SELECT remove_continuous_aggregate_policy('trades_candle_1_day');
 DROP MATERIALIZED VIEW IF EXISTS trades_candle_1_day;
 
 CREATE MATERIALIZED VIEW trades_candle_1_day
