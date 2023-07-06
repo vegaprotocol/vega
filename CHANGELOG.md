@@ -132,6 +132,7 @@
 - [8630](https://github.com/vegaprotocol/vega/issues/8630) - Fix duplicate stake linking due to `re-org`
 - [8664](https://github.com/vegaprotocol/vega/issues/8664) - Stop order invalid expiry
 - [8643](https://github.com/vegaprotocol/vega/issues/8643) - Handle vote close for pending successor markets.
+- [8665](https://github.com/vegaprotocol/vega/issues/8665) - `Datanode` not persisting stop order events
 - [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
 - [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 
