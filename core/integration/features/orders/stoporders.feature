@@ -1658,7 +1658,12 @@ Scenario: A stop order cannot be triggered by a stop order expiring during an au
     When time is updated to "2019-11-30T00:00:10Z"
     Then the market data for the market "ETH/DEC20" should be:
       | mark price | trading mode            | auction trigger             | horizon | min bound | max bound |
-      | 5000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 4986      | 5014      |
+      | 5010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 4996      | 5024      |
     And the stop orders should have the following states
-      | party  | market id | status           | reference |
-      | party1 | ETH/DEC20 | STATUS_TRIGGERED | stop      |
+      | party  | market id | status         | reference |
+      | party1 | ETH/DEC20 | STATUS_EXPIRED | stop      |
+    # The stop order did not trigger an order as stop expired during an auction
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 1      | 10             | 0            |
+
