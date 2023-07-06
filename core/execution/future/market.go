@@ -1507,13 +1507,15 @@ func (m *Market) stopOrderWouldTriggerAtSubmission(
 		return false
 	}
 
+	lastTradedPrice := m.priceToMarketPrecision(m.getLastTradedPrice())
+
 	switch stopOrder.Trigger.Direction {
 	case types.StopOrderTriggerDirectionFallsBelow:
-		if m.lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
+		if lastTradedPrice.LTE(stopOrder.Trigger.Price()) {
 			return true
 		}
 	case types.StopOrderTriggerDirectionRisesAbove:
-		if m.lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
+		if lastTradedPrice.GTE(stopOrder.Trigger.Price()) {
 			return true
 		}
 	}
@@ -1528,7 +1530,8 @@ func (m *Market) triggerStopOrders(
 		return nil
 	}
 
-	triggered, cancelled := m.stopOrders.PriceUpdated(m.lastTradedPrice)
+	lastTradedPrice := m.priceToMarketPrecision(m.getLastTradedPrice())
+	triggered, cancelled := m.stopOrders.PriceUpdated(lastTradedPrice)
 
 	if len(triggered) <= 0 {
 		return nil
