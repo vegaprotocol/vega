@@ -44,6 +44,10 @@ func (so *StopOrder) Push(ctx context.Context, evt events.Event) error {
 	return so.consume(evt.(StopOrderEvent), evt.Sequence())
 }
 
+func (so *StopOrder) Flush(ctx context.Context) error {
+	return so.store.Flush(ctx)
+}
+
 func (so *StopOrder) consume(evt StopOrderEvent, seqNum uint64) error {
 	protoOrder := evt.StopOrder()
 	stop, err := entities.StopOrderFromProto(protoOrder, so.vegaTime, seqNum, entities.TxHash(evt.TxHash()))
