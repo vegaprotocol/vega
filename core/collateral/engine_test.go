@@ -125,6 +125,64 @@ func TestTransferRewards(t *testing.T) {
 	t.Run("transfer rewards success", testTransferRewardsSuccess)
 }
 
+func TestClearAccounts(t *testing.T) {
+	t.Run("clear fee accounts", testClearFeeAccounts)
+}
+
+func testClearFeeAccounts(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	ctx := context.Background()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	mktID := "market"
+	asset := "ETH"
+	party := "myparty"
+	assetT := types.Asset{
+		ID: asset,
+		Details: &types.AssetDetails{
+			Symbol: asset,
+		},
+	}
+
+	eng.EnableAsset(ctx, assetT)
+	_, _ = eng.GetGlobalRewardAccount(asset)
+	_, _, err := eng.CreateMarketAccounts(ctx, mktID, asset)
+	require.NoError(t, err)
+	general, err := eng.CreatePartyGeneralAccount(ctx, party, asset)
+	require.NoError(t, err)
+
+	_, err = eng.CreatePartyMarginAccount(ctx, party, mktID, asset)
+	require.NoError(t, err)
+
+	// add funds
+	err = eng.UpdateBalance(ctx, general, num.NewUint(10000))
+	assert.Nil(t, err)
+
+	transferFeesReq := transferFees{
+		tfs: []*types.Transfer{
+			{
+				Owner: party,
+				Amount: &types.FinancialAmount{
+					Amount: num.NewUint(1000),
+				},
+				Type:      types.TransferTypeMakerFeePay,
+				MinAmount: num.NewUint(1000),
+			},
+		},
+		tfa: map[string]uint64{party: 1000},
+	}
+
+	transfers, err := eng.TransferFeesContinuousTrading(ctx, mktID, asset, transferFeesReq)
+	assert.NotNil(t, transfers)
+	assert.NoError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
+	assert.Len(t, transfers, 1)
+
+	assert.Equal(t, 1, len(transfers[0].Entries))
+	assert.Equal(t, num.NewUint(9000), transfers[0].Entries[0].FromAccountBalance)
+	assert.Equal(t, num.NewUint(1000), transfers[0].Entries[0].ToAccountBalance)
+	eng.ClearInsurancepool(ctx, mktID, asset, true)
+}
+
 func testTransferRewardsEmptySlice(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.Finish()
