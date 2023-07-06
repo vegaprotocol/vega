@@ -131,6 +131,7 @@
 - [8630](https://github.com/vegaprotocol/vega/issues/8630) - Fix duplicate stake linking due to `re-org`
 - [8664](https://github.com/vegaprotocol/vega/issues/8664) - Stop order invalid expiry
 - [8643](https://github.com/vegaprotocol/vega/issues/8643) - Handle vote close for pending successor markets.
+- [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
 
 ## 0.71.0
 

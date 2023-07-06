@@ -2,9 +2,9 @@ Feature: stop orders
 
   Background:
     Given the markets:
-      | id        | quote name | asset | risk model                  | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
-      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
-      | ETH/DEC20 | BTC        | BTC   | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | id        | quote name | asset | risk model                    | margin calculator         | auction duration | fees         | price monitoring | data source config     | linear slippage factor | quadratic slippage factor |
+      | ETH/DEC19 | BTC        | BTC   | default-simple-risk-model-3   | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future | 1e6                    | 1e6                       |
+      | ETH/DEC20 | BTC        | BTC   | default-log-normal-risk-model | default-margin-calculator | 1                | default-none | default-basic    | default-eth-for-future | 1e-3                   | 0                         |
     And the following network parameters are set:
       | name                                    | value |
       | market.auction.minimumDuration          | 1     |
@@ -1530,3 +1530,140 @@ Scenario: All stop orders for a specific party for a specific market can be canc
       | party1 | ETH/DEC19 | STATUS_CANCELLED | stop2     |
       | party1 | ETH/DEC20 | STATUS_PENDING   | stop3     |
       | party1 | ETH/DEC20 | STATUS_PENDING   | stop4     |
+
+Scenario: A stop order cannot be triggered by orders crossing during an auction. (WIP TEST CASE 2)
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party  | asset | amount     |
+      | party1 | BTC   | 1000000000 |
+      | party2 | BTC   | 1000000000 |
+      | party3 | BTC   | 1000000000 |
+      | aux    | BTC   | 1000000000 |
+      | aux2   | BTC   | 1000000000 |
+      | lpprov | BTC   | 9000000000 |
+
+    When the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp2 | lpprov | ETH/DEC20 | 900000            | 0.1 | sell | ASK              | 50         | 100    | submission |
+
+    # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 100    | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 100    | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound |
+      | 5000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5       | 4993      | 5007      |
+      | 5000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 4986      | 5014      |
+
+    # Open a position for party1
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
+    # Place a stop order
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 5001             |       | stop      |
+    # Trigger a price-monitoring auction
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC20 | buy  | 1      | 5010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC20 | sell | 1      | 5010  | 0                | TYPE_LIMIT | TIF_GTC |
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | horizon | min bound | max bound |
+      | 5000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 10      | 4986      | 5014      |
+    # Check the stop order was not triggered
+    And the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | ETH/DEC20 | STATUS_PENDING | stop      |
+
+    # Update the indicative uncrossing price
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC20 | buy  | 1      | 5011  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC20 | sell | 1      | 5011  | 0                | TYPE_LIMIT | TIF_GTC |
+    # Check the stop order was not triggered
+    And the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | ETH/DEC20 | STATUS_PENDING | stop      |
+
+Scenario: A stop order cannot be triggered by a stop order expiring during an auction. (WIP TEST CASE 2)
+
+    # setup accounts
+    Given time is updated to "2019-11-30T00:00:00Z"
+    And the parties deposit on asset's general account the following amount:
+      | party  | asset | amount   |
+      | party1 | BTC   | 10000    |
+      | party2 | BTC   | 10000    |
+      | party3 | BTC   | 10000    |
+      | aux    | BTC   | 100000   |
+      | aux2   | BTC   | 100000   |
+      | lpprov | BTC   | 90000000 |
+    And the parties submit the following liquidity provision:
+      | id  | party  | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | buy  | BID              | 50         | 100    | submission |
+      | lp1 | lpprov | ETH/DEC20 | 90000000          | 0.1 | sell | ASK              | 50         | 100    | submission |
+    And the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux   | ETH/DEC20 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 1      | 10001 | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC20 | buy  | 5      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux   | ETH/DEC20 | sell | 5      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+    When the opening auction period ends for market "ETH/DEC20"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound |
+      | 5000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 5       | 4993      | 5007      |
+      | 5000       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 4986      | 5014      |
+
+    # Open a position for party1
+    Given the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party1 | ETH/DEC20 | buy  | 1      | 5000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party2 | ETH/DEC20 | sell | 1      | 5000  | 1                | TYPE_LIMIT | TIF_GTC |
+    # Place a stop order which will expire during the auction
+    And the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type        | tif     | only   | ra price trigger | error | so expires in | so expiry strategy     | reference |
+      | party1 | ETH/DEC20 | sell | 1      | 0     | 0                | TYPE_MARKET | TIF_IOC | reduce | 5020             |       | 5             | EXPIRY_STRATEGY_SUBMIT | stop      |
+    # Trigger a price-monitoring auction
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party2 | ETH/DEC20 | buy  | 1      | 5010  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party3 | ETH/DEC20 | sell | 1      | 5010  | 0                | TYPE_LIMIT | TIF_GTC |
+    # Check we have entered an auction
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | horizon | min bound | max bound |
+      | 5000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 10      | 4986      | 5014      |
+    # Check the stop order was not triggered
+    And the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | ETH/DEC20 | STATUS_PENDING | stop      |
+
+    # Update the time to expire the stop order
+    When time is updated to "2019-11-30T00:00:03Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode                    | auction trigger       | horizon | min bound | max bound |
+      | 5000       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE | 10      | 4986      | 5014      |
+    And the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | ETH/DEC20 | STATUS_PENDING | stop      |
+
+    # Update the time to the end of the auction
+    When time is updated to "2019-11-30T00:00:10Z"
+    Then the market data for the market "ETH/DEC20" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound |
+      | 5010       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 10      | 4996      | 5024      |
+    And the stop orders should have the following states
+      | party  | market id | status         | reference |
+      | party1 | ETH/DEC20 | STATUS_EXPIRED | stop      |
+    # The stop order did not trigger an order as stop expired during an auction
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | 1      | 10             | 0            |
+
