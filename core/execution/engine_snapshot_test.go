@@ -334,7 +334,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.True(t, bytes.Equal(b, state2))
 
 	snap = &snapshot.Payload{}
-	err = proto.Unmarshal(b, snap)
+	err = proto.Unmarshal(state2, snap)
 	assert.NoError(t, err)
 	tt, ok = snap.Data.(*snapshot.Payload_ExecutionMarkets)
 	require.True(t, ok)
