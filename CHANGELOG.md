@@ -16,7 +16,7 @@
 
 ### 🐛 Fixes
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8709](https://github.com/vegaprotocol/vega/issues/8709) - Fix stop order enum in data node.
 
 
 ## 0.72.0
