@@ -350,6 +350,11 @@ func NewApp(
 				addDeterministicID(app.DeliverStopOrdersSubmission),
 			),
 		).
+		HandleDeliverTx(txn.StopOrdersCancellationCommand,
+			app.SendTransactionResult(
+				addDeterministicID(app.DeliverStopOrdersCancellation),
+			),
+		).
 		HandleDeliverTx(txn.CancelOrderCommand,
 			app.SendTransactionResult(
 				addDeterministicID(app.DeliverCancelOrder),

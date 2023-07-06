@@ -27,7 +27,7 @@
 - [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
 - [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
 - [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
-- [8592](https://github.com/vegaprotocol/vega/issues/8592) - Remove oracle data current state table 
+- [8592](https://github.com/vegaprotocol/vega/issues/8592) - Remove oracle data current state table
 - [8398](https://github.com/vegaprotocol/vega/issues/8398) - Implement iceberg orders in data node
 - [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
 - [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
@@ -133,6 +133,7 @@
 - [8664](https://github.com/vegaprotocol/vega/issues/8664) - Stop order invalid expiry
 - [8643](https://github.com/vegaprotocol/vega/issues/8643) - Handle vote close for pending successor markets.
 - [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
+- [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 
 ## 0.71.0
 
