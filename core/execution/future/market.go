@@ -3441,6 +3441,36 @@ func (m *Market) removeExpiredStopOrders(
 
 	updatedAt := m.timeService.GetTimeNow()
 
+	if m.as.InAuction() {
+		m.removeExpiredStopOrdersInAuction(ctx, updatedAt, stopOrders)
+		return nil
+	}
+
+	return m.removeExpiredStopOrdersInContinuous(ctx, updatedAt, stopOrders, idgen)
+}
+
+func (m *Market) removeExpiredStopOrdersInAuction(
+	ctx context.Context,
+	updatedAt time.Time,
+	stopOrders []*types.StopOrder,
+) {
+	evts := []events.Event{}
+	for _, v := range stopOrders {
+		v.UpdatedAt = updatedAt
+		v.Status = types.StopOrderStatusExpired
+		// nothing to do, can send the event now
+		evts = append(evts, events.NewStopOrderEvent(ctx, v))
+	}
+
+	m.broker.SendBatch(evts)
+}
+
+func (m *Market) removeExpiredStopOrdersInContinuous(
+	ctx context.Context,
+	updatedAt time.Time,
+	stopOrders []*types.StopOrder,
+	idgen common.IDGenerator,
+) []*types.OrderConfirmation {
 	evts := []events.Event{}
 	filteredOCO := []*types.StopOrder{}
 	for _, v := range stopOrders {
