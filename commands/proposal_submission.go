@@ -808,6 +808,8 @@ func checkNewInstrument(instrument *protoTypes.InstrumentConfiguration, parent s
 	switch product := instrument.Product.(type) {
 	case *protoTypes.InstrumentConfiguration_Future:
 		errs.Merge(checkNewFuture(product.Future))
+	case *protoTypes.InstrumentConfiguration_Perps:
+		errs.Merge(checkNewPerps(product.Perps))
 	case *protoTypes.InstrumentConfiguration_Spot:
 		errs.Merge(checkNewSpot(product.Spot))
 	default:
@@ -863,6 +865,26 @@ func checkNewFuture(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
+func checkNewPerps(perps *protoTypes.PerpsProduct) Errors {
+	errs := NewErrors()
+
+	if perps == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps", ErrIsRequired)
+	}
+
+	if len(perps.SettlementAsset) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset", ErrIsRequired)
+	}
+	if len(perps.QuoteName) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name", ErrIsRequired)
+	}
+
+	errs.Merge(checkDataSourceSpec(perps.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.new_market.changes.instrument.product.perps", true))
+	errs.Merge(checkNewPerpsOracleBinding(perps))
+
+	return errs
+}
+
 func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 	errs := NewErrors()
 
@@ -886,6 +908,24 @@ func checkNewSpot(spot *protoTypes.SpotProduct) Errors {
 }
 
 func checkUpdateFuture(future *protoTypes.UpdateFutureProduct) Errors {
+	errs := NewErrors()
+
+	if future == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future", ErrIsRequired)
+	}
+
+	if len(future.QuoteName) == 0 {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.quote_name", ErrIsRequired)
+	}
+
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForSettlementData, "data_source_spec_for_settlement_data", "proposal_submission.terms.change.update_market.changes.instrument.product.future", true))
+	errs.Merge(checkDataSourceSpec(future.DataSourceSpecForTradingTermination, "data_source_spec_for_trading_termination", "proposal_submission.terms.change.update_market.changes.instrument.product.future", false))
+	errs.Merge(checkUpdateOracleBinding(future))
+
+	return errs
+}
+
+func checkUpdatePerps(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 
 	if future == nil {
@@ -971,7 +1011,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
-
 		case *vegapb.DataSourceDefinitionExternal_EthOracle:
 			ethOracle := tp.External.GetEthOracle()
 
@@ -1007,7 +1046,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 			}
 		}
 	}
-
 	return errs
 }
 
@@ -1124,6 +1162,23 @@ func checkNewOracleBinding(future *protoTypes.FutureProduct) Errors {
 	return errs
 }
 
+func checkNewPerpsOracleBinding(perps *protoTypes.PerpsProduct) Errors {
+	errs := NewErrors()
+	if perps.DataSourceSpecBinding != nil {
+		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+			}
+		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
+	}
+
+	return errs
+}
+
 func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 	errs := NewErrors()
 	if future.DataSourceSpecBinding != nil {
@@ -1144,6 +1199,23 @@ func checkUpdateOracleBinding(future *protoTypes.UpdateFutureProduct) Errors {
 		}
 	} else {
 		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.future.data_source_spec_binding", ErrIsRequired)
+	}
+
+	return errs
+}
+
+func checkUpdatePerpsOracleBinding(perps *protoTypes.UpdatePerpsProduct) Errors {
+	errs := NewErrors()
+	if perps.DataSourceSpecBinding != nil {
+		if len(perps.DataSourceSpecBinding.SettlementDataProperty) == 0 {
+			errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsRequired)
+		} else {
+			if !isBindingMatchingSpec(perps.DataSourceSpecForSettlementData, perps.DataSourceSpecBinding.SettlementDataProperty) {
+				errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property", ErrIsMismatching)
+			}
+		}
+	} else {
+		errs.AddForProperty("proposal_submission.terms.change.update_market.changes.instrument.product.perps.data_source_spec_binding", ErrIsRequired)
 	}
 
 	return errs

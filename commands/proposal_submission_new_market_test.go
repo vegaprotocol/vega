@@ -133,6 +133,34 @@ func TestCheckProposalSubmissionForNewMarket(t *testing.T) {
 	t.Run("Submitting a future market with external data sources for settlement and termination with empty pubKey signer fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyPubKeySignerFails)
 	t.Run("Submitting a future market with external data sources for settlement and termination with empty eth address signer fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthAddressSignerFails)
 	t.Run("Submitting a future market with external data sources for settlement and termination with no signers fail", testFutureMarketSubmissionWithExternalSettlementDataAndTerminationNoSignerFails)
+
+	t.Run("Submitting a perps market change without perps fails", testNewPerpsMarketChangeSubmissionWithoutPerpsFails)
+	t.Run("Submitting a perps market change with perps succeeds", testNewPerpsMarketChangeSubmissionWithPerpsSucceeds)
+	t.Run("Submitting a perps market change without settlement asset fails", testNewPerpsMarketChangeSubmissionWithoutSettlementAssetFails)
+	t.Run("Submitting a perps market change with settlement asset succeeds", testNewPerpsMarketChangeSubmissionWithSettlementAssetSucceeds)
+	t.Run("Submitting a perps market change without quote name fails", testNewPerpsMarketChangeSubmissionWithoutQuoteNameFails)
+	t.Run("Submitting a perps market change with quote name succeeds", testNewPerpsMarketChangeSubmissionWithQuoteNameSucceeds)
+	t.Run("Submitting a perps market change without oracle spec fails", testNewPerpsMarketChangeSubmissionWithoutOracleSpecFails)
+	t.Run("Submitting a perps market change with oracle spec succeeds", testNewPerpsMarketChangeSubmissionWithOracleSpecSucceeds)
+	t.Run("Submitting a perps market change without filters fails", testNewPerpsMarketChangeSubmissionWithoutFiltersFails)
+	t.Run("Submitting a perps market change with filters succeeds", testNewPerpsMarketChangeSubmissionWithFiltersSucceeds)
+	t.Run("Submitting a perps market change with filter without key fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyFails)
+	t.Run("Submitting a perps market change with filter with key succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithKeySucceeds)
+	t.Run("Submitting a perps market change with filter without key name fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyNameFails)
+	t.Run("Submitting a perps market change with filter with key name succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithKeyNameSucceeds)
+	t.Run("Submitting a perps market change with filter without key type fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyTypeFails)
+	t.Run("Submitting a perps market change with filter with key type succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithKeyTypeSucceeds)
+	t.Run("Submitting a perps market change with filter without condition succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionsSucceeds)
+	t.Run("Submitting a perps market change with filter without condition operator fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionOperatorFails)
+	t.Run("Submitting a perps market change with filter with condition operator succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds)
+	t.Run("Submitting a perps market change with filter without condition value fails", testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionValueFails)
+	t.Run("Submitting a perps market change with filter with condition value succeeds", testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds)
+	t.Run("Submitting a perps market change without oracle spec bindings fails", testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails)
+	t.Run("Submitting a perps market change with oracle spec binding succeeds", testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds)
+	t.Run("Submitting a perps market change with a mismatch between binding property name and filter fails", testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails)
+	t.Run("Submitting a perps market change with match between binding property name and filter succeeds", testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds)
+	t.Run("Submitting a perps market change with settlement data and trading termination properties succeeds", testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds)
+
 }
 
 func testNewMarketChangeSubmissionWithoutNewMarketFails(t *testing.T) {
@@ -4265,4 +4293,824 @@ func testFutureMarketSubmissionWithExternalSettlementDataAndTerminationEmptyEthA
 
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_settlement_data.external.oracle.signers.0"), commands.ErrIsNotValid)
 	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.future.data_source_spec_for_trading_termination.external.oracle.signers.0"), commands.ErrIsNotValid)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutPerpsFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithPerpsSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutSettlementAssetFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									SettlementAsset: "",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithSettlementAssetSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									SettlementAsset: "BTC",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.settlement_asset"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutQuoteNameFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									QuoteName: "",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithQuoteNameSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									QuoteName: "BTC",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.quote_name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutOracleSpecFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithOracleSpecSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: &vegapb.DataSourceDefinition{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutFiltersFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFiltersSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{}, {},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.key"), commands.ErrIsNotValid)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.1.key"), commands.ErrIsNotValid)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithKeySucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{},
+												}, {
+													Key: &datapb.PropertyKey{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.key"), commands.ErrIsNotValid)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.1.key"), commands.ErrIsNotValid)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyNameFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "",
+													},
+												}, {
+													Key: &datapb.PropertyKey{
+														Name: "",
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.key.name"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.1.key.name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithKeyNameSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: "key1",
+													},
+												}, {
+													Key: &datapb.PropertyKey{
+														Name: "key2",
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.key.name"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.1.key.name"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutKeyTypeFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Type: datapb.PropertyKey_TYPE_UNSPECIFIED,
+													},
+												}, {
+													Key: &datapb.PropertyKey{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.key.type"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.1.key.type"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithKeyTypeSucceeds(t *testing.T) {
+	testCases := []struct {
+		msg   string
+		value datapb.PropertyKey_Type
+	}{
+		{
+			msg:   "with EMPTY",
+			value: datapb.PropertyKey_TYPE_EMPTY,
+		}, {
+			msg:   "with INTEGER",
+			value: datapb.PropertyKey_TYPE_INTEGER,
+		}, {
+			msg:   "with STRING",
+			value: datapb.PropertyKey_TYPE_STRING,
+		}, {
+			msg:   "with BOOLEAN",
+			value: datapb.PropertyKey_TYPE_BOOLEAN,
+		}, {
+			msg:   "with DECIMAL",
+			value: datapb.PropertyKey_TYPE_DECIMAL,
+		}, {
+			msg:   "with TIMESTAMP",
+			value: datapb.PropertyKey_TYPE_TIMESTAMP,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.msg, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								Instrument: &protoTypes.InstrumentConfiguration{
+									Product: &protoTypes.InstrumentConfiguration_Perps{
+										Perps: &protoTypes.PerpsProduct{
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(
+												&vegapb.DataSourceSpecConfiguration{
+													Filters: []*datapb.Filter{
+														{
+															Key: &datapb.PropertyKey{
+																Type: tc.value,
+															},
+														}, {
+															Key: &datapb.PropertyKey{
+																Type: tc.value,
+															},
+														},
+													},
+												},
+											),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.0.key.type"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.1.key.type"), commands.ErrIsRequired)
+		})
+	}
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionsSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.0.conditions"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionOperatorFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Operator: datapb.Condition_OPERATOR_UNSPECIFIED,
+														},
+														{},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.1.operator"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithConditionOperatorSucceeds(t *testing.T) {
+	testCases := []struct {
+		msg   string
+		value datapb.Condition_Operator
+	}{
+		{
+			msg:   "with EQUALS",
+			value: datapb.Condition_OPERATOR_EQUALS,
+		}, {
+			msg:   "with GREATER_THAN",
+			value: datapb.Condition_OPERATOR_GREATER_THAN,
+		}, {
+			msg:   "with GREATER_THAN_OR_EQUAL",
+			value: datapb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+		}, {
+			msg:   "with LESS_THAN",
+			value: datapb.Condition_OPERATOR_LESS_THAN,
+		}, {
+			msg:   "with LESS_THAN_OR_EQUAL",
+			value: datapb.Condition_OPERATOR_LESS_THAN_OR_EQUAL,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.msg, func(t *testing.T) {
+			err := checkProposalSubmission(&commandspb.ProposalSubmission{
+				Terms: &protoTypes.ProposalTerms{
+					Change: &protoTypes.ProposalTerms_NewMarket{
+						NewMarket: &protoTypes.NewMarket{
+							Changes: &protoTypes.NewMarketConfiguration{
+								Instrument: &protoTypes.InstrumentConfiguration{
+									Product: &protoTypes.InstrumentConfiguration_Perps{
+										Perps: &protoTypes.PerpsProduct{
+											DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+												vegapb.DataSourceDefinitionTypeExt,
+											).SetOracleConfig(
+												&vegapb.DataSourceSpecConfiguration{
+													Filters: []*datapb.Filter{
+														{
+															Conditions: []*datapb.Condition{
+																{
+																	Operator: tc.value,
+																},
+																{
+																	Operator: tc.value,
+																},
+															},
+														},
+													},
+												},
+											),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			})
+
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.0.conditions.0.operator"), commands.ErrIsRequired)
+			assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.1.conditions.0.operator"), commands.ErrIsRequired)
+		})
+	}
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithoutConditionValueFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Value: "",
+														},
+														{
+															Value: "",
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_for_settlement_data.external.oracle.filters.0.conditions.1.value"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithFilterWithConditionValueSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Conditions: []*datapb.Condition{
+														{
+															Value: "value 1",
+														},
+														{
+															Value: "value 2",
+														},
+													},
+												},
+											},
+										},
+									),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.0.conditions.0.value"), commands.ErrIsRequired)
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec.external.oracle.filters.0.conditions.1.value"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithoutDataSourceSpecBindingFails(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithDataSourceSpecBindingSucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecBinding: &protoTypes.DataSourceSpecToPerpsBinding{},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding"), commands.ErrIsRequired)
+}
+
+func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingSucceeds(t *testing.T) {
+	testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t, &protoTypes.DataSourceSpecToPerpsBinding{SettlementDataProperty: "key1"}, "settlement_data_property", "key1")
+}
+
+func testNewPerpsMarketChangeSubmissionWithNoMismatchBetweenFilterAndBindingForSpecSucceeds(t *testing.T, binding *protoTypes.DataSourceSpecToPerpsBinding, bindingName string, bindingKey string) {
+	t.Helper()
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecForSettlementData: vegapb.NewDataSourceDefinition(
+										vegapb.DataSourceDefinitionTypeExt,
+									).SetOracleConfig(
+										&vegapb.DataSourceSpecConfiguration{
+											Filters: []*datapb.Filter{
+												{
+													Key: &datapb.PropertyKey{
+														Name: bindingKey,
+													},
+												}, {
+													Key: &datapb.PropertyKey{},
+												},
+											},
+										},
+									),
+									DataSourceSpecBinding: binding,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
+}
+
+func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t *testing.T, binding *protoTypes.DataSourceSpecToPerpsBinding, bindingName string) {
+	t.Helper()
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecBinding: binding,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.Contains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding."+bindingName), commands.ErrIsMismatching)
+}
+
+func testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingFails(t *testing.T) {
+	testNewPerpsMarketChangeSubmissionWithMismatchBetweenFilterAndBindingForSpecFails(t, &protoTypes.DataSourceSpecToPerpsBinding{SettlementDataProperty: "My property"}, "settlement_data_property")
+}
+
+func testNewPerpsMarketChangeSubmissionWithSettlementDataPropertySucceeds(t *testing.T) {
+	err := checkProposalSubmission(&commandspb.ProposalSubmission{
+		Terms: &protoTypes.ProposalTerms{
+			Change: &protoTypes.ProposalTerms_NewMarket{
+				NewMarket: &protoTypes.NewMarket{
+					Changes: &protoTypes.NewMarketConfiguration{
+						Instrument: &protoTypes.InstrumentConfiguration{
+							Product: &protoTypes.InstrumentConfiguration_Perps{
+								Perps: &protoTypes.PerpsProduct{
+									DataSourceSpecBinding: &protoTypes.DataSourceSpecToPerpsBinding{
+										SettlementDataProperty: "My property",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	assert.NotContains(t, err.Get("proposal_submission.terms.change.new_market.changes.instrument.product.perps.data_source_spec_binding.settlement_data_property"), commands.ErrIsRequired)
 }
