@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/libs/stringer"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
+	"github.com/shopspring/decimal"
 )
 
 type ProposalTermsUpdateMarket struct {
@@ -286,6 +287,8 @@ func (i UpdateInstrumentConfiguration) IntoProto() *vegapb.UpdateInstrumentConfi
 	switch pr := p.(type) {
 	case *vegapb.UpdateInstrumentConfiguration_Future:
 		r.Product = pr
+	case *vegapb.UpdateInstrumentConfiguration_Perps:
+		r.Product = pr
 	}
 	return r
 }
@@ -337,6 +340,38 @@ func (i UpdateInstrumentConfigurationFuture) IntoProto() *vegapb.UpdateInstrumen
 	}
 }
 
+type UpdateInstrumentConfigurationPerps struct {
+	Perps *UpdatePerpsProduct
+}
+
+func (i UpdateInstrumentConfigurationPerps) isUpdateInstrumentConfigurationProduct() {}
+
+func (i UpdateInstrumentConfigurationPerps) icpIntoProto() interface{} {
+	return i.IntoProto()
+}
+
+func (i UpdateInstrumentConfigurationPerps) DeepClone() updateInstrumentConfigurationProduct {
+	if i.Perps == nil {
+		return &UpdateInstrumentConfigurationPerps{}
+	}
+	return &UpdateInstrumentConfigurationPerps{
+		Perps: i.Perps.DeepClone(),
+	}
+}
+
+func (i UpdateInstrumentConfigurationPerps) String() string {
+	return fmt.Sprintf(
+		"perps(%s)",
+		stringer.ReflectPointerToString(i.Perps),
+	)
+}
+
+func (i UpdateInstrumentConfigurationPerps) IntoProto() *vegapb.UpdateInstrumentConfiguration_Perps {
+	return &vegapb.UpdateInstrumentConfiguration_Perps{
+		Perps: i.Perps.IntoProto(),
+	}
+}
+
 func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfiguration) (*UpdateInstrumentConfiguration, error) {
 	r := &UpdateInstrumentConfiguration{
 		Code: p.Code,
@@ -358,6 +393,43 @@ func UpdateInstrumentConfigurationFromProto(p *vegapb.UpdateInstrumentConfigurat
 				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settl),
 				DataSourceSpecForTradingTermination: *datasource.NewDefinitionWith(term),
 				DataSourceSpecBinding:               datasource.SpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+			},
+		}
+	case *vegapb.UpdateInstrumentConfiguration_Perps:
+		settlement, err := datasource.DefinitionFromProto(pr.Perps.DataSourceSpecForSettlementData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement data source spec: %w", err)
+		}
+
+		settlementSchedule, err := datasource.DefinitionFromProto(pr.Perps.DataSourceSpecForSettlementSchedule)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse settlement schedule data source spec: %w", err)
+		}
+
+		var marginFundingFactor, interestRate, clampLowerBound, clampUpperBound decimal.Decimal
+		if marginFundingFactor, err = num.DecimalFromString(pr.Perps.MarginFundingFactor); err != nil {
+			return nil, fmt.Errorf("failed to parse margin funding factor: %w", err)
+		}
+		if interestRate, err = num.DecimalFromString(pr.Perps.InterestRate); err != nil {
+			return nil, fmt.Errorf("failed to parse interest rate: %w", err)
+		}
+		if clampLowerBound, err = num.DecimalFromString(pr.Perps.ClampLowerBound); err != nil {
+			return nil, fmt.Errorf("failed to parse clamp lower bound: %w", err)
+		}
+		if clampUpperBound, err = num.DecimalFromString(pr.Perps.ClampUpperBound); err != nil {
+			return nil, fmt.Errorf("failed to parse clamp upper bound: %w", err)
+		}
+
+		r.Product = &UpdateInstrumentConfigurationPerps{
+			Perps: &UpdatePerpsProduct{
+				QuoteName:                           pr.Perps.QuoteName,
+				MarginFundingFactor:                 marginFundingFactor,
+				InterestRate:                        interestRate,
+				ClampLowerBound:                     clampLowerBound,
+				ClampUpperBound:                     clampUpperBound,
+				DataSourceSpecForSettlementData:     *datasource.NewDefinitionWith(settlement),
+				DataSourceSpecForSettlementSchedule: *datasource.NewDefinitionWith(settlementSchedule),
+				DataSourceSpecBinding:               datasource.SpecBindingForPerpsFromProto(pr.Perps.DataSourceSpecBinding),
 			},
 		}
 	}
@@ -396,6 +468,59 @@ func (f UpdateFutureProduct) String() string {
 		stringer.ReflectPointerToString(f.DataSourceSpecForSettlementData),
 		stringer.ReflectPointerToString(f.DataSourceSpecForTradingTermination),
 		stringer.ReflectPointerToString(f.DataSourceSpecBinding),
+	)
+}
+
+type UpdatePerpsProduct struct {
+	QuoteName string
+
+	MarginFundingFactor num.Decimal
+	InterestRate        num.Decimal
+	ClampLowerBound     num.Decimal
+	ClampUpperBound     num.Decimal
+
+	DataSourceSpecForSettlementData     dsdefinition.Definition
+	DataSourceSpecForSettlementSchedule dsdefinition.Definition
+	DataSourceSpecBinding               *datasource.SpecBindingForPerps
+}
+
+func (p UpdatePerpsProduct) IntoProto() *vegapb.UpdatePerpsProduct {
+	return &vegapb.UpdatePerpsProduct{
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor.String(),
+		InterestRate:                        p.InterestRate.String(),
+		ClampLowerBound:                     p.ClampLowerBound.String(),
+		ClampUpperBound:                     p.ClampLowerBound.String(),
+		DataSourceSpecForSettlementData:     p.DataSourceSpecForSettlementData.IntoProto(),
+		DataSourceSpecForSettlementSchedule: p.DataSourceSpecForSettlementSchedule.IntoProto(),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.IntoProto(),
+	}
+}
+
+func (p UpdatePerpsProduct) DeepClone() *UpdatePerpsProduct {
+	return &UpdatePerpsProduct{
+		QuoteName:                           p.QuoteName,
+		MarginFundingFactor:                 p.MarginFundingFactor,
+		InterestRate:                        p.InterestRate,
+		ClampLowerBound:                     p.ClampLowerBound,
+		ClampUpperBound:                     p.ClampLowerBound,
+		DataSourceSpecForSettlementData:     *p.DataSourceSpecForSettlementData.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecForSettlementSchedule: *p.DataSourceSpecForSettlementSchedule.DeepClone().(*dsdefinition.Definition),
+		DataSourceSpecBinding:               p.DataSourceSpecBinding.DeepClone(),
+	}
+}
+
+func (p UpdatePerpsProduct) String() string {
+	return fmt.Sprintf(
+		"quote(%s)marginFundingFactor(%s) interestRate(%s) clampLowerBound(%s) clampUpperBound(%s) settlementData(%s) settlementSchedule(%s) binding(%s)",
+		p.QuoteName,
+		p.MarginFundingFactor.String(),
+		p.InterestRate.String(),
+		p.ClampLowerBound.String(),
+		p.ClampUpperBound.String(),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementData),
+		stringer.ReflectPointerToString(p.DataSourceSpecForSettlementSchedule),
+		stringer.ReflectPointerToString(p.DataSourceSpecBinding),
 	)
 }
 

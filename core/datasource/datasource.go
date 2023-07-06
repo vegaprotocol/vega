@@ -142,6 +142,40 @@ func SpecBindingForFutureFromProto(o *vegapb.DataSourceSpecToFutureBinding) *Spe
 	}
 }
 
+type SpecBindingForPerps struct {
+	SettlementDataProperty     string
+	SettlementScheduleProperty string
+}
+
+func (b SpecBindingForPerps) String() string {
+	return fmt.Sprintf(
+		"settlementData(%s) settlementSchedule(%s)",
+		b.SettlementDataProperty,
+		b.SettlementScheduleProperty,
+	)
+}
+
+func (b SpecBindingForPerps) IntoProto() *vegapb.DataSourceSpecToPerpsBinding {
+	return &vegapb.DataSourceSpecToPerpsBinding{
+		SettlementDataProperty:     b.SettlementDataProperty,
+		SettlementScheduleProperty: b.SettlementScheduleProperty,
+	}
+}
+
+func (b SpecBindingForPerps) DeepClone() *SpecBindingForPerps {
+	return &SpecBindingForPerps{
+		SettlementDataProperty:     b.SettlementDataProperty,
+		SettlementScheduleProperty: b.SettlementScheduleProperty,
+	}
+}
+
+func SpecBindingForPerpsFromProto(o *vegapb.DataSourceSpecToPerpsBinding) *SpecBindingForPerps {
+	return &SpecBindingForPerps{
+		SettlementDataProperty:     o.SettlementDataProperty,
+		SettlementScheduleProperty: o.SettlementScheduleProperty,
+	}
+}
+
 func FromOracleSpecProto(specProto *vegapb.OracleSpec) *Spec {
 	if specProto.ExternalDataSourceSpec != nil {
 		if specProto.ExternalDataSourceSpec.Spec != nil {
