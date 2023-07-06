@@ -20,7 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/core/assets"
 	"code.vegaprotocol.io/vega/core/broker"
 	"code.vegaprotocol.io/vega/core/events"
-	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/oracles"
 	"code.vegaprotocol.io/vega/core/types"
@@ -43,6 +43,7 @@ var (
 	ErrMarketBatchInstructionTooBig           = func(got, expected uint64) error {
 		return fmt.Errorf("market batch instructions too big, got(%d), expected(%d)", got, expected)
 	}
+	ErrParentMarketAlreadySucceeded = errors.New("parent market already was already succeeded")
 )
 
 type TimeService interface {
@@ -68,15 +69,20 @@ type DelegationEngine interface {
 //nolint:interfacebloat
 type ExecutionEngine interface {
 	// orders stuff
-	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) (*types.OrderConfirmation, error)
+	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) (*types.OrderConfirmation, error)
+
+	// stop orders stuff
+	SubmitStopOrders(ctx context.Context, stopOrdersSubmission *types.StopOrdersSubmission, party string, idgen common.IDGenerator, stopOrderID1, stopOrderID2 *string) (*types.OrderConfirmation, error)
+	CancelStopOrders(ctx context.Context, stopOrdersCancellation *types.StopOrdersCancellation, party string, idgen common.IDGenerator) error
 
 	// market stuff
-	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string) error
+	SubmitMarket(ctx context.Context, marketConfig *types.Market, proposer string, oos time.Time) error
 	UpdateMarket(ctx context.Context, marketConfig *types.Market) error
 	RejectMarket(ctx context.Context, marketid string) error
 	StartOpeningAuction(ctx context.Context, marketid string) error
+	SucceedMarket(ctx context.Context, successor, parent string) error
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
@@ -200,6 +206,10 @@ type Banking interface {
 	BridgeStopped(context.Context, bool, string, uint64, uint64, string) error
 	BridgeResumed(context.Context, bool, string, uint64, uint64, string) error
 	CheckTransfer(t *types.TransferBase) error
+	NewGovernanceTransfer(ctx context.Context, ID, reference string, transferConfig *types.NewTransferConfiguration) error
+	VerifyGovernanceTransfer(transfer *types.NewTransferConfiguration) error
+	VerifyCancelGovernanceTransfer(transferID string) error
+	CancelGovTransfer(ctx context.Context, ID string) error
 }
 
 // NetworkParameters ...

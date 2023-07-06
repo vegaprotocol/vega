@@ -23,10 +23,10 @@ import (
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
-	db "github.com/tendermint/tm-db"
 )
 
 func getDummyData() *types.Chunk {
@@ -785,7 +785,7 @@ func TestListSnapFromTree(t *testing.T) {
 
 func createTree(t *testing.T) *iavl.MutableTree {
 	t.Helper()
-	db := db.NewMemDB()
+	db := cometbftdb.NewMemDB()
 	tree, err := iavl.NewMutableTreeWithOpts(db, 0, nil, false)
 	require.NoError(t, err)
 	return tree

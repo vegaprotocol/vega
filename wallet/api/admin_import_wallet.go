@@ -33,27 +33,27 @@ type AdminImportWallet struct {
 func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params) (jsonrpc.Result, *jsonrpc.ErrorDetails) {
 	params, err := validateImportWalletParams(rawParams)
 	if err != nil {
-		return nil, invalidParams(err)
+		return nil, InvalidParams(err)
 	}
 
 	if exist, err := h.walletStore.WalletExists(ctx, params.Wallet); err != nil {
-		return nil, internalError(fmt.Errorf("could not verify the wallet exists: %w", err))
+		return nil, InternalError(fmt.Errorf("could not verify the wallet exists: %w", err))
 	} else if exist {
-		return nil, invalidParams(ErrWalletAlreadyExists)
+		return nil, InvalidParams(ErrWalletAlreadyExists)
 	}
 
 	w, err := wallet.ImportHDWallet(params.Wallet, params.RecoveryPhrase, params.KeyDerivationVersion)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not import the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not import the wallet: %w", err))
 	}
 
 	kp, err := w.GenerateKeyPair(nil)
 	if err != nil {
-		return nil, internalError(fmt.Errorf("could not generate first key: %w", err))
+		return nil, InternalError(fmt.Errorf("could not generate first key: %w", err))
 	}
 
 	if err := h.walletStore.CreateWallet(ctx, w, params.Passphrase); err != nil {
-		return nil, internalError(fmt.Errorf("could not save the wallet: %w", err))
+		return nil, InternalError(fmt.Errorf("could not save the wallet: %w", err))
 	}
 
 	return AdminImportWalletResult{
@@ -67,7 +67,7 @@ func (h *AdminImportWallet) Handle(ctx context.Context, rawParams jsonrpc.Params
 				Name:    kp.AlgorithmName(),
 				Version: kp.AlgorithmVersion(),
 			},
-			Meta: kp.Metadata(),
+			Metadata: kp.Metadata(),
 		},
 	}, nil
 }

@@ -2238,11 +2238,12 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Nil(t, nonorder)
 }
 
-func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
+func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
 	t.Helper()
 	order := getOrder(t, market, id, side, price, partyid, size)
 	_, err := orderbook.ob.SubmitOrder(order)
 	assert.Equal(t, err, nil)
+	return order
 }
 
 func getOrder(t *testing.T, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {

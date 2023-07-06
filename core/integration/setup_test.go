@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/notary"
 	"code.vegaprotocol.io/vega/core/rewards"
 	"code.vegaprotocol.io/vega/core/validators"
@@ -155,10 +156,10 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent, execsetup.stakingAccount.OnEpochRestore)
 
-	marketActivityTracker := execution.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
+	marketActivityTracker := common.NewMarketActivityTracker(execsetup.log, execsetup.epochEngine)
 	commander := stubs.NewCommanderStub()
 	execsetup.netDeposits = num.UintZero()
-	execsetup.witness = validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+	execsetup.witness = validators.NewWitness(context.Background(), execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
 
 	execsetup.ntry = notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander)
 	execsetup.assetsEngine = stubs.NewAssetStub()
@@ -225,6 +226,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: execsetup.executionEngine.OnMarkPriceUpdateMaximumFrequency,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: execsetup.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
+		},
 	)
 	return execsetup
 }
@@ -269,7 +274,7 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketValueWindowLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
 			Watcher: e.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
 		netparams.WatchParam{
@@ -284,6 +289,32 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.MarketLiquidityBondPenaltyParameter,
 			Watcher: e.executionEngine.OnMarketLiquidityBondPenaltyUpdate,
 		},
+		// Liquidity version 2.
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Watcher: e.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Watcher: e.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Watcher: e.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Watcher: e.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		// End of liquidity version 2.
 		netparams.WatchParam{
 			Param:   netparams.MarketAuctionMinimumDuration,
 			Watcher: e.executionEngine.OnMarketAuctionMinimumDurationUpdate,
@@ -335,6 +366,10 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: e.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketSuccessorLaunchWindow,
+			Watcher: execsetup.executionEngine.OnSuccessorMarketTimeWindowUpdate,
 		},
 	)
 }

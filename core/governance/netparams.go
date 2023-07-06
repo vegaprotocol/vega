@@ -24,6 +24,22 @@ var (
 	ErrEmptyNetParamValue = errors.New("empty network parameter value")
 )
 
+func (e *Engine) getNewSpotMarketProposalParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalMarketMinClose,
+		netparams.GovernanceProposalMarketMaxClose,
+		netparams.GovernanceProposalMarketMinEnact,
+		netparams.GovernanceProposalMarketMaxEnact,
+		netparams.GovernanceProposalMarketRequiredParticipation,
+		netparams.GovernanceProposalMarketRequiredMajority,
+		netparams.GovernanceProposalMarketMinProposerBalance,
+		netparams.GovernanceProposalMarketMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
 func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalMarketMinClose,
@@ -41,6 +57,22 @@ func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {
 }
 
 func (e *Engine) getUpdateMarketProposalParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalUpdateMarketMinClose,
+		netparams.GovernanceProposalUpdateMarketMaxClose,
+		netparams.GovernanceProposalUpdateMarketMinEnact,
+		netparams.GovernanceProposalUpdateMarketMaxEnact,
+		netparams.GovernanceProposalUpdateMarketRequiredParticipation,
+		netparams.GovernanceProposalUpdateMarketRequiredMajority,
+		netparams.GovernanceProposalUpdateMarketMinProposerBalance,
+		netparams.GovernanceProposalUpdateMarketMinVoterBalance,
+		netparams.GovernanceProposalUpdateMarketRequiredParticipationLP,
+		netparams.GovernanceProposalUpdateMarketRequiredMajorityLP,
+		netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare,
+	)
+}
+
+func (e *Engine) getUpdateSpotMarketProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalUpdateMarketMinClose,
 		netparams.GovernanceProposalUpdateMarketMaxClose,
@@ -114,6 +146,22 @@ func (e *Engine) getNewFreeformProposalParameters() *ProposalParameters {
 		netparams.GovernanceProposalFreeformRequiredMajority,
 		netparams.GovernanceProposalFreeformMinProposerBalance,
 		netparams.GovernanceProposalFreeformMinVoterBalance,
+		"0",
+		"0",
+		"0",
+	)
+}
+
+func (e *Engine) getNewTransferProposalParameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalTransferMinClose,
+		netparams.GovernanceProposalTransferMaxClose,
+		netparams.GovernanceProposalAssetMinEnact,
+		netparams.GovernanceProposalAssetMaxEnact,
+		netparams.GovernanceProposalTransferRequiredParticipation,
+		netparams.GovernanceProposalTransferRequiredMajority,
+		netparams.GovernanceProposalTransferMinProposerBalance,
+		netparams.GovernanceProposalTransferMinVoterBalance,
 		"0",
 		"0",
 		"0",

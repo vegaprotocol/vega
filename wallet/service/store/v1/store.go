@@ -89,13 +89,14 @@ func (s *Store) ConfigExists() (bool, error) {
 }
 
 func (s *Store) GetConfig() (*service.Config, error) {
+	config := service.DefaultConfig()
+
 	if exists, err := vgfs.FileExists(s.configFilePath); err != nil {
 		return nil, fmt.Errorf("could not verify the service configuration file existence: %w", err)
 	} else if !exists {
-		return service.DefaultConfig(), nil
+		return config, nil
 	}
 
-	config := &service.Config{}
 	if err := paths.ReadStructuredFile(s.configFilePath, config); err != nil {
 		return nil, fmt.Errorf("could not read the service configuration file: %w", err)
 	}

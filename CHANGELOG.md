@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.72.0
+## Unreleased 0.73.0
 
 ### 🚨 Breaking changes
 
@@ -19,6 +19,139 @@
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
+## 0.72.0
+
+### 🗑️ Deprecation
+
+- [8280](https://github.com/vegaprotocol/vega/issues/8280) - Unused rewards related network parameters are now deprecated and will be removed
+
+### 🛠 Improvements
+
+- [8666](https://github.com/vegaprotocol/vega/issues/8666) - Fix `total notional value` database migrations deadlock.
+- [8409](https://github.com/vegaprotocol/vega/issues/8409) - Add `total notional value` to the candles.
+- [7684](https://github.com/vegaprotocol/vega/issues/7684) - Add filters for `Block Explorer` transactions `API` for multiple command types (inclusive and exclusive) and multiple parties
+- [7592](https://github.com/vegaprotocol/vega/issues/7592) - Add `block` parameter to `epoch` query.
+- [7906](https://github.com/vegaprotocol/vega/issues/7906) - Connection tokens on the wallet survive reboot.
+- [8264](https://github.com/vegaprotocol/vega/issues/8264) - Add a command line on the wallet to locate the wallet files
+- [8026](https://github.com/vegaprotocol/vega/issues/8026) - Update `UPGRADING.md document`
+- [8283](https://github.com/vegaprotocol/vega/issues/8283) - Add disclaimer to the wallet `CLI`
+- [8296](https://github.com/vegaprotocol/vega/issues/8296) - Improve error handling for invalid proposal validation timestamp
+- [8318](https://github.com/vegaprotocol/vega/issues/8318) - Proto definitions for spots
+- [8117](https://github.com/vegaprotocol/vega/issues/8117) - Added spots governance implementation
+- [8259](https://github.com/vegaprotocol/vega/issues/8259) - Proto definitions for successor markets.
+- [8201](https://github.com/vegaprotocol/vega/issues/8201) - Add support for successor markets.
+- [8339](https://github.com/vegaprotocol/vega/issues/8339) - Target stake for spots
+- [8337](https://github.com/vegaprotocol/vega/issues/8337) - ELS for spots
+- [8359](https://github.com/vegaprotocol/vega/issues/8359) - Add proto definitions for iceberg orders
+- [8592](https://github.com/vegaprotocol/vega/issues/8592) - Remove oracle data current state table
+- [8398](https://github.com/vegaprotocol/vega/issues/8398) - Implement iceberg orders in data node
+- [8361](https://github.com/vegaprotocol/vega/issues/8361) - Implement pegged iceberg orders
+- [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in core
+- [8301](https://github.com/vegaprotocol/vega/issues/8301) - Implement iceberg orders in feature tests
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders in `graphQL`
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Implement iceberg orders during auction uncrossing
+- [8524](https://github.com/vegaprotocol/vega/issues/8524) - Rename iceberg fields for clarity
+- [8459](https://github.com/vegaprotocol/vega/issues/8459) - Market depth and book volume include iceberg reserves
+- [8332](https://github.com/vegaprotocol/vega/issues/8332) - Add support in collateral engine for spots
+- [8330](https://github.com/vegaprotocol/vega/issues/8330) - Implement validation on successor market proposals.
+- [8247](https://github.com/vegaprotocol/vega/issues/8247) - Initial support for `Ethereum` `oracles`
+- [8334](https://github.com/vegaprotocol/vega/issues/8334) - Implement market succession in execution engine.
+- [8354](https://github.com/vegaprotocol/vega/issues/8354) - refactor execution package
+- [8394](https://github.com/vegaprotocol/vega/issues/8394) - Get rid of spot liquidity provision commands and data structures.
+- [8613](https://github.com/vegaprotocol/vega/issues/8613) - Pass context into witness resource check method
+- [8402](https://github.com/vegaprotocol/vega/issues/8402) - Avoid division by 0 in market activity tracker
+- [8347](https://github.com/vegaprotocol/vega/issues/8347) - Market state (`ELS`) to be included in checkpoint data.
+- [8303](https://github.com/vegaprotocol/vega/issues/8303) - Add support for successor markets in datanode.
+- [7416](https://github.com/vegaprotocol/vega/issues/7416) - Support for governance transfers
+- [7701](https://github.com/vegaprotocol/vega/issues/7701) - Support parallel request on different party on the wallet API
+- [8353](https://github.com/vegaprotocol/vega/issues/8353) - Improve ledger entry `CSV` export.
+- [8445](https://github.com/vegaprotocol/vega/issues/8445) - Additional feature tests for iceberg orders.
+- [8349](https://github.com/vegaprotocol/vega/issues/8349) - Add successor market integration test coverage.
+- [8434](https://github.com/vegaprotocol/vega/issues/8434) - Add pagination for `ListSuccessorMarkets`.
+- [8439](https://github.com/vegaprotocol/vega/issues/8439) - Include proposals for the `ListSuccessorMarkets API`.
+- [8476](https://github.com/vegaprotocol/vega/issues/8476) - Add successor market per `AC`
+- [8365](https://github.com/vegaprotocol/vega/issues/8365) - Add new liquidity engine with SLA support.
+- [8466](https://github.com/vegaprotocol/vega/issues/8466) - Add stop orders protobufs and domain types
+- [8467](https://github.com/vegaprotocol/vega/issues/8467) - Add stop orders data structures
+- [8516](https://github.com/vegaprotocol/vega/issues/8516) - Add stop orders network parameter
+- [8470](https://github.com/vegaprotocol/vega/issues/8470) - Stop orders snapshots
+- [8548](https://github.com/vegaprotocol/vega/issues/8548) - Use default for tendermint `RPC` address and better validation for `semver`
+- [8472](https://github.com/vegaprotocol/vega/issues/8472) - Add support for stop orders with batch market instructions
+- [8567](https://github.com/vegaprotocol/vega/issues/8567) - Add virtual stake and market growth to market data.
+- [8508](https://github.com/vegaprotocol/vega/issues/8508) - Add network parameters for SLA.
+- [8468](https://github.com/vegaprotocol/vega/issues/8468) - Wire in stop orders in markets
+- [8609](https://github.com/vegaprotocol/vega/issues/8609) - Add `graphQL` support for governance transfers
+- [8528](https://github.com/vegaprotocol/vega/issues/8528) - Add support for Stop Orders in the data node.
+- [8635](https://github.com/vegaprotocol/vega/issues/8635) - Allow market update proposal with ELS only
+- [8675](https://github.com/vegaprotocol/vega/issues/8675) - Fix inconsistent naming for successor markets.
+- [8504](https://github.com/vegaprotocol/vega/issues/8504) - Add market liquidity common layer for spot market.
+- [8690](https://github.com/vegaprotocol/vega/issues/8690) - Add gas estimation for stop orders.
+
+### 🐛 Fixes
+
+- [8236](https://github.com/vegaprotocol/vega/issues/8236) - Fix `orderById` `GraphQL` docs.
+- [8208](https://github.com/vegaprotocol/vega/issues/8208) - Fix block explorer API documentation
+- [8203](https://github.com/vegaprotocol/vega/issues/8203) - Fix `assetId` parsing for Ledger entries export to `CSV` file.
+- [8251](https://github.com/vegaprotocol/vega/issues/8251) - Fix bug in expired orders optimisation resulting in non deterministic order sequence numbers
+- [8226](https://github.com/vegaprotocol/vega/issues/8226) - Fix auto initialise failure when initialising empty node
+- [8186](https://github.com/vegaprotocol/vega/issues/8186) - Set a close timestamp when closing a market
+- [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
+- [8668](https://github.com/vegaprotocol/vega/issues/8668) - Market data migration scripts fix
+- [8225](https://github.com/vegaprotocol/vega/issues/8225) - Better error handling in `ListEntities`
+- [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
+- [8357](https://github.com/vegaprotocol/vega/issues/8357) - Load network history segments into staging area prior to load if not already present
+- [8266](https://github.com/vegaprotocol/vega/issues/8266) - Fix HTTPS with `autocert`.
+- [8471](https://github.com/vegaprotocol/vega/issues/8471) - Restore network parameters from snapshot without validation to avoid order dependence.
+- [8290](https://github.com/vegaprotocol/vega/issues/8290) - Calling network history `API` without network history enabled caused panics in data node.
+- [8299](https://github.com/vegaprotocol/vega/issues/8299) - Fix listing of internal data sources in GraphQL.
+- [8279](https://github.com/vegaprotocol/vega/issues/8279) - Avoid overriding a map entry while iterating on it, on the wallet connection manager.
+- [8341](https://github.com/vegaprotocol/vega/issues/8341) - Remind the user to check his internet connection if the wallet can't connect to a node.
+- [8343](https://github.com/vegaprotocol/vega/issues/8343) - Make the service starter easier to instantiate
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Release margin when decreasing iceberg size like normal orders do
+- [8429](https://github.com/vegaprotocol/vega/issues/8429) - Set order status to stopped if an iceberg order instantly causes a wash trade
+- [8376](https://github.com/vegaprotocol/vega/issues/8376) - Ensure the structure fields match their JSON counter parts in the wallet API requests and responses.
+- [8363](https://github.com/vegaprotocol/vega/issues/8363) - Add missing name property in `admin.describe_key` wallet API example
+- [8536](https://github.com/vegaprotocol/vega/issues/8536) - If liquidity fee account is empty do not create 0 amount transfers to insurance pool when clearing market
+- [8313](https://github.com/vegaprotocol/vega/issues/8313) - Assure liquidation price estimate works with 0 open volume
+- [8412](https://github.com/vegaprotocol/vega/issues/8412) - Fix non deterministic ordering of events emitted on auto delegation
+- [8414](https://github.com/vegaprotocol/vega/issues/8414) - Fix corruption on order subscription
+- [8453](https://github.com/vegaprotocol/vega/issues/8453) - Do not verify termination timestamp in update market when pre-enacting proposal
+- [8418](https://github.com/vegaprotocol/vega/issues/8418) - Fix data node panics when a bad successor market proposal is rejected
+- [8358](https://github.com/vegaprotocol/vega/issues/8358) - Fix replay protection
+- [8655](https://github.com/vegaprotocol/vega/issues/8655) - Set market close timestamp when market closes
+- [8362](https://github.com/vegaprotocol/vega/issues/8362) - Fix `PnL` flickering bug.
+- [8565](https://github.com/vegaprotocol/vega/issues/8565) - Unsubscribe all data sources when restoring a settled market from a snapshot
+- [8578](https://github.com/vegaprotocol/vega/issues/8578) - Add iceberg option fields to live orders trigger
+- [8451](https://github.com/vegaprotocol/vega/issues/8451) - Fix invalid auction duration for new market proposals.
+- [8500](https://github.com/vegaprotocol/vega/issues/8500) - Fix liquidity provision `ID` is nullable in `GraphQL API`.
+- [8511](https://github.com/vegaprotocol/vega/issues/8511) - Include settled markets in the snapshots
+- [8551](https://github.com/vegaprotocol/vega/issues/8551) - Reload market checkpoint data on snapshot loaded.
+- [8486](https://github.com/vegaprotocol/vega/issues/8486) - Fix enactment timestamp being lost in checkpoints.
+- [8572](https://github.com/vegaprotocol/vega/issues/8572) - Fix governance fraction validation
+- [8618](https://github.com/vegaprotocol/vega/issues/8618) - Add iceberg fields to GraphQL `OrderUpdate`
+- [8694](https://github.com/vegaprotocol/vega/issues/8694) - Properly decrement by difference when amending iceberg order
+- [8580](https://github.com/vegaprotocol/vega/issues/8580) - Fix wallet `CLI` ignoring max-request-duration
+- [8583](https://github.com/vegaprotocol/vega/issues/8583) - Fix validation of ineffectual transfer
+- [8586](https://github.com/vegaprotocol/vega/issues/8586) - Fix cancel governance transfer proposal validation
+- [8597](https://github.com/vegaprotocol/vega/issues/8597) - Enact governance transfer cancellation
+- [8428](https://github.com/vegaprotocol/vega/issues/8428) - Add missing `LastTradedPrice` field in market data
+- [8335](https://github.com/vegaprotocol/vega/issues/8335) - Validate asset for metrics in transfers to be an actual asset
+- [8603](https://github.com/vegaprotocol/vega/issues/8603) - Restore `lastTradedPrice` of `nil` as `nil` in market snapshot
+- [8617](https://github.com/vegaprotocol/vega/issues/8617) - Fix panic with order gauge in future market
+- [8596](https://github.com/vegaprotocol/vega/issues/8596) - Fix panic when rejecting markets on time update.
+- [8545](https://github.com/vegaprotocol/vega/issues/6545) - Block explorer does not page backwards correctly.
+- [8654](https://github.com/vegaprotocol/vega/issues/8654) - `GraphQL` query on trades with no filters returns an error.
+- [8623](https://github.com/vegaprotocol/vega/issues/8623) - Send market data event when a market is rejected.
+- [8642](https://github.com/vegaprotocol/vega/issues/8642) - Restore successor maps from snapshot.
+- [8636](https://github.com/vegaprotocol/vega/issues/8636) - Trading mode in market data events should be set to `NO_TRADING` if the market is in a final state.
+- [8651](https://github.com/vegaprotocol/vega/issues/8651) - Wallet support for stop orders
+- [8630](https://github.com/vegaprotocol/vega/issues/8630) - Fix duplicate stake linking due to `re-org`
+- [8664](https://github.com/vegaprotocol/vega/issues/8664) - Stop order invalid expiry
+- [8643](https://github.com/vegaprotocol/vega/issues/8643) - Handle vote close for pending successor markets.
+- [8665](https://github.com/vegaprotocol/vega/issues/8665) - `Datanode` not persisting stop order events
+- [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
+- [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
+
 ## 0.71.0
 
 ### 🚨 Breaking changes
@@ -36,7 +169,7 @@
 - [8030](https://github.com/vegaprotocol/vega/issues/8030) - Add `API` for fetching `CSV` data from network history.
 - [7943](https://github.com/vegaprotocol/vega/issues/7943) - Add version to network file to be future-proof.
 - [7759](https://github.com/vegaprotocol/vega/issues/7759) - Support for rolling back data node to a previous network history segment
-- [8131](https://github.com/vegaprotocol/vega/issues/8131) - Add reset all command to data node and remove wipe on start up flags 
+- [8131](https://github.com/vegaprotocol/vega/issues/8131) - Add reset all command to data node and remove wipe on start up flags
 - [7505](https://github.com/vegaprotocol/vega/issues/7505) - `Datanode` batcher statistics
 - [8045](https://github.com/vegaprotocol/vega/issues/8045) - Fix bug in handling internal sources data.
 - [7843](https://github.com/vegaprotocol/vega/issues/7843) - Report partial batch market instruction processing failure
@@ -64,6 +197,7 @@
 - [8155](https://github.com/vegaprotocol/vega/issues/8155) - Visor - allow restart without snapshot.
 - [8129](https://github.com/vegaprotocol/vega/issues/8129) - Keep liquidity fee remainder in fee account.
 - [8022](https://github.com/vegaprotocol/vega/issues/8022) - Improve `ListTransfers` API documentation.
+- [8231](https://github.com/vegaprotocol/vega/issues/8231) - Fix `GetNetworkHistoryStatus`
 - [8154](https://github.com/vegaprotocol/vega/issues/8154) - Visor - added option for delaying stop of binaries.
 - [8169](https://github.com/vegaprotocol/vega/issues/8169) - Add `buf` format
 - [7997](https://github.com/vegaprotocol/vega/issues/7997) - Clean up `API` comments when returned value is signed/unsigned.
@@ -128,7 +262,7 @@
 
 ### 🚨 Breaking changes
 
-- [7794](https://github.com/vegaprotocol/vega/issues/7794) - Add `marketIds` and `partyIds` to orders queries' filter.
+- [7794](https://github.com/vegaprotocol/vega/issues/7794) - Rename `marketId` and `partyId` to `marketIds` and `partyIds` in the orders queries' filter.
 - [7876](https://github.com/vegaprotocol/vega/issues/7876) - Change `DeliverOn` on one-off transfer to be in nanoseconds as everything else.
 - [7326](https://github.com/vegaprotocol/vega/issues/7326) - Rename table `current liquidity provisions` to `live liquiditiy provisions` and add a `live` option
 

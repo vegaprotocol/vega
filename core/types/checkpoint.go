@@ -15,9 +15,11 @@ package types
 import (
 	"bytes"
 	"errors"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 	checkpoint "code.vegaprotocol.io/vega/protos/vega/checkpoint/v1"
 
 	"code.vegaprotocol.io/vega/libs/proto"
@@ -45,6 +47,7 @@ const (
 	ValidatorsCheckpoint            CheckpointName = "validators"
 	StakingCheckpoint               CheckpointName = "staking"
 	MultisigControlCheckpoint       CheckpointName = "multisigControl"
+	ExecutionCheckpoint             CheckpointName = "execution"
 )
 
 type Block struct {
@@ -70,6 +73,7 @@ type Checkpoint struct {
 	Staking               []byte
 	MultisigControl       []byte
 	MarketActivityTracker []byte
+	Execution             []byte
 }
 
 type DelegationEntry struct {
@@ -169,6 +173,7 @@ func NewCheckpointFromProto(pc *checkpoint.Checkpoint) *Checkpoint {
 		Staking:               pc.Staking,
 		MultisigControl:       pc.MultisigControl,
 		MarketActivityTracker: pc.MarketTracker,
+		Execution:             pc.Execution,
 	}
 }
 
@@ -187,6 +192,7 @@ func (c Checkpoint) IntoProto() *checkpoint.Checkpoint {
 		Staking:           c.Staking,
 		MultisigControl:   c.MultisigControl,
 		MarketTracker:     c.MarketActivityTracker,
+		Execution:         c.Execution,
 	}
 }
 
@@ -220,6 +226,7 @@ func (c Checkpoint) HashBytes() bytes.Buffer {
 	b.Write(c.Staking)
 	b.Write(c.MarketActivityTracker)
 	b.Write(c.MultisigControl)
+	b.Write(c.Execution)
 
 	return b
 }
@@ -253,6 +260,8 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.MultisigControl = val
 	case MarketActivityTrackerCheckpoint:
 		c.MarketActivityTracker = val
+	case ExecutionCheckpoint:
+		c.Execution = val
 	}
 }
 
@@ -285,6 +294,8 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.MultisigControl
 	case MarketActivityTrackerCheckpoint:
 		return c.MarketActivityTracker
+	case ExecutionCheckpoint:
+		return c.Execution
 	}
 	return nil
 }
@@ -357,5 +368,127 @@ func NewBlockFromProto(bp *checkpoint.Block) *Block {
 func (b Block) IntoProto() *checkpoint.Block {
 	return &checkpoint.Block{
 		Height: b.Height,
+	}
+}
+
+type ELSShare struct {
+	PartyID       string
+	Share         num.Decimal
+	SuppliedStake num.Decimal
+	VStake        num.Decimal
+	Avg           num.Decimal
+}
+
+func NewELSShareFromProto(ELSs *checkpoint.ELSShare) *ELSShare {
+	return &ELSShare{
+		PartyID:       ELSs.PartyId,
+		Share:         num.MustDecimalFromString(ELSs.Share),
+		SuppliedStake: num.MustDecimalFromString(ELSs.SuppliedStake),
+		VStake:        num.MustDecimalFromString(ELSs.VirtualStake),
+		Avg:           num.MustDecimalFromString(ELSs.Avg),
+	}
+}
+
+func (e *ELSShare) IntoProto() *checkpoint.ELSShare {
+	return &checkpoint.ELSShare{
+		PartyId:       e.PartyID,
+		Share:         e.Share.String(),
+		SuppliedStake: e.SuppliedStake.String(),
+		VirtualStake:  e.VStake.String(),
+		Avg:           e.Avg.String(),
+	}
+}
+
+type CPMarketState struct {
+	ID               string
+	Shares           []*ELSShare
+	InsuranceBalance *num.Uint
+	LastTradeValue   *num.Uint
+	LastTradeVolume  *num.Uint
+	TTL              time.Time
+	Market           *Market // the full market object - needed in case the market has settled but a successor market is enacted during the successor window.
+}
+
+func NewMarketStateFromProto(ms *checkpoint.MarketState) *CPMarketState {
+	els := make([]*ELSShare, 0, len(ms.Shares))
+	for _, s := range ms.Shares {
+		els = append(els, NewELSShareFromProto(s))
+	}
+	var insBal, tVal, tVol *num.Uint
+	if len(ms.InsuranceBalance) > 0 {
+		insBal, _ = num.UintFromString(ms.InsuranceBalance, 10)
+	}
+	if len(ms.LastTradeValue) > 0 {
+		tVal, _ = num.UintFromString(ms.LastTradeValue, 10)
+	}
+	if len(ms.LastTradeVolume) > 0 {
+		tVol, _ = num.UintFromString(ms.LastTradeVolume, 10)
+	}
+	var mkt *Market
+	if ms.Market != nil {
+		mkt, _ = MarketFromProto(ms.Market)
+	}
+	return &CPMarketState{
+		ID:               ms.Id,
+		Shares:           els,
+		InsuranceBalance: insBal,
+		LastTradeValue:   tVal,
+		LastTradeVolume:  tVol,
+		TTL:              time.Unix(0, ms.SuccessionWindow),
+		Market:           mkt,
+	}
+}
+
+func (m *CPMarketState) IntoProto() *checkpoint.MarketState {
+	els := make([]*checkpoint.ELSShare, 0, len(m.Shares))
+	for _, s := range m.Shares {
+		els = append(els, s.IntoProto())
+	}
+	var mkt *vega.Market
+	if m.Market != nil {
+		mkt = m.Market.IntoProto()
+	}
+	var insBal, ltVal, ltVol string
+	if m.InsuranceBalance != nil {
+		insBal = m.InsuranceBalance.String()
+	}
+	if m.LastTradeValue != nil {
+		ltVal = m.LastTradeValue.String()
+	}
+	if m.LastTradeVolume != nil {
+		ltVol = m.LastTradeVolume.String()
+	}
+	return &checkpoint.MarketState{
+		Id:               m.ID,
+		Shares:           els,
+		InsuranceBalance: insBal,
+		LastTradeValue:   ltVal,
+		LastTradeVolume:  ltVol,
+		SuccessionWindow: m.TTL.UnixNano(),
+		Market:           mkt,
+	}
+}
+
+type ExecutionState struct {
+	Data []*CPMarketState
+}
+
+func NewExecutionStateFromProto(es *checkpoint.ExecutionState) *ExecutionState {
+	d := make([]*CPMarketState, 0, len(es.Data))
+	for _, m := range es.Data {
+		d = append(d, NewMarketStateFromProto(m))
+	}
+	return &ExecutionState{
+		Data: d,
+	}
+}
+
+func (e *ExecutionState) IntoProto() *checkpoint.ExecutionState {
+	d := make([]*checkpoint.MarketState, 0, len(e.Data))
+	for _, m := range e.Data {
+		d = append(d, m.IntoProto())
+	}
+	return &checkpoint.ExecutionState{
+		Data: d,
 	}
 }

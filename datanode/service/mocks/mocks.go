@@ -172,6 +172,22 @@ func (mr *MockMarketStoreMockRecorder) GetByTxHash(arg0, arg1 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByTxHash", reflect.TypeOf((*MockMarketStore)(nil).GetByTxHash), arg0, arg1)
 }
 
+// ListSuccessorMarkets mocks base method.
+func (m *MockMarketStore) ListSuccessorMarkets(arg0 context.Context, arg1 string, arg2 bool, arg3 entities.CursorPagination) ([]entities.SuccessorMarket, entities.PageInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSuccessorMarkets", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].([]entities.SuccessorMarket)
+	ret1, _ := ret[1].(entities.PageInfo)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListSuccessorMarkets indicates an expected call of ListSuccessorMarkets.
+func (mr *MockMarketStoreMockRecorder) ListSuccessorMarkets(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSuccessorMarkets", reflect.TypeOf((*MockMarketStore)(nil).ListSuccessorMarkets), arg0, arg1, arg2, arg3)
+}
+
 // Upsert mocks base method.
 func (m *MockMarketStore) Upsert(arg0 context.Context, arg1 *entities.Market) error {
 	m.ctrl.T.Helper()

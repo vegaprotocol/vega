@@ -6,6 +6,77 @@ import "vega/markets.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+message StopOrder {
+  enum ExpiryStrategy {
+    // Never valid
+    EXPIRY_STRATEGY_UNSPECIFIED = 0;
+    // Stop order should be cancelled if the expiry time is reached.
+    EXPIRY_STRATEGY_CANCELS = 1;
+    // Order should be submitted if the expiry time is reached.
+    EXPIRY_STRATEGY_SUBMIT = 2;
+  }
+
+  enum TriggerDirection {
+    // Never valid
+    TRIGGER_DIRECTION_UNSPECIFIED = 0;
+    // Stop order is triggered once the price rises above a certain level
+    TRIGGER_DIRECTION_RISES_ABOVE = 1;
+    // Stop order is triggered once the price falls below a certain level
+    TRIGGER_DIRECTION_FALLS_BELOW = 2;
+  }
+
+  enum Status {
+    // Never valid
+    STATUS_UNSPECIFIED = 0;
+    // Pending to be executed once the trigger is breached
+    STATUS_PENDING = 1;
+    // Cancelled by the user
+    STATUS_CANCELLED = 2;
+    // Stopped by the network, e.g: OCO on the other side has been triggered
+    STATUS_STOPPED = 3;
+    // Stop order has been triggered and generated an order
+    STATUS_TRIGGERED = 4;
+    // Stop order has expired
+    STATUS_EXPIRED = 5;
+    // Stop order was rejected at submission
+    STATUS_REJECTED = 6;
+  }
+
+  // ID of this stop order
+  // also the ID of the associated order if it is ever triggered
+  string id = 1;
+  // The ID of the 'other' part of the OCO if 2 stop orders were submitted at once
+  optional string oco_link_id = 2;
+  // Optional expiry timestamp.
+  optional int64 expires_at = 3;
+  // Strategy to adopt if the expiry time is reached.
+  optional ExpiryStrategy expiry_strategy = 4;
+  // Trigger direction for this stop order.
+  TriggerDirection trigger_direction = 5;
+  // Status of the stop order.
+  Status status = 6;
+  // Creation time of the stop order.
+  int64 created_at = 7;
+  // Last update of this stop order.
+  optional int64 updated_at = 8;
+  // ID of the order created once the trigger is hit.
+  string order_id = 9;
+  // ID of the party that submitted this stop order.
+  string party_id = 10;
+  // ID of the market the stop order is submitted to.
+  string market_id = 11;
+
+  // Trigger that will need to be breached for the order
+  // to be submitted to the book.
+  oneof trigger {
+    // Fixed price at which the order will be submitted.
+    string price = 100;
+    // Trailing percentage at which the order will be submitted.
+    // This should be expressed as a decimal value between 0 and 1, e.g. 0.01 for 1%
+    string trailing_percent_offset = 101;
+  }
+}
+
 // Side relates to the direction of an order, to Buy, or Sell
 enum Side {
   // Default value, always invalid
@@ -108,6 +179,16 @@ message PeggedOrder {
   string offset = 2;
 }
 
+// Details of an iceberg order
+message IcebergOrder {
+  // Size of the order that will be made visible if the iceberg order is replenished after trading.
+  uint64 peak_size = 1;
+  // If the visible size of the order falls below this value, it will be replenished back to the peak size using the reserved amount.
+  uint64 minimum_visible_size = 2;
+  // Size of the order that is reserved and used to restore the iceberg's peak when it is refreshed.
+  uint64 reserved_remaining = 3;
+}
+
 // Orders can be submitted, amended and cancelled on Vega in an attempt to make trades with other parties
 message Order {
   // Time In Force for an order
@@ -180,7 +261,7 @@ message Order {
     //       - gateway/graphql/schema.graphql (enum OrderStatus)
   }
 
-  // Unique ID generated for the order. This is set by the system after consensus.
+  // Unique ID generated for the order.
   string id = 1;
   // Market ID for the order.
   string market_id = 2;
@@ -202,33 +283,32 @@ message Order {
   Type type = 9;
   // Timestamp for when the order was created at, in nanoseconds.
   int64 created_at = 10;
-  // Current status for the order.
-  // - For detail on `STATUS_REJECTED` please check the OrderError value given in the `reason` field.
+  // Current status of the order.
   Status status = 11;
-  // Timestamp for when the order will expire, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order will expire.
   int64 expires_at = 12;
-  // Reference given for the order, this is typically used to retrieve an order submitted through consensus
-  // - Currently set internally by the node to return a unique reference ID for the order submission.
+  // Reference given for the order.
   string reference = 13;
-  // If the Order `status` is `STATUS_REJECTED` then an OrderError reason will be specified
-  // - The default for this field is `ORDER_ERROR_NONE` which signifies that there were no errors.
+  // Futher details for why an order with status `STATUS_REJECTED` was rejected.
   optional OrderError reason = 14;
-  // Timestamp for when the order was last updated, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order was last updated.
   int64 updated_at = 15;
-  // Version for the order, initial value is version 1 and is incremented after each successful amend
+  // Version for the order, initial value is version 1 and is incremented after each successful amend.
   uint64 version = 16;
   // Batch ID for the order, used internally for orders submitted during auctions
-  // to keep track of the auction batch this order falls under (required for fees calculation)
+  // to keep track of the auction batch this order falls under. Required for fees calculation.
   uint64 batch_id = 17;
   // Pegged order details, used only if the order represents a pegged order.
   PeggedOrder pegged_order = 18;
-  // Set if order was created as part of a liquidity provision, will be empty if not.
+  // Set if the order was created as part of a liquidity provision, will be empty if not.
   string liquidity_provision_id = 19;
   // Only valid for Limit orders. Cannot be True at the same time as Reduce-Only.
   bool post_only = 20;
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 21;
+  // Details of an iceberg order
+  optional IcebergOrder iceberg_order = 22;
 }
 
 // Used when cancelling an order
@@ -394,9 +474,9 @@ message Trade {
     //       - gateway/graphql/schema.graphql (enum TradeType)
   }
 
-  // Unique ID for the trade (generated by Vega).
+  // Unique ID for the trade.
   string id = 1;
-  // Market ID (the market that the trade occurred on).
+  // Market ID on which the trade occurred.
   string market_id = 2;
   // Price for the trade, the price is an integer, for example `123456` is a correctly
   // formatted price of `1.23456` assuming market configured to 5 decimal places.
@@ -413,7 +493,7 @@ message Trade {
   string buy_order = 8;
   // Identifier of the order from the sell side.
   string sell_order = 9;
-  // Timestamp for when the trade occurred, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the trade occurred.
   int64 timestamp = 10;
   // Type for the trade.
   Type type = 11;
@@ -445,7 +525,7 @@ message TradeSet {
 // Represents the high, low, open, and closing prices for an interval of trading,
 // referred to commonly as a candlestick or candle
 message Candle {
-  // Timestamp for the point in time when the candle was initially created/opened, in nanoseconds.
+  // Timestamp in Unix nanoseconds for the point in time when the candle was initially created/opened.
   int64 timestamp = 1;
   // ISO-8601 datetime with nanosecond precision for when the candle was last updated.
   string datetime = 2;
@@ -461,6 +541,8 @@ message Candle {
   uint64 volume = 7;
   // Time interval for the candle.
   Interval interval = 8;
+  // Total notional value traded during the candle interval.
+  uint64 notional = 9;
 }
 
 // Represents a price level from market depth or order book data
@@ -696,6 +778,15 @@ enum AccountType {
   // Per asset reward account for market proposers when the market goes above some trading threshold
   ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS = 17;
 
+  // Per asset account for holding in-flight unfilled orders' funds
+  ACCOUNT_TYPE_HOLDING = 18;
+
+  // Network controlled liquidity provider's account, per market, to hold accrued liquidity fees.
+  ACCOUNT_TYPE_LP_LIQUIDITY_FEES = 19;
+
+  // Network controlled liquidity fees bonus distribution account, per market.
+  ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION = 20;
+
   // Note: If adding an enum value, add a matching entry in:
   //       - gateway/graphql/helpers_enum.go
   //       - gateway/graphql/schema.graphql (enum AccountType)
@@ -779,6 +870,26 @@ enum TransferType {
   TRANSFER_TYPE_CLEAR_ACCOUNT = 24;
   // Balances restored after network restart
   TRANSFER_TYPE_CHECKPOINT_BALANCE_RESTORE = 25;
+  // Spot trade delivery
+  TRANSFER_TYPE_SPOT = 26;
+  // An internal instruction to transfer a quantity corresponding to an active spot order from a general account into a party holding account.
+  TRANSFER_TYPE_HOLDING_LOCK = 27;
+  // An internal instruction to transfer an excess quantity corresponding to an active spot order from a holding account into a party general account.
+  TRANSFER_TYPE_HOLDING_RELEASE = 28;
+  // Insurance pool fraction transfer from parent to successor market.
+  TRANSFER_TYPE_SUCCESSOR_INSURANCE_FRACTION = 29;
+  // Allocates liquidity fee earnings to each liquidity provider's network controlled liquidity fee account.
+  TRANSFER_TYPE_LIQUIDITY_FEE_ALLOCATE = 30;
+  // Distributes net fee earnings from liquidity provider's fee account to their general account.
+  TRANSFER_TYPE_LIQUIDITY_FEE_NET_DISTRIBUTE = 31;
+  // Applies SLA penalty by moving funds from party's bond account to market's insurance pool.
+  TRANSFER_TYPE_SLA_PENALTY_BOND_APPLY = 32;
+  // Applies SLA penalty by moving funds from the liquidity provider's fee account to market insurance pool.
+  TRANSFER_TYPE_SLA_PENALTY_LP_FEE_APPLY = 33;
+  // Collects penalties from the liquidity provider's fee account before the fee revenue is paid, and transfers it to the market's bonus distribution account.
+  TRANSFER_TYPE_LIQUIDITY_FEE_UNPAID_COLLECT = 34;
+  // Distributes performance bonus from market bonus to liquidity provider's general account.
+  TRANSFER_TYPE_SLA_PERFORMANCE_BONUS_DISTRIBUTE = 35;
 }
 
 // Represents a financial transfer within Vega
@@ -854,7 +965,7 @@ message LedgerEntry {
   string amount = 3;
   // Transfer type for this entry.
   TransferType type = 4;
-  // Unixnano timestamp at which the ledger entry was created.
+  // Timestamp in nanoseconds of when the ledger entry was created.
   int64 timestamp = 5;
   // Sender account balance after the transfer. This field is an unsigned integer scaled to the asset's decimal places.
   string from_account_balance = 6;
@@ -893,7 +1004,7 @@ message MarginLevels {
   string market_id = 6;
   // Asset ID for which the margin levels apply.
   string asset = 7;
-  // Timestamp for the time the ledger entry was created, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the ledger entry was created.
   int64 timestamp = 8;
 }
 
@@ -931,7 +1042,7 @@ message MarketData {
   string static_mid_price = 11;
   // Market ID for the data
   string market = 12;
-  // Timestamp at which this mark price was relevant, in nanoseconds.
+  // Timestamp in Unix nanoseconds at which this mark price was relevant.
   int64 timestamp = 13;
   // Sum of the size of all positions greater than zero on the market.
   uint64 open_interest = 14;
@@ -961,22 +1072,26 @@ message MarketData {
   repeated LiquidityProviderFeeShare liquidity_provider_fee_share = 26;
   // Current state of the market.
   Market.State market_state = 27;
-  // Next MTM timestamp.
+  // Time in Unix nanoseconds when the next mark-to-market calculation will occur.
   int64 next_mark_to_market = 28;
   // Last traded price of the market. This field is an unsigned integer scaled to the market's decimal places.
   string last_traded_price = 29;
+  // Market growth at the last market time window.
+  string market_growth = 30;
 }
 
 // Equity like share of liquidity fee for each liquidity provider
 message LiquidityProviderFeeShare {
   // Liquidity provider party ID.
   string party = 1;
-  // Share own by this liquidity provider (float).
+  // Share own by this liquidity provider.
   string equity_like_share = 2;
   // Average entry valuation of the liquidity provider for the market.
   string average_entry_valuation = 3;
   // Average liquidity score.
   string average_score = 4;
+  // The virtual stake of this liquidity provider.
+  string virtual_stake = 5;
 }
 
 // Represents a list of valid (at the current timestamp) price ranges per associated trigger
@@ -1025,9 +1140,9 @@ message NetworkLimits {
   bool propose_asset_enabled = 5;
   // True once the genesis file is loaded.
   bool genesis_loaded = 7;
-  // Date/timestamp in unix nanoseconds at which market proposals will be enabled (0 indicates not set).
+  // Timestamp in Unix nanoseconds at which market proposals will be enabled (0 indicates not set).
   int64 propose_market_enabled_from = 8;
-  // Date/timestamp in unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
+  // Timestamp in Unix nanoseconds at which asset proposals will be enabled (0 indicates not set).
   int64 propose_asset_enabled_from = 9;
 }
 
@@ -1041,9 +1156,9 @@ message LiquidityOrder {
   string offset = 3;
 }
 
-// Pair of a liquidity order and the ID of the generated order by the core
+// Pair of a liquidity order and the ID of the generated order
 message LiquidityOrderReference {
-  // Unique ID of the pegged order generated by the core to fulfil this liquidity order.
+  // Unique ID of the pegged order generated to fulfil this liquidity order.
   string order_id = 1;
   // Liquidity order from the original submission.
   LiquidityOrder liquidity_order = 2;
@@ -1053,7 +1168,7 @@ message LiquidityOrderReference {
 message LiquidityProvision {
   // Status of a liquidity provision order.
   enum Status {
-    // Default value
+    // Always invalid
     STATUS_UNSPECIFIED = 0;
     // Liquidity provision is active
     STATUS_ACTIVE = 1;
@@ -1075,11 +1190,11 @@ message LiquidityProvision {
   string id = 1;
   // Unique party ID for the creator of the provision.
   string party_id = 2;
-  // Timestamp for when the order was created at, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order was created.
   int64 created_at = 3;
-  // Timestamp for when the order was updated at, in nanoseconds.
+  // Timestamp in Unix nanoseconds for when the order was updated.
   int64 updated_at = 4;
-  // Market ID for the order, required field.
+  // Market ID for the order.
   string market_id = 5;
   // Specified as a unitless number that represents the amount of settlement asset of the market.
   // This field is an unsigned integer scaled to the asset's decimal places.
@@ -1138,11 +1253,11 @@ enum NodeStatus {
 
 // Describes in both human readable and block time when an epoch spans
 message EpochTimestamps {
-  // Timestamp of epoch start in nanoseconds.
+  // Timestamp in Unix nanoseconds for when epoch started.
   int64 start_time = 1;
-  // Timestamp of epoch expiry in nanoseconds.
+  // Timestamp in Unix nanoseconds for the epoch's expiry.
   int64 expiry_time = 2;
-  // Timestamp of epoch end in nanoseconds, empty if not started.
+  // Timestamp in Unix nanoseconds for when the epoch ended, empty if not ended.
   int64 end_time = 3;
   // Height of first block in the epoch.
   uint64 first_block = 4;

@@ -99,7 +99,7 @@ func testDepositSuccess(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(1)
+	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -116,7 +116,7 @@ func testDepositSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// then we call time update, which should call the collateral to
@@ -131,7 +131,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(3)
+	eng.tsvc.EXPECT().GetTimeNow().Times(6)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -146,7 +146,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// then we call time update, which should call the collateral to
@@ -161,7 +161,7 @@ func testDepositSuccessNoTxDuplicate(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, true)
 
 	// then we call time update, which should call the collateral to
@@ -176,7 +176,7 @@ func testDepositFailure(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(3)
+	eng.tsvc.EXPECT().GetTimeNow().Times(5)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -191,7 +191,7 @@ func testDepositFailure(t *testing.T) {
 	assert.NoError(t, err)
 
 	// then we call the callback from the fake erc
-	eng.erc.r.Check()
+	eng.erc.r.Check(context.Background())
 	eng.erc.f(eng.erc.r, false)
 
 	// then we call time update, expect collateral to never be called
@@ -203,7 +203,7 @@ func testDepositError(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(3)
+	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
 	eng.OnTick(context.Background(), time.Now())
@@ -226,7 +226,7 @@ func testDepositFailureNotBuiltin(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
-	eng.tsvc.EXPECT().GetTimeNow().Times(2)
+	eng.tsvc.EXPECT().GetTimeNow().Times(3)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	expectError := errors.New("bad bad bad")
 	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, expectError)

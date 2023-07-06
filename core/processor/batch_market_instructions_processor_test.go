@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/blockchain/abci"
-	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/processor"
 	"code.vegaprotocol.io/vega/core/processor/mocks"
 	"code.vegaprotocol.io/vega/core/stats"
@@ -21,7 +21,7 @@ import (
 func TestBatchMarketInstructionsErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 
 	batch := commandspb.BatchMarketInstructions{
 		Amendments:  []*commandspb.OrderAmendment{{}},
@@ -44,7 +44,7 @@ func TestBatchMarketInstructionsErrors(t *testing.T) {
 func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
@@ -69,7 +69,7 @@ func TestBatchMarketInstructionsCannotSubmitMultipleAmendForSameID(t *testing.T)
 
 	amendCnt := 0
 	exec.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(2).DoAndReturn(
-		func(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) ([]*types.OrderConfirmation, error) {
+		func(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) ([]*types.OrderConfirmation, error) {
 			amendCnt++
 			return nil, nil
 		},
@@ -90,7 +90,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
@@ -152,7 +152,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 
 	cancelCnt := 0
 	exec.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
-		func(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
+		func(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
 			cancelCnt++
 
 			// if the order is order 2 we return an error
@@ -164,7 +164,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 	)
 	amendCnt := 0
 	exec.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
-		func(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) ([]*types.OrderConfirmation, error) {
+		func(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) ([]*types.OrderConfirmation, error) {
 			amendCnt++
 
 			// if the order is order 2 we return an error
@@ -177,7 +177,7 @@ func TestBatchMarketInstructionsContinueProcessingOnError(t *testing.T) {
 
 	orderCnt := 0
 	exec.EXPECT().SubmitOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(3).DoAndReturn(
-		func(ctx context.Context, order *types.OrderSubmission, party string, idgen execution.IDGenerator, orderID string) (*types.OrderConfirmation, error) {
+		func(ctx context.Context, order *types.OrderSubmission, party string, idgen common.IDGenerator, orderID string) (*types.OrderConfirmation, error) {
 			orderCnt++
 
 			// if the order is order 2 we return an error
@@ -219,7 +219,7 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	exec := mocks.NewMockExecutionEngine(ctrl)
-	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec)
+	proc := processor.NewBMIProcessor(logging.NewTestLogger(), exec, processor.Validate{})
 	stats := stats.New(logging.NewTestLogger(), stats.NewDefaultConfig())
 
 	batch := commandspb.BatchMarketInstructions{
@@ -241,7 +241,7 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 
 	cancelCnt := 0
 	exec.EXPECT().CancelOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(ctx context.Context, order *types.OrderCancellation, party string, idgen execution.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
+		func(ctx context.Context, order *types.OrderCancellation, party string, idgen common.IDGenerator) ([]*types.OrderCancellationConfirmation, error) {
 			cancelCnt++
 
 			// if the order is order 2 we return an error
@@ -253,7 +253,7 @@ func TestBatchMarketInstructionsEnsureAllErrorReturnNonPartialError(t *testing.T
 	)
 	amendCnt := 0
 	exec.EXPECT().AmendOrder(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(ctx context.Context, order *types.OrderAmendment, party string, idgen execution.IDGenerator) ([]*types.OrderConfirmation, error) {
+		func(ctx context.Context, order *types.OrderAmendment, party string, idgen common.IDGenerator) ([]*types.OrderConfirmation, error) {
 			amendCnt++
 
 			// if the order is order 2 we return an error

@@ -12,9 +12,9 @@ import (
 
 type snapshotCmd struct {
 	config.OutputFlag
-	DBPath               string `short:"d" long:"db-path" description:"path to snapshot state data"`
-	SnapshotContentsPath string `short:"c" long:"snapshot-contents" description:"path to file where to write the content of a snapshot"`
-	BlockHeight          uint64 `short:"b" long:"block-height" description:"block-height of requested snapshot"`
+	DBPath               string `description:"path to snapshot state data"                           long:"db-path"           short:"d"`
+	SnapshotContentsPath string `description:"path to file where to write the content of a snapshot" long:"snapshot-contents" short:"c"`
+	BlockHeight          uint64 `description:"block-height of requested snapshot"                    long:"block-height"      short:"b"`
 }
 
 func (opts *snapshotCmd) Execute(_ []string) error {
@@ -38,7 +38,7 @@ func (opts *snapshotCmd) Execute(_ []string) error {
 		return nil
 	}
 
-	snapshots, invalid, err := snapshotdb.SnapshotData(db, opts.SnapshotContentsPath, opts.BlockHeight)
+	snapshots, invalid, err := snapshotdb.SnapshotData(db, opts.BlockHeight)
 	if err != nil {
 		return err
 	}

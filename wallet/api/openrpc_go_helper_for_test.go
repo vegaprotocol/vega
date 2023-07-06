@@ -37,7 +37,7 @@ func resolveNestedProperties(rootType reflect.Type) ([]astNode, error) {
 		return resolveNestedPropertiesForArray(unwrappedType)
 	}
 
-	if unwrappedType.Kind() == reflect.Struct && unwrappedType.String() != "time.Time" {
+	if unwrappedType.Kind() == reflect.Struct && !structShouldBeString(unwrappedType) {
 		return resolveNestedPropertiesForStruct(unwrappedType)
 	}
 
@@ -46,6 +46,10 @@ func resolveNestedProperties(rootType reflect.Type) ([]astNode, error) {
 	}
 
 	return nil, nil
+}
+
+func structShouldBeString(unwrappedType reflect.Type) bool {
+	return unwrappedType.String() == "time.Time"
 }
 
 func resolveNestedPropertiesForMap(unwrappedType reflect.Type) ([]astNode, error) {
@@ -72,7 +76,7 @@ func resolveNestedPropertiesForArray(unwrappedType reflect.Type) ([]astNode, err
 	elemType := unwrappedType.Elem()
 	unwrappedElemType := unwrapType(elemType)
 
-	if unwrappedElemType.Kind() == reflect.Struct && unwrappedElemType.String() != "time.Time" {
+	if unwrappedElemType.Kind() == reflect.Struct && !structShouldBeString(unwrappedType) {
 		itemsProperty, err := resolveNestedPropertiesForStruct(unwrappedElemType)
 		if err != nil {
 			return nil, fmt.Errorf("could not reflect on the item properties %q: %w", unwrappedType.String(), err)
@@ -164,14 +168,18 @@ func retrieveFieldName(field reflect.StructField) (string, bool, error) {
 			return "", false, fmt.Errorf("field is exported but does not have a JSON tag")
 		}
 
-		// No json tag, so it's not meant to be used in the API
+		// No json tag, so it is not meant to be used in the API.
 		return "", false, nil
 	}
 
 	// the first value is the name in the JSON tag
-	name := strings.Split(jsonValue, ",")[0]
+	jsonName := strings.Split(jsonValue, ",")[0]
 
-	return name, true, nil
+	if strings.ToLower(field.Name) != strings.ToLower(jsonName) { //nolint:staticcheck
+		return "", false, fmt.Errorf("field name %q does not match JSON name %q", field.Name, jsonName)
+	}
+
+	return jsonName, true, nil
 }
 
 func goTypeToJSONType(fieldType reflect.Type) (nodeType, error) {
@@ -197,7 +205,7 @@ func goTypeToJSONType(fieldType reflect.Type) (nodeType, error) {
 	case reflect.Bool:
 		return nodeTypeBoolean, nil
 	case reflect.Struct, reflect.Map, reflect.Interface:
-		if fieldType.String() == "time.Time" {
+		if structShouldBeString(fieldType) {
 			return nodeTypeString, nil
 		}
 		return nodeTypeObject, nil

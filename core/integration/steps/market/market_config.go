@@ -12,7 +12,10 @@
 
 package market
 
-import "code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
+import (
+	"code.vegaprotocol.io/vega/core/integration/steps/market/defaults"
+	"code.vegaprotocol.io/vega/libs/num"
+)
 
 type Config struct {
 	RiskModels          *riskModels
@@ -21,6 +24,19 @@ type Config struct {
 	PriceMonitoring     *priceMonitoring
 	MarginCalculators   *marginCalculators
 	LiquidityMonitoring *liquidityMonitoring
+}
+
+type SuccessorConfig struct {
+	ParentID            string
+	InsuranceFraction   num.Decimal
+	PriceMonitoring     *priceMonitoring
+	LiquidityMonitoring *liquidityMonitoring
+	RiskModels          *riskModels
+	PositionDecimals    int64
+	Decimals            uint64
+	PriceRange          num.Decimal
+	LinSlip             num.Decimal
+	QuadSlip            num.Decimal
 }
 
 func NewMarketConfig() *Config {
@@ -32,5 +48,19 @@ func NewMarketConfig() *Config {
 		PriceMonitoring:     newPriceMonitoring(unmarshaler),
 		MarginCalculators:   newMarginCalculators(unmarshaler),
 		LiquidityMonitoring: newLiquidityMonitoring(unmarshaler),
+	}
+}
+
+func NewSuccessorConfig() *SuccessorConfig {
+	u := defaults.NewUnmarshaler()
+	zero := num.DecimalZero()
+	return &SuccessorConfig{
+		InsuranceFraction:   zero,
+		PriceMonitoring:     newPriceMonitoring(u),
+		LiquidityMonitoring: newLiquidityMonitoring(u),
+		RiskModels:          newRiskModels(u),
+		PriceRange:          zero,
+		LinSlip:             zero,
+		QuadSlip:            zero,
 	}
 }

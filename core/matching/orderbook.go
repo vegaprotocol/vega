@@ -211,6 +211,9 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 	}
 
 	for _, uo := range uncrossedOrders {
+		// refresh if its an iceberg, noop if not
+		b.icebergRefresh(uo.Order)
+
 		if uo.Order.Remaining == 0 {
 			uo.Order.Status = types.OrderStatusFilled
 			b.remove(uo.Order)
@@ -219,6 +222,10 @@ func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*t
 		uo.Order.UpdatedAt = ts
 		for idx, po := range uo.PassiveOrdersAffected {
 			po.UpdatedAt = ts
+
+			// refresh if its an iceberg, noop if not
+			b.icebergRefresh(po)
+
 			// also remove the orders from lookup tables
 			if uo.PassiveOrdersAffected[idx].Remaining == 0 {
 				uo.PassiveOrdersAffected[idx].Status = types.OrderStatusFilled
@@ -549,6 +556,13 @@ func (b *OrderBook) uncrossBookSide(
 	mPrice.Div(price, mPrice)
 	// Uncross each one
 	for _, order := range uncrossOrders {
+		// since all of uncrossOrders will be traded away and at the same uncrossing price
+		// iceberg orders are sent in as their full value instead of refreshing at each step
+		if order.IcebergOrder != nil {
+			order.Remaining += order.IcebergOrder.ReservedRemaining
+			order.IcebergOrder.ReservedRemaining = 0
+		}
+
 		// try to get the market price value from the order
 		trades, affectedOrders, _, err := opSide.uncross(order, false)
 		if err != nil {
@@ -714,15 +728,15 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	}
 
 	var (
-		reduceBy uint64
-		side     = b.sell
-		err      error
+		volumeChange int64
+		side         = b.sell
+		err          error
 	)
 	if amendedOrder.Side == types.SideBuy {
 		side = b.buy
 	}
 
-	if reduceBy, err = side.amendOrder(amendedOrder); err != nil {
+	if volumeChange, err = side.amendOrder(amendedOrder); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
 			b.log.Debug("Failed to amend",
 				logging.String("side", amendedOrder.Side.String()),
@@ -736,11 +750,18 @@ func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 
 	// update the order by ids mapping
 	b.ordersByID[amendedOrder.ID] = amendedOrder
+	if !b.auction {
+		return nil
+	}
 
-	if b.auction && reduceBy != 0 {
-		// reduce volume at price level
+	if volumeChange < 0 {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			amendedOrder.Price, reduceBy, amendedOrder.Side)
+			amendedOrder.Price, uint64(-volumeChange), amendedOrder.Side)
+	}
+
+	if volumeChange > 0 {
+		b.indicativePriceAndVolume.AddVolumeAtPrice(
+			amendedOrder.Price, uint64(volumeChange), amendedOrder.Side)
 	}
 
 	return nil
@@ -849,11 +870,17 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	// if order is persistent type add to order book to the correct side
 	// and we did not hit a error / wash trade error
 	if order.IsPersistent() && err == nil {
+		if order.IcebergOrder != nil && order.Status == types.OrderStatusActive {
+			// now trades have been generated for the aggressive iceberg based on the
+			// full size, set the peak limits ready for it to be added to the book.
+			order.SetIcebergPeaks()
+		}
+
 		b.getSide(order.Side).addOrder(order)
 		// also add it to the indicative price and volume if in auction
 		if b.auction {
 			b.indicativePriceAndVolume.AddVolumeAtPrice(
-				order.Price, order.Remaining, order.Side)
+				order.Price, order.TrueRemaining(), order.Side)
 		}
 	}
 
@@ -885,6 +912,9 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	}
 
 	for idx := range impactedOrders {
+		// refresh if its an iceberg, noop if not
+		b.icebergRefresh(impactedOrders[idx])
+
 		if impactedOrders[idx].Remaining == 0 {
 			impactedOrders[idx].Status = types.OrderStatusFilled
 
@@ -937,7 +967,7 @@ func (b *OrderBook) DeleteOrder(
 	// cancel the order if it expires it
 	if b.auction {
 		b.indicativePriceAndVolume.RemoveVolumeAtPrice(
-			dorder.Price, dorder.Remaining, dorder.Side)
+			dorder.Price, dorder.TrueRemaining(), dorder.Side)
 	}
 	return dorder, err
 }
@@ -1040,6 +1070,10 @@ func (b *OrderBook) GetBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) 
 	return b.sell.BestStaticPriceAndVolume()
 }
 
+func (b *OrderBook) GetLastTradedPrice() *num.Uint {
+	return b.lastTradedPrice
+}
+
 // PrintState prints the actual state of the book.
 // this should be use only in debug / non production environment as it
 // rely a lot on logging.
@@ -1106,6 +1140,27 @@ func (b *OrderBook) GetActivePeggedOrderIDs() []string {
 	}
 	sort.Strings(pegged)
 	return pegged
+}
+
+// icebergRefresh will restore the peaks of an iceberg order if they have drifted below the minimum value
+// if not the order remains unchanged.
+func (b *OrderBook) icebergRefresh(o *types.Order) {
+	if !o.IcebergNeedsRefresh() {
+		return
+	}
+
+	if _, err := b.DeleteOrder(o); err != nil {
+		b.log.Panic("could not delete iceberg order during refresh", logging.Error(err), logging.Order(o))
+	}
+
+	// refresh peaks
+	o.SetIcebergPeaks()
+
+	// make sure its active again
+	o.Status = types.OrderStatusActive
+
+	// put it to the back of the line
+	b.getSide(o.Side).addOrder(o)
 }
 
 // remove removes the given order from all the lookup map.

@@ -144,7 +144,7 @@ func testImportingWalletWithValidParamsSucceeds(t *testing.T) {
 	assert.Equal(t, keyPair.PublicKey(), result.Key.PublicKey)
 	assert.Equal(t, keyPair.AlgorithmName(), result.Key.Algorithm.Name)
 	assert.Equal(t, keyPair.AlgorithmVersion(), result.Key.Algorithm.Version)
-	assert.Equal(t, keyPair.Metadata(), result.Key.Meta)
+	assert.Equal(t, keyPair.Metadata(), result.Key.Metadata)
 }
 
 func testImportingWalletThatAlreadyExistsFails(t *testing.T) {

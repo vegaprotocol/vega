@@ -62,7 +62,7 @@ type App struct {
 
 	// checkedTxs holds a map of valid transactions (validated by CheckTx)
 	// They are consumed by DeliverTx to avoid double validation.
-	checkedTxs *lru.Cache // map[string]Tx
+	checkedTxs *lru.Cache // map[string]Transaction
 
 	// the current block context
 	ctx context.Context

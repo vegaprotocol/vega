@@ -65,11 +65,11 @@ func (p *MarketPosition) Closed() bool {
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(log *logging.Logger, order *types.Order) {
-	p.UpdateOnOrderChange(log, order.Side, order.Price, order.Remaining, true)
+	p.UpdateOnOrderChange(log, order.Side, order.Price, order.TrueRemaining(), true)
 }
 
 func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order) {
-	p.UpdateOnOrderChange(log, order.Side, order.Price, order.Remaining, false)
+	p.UpdateOnOrderChange(log, order.Side, order.Price, order.TrueRemaining(), false)
 }
 
 func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Side, price *num.Uint, sizeChange uint64, add bool) {
@@ -124,13 +124,13 @@ func (p *MarketPosition) UpdateOnOrderChange(log *logging.Logger, side types.Sid
 func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder *types.Order) {
 	switch originalOrder.Side {
 	case types.SideBuy:
-		if uint64(p.buy) < originalOrder.Remaining {
+		if uint64(p.buy) < originalOrder.TrueRemaining() {
 			log.Panic("cannot amend order with remaining > potential buy",
 				logging.Order(*originalOrder),
 				logging.Int64("potential-buy", p.buy))
 		}
 	case types.SideSell:
-		if uint64(p.sell) < originalOrder.Remaining {
+		if uint64(p.sell) < originalOrder.TrueRemaining() {
 			log.Panic("cannot amend order with remaining > potential sell",
 				logging.Order(*originalOrder),
 				logging.Int64("potential-sell", p.sell))

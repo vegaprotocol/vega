@@ -14,6 +14,7 @@ package governance
 
 import (
 	"context"
+	"time"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/execution"
@@ -29,6 +30,7 @@ import (
 type enactmentTime struct {
 	current         int64
 	shouldNotVerify bool
+	cpLoad          bool
 }
 
 func (e *Engine) Name() types.CheckpointName {
@@ -77,22 +79,38 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 		switch prop.Terms.Change.GetTermType() {
 		case types.ProposalTermsTypeNewMarket:
-			enct := &enactmentTime{}
-			// if the proposal is for a new market we want to restore it such that it will be in opening auction
+			// before we mess around with enactment times, determine the time until enactment
+			closeTime := time.Unix(p.Terms.ClosingTimestamp, 0)
+			enactTime := time.Unix(p.Terms.EnactmentTimestamp, 0)
+			auctionDuration := enactTime.Sub(closeTime)
+			// check for successor proposals
+			toEnact := false
 			if p.Terms.EnactmentTimestamp <= now.Unix() {
-				prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
+				toEnact = true
+			}
+			enct := &enactmentTime{
+				cpLoad: true,
+			}
+			// if the proposal is for a new market it should be restored it such that it will be in opening auction
+			if toEnact {
+				prop.Terms.ClosingTimestamp = now.Unix()
+				if auctionDuration < duration {
+					prop.Terms.EnactmentTimestamp = now.Add(duration).Unix()
+				} else {
+					prop.Terms.EnactmentTimestamp = now.Add(auctionDuration).Unix()
+				}
 				enct.shouldNotVerify = true
 			}
 			enct.current = prop.Terms.EnactmentTimestamp
 			toSubmit, err := e.intoToSubmit(ctx, prop, enct)
 			if err != nil {
-				e.log.Panic("Failed to convert proposal into market")
+				e.log.Panic("Failed to convert proposal into market", logging.Error(err))
 			}
 			nm := toSubmit.NewMarket()
 			err = e.markets.RestoreMarket(ctx, nm.Market())
 			if err != nil {
 				if err == execution.ErrMarketDoesNotExist {
-					// market has been settled, we don't care
+					// market has been settled, network doesn't care
 					continue
 				}
 				// any other error, panic
@@ -116,7 +134,6 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			Proposal: prop,
 		})
 	}
-
 	for _, v := range updatedMarketIDs {
 		p := latestUpdateMarketProposals[v]
 		mkt, _, err := e.updatedMarketFromProposal(&proposal{Proposal: p})

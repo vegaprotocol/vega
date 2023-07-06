@@ -22,26 +22,26 @@ import (
 )
 
 type AccountsCmd struct {
-	Party   AccountsPartyCmd   `command:"party" description:"List accounts for a given party"`
-	Market  AccountsMarketCmd  `command:"market" description:"List accounts for a given market"`
-	Network AccountsNetworkCmd `command:"network" description:"List accounts owned by the network"`
-	Help    bool               `short:"h" long:"help" description:"Show this help message"`
+	Party   AccountsPartyCmd   `command:"party"                      description:"List accounts for a given party"`
+	Market  AccountsMarketCmd  `command:"market"                     description:"List accounts for a given market"`
+	Network AccountsNetworkCmd `command:"network"                    description:"List accounts owned by the network"`
+	Help    bool               `description:"Show this help message" long:"help"                                      short:"h"`
 }
 
 type AccountsPartyCmd struct {
-	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
-	Market      string `long:"market" description:"An optional market"`
-	Help        bool   `short:"h" long:"help" description:"Show this help message"`
+	NodeAddress string `default:"0.0.0.0:3002"               description:"The address of the vega node to use" long:"node-address"`
+	Market      string `description:"An optional market"     long:"market"`
+	Help        bool   `description:"Show this help message" long:"help"                                       short:"h"`
 }
 
 type AccountsMarketCmd struct {
-	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
-	Help        bool   `short:"h" long:"help" description:"Show this help message"`
+	NodeAddress string `default:"0.0.0.0:3002"               description:"The address of the vega node to use" long:"node-address"`
+	Help        bool   `description:"Show this help message" long:"help"                                       short:"h"`
 }
 
 type AccountsNetworkCmd struct {
-	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
-	Help        bool   `short:"h" long:"help" description:"Show this help message"`
+	NodeAddress string `default:"0.0.0.0:3002"               description:"The address of the vega node to use" long:"node-address"`
+	Help        bool   `description:"Show this help message" long:"help"                                       short:"h"`
 }
 
 func (opts *AccountsPartyCmd) Execute(params []string) error {

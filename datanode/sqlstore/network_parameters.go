@@ -69,11 +69,11 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	np.cacheLock.Lock()
 	defer np.cacheLock.Unlock()
 
+	var parameter entities.NetworkParameter
 	if value, ok := np.cache[key]; ok {
 		return value, nil
 	}
 
-	var parameter entities.NetworkParameter
 	query := `SELECT * FROM network_parameters_current where key = $1`
 	defer metrics.StartSQLQuery("NetworkParameters", "GetByKey")()
 	err := pgxscan.Get(ctx, np.Connection, &parameter, query, key)
@@ -82,7 +82,6 @@ func (np *NetworkParameters) GetByKey(ctx context.Context, key string) (entities
 	}
 
 	np.cache[parameter.Key] = parameter
-
 	return parameter, nil
 }
 

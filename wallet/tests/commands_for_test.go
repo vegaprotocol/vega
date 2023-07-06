@@ -535,9 +535,8 @@ func (d *DescribeNetworkAssertion) WithName(expected string) *DescribeNetworkAss
 	return d
 }
 
-func (d *DescribeNetworkAssertion) WithGRPCConfig(hosts []string, retires uint64) *DescribeNetworkAssertion {
+func (d *DescribeNetworkAssertion) WithGRPCConfig(hosts []string) *DescribeNetworkAssertion {
 	assert.Equal(d.t, hosts, d.resp.API.GRPCConfig.Hosts)
-	assert.Equal(d.t, retires, d.resp.API.GRPCConfig.Retries)
 	return d
 }
 

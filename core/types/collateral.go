@@ -288,4 +288,10 @@ const (
 	AccountTypeLPFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
 	// Asset account for market proposers.
 	AccountTypeMarketProposerReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
+	// Market account for holding in-flight spot passive orders funds.
+	AccountTypeHolding AccountType = proto.AccountType_ACCOUNT_TYPE_HOLDING
+	// Market account per LP to receive liquidity fees.
+	AccountTypeLPLiquidityFees AccountType = proto.AccountType_ACCOUNT_TYPE_LP_LIQUIDITY_FEES
+
+	AccountTypeLiquidityFeesBonusDistribution AccountType = proto.AccountType_ACCOUNT_TYPE_LIQUIDITY_FEES_BONUS_DISTRIBUTION
 )

@@ -107,6 +107,15 @@ models:
   AuctionTrigger:
     model:
       - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.AuctionTrigger
+  StopOrderStatus:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderStatus
+  StopOrderExpiryStrategy:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderExpiryStrategy
+  StopOrderTriggerDirection:
+    model:
+      - code.vegaprotocol.io/vega/datanode/gateway/graphql/marshallers.StopOrderTriggerDirection
   Order:
     model: code.vegaprotocol.io/vega/protos/vega.Order
   OrderUpdate:
@@ -187,6 +196,18 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.Instrument
   InstrumentMetadata:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentMetadata
+  SuccessorMarket:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.SuccessorMarket
+  StopOrder:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.StopOrderEvent
+  OrderSubmission:
+    model: code.vegaprotocol.io/vega/protos/vega/commands/v1.OrderSubmission
+  StopOrderEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.StopOrderEdge
+  StopOrderConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.StopOrderConnection
+  StopOrderFilter:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.StopOrderFilter
   Market:
     model: code.vegaprotocol.io/vega/protos/vega.Market
     fields:
@@ -250,8 +271,14 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateMarket
   UpdateNetworkParameter:
     model: code.vegaprotocol.io/vega/protos/vega.UpdateNetworkParameter
+  CancelTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
+  NewTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega.NewTransfer
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
+  SuccessorConfiguration:
+    model: code.vegaprotocol.io/vega/protos/vega.SuccessorConfiguration
   FutureProduct:
     model: code.vegaprotocol.io/vega/protos/vega.FutureProduct
   Asset:
@@ -268,10 +295,20 @@ models:
         resolver: true
   PeggedOrder:
     model: code.vegaprotocol.io/vega/protos/vega.PeggedOrder
+  IcebergOrder:
+    model: code.vegaprotocol.io/vega/protos/vega.IcebergOrder
   DataSourceSpecToFutureBinding:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecToFutureBinding
+  DataSourceDefinition:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinition
+  DataSourceDefinitionExternal:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionExternal
+  DataSourceDefinitionInternal:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceDefinitionInternal
   DataSourceSpecConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfiguration
+  DataSourceSpecConfigurationTime:
+    model: code.vegaprotocol.io/vega/protos/vega.DataSourceSpecConfigurationTime
   OracleSpec:
     model: code.vegaprotocol.io/vega/protos/vega.OracleSpec
   Filter:
@@ -339,6 +376,10 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffTransfer
   RecurringTransfer:
     model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringTransfer
+  OneOffGovernanceTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.OneOffGovernanceTransfer
+  RecurringGovernanceTransfer:
+    model: code.vegaprotocol.io/vega/protos/vega/events/v1.RecurringGovernanceTransfer
   Statistics:
     model: code.vegaprotocol.io/vega/protos/vega/api/v1.Statistics
   AccountType:
@@ -382,8 +423,12 @@ models:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PageInfo
   MarketConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketConnection
+  SuccessorMarketConnection:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.SuccessorMarketConnection
   MarketEdge:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.MarketEdge
+  SuccessorMarketEdge:
+    model: code.vegaprotocol.io/vega/protos/data-node/api/v2.SuccessorMarketEdge
   PositionConnection:
     model: code.vegaprotocol.io/vega/protos/data-node/api/v2.PositionConnection
   PositionEdge:

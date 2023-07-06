@@ -92,7 +92,7 @@ func (e *Engine) SetLiquidityFee(v num.Decimal) {
 }
 
 // CalculateForContinuousMode calculate the fee for
-// trades which were produced from a market running in
+// trades which were produced from a market running
 // in continuous trading mode.
 // A single FeesTransfer is produced here as all fees
 // are paid by the aggressive order.
@@ -227,7 +227,7 @@ func (e *Engine) CalculateForAuctionMode(
 }
 
 // CalculateForFrequentBatchesAuctionMode calculate the fee for
-// trades which were produced from a market running in
+// trades which were produced from a market running
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
 // single party.
@@ -394,6 +394,23 @@ func (e *Engine) CalculateFeeForPositionResolution(
 // remainder is assigned to the last party on the share map. Note that the map
 // is sorted lexicographically to keep determinism.
 func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Decimal, acc *types.Account) events.FeesTransfer {
+	return e.buildLiquidityFeesTransfer(shares, acc, types.TransferTypeLiquidityFeeDistribute)
+}
+
+// BuildLiquidityFeeAllocationTransfer returns the set of transfers that will
+// be used by the collateral engine to allocate the fees to liquidity providers per market fee accounts.
+// As shares are represented in float64 and fees are uint64, shares are floored and the
+// remainder is assigned to the last party on the share map. Note that the map
+// is sorted lexicographically to keep determinism.
+func (e *Engine) BuildLiquidityFeeAllocationTransfer(shares map[string]num.Decimal, acc *types.Account) events.FeesTransfer {
+	return e.buildLiquidityFeesTransfer(shares, acc, types.TransferTypeLiquidityFeeAllocate)
+}
+
+func (e *Engine) buildLiquidityFeesTransfer(
+	shares map[string]num.Decimal,
+	acc *types.Account,
+	transferType types.TransferType,
+) events.FeesTransfer {
 	if len(shares) == 0 {
 		return nil
 	}
@@ -429,7 +446,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 				Asset:  acc.Asset,
 			},
 			MinAmount: amount.Clone(),
-			Type:      types.TransferTypeLiquidityFeeDistribute,
+			Type:      transferType,
 		})
 	}
 

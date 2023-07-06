@@ -140,7 +140,6 @@ func PrintDescribeNetworkResponse(w io.Writer, resp api.AdminNetwork) {
 	str.NextSection()
 
 	str.Text("API.GRPC").NextLine()
-	str.Text("  Retries: ").WarningText(fmt.Sprint(resp.API.GRPC.Retries)).NextLine()
 	str.Text("  Hosts:")
 	PrintDescribeNetworkWithValuesNotSet(str, resp.API.GRPC.Hosts)
 	str.NextLine()

@@ -37,15 +37,23 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p             *proposal
-	m             *ToEnactNewMarket
-	newAsset      *types.Asset
-	updatedAsset  *types.Asset
-	n             *types.NetworkParameter
-	as            *types.AssetDetails
-	updatedMarket *types.Market
-	f             *ToEnactFreeform
+	p                 *proposal
+	m                 *ToEnactNewMarket
+	s                 *ToEnactNewSpotMarket
+	newAsset          *types.Asset
+	updatedAsset      *types.Asset
+	n                 *types.NetworkParameter
+	as                *types.AssetDetails
+	updatedMarket     *types.Market
+	updatedSpotMarket *types.Market
+	f                 *ToEnactFreeform
+	t                 *ToEnactTransfer
+	c                 *ToEnactCancelTransfer
 }
+
+type ToEnactTransfer struct{}
+
+type ToEnactCancelTransfer struct{}
 
 // ToEnactNewMarket is just a empty struct, to signal
 // an enacted market. nothing to be done with it
@@ -53,11 +61,25 @@ type ToEnact struct {
 // end of opening auction or so).
 type ToEnactNewMarket struct{}
 
+type ToEnactNewSpotMarket struct{}
+
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
 
+func (t ToEnact) IsCancelTransfer() bool {
+	return t.c != nil
+}
+
+func (t ToEnact) IsNewTransfer() bool {
+	return t.t != nil
+}
+
 func (t ToEnact) IsNewMarket() bool {
 	return t.m != nil
+}
+
+func (t ToEnact) IsNewSpotMarket() bool {
+	return t.s != nil
 }
 
 func (t ToEnact) IsNewAsset() bool {
@@ -67,6 +89,10 @@ func (t ToEnact) IsNewAsset() bool {
 
 func (t ToEnact) IsUpdateMarket() bool {
 	return t.updatedMarket != nil
+}
+
+func (t ToEnact) IsUpdateSpotMarket() bool {
+	return t.updatedSpotMarket != nil
 }
 
 func (t ToEnact) IsUpdateNetworkParameter() bool {
@@ -79,6 +105,14 @@ func (t ToEnact) IsNewAssetDetails() bool {
 
 func (t ToEnact) IsFreeform() bool {
 	return t.f != nil
+}
+
+func (t *ToEnact) NewTransfer() *ToEnactTransfer {
+	return t.t
+}
+
+func (t *ToEnact) CancelTransfer() *ToEnactCancelTransfer {
+	return t.c
 }
 
 func (t *ToEnact) NewMarket() *ToEnactNewMarket {
@@ -99,6 +133,10 @@ func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 
 func (t *ToEnact) UpdateMarket() *types.Market {
 	return t.updatedMarket
+}
+
+func (t *ToEnact) UpdateSpotMarket() *types.Market {
+	return t.updatedSpotMarket
 }
 
 func (t *ToEnact) NewFreeform() *ToEnactFreeform {
@@ -128,6 +166,7 @@ func (t *ToEnact) UpdateAsset() *types.Asset {
 type ToSubmit struct {
 	p *types.Proposal
 	m *ToSubmitNewMarket
+	s *ToSubmitNewSpotMarket
 }
 
 func (t *ToSubmit) Proposal() *types.Proposal {
@@ -142,12 +181,45 @@ func (t *ToSubmit) NewMarket() *ToSubmitNewMarket {
 	return t.m
 }
 
-type ToSubmitNewMarket struct {
+func (t ToSubmit) IsNewSpotMarket() bool {
+	return t.s != nil
+}
+
+func (t *ToSubmit) NewSpotMarket() *ToSubmitNewSpotMarket {
+	return t.s
+}
+
+type ToSubmitNewSpotMarket struct {
 	m *types.Market
+}
+
+func (t *ToSubmitNewSpotMarket) Market() *types.Market {
+	return t.m
+}
+
+func (t *ToSubmit) ParentMarketID() string {
+	return t.m.m.ParentMarketID
+}
+
+func (t *ToSubmit) InsurancePoolFraction() *num.Decimal {
+	if len(t.m.m.ParentMarketID) == 0 {
+		return nil
+	}
+	ipf := t.m.m.InsurancePoolFraction
+	return &ipf
+}
+
+type ToSubmitNewMarket struct {
+	m   *types.Market
+	oos time.Time // opening auction start
 }
 
 func (t *ToSubmitNewMarket) Market() *types.Market {
 	return t.m
+}
+
+func (t *ToSubmitNewMarket) OpeningAuctionStart() time.Time {
+	return t.oos
 }
 
 type VoteClosed struct {

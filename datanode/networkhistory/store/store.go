@@ -15,37 +15,31 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dustin/go-humanize"
-	"github.com/ipfs/kubo/core/node/libp2p/fd"
-	"github.com/libp2p/go-libp2p/core/peer"
-
 	"code.vegaprotocol.io/vega/datanode/metrics"
-
-	"github.com/ipfs/kubo/repo"
-
-	"github.com/ipfs/kubo/core/corerepo"
-
 	"code.vegaprotocol.io/vega/datanode/networkhistory/segment"
 	"code.vegaprotocol.io/vega/libs/memory"
 	"code.vegaprotocol.io/vega/logging"
 
-	"github.com/ipfs/kubo/core/node/libp2p"
-	"github.com/ipfs/kubo/repo/fsrepo"
-
+	"github.com/dustin/go-humanize"
+	icore "github.com/ipfs/boxo/coreiface"
 	"github.com/ipfs/go-cid"
 	files "github.com/ipfs/go-ipfs-files"
-	icore "github.com/ipfs/interface-go-ipfs-core"
+	ipfslogging "github.com/ipfs/go-log"
 	"github.com/ipfs/interface-go-ipfs-core/path"
 	"github.com/ipfs/kubo/config"
 	serialize "github.com/ipfs/kubo/config/serialize"
 	"github.com/ipfs/kubo/core"
 	"github.com/ipfs/kubo/core/coreapi"
 	"github.com/ipfs/kubo/core/corehttp"
+	"github.com/ipfs/kubo/core/corerepo"
+	"github.com/ipfs/kubo/core/node/libp2p"
+	"github.com/ipfs/kubo/core/node/libp2p/fd"
 	"github.com/ipfs/kubo/plugin/loader"
+	"github.com/ipfs/kubo/repo"
+	"github.com/ipfs/kubo/repo/fsrepo"
+	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 	"github.com/prometheus/client_golang/prometheus"
-
-	ipfslogging "github.com/ipfs/go-log"
 )
 
 const segmentMetaDataFile = "metadata.json"
@@ -670,22 +664,25 @@ func (p *Store) FetchHistorySegment(ctx context.Context, historySegmentID string
 	return indexEntry, nil
 }
 
-func (p *Store) StagedSegment(s segment.Full) (segment.Staged, error) {
+func (p *Store) StagedSegment(ctx context.Context, s segment.Full) (segment.Staged, error) {
 	ss := segment.Staged{
 		Full:      s,
 		Directory: p.stagingDir,
 	}
 	if _, err := os.Stat(ss.ZipFilePath()); err != nil {
-		return segment.Staged{}, fmt.Errorf("segment %v not fetched into staging area:%w", s, err)
+		_, err = p.FetchHistorySegment(ctx, ss.HistorySegmentID)
+		if err != nil {
+			return segment.Staged{}, fmt.Errorf("failed to fetch history segment into staging area:%w", err)
+		}
 	}
 	return ss, nil
 }
 
-func (p *Store) StagedContiguousHistory(chunk segment.ContiguousHistory[segment.Full]) (segment.ContiguousHistory[segment.Staged], error) {
+func (p *Store) StagedContiguousHistory(ctx context.Context, chunk segment.ContiguousHistory[segment.Full]) (segment.ContiguousHistory[segment.Staged], error) {
 	staged := segment.ContiguousHistory[segment.Staged]{}
 
 	for _, s := range chunk.Segments {
-		ss, err := p.StagedSegment(s)
+		ss, err := p.StagedSegment(ctx, s)
 		if err != nil {
 			return segment.ContiguousHistory[segment.Staged]{}, err
 		}

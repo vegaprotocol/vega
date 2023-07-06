@@ -2332,29 +2332,52 @@ func TestClearMarket(t *testing.T) {
 	party := "okparty"
 
 	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(10)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(12)
 
 	eng.IncrementBalance(context.Background(), eng.marketInsuranceID, num.NewUint(1000))
 
-	acc, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
-	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
-	_, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	_, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	assert.Nil(t, err)
+	acc, err := eng.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
+	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
+	assert.Nil(t, err)
+
+	// increment the balance on the lpFee account so we can check it gets cleared
+	liqAcc, _ := eng.GetMarketLiquidityFeeAccount(testMarketID, testMarketAsset)
+	eng.IncrementBalance(context.Background(), liqAcc.ID, num.NewUint(250))
 
 	parties := []string{party}
 
-	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
+	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties, false)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(responses))
 
+	// this will be from the margin account to the general account
 	assert.Equal(t, 1, len(responses[0].Entries))
-	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
-	assert.Equal(t, num.NewUint(500), responses[0].Entries[0].ToAccountBalance)
+	entry := responses[0].Entries[0]
+	assert.Equal(t, types.AccountTypeMargin, entry.FromAccount.Type)
+	assert.Equal(t, types.AccountTypeGeneral, entry.ToAccount.Type)
+	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
+	assert.Equal(t, num.NewUint(500), entry.ToAccountBalance)
+	assert.Equal(t, num.NewUint(500), entry.Amount)
 
+	// This will be liquidity fees being cleared into the insurance account
 	assert.Equal(t, 1, len(responses[1].Entries))
-	assert.Equal(t, num.NewUint(1000), responses[1].Entries[0].ToAccountBalance)
-	assert.Equal(t, num.NewUint(1000), responses[1].Entries[0].ToAccountBalance)
+	entry = responses[1].Entries[0]
+	assert.Equal(t, types.AccountTypeFeesLiquidity, entry.FromAccount.Type)
+	assert.Equal(t, types.AccountTypeInsurance, entry.ToAccount.Type)
+	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
+	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
+	assert.Equal(t, num.NewUint(250), entry.Amount)
+
+	// This will be the insurance account going into the global rewards pool
+	entry = responses[2].Entries[0]
+	assert.Equal(t, types.AccountTypeInsurance, entry.FromAccount.Type)
+	assert.Equal(t, types.AccountTypeGlobalReward, entry.ToAccount.Type)
+	assert.Equal(t, num.NewUint(0), entry.FromAccountBalance)
+	assert.Equal(t, num.NewUint(1250), entry.ToAccountBalance)
+	assert.Equal(t, num.NewUint(1250), entry.Amount)
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
@@ -2363,16 +2386,17 @@ func TestClearMarketNoMargin(t *testing.T) {
 	party := "okparty"
 
 	// create parties
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	acc, _ := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
 	eng.IncrementBalance(context.Background(), acc, num.NewUint(500))
 
 	parties := []string{party}
 
-	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties)
+	responses, err := eng.ClearMarket(context.Background(), testMarketID, testMarketAsset, parties, false)
 
+	// we expect no ledger movements as all accounts to clear were empty
 	assert.NoError(t, err)
-	assert.Equal(t, len(responses), 1)
+	assert.Equal(t, len(responses), 0)
 }
 
 func TestRewardDepositOK(t *testing.T) {
@@ -2843,4 +2867,221 @@ func TestHash(t *testing.T) {
 func stringToInt(s string) int {
 	i, _ := strconv.Atoi(s)
 	return i
+}
+
+func TestHoldingAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+
+	// create the general account for the source general account
+	id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	// we're have 1000 in the general account and 0 in the holding
+	// transferring 800 from the general account to the holding account in two transfers of 400
+	// expect to have the holding account balance = 800 and the general account balance = 200
+
+	// holding account does not exist yet - it will be created
+	le, err := eng.TransferToHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(400),
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
+
+	// holding account does not exist yet - it will be created
+	le, err = eng.TransferToHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(400),
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(400), le.Balances[0].Balance)
+
+	// check general account balance is 200
+	z, err := eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(200), z.Balance)
+
+	// request to release 200 from the holding account
+	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(200),
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeGeneral, le.Balances[0].Account.Type)
+	require.Equal(t, num.NewUint(200), le.Balances[0].Balance)
+
+	// now request to release 600 more
+	le, err = eng.ReleaseFromHoldingAccount(ctx, &types.Transfer{
+		Owner: "zohar",
+		Amount: &types.FinancialAmount{
+			Asset:  "BTC",
+			Amount: num.NewUint(600),
+		},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, num.UintZero(), le.Entries[0].FromAccountBalance)
+	require.Equal(t, num.NewUint(1000), le.Entries[0].ToAccountBalance)
+}
+
+func TestClearSpotMarket(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// create a spot market and top up the fees account before we try to close the market
+	err := eng.CreateSpotMarketAccounts(context.Background(), testMarketID, "BTC")
+	require.NoError(t, err)
+
+	acc, err := eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+
+	eng.IncrementBalance(context.Background(), acc.ID, num.NewUint(1000))
+
+	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+
+	_, err = eng.ClearSpotMarket(context.Background(), testMarketID, "BTC")
+	require.NoError(t, err)
+
+	globalReward, err := eng.GetGlobalRewardAccount("BTC")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(1000), globalReward.Balance)
+
+	// the liquidity and makes fees should be removed at this point
+	_, err = eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
+	require.Error(t, err)
+
+	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	require.Error(t, err)
+}
+
+func TestCreateSpotMarketAccounts(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	err := eng.CreateSpotMarketAccounts(context.Background(), testMarketID, "BTC")
+	require.NoError(t, err)
+
+	// check that accounts were created for liquidity and maker fees
+	_, err = eng.GetMarketLiquidityFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+
+	_, err = eng.GetMarketMakerFeeAccount(testMarketID, "BTC")
+	require.NoError(t, err)
+}
+
+func TestPartyHasSufficientBalance(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// first check when general account of the source does not exist
+	err := eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	require.Error(t, err)
+
+	ctx := context.Background()
+	// create the general account for the source general account
+	id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1001))
+	require.Error(t, err)
+	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(1000))
+	require.NoError(t, err)
+	err = eng.PartyHasSufficientBalance("zohar", "BTC", num.NewUint(900))
+	require.NoError(t, err)
+}
+
+func TestCreatePartyHoldingAccount(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	ctx := context.Background()
+
+	_, err := eng.CreatePartyHoldingAccount(ctx, "zohar", "BTC2")
+	// asset does not exist
+	require.Error(t, err)
+
+	id, err := eng.CreatePartyHoldingAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	eng.IncrementBalance(ctx, id, num.NewUint(1000))
+
+	// check holding account balance
+	acc, err := eng.GetAccountByID(id)
+	require.NoError(t, err)
+	require.Equal(t, types.AccountTypeHolding, acc.Type)
+	require.Equal(t, num.NewUint(1000), acc.Balance)
+}
+
+func TestTransferSpot(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	ctx := context.Background()
+	// first check when general account of the source does not exist
+	_, err := eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900))
+	require.Error(t, err)
+
+	// create the general account for the source general account
+	id, err := eng.CreatePartyGeneralAccount(ctx, "zohar", "BTC")
+	require.NoError(t, err)
+
+	// topup the source general account
+	require.NoError(t, eng.IncrementBalance(ctx, id, num.NewUint(1000)))
+
+	// transfer successfully
+	_, err = eng.TransferSpot(ctx, "zohar", "jeremy", "BTC", num.NewUint(900))
+	require.NoError(t, err)
+
+	// check balances
+	z, err := eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+
+	j, err := eng.GetPartyGeneralAccount("jeremy", "BTC")
+	require.NoError(t, err)
+
+	require.Equal(t, num.NewUint(100), z.Balance)
+	require.Equal(t, num.NewUint(900), j.Balance)
+
+	// try to transfer more than in the account should transfer all
+	_, err = eng.TransferSpot(ctx, "jeremy", "zohar", "BTC", num.NewUint(1000))
+	require.NoError(t, err)
+
+	// check balances
+	z, err = eng.GetPartyGeneralAccount("zohar", "BTC")
+	require.NoError(t, err)
+
+	j, err = eng.GetPartyGeneralAccount("jeremy", "BTC")
+	require.NoError(t, err)
+
+	require.Equal(t, num.NewUint(1000), z.Balance)
+	require.Equal(t, num.UintZero(), j.Balance)
 }

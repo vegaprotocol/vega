@@ -48,7 +48,7 @@ func getTestWitness(t *testing.T) *testWitness {
 
 	now := time.Now()
 	tsvc.EXPECT().GetTimeNow().Times(1).Return(now)
-	w := validators.NewWitness(
+	w := validators.NewWitness(context.Background(),
 		logging.NewTestLogger(), validators.NewDefaultConfig(), top, cmd, tsvc)
 	assert.NotNil(t, w)
 
@@ -379,7 +379,7 @@ func (t testRes) GetID() string { return t.id }
 func (t testRes) GetType() commandspb.NodeVote_Type {
 	return commandspb.NodeVote_TYPE_FUNDS_DEPOSITED
 }
-func (t testRes) Check() error { return t.check() }
+func (t testRes) Check(ctx context.Context) error { return t.check() }
 
 func newPublicKey(k string) crypto.PublicKey {
 	pubKeyB := []byte(k)

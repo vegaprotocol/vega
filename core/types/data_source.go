@@ -134,14 +134,12 @@ type dataSourceType interface {
 
 	String() string
 	DeepClone() dataSourceType
-	// ToDataSourceSpec() *DataSourceSpec
 }
 
 type DataSourceDefinition struct {
 	SourceType dataSourceType
 }
 
-// /
 // IntoProto returns the proto object from DataSourceDefinition
 // that is - vegapb.DataSourceDefinition that may have external or internal SourceType.
 // Returns the whole proto object.
@@ -190,7 +188,6 @@ func (s DataSourceDefinition) IntoProto() *vegapb.DataSourceDefinition {
 	return ds
 }
 
-// /
 // String returns the data source definition content as a string.
 func (s DataSourceDefinition) String() string {
 	if s.SourceType != nil {
@@ -218,31 +215,72 @@ func (s DataSourceDefinition) String() string {
 func (s DataSourceDefinition) DeepClone() DataSourceDefinition {
 	cpy := &DataSourceDefinition{}
 
-	if s.SourceType != nil {
-		switch dsn := s.SourceType.oneOfProto().(type) {
-		case *vegapb.DataSourceDefinition_External:
-			cpy = &DataSourceDefinition{
-				SourceType: &DataSourceDefinitionExternalx{
-					External: &DataSourceDefinitionExternal{
-						SourceType: &DataSourceSpecConfiguration{
-							Signers: SignersFromProto(dsn.External.GetOracle().Signers),
-							Filters: DataSourceSpecFiltersFromProto(dsn.External.GetOracle().Filters),
-						},
+	d := s.Content()
+	switch tp := d.(type) {
+	case *DataSourceSpecConfiguration:
+		cpy = &DataSourceDefinition{
+			SourceType: &DataSourceDefinitionExternalx{
+				External: &DataSourceDefinitionExternal{
+					SourceType: &DataSourceSpecConfiguration{
+						Signers: tp.Signers,
+						Filters: tp.Filters,
 					},
 				},
-			}
-
-		case *vegapb.DataSourceDefinition_Internal:
-			cpy = &DataSourceDefinition{
-				SourceType: s.SourceType.DeepClone(),
-			}
+			},
+		}
+	case *DataSourceSpecConfigurationTime:
+		cpy = &DataSourceDefinition{
+			SourceType: &DataSourceDefinitionInternalx{
+				Internal: &DataSourceDefinitionInternal{
+					SourceType: &DataSourceSpecConfigurationTime{
+						Conditions: tp.Conditions,
+					},
+				},
+			},
 		}
 	}
 
 	return *cpy
 }
 
-// /
+func (s *DataSourceDefinition) Content() interface{} {
+	if s != nil {
+		if s.SourceType != nil {
+			switch tp := s.SourceType.(type) {
+			case *DataSourceDefinitionExternalx:
+				if tp.External != nil {
+					if tp.External.SourceType != nil {
+						switch extTp := tp.External.SourceType.(type) {
+						case *DataSourceDefinitionExternalOracle:
+							if extTp.Oracle != nil {
+								return extTp.Oracle
+							}
+
+							// The Ethereum type case will go here later.
+						}
+					}
+				}
+
+			case *DataSourceDefinitionInternalx:
+				if tp.Internal != nil {
+					if tp.Internal.SourceType != nil {
+						switch intTp := tp.Internal.SourceType.(type) {
+						case *DataSourceDefinitionInternalTime:
+							if intTp.Time != nil {
+								return intTp.Time
+							}
+
+							// The rest of the internal type sources cases will go here later.
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // DataSourceDefinitionFromProto tries to build the DataSourceDfiniition object
 // from the given proto object.
 func DataSourceDefinitionFromProto(protoConfig *vegapb.DataSourceDefinition) *DataSourceDefinition {
@@ -271,82 +309,49 @@ func DataSourceDefinitionFromProto(protoConfig *vegapb.DataSourceDefinition) *Da
 	return &DataSourceDefinition{}
 }
 
-// /
 // GetSigners tries to get the signers from the DataSourceDefinition if they exist.
 func (s DataSourceDefinition) GetSigners() []*Signer {
 	signers := []*Signer{}
 
-	if s.SourceType != nil {
-		switch dsn := s.SourceType.oneOfProto().(type) {
-		case *vegapb.DataSourceDefinition_External:
-			if dsn.External != nil {
-				if dsn.External.SourceType != nil {
-					o := dsn.External.GetOracle()
-					if o != nil {
-						signers = SignersFromProto(o.Signers)
-					}
-				}
-			}
-		case **vegapb.DataSourceDefinition_Internal:
-			// Do not try to get signers from internal type of data source
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *DataSourceSpecConfiguration:
+			signers = tp.Signers
 		}
 	}
 
 	return signers
 }
 
-// /
 // GetFilters tries to get the filters from the DataSourceDefinition if they exist.
 func (s DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 	filters := []*DataSourceSpecFilter{}
 
-	if s.SourceType != nil {
-		switch dsn := s.SourceType.oneOfProto().(type) {
-		case *vegapb.DataSourceDefinition_External:
-			if dsn.External != nil {
-				if dsn.External.SourceType != nil {
-					switch dsn.External.SourceType.(type) {
-					case *vegapb.DataSourceDefinitionExternal_Oracle:
-						o := dsn.External.GetOracle()
-						if o != nil {
-							filters = DataSourceSpecFiltersFromProto(o.Filters)
-						}
-					}
-				}
-			}
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *DataSourceSpecConfiguration:
+			filters = tp.Filters
 
-		// For the case the definition source type is vegapb.DataSourceDefinition_Internal
-		case *vegapb.DataSourceDefinition_Internal:
-			if dsn.Internal != nil {
-				if dsn.Internal.SourceType != nil {
-					switch idsn := dsn.Internal.SourceType.(type) {
-					// For the case the vegapb.DataSourceDefinitionInternal is not nill
-					// and its embedded object is of type vegapb.DataSourceDefinitionInternal_Time
-					case *vegapb.DataSourceDefinitionInternal_Time:
-						// Retrieve the filters for this specific type of internal source
-						// Checking if the idsn.Time object is nil is done in `DataSourceSpecConfigurationTimeFromProto`
-						dst := DataSourceSpecConfigurationTimeFromProto(idsn.Time)
-
-						// For the case the internal data source is time based
-						// (as of OT https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
-						// We add the filter key values manually to match a time based data source
-						// Ensure only a single filter has been created, that holds the first condition
-						if len(dst.Conditions) > 0 {
-							filters = append(
-								filters,
-								&DataSourceSpecFilter{
-									Key: &DataSourceSpecPropertyKey{
-										Name: "vegaprotocol.builtin.timestamp",
-										Type: datapb.PropertyKey_TYPE_TIMESTAMP,
-									},
-									Conditions: []*DataSourceSpecCondition{
-										dst.Conditions[0],
-									},
-								},
-							)
-						}
-					}
-				}
+		case *DataSourceSpecConfigurationTime:
+			// For the case the internal data source is time based
+			// (as of OT https://github.com/vegaprotocol/specs/blob/master/protocol/0048-DSRI-data_source_internal.md#13-vega-time-changed)
+			// We add the filter key values manually to match a time based data source
+			// Ensure only a single filter has been created, that holds the first condition
+			if len(tp.Conditions) > 0 {
+				filters = append(
+					filters,
+					&DataSourceSpecFilter{
+						Key: &DataSourceSpecPropertyKey{
+							Name: "vegaprotocol.builtin.timestamp",
+							Type: datapb.PropertyKey_TYPE_TIMESTAMP,
+						},
+						Conditions: []*DataSourceSpecCondition{
+							tp.Conditions[0],
+						},
+					},
+				)
 			}
 		}
 	}
@@ -356,24 +361,16 @@ func (s DataSourceDefinition) GetFilters() []*DataSourceSpecFilter {
 
 // GetDataSourceSpecConfiguration returns the base object - DataSourceSpecConfiguration
 // from the DataSourceDefinition.
-func (s DataSourceDefinition) GetDataSourceSpecConfiguration() *vegapb.DataSourceSpecConfiguration {
-	if s.SourceType != nil {
-		switch tp := s.SourceType.oneOfProto().(type) {
-		case *vegapb.DataSourceDefinition_External:
-			if tp.External != nil {
-				if tp.External.SourceType != nil {
-					o := tp.External.GetOracle()
-					if o != nil {
-						return o
-					}
-				}
-			}
-		case *vegapb.DataSourceDefinitionInternal:
-			//
+func (s DataSourceDefinition) GetDataSourceSpecConfiguration() *DataSourceSpecConfiguration {
+	data := s.Content()
+	if data != nil {
+		switch tp := data.(type) {
+		case *DataSourceSpecConfiguration:
+			return tp
 		}
 	}
 
-	return &vegapb.DataSourceSpecConfiguration{}
+	return &DataSourceSpecConfiguration{}
 }
 
 // NewDataSourceDefinition creates a new EMPTY DataSourceDefinition object.
@@ -410,7 +407,6 @@ func NewDataSourceDefinition(tp int) *DataSourceDefinition {
 	return ds
 }
 
-// /
 // UpdateFilters updates the DataSourceDefinition Filters.
 func (s *DataSourceDefinition) UpdateFilters(filters []*DataSourceSpecFilter) error {
 	fTypeCheck := map[*DataSourceSpecFilter]struct{}{}
@@ -646,17 +642,12 @@ func (s *DataSourceDefinition) IsExternal() (bool, error) {
 	return false, errors.New("unknown type of data source provided")
 }
 
-func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() *vegapb.DataSourceSpecConfigurationTime {
-	if s.SourceType != nil {
-		switch tp := s.SourceType.oneOfProto().(type) {
-		case *vegapb.DataSourceDefinition_Internal:
-			if tp.Internal != nil {
-				if tp.Internal.SourceType != nil {
-					return tp.Internal.GetTime()
-				}
-			}
-		}
+func (s *DataSourceDefinition) GetDataSourceSpecConfigurationTime() *DataSourceSpecConfigurationTime {
+	data := s.Content()
+	switch tp := data.(type) {
+	case *DataSourceSpecConfigurationTime:
+		return tp
 	}
 
-	return &vegapb.DataSourceSpecConfigurationTime{}
+	return &DataSourceSpecConfigurationTime{}
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -129,7 +130,7 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 	hash := "hashy mchashface"
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -163,8 +164,8 @@ func testAdminSendingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	assert.Nil(t, errorDetails)
-	assert.Equal(t, hash, result.TxHash)
-	assert.NotEmpty(t, result.Tx)
+	assert.Equal(t, hash, result.TransactionHash)
+	assert.NotEmpty(t, result.Transaction)
 }
 
 func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
@@ -174,7 +175,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletVerificationFails(t
 	walletName := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -237,7 +238,7 @@ func testAdminSendTransactionGettingInternalErrorDuringWalletRetrievalFails(t *t
 	walletName := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminSendTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)

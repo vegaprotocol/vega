@@ -1,0 +1,17 @@
+{
+	"TestName": "TestEpochs_EpochByBlock",
+	"Query": "{ epoch(block: \"121\") { id timestamps{ start, expiry, end, firstBlock, lastBlock } } }",
+	"Result": {
+		"epoch": {
+			"id": "14",
+			"timestamps": {
+				"end": "2023-03-10T10:19:41.051503Z",
+				"expiry": "2023-03-10T10:19:40.092803Z",
+				"firstBlock": "121",
+				"lastBlock": "134",
+				"start": "2023-03-10T10:19:35.092803Z"
+			}
+		}
+	},
+	"Duration": 3037208
+}

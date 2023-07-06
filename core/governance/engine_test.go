@@ -67,6 +67,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Submitting a proposal with non-existing account fails", testSubmittingProposalWithNonExistingAccountFails)
 	t.Run("Submitting a proposal with internal time termination with non-existing account fails", testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails)
 	t.Run("Submitting a proposal without enough stake fails", testSubmittingProposalWithoutEnoughStakeFails)
+	t.Run("Submitting an update market proposal without enough stake and els fails", testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails)
 	t.Run("Submitting a proposal with internal time termination without enough stake fails", testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails)
 
 	t.Run("Submitting a time-triggered proposal for new market with termination time before enactment time fails", testSumittingTimeTriggeredProposalNewMarketTerminationBeforeEnactmentFails)
@@ -82,6 +83,7 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Updating voters key on votes with internal time termination succeeds", testUpdatingVotersKeyOnVotesWithInternalTimeTerminationSucceeds)
 
 	t.Run("Computing the governance state hash is deterministic", testComputingGovernanceStateHashIsDeterministic)
+	t.Run("Submit proposal update market", testSubmitProposalMarketUpdate)
 }
 
 func testUpdatingVotersKeyOnVotesSucceeds(t *testing.T) {
@@ -240,9 +242,6 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 			name:     "For new market",
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
-			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
-		}, {
 			name:     "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
 		}, {
@@ -268,6 +267,38 @@ func testSubmittingProposalWithNonExistingAccountFails(t *testing.T) {
 	}
 }
 
+func testSubmitProposalMarketUpdate(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
+	tc := struct {
+		name     string
+		proposal types.Proposal
+	}{
+		name:     "For market update",
+		proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, true),
+	}
+
+	// test that with no account but equity like share, a market update proposal goes through
+	t.Run(tc.name, func(tt *testing.T) {
+		// setup
+		eng.ensureAllAssetEnabled(tt)
+		eng.ensureNoAccountForParty(tt, party)
+		eng.expectOpenProposalEvent(tt, party, tc.proposal.ID)
+
+		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
+		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalOne(), true)
+		// when
+		_, err := eng.submitProposal(tt, tc.proposal)
+
+		// then
+		require.NoError(tt, err)
+	})
+}
+
 func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -283,9 +314,6 @@ func testSubmittingProposalWithInternalTimeTerminationWithNonExistingAccountFail
 		{
 			name:     "For new market",
 			proposal: eng.newProposalForNewMarket(party, now, nil, nil, false),
-		}, {
-			name:     "For market update",
-			proposal: eng.newProposalForMarketUpdate("", party, now, nil, nil, false),
 		}, {
 			name:     "For new asset",
 			proposal: eng.newProposalForNewAsset(party, now),
@@ -330,10 +358,6 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
 			proposal:                eng.newProposalForNewMarket(party, now, nil, nil, true),
 		}, {
-			name:                    "For market update",
-			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
-		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
 			proposal:                eng.newProposalForNewAsset(party, now),
@@ -362,6 +386,42 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 	}
 }
 
+func testSubmittingUpdateMarketProposalWithoutEnoughStakeAndELSFails(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := vgrand.RandomStr(5)
+	now := eng.tsvc.GetTimeNow()
+
+	tc := struct {
+		name                    string
+		minProposerBalanceParam string
+		proposal                types.Proposal
+	}{
+		name:                    "For market update",
+		minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
+		proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, true),
+	}
+
+	t.Run(tc.name, func(tt *testing.T) {
+		// setup
+		eng.ensureTokenBalanceForParty(tt, party, 10)
+		eng.ensureNetworkParameter(tt, tc.minProposerBalanceParam, "10000")
+		eng.ensureAllAssetEnabled(tt)
+		eng.expectRejectedProposalEvent(tt, party, tc.proposal.ID, types.ProposalErrorInsufficientTokens)
+
+		// when
+		eng.markets.EXPECT().MarketExists(gomock.Any()).Return(true)
+		eng.markets.EXPECT().GetEquityLikeShareForMarketAndParty(gomock.Any(), gomock.Any()).Return(num.DecimalZero(), true)
+		_, err := eng.submitProposal(tt, tc.proposal)
+
+		// then
+		require.Error(tt, err)
+		assert.Contains(t, err.Error(), "proposer have insufficient governance token, expected >=")
+	})
+}
+
 func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -379,10 +439,6 @@ func testSubmittingProposalWithInternalTimeTerminationWithoutEnoughStakeFails(t 
 			name:                    "For new market",
 			minProposerBalanceParam: netparams.GovernanceProposalMarketMinProposerBalance,
 			proposal:                eng.newProposalForNewMarket(party, now, nil, nil, false),
-		}, {
-			name:                    "For market update",
-			minProposerBalanceParam: netparams.GovernanceProposalUpdateMarketMinProposerBalance,
-			proposal:                eng.newProposalForMarketUpdate("market-1", party, now, nil, nil, false),
 		}, {
 			name:                    "For new asset",
 			minProposerBalanceParam: netparams.GovernanceProposalAssetMinProposerBalance,
@@ -811,7 +867,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	eng.tokenBal[partyA] = 200
 	eng.tokenBal[partyB] = 100
 
-	const howMany = 100
+	const howMany = 10
 	passed := map[string]*types.Proposal{}
 	declined := map[string]*types.Proposal{}
 	var afterClosing time.Time
@@ -1063,6 +1119,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ts := mocks.NewMockTimeService(ctrl)
 	broker := bmocks.NewMockBroker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
+	banking := mocks.NewMockBanking(ctrl)
 
 	// Set default network parameters
 	netp := netparams.New(log, netparams.NewDefaultConfig(), broker)
@@ -1084,7 +1141,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	require.NoError(t, netp.Update(ctx, netparams.GovernanceProposalUpdateMarketMinProposerEquityLikeShare, "0.1"))
 
 	// Initialise engine as validator
-	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp)
+	eng := governance.NewEngine(log, cfg, accounts, ts, broker, assets, witness, markets, netp, banking)
 	require.NotNil(t, eng)
 
 	tEng := &tstEngine{
@@ -1179,7 +1236,7 @@ func newNetParamTerms(key, value string) *types.ProposalTermsUpdateNetworkParame
 	}
 }
 
-func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool) *types.ProposalTermsNewMarket {
+func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) *types.ProposalTermsNewMarket {
 	var dt *types.DataSourceDefinition
 	if termExt {
 		if termFilter == nil {
@@ -1262,6 +1319,40 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 				LpPriceRange:            num.DecimalFromFloat(0.95),
 				LinearSlippageFactor:    num.DecimalFromFloat(0.1),
 				QuadraticSlippageFactor: num.DecimalFromFloat(0.1),
+				Successor:               successor,
+			},
+		},
+	}
+}
+
+func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
+	return &types.ProposalTermsNewSpotMarket{
+		NewSpotMarket: &types.NewSpotMarket{
+			Changes: &types.NewSpotMarketConfiguration{
+				Instrument: &types.InstrumentConfiguration{
+					Name: "BTC/USDT Spot",
+					Code: "CRYPTO:BTCUSDT",
+					Product: &types.InstrumentConfigurationSpot{
+						Spot: &types.SpotProduct{
+							Name:       "BTC/USDT",
+							BaseAsset:  "BTC",
+							QuoteAsset: "USDT",
+						},
+					},
+				},
+				RiskParameters: &types.NewMarketConfigurationLogNormal{
+					LogNormal: &types.LogNormalRiskModel{
+						RiskAversionParameter: num.DecimalFromFloat(0.01),
+						Tau:                   num.DecimalFromFloat(0.00011407711613050422),
+						Params: &types.LogNormalModelParams{
+							Mu:    num.DecimalZero(),
+							R:     num.DecimalFromFloat(0.016),
+							Sigma: num.DecimalFromFloat(0.09),
+						},
+					},
+				},
+				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
+				DecimalPlaces: 0,
 			},
 		},
 	}
@@ -1410,7 +1501,45 @@ func (e *tstEngine) newProposalForNewMarket(partyID string, now time.Time, termF
 			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
-			Change:              newMarketTerms(termFilter, termBinding, termExt),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, nil),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time, termFilter *types.DataSourceSpecFilter, termBinding *types.DataSourceSpecBindingForFuture, termExt bool, successor *types.SuccessorConfig) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForNewSpotMarket(partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newSpotMarketTerms(),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",
@@ -1629,7 +1758,7 @@ func (e *tstEngine) ensureEquityLikeShareForMarketAndParty(t *testing.T, market,
 func (e *tstEngine) ensureGetMarket(t *testing.T, marketID string, market types.Market) {
 	t.Helper()
 	e.markets.EXPECT().
-		GetMarket(marketID).
+		GetMarket(marketID, gomock.Any()).
 		Times(1).
 		Return(market, true)
 }

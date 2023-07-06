@@ -24,7 +24,7 @@ import (
 type InitCmd struct {
 	config.VegaHomeFlag
 
-	Force bool `short:"f" long:"force" description:"Erase exiting blockexplorer configuration at the specified path"`
+	Force bool `description:"Erase exiting blockexplorer configuration at the specified path" long:"force" short:"f"`
 }
 
 func (opts *InitCmd) Execute(_ []string) error {

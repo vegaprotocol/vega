@@ -61,38 +61,36 @@ func TestCountZeros(t *testing.T) {
 		difficulty uint
 	}{
 		{
-			// 00000e31f8ac983354f5885d46b7631bc75f69ec82e8f6178bae53db0ab7e054
-			name:       "with difficulty set to 20",
+			// 00001315c698aae3e559e9de507c43260e4b89e992840c281c68d54663eb02ae
+			name:       "with difficulty set to 19",
 			blockHash:  "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4",
 			txID:       "DFE522E234D67E6AE3F017859F898E576B3928EA57310B765398615A0D3FDE2F",
-			difficulty: 20,
+			difficulty: 19,
 		}, {
-			// 0000077b7d66117b57e45ccba0c31554e61c9853cc1cd9a2cf09c41b0aa9c22e
-			name:       "with difficulty set to 21",
+			// 00000d9ae20dd3c9ed57260ffe67832a98ccb43f797bba82f8a21be137e0ae5b
+			name:       "with difficulty set to 20",
 			blockHash:  "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4",
 			txID:       "5B87F9DFA41DABE84A11CA78D9FE11DA8FC2AA926004CA66454A7AF0A206480D",
-			difficulty: 21,
+			difficulty: 20,
 		}, {
 			// 000003bbf0cde49e3899ad23282b18defbc12a65f07c95d768464b87024df368
-			name:       "with difficulty set to 22",
+			name:       "with difficulty set to 21",
 			blockHash:  "2E7A16D9EF690F0D2BEED115FBA13BA2AAA16C8F971910AD88C72B9DB010C7D4",
 			txID:       "B14DD602ED48C9F7B5367105A4A97FFC9199EA0C9E1490B786534768DD1538EF",
-			difficulty: 22,
+			difficulty: 21,
 		}, {
-			// 000001e1084b865aba27df7a445753a24a3d89d63c7739a62c11dab3ee6eae32
-			name:       "with difficulty set to 23",
+			// 0000039c42f8c0a62ad39e1459393803104d8fdc2cd15410daaec3d8de7b85a0
+			name:       "with difficulty set to 22",
 			blockHash:  "B14DD602ED48C9F7B5367105A4A97FFC9199EA0C9E1490B786534768DD1538EF",
 			txID:       "94A9CB1532011081B013CCD8E6AAA832CAB1CBA603F0C5A093B14C4961E5E7F0",
-			difficulty: 23,
+			difficulty: 22,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(tt *testing.T) {
 			tt.Parallel()
-
 			_, hash, err := crypto.PoW(tc.blockHash, tc.txID, tc.difficulty, crypto.Sha3)
-
 			require.NoError(tt, err)
 			assert.NotEmpty(tt, hash)
 

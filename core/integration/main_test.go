@@ -14,19 +14,21 @@ package core_test
 
 import (
 	"context"
+	"flag"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
 	"testing"
 
 	"code.vegaprotocol.io/vega/core/integration/helpers"
 	"code.vegaprotocol.io/vega/core/integration/steps"
+	"code.vegaprotocol.io/vega/core/netparams"
 	"code.vegaprotocol.io/vega/libs/num"
 	"code.vegaprotocol.io/vega/protos/vega"
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
-	"github.com/spf13/pflag"
 )
 
 var (
@@ -41,13 +43,18 @@ var (
 )
 
 func init() {
-	godog.BindCommandLineFlags("godog.", &gdOpts)
-	pflag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
+	godog.BindFlags("godog.", flag.CommandLine, &gdOpts)
+	flag.StringVar(&features, "features", "", "a coma separated list of paths to the feature files")
 }
 
 func TestMain(m *testing.M) {
-	pflag.Parse()
-	gdOpts.Paths = pflag.Args()
+	flag.Parse()
+	gdOpts.Paths = flag.Args()
+
+	if testing.Short() {
+		log.Print("Skipping core integration tests, go test run with -short")
+		return
+	}
 
 	status := godog.TestSuite{
 		Name:                 "godogs",
@@ -70,6 +77,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		execsetup.accountsBefore = execsetup.broker.GetAccounts()
 		execsetup.ledgerMovementsBefore = len(execsetup.broker.GetTransfers(false))
 		execsetup.insurancePoolDepositsOverStep = make(map[string]*num.Int)
+		// set default netparams
+		execsetup.netParams.Update(ctx, netparams.MarketSuccessorLaunchWindow, "1h")
 
 		// don't record events before step if it's the step that's meant to assess number of events over a regular step
 		if b, _ := regexp.MatchString(expectingEventsOverStepText, st.Text); !b {
@@ -91,6 +100,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			berr = fmt.Errorf("error at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v", berr)
 		}
 		return ctx, berr
+	})
+
+	s.Step(`^the stop orders should have the following states$`, func(table *godog.Table) error {
+		return steps.TheStopOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
 
 	// delegation/validator steps
@@ -137,7 +150,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.TheMarginCalculator(marketConfig, name, table)
 	})
 	s.Step(`^the markets:$`, func(table *godog.Table) error {
-		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, table)
+		markets, err := steps.TheMarkets(marketConfig, execsetup.executionEngine, execsetup.collateralEngine, execsetup.netParams, execsetup.timeService.GetTimeNow(), table)
 		execsetup.markets = markets
 		return err
 	})
@@ -150,12 +163,19 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`the successor market "([^"]+)" is enacted$`, func(successor string) error {
+		if err := steps.TheSuccesorMarketIsEnacted(successor, execsetup.markets, execsetup.executionEngine); err != nil {
+			return err
+		}
+		return nil
+	})
+
 	// Other steps
 	s.Step(`^the initial insurance pool balance is "([^"]*)" for all the markets$`, func(amountstr string) error {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
-			asset, _ := mkt.GetAsset()
-			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.ID, asset)
+			assets, _ := mkt.GetAssets()
+			marketInsuranceAccount, err := execsetup.collateralEngine.GetMarketInsurancePoolAccount(mkt.ID, assets[0])
 			if err != nil {
 				return err
 			}
@@ -169,6 +189,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return nil
 	})
 
+	s.Step(`^the last market state should be "([^"]+)" for the market "([^"]+)"$`, func(mState, marketID string) error {
+		return steps.TheLastStateUpdateShouldBeForMarket(execsetup.broker, marketID, mState)
+	})
 	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
 		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
 	})
@@ -181,6 +204,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the parties cancel the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesCancelTheFollowingOrders(execsetup.broker, execsetup.executionEngine, table)
+	})
+	s.Step(`^the parties cancel the following stop orders:$`, func(table *godog.Table) error {
+		return steps.PartiesCancelTheFollowingStopOrders(execsetup.broker, execsetup.executionEngine, table)
+	})
+	s.Step(`^the party "([^"]*)" cancels all their stop orders for the market "([^"]*)"$`, func(partyId, marketId string) error {
+		return steps.PartyCancelsAllTheirStopOrdersForTheMarket(execsetup.executionEngine, partyId, marketId)
+	})
+	s.Step(`^the party "([^"]*)" cancels all their stop orders`, func(partyId string) error {
+		return steps.PartyCancelsAllTheirStopOrders(execsetup.executionEngine, partyId)
 	})
 	s.Step(`^the parties cancel all their orders for the markets:$`, func(table *godog.Table) error {
 		return steps.PartiesCancelAllTheirOrdersForTheMarkets(execsetup.broker, execsetup.executionEngine, table)
@@ -206,6 +238,21 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+	s.Step(`^the party "([^"]+)" adds the following orders to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the party "([^"]+)" adds the following iceberg orders to a batch:$`, func(party string, table *godog.Table) error {
+		return steps.PartyAddsTheFollowingIcebergOrdersToABatch(party, execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the party "([^"]+)" starts a batch instruction$`, func(party string) error {
+		return steps.PartyStartsABatchInstruction(party, execsetup.executionEngine)
+	})
+
+	s.Step(`^the party "([^"]+)" submits their batch instruction$`, func(party string) error {
+		return steps.PartySubmitsTheirBatchInstruction(party, execsetup.executionEngine)
 	})
 
 	s.Step(`^the parties place the following orders "([^"]+)" blocks apart:$`, func(blockCount string, table *godog.Table) error {
@@ -253,6 +300,18 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^the average block duration is "([^"]+)"$`, func(blockTime string) error {
 		return steps.TheAverageBlockDurationIs(execsetup.block, blockTime)
+	})
+
+	s.Step(`^the parties place the following iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the parties place the following pegged iceberg orders:$`, func(table *godog.Table) error {
+		return steps.PartiesPlaceTheFollowingPeggedIcebergOrders(execsetup.executionEngine, execsetup.timeService, table)
+	})
+
+	s.Step(`^the iceberg orders should have the following states:$`, func(table *godog.Table) error {
+		return steps.TheIcebergOrdersShouldHaveTheFollowingStates(execsetup.broker, table)
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
@@ -452,7 +511,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	// Decimal places steps
 	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
-		return steps.RegisterAsset(table, execsetup.assetsEngine)
+		return steps.RegisterAsset(table, execsetup.assetsEngine, execsetup.collateralEngine)
 	})
 	s.Step(`^set assets to strict$`, func() error {
 		execsetup.assetsEngine.SetStrict()

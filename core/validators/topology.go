@@ -20,7 +20,6 @@ import (
 	"math"
 	"math/rand"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -34,6 +33,7 @@ import (
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 
+	"github.com/ethereum/go-ethereum/common"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -616,7 +616,7 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	// the keys set in the genesis block
 	hasError := t.wallets.GetVega().ID().Hex() != data.ID ||
 		t.wallets.GetVega().PubKey().Hex() != data.VegaPubKey ||
-		strings.TrimLeft(t.wallets.GetEthereumAddress(), "0x") != strings.TrimLeft(data.EthereumAddress, "0x")
+		common.HexToAddress(t.wallets.GetEthereumAddress()) != common.HexToAddress(data.EthereumAddress)
 
 	if hasError {
 		t.log.Panic("invalid node wallet configurations, the genesis validator mapping differ to the wallets imported by the nodewallet",

@@ -1311,8 +1311,7 @@
                 "grpc": {
                   "hosts": [
                     "localhost:3028"
-                  ],
-                  "retries": 5
+                  ]
                 },
                 "graphQL": {
                   "hosts": [
@@ -1401,8 +1400,7 @@
                 "grpc": {
                   "hosts": [
                     "localhost:3028"
-                  ],
-                  "retries": 5
+                  ]
                 },
                 "graphQL": {
                   "hosts": [
@@ -1778,6 +1776,7 @@
           "result": {
             "name": "Success",
             "value": {
+              "name": "Key 1",
               "publicKey": "b5fd9d3c4ad553cb3196303b6e6df7f484cf7f5331a572a45031239fd71ad8a0",
               "algorithm": {
                 "name": "vega/ed25519",
@@ -1787,10 +1786,6 @@
                 {
                   "key": "portfolio",
                   "value": "btc"
-                },
-                {
-                  "key": "name",
-                  "value": "Key 1"
                 }
               ],
               "isTainted": false
@@ -2622,6 +2617,7 @@
         {
           "name": "wallet",
           "required": true,
+          "description": "The wallet from which the signing key comes from.",
           "schema": {
             "type": "string"
           }
@@ -2629,18 +2625,21 @@
         {
           "name": "publicKey",
           "required": true,
+          "description": "The public key associated to the private key that is used to sign the transaction.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "network",
+          "description": "The network configuration to use to retrieve the last block data. If specified, the last block data will be fetched by one of the nodes specified in this network configuration. Not required if the last block data is specified, as no network query will be issued.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "transaction",
+          "description": "The transaction to sign.",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/transaction"
@@ -2648,8 +2647,23 @@
         },
         {
           "name": "lastBlockData",
+          "description": "Instead of fetching the last block data from a network, it possible to manually specify it. If specified, then the parameters `network`, `retries` and `maximumRequestDuration` do not have to be specified.",
           "schema": {
             "$ref": "#/components/schemas/last_block_data"
+          }
+        },
+        {
+          "name": "retries",
+          "description": "The number of times the software should retry sending the requests to the node if there is a communication failure. Not required if the last block data is specified, as no network query will be issued.",
+          "schema": {
+            "type": "number"
+          }
+        },
+        {
+          "name": "maximumRequestDuration",
+          "description": "The maximum duration the software waits for the node to respond. If the node does not respond in time, the software cancels the request. Not required if the last block data is specified, as no network query will be issued.",
+          "schema": {
+            "$ref": "#/components/schemas/duration"
           }
         }
       ],
@@ -2822,12 +2836,14 @@
         {
           "name": "wallet",
           "required": true,
+          "description": "The wallet from which the signing key comes from.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "publicKey",
+          "description": "The public key associated to the private key that is used to sign the transaction.",
           "required": true,
           "schema": {
             "type": "string"
@@ -2835,25 +2851,36 @@
         },
         {
           "name": "network",
+          "description": "The network configuration used to connect the network and send the transaction to. It should not be specified if the parameter `nodeAddress` is specified.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "nodeAddress",
+          "description": "he specific node address used to connect to the network and send the transaction. It should not be specified if the parameter `network` is specified.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "retries",
+          "description": "The number of times the software should retry sending the requests to the node if there is a communication failure.",
           "schema": {
             "type": "number"
           }
         },
         {
+          "name": "maximumRequestDuration",
+          "description": "The maximum duration the software waits for the node to respond. If the node does not respond in time, the software cancels the request.",
+          "schema": {
+            "$ref": "#/components/schemas/duration"
+          }
+        },
+        {
           "name": "sendingMode",
           "required": true,
+          "description": "The mode used to send the transaction to the network.",
           "schema": {
             "$ref": "#/components/schemas/sending_mode"
           }
@@ -2861,6 +2888,7 @@
         {
           "name": "transaction",
           "required": true,
+          "description": "The transaction to send.",
           "schema": {
             "$ref": "#/components/schemas/transaction"
           }
@@ -2923,6 +2951,7 @@
       "params": [
         {
           "name": "wallet",
+          "description": "The wallet from which the signing key comes from.",
           "required": true,
           "schema": {
             "type": "string"
@@ -2930,6 +2959,7 @@
         },
         {
           "name": "publicKey",
+          "description": "The public key associated to the private key that is used to sign the transaction.",
           "required": true,
           "schema": {
             "type": "string"
@@ -2937,24 +2967,37 @@
         },
         {
           "name": "network",
+          "description": "The network configuration used to connect the network and check the transaction against. It should not be specified if the parameter `nodeAddress` is specified.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "nodeAddress",
+          "description": "The specific node address used to connect the network and check the transaction against. It should not be specified if the parameter `network` is specified.",
           "schema": {
             "type": "string"
           }
         },
         {
           "name": "retries",
+          "description": "The number of times the software should retry sending the requests to the node if there is a communication failure.",
+          "required": true,
           "schema": {
             "type": "number"
           }
         },
         {
+          "name": "maximumRequestDuration",
+          "description": "The maximum duration the software waits for the node to respond. If the node does not respond in time, the software cancels the request.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/duration"
+          }
+        },
+        {
           "name": "transaction",
+          "description": "The transaction to check.",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/transaction"
@@ -3025,7 +3068,7 @@
         },
         {
           "name": "network",
-          "description": "The network to send the transaction to.",
+          "description": "The network configuration used to connect the network and send the transaction to. It should not be specified if the parameter `nodeAddress` is specified.",
           "required": true,
           "schema": {
             "type": "string"
@@ -3033,7 +3076,7 @@
         },
         {
           "name": "nodeAddress",
-          "description": "The node address to send the transaction to.",
+          "description": "he specific node address used to connect to the network and send the transaction. It should not be specified if the parameter `network` is specified.",
           "required": true,
           "schema": {
             "type": "string"
@@ -3041,14 +3084,23 @@
         },
         {
           "name": "retries",
-          "description": "the number of times sending the transaction should be attempted if it fails",
+          "description": "The number of times the software should retry sending the requests to the node if there is a communication failure.",
           "required": true,
           "schema": {
             "type": "number"
           }
         },
         {
+          "name": "maximumRequestDuration",
+          "description": "The maximum duration the software waits for the node to respond. If the node does not respond in time, the software cancels the request.",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/duration"
+          }
+        },
+        {
           "name": "sendingMode",
+          "description": "The mode used to send the transaction to the network.",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/sending_mode"
@@ -3095,120 +3147,6 @@
           }
         }
       }
-    },
-    {
-      "name": "admin.start_service",
-      "summary": "Start a wallet service.",
-      "description": "This method starts a wallet service targeting the specified network.",
-      "tags": [
-        {
-          "name": "admin"
-        },
-        {
-          "name": "service"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "noVersionCheck",
-          "required": true,
-          "schema": {
-            "type": "boolean"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "null"
-        }
-      },
-      "examples": [
-        {
-          "name": "Start the service",
-          "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            },
-            {
-              "name": "noVersionCheck",
-              "value": false
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": null
-          }
-        }
-      ]
-    },
-    {
-      "name": "admin.stop_service",
-      "summary": "Stop a wallet service.",
-      "description": "This method stops the wallet service targeting the specified network. This automatically disconnects all the wallets used in the service.\n\nIt does not fail if there is no service running for this network.",
-      "tags": [
-        {
-          "name": "admin"
-        },
-        {
-          "name": "service"
-        }
-      ],
-      "paramStructure": "by-name",
-      "params": [
-        {
-          "name": "network",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "result": {
-        "name": "Success",
-        "required": true,
-        "schema": {
-          "type": "null"
-        }
-      },
-      "examples": [
-        {
-          "name": "Stop a running service",
-          "params": [
-            {
-              "name": "network",
-              "value": "mainnet1"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": null
-          }
-        },
-        {
-          "name": "Stop a non-running service",
-          "params": [
-            {
-              "name": "network",
-              "value": "network-without-running-service"
-            }
-          ],
-          "result": {
-            "name": "Success",
-            "value": null
-          }
-        }
-      ]
     },
     {
       "name": "admin.list_connections",
@@ -3616,8 +3554,7 @@
           "grpc": {
             "type": "object",
             "required": [
-              "hosts",
-              "retries"
+              "hosts"
             ],
             "properties": {
               "hosts": {
@@ -3625,9 +3562,6 @@
                 "items": {
                   "type": "string"
                 }
-              },
-              "retries": {
-                "type": "number"
               }
             }
           },
@@ -3712,6 +3646,10 @@
           "TYPE_ASYNC",
           "TYPE_COMMIT"
         ]
+      },
+      "duration": {
+        "type": "number",
+        "description": "As nanoseconds"
       }
     },
     "errors": {

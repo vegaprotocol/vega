@@ -116,7 +116,15 @@ message Payload {
     BankingBridgeState banking_bridge_state = 56;
     SettlementState settlement_state = 57;
     LiquidityScores liquidity_scores = 58;
+    SpotLiquidityTarget spot_liquidity_target = 59;
+    BankingRecurringGovernanceTransfers banking_recurring_governance_transfers = 60;
+    BankingScheduledGovernanceTransfers banking_scheduled_governance_transfers = 61;
   }
+}
+
+message TimestampedTotalStake {
+  uint64 total_stake = 1;
+  int64 time = 2;
 }
 
 message TimestampedOpenInterest {
@@ -131,6 +139,15 @@ message LiquidityTarget {
   repeated uint64 current_open_interests = 4;
   repeated TimestampedOpenInterest previous_open_interests = 5;
   TimestampedOpenInterest max_open_interests = 6;
+}
+
+message SpotLiquidityTarget {
+  string market_id = 1;
+  int64 current_time = 2;
+  int64 scheduled_truncate = 3;
+  repeated uint64 current_total_stake = 4;
+  repeated TimestampedTotalStake previous_total_stake = 5;
+  TimestampedTotalStake max_total_stake = 6;
 }
 
 message LiquidityOffsetProbabilityPair {
@@ -234,6 +251,14 @@ message BankingRecurringTransfers {
 
 message BankingScheduledTransfers {
   repeated vega.checkpoint.v1.ScheduledTransferAtTime transfers_at_time = 1;
+}
+
+message BankingRecurringGovernanceTransfers {
+  repeated vega.checkpoint.v1.GovernanceTransfer recurring_transfers = 1;
+}
+
+message BankingScheduledGovernanceTransfers {
+  repeated vega.checkpoint.v1.ScheduledGovernanceTransferAtTime transfers_at_time = 1;
 }
 
 message BankingBridgeState {
@@ -398,6 +423,27 @@ message FeeSplitter {
   uint64 window = 4;
 }
 
+message SpotMarket {
+  vega.Market market = 1;
+  PriceMonitor price_monitor = 2;
+  AuctionState auction_state = 3;
+  PeggedOrders pegged_orders = 4;
+  repeated vega.Order expiring_orders = 5;
+  string last_best_bid = 6;
+  string last_best_ask = 7;
+  string last_mid_bid = 8;
+  string last_mid_ask = 9;
+  string last_market_value_proxy = 10;
+  int64 last_equity_share_distributed = 11;
+  EquityShare equity_share = 12;
+  string current_mark_price = 13;
+  FeeSplitter fee_splitter = 14;
+  int64 next_mark_to_market = 15;
+  string last_traded_price = 16;
+  repeated string parties = 17;
+  bool closed = 18;
+}
+
 message Market {
   vega.Market market = 1;
   PriceMonitor price_monitor = 2;
@@ -421,6 +467,41 @@ message Market {
   string last_traded_price = 20;
   repeated string parties = 21;
   bool closed = 22;
+  bool succeeded = 23;
+  StopOrders stop_orders = 24;
+  repeated vega.Order expiring_stop_orders = 25;
+}
+
+message OrdersAtPrice {
+  string price = 1;
+  repeated string orders = 2;
+}
+
+message PricedStopOrders {
+  repeated OrdersAtPrice falls_bellow = 1;
+  repeated OrdersAtPrice rises_above = 2;
+}
+
+message TrailingStopOrders {
+  string last_seen_price = 1;
+  repeated OffsetsAtPrice falls_bellow = 2;
+  repeated OffsetsAtPrice rises_above = 3;
+}
+
+message OrdersAtOffset {
+  string offset = 1;
+  repeated string orders = 2;
+}
+
+message OffsetsAtPrice {
+  string price = 1;
+  repeated OrdersAtOffset offsets = 2;
+}
+
+message StopOrders {
+  repeated events.v1.StopOrderEvent stop_orders = 1;
+  PricedStopOrders priced_stop_orders = 2;
+  TrailingStopOrders trailing_stop_orders = 3;
 }
 
 message PeggedOrders {
@@ -429,6 +510,14 @@ message PeggedOrders {
 
 message ExecutionMarkets {
   repeated Market markets = 1;
+  repeated SpotMarket spot_markets = 2;
+  repeated vega.checkpoint.v1.MarketState settled_markets = 3;
+  repeated Successors successors = 4;
+}
+
+message Successors {
+  string parent_market = 1;
+  repeated string successor_markets = 2;
 }
 
 message Position {
@@ -703,13 +792,13 @@ message PartyOrders {
 
 message LiquidityPartiesOrders {
   repeated PartyOrders party_orders = 1;
-  // Market ID these orders apply to. Required for key generation
+  // Market ID these orders apply to.
   string market_id = 2;
 }
 
 message LiquidityProvisions {
   repeated vega.LiquidityProvision liquidity_provisions = 1;
-  // Market ID these provisions apply to. Required for key generation
+  // Market ID these provisions apply to.
   string market_id = 2;
 }
 

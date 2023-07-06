@@ -30,6 +30,10 @@ type ExternalDataSourceKind interface {
 	IsExternalDataSourceKind()
 }
 
+type GovernanceTransferKind interface {
+	IsGovernanceTransferKind()
+}
+
 type InternalDataSourceKind interface {
 	IsInternalDataSourceKind()
 }
@@ -52,6 +56,10 @@ type RiskModel interface {
 
 type SignerKind interface {
 	IsSignerKind()
+}
+
+type StopOrderTrigger interface {
+	IsStopOrderTrigger()
 }
 
 type TransferKind interface {
@@ -125,29 +133,6 @@ type Data struct {
 	BroadcastAt int64 `json:"broadcastAt"`
 }
 
-// DataSourceDefinition represents the top level object that deals with data sources.
-// DataSourceDefinition can be external or internal, with whatever number of data sources are defined
-// for each type in the child objects below.
-type DataSourceDefinition struct {
-	SourceType DataSourceKind `json:"sourceType"`
-}
-
-// DataSourceDefinitionExternal is the top level object used for all external data sources.
-// It contains one of any of the defined `SourceType` variants.
-type DataSourceDefinitionExternal struct {
-	SourceType ExternalDataSourceKind `json:"sourceType"`
-}
-
-func (DataSourceDefinitionExternal) IsDataSourceKind() {}
-
-// DataSourceDefinitionInternal is the top level object used for all internal data sources.
-// It contains one of any of the defined `SourceType` variants.
-type DataSourceDefinitionInternal struct {
-	SourceType InternalDataSourceKind `json:"sourceType"`
-}
-
-func (DataSourceDefinitionInternal) IsDataSourceKind() {}
-
 // An data source specification describes the data source data that a product (or a risk model)
 // wants to get from the oracle engine.
 type DataSourceSpec struct {
@@ -156,18 +141,11 @@ type DataSourceSpec struct {
 	// RFC3339Nano creation date time
 	CreatedAt int64 `json:"createdAt"`
 	// RFC3339Nano last updated timestamp
-	UpdatedAt *int64                `json:"updatedAt"`
-	Data      *DataSourceDefinition `json:"data"`
+	UpdatedAt *int64                     `json:"updatedAt"`
+	Data      *vega.DataSourceDefinition `json:"data"`
 	// Status describes the status of the data source spec
 	Status DataSourceSpecStatus `json:"status"`
 }
-
-// DataSourceSpecConfigurationTime is the internal data source used for emitting timestamps.
-type DataSourceSpecConfigurationTime struct {
-	Conditions []*v1.Condition `json:"conditions"`
-}
-
-func (DataSourceSpecConfigurationTime) IsInternalDataSourceKind() {}
 
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
@@ -340,12 +318,14 @@ type LiquidityMonitoringParameters struct {
 type LiquidityProviderFeeShare struct {
 	// The liquidity provider party ID
 	Party *vega.Party `json:"party"`
-	// The share owned by this liquidity provider (float)
+	// The share owned by this liquidity provider
 	EquityLikeShare string `json:"equityLikeShare"`
 	// The average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
 	// The average liquidity score
 	AverageScore string `json:"averageScore"`
+	// The virtual stake for this liquidity provider
+	VirtualStake string `json:"virtualStake"`
 }
 
 type LossSocialization struct {
@@ -614,6 +594,20 @@ type StakingSummary struct {
 	Linkings *v2.StakesConnection `json:"linkings"`
 }
 
+// Price at which a stop order will trigger
+type StopOrderPrice struct {
+	Price string `json:"price"`
+}
+
+func (StopOrderPrice) IsStopOrderTrigger() {}
+
+// Percentage movement in the price at which a stop order will trigger.
+type StopOrderTrailingPercentOffset struct {
+	TrailingPercentOffset string `json:"trailingPercentOffset"`
+}
+
+func (StopOrderTrailingPercentOffset) IsStopOrderTrigger() {}
+
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
 	// Specifies length of time window expressed in seconds for target stake calculation
@@ -792,6 +786,52 @@ func (e *DataSourceSpecStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e DataSourceSpecStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type GovernanceTransferType string
+
+const (
+	// Default value, always invalid
+	GovernanceTransferTypeGovernanceTransferTypeUnspecified GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_UNSPECIFIED"
+	// Transfers the specified amount or does not transfer anything
+	GovernanceTransferTypeGovernanceTransferTypeAllOrNothing GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING"
+	// Transfers the specified amount or the max allowable amount if this is less than the specified amount
+	GovernanceTransferTypeGovernanceTransferTypeBestEffort GovernanceTransferType = "GOVERNANCE_TRANSFER_TYPE_BEST_EFFORT"
+)
+
+var AllGovernanceTransferType = []GovernanceTransferType{
+	GovernanceTransferTypeGovernanceTransferTypeUnspecified,
+	GovernanceTransferTypeGovernanceTransferTypeAllOrNothing,
+	GovernanceTransferTypeGovernanceTransferTypeBestEffort,
+}
+
+func (e GovernanceTransferType) IsValid() bool {
+	switch e {
+	case GovernanceTransferTypeGovernanceTransferTypeUnspecified, GovernanceTransferTypeGovernanceTransferTypeAllOrNothing, GovernanceTransferTypeGovernanceTransferTypeBestEffort:
+		return true
+	}
+	return false
+}
+
+func (e GovernanceTransferType) String() string {
+	return string(e)
+}
+
+func (e *GovernanceTransferType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GovernanceTransferType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GovernanceTransferType", str)
+	}
+	return nil
+}
+
+func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

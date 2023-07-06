@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -104,6 +105,7 @@ type TradingDataServiceV2 struct {
 	protocolUpgradeService     *service.ProtocolUpgrade
 	NetworkHistoryService      NetworkHistoryService
 	coreSnapshotService        *service.SnapshotData
+	stopOrderService           *service.StopOrders
 }
 
 // ListAccounts lists accounts matching the request.
@@ -1094,6 +1096,54 @@ func (t *TradingDataServiceV2) ListMarkets(ctx context.Context, req *v2.ListMark
 	}, nil
 }
 
+// ListSuccessorMarkets returns the successor chain for a given market.
+func (t *TradingDataServiceV2) ListSuccessorMarkets(ctx context.Context, req *v2.ListSuccessorMarketsRequest) (*v2.ListSuccessorMarketsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("ListSuccessorMarkets")()
+
+	if len(req.MarketId) == 0 {
+		return nil, formatE(ErrEmptyMissingMarketID)
+	}
+
+	if !crypto.IsValidVegaID(req.MarketId) {
+		return nil, formatE(ErrInvalidMarketID)
+	}
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	markets, pageInfo, err := t.marketsService.ListSuccessorMarkets(ctx, req.MarketId, req.IncludeFullHistory, pagination)
+	if err != nil {
+		return nil, formatE(ErrMarketServiceGetAllPaged, err)
+	}
+
+	edges, err := makeEdges[*v2.SuccessorMarketEdge](markets)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	for i := range edges {
+		for j := range edges[i].Node.Proposals {
+			proposalID := edges[i].Node.Proposals[j].Proposal.Id
+			node := edges[i].Node.Proposals[j]
+			node.Yes, node.No, err = t.getVotesByProposal(ctx, proposalID)
+			if err != nil {
+				return nil, formatE(ErrGovernanceServiceGetVotes, errors.Wrapf(err, "proposalID: %s", proposalID))
+			}
+		}
+	}
+
+	marketsConnection := &v2.SuccessorMarketConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListSuccessorMarketsResponse{
+		SuccessorMarkets: marketsConnection,
+	}, nil
+}
+
 // List all Positions.
 //
 // Deprecated: Use ListAllPositions instead.
@@ -1752,11 +1802,9 @@ func (t *TradingDataServiceV2) ListOracleData(ctx context.Context, req *v2.ListO
 		pageInfo entities.PageInfo
 	)
 
-	if oracleSpecID := ptr.UnBox(req.OracleSpecId); oracleSpecID != "" {
-		data, pageInfo, err = t.oracleDataService.GetOracleDataBySpecID(ctx, oracleSpecID, pagination)
-	} else {
-		data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, pagination)
-	}
+	oracleSpecID := ptr.UnBox(req.OracleSpecId)
+	data, pageInfo, err = t.oracleDataService.ListOracleData(ctx, oracleSpecID, pagination)
+
 	if err != nil {
 		return nil, formatE(ErrOracleDataServiceGet, err)
 	}
@@ -2340,8 +2388,7 @@ func (t *TradingDataServiceV2) ListNodes(ctx context.Context, req *v2.ListNodesR
 	if req.EpochSeq == nil || *req.EpochSeq > math.MaxInt64 {
 		epoch, err = t.epochService.GetCurrent(ctx)
 	} else {
-		epochSeq := int64(*req.EpochSeq)
-		epoch, err = t.epochService.Get(ctx, epochSeq)
+		epoch, err = t.epochService.Get(ctx, *req.EpochSeq)
 	}
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
@@ -2413,10 +2460,12 @@ func (t *TradingDataServiceV2) GetEpoch(ctx context.Context, req *v2.GetEpochReq
 		epoch entities.Epoch
 		err   error
 	)
-	if req.GetId() == 0 {
-		epoch, err = t.epochService.GetCurrent(ctx)
+	if req.GetId() > 0 {
+		epoch, err = t.epochService.Get(ctx, req.GetId())
+	} else if req.GetBlock() > 0 {
+		epoch, err = t.epochService.GetByBlock(ctx, req.GetBlock())
 	} else {
-		epoch, err = t.epochService.Get(ctx, int64(req.GetId()))
+		epoch, err = t.epochService.GetCurrent(ctx)
 	}
 	if err != nil {
 		return nil, formatE(ErrGetEpoch, err)
@@ -2692,6 +2741,10 @@ func implyMarginLevels(maintenanceMargin num.Decimal, scalingFactors *vega.Scali
 func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.EstimatePositionRequest) (*v2.EstimatePositionResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("EstimatePosition")()
 
+	if req.MarketId == "" {
+		return nil, ErrEmptyMissingMarketID
+	}
+
 	var collateralAvailable num.Decimal
 	if req.CollateralAvailable != nil && len(*req.CollateralAvailable) > 0 {
 		var err error
@@ -2723,15 +2776,22 @@ func (t *TradingDataServiceV2) EstimatePosition(ctx context.Context, req *v2.Est
 		var price num.Decimal
 		p, err := num.DecimalFromString(o.Price)
 		if err != nil {
-			return nil, errors.Wrap(ErrInvalidOrderPrice, err.Error())
+			return nil, formatE(ErrInvalidOrderPrice, err)
 		}
+
+		if p.IsNegative() || !p.IsInteger() {
+			return nil, ErrInvalidOrderPrice
+		}
+
 		price = p.Mul(dPriceFactor)
 
-		if o.Side == types.SideBuy {
+		switch o.Side {
+		case types.SideBuy:
 			buyOrders = append(buyOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
-		}
-		if o.Side == types.SideSell {
+		case types.SideSell:
 			sellOrders = append(sellOrders, &risk.OrderInfo{Size: o.Remaining, Price: price, IsMarketOrder: o.IsMarketOrder})
+		default:
+			return nil, ErrInvalidOrderSide
 		}
 	}
 
@@ -3316,6 +3376,10 @@ func (t *TradingDataServiceV2) GetVegaTime(ctx context.Context, _ *v2.GetVegaTim
 func (t *TradingDataServiceV2) ExportNetworkHistory(req *v2.ExportNetworkHistoryRequest, stream v2.TradingDataService_ExportNetworkHistoryServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ExportNetworkHistory")()
 
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	if req.Table == v2.Table_TABLE_UNSPECIFIED {
 		return formatE(ErrNetworkHistoryNoTableName, errors.New("empty table name"))
 	}
@@ -3410,6 +3474,10 @@ func partitionSegmentsByDBVersion(segments []segment.Full) [][]segment.Full {
 func (t *TradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Context, *v2.GetMostRecentNetworkHistorySegmentRequest) (*v2.GetMostRecentNetworkHistorySegmentResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentNetworkHistorySegment")()
 
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	segment, err := t.NetworkHistoryService.GetHighestBlockHeightHistorySegment()
 	if err != nil {
 		if errors.Is(err, store.ErrSegmentNotFound) {
@@ -3429,6 +3497,10 @@ func (t *TradingDataServiceV2) GetMostRecentNetworkHistorySegment(context.Contex
 // ListAllNetworkHistorySegments returns all network history segments.
 func (t *TradingDataServiceV2) ListAllNetworkHistorySegments(context.Context, *v2.ListAllNetworkHistorySegmentsRequest) (*v2.ListAllNetworkHistorySegmentsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("ListAllNetworkHistorySegments")()
+
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
 
 	segments, err := t.NetworkHistoryService.ListAllHistorySegments()
 	if err != nil {
@@ -3464,14 +3536,23 @@ func toHistorySegment(segment segment.Full) *v2.HistorySegment {
 // GetActiveNetworkHistoryPeerAddresses returns the active network history peer addresses.
 func (t *TradingDataServiceV2) GetActiveNetworkHistoryPeerAddresses(context.Context, *v2.GetActiveNetworkHistoryPeerAddressesRequest) (*v2.GetActiveNetworkHistoryPeerAddressesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetMostRecentHistorySegmentFromPeers")()
+
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	return &v2.GetActiveNetworkHistoryPeerAddressesResponse{
 		IpAddresses: t.NetworkHistoryService.GetActivePeerIPAddresses(),
 	}, nil
 }
 
 // NetworkHistoryStatus returns the network history status.
-func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.GetNetworkHistoryStatusRequest) (*v2.GetNetworkHistoryStatusResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("NetworkHistoryStatus")()
+func (t *TradingDataServiceV2) GetNetworkHistoryStatus(context.Context, *v2.GetNetworkHistoryStatusRequest) (*v2.GetNetworkHistoryStatusResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkHistoryStatus")()
+
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
 
 	connectedPeerAddresses, err := t.NetworkHistoryService.GetConnectedPeerAddresses()
 	if err != nil {
@@ -3498,7 +3579,11 @@ func (t *TradingDataServiceV2) NetworkHistoryStatus(context.Context, *v2.GetNetw
 }
 
 // NetworkHistoryBootstrapPeers returns the network history bootstrap peers.
-func (t *TradingDataServiceV2) NetworkHistoryBootstrapPeers(context.Context, *v2.GetNetworkHistoryBootstrapPeersRequest) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
+func (t *TradingDataServiceV2) GetNetworkHistoryBootstrapPeers(context.Context, *v2.GetNetworkHistoryBootstrapPeersRequest) (*v2.GetNetworkHistoryBootstrapPeersResponse, error) {
+	if t.NetworkHistoryService == nil || reflect.ValueOf(t.NetworkHistoryService).IsNil() {
+		return nil, formatE(ErrNetworkHistoryServiceNotInitialised)
+	}
+
 	return &v2.GetNetworkHistoryBootstrapPeersResponse{BootstrapPeers: t.NetworkHistoryService.GetBootstrapPeers()}, nil
 }
 
@@ -3512,11 +3597,14 @@ func (t *TradingDataServiceV2) ListEntities(ctx context.Context, req *v2.ListEnt
 	defer metrics.StartAPIRequestAndTimeGRPC("ListEntities")()
 
 	if len(req.GetTransactionHash()) == 0 {
-		return nil, ErrMissingEmptyTxHash
+		return nil, formatE(ErrMissingEmptyTxHash)
+	}
+
+	if !crypto.IsValidVegaID(req.GetTransactionHash()) {
+		return nil, formatE(ErrInvalidTxHash)
 	}
 
 	txHash := entities.TxHash(req.GetTransactionHash())
-
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// query
@@ -3673,4 +3761,88 @@ func batch[T any](in []T, batchSize int) [][]T {
 	}
 	batches = append(batches, in)
 	return batches
+}
+
+func (t *TradingDataServiceV2) GetStopOrder(ctx context.Context, req *v2.GetStopOrderRequest) (*v2.GetStopOrderResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetStopOrder")()
+
+	if len(req.OrderId) == 0 {
+		return nil, formatE(ErrMissingOrderID)
+	}
+
+	if !crypto.IsValidVegaID(req.OrderId) {
+		return nil, formatE(ErrInvalidOrderID)
+	}
+
+	order, err := t.stopOrderService.GetStopOrder(ctx, req.OrderId)
+	if err != nil {
+		return nil, formatE(ErrOrderNotFound, errors.Wrapf(err, "orderID: %s", req.OrderId))
+	}
+
+	return &v2.GetStopOrderResponse{
+		Order: order.ToProto(),
+	}, nil
+}
+
+func (t *TradingDataServiceV2) ListStopOrders(ctx context.Context, req *v2.ListStopOrdersRequest) (*v2.ListStopOrdersResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetStopOrder")()
+
+	pagination, err := entities.CursorPaginationFromProto(req.Pagination)
+	if err != nil {
+		return nil, formatE(ErrInvalidPagination, err)
+	}
+
+	var filter entities.StopOrderFilter
+	if req.Filter != nil {
+		dateRange := entities.DateRangeFromProto(req.Filter.DateRange)
+		filter = entities.StopOrderFilter{
+			Statuses:       stopOrderStatusesFromProto(req.Filter.Statuses),
+			ExpiryStrategy: stopOrderExpiryStrategyFromProto(req.Filter.ExpiryStrategies),
+			PartyIDs:       req.Filter.PartyIds,
+			MarketIDs:      req.Filter.MarketIds,
+			DateRange:      &entities.DateRange{Start: dateRange.Start, End: dateRange.End},
+		}
+		if err := VegaIDsSlice(req.Filter.MarketIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more market id is invalid"))
+		}
+
+		if err := VegaIDsSlice(req.Filter.PartyIds).Ensure(); err != nil {
+			return nil, formatE(err, errors.New("one or more party id is invalid"))
+		}
+	}
+
+	orders, pageInfo, err := t.stopOrderService.ListStopOrders(ctx, filter, pagination)
+	if err != nil {
+		return nil, formatE(ErrOrderServiceGetOrders, err)
+	}
+
+	edges, err := makeEdges[*v2.StopOrderEdge](orders)
+	if err != nil {
+		return nil, formatE(err)
+	}
+
+	ordersConnection := &v2.StopOrderConnection{
+		Edges:    edges,
+		PageInfo: pageInfo.ToProto(),
+	}
+
+	return &v2.ListStopOrdersResponse{
+		Orders: ordersConnection,
+	}, nil
+}
+
+func stopOrderStatusesFromProto(statuses []vega.StopOrder_Status) []entities.StopOrderStatus {
+	s := make([]entities.StopOrderStatus, len(statuses))
+	for i := range statuses {
+		s[i] = entities.StopOrderStatus(statuses[i])
+	}
+	return s
+}
+
+func stopOrderExpiryStrategyFromProto(strategies []vega.StopOrder_ExpiryStrategy) []entities.StopOrderExpiryStrategy {
+	es := make([]entities.StopOrderExpiryStrategy, len(strategies))
+	for i := range strategies {
+		es[i] = entities.StopOrderExpiryStrategy(strategies[i])
+	}
+	return es
 }

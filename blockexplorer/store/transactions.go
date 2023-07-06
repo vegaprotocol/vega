@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/georgysavva/scany/pgxscan"
@@ -56,6 +57,7 @@ func (s *Store) GetTransaction(ctx context.Context, txID string) (*pb.Transactio
 
 func (s *Store) ListTransactions(ctx context.Context,
 	filters map[string]string,
+	cmdTypes, exclCmdTypes, parties []string,
 	limit uint32,
 	before *entities.TxCursor,
 	after *entities.TxCursor,
@@ -64,11 +66,15 @@ func (s *Store) ListTransactions(ctx context.Context,
 
 	args := []interface{}{}
 	predicates := []string{}
+
+	sortOrder := "asc"
+
 	if before != nil {
 		block := nextBindVar(&args, before.BlockNumber)
 		index := nextBindVar(&args, before.TxIndex)
 		predicate := fmt.Sprintf("(block_id < %s OR (block_id = %s AND index < %s))", block, block, index)
 		predicates = append(predicates, predicate)
+		sortOrder = "desc"
 	}
 
 	if after != nil {
@@ -76,6 +82,22 @@ func (s *Store) ListTransactions(ctx context.Context,
 		index := nextBindVar(&args, after.TxIndex)
 		predicate := fmt.Sprintf("(block_id > %s OR (block_id = %s AND index > %s))", block, block, index)
 		predicates = append(predicates, predicate)
+	}
+
+	if len(cmdTypes) > 0 {
+		predicates = append(predicates, fmt.Sprintf("tx_results.cmd_type = ANY(%s)", nextBindVar(&args, cmdTypes)))
+	}
+
+	if len(exclCmdTypes) > 0 {
+		predicates = append(predicates, fmt.Sprintf("tx_results.cmd_type != ALL(%s)", nextBindVar(&args, exclCmdTypes)))
+	}
+
+	if len(parties) > 0 {
+		partiesBytes := make([][]byte, len(parties))
+		for i, p := range parties {
+			partiesBytes[i] = []byte(p)
+		}
+		predicates = append(predicates, fmt.Sprintf("tx_results.submitter = ANY(%s)", nextBindVar(&args, partiesBytes)))
 	}
 
 	for key, value := range filters {
@@ -103,7 +125,7 @@ func (s *Store) ListTransactions(ctx context.Context,
 		query = fmt.Sprintf("%s WHERE %s", query, strings.Join(predicates, " AND "))
 	}
 
-	query = fmt.Sprintf("%s ORDER BY block_id desc, index desc", query)
+	query = fmt.Sprintf("%s ORDER BY block_id %s, index %s", query, sortOrder, sortOrder)
 	query = fmt.Sprintf("%s LIMIT %d", query, limit)
 
 	var rows []entities.TxResultRow
@@ -120,6 +142,15 @@ func (s *Store) ListTransactions(ctx context.Context,
 		}
 		txs = append(txs, tx)
 	}
+
+	// make sure the results are always order in the same direction, i.e. newest first, regardless of the order of the
+	// results from the database.
+	sort.Slice(txs, func(i, j int) bool {
+		if txs[i].Block == txs[j].Block {
+			return txs[i].Index > txs[j].Index
+		}
+		return txs[i].Block > txs[j].Block
+	})
 
 	return txs, nil
 }

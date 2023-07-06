@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	vgrand "code.vegaprotocol.io/vega/libs/rand"
@@ -122,7 +123,7 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 	nodeHost := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -145,8 +146,8 @@ func testAdminSendingRawTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	assert.Nil(t, errorDetails)
-	assert.NotEmpty(t, result.Tx)
-	assert.Equal(t, txHash, result.TxHash)
+	assert.NotEmpty(t, result.Transaction)
+	assert.Equal(t, txHash, result.TransactionHash)
 	assert.NotEmpty(t, result.ReceivedAt)
 	assert.NotEmpty(t, result.SentAt)
 }
@@ -225,7 +226,7 @@ func testAdminSendingRawTransactionGettingInternalErrorDuringNodeSelectorBuildin
 	network := newNetwork(t)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		return nil, assert.AnError
 	})
 
@@ -251,7 +252,7 @@ func testAdminSendingRawTransactionWithoutHealthyNodeFails(t *testing.T) {
 	network := newNetwork(t)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		nodeSelector.EXPECT().Node(ctx, gomock.Any()).Times(1).Return(nil, assert.AnError)
@@ -281,7 +282,7 @@ func testAdminSendingRawTransactionWithFailedSendingFails(t *testing.T) {
 	network := newNetwork(t)
 
 	// setup
-	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminSendRawTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -326,14 +327,14 @@ func (h *adminSendRawTransactionHandler) handle(t *testing.T, ctx context.Contex
 	return api.AdminSendRawTransactionResult{}, err
 }
 
-func newAdminSendRawTransactionHandler(t *testing.T, builder api.NodeSelectorBuilder) *adminSendRawTransactionHandler {
+func newAdminSendRawTransactionHandler(t *testing.T, selectorBuilder api.NodeSelectorBuilder) *adminSendRawTransactionHandler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
 	networkStore := mocks.NewMockNetworkStore(ctrl)
 
 	return &adminSendRawTransactionHandler{
-		AdminSendRawTransaction: api.NewAdminSendRawTransaction(networkStore, builder),
+		AdminSendRawTransaction: api.NewAdminSendRawTransaction(networkStore, selectorBuilder),
 		ctrl:                    ctrl,
 		networkStore:            networkStore,
 	}

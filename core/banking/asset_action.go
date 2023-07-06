@@ -13,6 +13,7 @@
 package banking
 
 import (
+	"context"
 	"errors"
 	"sync/atomic"
 
@@ -129,7 +130,7 @@ func (t *assetAction) String() string {
 	}
 }
 
-func (t *assetAction) Check() error {
+func (t *assetAction) Check(ctx context.Context) error {
 	switch {
 	case t.IsBuiltinAssetDeposit():
 		return t.checkBuiltinAssetDeposit()
@@ -154,29 +155,29 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 
 func (t *assetAction) checkERC20BridgeStopped() error {
 	return t.bridgeView.FindBridgeStopped(
-		t.erc20BridgeStopped, t.blockHeight, t.logIndex)
+		t.erc20BridgeStopped, t.blockHeight, t.logIndex, t.txHash)
 }
 
 func (t *assetAction) checkERC20BridgeResumed() error {
 	return t.bridgeView.FindBridgeResumed(
-		t.erc20BridgeResumed, t.blockHeight, t.logIndex)
+		t.erc20BridgeResumed, t.blockHeight, t.logIndex, t.txHash)
 }
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
 	return t.bridgeView.FindDeposit(
-		t.erc20D, t.blockHeight, t.logIndex, asset.Address(),
+		t.erc20D, t.blockHeight, t.logIndex, asset.Address(), t.txHash,
 	)
 }
 
 func (t *assetAction) checkERC20AssetList() error {
-	return t.bridgeView.FindAssetList(t.erc20AL, t.blockHeight, t.logIndex)
+	return t.bridgeView.FindAssetList(t.erc20AL, t.blockHeight, t.logIndex, t.txHash)
 }
 
 func (t *assetAction) checkERC20AssetLimitsUpdated() error {
 	asset, _ := t.asset.ERC20()
 	return t.bridgeView.FindAssetLimitsUpdated(
-		t.erc20AssetLimitsUpdated, t.blockHeight, t.logIndex, asset.Address(),
+		t.erc20AssetLimitsUpdated, t.blockHeight, t.logIndex, asset.Address(), t.txHash,
 	)
 }
 

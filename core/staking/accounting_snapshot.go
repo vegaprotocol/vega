@@ -34,6 +34,9 @@ func (a *Accounting) serialiseStakingAccounts() ([]byte, error) {
 	accounts := make([]*types.StakingAccount, 0, len(a.hashableAccounts))
 	a.log.Debug("serialsing staking accounts", logging.Int("n", len(a.hashableAccounts)))
 	for _, acc := range a.hashableAccounts {
+		// dedup transactions with the same eth hash from different block heights and recalc the balance
+		acc.Events = a.dedupHack(acc.Events)
+		acc.computeOngoingBalance()
 		accounts = append(accounts,
 			&types.StakingAccount{
 				Party:   acc.Party,
@@ -115,6 +118,32 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 	}
 }
 
+// dedupHack takes care of events with the same ethereum tx hash originating from
+// reorg - the result is that duplicates are removed and the branch with the latest block height is kept
+// after calling this function, the balance should be recalculated.
+func (a *Accounting) dedupHack(evts []*types.StakeLinking) []*types.StakeLinking {
+	hashToEvt := map[string]*types.StakeLinking{}
+	for _, sl := range evts {
+		evt, ok := hashToEvt[sl.TxHash]
+		if !ok {
+			hashToEvt[sl.TxHash] = sl
+		} else {
+			if sl.BlockHeight > evt.BlockHeight {
+				a.log.Warn("duplicate events with identical transaction hash found", logging.String("tx-hash", sl.TxHash), logging.Uint64("block-height1", sl.BlockHeight), logging.Uint64("block-height2", evt.BlockHeight))
+				hashToEvt[sl.TxHash] = sl
+			}
+		}
+	}
+	newEvts := make([]*types.StakeLinking, 0, len(hashToEvt))
+	for _, sl := range evts {
+		evt := hashToEvt[sl.TxHash]
+		if evt.BlockHeight == sl.BlockHeight {
+			newEvts = append(newEvts, sl)
+		}
+	}
+	return newEvts
+}
+
 func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts, pendingSupply *types.StakeTotalSupply, p *types.Payload) error {
 	a.hashableAccounts = make([]*Account, 0, len(accounts.Accounts))
 	a.log.Debug("restoring staking accounts",
@@ -126,8 +155,9 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 		stakingAcc := &Account{
 			Party:   acc.Party,
 			Balance: acc.Balance,
-			Events:  acc.Events,
+			Events:  a.dedupHack(acc.Events),
 		}
+		stakingAcc.computeOngoingBalance()
 		a.hashableAccounts = append(a.hashableAccounts, stakingAcc)
 		a.accounts[acc.Party] = stakingAcc
 		pevts = append(pevts, events.NewPartyEvent(ctx, types.Party{Id: acc.Party}))

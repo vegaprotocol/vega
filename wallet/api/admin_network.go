@@ -16,8 +16,7 @@ type AdminAPIConfig struct {
 }
 
 type AdminGRPCConfig struct {
-	Hosts   []string `json:"hosts"`
-	Retries uint64   `json:"retries"`
+	Hosts []string `json:"hosts"`
 }
 
 type AdminRESTConfig struct {

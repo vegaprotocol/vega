@@ -10,6 +10,7 @@ func (o *DataSourceSpecConfiguration) ToOracleSpec(d *DataSourceSpec) *OracleSpe
 
 func (DataSourceSpec) IsEvent() {}
 
+// Used only for testing purposes at the moment.
 func NewDataSourceSpec(sc *DataSourceDefinition) *DataSourceSpec {
 	ds := &DataSourceSpec{}
 	tp := sc.GetSourceType()

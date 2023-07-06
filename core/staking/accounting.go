@@ -89,7 +89,7 @@ func (p pendingStakeTotalSupply) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeStakeTotalSupply
 }
 
-func (p *pendingStakeTotalSupply) Check() error { return p.check() }
+func (p *pendingStakeTotalSupply) Check(ctx context.Context) error { return p.check() }
 
 func NewAccounting(
 	log *logging.Logger,

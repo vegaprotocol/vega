@@ -32,7 +32,8 @@ const (
                        size, remaining, time_in_force, type, status,
                        reference, reason, version, batch_id, pegged_offset,
                        pegged_reference, lp_id, created_at, updated_at, expires_at,
-                       tx_hash, vega_time, seq_num, post_only, reduce_only`
+                       tx_hash, vega_time, seq_num, post_only, reduce_only, reserved_remaining, 
+                       peak_size, minimum_visible_size`
 
 	ordersFilterDateColumn = "vega_time"
 
@@ -65,7 +66,7 @@ func (os *Orders) Flush(ctx context.Context) ([]entities.Order, error) {
 	return os.batcher.Flush(ctx, os.Connection)
 }
 
-// Add inserts an order update row into the database if an row for this (block time, order id, version)
+// Add inserts an order update row into the database if a row for this (block time, order id, version)
 // does not already exist; otherwise update the existing row with information supplied.
 // Currently we only store the last update to an order per block, so the order history is not
 // complete if multiple updates happen in one block.
@@ -127,7 +128,7 @@ func (os *Orders) GetByMarketAndID(ctx context.Context, marketIDstr string, orde
 	// select directly from orders_live table, the current view searches in orders
 	// this is used to expire orders, which have to be, by definition, live. This table uses ID as its PK
 	// so this is a more optimal way of querying the data.
-	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s)`, sqlOrderColumns, strings.Join(in, ", "))
+	query := fmt.Sprintf(`SELECT %s from orders_live WHERE market_id=$1 AND id IN (%s) order by id`, sqlOrderColumns, strings.Join(in, ", "))
 	orders := make([]entities.Order, 0, len(orderIDs))
 	err := pgxscan.Select(ctx, os.Connection, &orders, query, bind...)
 

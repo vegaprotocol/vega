@@ -13,6 +13,8 @@
 package netparams
 
 const (
+	SpotMarketTradingEnabled = "spot.market.trading.enabled"
+
 	// market related parameters.
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
@@ -22,7 +24,7 @@ const (
 	MarketLiquidityBondPenaltyParameter             = "market.liquidity.bondPenaltyParameter"
 	MarketLiquidityMaximumLiquidityFeeFactorLevel   = "market.liquidity.maximumLiquidityFeeFactorLevel"
 	MarketLiquidityStakeToCCYVolume                 = "market.liquidity.stakeToCcyVolume"
-	MarketLiquidityProvidersFeeDistribitionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
+	MarketLiquidityProvidersFeeDistributionTimeStep = "market.liquidity.providers.fee.distributionTimeStep"
 	MarketLiquidityTargetStakeTriggeringRatio       = "market.liquidity.targetstake.triggering.ratio"
 	MarketProbabilityOfTradingTauScaling            = "market.liquidity.probabilityOfTrading.tau.scaling"
 	MarketMinProbabilityOfTradingForLPOrders        = "market.liquidity.minimum.probabilityOfTrading.lpOrders"
@@ -32,6 +34,15 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
+	MarketSuccessorLaunchWindow                     = "market.liquidity.successorLaunchWindowLength"
+
+	// Parameters for liquidity framework version 2.
+	MarketLiquidityV2BondPenaltyParameter              = "market.liquidityV2.bondPenaltyParameter"
+	MarketLiquidityV2EarlyExitPenalty                  = "market.liquidityV2.earlyExitPenalty"
+	MarketLiquidityV2MaximumLiquidityFeeFactorLevel    = "market.liquidityV2.maximumLiquidityFeeFactorLevel"
+	MarketLiquidityV2SLANonPerformanceBondPenaltyMax   = "market.liquidityV2.sla.nonPerformanceBondPenaltyMax"
+	MarketLiquidityV2SLANonPerformanceBondPenaltySlope = "market.liquidityV2.sla.nonPerformanceBondPenaltySlope"
+	MarketLiquidityV2StakeToCCYVolume                  = "market.liquidityV2.stakeToCcyVolume"
 
 	RewardAsset = "reward.asset"
 
@@ -96,6 +107,18 @@ const (
 	GovernanceProposalFreeformMinProposerBalance    = "governance.proposal.freeform.minProposerBalance"
 	GovernanceProposalFreeformMinVoterBalance       = "governance.proposal.freeform.minVoterBalance"
 
+	// governance transfer proposal parameters.
+	GovernanceProposalTransferMinClose              = "governance.proposal.transfer.minClose"
+	GovernanceProposalTransferMaxClose              = "governance.proposal.transfer.maxClose"
+	GovernanceProposalTransferMinEnact              = "governance.proposal.transfer.minEnact"
+	GovernanceProposalTransferMaxEnact              = "governance.proposal.transfer.maxEnact"
+	GovernanceProposalTransferRequiredParticipation = "governance.proposal.transfer.requiredParticipation"
+	GovernanceProposalTransferRequiredMajority      = "governance.proposal.transfer.requiredMajority"
+	GovernanceProposalTransferMinProposerBalance    = "governance.proposal.transfer.minProposerBalance"
+	GovernanceProposalTransferMinVoterBalance       = "governance.proposal.transfer.minVoterBalance"
+	GovernanceTransferMaxAmount                     = "governance.proposal.transfer.maxAmount"
+	GovernanceTransferMaxFraction                   = "governance.proposal.transfer.maxFraction"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -119,6 +142,7 @@ const (
 	SpamProtectionMaxBatchSize                     = "spam.protection.max.batchSize"
 	SpamProtectionMinimumWithdrawalQuantumMultiple = "spam.protection.minimumWithdrawalQuantumMultiple"
 	SpamProtectionMinMultisigUpdates               = "spam.protection.minMultisigUpdates"
+	SpamProtectionMaxStopOrdersPerMarket           = "spam.protection.max.stopOrdersPerMarket"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -174,7 +198,14 @@ const (
 	ValidatorPerformanceScalingFactor = "validator.performance.scaling.factor"
 )
 
+var Deprecated = map[string]struct{}{
+	StakingAndDelegationRewardPayoutFraction:    {},
+	StakingAndDelegationRewardPayoutDelay:       {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch: {},
+}
+
 var AllKeys = map[string]struct{}{
+	SpotMarketTradingEnabled:                                 {},
 	MaxPeggedOrders:                                          {},
 	MaxGasPerBlock:                                           {},
 	DefaultGas:                                               {},
@@ -188,8 +219,14 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityBondPenaltyParameter:                      {},
 	MarketLiquidityMaximumLiquidityFeeFactorLevel:            {},
 	MarketLiquidityStakeToCCYVolume:                          {},
-	MarketLiquidityProvidersFeeDistribitionTimeStep:          {},
+	MarketLiquidityProvidersFeeDistributionTimeStep:          {},
 	MarketLiquidityTargetStakeTriggeringRatio:                {},
+	MarketLiquidityV2BondPenaltyParameter:                    {},
+	MarketLiquidityV2EarlyExitPenalty:                        {},
+	MarketLiquidityV2MaximumLiquidityFeeFactorLevel:          {},
+	MarketLiquidityV2SLANonPerformanceBondPenaltySlope:       {},
+	MarketLiquidityV2SLANonPerformanceBondPenaltyMax:         {},
+	MarketLiquidityV2StakeToCCYVolume:                        {},
 	MarketTargetStakeTimeWindow:                              {},
 	MarketTargetStakeScalingFactor:                           {},
 	MarketPriceMonitoringDefaultParameters:                   {},
@@ -236,6 +273,16 @@ var AllKeys = map[string]struct{}{
 	GovernanceProposalFreeformRequiredMajority:               {},
 	GovernanceProposalFreeformMinProposerBalance:             {},
 	GovernanceProposalFreeformMinVoterBalance:                {},
+	GovernanceProposalTransferMinClose:                       {},
+	GovernanceProposalTransferMaxClose:                       {},
+	GovernanceProposalTransferMinEnact:                       {},
+	GovernanceProposalTransferMaxEnact:                       {},
+	GovernanceProposalTransferRequiredParticipation:          {},
+	GovernanceProposalTransferRequiredMajority:               {},
+	GovernanceProposalTransferMinProposerBalance:             {},
+	GovernanceProposalTransferMinVoterBalance:                {},
+	GovernanceTransferMaxAmount:                              {},
+	GovernanceTransferMaxFraction:                            {},
 	BlockchainsEthereumConfig:                                {},
 	MarketLiquidityProvisionShapesMaxSize:                    {},
 	MarketProbabilityOfTradingTauScaling:                     {},
@@ -291,4 +338,6 @@ var AllKeys = map[string]struct{}{
 	ValidatorPerformanceScalingFactor:                        {},
 	SpamProtectionMinimumWithdrawalQuantumMultiple:           {},
 	SpamProtectionMinMultisigUpdates:                         {},
+	MarketSuccessorLaunchWindow:                              {},
+	SpamProtectionMaxStopOrdersPerMarket:                     {},
 }

@@ -15,6 +15,7 @@ package steps
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/core/integration/stubs"
 	types "code.vegaprotocol.io/vega/protos/vega"
 )
 
@@ -32,6 +33,24 @@ func TheMarketStateShouldBeForMarket(
 
 	if marketState != expectedMarketState {
 		return errMismatchedMarketState(market, expectedMarketState, marketState)
+	}
+	return nil
+}
+
+func TheLastStateUpdateShouldBeForMarket(
+	broker *stubs.BrokerStub,
+	market, expectedMarketStateStr string,
+) error {
+	expectedMarketState, err := MarketState(expectedMarketStateStr)
+	panicW("market state", err)
+
+	lastMkt := broker.GetLastMarketUpdateState(market)
+	if lastMkt == nil {
+		return errMarketDataNotFound(market, fmt.Errorf("no market updates found"))
+	}
+
+	if lastMkt.State != expectedMarketState {
+		return errMismatchedMarketState(market, expectedMarketState, lastMkt.State)
 	}
 	return nil
 }

@@ -104,6 +104,9 @@ func (s *FileStore) UnlockWallet(ctx context.Context, name, passphrase string) e
 		wallet:     w,
 	}
 
+	// It warns other components of a freshly unlocked wallet.
+	s.broadcastEvent(ctx, wallet.NewUnlockedWalletUpdatedEvent(w))
+
 	return nil
 }
 
@@ -264,7 +267,8 @@ func (s *FileStore) ListWallets(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not read the directory at %s: %w", s.walletsHome, err)
 	}
-	wallets := []string{}
+	wallets := make([]string, 0, len(entries))
+	walletCount := 0
 	for _, entry := range entries {
 		info, err := entry.Info()
 		if err != nil || info.IsDir() || strings.HasPrefix(info.Name(), ".") {
@@ -272,7 +276,9 @@ func (s *FileStore) ListWallets(ctx context.Context) ([]string, error) {
 		}
 
 		wallets = append(wallets, entry.Name())
+		walletCount++
 	}
+	wallets = wallets[0:walletCount]
 	sort.Strings(wallets)
 	return wallets, nil
 }
@@ -592,6 +598,10 @@ func (s *FileStore) broadcastEvent(ctx context.Context, eventToBroadcast wallet.
 			listener(ctx, eventToBroadcast)
 		}
 	}()
+}
+
+func (s *FileStore) GetWalletsPath() string {
+	return s.walletsHome
 }
 
 func checkContextStatus(ctx context.Context) error {

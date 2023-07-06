@@ -1,0 +1,29 @@
+---
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release-notes
+    authors:
+      - renovate
+      - dependabot
+  categories:
+    - title: Vulnerabilities 🔐
+      labels:
+        - vulnerability
+    - title: Breaking Changes 🛠
+      labels:
+        - breaking-change
+    - title: Deprecations ⚠️
+      labels:
+        - deprecation
+    - title: Bug Fixes 🐛
+      labels:
+        - bug
+    - title: New Features 🌱
+      labels:
+        - enhancement
+        - feature
+    - title: Other Changes
+      labels:
+        - "*"

@@ -139,7 +139,8 @@ func testInsertWithdrawalUpdatesIfNewBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, ctx, bs)
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
 	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
@@ -151,9 +152,7 @@ func testInsertWithdrawalUpdatesIfNewBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
-	time.Sleep(time.Second)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	withdrawalProto.Status = vega.Withdrawal_STATUS_FINALIZED
 	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
@@ -179,7 +178,8 @@ func testWithdrawalsGetByID(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, ctx, bs)
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	withdrawalProto := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 
 	withdrawal, err := entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
@@ -191,9 +191,7 @@ func testWithdrawalsGetByID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowCount)
 
-	time.Sleep(time.Second)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	withdrawalProto.Status = vega.Withdrawal_STATUS_FINALIZED
 	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
@@ -219,7 +217,8 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, rowCount)
 
-	block := addTestBlock(t, ctx, bs)
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
 	withdrawalProto1 := getTestWithdrawal(testID, testID, testID, testAmount, testID, block.VegaTime)
 	withdrawalProto1.Id = "deadbeef01"
 
@@ -234,9 +233,7 @@ func testWithdrawalsGetByParty(t *testing.T) {
 	err = ws.Upsert(ctx, withdrawal)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 500)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	withdrawalProto1.Status = vega.Withdrawal_STATUS_FINALIZED
 	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto1, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
@@ -249,18 +246,14 @@ func testWithdrawalsGetByParty(t *testing.T) {
 
 	want = append(want, *withdrawal)
 
-	time.Sleep(time.Millisecond * 500)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto2, generateTxHash(), block.VegaTime)
 	require.NoError(t, err, "Converting withdrawal proto to database entity")
 
 	err = ws.Upsert(ctx, withdrawal)
 	require.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 500)
-
-	block = addTestBlock(t, ctx, bs)
+	block = source.getNextBlock(t, ctx)
 	withdrawal, err = entities.WithdrawalFromProto(withdrawalProto2, generateTxHash(), block.VegaTime)
 	withdrawalProto2.Status = vega.Withdrawal_STATUS_FINALIZED
 	require.NoError(t, err, "Converting withdrawal proto to database entity")

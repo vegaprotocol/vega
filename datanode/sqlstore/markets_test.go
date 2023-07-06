@@ -20,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/datanode/entities"
 	"code.vegaprotocol.io/vega/datanode/sqlstore"
 	"code.vegaprotocol.io/vega/protos/vega"
+	v1 "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -161,7 +162,7 @@ func shouldInsertAValidMarketRecord(t *testing.T) {
 
 	block := addTestBlock(t, ctx, bs)
 
-	marketProto := getTestMarket()
+	marketProto := getTestMarket(true)
 	marketProto.LiquidityMonitoringParameters.TriggeringRatio = "0.3"
 
 	market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
@@ -200,7 +201,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 
 	t.Run("should insert a valid market record to the database", func(t *testing.T) {
 		block = addTestBlock(t, ctx, bs)
-		marketProto = getTestMarket()
+		marketProto = getTestMarket(false)
 
 		market, err := entities.NewMarketFromProto(marketProto, generateTxHash(), block.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
@@ -238,8 +239,7 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	t.Run("should add the updated market record to the database if the block number has changed", func(t *testing.T) {
 		newMarketProto := marketProto.DeepClone()
 		newMarketProto.TradableInstrument.Instrument.Metadata.Tags = append(newMarketProto.TradableInstrument.Instrument.Metadata.Tags, "DDD")
-		time.Sleep(time.Second)
-		newBlock := addTestBlock(t, ctx, bs)
+		newBlock := addTestBlockForTime(t, ctx, bs, time.Now().Add(time.Second))
 
 		market, err := entities.NewMarketFromProto(newMarketProto, generateTxHash(), newBlock.VegaTime)
 		require.NoError(t, err, "Converting market proto to database entity")
@@ -267,7 +267,41 @@ func shouldUpdateAValidMarketRecord(t *testing.T) {
 	})
 }
 
-func getTestMarket() *vega.Market {
+func getTestMarket(termInt bool) *vega.Market {
+	term := &vega.DataSourceSpec{
+		Id:        "",
+		CreatedAt: 0,
+		UpdatedAt: 0,
+		Data: vega.NewDataSourceDefinition(
+			vega.DataSourceDefinitionTypeExt,
+		).SetOracleConfig(
+			&vega.DataSourceSpecConfiguration{
+				Signers: nil,
+				Filters: nil,
+			},
+		),
+		Status: 0,
+	}
+
+	if termInt {
+		term = &vega.DataSourceSpec{
+			Id:        "",
+			CreatedAt: 0,
+			UpdatedAt: 0,
+			Data: vega.NewDataSourceDefinition(
+				vega.DataSourceDefinitionTypeInt,
+			).SetTimeTriggerConditionConfig(
+				[]*v1.Condition{
+					{
+						Operator: v1.Condition_OPERATOR_GREATER_THAN,
+						Value:    "test-value",
+					},
+				},
+			),
+			Status: 0,
+		}
+	}
+
 	return &vega.Market{
 		Id: "DEADBEEF",
 		TradableInstrument: &vega.TradableInstrument{
@@ -296,20 +330,7 @@ func getTestMarket() *vega.Market {
 							),
 							Status: 0,
 						},
-						DataSourceSpecForTradingTermination: &vega.DataSourceSpec{
-							Id:        "",
-							CreatedAt: 0,
-							UpdatedAt: 0,
-							Data: vega.NewDataSourceDefinition(
-								vega.DataSourceDefinitionTypeExt,
-							).SetOracleConfig(
-								&vega.DataSourceSpecConfiguration{
-									Signers: nil,
-									Filters: nil,
-								},
-							),
-							Status: 0,
-						},
+						DataSourceSpecForTradingTermination: term,
 						DataSourceSpecBinding: &vega.DataSourceSpecToFutureBinding{
 							SettlementDataProperty:     "",
 							TradingTerminationProperty: "",
@@ -428,13 +449,13 @@ func populateTestMarkets(ctx context.Context, t *testing.T, bs *sqlstore.Blocks,
 		},
 	}
 
+	source := &testBlockSource{bs, time.Now()}
 	for _, market := range markets {
-		block := addTestBlock(t, ctx, bs)
+		block := source.getNextBlock(t, ctx)
 		market.VegaTime = block.VegaTime
 		blockTimes[market.ID.String()] = block.VegaTime
 		err := md.Upsert(ctx, &market)
 		require.NoError(t, err)
-		time.Sleep(time.Microsecond * 100)
 	}
 }
 
@@ -933,4 +954,420 @@ func testCursorPaginationReturnsPageTraversingBackwardNewestFirst(t *testing.T) 
 		StartCursor:     wantStartCursor,
 		EndCursor:       wantEndCursor,
 	}, pageInfo)
+}
+
+func TestSuccessorMarkets(t *testing.T) {
+	t.Run("should create a market lineage record when a successor market proposal is approved", testMarketLineageCreated)
+	t.Run("ListSuccessorMarkets should return the market lineage", testListSuccessorMarkets)
+	t.Run("GetMarket should return the market with its parent and successor if they exist", testGetMarketWithParentAndSuccessor)
+}
+
+func testMarketLineageCreated(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	bs, md := setupMarketsTest(t)
+	parentMarket := entities.Market{
+		ID:           entities.MarketID("deadbeef01"),
+		InstrumentID: "deadbeef01",
+	}
+
+	successorMarketA := entities.Market{
+		ID:             entities.MarketID("deadbeef02"),
+		InstrumentID:   "deadbeef02",
+		ParentMarketID: parentMarket.ID,
+	}
+
+	successorMarketB := entities.Market{
+		ID:             entities.MarketID("deadbeef03"),
+		InstrumentID:   "deadbeef03",
+		ParentMarketID: successorMarketA.ID,
+	}
+
+	conn := connectionSource.Connection
+	var rowCount int64
+
+	source := &testBlockSource{bs, time.Now()}
+	block := source.getNextBlock(t, ctx)
+	t.Run("parent market should create a market lineage record with no parent market id", func(t *testing.T) {
+		parentMarket.VegaTime = block.VegaTime
+		parentMarket.State = entities.MarketStateProposed
+		err := md.Upsert(ctx, &parentMarket)
+		require.NoError(t, err)
+		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, parentMarket.ID).Scan(&rowCount)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), rowCount)
+
+		block = source.getNextBlock(t, ctx)
+		parentMarket.State = entities.MarketStatePending
+		parentMarket.VegaTime = block.VegaTime
+
+		err = md.Upsert(ctx, &parentMarket)
+		require.NoError(t, err)
+		var marketID, parentMarketID, rootID entities.MarketID
+		err = conn.QueryRow(ctx,
+			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
+			parentMarket.ID,
+		).Scan(&marketID, &parentMarketID, &rootID)
+		require.NoError(t, err)
+		assert.Equal(t, parentMarket.ID, marketID)
+		assert.Equal(t, entities.MarketID(""), parentMarketID)
+		assert.Equal(t, parentMarket.ID, rootID)
+	})
+
+	block = source.getNextBlock(t, ctx)
+	t.Run("successor market should create a market lineage record pointing to the parent market and the root market", func(t *testing.T) {
+		successorMarketA.VegaTime = block.VegaTime
+		successorMarketA.State = entities.MarketStateProposed
+		err := md.Upsert(ctx, &successorMarketA)
+		require.NoError(t, err)
+		// proposed market successor only, so it should not create a lineage record yet
+		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketA.ID).Scan(&rowCount)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), rowCount)
+
+		block = source.getNextBlock(t, ctx)
+		successorMarketA.State = entities.MarketStatePending
+		err = md.Upsert(ctx, &successorMarketA)
+		require.NoError(t, err)
+		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
+		var marketID, parentMarketID, rootID entities.MarketID
+		err = conn.QueryRow(ctx,
+			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
+			successorMarketA.ID,
+		).Scan(&marketID, &parentMarketID, &rootID)
+		require.NoError(t, err)
+		assert.Equal(t, successorMarketA.ID, marketID)
+		assert.Equal(t, parentMarket.ID, parentMarketID)
+		assert.Equal(t, parentMarket.ID, rootID)
+	})
+
+	block = source.getNextBlock(t, ctx)
+	t.Run("second successor market should create a lineage record pointing to the parent market and the root market", func(t *testing.T) {
+		successorMarketB.VegaTime = block.VegaTime
+		successorMarketB.State = entities.MarketStateProposed
+		err := md.Upsert(ctx, &successorMarketB)
+		require.NoError(t, err)
+		// proposed market successor only, so it should not create a lineage record yet
+		err = conn.QueryRow(ctx, `select count(*) from market_lineage where market_id = $1`, successorMarketB.ID).Scan(&rowCount)
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), rowCount)
+
+		block = source.getNextBlock(t, ctx)
+		successorMarketB.State = entities.MarketStatePending
+		err = md.Upsert(ctx, &successorMarketB)
+		require.NoError(t, err)
+		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
+		var marketID, parentMarketID, rootID entities.MarketID
+		err = conn.QueryRow(ctx,
+			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
+			successorMarketB.ID,
+		).Scan(&marketID, &parentMarketID, &rootID)
+		require.NoError(t, err)
+		assert.Equal(t, successorMarketB.ID, marketID)
+		assert.Equal(t, successorMarketA.ID, parentMarketID)
+		assert.Equal(t, parentMarket.ID, rootID)
+	})
+}
+
+func testListSuccessorMarkets(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+	md, markets, proposals := setupSuccessorMarkets(t, ctx)
+
+	successors := []entities.SuccessorMarket{
+		{
+			Market: markets[5],
+			Proposals: []*entities.Proposal{
+				&proposals[1],
+				&proposals[2],
+			},
+		},
+		{
+			Market: markets[6],
+			Proposals: []*entities.Proposal{
+				&proposals[3],
+				&proposals[4],
+			},
+		},
+		{
+			Market: markets[8],
+		},
+	}
+
+	t.Run("should list the full history if children only is false", func(t *testing.T) {
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef02", true, entities.CursorPagination{})
+		require.NoError(t, err)
+		want := successors[:]
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("should list only the successor markets if children only is true", func(t *testing.T) {
+		got, _, err := md.ListSuccessorMarkets(ctx, "deadbeef02", false, entities.CursorPagination{})
+		require.NoError(t, err)
+		want := successors[1:]
+
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("should paginate results if pagination is provided", func(t *testing.T) {
+		first := int32(2)
+		after := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: markets[5].VegaTime,
+				ID:       markets[5].ID,
+			}.String(),
+		).Encode()
+		pagination, err := entities.NewCursorPagination(&first, &after, nil, nil, false)
+		require.NoError(t, err)
+		got, pageInfo, err := md.ListSuccessorMarkets(ctx, "deadbeef01", true, pagination)
+		require.NoError(t, err)
+		want := successors[1:]
+
+		assert.Equal(t, want, got, "paged successor markets do not match")
+		wantStartCursor := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: markets[6].VegaTime,
+				ID:       markets[6].ID,
+			}.String(),
+		).Encode()
+		wantEndCursor := entities.NewCursor(
+			entities.MarketCursor{
+				VegaTime: markets[8].VegaTime,
+				ID:       markets[8].ID,
+			}.String(),
+		).Encode()
+		assert.Equal(t, entities.PageInfo{
+			HasNextPage:     false,
+			HasPreviousPage: true,
+			StartCursor:     wantStartCursor,
+			EndCursor:       wantEndCursor,
+		}, pageInfo)
+	})
+}
+
+func testGetMarketWithParentAndSuccessor(t *testing.T) {
+	ctx, rollback := tempTransaction(t)
+	defer rollback()
+
+	md, _, _ := setupSuccessorMarkets(t, ctx)
+
+	t.Run("should return successor market id only if the first market in a succession line", func(t *testing.T) {
+		got, err := md.GetByID(ctx, "deadbeef01")
+		require.NoError(t, err)
+		assert.Equal(t, "", got.ParentMarketID.String())
+		assert.Equal(t, "deadbeef02", got.SuccessorMarketID.String())
+	})
+
+	t.Run("should return parent and successor market id if the market is within a succession line", func(t *testing.T) {
+		got, err := md.GetByID(ctx, "deadbeef02")
+		require.NoError(t, err)
+		assert.Equal(t, "deadbeef01", got.ParentMarketID.String())
+		assert.Equal(t, "deadbeef03", got.SuccessorMarketID.String())
+	})
+
+	t.Run("should return parent market id only if the last market in a succession line", func(t *testing.T) {
+		got, err := md.GetByID(ctx, "deadbeef03")
+		require.NoError(t, err)
+		assert.Equal(t, "deadbeef02", got.ParentMarketID.String())
+		assert.Equal(t, "", got.SuccessorMarketID.String())
+	})
+}
+
+func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets, []entities.Market, []entities.Proposal) {
+	t.Helper()
+
+	bs, md := setupMarketsTest(t)
+	ps := sqlstore.NewProposals(connectionSource)
+	ts := sqlstore.NewParties(connectionSource)
+
+	parentMarket := entities.Market{
+		ID:           entities.MarketID("deadbeef01"),
+		InstrumentID: "deadbeef01",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+	}
+
+	successorMarketA := entities.Market{
+		ID:           entities.MarketID("deadbeef02"),
+		InstrumentID: "deadbeef02",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+		ParentMarketID: parentMarket.ID,
+	}
+
+	parentMarket.SuccessorMarketID = successorMarketA.ID
+
+	successorMarketB := entities.Market{
+		ID:           entities.MarketID("deadbeef03"),
+		InstrumentID: "deadbeef03",
+		TradableInstrument: entities.TradableInstrument{
+			TradableInstrument: &vega.TradableInstrument{},
+		},
+		ParentMarketID: successorMarketA.ID,
+	}
+
+	successorMarketA.SuccessorMarketID = successorMarketB.ID
+
+	source := &testBlockSource{bs, time.Now()}
+
+	block := source.getNextBlock(t, ctx)
+
+	pt1 := addTestParty(t, ctx, ts, block)
+	pt2 := addTestParty(t, ctx, ts, block)
+
+	proposals := []struct {
+		id        string
+		party     entities.Party
+		reference string
+		block     entities.Block
+		state     entities.ProposalState
+		rationale entities.ProposalRationale
+		terms     entities.ProposalTerms
+		reason    entities.ProposalError
+	}{
+		{
+			id:        "deadbeef01",
+			party:     pt1,
+			reference: "deadbeef01",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms:     entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{}}}},
+			reason:    entities.ProposalErrorUnspecified,
+		},
+		{
+			id:        "deadbeef02",
+			party:     pt1,
+			reference: "deadbeef02",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef01",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorUnspecified,
+		},
+		{
+			id:        "deadbeefaa",
+			party:     pt2,
+			reference: "deadbeefaa",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef01",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorParticipationThresholdNotReached,
+		},
+		{
+			id:        "deadbeef03",
+			party:     pt1,
+			reference: "deadbeef03",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef02",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorUnspecified,
+		},
+		{
+			id:        "deadbeefbb",
+			party:     pt2,
+			reference: "deadbeefbb",
+			block:     source.getNextBlock(t, ctx),
+			state:     entities.ProposalStateEnacted,
+			rationale: entities.ProposalRationale{ProposalRationale: &vega.ProposalRationale{Title: "myurl1.com", Description: "mydescription1"}},
+			terms: entities.ProposalTerms{ProposalTerms: &vega.ProposalTerms{Change: &vega.ProposalTerms_NewMarket{NewMarket: &vega.NewMarket{
+				Changes: &vega.NewMarketConfiguration{
+					Successor: &vega.SuccessorConfiguration{
+						ParentMarketId:        "deadbeef02",
+						InsurancePoolFraction: "1.0",
+					},
+				},
+			}}}},
+			reason: entities.ProposalErrorParticipationThresholdNotReached,
+		},
+	}
+
+	props := []entities.Proposal{}
+	for _, p := range proposals {
+		p := addTestProposal(t, ctx, ps, p.id, p.party, p.reference, p.block, p.state,
+			p.rationale, p.terms, p.reason)
+
+		props = append(props, p)
+	}
+
+	markets := []struct {
+		market entities.Market
+		state  entities.MarketState
+	}{
+		{
+			market: parentMarket,
+			state:  entities.MarketStateProposed,
+		},
+		{
+			market: parentMarket,
+			state:  entities.MarketStatePending,
+		},
+		{
+			market: parentMarket,
+			state:  entities.MarketStateActive,
+		},
+		{
+			market: successorMarketA,
+			state:  entities.MarketStateProposed,
+		},
+		{
+			market: successorMarketA,
+			state:  entities.MarketStatePending,
+		},
+		{
+			market: parentMarket,
+			state:  entities.MarketStateSettled,
+		},
+		{
+			market: successorMarketA,
+			state:  entities.MarketStateActive,
+		},
+		{
+			market: successorMarketB,
+			state:  entities.MarketStateProposed,
+		},
+		{
+			market: successorMarketB,
+			state:  entities.MarketStatePending,
+		},
+	}
+
+	entries := make([]entities.Market, 0, len(markets))
+
+	for _, u := range markets {
+		block := source.getNextBlock(t, ctx)
+		u.market.VegaTime = block.VegaTime
+		u.market.State = u.state
+		err := md.Upsert(ctx, &u.market)
+		entries = append(entries, u.market)
+		require.NoError(t, err)
+	}
+
+	return md, entries, props
 }

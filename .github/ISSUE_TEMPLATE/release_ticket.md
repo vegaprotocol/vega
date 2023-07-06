@@ -1,32 +1,52 @@
 ---
 name: Release ticket
 about: A ticket to capture all the details of the release 
-title: 'Release Version `X.Y.Z`'
+title: '[Release]: Version `X.Y.Z`'
 labels: "release"
 assignees: '@gordsport'
 ---
 
-### Release Version `X.Y.Z`
+## Release Version `X.Y.Z` of core to Testnet
 
-### Software Versions:
+### Pre-release checklist
 
-| Repo | Version | Released/Tagged | Release notes |
-|:--------------:|:--------:|:--------:|:--------:|
-| Protos | [x.y.z](https://github.com/vegaprotocol/protos/releases/tag/) | Tagged | [changelog](https://github.com/vegaprotocol/protos/blob/develop/CHANGELOG.md) |
-| Datanode | [x.y.z](https://github.com/vegaprotocol/data-node/releases/tag/) | Tagged | [changelog](https://github.com/vegaprotocol/data-node/blob/develop/CHANGELOG.md) |
-| Vegawallet| [x.y.z](https://github.com/vegaprotocol/vegawallet/releases/tag/) | Released | [changelog](https://github.com/vegaprotocol/vegawallet/blob/develop/CHANGELOG.md) |
-| Vega | [x.y.z](https://github.com/vegaprotocol/vega/releases/tag/) | Tagged | [changelog](https://github.com/vegaprotocol/vega/blob/develop/CHANGELOG.md) |
-| EEF | [x.y.z](https://github.com/vegaprotocol/ethereum-event-forwarder/releases/tag/) | Tagged |  [changelog](https://github.com/vegaprotocol/ethereum-event-forwarder/blob/ether/CHANGELOG.md) |
+- [ ] Key features / fixes described and understood
+- [ ] Any breaking changes, deprecations or removals in this release?
+- [ ] Smart Contracts updated? (if applicable capture addresses for all networks)
+- [ ] Documentation to support feature/api changes?
+- [ ] Node operator docs updated?
+- [ ] Automated tests pass without blocking incidents? (Front end dApps)
+- [ ] Automated tests pass without blocking incidents? (Core QA nightly run AND QA load run)
+- [ ] Perfromance tests run
+- [ ] Manual tests pass without blocking incidents on Stagnet?
+- [ ] Changelog's / GitHub release page updated?
+- [ ] Release notes available?
+- [ ] Migration / deployment guide?
+- [ ] Front end applications versions ready
+- [ ] Tag system tests repo
+- [ ] Tag vegacapsule repo
+- [ ] Tag desktop wallet repo (if required)
+- [ ] Release tags captured:
 
-### Smart Contract:
+| Deployable: | Core | Front Ends | Desktop Wallet | Capsule |  System Tests |
+|:---------:|:--------:|:--------:|:--------:|:--------:|:--------:|
+| Versions: | - |  - | - | - | - |
 
-| Contract | DV Address | Devnet Address | Stagnet1 Address | Stagnet2 Address | Testnet Address | Val-Testnet1 Address | Mainnet1 Address |
-|:--------------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
-| Multisig | tbc | tbc | tbc | tbc | tbc | tbc | tbc |
-| Staking Bridge | tbc | tbc | tbc | tbc | tbc | tbc | tbc |
 
-### Documentation:
-TBC
+- [ ] Go / No-go (core, QA, community, FE, research)
+- [ ] Date / time of deployment decided
+- [ ] Community informed of deprecations, removals, 
+- [ ] Community given info / timings of deployments
+- [ ] Testnet slack channel updated (details pinned / TOPIC updated)
+- [ ] Ensure that the [testnet version](https://github.com/vegaprotocol/vega.xyz/blob/main/src/pages/wallet/index.js#L142) download is specified for the [website](https://vega.xyz/wallet)
+- [ ] DEPLOY TO FAIRGROUND TESTNET
+- [ ] Update [hosted wallet version](https://github.com/vegaprotocol/k8s/blob/main/charts/apps/vegawallet/fairground/VERSION)
 
-### QA test results
-TBC
+#### Post-release checklist
+
+- [ ] Community informed (success or delays)
+- [ ] Vega Testnet slack channel informed (success or delays)
+- [ ] Engineering monitor network
+- [ ] Blameless post mortem (should we face deployment / release version issues)
+
+> NOTE: This list may be edited depending on the context of the release. We may take a calculated risk and not have some of these complete for a deployment (however a good justification is required!).

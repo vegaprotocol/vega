@@ -215,6 +215,7 @@ var (
 	ErrNetworkHistoryOpeningSegment        = errors.New("failed to open network history segment file")
 	ErrNetworkHistoryExtractingSegment     = errors.New("failed to extract data from network history segment file")
 	ErrNetworkHistoryCreatingZipFile       = errors.New("failed to create zip file writer for network history segment")
+	ErrNetworkHistoryServiceNotInitialised = errors.New("network history service not initialised")
 
 	// ErrGetEpoch is returned when the epoch cannot be retrieved.
 	ErrGetEpoch     = errors.New("failed to get epoch")
@@ -285,7 +286,9 @@ var (
 	// MarginLevels...
 	ErrMarginLevelsGetByTxHash = errors.New("failed to get margin levels for tx hash")
 
-	ErrMissingEmptyTxHash = errors.New("missing or empty tx hash")
+	// TxHashes...
+	ErrMissingEmptyTxHash = newInvalidArgumentError("missing or empty transaction hash")
+	ErrInvalidTxHash      = newInvalidArgumentError("not a valid transaction hash")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.

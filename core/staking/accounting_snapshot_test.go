@@ -57,6 +57,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 		BlockTime:       1000002000,
 		LogIndex:        100022,
 		EthereumAddress: "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
+		TxHash:          crypto.RandomHash(),
 	}
 	acc.AddEvent(ctx, evt)
 	acc.tsvc.EXPECT().GetTimeNow().AnyTimes()
@@ -66,10 +67,34 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 		TotalSupply:  num.NewUint(100),
 	})
 
+	evt = &types.StakeLinking{
+		ID:              "someid2",
+		Type:            types.StakeLinkingTypeDeposited,
+		TS:              100,
+		Party:           testParty,
+		Amount:          num.NewUint(10),
+		BlockHeight:     13,
+		BlockTime:       1000003000,
+		LogIndex:        100022,
+		EthereumAddress: "0xe82EfC4187705655C9b484dFFA25f240e8A6B0BA",
+		TxHash:          evt.TxHash,
+	}
+
+	acc.AddEvent(ctx, evt)
+
+	balance, err := acc.GetAvailableBalance(testParty)
+	require.NoError(t, err)
+	require.Equal(t, "20", balance.String())
+
 	// Check state has change now an event as been added
 	s2, _, err := acc.GetState(allKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(s1, s2))
+
+	// taking the snapshot has corrected the duplicate balance
+	balance, err = acc.GetAvailableBalance(testParty)
+	require.NoError(t, err)
+	require.Equal(t, "10", balance.String())
 
 	// Get state ready to load in a new instance of the engine
 	state, _, err := acc.GetState(allKey)
@@ -89,6 +114,9 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	require.Nil(t, provs)
 	require.Equal(t, acc.GetAllAvailableBalances(), snapAcc.GetAllAvailableBalances())
+	accBalance := acc.GetAllAvailableBalances()
+	snapAccBalance := snapAcc.GetAllAvailableBalances()
+	require.Equal(t, accBalance["bob"].String(), snapAccBalance["bob"].String())
 	s3, _, err := snapAcc.GetState(allKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(s2, s3))

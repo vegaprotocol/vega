@@ -14,6 +14,7 @@ import (
 const (
 	batchFactor       = 0.5
 	pegCostFactor     = uint64(50)
+	stopCostFactor    = 0.2
 	lpShapeCostFactor = uint64(100)
 	positionFactor    = uint64(1)
 	levelFactor       = 0.1
@@ -72,8 +73,7 @@ func (g *Gastimator) GetMaxGas() uint64 {
 
 func (g *Gastimator) GetPriority(tx abci.Tx) uint64 {
 	switch tx.Command() {
-	case txn.ProposeCommand,
-		txn.VoteCommand:
+	case txn.ProposeCommand, txn.VoteCommand:
 		return medium
 	default:
 		if tx.Command().IsValidatorCommand() {
@@ -108,7 +108,6 @@ func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
 		}
 		// if it is a cancel for all markets
 		return g.defaultGas, nil
-
 	case txn.LiquidityProvisionCommand:
 		s := &commandspb.LiquidityProvisionSubmission{}
 		if err := tx.Unmarshal(s); err != nil {
@@ -134,6 +133,31 @@ func (g *Gastimator) CalcGasWantedForTx(tx abci.Tx) (uint64, error) {
 			return g.maxGas + 1, err
 		}
 		return g.batchGastimate(s), nil
+	case txn.StopOrdersSubmissionCommand:
+		s := &commandspb.StopOrdersSubmission{}
+		if err := tx.Unmarshal(s); err != nil {
+			return g.maxGas + 1, err
+		}
+		var marketId string
+		if s.FallsBelow != nil {
+			marketId = s.FallsBelow.OrderSubmission.MarketId
+		} else {
+			marketId = s.RisesAbove.OrderSubmission.MarketId
+		}
+
+		return g.orderGastimate(marketId), nil
+	case txn.StopOrdersCancellationCommand:
+		s := &commandspb.StopOrdersCancellation{}
+		if err := tx.Unmarshal(s); err != nil {
+			return g.maxGas + 1, err
+		}
+		// if it is a cancel for one market
+		if s.MarketId != nil && s.StopOrderId != nil {
+			return g.cancelOrderGastimate(*s.MarketId), nil
+		}
+		// if it is a cancel for all markets
+		return g.defaultGas, nil
+
 	default:
 		return g.defaultGas, nil
 	}
@@ -173,6 +197,31 @@ func (g *Gastimator) batchGastimate(batch *commandspb.BatchMarketInstructions) u
 		orderGas := g.cancelOrderGastimate(os.MarketId)
 		totalBatchGas += factor * float64(orderGas)
 	}
+	for i, os := range batch.StopOrdersCancellation {
+		factor := batchFactor
+		if i == 0 {
+			factor = 1.0
+		}
+		if os.MarketId == nil {
+			totalBatchGas += factor * float64(g.defaultGas)
+		}
+		orderGas := g.cancelOrderGastimate(*os.MarketId)
+		totalBatchGas += factor * float64(orderGas)
+	}
+	for i, os := range batch.StopOrdersSubmission {
+		factor := batchFactor
+		if i == 0 {
+			factor = 1.0
+		}
+		var marketId string
+		if os.FallsBelow != nil {
+			marketId = os.FallsBelow.OrderSubmission.MarketId
+		} else {
+			marketId = os.RisesAbove.OrderSubmission.MarketId
+		}
+		orderGas := g.orderGastimate(marketId)
+		totalBatchGas += factor * float64(orderGas)
+	}
 	return uint64(math.Min(float64(uint64(totalBatchGas)), float64(g.maxGas-1)))
 }
 
@@ -185,6 +234,7 @@ func (g *Gastimator) orderGastimate(marketID string) uint64 {
 	if marketCounters, ok := g.marketCounters[marketID]; ok {
 		return uint64(math.Min(float64(
 			g.defaultGas+
+				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+
@@ -202,6 +252,7 @@ func (g *Gastimator) cancelOrderGastimate(marketID string) uint64 {
 	if marketCounters, ok := g.marketCounters[marketID]; ok {
 		return uint64(math.Min(float64(
 			g.defaultGas+
+				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				uint64(0.1*float64(marketCounters.OrderbookLevelCount))),
@@ -219,6 +270,7 @@ func (g *Gastimator) lpGastimate(marketID string) uint64 {
 	if marketCounters, ok := g.marketCounters[marketID]; ok {
 		return uint64(math.Min(float64(
 			g.defaultGas+
+				uint64(stopCostFactor*float64(marketCounters.StopOrderCounter))+
 				pegCostFactor*marketCounters.PeggedOrderCounter+
 				lpShapeCostFactor*marketCounters.LPShapeCount+
 				positionFactor*marketCounters.PositionCount+

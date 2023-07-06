@@ -26,6 +26,13 @@ var (
 	ErrMissingSlippageFactor   = errors.New("slippage factor not specified")
 )
 
+type ProductType int32
+
+const (
+	ProductTypeFuture ProductType = iota
+	ProductTypeSpot
+)
+
 type ProposalTermsNewMarket struct {
 	NewMarket *NewMarket
 }
@@ -85,6 +92,21 @@ type NewMarket struct {
 	Changes *NewMarketConfiguration
 }
 
+func (n NewMarket) ParentMarketID() (string, bool) {
+	if n.Changes.Successor == nil || len(n.Changes.Successor.ParentID) == 0 {
+		return "", false
+	}
+	return n.Changes.Successor.ParentID, true
+}
+
+func (n NewMarket) Successor() *SuccessorConfig {
+	if n.Changes.Successor == nil {
+		return nil
+	}
+	cpy := *n.Changes.Successor
+	return &cpy
+}
+
 func (n NewMarket) IntoProto() *vegapb.NewMarket {
 	var changes *vegapb.NewMarketConfiguration
 	if n.Changes != nil {
@@ -110,6 +132,11 @@ func (n NewMarket) String() string {
 	)
 }
 
+type SuccessorConfig struct {
+	ParentID              string
+	InsurancePoolFraction num.Decimal
+}
+
 type NewMarketConfiguration struct {
 	Instrument                    *InstrumentConfiguration
 	DecimalPlaces                 uint64
@@ -121,6 +148,7 @@ type NewMarketConfiguration struct {
 	LpPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
+	Successor                     *SuccessorConfig
 	// New market risk model parameters
 	//
 	// Types that are valid to be assigned to RiskParameters:
@@ -164,6 +192,9 @@ func (n NewMarketConfiguration) IntoProto() *vegapb.NewMarketConfiguration {
 		LinearSlippageFactor:          n.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       n.QuadraticSlippageFactor.String(),
 	}
+	if n.Successor != nil {
+		r.Successor = n.Successor.IntoProto()
+	}
 	switch rp := riskParams.(type) {
 	case *vegapb.NewMarketConfiguration_Simple:
 		r.RiskParameters = rp
@@ -195,6 +226,10 @@ func (n NewMarketConfiguration) DeepClone() *NewMarketConfiguration {
 	if n.RiskParameters != nil {
 		cpy.RiskParameters = n.RiskParameters.DeepClone()
 	}
+	if n.Successor != nil {
+		cs := *n.Successor
+		cpy.Successor = &cs
+	}
 	return cpy
 }
 
@@ -212,6 +247,26 @@ func (n NewMarketConfiguration) String() string {
 		n.LinearSlippageFactor.String(),
 		n.QuadraticSlippageFactor.String(),
 	)
+}
+
+func (n NewMarketConfiguration) ProductType() ProductType {
+	return n.Instrument.Product.Type()
+}
+
+func (n NewMarketConfiguration) GetFuture() *InstrumentConfigurationFuture {
+	if n.ProductType() == ProductTypeFuture {
+		f, _ := n.Instrument.Product.(*InstrumentConfigurationFuture)
+		return f
+	}
+	return nil
+}
+
+func (n NewMarketConfiguration) GetSpot() *InstrumentConfigurationSpot {
+	if n.ProductType() == ProductTypeSpot {
+		f, _ := n.Instrument.Product.(*InstrumentConfigurationSpot)
+		return f
+	}
+	return nil
 }
 
 func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMarketConfiguration, error) {
@@ -268,7 +323,36 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) (*NewMark
 			r.RiskParameters = NewMarketConfigurationLogNormalFromProto(rp)
 		}
 	}
+	if p.Successor != nil {
+		s, err := SuccessorConfigFromProto(p.Successor)
+		if err != nil {
+			return nil, err
+		}
+		r.Successor = s
+	}
 	return r, nil
+}
+
+func SuccessorConfigFromProto(p *vegapb.SuccessorConfiguration) (*SuccessorConfig, error) {
+	// successor config is optional, but make sure that, if provided, it's not set to empty parent market ID
+	if len(p.ParentMarketId) == 0 {
+		return nil, nil
+	}
+	f, err := num.DecimalFromString(p.InsurancePoolFraction)
+	if err != nil {
+		return nil, err
+	}
+	return &SuccessorConfig{
+		ParentID:              p.ParentMarketId,
+		InsurancePoolFraction: f,
+	}, nil
+}
+
+func (s *SuccessorConfig) IntoProto() *vegapb.SuccessorConfiguration {
+	return &vegapb.SuccessorConfiguration{
+		ParentMarketId:        s.ParentID,
+		InsurancePoolFraction: s.InsurancePoolFraction.String(),
+	}
 }
 
 type newRiskParams interface {
@@ -356,9 +440,10 @@ func NewMarketConfigurationLogNormalFromProto(p *vegapb.NewMarketConfiguration_L
 type instrumentConfigurationProduct interface {
 	isInstrumentConfigurationProduct()
 	icpIntoProto() interface{}
-	Asset() string
+	Assets() []string
 	DeepClone() instrumentConfigurationProduct
 	String() string
+	Type() ProductType
 }
 
 type InstrumentConfigurationFuture struct {
@@ -381,14 +466,19 @@ func (i InstrumentConfigurationFuture) DeepClone() instrumentConfigurationProduc
 	}
 }
 
-func (i InstrumentConfigurationFuture) Asset() string {
-	return i.Future.SettlementAsset
+func (i InstrumentConfigurationFuture) Assets() []string {
+	return i.Future.Assets()
+}
+
+func (InstrumentConfigurationFuture) Type() ProductType {
+	return ProductTypeFuture
 }
 
 type InstrumentConfiguration struct {
 	Name string
 	Code string
 	// *InstrumentConfigurationFuture
+	// *InstrumentConfigurationSpot
 	Product instrumentConfigurationProduct
 }
 
@@ -411,6 +501,8 @@ func (i InstrumentConfiguration) IntoProto() *vegapb.InstrumentConfiguration {
 	}
 	switch pr := p.(type) {
 	case *vegapb.InstrumentConfiguration_Future:
+		r.Product = pr
+	case *vegapb.InstrumentConfiguration_Spot:
 		r.Product = pr
 	}
 	return r
@@ -442,6 +534,14 @@ func InstrumentConfigurationFromProto(
 				DataSourceSpecForSettlementData:     *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForSettlementData),
 				DataSourceSpecForTradingTermination: *DataSourceDefinitionFromProto(pr.Future.DataSourceSpecForTradingTermination),
 				DataSourceSpecBinding:               DataSourceSpecBindingForFutureFromProto(pr.Future.DataSourceSpecBinding),
+			},
+		}
+	case *vegapb.InstrumentConfiguration_Spot:
+		r.Product = &InstrumentConfigurationSpot{
+			Spot: &SpotProduct{
+				Name:       pr.Spot.Name,
+				BaseAsset:  pr.Spot.BaseAsset,
+				QuoteAsset: pr.Spot.QuoteAsset,
 			},
 		}
 	}
@@ -501,8 +601,8 @@ func (f FutureProduct) String() string {
 	)
 }
 
-func (f FutureProduct) Asset() string {
-	return f.SettlementAsset
+func (f FutureProduct) Assets() []string {
+	return []string{f.SettlementAsset}
 }
 
 type MetadataList []string

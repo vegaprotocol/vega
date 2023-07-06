@@ -25,9 +25,10 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | trading.terminated | TYPE_BOOLEAN | trading termination |
 
     And the following network parameters are set:
-      | name                                    | value |
-      | market.auction.minimumDuration          | 1     |
-      | network.markPriceUpdateMaximumFrequency | 0s    |
+      | name                                         | value |
+      | market.auction.minimumDuration               | 1     |
+      | network.markPriceUpdateMaximumFrequency      | 0s    |
+      | market.liquidity.successorLaunchWindowLength | 1s    |
 
     And the settlement data decimals for the oracle named "ethDec20Oracle" is given in "2" decimal places
     And the settlement data decimals for the oracle named "ethDec21Oracle" is given in "1" decimal places
@@ -214,7 +215,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | name             | value |
       | prices.ETH.value | 4200  |
 
-    Then time is updated to "2020-01-01T01:01:02Z"
+    When the network moves ahead "1" blocks
+    And time is updated to "2020-01-01T01:01:02Z"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price   | resulting trades | type       | tif     | reference | error                         |
@@ -226,7 +228,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | party2 | ETH   | ETH/DEC19 | 0      | 4200000    |
       | party3 | ETH   | ETH/DEC19 | 0      | 404200000  |
 
-    And the cumulated balance for all accounts should be worth "10023600000000"
+    When the network moves ahead "2" blocks
+    Then the cumulated balance for all accounts should be worth "10023600000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the network treasury balance should be "2000000000" for the asset "ETH"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
@@ -312,9 +315,9 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | prices.ETH.value | 70000 |
 
     # settlement price is 70000 which is outside price monitoring bounds, and this will not trigger auction
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+    And the trading mode should be "TRADING_MODE_NO_TRADING" for the market "ETH/DEC21"
     Then the market state should be "STATE_SETTLED" for the market "ETH/DEC21"
-    And the network moves ahead "1" blocks
+    And the network moves ahead "6" blocks
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "1500000000" for the market "ETH/DEC19"
     And the network treasury balance should be "500000000" for the asset "ETH"
@@ -359,7 +362,8 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | party2 | ETH   | ETH/DEC19 | 0      | 4200000    |
       | party3 | ETH   | ETH/DEC19 | 0      | 404200000  |
 
-    And the cumulated balance for all accounts should be worth "20023600000000"
+    When the network moves ahead "2" blocks
+    Then the cumulated balance for all accounts should be worth "20023600000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the network treasury balance should be "2000000000" for the asset "ETH"
@@ -437,6 +441,7 @@ Feature: Test settlement at expiry with decimal places for asset and market (dif
       | party1 | ETH   | ETH/DEC19 | 0      | 1191600000 |
       | party2 | ETH   | ETH/DEC19 | 0      | 0          |
 
+    When the network moves ahead "2" blocks
     And the cumulated balance for all accounts should be worth "10021300000000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market

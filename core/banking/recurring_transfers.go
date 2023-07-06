@@ -49,6 +49,19 @@ func (e *Engine) recurringTransfer(
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
+	if transfer.DispatchStrategy != nil {
+		hasAsset := len(transfer.DispatchStrategy.AssetForMetric) > 0
+		// ensure the asset transfer is correct
+		if hasAsset {
+			_, err := e.assets.Get(transfer.DispatchStrategy.AssetForMetric)
+			if err != nil {
+				transfer.Status = types.TransferStatusRejected
+				e.log.Debug("cannot transfer funds, invalid asset for metric", logging.Error(err))
+				return fmt.Errorf("could not transfer funds, invalid asset for metric: %w", err)
+			}
+		}
+	}
+
 	if err := transfer.IsValid(); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
@@ -170,7 +183,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 		var r []*types.LedgerMovement
 		if v.DispatchStrategy == nil {
 			resps, err = e.processTransfer(
-				ctx, v.From, v.To, v.Asset, "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
+				ctx, v.From, v.To, v.Asset, "", "", v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 			)
 		} else {
 			// check if the amount + fees can be covered by the party issuing the transfer
@@ -183,7 +196,7 @@ func (e *Engine) distributeRecurringTransfers(ctx context.Context, newEpoch uint
 						continue
 					}
 					r, err = e.processTransfer(
-						ctx, v.From, v.To, v.Asset, fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
+						ctx, v.From, v.To, v.Asset, "", fms.Market, v.FromAccountType, v.ToAccountType, amt, v.Reference, nil, // last is eventual oneoff, which this is not
 					)
 					if err != nil {
 						e.log.Error("failed to process transfer", logging.Error(err))

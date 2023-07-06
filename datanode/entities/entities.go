@@ -20,7 +20,7 @@ type Entities interface {
 		AccountBalance | Proposal | Delegation | Node | NetworkParameter | Checkpoint |
 		StakeLinking | NodeSignature | KeyRotation | ERC20MultiSigSignerAddedEvent |
 		ERC20MultiSigSignerRemovedEvent | EthereumKeyRotation | AggregatedBalance | AggregatedLedgerEntry |
-		ProtocolUpgradeProposal | CoreSnapshotData | EpochRewardSummary
+		ProtocolUpgradeProposal | CoreSnapshotData | EpochRewardSummary | SuccessorMarket | StopOrder
 }
 
 type PagedEntity[T proto.Message] interface {

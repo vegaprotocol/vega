@@ -160,7 +160,7 @@ func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {
 
 func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, payload proto.Message) {
 	switch cmd {
-	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand:
+	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand, txn.StopOrdersCancellationCommand, txn.StopOrdersSubmissionCommand:
 		panic("command is not supported to be sent by a node.")
 	case txn.ProtocolUpgradeCommand:
 		if underlyingCmd, ok := payload.(*commandspb.ProtocolUpgradeProposal); ok {

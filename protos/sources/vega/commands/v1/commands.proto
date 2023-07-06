@@ -24,6 +24,56 @@ message BatchMarketInstructions {
   repeated OrderAmendment amendments = 2;
   // List of order submissions to be processed sequentially.
   repeated OrderSubmission submissions = 3;
+  // List of stop order cancellations to be processed sequentially.
+  repeated StopOrdersCancellation stop_orders_cancellation = 4;
+  // List of stop order submissions to be processed sequentially.
+  repeated StopOrdersSubmission stop_orders_submission = 5;
+}
+
+// Stop order submission submits stops orders.
+// It is possible to make a single stop order submission by
+// specifying a single direction,
+// or an OCO (One Cancels the Other) stop order submission
+// by specifying a configuration for both directions
+message StopOrdersSubmission {
+  // Stop order that will be triggered
+  // if the price rises above a given trigger price.
+  optional StopOrderSetup rises_above = 1;
+  // Stop order that will be triggered
+  // if the price falls below a given trigger price.
+  optional StopOrderSetup falls_below = 2;
+}
+
+// Price and expiry configuration for a stop order
+message StopOrderSetup {
+  // Order to be submitted once the trigger is breached.
+  OrderSubmission order_submission = 1;
+  // Optional expiry timestamp.
+  optional int64 expires_at = 2;
+  // Strategy to adopt if the expiry time is reached.
+  optional vega.StopOrder.ExpiryStrategy expiry_strategy = 3;
+
+  // Trigger that will need to be breached for the order
+  // to be submitted to the book.
+  oneof trigger {
+    // Fixed price at which the order will be submitted.
+    string price = 100;
+    // Trailing percentage at which the order will be submitted.
+    string trailing_percent_offset = 101;
+  }
+}
+
+// Cancel a stop order.
+// The following combinations are available:
+// Empty object will cancel all stop orders for the party
+// Market ID alone will cancel all stop orders in a market
+// Market ID and order ID will cancel a specific stop order in a market
+// If the stop order is part of an OCO, both stop orders will be cancelled
+message StopOrdersCancellation {
+  // Optional market ID.
+  optional string market_id = 1;
+  // Optional order ID.
+  optional string stop_order_id = 2;
 }
 
 // Order submission is a request to submit or create a new order on Vega
@@ -41,7 +91,7 @@ message OrderSubmission {
   vega.Side side = 4;
   // Time in force indicates how long an order will remain active before it is executed or expires, required field.
   vega.Order.TimeInForce time_in_force = 5;
-  // Timestamp for when the order will expire, in nanoseconds,
+  // Timestamp in Unix nanoseconds for when the order will expire,
   // required field only for `Order.TimeInForce`.TIME_IN_FORCE_GTT`.
   int64 expires_at = 6;
   // Type for the order, required field - See `Order.Type`.
@@ -56,6 +106,16 @@ message OrderSubmission {
   // Only valid for Non-Persistent orders. Cannot be True at the same time as Post-Only.
   // If set, order will only be executed if the outcome of the trade moves the trader's position closer to 0.
   bool reduce_only = 11;
+  // Parameters used to specify an iceberg order.
+  optional IcebergOpts iceberg_opts = 12;
+}
+
+// Iceberg order options
+message IcebergOpts {
+  // Size of the order that is made visible and can be traded with during the execution of a single order.
+  uint64 peak_size = 1;
+  // Minimum allowed remaining size of the order before it is replenished back to its peak size.
+  uint64 minimum_visible_size = 2;
 }
 
 // Order cancellation is a request to cancel an existing order on Vega
@@ -98,7 +158,7 @@ message OrderAmendment {
 
 // A liquidity provision submitted for a given market
 message LiquidityProvisionSubmission {
-  // Market ID for the order, required field.
+  // Market ID for the order.
   string market_id = 1;
   // Specified as a unitless number that represents the amount of settlement asset of the market.
   // This field is an unsigned integer scaled using the asset's decimal places.
@@ -109,7 +169,7 @@ message LiquidityProvisionSubmission {
   repeated vega.LiquidityOrder sells = 4;
   // Set of liquidity buy orders to meet the liquidity provision obligation.
   repeated vega.LiquidityOrder buys = 5;
-  // Reference to be added to every order created out of this liquidityProvisionSubmission.
+  // Reference to be added to every order created out of this liquidity provision submission.
   string reference = 6;
 }
 
@@ -212,8 +272,7 @@ message Transfer {
 
 // Specific details for a one off transfer
 message OneOffTransfer {
-  // Unix timestamp in nanoseconds. Time at which the
-  // transfer should be delivered into the To account.
+  // Timestamp in Unix nanoseconds for when the transfer should be delivered into the receiver's account.
   int64 deliver_on = 1;
 }
 

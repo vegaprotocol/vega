@@ -4,6 +4,18 @@ package vega;
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
+// Result of calling an arbitrary Ethereum contract method
+message EthContractCallEvent {
+  // ID of the data source spec that triggered this contract call.
+  string spec_id = 1;
+  // Ethereum block height.
+  uint64 block_height = 2;
+  // Ethereum block time in Unix seconds.
+  uint64 block_time = 3;
+  // Result of contract call, packed according to the ABI stored in the associated data source spec.
+  bytes result = 4;
+}
+
 // Deposit for a Vega built-in asset
 message BuiltinAssetDeposit {
   // Vega network internal asset ID.

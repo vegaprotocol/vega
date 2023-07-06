@@ -20,9 +20,9 @@ import (
 var namedLogger = "api.grpc"
 
 type Config struct {
-	Reflection         encoding.Bool     `long:"reflection" description:"Enable GRPC reflection, required for grpc-ui"`
-	Level              encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning"`
-	MaxPageSizeDefault uint32            `long:"default-page-size" description:"How many results to return per page if client does not specify explicitly"`
+	Reflection         encoding.Bool     `description:"Enable GRPC reflection, required for grpc-ui"                              long:"reflection"`
+	Level              encoding.LogLevel `choice:"debug"                                                                          choice:"info"            choice:"warning" long:"log-level"`
+	MaxPageSizeDefault uint32            `description:"How many results to return per page if client does not specify explicitly" long:"default-page-size"`
 }
 
 func NewDefaultConfig() Config {

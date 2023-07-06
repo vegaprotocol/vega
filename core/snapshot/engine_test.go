@@ -25,11 +25,11 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 
+	cometbftdb "github.com/cometbft/cometbft-db"
 	"github.com/cosmos/iavl"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	db "github.com/tendermint/tm-db"
 )
 
 type tstEngine struct {
@@ -41,6 +41,12 @@ type tstEngine struct {
 	stats *mocks.MockStatsService
 }
 
+func newTestConfig() snapshot.Config {
+	cfg := snapshot.NewDefaultConfig()
+	cfg.Storage = snapshot.InMemoryDB
+	return cfg
+}
+
 func getTestEngine(t *testing.T) *tstEngine {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
@@ -48,7 +54,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
-	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
+	eng, err := snapshot.New(context.Background(), nil, newTestConfig(), logging.NewTestLogger(), time, stats)
 	require.NoError(t, err)
 
 	if err := eng.ClearAndInitialise(); err != nil {
@@ -101,7 +107,7 @@ func getPopulatedTree(t *testing.T) *iavl.MutableTree {
 		},
 	}
 
-	tree, err := iavl.NewMutableTree(db.NewMemDB(), 0, false)
+	tree, err := iavl.NewMutableTree(cometbftdb.NewMemDB(), 0, false)
 	tree.Load()
 	require.NoError(t, err)
 
@@ -153,7 +159,7 @@ func testTreeExportImport(t *testing.T) {
 	// via TM to the node restoring from a snapshot
 
 	// Make a new tree waiting to import the snapshot
-	importedTree, err := iavl.NewMutableTree(db.NewMemDB(), 0, false)
+	importedTree, err := iavl.NewMutableTree(cometbftdb.NewMemDB(), 0, false)
 	importedTree.Load()
 	require.NoError(t, err)
 
@@ -430,7 +436,7 @@ func testRejectSnapshot(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
 
-	for i := 0; i < engine.RetryLimit; i++ {
+	for i := 0; i < int(engine.RetryLimit); i++ {
 		err := engine.RejectSnapshot()
 		assert.ErrorIs(t, types.ErrUnknownSnapshot, err)
 	}
@@ -496,7 +502,7 @@ func testClosingEngineDoesNotPanicWhenNotInitialised(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
-	config := snapshot.NewTestConfig()
+	config := newTestConfig()
 	logger := logging.NewTestLogger()
 
 	// when

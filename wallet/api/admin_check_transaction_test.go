@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/jsonrpc"
@@ -128,7 +129,7 @@ func testAdminCheckingTransactionWithValidParamsSucceeds(t *testing.T) {
 	w, kp := walletWithKey(t)
 
 	// setup
-	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -162,7 +163,7 @@ func testAdminCheckingTransactionWithValidParamsSucceeds(t *testing.T) {
 
 	// then
 	assert.Nil(t, errorDetails)
-	assert.NotEmpty(t, result.Tx)
+	assert.NotEmpty(t, result.Transaction)
 }
 
 func testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails(t *testing.T) {
@@ -172,7 +173,7 @@ func testAdminCheckTransactionGettingInternalErrorDuringWalletVerificationFails(
 	walletName := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)
@@ -235,7 +236,7 @@ func testAdminCheckTransactionGettingInternalErrorDuringWalletRetrievalFails(t *
 	walletName := vgrand.RandomStr(5)
 
 	// setup
-	handler := newAdminCheckTransactionHandler(t, func(hosts []string, retries uint64) (walletnode.Selector, error) {
+	handler := newAdminCheckTransactionHandler(t, func(hosts []string, _ uint64, _ time.Duration) (walletnode.Selector, error) {
 		ctrl := gomock.NewController(t)
 		nodeSelector := nodemocks.NewMockSelector(ctrl)
 		node := nodemocks.NewMockNode(ctrl)

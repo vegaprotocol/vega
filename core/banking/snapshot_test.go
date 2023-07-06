@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/paths"
+	"code.vegaprotocol.io/vega/protos/vega"
 	snapshot "code.vegaprotocol.io/vega/protos/vega/snapshot/v1"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -296,49 +297,47 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 }
 
 func TestSeenSnapshotRoundTrip(t *testing.T) {
-	for i := 0; i < 100; i++ {
-		seenKey := (&types.PayloadBankingSeen{}).Key()
-		eng := getTestEngine(t)
-		defer eng.ctrl.Finish()
+	seenKey := (&types.PayloadBankingSeen{}).Key()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
 
-		eng.tsvc.EXPECT().GetTimeNow().Times(1)
-		state1, _, err := eng.GetState(seenKey)
-		require.Nil(t, err)
-		eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
+	eng.tsvc.EXPECT().GetTimeNow().Times(2)
+	state1, _, err := eng.GetState(seenKey)
+	require.Nil(t, err)
+	eng.col.EXPECT().Deposit(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.LedgerMovement{}, nil)
 
-		d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
-		err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
-		assert.NoError(t, err)
-		eng.erc.f(eng.erc.r, true)
+	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
+	err = eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
+	assert.NoError(t, err)
+	eng.erc.f(eng.erc.r, true)
 
-		d2 := deposit(eng, "VGT2", "someparty2", num.NewUint(24))
-		err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
-		assert.NoError(t, err)
-		eng.erc.f(eng.erc.r, true)
+	d2 := deposit(eng, "VGT2", "someparty2", num.NewUint(24))
+	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
+	assert.NoError(t, err)
+	eng.erc.f(eng.erc.r, true)
 
-		eng.OnTick(context.Background(), time.Now())
-		state2, _, err := eng.GetState(seenKey)
-		require.Nil(t, err)
+	eng.OnTick(context.Background(), time.Now())
+	state2, _, err := eng.GetState(seenKey)
+	require.Nil(t, err)
 
-		require.False(t, bytes.Equal(state1, state2))
+	require.False(t, bytes.Equal(state1, state2))
 
-		// verify state is consistent in the absence of change
-		stateNoChange, _, err := eng.GetState(seenKey)
-		require.Nil(t, err)
-		require.True(t, bytes.Equal(state2, stateNoChange))
+	// verify state is consistent in the absence of change
+	stateNoChange, _, err := eng.GetState(seenKey)
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(state2, stateNoChange))
 
-		// reload the state
-		var seen snapshot.Payload
-		snap := getTestEngine(t)
-		proto.Unmarshal(state2, &seen)
+	// reload the state
+	var seen snapshot.Payload
+	snap := getTestEngine(t)
+	proto.Unmarshal(state2, &seen)
 
-		payload := types.PayloadFromProto(&seen)
+	payload := types.PayloadFromProto(&seen)
 
-		_, err = snap.LoadState(context.Background(), payload)
-		require.Nil(t, err)
-		statePostReload, _, _ := snap.GetState(seenKey)
-		require.True(t, bytes.Equal(state2, statePostReload))
-	}
+	_, err = snap.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	statePostReload, _, _ := snap.GetState(seenKey)
+	require.True(t, bytes.Equal(state2, statePostReload))
 }
 
 func TestWithdrawalsSnapshotRoundTrip(t *testing.T) {
@@ -432,7 +431,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	}
 
 	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.DecimalFromFloat(100)}), nil)
-	eng.tsvc.EXPECT().GetTimeNow().Times(3)
+	eng.tsvc.EXPECT().GetTimeNow().Times(4)
 	eng.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).AnyTimes().Return(&fromAcc, nil)
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	eng.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -478,7 +477,7 @@ func TestOneOffTransfersSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state2, statePostReload))
 }
 
-func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
+func TestRecurringTransfersSnapshotRoundTrip(t *testing.T) {
 	ctx := context.Background()
 	key := (&types.PayloadBankingRecurringTransfers{}).Key()
 	eng := getTestEngine(t)
@@ -531,6 +530,100 @@ func TestRecurringransfersSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	statePostReload, _, _ := snap.GetState(key)
 	require.True(t, bytes.Equal(state2, statePostReload))
+}
+
+func TestRecurringGovTransfersSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	key := (&types.PayloadBankingRecurringGovernanceTransfers{}).Key()
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).Times(3)
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+	e.OnTick(ctx, time.Unix(10, 0))
+	e.OnEpoch(ctx, types.Epoch{Seq: 1, StartTime: time.Unix(10, 0), Action: vega.EpochAction_EPOCH_ACTION_START})
+
+	endEpoch := uint64(2)
+	transfer := &types.NewTransferConfiguration{
+		SourceType:              types.AccountTypeGlobalReward,
+		DestinationType:         types.AccountTypeGeneral,
+		Asset:                   "eth",
+		Source:                  "",
+		Destination:             "zohar",
+		TransferType:            vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+		MaxAmount:               num.NewUint(10),
+		FractionOfBalance:       num.DecimalFromFloat(0.1),
+		Kind:                    types.TransferKindRecurring,
+		OneOffTransferConfig:    nil,
+		RecurringTransferConfig: &vega.RecurringTransfer{StartEpoch: 1, EndEpoch: &endEpoch},
+	}
+
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
+
+	// test the new transfer prompts a change
+	state, _, err := e.GetState(key)
+	require.NoError(t, err)
+
+	// reload the state
+	var transfers snapshot.Payload
+	snap := getTestEngine(t)
+	proto.Unmarshal(state, &transfers)
+	payload := types.PayloadFromProto(&transfers)
+	_, err = snap.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	statePostReload, _, _ := snap.GetState(key)
+	require.True(t, bytes.Equal(state, statePostReload))
+}
+
+func TestScheduledgGovTransfersSnapshotRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	key := (&types.PayloadBankingScheduledGovernanceTransfers{}).Key()
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+	e.tsvc.EXPECT().GetTimeNow().DoAndReturn(
+		func() time.Time {
+			return time.Unix(10, 0)
+		}).AnyTimes()
+
+	// let's do a massive fee, easy to test.
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(1))
+	e.OnTick(context.Background(), time.Unix(10, 0))
+
+	deliverOn := time.Unix(12, 0).UnixNano()
+	transfer := &types.NewTransferConfiguration{
+		SourceType:              types.AccountTypeGlobalReward,
+		DestinationType:         types.AccountTypeGeneral,
+		Asset:                   "eth",
+		Source:                  "",
+		Destination:             "zohar",
+		TransferType:            vega.GovernanceTransferType_GOVERNANCE_TRANSFER_TYPE_ALL_OR_NOTHING,
+		MaxAmount:               num.NewUint(10),
+		FractionOfBalance:       num.DecimalFromFloat(0.1),
+		Kind:                    types.TransferKindOneOff,
+		OneOffTransferConfig:    &vega.OneOffTransfer{DeliverOn: deliverOn},
+		RecurringTransferConfig: nil,
+	}
+
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	require.NoError(t, e.NewGovernanceTransfer(ctx, "1", "some reference", transfer))
+
+	// test the new transfer prompts a change
+	state, _, err := e.GetState(key)
+	require.NoError(t, err)
+
+	// reload the state
+	var transfers snapshot.Payload
+	snap := getTestEngine(t)
+	proto.Unmarshal(state, &transfers)
+	payload := types.PayloadFromProto(&transfers)
+	_, err = snap.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	statePostReload, _, _ := snap.GetState(key)
+	require.True(t, bytes.Equal(state, statePostReload))
 }
 
 func TestAssetListRoundTrip(t *testing.T) {

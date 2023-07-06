@@ -23,6 +23,7 @@ import (
 	"code.vegaprotocol.io/vega/core/collateral"
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/integration/stubs"
 	"code.vegaprotocol.io/vega/core/oracles"
 	snp "code.vegaprotocol.io/vega/core/snapshot"
@@ -61,7 +62,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshot(t *testing.T) {
 		},
 	}
 	mkt := newMarket("MarketID", pubKey)
-	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
 	state, _, _ := exec.engine.GetState("")
@@ -136,7 +137,7 @@ func TestSnapshotOraclesTerminatingMarketSettleAfterSnapshot(t *testing.T) {
 		},
 	}
 	mkt := newMarket("MarketID", pubKey)
-	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
 	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
@@ -264,7 +265,7 @@ func TestSnapshotOraclesTerminatingMarketFromSnapshotAfterSettlementData(t *test
 	now := time.Now()
 	exec := getEngine(t, now)
 	mkt := newMarket("MarketID", pubKeys[0].Signer.(*types.SignerPubKey))
-	err := exec.engine.SubmitMarket(context.Background(), mkt, "")
+	err := exec.engine.SubmitMarket(context.Background(), mkt, "", time.Now())
 	require.NoError(t, err)
 
 	err = exec.engine.StartOpeningAuction(context.Background(), mkt.ID)
@@ -331,7 +332,7 @@ func TestLoadTerminatedMarketFromSnapshot(t *testing.T) {
 	// submit and terminate all markets
 	for i := 0; i < 3; i++ {
 		mkt := newMarket(marketIDs[i], pubKeys[i].Signer.(*types.SignerPubKey))
-		err := exec.engine.SubmitMarket(ctx, mkt, "")
+		err := exec.engine.SubmitMarket(ctx, mkt, "", time.Now())
 		require.NoError(t, err)
 
 		// verify markets are terminated
@@ -532,7 +533,7 @@ func getEngine(t *testing.T, now time.Time) *snapshotTestData {
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
-	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
@@ -582,7 +583,7 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), timeService, broker)
 
 	epochEngine := epochtime.NewService(log, epochtime.NewDefaultConfig(), broker)
-	marketActivityTracker := execution.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
+	marketActivityTracker := common.NewMarketActivityTracker(logging.NewTestLogger(), epochEngine)
 
 	ethAsset := types.Asset{
 		ID: "Ethereum/Ether",
@@ -626,4 +627,12 @@ func getEngineWithParties(t *testing.T, now time.Time, balance *num.Uint, partie
 func (s *stubIDGen) NextID() string {
 	s.calls++
 	return hex.EncodeToString([]byte(fmt.Sprintf("deadb33f%d", s.calls)))
+}
+
+func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportion uint32) *types.LiquidityOrder {
+	return &types.LiquidityOrder{
+		Reference:  reference,
+		Proportion: proportion,
+		Offset:     num.NewUint(offset),
+	}
 }

@@ -24,7 +24,11 @@ type GenesisState map[string]string
 func DefaultGenesisState() GenesisState {
 	state := map[string]string{}
 	netp := defaultNetParams()
+
 	for k, v := range netp {
+		if _, ok := Deprecated[k]; ok {
+			continue
+		}
 		state[k] = v.String()
 	}
 

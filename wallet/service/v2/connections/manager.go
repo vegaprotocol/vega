@@ -2,11 +2,14 @@ package connections
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/libs/jsonrpc"
 	"code.vegaprotocol.io/vega/wallet/api"
 	"code.vegaprotocol.io/vega/wallet/wallet"
 )
@@ -29,16 +32,18 @@ type Manager struct {
 	// time on the token, and figure out their expiration.
 	timeService TimeService
 
-	walletStore WalletStore
+	walletStore  WalletStore
+	sessionStore SessionStore
+	tokenStore   TokenStore
 
-	tokenStore TokenStore
+	interactor api.Interactor
 
 	mu sync.Mutex
 }
 
 type walletConnection struct {
 	// connectedWallet is the projection of the wallet through the permissions
-	// and authentication system. On a regular wallet, there are no restrictions
+	// and authentication system. On a regular wallet, there is no restriction
 	// on what we can call, which doesn't fit the model of having allowed
 	// access, so we wrap the "regular wallet" behind the "connected wallet".
 	connectedWallet api.ConnectedWallet
@@ -67,12 +72,22 @@ func (m *Manager) StartSession(hostname string, w wallet.Wallet) (Token, error) 
 	}
 	m.sessionFingerprintToToken[sessionFingerprint] = newToken
 
+	now := m.timeService.Now()
 	m.tokenToConnection[newToken] = &walletConnection{
 		connectedWallet: cw,
 		policy: &sessionPolicy{
-			lastActivityDate: m.timeService.Now(),
+			expiryDate: now.Add(1 * time.Hour),
 		},
 	}
+
+	// We ignore this error as tracking the session a nice-to-have feature to
+	// ease reconnection after a software reboot. We don't want to prevent the
+	// connection because an error on that layer.
+	_ = m.sessionStore.TrackSession(Session{
+		Token:    newToken,
+		Hostname: hostname,
+		Wallet:   w.Name(),
+	})
 
 	return newToken, nil
 }
@@ -108,30 +123,98 @@ func (m *Manager) EndAllSessionConnections() {
 }
 
 // ConnectedWallet retrieves the wallet associated to the specified token.
-func (m *Manager) ConnectedWallet(hostname string, token Token) (api.ConnectedWallet, error) {
+func (m *Manager) ConnectedWallet(ctx context.Context, hostname string, token Token) (api.ConnectedWallet, *jsonrpc.ErrorDetails) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	connection, exists := m.tokenToConnection[token]
 	if !exists {
-		return api.ConnectedWallet{}, ErrNoConnectionAssociatedThisAuthenticationToken
-	}
-
-	if !connection.policy.IsLongLivingConnection() && connection.connectedWallet.Hostname() != hostname {
-		return api.ConnectedWallet{}, ErrHostnamesMismatchForThisToken
+		return api.ConnectedWallet{}, serverErrorAuthenticationFailure(ErrNoConnectionAssociatedThisAuthenticationToken)
 	}
 
 	now := m.timeService.Now()
 
-	if connection.policy.HasConnectionExpired(now) {
-		return api.ConnectedWallet{}, ErrTokenHasExpired
-	}
+	hasExpired := connection.policy.HasConnectionExpired(now)
 
-	if connection.policy.IsClosed() {
-		return api.ConnectedWallet{}, ErrConnectionHasBeenClosed
-	}
+	if connection.policy.IsLongLivingConnection() {
+		if hasExpired {
+			return api.ConnectedWallet{}, serverErrorAuthenticationFailure(ErrTokenHasExpired)
+		}
+	} else {
+		traceID := jsonrpc.TraceIDFromContext(ctx)
 
-	connection.policy.UpdateActivityDate(now)
+		if connection.connectedWallet.Hostname() != hostname {
+			return api.ConnectedWallet{}, serverErrorAuthenticationFailure(ErrHostnamesMismatchForThisToken)
+		}
+
+		isClosed := connection.policy.IsClosed()
+
+		if hasExpired || isClosed {
+			if err := m.interactor.NotifyInteractionSessionBegan(ctx, traceID, api.WalletUnlockingWorkflow, 2); err != nil {
+				return api.ConnectedWallet{}, api.RequestNotPermittedError(err)
+			}
+			defer m.interactor.NotifyInteractionSessionEnded(ctx, traceID)
+
+			for {
+				if ctx.Err() != nil {
+					m.interactor.NotifyError(ctx, traceID, api.ApplicationErrorType, api.ErrRequestInterrupted)
+					return api.ConnectedWallet{}, api.RequestInterruptedError(api.ErrRequestInterrupted)
+				}
+
+				unlockingReason := fmt.Sprintf("The third-party application %q is attempting access to the locked wallet %q. To unlock this wallet and allow access to all connected apps associated to it, enter its passphrase.", hostname, connection.connectedWallet.Name())
+
+				walletPassphrase, err := m.interactor.RequestPassphrase(ctx, traceID, 1, connection.connectedWallet.Name(), unlockingReason)
+				if err != nil {
+					if errDetails := api.HandleRequestFlowError(ctx, traceID, m.interactor, err); errDetails != nil {
+						return api.ConnectedWallet{}, errDetails
+					}
+					m.interactor.NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("requesting the wallet passphrase failed: %w", err))
+					return api.ConnectedWallet{}, api.InternalError(api.ErrCouldNotConnectToWallet)
+				}
+
+				if err := m.walletStore.UnlockWallet(ctx, connection.connectedWallet.Name(), walletPassphrase); err != nil {
+					if errors.Is(err, wallet.ErrWrongPassphrase) {
+						m.interactor.NotifyError(ctx, traceID, api.UserErrorType, wallet.ErrWrongPassphrase)
+						continue
+					}
+					if errDetails := api.HandleRequestFlowError(ctx, traceID, m.interactor, err); errDetails != nil {
+						return api.ConnectedWallet{}, errDetails
+					}
+					m.interactor.NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("could not unlock the wallet: %w", err))
+					return api.ConnectedWallet{}, api.InternalError(api.ErrCouldNotConnectToWallet)
+				}
+				break
+			}
+
+			w, err := m.walletStore.GetWallet(ctx, connection.connectedWallet.Name())
+			if err != nil {
+				m.interactor.NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("could not retrieve the wallet: %w", err))
+				return api.ConnectedWallet{}, api.InternalError(api.ErrCouldNotConnectToWallet)
+			}
+
+			// Update the connected wallet for all connections referencing the
+			// newly unlocked wallet.
+			for _, otherConnection := range m.tokenToConnection {
+				if w.Name() != otherConnection.connectedWallet.Name() {
+					continue
+				}
+
+				cw, err := api.NewConnectedWallet(otherConnection.connectedWallet.Hostname(), w)
+				if err != nil {
+					m.interactor.NotifyError(ctx, traceID, api.InternalErrorType, fmt.Errorf("could not instantiate the connected wallet for a session connection: %w", err))
+					return api.ConnectedWallet{}, api.InternalError(api.ErrCouldNotConnectToWallet)
+				}
+
+				otherConnection.connectedWallet = cw
+				otherConnection.policy = &sessionPolicy{
+					expiryDate: now.Add(1 * time.Hour),
+					closed:     false,
+				}
+			}
+
+			m.interactor.NotifySuccessfulRequest(ctx, traceID, 2, fmt.Sprintf("The wallet %q has been successfully unlocked.", w.Name()))
+		}
+	}
 
 	return connection.connectedWallet, nil
 }
@@ -143,7 +226,8 @@ func (m *Manager) ListSessionConnections() []api.Connection {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	connections := []api.Connection{}
+	connections := make([]api.Connection, 0, len(m.tokenToConnection))
+	connectionsCount := 0
 	for _, connection := range m.tokenToConnection {
 		if connection.policy.IsLongLivingConnection() {
 			continue
@@ -153,7 +237,10 @@ func (m *Manager) ListSessionConnections() []api.Connection {
 			Hostname: connection.connectedWallet.Hostname(),
 			Wallet:   connection.connectedWallet.Name(),
 		})
+
+		connectionsCount++
 	}
+	connections = connections[0:connectionsCount]
 
 	sort.SliceStable(connections, func(i, j int) bool {
 		if connections[i].Hostname == connections[j].Hostname {
@@ -196,9 +283,7 @@ func (m *Manager) destroySessionToken(tokenToDestroy Token) {
 	delete(m.tokenToConnection, tokenToDestroy)
 }
 
-func (m *Manager) loadLongLivingConnections() error {
-	ctx := context.Background()
-
+func (m *Manager) loadLongLivingConnections(ctx context.Context) error {
 	tokenSummaries, err := m.tokenStore.ListTokens()
 	if err != nil {
 		return err
@@ -248,6 +333,70 @@ func (m *Manager) loadLongLivingConnection(ctx context.Context, tokenDescription
 	return nil
 }
 
+func (m *Manager) loadPreviousSessionConnections(ctx context.Context) error {
+	sessions, err := m.sessionStore.ListSessions(ctx)
+	if err != nil {
+		return fmt.Errorf("could not list the sessions: %w", err)
+	}
+
+	now := m.timeService.Now()
+
+	for _, session := range sessions {
+		sessionFingerprint := asSessionFingerprint(session.Hostname, session.Wallet)
+		m.sessionFingerprintToToken[sessionFingerprint] = session.Token
+
+		// If the wallet in the session store doesn't exist, we destroy that session
+		// and move onto the next.
+		walletExists, err := m.walletStore.WalletExists(ctx, session.Wallet)
+		if err != nil {
+			return fmt.Errorf("could not verify if the wallet %q exists: %w", session.Wallet, err)
+		}
+
+		if !walletExists {
+			err := m.sessionStore.DeleteSession(ctx, session.Token)
+			if err != nil {
+				return fmt.Errorf("could not delete the session with token %q: %w", session.Token, err)
+			}
+			continue
+		}
+
+		// If the wallet is already unlocked, we fully restore the connection.
+		isAlreadyUnlocked, err := m.walletStore.IsWalletAlreadyUnlocked(ctx, session.Wallet)
+		if err != nil {
+			return fmt.Errorf("could not verify wether the wallet %q is locked or not: %w", session.Wallet, err)
+		}
+
+		var connectedWallet api.ConnectedWallet
+		isClosed := true
+		if isAlreadyUnlocked {
+			w, err := m.walletStore.GetWallet(ctx, session.Wallet)
+			if err != nil {
+				return fmt.Errorf("could not retrieve the wallet %q: %w", session.Wallet, err)
+			}
+			cw, err := api.NewConnectedWallet(session.Hostname, w)
+			if err != nil {
+				return fmt.Errorf("could not instantiate the connected wallet for a session connection: %w", err)
+			}
+			connectedWallet = cw
+			isClosed = false
+		} else {
+			connectedWallet = api.NewDisconnectedWallet(session.Hostname, session.Wallet)
+		}
+
+		m.tokenToConnection[session.Token] = &walletConnection{
+			connectedWallet: connectedWallet,
+			policy: &sessionPolicy{
+				// Since this session is being reloaded, we consider it to be
+				// expired.
+				expiryDate: now,
+				closed:     isClosed,
+			},
+		}
+	}
+
+	return nil
+}
+
 // refreshConnections is called when the wallet store notices a change in
 // the wallets. This way the connection manager is able to reload the connected
 // wallets.
@@ -255,19 +404,24 @@ func (m *Manager) refreshConnections(_ context.Context, event wallet.Event) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if event.Type == wallet.WalletRemovedEventType {
-		m.closeConnectionsUsingThisWallet(event.Data.(wallet.WalletRemovedEventData).Name)
-	} else if event.Type == wallet.UnlockedWalletUpdatedEventType {
+	switch event.Type {
+	case wallet.WalletRemovedEventType:
+		m.destroyConnectionsUsingThisWallet(event.Data.(wallet.WalletRemovedEventData).Name)
+	case wallet.UnlockedWalletUpdatedEventType:
 		m.updateConnectionsUsingThisWallet(event.Data.(wallet.UnlockedWalletUpdatedEventData).UpdatedWallet)
-	} else if event.Type == wallet.WalletHasBeenLockedEventType {
-		m.expireConnectionsUsingThisWallet(event.Data.(wallet.WalletHasBeenLockedEventData).Name)
-	} else if event.Type == wallet.WalletRenamedEventType {
+	case wallet.WalletHasBeenLockedEventType:
+		m.closeConnectionsUsingThisWallet(event.Data.(wallet.WalletHasBeenLockedEventData).Name)
+	case wallet.WalletRenamedEventType:
 		data := event.Data.(wallet.WalletRenamedEventData)
 		m.updateConnectionsUsingThisRenamedWallet(data.PreviousName, data.NewName)
 	}
 }
 
-func (m *Manager) closeConnectionsUsingThisWallet(walletName string) {
+// destroyConnectionUsingThisWallet close the connection, dereference it, and
+// remove it from the session store.
+func (m *Manager) destroyConnectionsUsingThisWallet(walletName string) {
+	ctx := context.Background()
+
 	for token, connection := range m.tokenToConnection {
 		if connection.connectedWallet.Name() != walletName {
 			continue
@@ -276,11 +430,15 @@ func (m *Manager) closeConnectionsUsingThisWallet(walletName string) {
 		connection.policy.SetAsForcefullyClose()
 
 		delete(m.tokenToConnection, token)
+
+		// We ignore the error in a best-effort to have the session store clean
+		// up.
+		_ = m.sessionStore.DeleteSession(ctx, token)
 	}
 }
 
 func (m *Manager) updateConnectionsUsingThisWallet(w wallet.Wallet) {
-	for token, connection := range m.tokenToConnection {
+	for _, connection := range m.tokenToConnection {
 		if connection.connectedWallet.Name() != w.Name() {
 			continue
 		}
@@ -292,7 +450,7 @@ func (m *Manager) updateConnectionsUsingThisWallet(w wallet.Wallet) {
 			updatedConnectedWallet, _ = api.NewConnectedWallet(connection.connectedWallet.Hostname(), w)
 		}
 
-		m.tokenToConnection[token].connectedWallet = updatedConnectedWallet
+		connection.connectedWallet = updatedConnectedWallet
 	}
 }
 
@@ -303,7 +461,7 @@ func (m *Manager) refreshLongLivingTokens(ctx context.Context, activeTokensDescr
 	// We need to find the new tokens among the active ones, so, we build a
 	// registry with all the active tokens. Then, we remove the tracked token
 	// when found. We will end up with the new tokens, only.
-	activeTokens := map[Token]TokenDescription{}
+	activeTokens := make(map[Token]TokenDescription, len(activeTokensDescriptions))
 	for _, tokenDescription := range activeTokensDescriptions {
 		activeTokens[tokenDescription.Token] = tokenDescription
 	}
@@ -316,7 +474,7 @@ func (m *Manager) refreshLongLivingTokens(ctx context.Context, activeTokensDescr
 		return activeTokenDescription, isTracked
 	}
 
-	// First, we address the update of the tokens we already track.
+	// First, we update of the tokens we already track.
 	for token, connection := range m.tokenToConnection {
 		if !connection.policy.IsLongLivingConnection() {
 			continue
@@ -334,12 +492,16 @@ func (m *Manager) refreshLongLivingTokens(ctx context.Context, activeTokensDescr
 		_ = m.loadLongLivingConnection(ctx, activeToken)
 	}
 
+	// Then, we load the new tokens.
 	for _, tokenDescription := range activeTokens {
 		_ = m.loadLongLivingConnection(ctx, tokenDescription)
 	}
 }
 
-func (m *Manager) expireConnectionsUsingThisWallet(walletName string) {
+// closeConnectionsUsingThisWallet defines the connection as closed. It keeps track of it
+// but next time it will be used the application will request for the passphrase
+// to reinstate it.
+func (m *Manager) closeConnectionsUsingThisWallet(walletName string) {
 	for _, connection := range m.tokenToConnection {
 		if connection.connectedWallet.Name() != walletName {
 			continue
@@ -364,36 +526,52 @@ func (m *Manager) updateConnectionsUsingThisRenamedWallet(previousWalletName, ne
 	for _, connection := range m.tokenToConnection {
 		if connection.connectedWallet.Name() != previousWalletName {
 			continue
-		} else if connection.policy.IsLongLivingConnection() {
-			// We don't update the long-living connections because they come
-			// from a configuration file that doesn't support token updates, for
-			// now.
-			continue
 		}
 
-		connection.connectedWallet, _ = api.NewConnectedWallet(connection.connectedWallet.Hostname(), getUpdatedWallet())
+		if connection.policy.IsLongLivingConnection() {
+			connection.connectedWallet = api.NewLongLivingConnectedWallet(
+				getUpdatedWallet(),
+			)
+		}
+
+		connection.connectedWallet, _ = api.NewConnectedWallet(
+			connection.connectedWallet.Hostname(),
+			getUpdatedWallet(),
+		)
 	}
 }
 
-func NewManager(timeService TimeService, walletStore WalletStore, tokenStore TokenStore) (*Manager, error) {
+func NewManager(timeService TimeService, walletStore WalletStore, tokenStore TokenStore, sessionStore SessionStore, interactor api.Interactor) (*Manager, error) {
 	m := &Manager{
-		sessionFingerprintToToken: map[string]Token{},
 		tokenToConnection:         map[Token]*walletConnection{},
+		sessionFingerprintToToken: map[string]Token{},
 		timeService:               timeService,
 		walletStore:               walletStore,
+		sessionStore:              sessionStore,
 		tokenStore:                tokenStore,
+		interactor:                interactor,
+	}
+
+	ctx := context.Background()
+
+	if err := m.loadLongLivingConnections(ctx); err != nil {
+		return nil, fmt.Errorf("could not load the long-living connections: %w", err)
+	}
+
+	if err := m.loadPreviousSessionConnections(ctx); err != nil {
+		return nil, fmt.Errorf("could not load the previous session connections: %w", err)
 	}
 
 	walletStore.OnUpdate(m.refreshConnections)
 	tokenStore.OnUpdate(m.refreshLongLivingTokens)
-
-	if err := m.loadLongLivingConnections(); err != nil {
-		return nil, fmt.Errorf("could not load the long-living connections: %w", err)
-	}
 
 	return m, nil
 }
 
 func asSessionFingerprint(hostname string, walletName string) string {
 	return vgcrypto.HashStrToHex(hostname + "::" + walletName)
+}
+
+func serverErrorAuthenticationFailure(err error) *jsonrpc.ErrorDetails {
+	return jsonrpc.NewServerError(api.ErrorCodeAuthenticationFailure, err)
 }

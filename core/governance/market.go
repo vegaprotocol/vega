@@ -48,8 +48,12 @@ var (
 	ErrDataSourceSpecTerminationTimeBeforeEnactment = errors.New("data source spec termination time before enactment")
 	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
+	// ErrMissingSpotProduct is returned when spot product is absent from the instrument.
+	ErrMissingSpotProduct = errors.New("missing spot product")
 	// ErrInvalidRiskParameter ...
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
+	// ErrInvalidInsurancePoolFraction is returned if the insurance pool fraction parameter is outside of the 0-1 range.
+	ErrInvalidInsurancePoolFraction = errors.New("insurnace pool fraction invalid")
 )
 
 func assignProduct(
@@ -83,6 +87,19 @@ func assignProduct(
 				DataSourceSpecBinding:               product.Future.DataSourceSpecBinding,
 			},
 		}
+	case *types.InstrumentConfigurationSpot:
+		if product.Spot == nil {
+			return types.ProposalErrorInvalidSpot, ErrMissingSpotProduct
+		}
+
+		target.Product = &types.InstrumentSpot{
+			Spot: &types.Spot{
+				Name:       product.Spot.Name,
+				BaseAsset:  product.Spot.BaseAsset,
+				QuoteAsset: product.Spot.QuoteAsset,
+			},
+		}
+
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
@@ -116,6 +133,24 @@ func assignRiskModel(definition *types.NewMarketConfiguration, target *types.Tra
 			},
 		}
 	case *types.NewMarketConfigurationLogNormal:
+		target.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
+			LogNormalRiskModel: parameters.LogNormal,
+		}
+	default:
+		return ErrUnsupportedRiskParameters
+	}
+	return nil
+}
+
+func assignSpotRiskModel(definition *types.NewSpotMarketConfiguration, target *types.TradableInstrument) error {
+	switch parameters := definition.RiskParameters.(type) {
+	case *types.NewSpotMarketConfigurationSimple:
+		target.RiskModel = &types.TradableInstrumentSimpleRiskModel{
+			SimpleRiskModel: &types.SimpleRiskModel{
+				Params: parameters.Simple,
+			},
+		}
+	case *types.NewSpotMarketConfigurationLogNormal:
 		target.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
 			LogNormalRiskModel: parameters.LogNormal,
 		}
@@ -201,10 +236,111 @@ func buildMarketFromProposal(
 		LinearSlippageFactor:          definition.Changes.LinearSlippageFactor,
 		QuadraticSlippageFactor:       definition.Changes.QuadraticSlippageFactor,
 	}
+	// successor proposal
+	if suc := definition.Successor(); suc != nil {
+		market.ParentMarketID = suc.ParentID
+		market.InsurancePoolFraction = suc.InsurancePoolFraction
+	}
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, types.ProposalErrorUnspecified, err
 	}
 	return market, types.ProposalErrorUnspecified, nil
+}
+
+func buildSpotMarketFromProposal(
+	marketID string,
+	definition *types.NewSpotMarket,
+	netp NetParams,
+	openingAuctionDuration time.Duration,
+) (*types.Market, types.ProposalError, error) {
+	instrument, perr, err := createInstrument(definition.Changes.Instrument, definition.Changes.Metadata)
+	if err != nil {
+		return nil, perr, err
+	}
+
+	// get factors for the market
+	makerFee, _ := netp.Get(netparams.MarketFeeFactorsMakerFee)
+	infraFee, _ := netp.Get(netparams.MarketFeeFactorsInfrastructureFee)
+	// get price monitoring parameters
+	if definition.Changes.PriceMonitoringParameters == nil {
+		pmParams := &proto.PriceMonitoringParameters{}
+		_ = netp.GetJSONStruct(netparams.MarketPriceMonitoringDefaultParameters, pmParams)
+		definition.Changes.PriceMonitoringParameters = types.PriceMonitoringParametersFromProto(pmParams)
+	}
+
+	if definition.Changes.TargetStakeParameters == nil {
+		// get target stake parameters
+		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
+		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
+		params := &types.TargetStakeParameters{
+			TimeWindow:    int64(tsTimeWindow.Seconds()),
+			ScalingFactor: tsScalingFactor,
+		}
+		definition.Changes.TargetStakeParameters = params
+	}
+
+	liquidityMonitoring := &types.LiquidityMonitoringParameters{
+		TargetStakeParameters: definition.Changes.TargetStakeParameters,
+		TriggeringRatio:       num.DecimalZero(),
+		AuctionExtension:      0,
+	}
+
+	makerFeeDec, _ := num.DecimalFromString(makerFee)
+	infraFeeDec, _ := num.DecimalFromString(infraFee)
+	market := &types.Market{
+		ID:                    marketID,
+		DecimalPlaces:         definition.Changes.DecimalPlaces,
+		PositionDecimalPlaces: definition.Changes.PositionDecimalPlaces,
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
+				MakerFee:          makerFeeDec,
+				InfrastructureFee: infraFeeDec,
+			},
+		},
+		OpeningAuction: &types.AuctionDuration{
+			Duration: int64(openingAuctionDuration.Seconds()),
+		},
+		TradableInstrument: &types.TradableInstrument{
+			Instrument: instrument,
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
+					SearchLevel:       num.DecimalZero(),
+					InitialMargin:     num.DecimalZero(),
+					CollateralRelease: num.DecimalZero(),
+				},
+			},
+		},
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			Parameters: definition.Changes.PriceMonitoringParameters,
+		},
+		LiquidityMonitoringParameters: liquidityMonitoring,
+		LinearSlippageFactor:          num.DecimalZero(),
+		QuadraticSlippageFactor:       num.DecimalZero(),
+	}
+	if err := assignSpotRiskModel(definition.Changes, market.TradableInstrument); err != nil {
+		return nil, types.ProposalErrorUnspecified, err
+	}
+	return market, types.ProposalErrorUnspecified, nil
+}
+
+func validateAssetBasic(assetID string, assets Assets, deepCheck bool) (types.ProposalError, error) {
+	if len(assetID) <= 0 {
+		return types.ProposalErrorInvalidAsset, errors.New("missing asset ID")
+	}
+
+	if !deepCheck {
+		return types.ProposalErrorUnspecified, nil
+	}
+
+	_, err := assets.Get(assetID)
+	if err != nil {
+		return types.ProposalErrorInvalidAsset, err
+	}
+	if !assets.IsEnabled(assetID) {
+		return types.ProposalErrorInvalidAsset,
+			fmt.Errorf("asset is not enabled %v", assetID)
+	}
+	return types.ProposalErrorUnspecified, nil
 }
 
 func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
@@ -231,6 +367,14 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 	}
 
 	return types.ProposalErrorUnspecified, nil
+}
+
+func validateSpot(spot *types.SpotProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
+	propError, err := validateAsset(spot.QuoteAsset, decimals, assets, deepCheck)
+	if err != nil {
+		return propError, err
+	}
+	return validateAssetBasic(spot.BaseAsset, assets, deepCheck)
 }
 
 func validateFuture(future *types.FutureProduct, decimals uint64, assets Assets, et *enactmentTime, deepCheck bool) (types.ProposalError, error) {
@@ -322,6 +466,8 @@ func validateNewInstrument(instrument *types.InstrumentConfiguration, decimals u
 		return types.ProposalErrorNoProduct, ErrMissingProduct
 	case *types.InstrumentConfigurationFuture:
 		return validateFuture(product.Future, decimals, assets, et, deepCheck)
+	case *types.InstrumentConfigurationSpot:
+		return validateSpot(product.Spot, decimals, assets, deepCheck)
 	default:
 		return types.ProposalErrorUnsupportedProduct, ErrUnsupportedProduct
 	}
@@ -396,9 +542,8 @@ func validateLpPriceRange(lpPriceRange num.Decimal) (types.ProposalError, error)
 	return types.ProposalErrorUnspecified, nil
 }
 
-// ValidateNewMarket checks new market proposal terms.
-func validateNewMarketChange(
-	terms *types.NewMarket,
+func validateNewSpotMarketChange(
+	terms *types.NewSpotMarket,
 	assets Assets,
 	deepCheck bool,
 	netp NetParams,
@@ -408,10 +553,42 @@ func validateNewMarketChange(
 	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
 		return perr, err
 	}
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+		return perr, err
+	}
+	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
+		return types.ProposalErrorTooManyPriceMonitoringTriggers,
+			fmt.Errorf("%v price monitoring triggers set, maximum allowed is 5", len(terms.Changes.PriceMonitoringParameters.Triggers) > 5)
+	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
-	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); err != nil {
+	return types.ProposalErrorUnspecified, nil
+}
+
+// ValidateNewMarket checks new market proposal terms.
+func validateNewMarketChange(
+	terms *types.NewMarket,
+	assets Assets,
+	deepCheck bool,
+	netp NetParams,
+	openingAuctionDuration time.Duration,
+	etu *enactmentTime,
+	parent *types.Market,
+) (types.ProposalError, error) {
+	// in all cases, the instrument must be specified and validated, successor markets included.
+	if perr, err := validateNewInstrument(terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, etu, deepCheck); err != nil {
+		return perr, err
+	}
+	// verify opening auction duration, works the same for successor markets
+	if perr, err := validateAuctionDuration(openingAuctionDuration, netp); !etu.cpLoad && err != nil {
+		return perr, err
+	}
+	// if this is a successor market, check if that's set up fine:
+	if perr, err := validateSuccessorMarket(terms, parent); err != nil {
+		return perr, err
+	}
+	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
 	if terms.Changes.PriceMonitoringParameters != nil && len(terms.Changes.PriceMonitoringParameters.Triggers) > 5 {
@@ -425,6 +602,53 @@ func validateNewMarketChange(
 		return perr, err
 	}
 	if perr, err := validateSlippageFactor(terms.Changes.QuadraticSlippageFactor, false); err != nil {
+		return perr, err
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateSuccessorMarket(terms *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+	suc := terms.Successor()
+	if parent == nil && suc == nil {
+		return types.ProposalErrorUnspecified, nil
+	}
+	// if parent is not nil, then terms.Successor() was not nil and vice-versa. Either both are set or neither is.
+	if perr, err := validateInsurancePoolFraction(suc.InsurancePoolFraction); err != nil {
+		return perr, err
+	}
+	if perr, err := validateParentProduct(terms, parent); err != nil {
+		return perr, err
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateParentProduct(prop *types.NewMarket, parent *types.Market) (types.ProposalError, error) {
+	// make sure parent and successor are future markets
+	parentFuture := parent.GetFuture()
+	propFuture := prop.Changes.GetFuture()
+	if propFuture == nil || parentFuture == nil {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("parent and successor markets must both be future markets")
+	}
+	if propFuture.Future.SettlementAsset != parentFuture.Future.SettlementAsset {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use asset %s", parentFuture.Future.SettlementAsset)
+	}
+	if propFuture.Future.QuoteName != parentFuture.Future.QuoteName {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("successor market must use quote name %s", parentFuture.Future.QuoteName)
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func validateInsurancePoolFraction(frac num.Decimal) (types.ProposalError, error) {
+	one := num.DecimalFromInt64(1)
+	if frac.IsNegative() || frac.GreaterThan(one) {
+		return types.ProposalErrorInvalidSuccessorMarket, fmt.Errorf("insurance pool fraction should be in range 0-1, was %s", frac.String())
+	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+// validateUpdateMarketChange checks market update proposal terms.
+func validateUpdateSpotMarketChange(terms *types.UpdateSpotMarket) (types.ProposalError, error) {
+	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {
 		return perr, err
 	}
 	return types.ProposalErrorUnspecified, nil

@@ -9,6 +9,7 @@ allowlist
 allowlisted
 api
 app_state
+artifacts
 assetActions
 async
 barnabee
@@ -31,6 +32,7 @@ datetime
 denylist
 delegator
 Devnet
+devops
 dlv
 DoD
 DoR

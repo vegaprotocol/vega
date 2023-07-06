@@ -12,7 +12,7 @@ option go_package = "code.vegaprotocol.io/vega/protos/vega/api/v1";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Vega core APIs";
-    version: "v0.71.0";
+    version: "v0.72.0";
   }
   schemes: [
     HTTP,
@@ -217,7 +217,7 @@ message GetVegaTimeRequest {}
 // Response for the current consensus coordinated time on the Vega network, referred to as "VegaTime"
 message GetVegaTimeResponse {
   // Timestamp representation of current VegaTime as represented in
-  // Nanoseconds since the epoch, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
+  // Unix nanoseconds, for example `1580473859111222333` corresponds to `2020-01-31T12:30:59.111222333Z`
   int64 timestamp = 1;
 }
 

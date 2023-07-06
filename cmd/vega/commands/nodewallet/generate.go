@@ -32,11 +32,11 @@ type generateCmd struct {
 
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
-	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum"`
-	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
+	Chain string `choice:"vega"                                                                    choice:"ethereum" description:"The chain to be imported" long:"chain" required:"true" short:"c"`
+	Force bool   `description:"Should the command generate a new wallet on top of an existing one" long:"force"`
 
 	// clef options
-	EthereumClefAddress string `long:"ethereum-clef-address" description:"The URL to the clef instance that Vega will use to generate a clef wallet."`
+	EthereumClefAddress string `description:"The URL to the clef instance that Vega will use to generate a clef wallet." long:"ethereum-clef-address"`
 }
 
 const (

@@ -15,9 +15,11 @@ package banking
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/core/events"
 	"code.vegaprotocol.io/vega/core/types"
+	"code.vegaprotocol.io/vega/libs/num"
 )
 
 var (
@@ -49,5 +51,16 @@ func (e *Engine) CancelTransferFunds(
 	transfer.Status = types.TransferStatusCancelled
 	e.broker.Send(events.NewRecurringTransferFundsEventWithReason(ctx, transfer, "transfer cancelled"))
 
+	return nil
+}
+
+func (e *Engine) CancelGovTransfer(ctx context.Context, ID string) error {
+	gTransfer, ok := e.recurringGovernanceTransfersMap[ID]
+	if !ok {
+		return fmt.Errorf("Governance transfer %s not found", ID)
+	}
+	e.deleteGovTransfer(ID)
+	gTransfer.Status = types.TransferStatusCancelled
+	e.broker.Send(events.NewGovTransferFundsEvent(ctx, gTransfer, num.UintZero()))
 	return nil
 }

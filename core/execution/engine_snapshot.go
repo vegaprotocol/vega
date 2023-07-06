@@ -15,8 +15,10 @@ package execution
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
+	"code.vegaprotocol.io/vega/core/execution/future"
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/proto"
 	"code.vegaprotocol.io/vega/logging"
@@ -36,13 +38,13 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*5)
 	for _, m := range e.marketsCpy {
 		// ensure the next MTM timestamp is set correctly:
-		am := e.markets[m.mkt.ID]
-		m.nextMTM = am.nextMTM
-		e.log.Debug("serialising market", logging.String("id", m.mkt.ID))
-		mks = append(mks, m.getState())
+		am := e.markets[m.Mkt().ID]
+		m.SetNextMTM(am.GetNextMTM())
+		e.log.Debug("serialising market", logging.String("id", m.Mkt().ID))
+		mks = append(mks, m.GetState())
 
 		if _, ok := e.generatedProviders[m.GetID()]; !ok {
-			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity, m.settlement)
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.GetNewStateProviders()...)
 			e.generatedProviders[m.GetID()] = struct{}{}
 		}
 	}
@@ -50,7 +52,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	return mks, e.newGeneratedProviders
 }
 
-func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Market, error) {
+func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*future.Market, error) {
 	marketConfig := em.Market
 
 	if len(marketConfig.ID) == 0 {
@@ -58,10 +60,11 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	}
 
 	// ensure the asset for this new market exists
-	asset, err := marketConfig.GetAsset()
+	assets, err := marketConfig.GetAssets()
 	if err != nil {
 		return nil, err
 	}
+	asset := assets[0]
 	if !e.collateral.AssetExists(asset) {
 		return nil, fmt.Errorf(
 			"unable to create a market %q with an invalid %q asset",
@@ -82,7 +85,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	nextMTM := time.Unix(0, em.NextMTM)
 	// create market auction state
 	e.log.Info("restoring market", logging.String("id", em.Market.ID))
-	mkt, err := NewMarketFromSnapshot(
+	mkt, err := future.NewMarketFromSnapshot(
 		ctx,
 		e.log,
 		em,
@@ -108,22 +111,25 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		)
 		return nil, err
 	}
+	if em.IsSucceeded {
+		mkt.SetSucceeded()
+	}
 
 	e.markets[marketConfig.ID] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
-	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
+	if err := e.propagateInitialNetParamsToFutureMarket(ctx, mkt); err != nil {
 		return nil, err
 	}
 	// ensure this is set correctly
-	mkt.nextMTM = nextMTM
+	mkt.SetNextMTM(nextMTM)
 
 	e.publishNewMarketInfos(ctx, mkt)
 	return mkt, nil
 }
 
 func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMarket) ([]types.StateProvider, error) {
-	e.markets = map[string]*Market{}
+	e.markets = map[string]*future.Market{}
 
 	pvds := make([]types.StateProvider, 0, len(ems)*4)
 	for _, em := range ems {
@@ -132,7 +138,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 			return nil, fmt.Errorf("failed to restore market: %w", err)
 		}
 
-		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity, m.settlement)
+		pvds = append(pvds, m.GetNewStateProviders()...)
 
 		// so that we don't return them again the next state change
 		e.generatedProviders[m.GetID()] = struct{}{}
@@ -143,11 +149,34 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 
 func (e *Engine) serialise() (snapshot []byte, providers []types.StateProvider, err error) {
 	mkts, pvds := e.marketsStates()
+	cpStates := make([]*types.CPMarketState, 0, len(e.marketCPStates))
+	for _, cp := range e.marketCPStates {
+		if cp.Market != nil {
+			cpy := cp
+			cpStates = append(cpStates, cpy)
+		}
+	}
+	// ensure the states are sorted
+	sort.SliceStable(cpStates, func(i, j int) bool {
+		return cpStates[i].Market.ID > cpStates[j].Market.ID
+	})
+	successors := make([]*types.Successors, 0, len(e.successors))
+	for pid, ids := range e.successors {
+		successors = append(successors, &types.Successors{
+			ParentMarket:     pid,
+			SuccessorMarkets: ids,
+		})
+	}
+	sort.SliceStable(successors, func(i, j int) bool {
+		return successors[i].ParentMarket > successors[j].ParentMarket
+	})
 
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
-				Markets: mkts,
+				Markets:        mkts,
+				SettledMarkets: cpStates,
+				Successors:     successors,
 			},
 		},
 	}
@@ -189,6 +218,12 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
+		// restore settled market state
+		for _, m := range pl.ExecutionMarkets.SettledMarkets {
+			cpy := m
+			e.marketCPStates[m.Market.ID] = cpy
+		}
+		e.restoreSuccessorMaps(pl.ExecutionMarkets.Successors)
 		e.snapshotSerialised, err = proto.Marshal(payload.IntoProto())
 		return providers, err
 	default:
@@ -196,10 +231,29 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 	}
 }
 
+func (e *Engine) restoreSuccessorMaps(successors []*types.Successors) {
+	for _, suc := range successors {
+		e.successors[suc.ParentMarket] = suc.SuccessorMarkets
+		for _, s := range suc.SuccessorMarkets {
+			e.isSuccessor[s] = suc.ParentMarket
+		}
+	}
+}
+
 func (e *Engine) OnStateLoaded(ctx context.Context) error {
 	for _, m := range e.markets {
 		if err := m.PostRestore(ctx); err != nil {
 			return err
+		}
+	}
+	// use the time as restored by the snapshot
+	t := e.timeService.GetTimeNow()
+	// restore marketCPStates through marketsCpy to ensure the order is preserved
+	for _, m := range e.marketsCpy {
+		if !m.IsSucceeded() {
+			cps := m.GetCPState()
+			cps.TTL = t.Add(e.successorWindow)
+			e.marketCPStates[m.GetID()] = cps
 		}
 	}
 	return nil

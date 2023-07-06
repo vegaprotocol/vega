@@ -111,7 +111,7 @@ func (p pendingSigner) GetType() types.NodeVoteType {
 	return ty
 }
 
-func (p *pendingSigner) Check() error { return p.check() }
+func (p *pendingSigner) Check(ctx context.Context) error { return p.check() }
 
 type pendingThresholdSet struct {
 	*types.SignerThresholdSetEvent
@@ -122,7 +122,7 @@ func (p pendingThresholdSet) GetID() string { return p.ID }
 func (p pendingThresholdSet) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeSignerThresholdSet
 }
-func (p *pendingThresholdSet) Check() error { return p.check() }
+func (p *pendingThresholdSet) Check(ctx context.Context) error { return p.check() }
 
 func NewTopology(
 	config Config,

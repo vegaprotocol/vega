@@ -1,0 +1,94 @@
+---
+
+name: Bug Report
+description: File a bug report
+title: "[Bug]: "
+labels: ["bug"]
+assignees:
+  - gordsport
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: textarea
+    id: bug
+    attributes:
+      label: Problem encountered
+      description: "A clear and concise description of what the bug is."
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+      description: "A clear and concise description of how the system is behaving."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: "A clear and concise description of what you expected to happen as per the AC or spec."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: "Detail the steps to reproduce the behaviour, or any additional information related to the observed behavior."
+      value: |
+        1. Submit `xyz` transaction
+        2. With this payload
+        3. Query `abc` API
+        4. Observe the error
+      render: bash
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Software version
+      description: "Please software version or commit hash the bug is seen on."
+    validations:
+      required: true
+
+  - type: input
+    id: test-case
+    attributes:
+      label: Failing test
+      description: "Please specify the path to the failing test."
+    validations:
+      required: false
+
+  - type: input
+    id: jenkins
+    attributes:
+      label: Jenkins run
+      description: "Please specify the Jenkins run URL."
+    validations:
+      required: false
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration used
+      description: "Please detail the configuration used when seeing this bug. This will be automatically formatted into code, so no need for backticks."
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: "Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks."
+      render: shell
+    validations:
+      required: false

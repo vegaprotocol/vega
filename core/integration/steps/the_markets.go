@@ -15,6 +15,7 @@ package steps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cucumber/godog"
 
@@ -64,6 +65,7 @@ func TheMarkets(
 	executionEngine Execution,
 	collateralEngine *collateral.Engine,
 	netparams *netparams.Store,
+	now time.Time,
 	table *godog.Table,
 ) ([]types.Market, error) {
 	rows := parseMarketsTable(table)
@@ -82,16 +84,29 @@ func TheMarkets(
 		return nil, err
 	}
 
-	if err := submitMarkets(markets, executionEngine); err != nil {
+	if err := submitMarkets(markets, executionEngine, now); err != nil {
 		return nil, err
 	}
 
 	return markets, nil
 }
 
-func submitMarkets(markets []types.Market, executionEngine Execution) error {
+func TheSuccesorMarketIsEnacted(sID string, markets []types.Market, exec Execution) error {
+	for _, mkt := range markets {
+		if mkt.ID == sID {
+			parent := mkt.ParentMarketID
+			if err := exec.SucceedMarket(context.Background(), sID, parent); err != nil {
+				return fmt.Errorf("couldn't enact the successor market %s (parent: %s): %v", sID, parent, err)
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("couldn't enact successor market %s - no such market ID", sID)
+}
+
+func submitMarkets(markets []types.Market, executionEngine Execution, now time.Time) error {
 	for i := range markets {
-		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID"); err != nil {
+		if err := executionEngine.SubmitMarket(context.Background(), &markets[i], "proposerID", now); err != nil {
 			return fmt.Errorf("couldn't submit market(%s): %v", markets[i].ID, err)
 		}
 		if err := executionEngine.StartOpeningAuction(context.Background(), markets[i].ID); err != nil {
@@ -113,8 +128,8 @@ func updateMarkets(markets []*types.Market, updates []types.UpdateMarket, execut
 func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Engine) error {
 	assetsToEnable := map[string]struct{}{}
 	for _, mkt := range markets {
-		asset, _ := mkt.GetAsset()
-		assetsToEnable[asset] = struct{}{}
+		assets, _ := mkt.GetAssets()
+		assetsToEnable[assets[0]] = struct{}{}
 	}
 	for assetToEnable := range assetsToEnable {
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
@@ -124,7 +139,7 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 				Symbol:  assetToEnable,
 			},
 		})
-		if err != nil {
+		if err != nil && err != collateral.ErrAssetAlreadyEnabled {
 			return fmt.Errorf("couldn't enable asset(%s): %v", assetToEnable, err)
 		}
 	}
@@ -322,19 +337,7 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	linearSlippageFactor := row.linearSlippageFactor()
 	quadraticSlippageFactor := row.quadraticSlippageFactor()
 
-	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
-	// so we do this step here manually
-	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
-		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
-	}
-
-	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
-		liqMon.TargetStakeParameters.ScalingFactor = sf
-	}
-
-	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
-		liqMon.TriggeringRatio = tr
-	}
+	setLiquidityMonitoringNetParams(liqMon, netparams)
 
 	m := types.Market{
 		TradingMode:           types.MarketTradingModeContinuous,
@@ -374,6 +377,13 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 		QuadraticSlippageFactor:       num.DecimalFromFloat(quadraticSlippageFactor),
 	}
 
+	if row.isSuccessor() {
+		m.ParentMarketID = row.parentID()
+		m.InsurancePoolFraction = row.insuranceFraction()
+		// increase opening auction duration by a given amount
+		m.OpeningAuction.Duration += row.successorAuction()
+	}
+
 	tip := m.TradableInstrument.IntoProto()
 	err = config.RiskModels.LoadModel(row.riskModel(), tip)
 	m.TradableInstrument = types.TradableInstrumentFromProto(tip)
@@ -382,6 +392,22 @@ func newMarket(config *market.Config, netparams *netparams.Store, row marketRow)
 	}
 
 	return m
+}
+
+func setLiquidityMonitoringNetParams(liqMon *types.LiquidityMonitoringParameters, netparams *netparams.Store) {
+	// the governance engine would fill in the liquidity monitor parameters from the network parameters (unless set explicitly)
+	// so we do this step here manually
+	if tw, err := netparams.GetDuration("market.stake.target.timeWindow"); err == nil {
+		liqMon.TargetStakeParameters.TimeWindow = int64(tw.Seconds())
+	}
+
+	if sf, err := netparams.GetDecimal("market.stake.target.scalingFactor"); err == nil {
+		liqMon.TargetStakeParameters.ScalingFactor = sf
+	}
+
+	if tr, err := netparams.GetDecimal("market.liquidity.targetstake.triggering.ratio"); err == nil {
+		liqMon.TriggeringRatio = tr
+	}
 }
 
 func openingAuction(row marketRow) *types.AuctionDuration {
@@ -413,6 +439,9 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"position decimal places",
 		"liquidity monitoring",
 		"lp price range",
+		"parent market id",
+		"insurance pool fraction",
+		"successor auction",
 	})
 }
 
@@ -553,6 +582,31 @@ func (r marketRow) quadraticSlippageFactor() float64 {
 		return 0.0
 	}
 	return r.row.MustF64("quadratic slippage factor")
+}
+
+func (r marketRow) isSuccessor() bool {
+	if pid, ok := r.row.StrB("parent market id"); !ok || len(pid) == 0 {
+		return false
+	}
+	return true
+}
+
+func (r marketRow) parentID() string {
+	return r.row.MustStr("parent market id")
+}
+
+func (r marketRow) insuranceFraction() num.Decimal {
+	if !r.row.HasColumn("insurance pool fraction") {
+		return num.DecimalZero()
+	}
+	return r.row.Decimal("insurance pool fraction")
+}
+
+func (r marketRow) successorAuction() int64 {
+	if !r.row.HasColumn("successor auction") {
+		return 5 * r.auctionDuration() // five times auction duration
+	}
+	return r.row.MustI64("successor auction")
 }
 
 func (r marketUpdateRow) tryLpPriceRange() (float64, bool) {

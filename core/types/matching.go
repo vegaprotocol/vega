@@ -46,6 +46,7 @@ type Order struct {
 	PostOnly             bool
 	ReduceOnly           bool
 	extraRemaining       uint64
+	IcebergOrder         *IcebergOrder
 }
 
 func (o *Order) ReduceOnlyAdjustRemaining(extraSize uint64) {
@@ -67,6 +68,61 @@ func (o *Order) ClearUpExtraRemaining() {
 	o.extraRemaining = 0
 }
 
+// TrueRemaining is the full remaining size of an order. If this is an iceberg order
+// it will return the visible peak + the hidden volume.
+func (o *Order) TrueRemaining() uint64 {
+	rem := o.Remaining
+	if o.IcebergOrder != nil {
+		rem += o.IcebergOrder.ReservedRemaining
+	}
+	return rem
+}
+
+// IcebergNeedsRefresh returns whether the given iceberg order's visible peak has
+// dropped below the minimum visible size, and there is hidden volume available to
+// restore it.
+func (o *Order) IcebergNeedsRefresh() bool {
+	if o.IcebergOrder == nil {
+		// not an iceberg
+		return false
+	}
+
+	if o.IcebergOrder.ReservedRemaining == 0 {
+		// nothing to refresh with
+		return false
+	}
+
+	if o.Remaining >= o.IcebergOrder.MinimumVisibleSize {
+		// not under the minimum
+		return false
+	}
+
+	return true
+}
+
+// SetIcebergPeaks will restore the given iceberg orders visible size with
+// some of its hidden volume.
+func (o *Order) SetIcebergPeaks() {
+	if o.IcebergOrder == nil {
+		return
+	}
+
+	if o.Remaining > o.IcebergOrder.PeakSize && o.IcebergOrder.ReservedRemaining == 0 {
+		// iceberg is at full volume and so set its visible amount to its peak size
+		peak := num.MinV(o.Remaining, o.IcebergOrder.PeakSize)
+		o.IcebergOrder.ReservedRemaining = o.Remaining - peak
+		o.Remaining = peak
+		return
+	}
+
+	// calculate the refill amount
+	refill := o.IcebergOrder.PeakSize - o.Remaining
+	refill = num.MinV(refill, o.IcebergOrder.ReservedRemaining)
+
+	o.Remaining += refill
+	o.IcebergOrder.ReservedRemaining -= refill
+}
+
 func (o Order) IntoSubmission() *OrderSubmission {
 	sub := &OrderSubmission{
 		MarketID:    o.MarketID,
@@ -78,6 +134,12 @@ func (o Order) IntoSubmission() *OrderSubmission {
 		Reference:   o.Reference,
 		PostOnly:    o.PostOnly,
 		ReduceOnly:  o.ReduceOnly,
+	}
+	if o.IcebergOrder != nil {
+		sub.IcebergOrder = &IcebergOrder{
+			PeakSize:           o.IcebergOrder.PeakSize,
+			MinimumVisibleSize: o.IcebergOrder.MinimumVisibleSize,
+		}
 	}
 	if o.Price != nil {
 		sub.Price = o.Price.Clone()
@@ -104,12 +166,15 @@ func (o Order) Clone() *Order {
 	if o.PeggedOrder != nil {
 		cpy.PeggedOrder = o.PeggedOrder.Clone()
 	}
+	if o.IcebergOrder != nil {
+		cpy.IcebergOrder = o.IcebergOrder.Clone()
+	}
 	return &cpy
 }
 
 func (o Order) String() string {
 	return fmt.Sprintf(
-		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v)",
+		"ID(%s) marketID(%s) party(%s) side(%s) price(%s) size(%v) remaining(%v) timeInForce(%s) type(%s) status(%s) reference(%s) reason(%s) version(%v) batchID(%v) liquidityProvisionID(%s) createdAt(%v) updatedAt(%v) expiresAt(%v) originalPrice(%s) peggedOrder(%s) postOnly(%v) reduceOnly(%v) iceberg(%s)",
 		o.ID,
 		o.MarketID,
 		o.Party,
@@ -132,6 +197,7 @@ func (o Order) String() string {
 		reflectPointerToString(o.PeggedOrder),
 		o.PostOnly,
 		o.ReduceOnly,
+		reflectPointerToString(o.IcebergOrder),
 	)
 }
 
@@ -159,6 +225,11 @@ func (o *Order) IntoProto() *proto.Order {
 		reason = ptr.From(o.Reason)
 	}
 
+	var iceberg *proto.IcebergOrder
+	if o.IcebergOrder != nil {
+		iceberg = o.IcebergOrder.IntoProto()
+	}
+
 	return &proto.Order{
 		Id:                   o.ID,
 		MarketId:             o.MarketID,
@@ -181,10 +252,19 @@ func (o *Order) IntoProto() *proto.Order {
 		LiquidityProvisionId: o.LiquidityProvisionID,
 		PostOnly:             o.PostOnly,
 		ReduceOnly:           o.ReduceOnly,
+		IcebergOrder:         iceberg,
 	}
 }
 
 func OrderFromProto(o *proto.Order) (*Order, error) {
+	var iceberg *IcebergOrder
+	if o.IcebergOrder != nil {
+		var err error
+		iceberg, err = NewIcebergOrderFromProto(o.IcebergOrder)
+		if err != nil {
+			return nil, err
+		}
+	}
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
 		var err error
@@ -227,6 +307,7 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		LiquidityProvisionID: o.LiquidityProvisionId,
 		PostOnly:             o.PostOnly,
 		ReduceOnly:           o.ReduceOnly,
+		IcebergOrder:         iceberg,
 	}, nil
 }
 
@@ -313,6 +394,45 @@ func (p PeggedOrder) String() string {
 		"reference(%s) offset(%s)",
 		p.Reference.String(),
 		uintPointerToString(p.Offset),
+	)
+}
+
+type IcebergOrder struct {
+	ReservedRemaining  uint64
+	PeakSize           uint64
+	MinimumVisibleSize uint64
+}
+
+func (i IcebergOrder) Clone() *IcebergOrder {
+	cpy := i
+	return &cpy
+}
+
+func NewIcebergOrderFromProto(i *proto.IcebergOrder) (*IcebergOrder, error) {
+	if i == nil {
+		return nil, nil
+	}
+	return &IcebergOrder{
+		ReservedRemaining:  i.ReservedRemaining,
+		PeakSize:           i.PeakSize,
+		MinimumVisibleSize: i.MinimumVisibleSize,
+	}, nil
+}
+
+func (i IcebergOrder) IntoProto() *proto.IcebergOrder {
+	return &proto.IcebergOrder{
+		ReservedRemaining:  i.ReservedRemaining,
+		PeakSize:           i.PeakSize,
+		MinimumVisibleSize: i.MinimumVisibleSize,
+	}
+}
+
+func (i IcebergOrder) String() string {
+	return fmt.Sprintf(
+		"reserved-remaining(%d) initial-peak-size(%d) minimum-peak-size(%d)",
+		i.ReservedRemaining,
+		i.PeakSize,
+		i.MinimumVisibleSize,
 	)
 }
 

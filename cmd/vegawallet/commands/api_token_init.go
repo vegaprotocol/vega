@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/flags"
 	"code.vegaprotocol.io/vega/cmd/vegawallet/commands/printer"
 	"code.vegaprotocol.io/vega/paths"
-	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/v1"
+	tokenStoreV1 "code.vegaprotocol.io/vega/wallet/service/v2/connections/store/longliving/v1"
 	"github.com/spf13/cobra"
 )
 

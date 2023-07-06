@@ -135,6 +135,8 @@ message ChainEvent {
     vega.StakingEvent staking_event = 1005;
     // Ethereum ERC20 multisig event.
     vega.ERC20MultiSigEvent erc20_multisig = 1006;
+    // Arbitrary contract call
+    vega.EthContractCallEvent contract_call = 1007;
   }
 }
 

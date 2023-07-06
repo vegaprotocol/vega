@@ -46,6 +46,8 @@ var (
 	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver.
 	ErrInvalidProposal = errors.New("invalid proposal")
+	// ErrInvalidStopOrder is returned when an invalid stop order is received by the stop order resolver.
+	ErrInvalidStopOrder = errors.New("invalid stop order")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/datanode/gateway/graphql CoreProxyServiceClient,TradingDataServiceClientV2
@@ -93,6 +95,18 @@ func (r *VegaResolverRoot) Query() QueryResolver {
 // Candle returns the candles resolver.
 func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinition() DataSourceDefinitionResolver {
+	return (*myDataSourceDefinitionResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinitionExternal() DataSourceDefinitionExternalResolver {
+	return (*myDataSourceDefinitionExternalResolver)(r)
+}
+
+func (r *VegaResolverRoot) DataSourceDefinitionInternal() DataSourceDefinitionInternalResolver {
+	return (*myDataSourceDefinitionInternalResolver)(r)
 }
 
 func (r *VegaResolverRoot) DataSourceSpecConfiguration() DataSourceSpecConfigurationResolver {
@@ -239,10 +253,6 @@ func (r *VegaResolverRoot) UpdateAsset() UpdateAssetResolver {
 	return (*updateAssetResolver)(r)
 }
 
-func (r *VegaResolverRoot) UpdateFutureProduct() UpdateFutureProductResolver {
-	return (*updateFutureProductResolver)(r)
-}
-
 func (r *VegaResolverRoot) NewMarket() NewMarketResolver {
 	return (*newMarketResolver)(r)
 }
@@ -261,6 +271,14 @@ func (r *VegaResolverRoot) UpdateNetworkParameter() UpdateNetworkParameterResolv
 
 func (r *VegaResolverRoot) NewFreeform() NewFreeformResolver {
 	return (*newFreeformResolver)(r)
+}
+
+func (r *VegaResolverRoot) NewTransfer() NewTransferResolver {
+	return (*newTransferResolver)(r)
+}
+
+func (r *VegaResolverRoot) CancelTransfer() CancelTransferResolver {
+	return (*cancelTransferResolver)(r)
 }
 
 func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
@@ -343,6 +361,10 @@ func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
 	return (*recurringTransferResolver)(r)
 }
 
+func (r *VegaResolverRoot) RecurringGovernanceTransfer() RecurringGovernanceTransferResolver {
+	return (*recurringGovernanceTransferResolver)(r)
+}
+
 func (r *VegaResolverRoot) UpdateMarketConfiguration() UpdateMarketConfigurationResolver {
 	return (*updateMarketConfigurationResolver)(r)
 }
@@ -389,6 +411,22 @@ func (r *VegaResolverRoot) ERC20MultiSigSignerAddedBundle() ERC20MultiSigSignerA
 
 func (r *VegaResolverRoot) ERC20MultiSigSignerRemovedBundle() ERC20MultiSigSignerRemovedBundleResolver {
 	return (*erc20MultiSigSignerRemovedBundleResolver)(r)
+}
+
+func (r *VegaResolverRoot) IcebergOrder() IcebergOrderResolver {
+	return (*icebergOrderResolver)(r)
+}
+
+func (r *VegaResolverRoot) OrderSubmission() OrderSubmissionResolver {
+	return (*orderSubmissionResolver)(r)
+}
+
+func (r *VegaResolverRoot) StopOrder() StopOrderResolver {
+	return (*stopOrderResolver)(r)
+}
+
+func (r *VegaResolverRoot) StopOrderFilter() StopOrderFilterResolver {
+	return (*stopOrderFilterResolver)(r)
 }
 
 // RewardSummaryFilter returns RewardSummaryFilterResolver implementation.
@@ -504,6 +542,10 @@ func (r *myDepositResolver) CreditedTimestamp(_ context.Context, obj *types.Depo
 type myQueryResolver VegaResolverRoot
 
 func (r *myQueryResolver) Trades(ctx context.Context, filter *TradesFilter, pagination *v2.Pagination, dateRange *v2.DateRange) (*v2.TradeConnection, error) {
+	if filter == nil {
+		filter = &TradesFilter{}
+	}
+
 	resp, err := r.tradingDataClientV2.ListTrades(ctx, &v2.ListTradesRequest{
 		MarketIds:  filter.MarketIds,
 		OrderIds:   filter.OrderIds,
@@ -1200,8 +1242,11 @@ func (r *myQueryResolver) EthereumKeyRotations(ctx context.Context, nodeID *stri
 	return resp.KeyRotations, nil
 }
 
-func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {
-	var epochID *uint64
+func (r *myQueryResolver) Epoch(ctx context.Context, id *string, block *string) (*types.Epoch, error) {
+	var (
+		epochID, blockHeight *uint64
+		err                  error
+	)
 	if id != nil {
 		parsedID, err := strconv.ParseUint(*id, 10, 64)
 		if err != nil {
@@ -1211,7 +1256,19 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 		epochID = &parsedID
 	}
 
-	resp, err := r.tradingDataClientV2.GetEpoch(ctx, &v2.GetEpochRequest{Id: epochID})
+	if block != nil {
+		parsedHeight, err := strconv.ParseUint(*block, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		blockHeight = &parsedHeight
+	}
+
+	req := &v2.GetEpochRequest{
+		Id:    epochID,
+		Block: blockHeight,
+	}
+	resp, err := r.tradingDataClientV2.GetEpoch(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -1283,6 +1340,54 @@ func (r *myQueryResolver) MostRecentHistorySegment(ctx context.Context) (*v2.His
 		return nil, err
 	}
 	return resp.GetSegment(), nil
+}
+
+func (r *myQueryResolver) SuccessorMarkets(ctx context.Context, marketID string, fullHistory *bool, pagination *v2.Pagination) (*v2.SuccessorMarketConnection, error) {
+	getAll := false
+
+	if fullHistory != nil {
+		getAll = *fullHistory
+	}
+
+	req := &v2.ListSuccessorMarketsRequest{
+		MarketId:           marketID,
+		IncludeFullHistory: getAll,
+		Pagination:         pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.ListSuccessorMarkets(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.GetSuccessorMarkets(), nil
+}
+
+func (r *myQueryResolver) StopOrder(ctx context.Context, id string) (*eventspb.StopOrderEvent, error) {
+	req := &v2.GetStopOrderRequest{
+		OrderId: id,
+	}
+
+	resp, err := r.tradingDataClientV2.GetStopOrder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Order, nil
+}
+
+func (r *myQueryResolver) StopOrders(ctx context.Context, filter *v2.StopOrderFilter, pagination *v2.Pagination) (*v2.StopOrderConnection, error) {
+	req := &v2.ListStopOrdersRequest{
+		Filter:     filter,
+		Pagination: pagination,
+	}
+
+	resp, err := r.tradingDataClientV2.ListStopOrders(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Orders, nil
 }
 
 // END: Root Resolver
@@ -1819,6 +1924,10 @@ func (r *myOrderResolver) PeggedOrder(_ context.Context, order *types.Order) (*t
 	return order.PeggedOrder, nil
 }
 
+func (r *myOrderResolver) IcebergOrder(_ context.Context, order *types.Order) IcebergOrderResolver {
+	return (*icebergOrderResolver)(r)
+}
+
 func (r *myOrderResolver) LiquidityProvision(ctx context.Context, obj *types.Order) (*types.LiquidityProvision, error) {
 	if obj == nil || len(obj.LiquidityProvisionId) <= 0 {
 		return nil, nil
@@ -1949,6 +2058,10 @@ func (r *myCandleResolver) LastUpdateInPeriod(_ context.Context, obj *v2.Candle)
 
 func (r *myCandleResolver) Volume(_ context.Context, obj *v2.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
+}
+
+func (r *myCandleResolver) Notional(_ context.Context, obj *v2.Candle) (string, error) {
+	return strconv.FormatUint(obj.Notional, 10), nil
 }
 
 // END: Candle Resolver
@@ -2200,7 +2313,6 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 	}
 
 	c := make(chan []*types.Order)
-	var orders []*types.Order
 	sCtx := stream.Context()
 	go func() {
 		defer func() {
@@ -2219,7 +2331,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, filter *OrderByMark
 				r.log.Error("orders: stream closed", logging.Error(err))
 				break
 			}
-			orders = orders[:0]
+			orders := []*types.Order{}
 			if snapshot := o.GetSnapshot(); snapshot != nil {
 				orders = append(orders, snapshot.Orders...)
 			}

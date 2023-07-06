@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/core/epochtime"
 	"code.vegaprotocol.io/vega/core/evtforward"
 	"code.vegaprotocol.io/vega/core/execution"
+	"code.vegaprotocol.io/vega/core/execution/common"
 	"code.vegaprotocol.io/vega/core/genesis"
 	"code.vegaprotocol.io/vega/core/governance"
 	"code.vegaprotocol.io/vega/core/limits"
@@ -81,7 +82,7 @@ type allServices struct {
 
 	vegaPaths paths.Paths
 
-	marketActivityTracker *execution.MarketActivityTracker
+	marketActivityTracker *common.MarketActivityTracker
 	statevar              *statevar.Engine
 	snapshot              *snapshot.Engine
 	executionEngine       *execution.Engine
@@ -195,7 +196,7 @@ func newServices(
 	}
 
 	svcs.protocolUpgradeEngine = protocolupgrade.New(svcs.log, svcs.conf.ProtocolUpgrade, svcs.broker, svcs.topology, version.Get())
-	svcs.witness = validators.NewWitness(svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
+	svcs.witness = validators.NewWitness(svcs.ctx, svcs.log, svcs.conf.Validators, svcs.topology, svcs.commander, svcs.timeService)
 
 	// this is done to go around circular deps...
 	svcs.erc20MultiSigTopology.SetWitness(svcs.witness)
@@ -217,7 +218,7 @@ func newServices(
 	svcs.epochService.NotifyOnEpoch(stats.OnEpochEvent, stats.OnEpochRestore)
 
 	svcs.statevar = statevar.New(svcs.log, svcs.conf.StateVar, svcs.broker, svcs.topology, svcs.commander)
-	svcs.marketActivityTracker = execution.NewMarketActivityTracker(svcs.log, svcs.epochService)
+	svcs.marketActivityTracker = common.NewMarketActivityTracker(svcs.log, svcs.epochService)
 
 	svcs.notary = notary.NewWithSnapshot(svcs.log, svcs.conf.Notary, svcs.topology, svcs.broker, svcs.commander)
 
@@ -237,26 +238,26 @@ func newServices(
 
 	svcs.gastimator = processor.NewGastimator(svcs.executionEngine)
 
+	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	if svcs.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin assets deposited with the faucet was staked
 		svcs.codec = &processor.NullBlockchainTxCodec{}
 		stakingLoop := nullchain.NewStakingLoop(svcs.collateral, svcs.assets)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
+		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, stakingLoop, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, stakingLoop, svcs.epochService, svcs.timeService)
 	} else {
 		svcs.codec = &processor.TxCodec{}
 		svcs.spam = spam.New(svcs.log, svcs.conf.Spam, svcs.epochService, svcs.stakingAccounts)
-		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams)
+		svcs.governance = governance.NewEngine(svcs.log, svcs.conf.Governance, svcs.stakingAccounts, svcs.timeService, svcs.broker, svcs.assets, svcs.witness, svcs.executionEngine, svcs.netParams, svcs.banking)
 		svcs.delegation = delegation.New(svcs.log, svcs.conf.Delegation, svcs.broker, svcs.topology, svcs.stakingAccounts, svcs.epochService, svcs.timeService)
 	}
 
-	svcs.banking = banking.New(svcs.log, svcs.conf.Banking, svcs.collateral, svcs.witness, svcs.timeService, svcs.assets, svcs.notary, svcs.broker, svcs.topology, svcs.epochService, svcs.marketActivityTracker, svcs.erc20BridgeView, svcs.eventForwarderEngine)
 	svcs.rewards = rewards.New(svcs.log, svcs.conf.Rewards, svcs.broker, svcs.delegation, svcs.epochService, svcs.collateral, svcs.timeService, svcs.marketActivityTracker, svcs.topology)
 
 	svcs.registerTimeServiceCallbacks()
 
 	// checkpoint engine
-	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker)
+	svcs.checkpoint, err = checkpoint.New(svcs.log, svcs.conf.Checkpoint, svcs.assets, svcs.collateral, svcs.governance, svcs.netParams, svcs.delegation, svcs.epochService, svcs.topology, svcs.banking, svcs.stakeCheckpoint, svcs.erc20MultiSigTopology, svcs.marketActivityTracker, svcs.executionEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -549,7 +550,7 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Watcher: svcs.executionEngine.OnMaxPeggedOrderUpdate,
 		},
 		{
-			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
+			Param:   netparams.MarketLiquidityProvidersFeeDistributionTimeStep,
 			Watcher: svcs.executionEngine.OnMarketLiquidityProvidersFeeDistributionTimeStep,
 		},
 		{
@@ -584,6 +585,32 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: svcs.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
 		},
+		// Liquidity version 2.
+		{
+			Param:   netparams.MarketLiquidityV2BondPenaltyParameter,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2BondPenaltyUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2EarlyExitPenalty,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2EarlyExitPenaltyUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2MaximumLiquidityFeeFactorLevel,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2MaximumLiquidityFeeFactorLevelUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltySlope,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltySlopeUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2SLANonPerformanceBondPenaltyMax,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2SLANonPerformanceBondPenaltyMaxUpdate,
+		},
+		{
+			Param:   netparams.MarketLiquidityV2StakeToCCYVolume,
+			Watcher: svcs.executionEngine.OnMarketLiquidityV2SuppliedStakeToObligationFactorUpdate,
+		},
+		// End of liquidity version 2.
 		{
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: svcs.epochService.OnEpochLengthUpdate,
@@ -632,7 +659,6 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
 			Watcher: svcs.checkpoint.OnTimeElapsedUpdate,
 		},
-
 		{
 			Param:   netparams.SnapshotIntervalLength,
 			Watcher: svcs.snapshot.OnSnapshotIntervalUpdate,
@@ -648,6 +674,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.TransferFeeFactor,
 			Watcher: svcs.banking.OnTransferFeeFactorUpdate,
+		},
+		{
+			Param:   netparams.GovernanceTransferMaxFraction,
+			Watcher: svcs.banking.OnMaxFractionChanged,
+		},
+		{
+			Param:   netparams.GovernanceTransferMaxAmount,
+			Watcher: svcs.banking.OnMaxAmountChanged,
 		},
 		{
 			Param:   netparams.TransferMinTransferQuantumMultiple,
@@ -684,6 +718,14 @@ func (svcs *allServices) setupNetParameters(powWatchers []netparams.WatchParam) 
 		{
 			Param:   netparams.MarkPriceUpdateMaximumFrequency,
 			Watcher: svcs.executionEngine.OnMarkPriceUpdateMaximumFrequency,
+		},
+		{
+			Param:   netparams.MarketSuccessorLaunchWindow,
+			Watcher: svcs.executionEngine.OnSuccessorMarketTimeWindowUpdate,
+		},
+		{
+			Param:   netparams.SpamProtectionMaxStopOrdersPerMarket,
+			Watcher: svcs.executionEngine.OnMarketPartiesMaximumStopOrdersUpdate,
 		},
 	}
 

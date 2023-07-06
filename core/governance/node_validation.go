@@ -16,6 +16,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -24,16 +25,16 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var (
-	ErrNoNodeValidationRequired           = errors.New("no node validation required")
-	ErrProposalReferenceDuplicate         = errors.New("proposal duplicate")
-	ErrProposalValidationTimestampInvalid = errors.New("proposal validation timestamp invalid")
-)
-
 const (
 	minValidationPeriod = 1         // 1 sec
 	maxValidationPeriod = 48 * 3600 // 2 days
+)
 
+var (
+	ErrNoNodeValidationRequired                = errors.New("no node validation required")
+	ErrProposalReferenceDuplicate              = errors.New("proposal duplicate")
+	ErrProposalValidationTimestampTooLate      = errors.New("proposal validation timestamp must be earlier than closing time")
+	ErrProposalValidationTimestampOutsideRange = fmt.Errorf("proposal validation timestamp must be within %d-%d seconds from submission time", minValidationPeriod, maxValidationPeriod)
 )
 
 const (
@@ -64,7 +65,7 @@ func (n *nodeProposal) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeGovernanceValidateAsset
 }
 
-func (n *nodeProposal) Check() error {
+func (n *nodeProposal) Check(ctx context.Context) error {
 	// always keep the last error
 	err := n.checker()
 	if err != nil {
@@ -277,11 +278,11 @@ func (n *NodeValidation) checkAsset(assetID string) error {
 
 func (n *NodeValidation) checkProposal(prop *types.Proposal) error {
 	if prop.Terms.ClosingTimestamp < prop.Terms.ValidationTimestamp {
-		return ErrProposalValidationTimestampInvalid
+		return ErrProposalValidationTimestampTooLate
 	}
 	minValid, maxValid := n.currentTimestamp.Add(minValidationPeriod*time.Second), n.currentTimestamp.Add(maxValidationPeriod*time.Second)
 	if prop.Terms.ValidationTimestamp < minValid.Unix() || prop.Terms.ValidationTimestamp > maxValid.Unix() {
-		return ErrProposalValidationTimestampInvalid
+		return ErrProposalValidationTimestampOutsideRange
 	}
 	return nil
 }

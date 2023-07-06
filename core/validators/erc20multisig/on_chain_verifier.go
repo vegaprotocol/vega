@@ -162,10 +162,12 @@ func (o *OnChainVerifier) CheckThresholdSetEvent(
 		}
 
 		nonce, _ := big.NewInt(0).SetString(event.Nonce, 10)
-		if iter.Event.Raw.BlockNumber == event.BlockNumber &&
+		if !iter.Event.Raw.Removed &&
+			iter.Event.Raw.BlockNumber == event.BlockNumber &&
 			uint64(iter.Event.Raw.Index) == event.LogIndex &&
 			iter.Event.NewThreshold == uint16(event.Threshold) &&
-			nonce.Cmp(iter.Event.Nonce) == 0 {
+			nonce.Cmp(iter.Event.Nonce) == 0 &&
+			iter.Event.Raw.TxHash.Hex() == event.TxHash {
 			// now we know the event is OK,
 			// just need to check for confirmations
 			return o.ethConfirmations.Check(event.BlockNumber)
@@ -202,10 +204,12 @@ func (o *OnChainVerifier) filterSignerAdded(
 		}
 
 		nonce, _ := big.NewInt(0).SetString(event.Nonce, 10)
-		if iter.Event.Raw.BlockNumber == event.BlockNumber &&
+		if !iter.Event.Raw.Removed &&
+			iter.Event.Raw.BlockNumber == event.BlockNumber &&
 			uint64(iter.Event.Raw.Index) == event.LogIndex &&
 			iter.Event.NewSigner.Hex() == event.Address &&
-			nonce.Cmp(iter.Event.Nonce) == 0 {
+			nonce.Cmp(iter.Event.Nonce) == 0 &&
+			iter.Event.Raw.TxHash.Hex() == event.TxHash {
 			// now we know the event is OK,
 			// just need to check for confirmations
 			return o.ethConfirmations.Check(event.BlockNumber)
@@ -242,10 +246,12 @@ func (o *OnChainVerifier) filterSignerRemoved(
 		}
 
 		nonce, _ := big.NewInt(0).SetString(event.Nonce, 10)
-		if iter.Event.Raw.BlockNumber == event.BlockNumber &&
+		if !iter.Event.Raw.Removed &&
+			iter.Event.Raw.BlockNumber == event.BlockNumber &&
 			uint64(iter.Event.Raw.Index) == event.LogIndex &&
 			iter.Event.OldSigner.Hex() == event.Address &&
-			nonce.Cmp(iter.Event.Nonce) == 0 {
+			nonce.Cmp(iter.Event.Nonce) == 0 &&
+			iter.Event.Raw.TxHash.Hex() == event.TxHash {
 			// now we know the event is OK,
 			// just need to check for confirmations
 			return o.ethConfirmations.Check(event.BlockNumber)

@@ -135,10 +135,12 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 				)
 			}
 
-			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
+			if !iter.Event.Raw.Removed && // ignore removed events
+				hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
 				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
 				iter.Event.Raw.BlockNumber == event.BlockNumber &&
-				uint64(iter.Event.Raw.Index) == event.LogIndex {
+				uint64(iter.Event.Raw.Index) == event.LogIndex &&
+				iter.Event.Raw.TxHash.Hex() == event.TxID {
 				// now we know the event is OK,
 				// just need to check for confirmations
 				return o.ethConfirmations.Check(event.BlockNumber)
@@ -213,10 +215,12 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 				)
 			}
 
-			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
+			if !iter.Event.Raw.Removed && // ignore removed events
+				hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
 				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
 				iter.Event.Raw.BlockNumber == event.BlockNumber &&
-				uint64(iter.Event.Raw.Index) == event.LogIndex {
+				uint64(iter.Event.Raw.Index) == event.LogIndex &&
+				iter.Event.Raw.TxHash.Hex() == event.TxID {
 				// now we know the event is OK,
 				// just need to check for confirmations
 				return o.ethConfirmations.Check(event.BlockNumber)

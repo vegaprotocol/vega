@@ -52,6 +52,9 @@ var (
 		# Send a transaction with a maximum of 10 retries
 		{{.Software}} transaction send --network NETWORK --wallet WALLET --pubkey PUBKEY --retries 10 TRANSACTION
 
+		# Send a transaction with a maximum request duration of 10 seconds
+		{{.Software}} transaction send --network NETWORK --wallet WALLET --pubkey PUBKEY --max-request-duration "10s" TRANSACTION
+
 		# Send a transaction to a registered network without verifying network version compatibility
 		{{.Software}} transaction send --network NETWORK --wallet WALLET --pubkey PUBKEY --no-version-check TRANSACTION
 	`)
@@ -83,8 +86,8 @@ func NewCmdSendTransaction(w io.Writer, rf *RootFlags) *cobra.Command {
 			return api.AdminSendTransactionResult{}, errors.New(errDetails.Data)
 		}
 
-		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64) (walletnode.Selector, error) {
-			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries)
+		sendTx := api.NewAdminSendTransaction(walletStore, ns, func(hosts []string, retries uint64, requestTTL time.Duration) (walletnode.Selector, error) {
+			return walletnode.BuildRoundRobinSelectorWithRetryingNodes(log, hosts, retries, requestTTL)
 		})
 
 		rawResult, errDetails := sendTx.Handle(ctx, params)
@@ -170,8 +173,13 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 	)
 	cmd.Flags().Uint64Var(&f.Retries,
 		"retries",
-		DefaultForwarderRetryCount,
+		defaultRequestRetryCount,
 		"Number of retries when contacting the Vega node",
+	)
+	cmd.Flags().DurationVar(&f.MaximumRequestDuration,
+		"max-request-duration",
+		defaultMaxRequestDuration,
+		"Maximum duration the wallet will wait for a node to respond. Supported format: <number>+<time unit>. Valid time units are `s` and `m`.",
 	)
 	cmd.Flags().BoolVar(&f.NoVersionCheck,
 		"no-version-check",
@@ -187,15 +195,16 @@ func BuildCmdSendTransaction(w io.Writer, handler SendTransactionHandler, rf *Ro
 }
 
 type SendTransactionFlags struct {
-	Network        string
-	NodeAddress    string
-	Wallet         string
-	PubKey         string
-	PassphraseFile string
-	Retries        uint64
-	LogLevel       string
-	RawTransaction string
-	NoVersionCheck bool
+	Network                string
+	NodeAddress            string
+	Wallet                 string
+	PubKey                 string
+	PassphraseFile         string
+	Retries                uint64
+	LogLevel               string
+	RawTransaction         string
+	NoVersionCheck         bool
+	MaximumRequestDuration time.Duration
 }
 
 func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, string, error) {
@@ -240,13 +249,14 @@ func (f *SendTransactionFlags) Validate() (api.AdminSendTransactionParams, strin
 	}
 
 	params := api.AdminSendTransactionParams{
-		Wallet:      f.Wallet,
-		PublicKey:   f.PubKey,
-		Network:     f.Network,
-		NodeAddress: f.NodeAddress,
-		Retries:     f.Retries,
-		Transaction: transaction,
-		SendingMode: "TYPE_ASYNC",
+		Wallet:                 f.Wallet,
+		PublicKey:              f.PubKey,
+		Network:                f.Network,
+		NodeAddress:            f.NodeAddress,
+		Retries:                f.Retries,
+		Transaction:            transaction,
+		SendingMode:            "TYPE_ASYNC",
+		MaximumRequestDuration: f.MaximumRequestDuration,
 	}
 
 	return params, passphrase, nil
@@ -265,7 +275,7 @@ func PrintSendTransactionResponse(w io.Writer, res api.AdminSendTransactionResul
 	str := p.String()
 	defer p.Print(str)
 	str.CheckMark().SuccessText("Transaction sending successful").NextSection()
-	str.Text("Transaction Hash:").NextLine().WarningText(res.TxHash).NextSection()
+	str.Text("Transaction Hash:").NextLine().WarningText(res.TransactionHash).NextSection()
 	str.Text("Sent at:").NextLine().WarningText(res.SentAt.Format(time.ANSIC)).NextSection()
 	str.Text("Selected node:").NextLine().WarningText(res.Node.Host).NextLine()
 }

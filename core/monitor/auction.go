@@ -61,6 +61,23 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	return &s
 }
 
+func (a *AuctionState) GetAuctionBegin() *time.Time {
+	if a.begin == nil {
+		return nil
+	}
+	cpy := *a.begin
+	return &cpy
+}
+
+func (a *AuctionState) GetAuctionEnd() *time.Time {
+	if a.begin == nil || a.end == nil {
+		return nil
+	}
+	cpy := *a.begin
+	cpy = cpy.Add(time.Duration(a.end.Duration) * time.Second)
+	return &cpy
+}
+
 func (a *AuctionState) StartLiquidityAuctionNoOrders(t time.Time, d *types.AuctionDuration) {
 	a.startLiquidityAuction(t, d, types.AuctionTriggerUnableToDeployLPOrders)
 }

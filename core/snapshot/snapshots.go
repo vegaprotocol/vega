@@ -13,14 +13,11 @@
 package snapshot
 
 import (
-	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/core/types"
 
 	"github.com/cosmos/iavl"
-	"github.com/syndtr/goleveldb/leveldb/opt"
-	db "github.com/tendermint/tm-db"
 )
 
 // Data is a representation of the information we an scrape from the avl tree.
@@ -69,26 +66,4 @@ func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]Data, []Data, error) {
 	})
 
 	return trees, invalidVersions, nil
-}
-
-func AvailableSnapshotsHeights(dbpath string) ([]Data, []Data, error) {
-	options := &opt.Options{
-		ErrorIfMissing: true,
-		ReadOnly:       true,
-	}
-	db, err := db.NewGoLevelDBWithOpts("snapshot", dbpath, options)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to open database located at %s : %w", dbpath, err)
-	}
-
-	tree, err := iavl.NewMutableTree(db, 0, false)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if _, err := tree.Load(); err != nil {
-		return nil, nil, err
-	}
-
-	return SnapshotsHeightsFromTree(tree)
 }
