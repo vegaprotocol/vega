@@ -323,10 +323,16 @@ type MatchingBook struct {
 	BatchID         uint64
 }
 
+type Successors struct {
+	ParentMarket     string
+	SuccessorMarkets []string
+}
+
 type ExecutionMarkets struct {
 	Markets        []*ExecMarket
 	SpotMarkets    []*ExecSpotMarket
 	SettledMarkets []*CPMarketState
+	Successors     []*Successors
 }
 
 type ExecMarket struct {
@@ -3242,11 +3248,16 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 	for _, m := range em.SettledMarkets {
 		settled = append(settled, NewMarketStateFromProto(m))
 	}
+	successors := make([]*Successors, 0, len(em.Successors))
+	for _, s := range em.Successors {
+		successors = append(successors, SuccessorsFromProto(s))
+	}
 
 	return &ExecutionMarkets{
 		Markets:        mkts,
 		SpotMarkets:    spots,
 		SettledMarkets: settled,
+		Successors:     successors,
 	}
 }
 
@@ -3263,10 +3274,29 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 	for _, m := range e.SettledMarkets {
 		settled = append(settled, m.IntoProto())
 	}
+	successors := make([]*snapshot.Successors, 0, len(e.Successors))
+	for _, s := range e.Successors {
+		successors = append(successors, s.IntoProto())
+	}
 	return &snapshot.ExecutionMarkets{
 		Markets:        mkts,
 		SpotMarkets:    spots,
 		SettledMarkets: settled,
+		Successors:     successors,
+	}
+}
+
+func SuccessorsFromProto(s *snapshot.Successors) *Successors {
+	return &Successors{
+		ParentMarket:     s.ParentMarket,
+		SuccessorMarkets: s.SuccessorMarkets,
+	}
+}
+
+func (s Successors) IntoProto() *snapshot.Successors {
+	return &snapshot.Successors{
+		ParentMarket:     s.ParentMarket,
+		SuccessorMarkets: s.SuccessorMarkets,
 	}
 }
 
