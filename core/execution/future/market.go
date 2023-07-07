@@ -1537,6 +1537,15 @@ func (m *Market) triggerStopOrders(
 		return nil
 	}
 
+	now := m.timeService.GetTimeNow()
+	// remove from expiring orders + set updatedAt
+	for _, v := range append(triggered, cancelled...) {
+		v.UpdatedAt = now
+		if v.Expiry.Expires() {
+			m.expiringStopOrders.RemoveOrder(v.Expiry.ExpiresAt.UnixNano(), v.ID)
+		}
+	}
+
 	evts := make([]events.Event, 0, len(cancelled))
 	for _, v := range cancelled {
 		evts = append(evts, events.NewStopOrderEvent(ctx, v))
