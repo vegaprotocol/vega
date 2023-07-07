@@ -10,7 +10,6 @@ import (
 	datapb "code.vegaprotocol.io/vega/protos/vega/data/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func TestNewDataSourceDefinitionWith(t *testing.T) {
@@ -165,7 +164,7 @@ func TestDataSourceDefinitionIntoProto(t *testing.T) {
 			assert.NotNil(t, eo)
 			assert.IsType(t, &vegapb.EthCallSpec{}, eo)
 			assert.Equal(t, "some-eth-address", eo.Address)
-			assert.IsType(t, &structpb.ListValue{}, eo.Abi)
+			assert.IsType(t, "", eo.Abi)
 			assert.Equal(t, "method", eo.Method)
 			filters := eo.GetFilters()
 			assert.Equal(t, 1, len(filters))

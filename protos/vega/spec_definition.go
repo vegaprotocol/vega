@@ -107,7 +107,7 @@ func NewDataSourceDefinition(tp DataSourceContentType) *DataSourceDefinition {
 			External: &DataSourceDefinitionExternal{
 				SourceType: &DataSourceDefinitionExternal_EthOracle{
 					EthOracle: &EthCallSpec{
-						Abi:     &structpb.ListValue{},
+						Abi:     "",
 						Args:    []*structpb.Value{},
 						Trigger: &EthCallTrigger{},
 						Filters: []*datapb.Filter{},

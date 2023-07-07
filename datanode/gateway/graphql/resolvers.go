@@ -2088,12 +2088,8 @@ type ethCallSpecResolver VegaResolverRoot
 
 func (m *ethCallSpecResolver) Abi(ctx context.Context, obj *vega.EthCallSpec) ([]string, error) {
 	if obj != nil {
-		if obj.Abi != nil {
-			abiStr := []string{}
-			for _, a := range obj.Abi.Values {
-				abiStr = append(abiStr, a.String())
-			}
-			return abiStr, nil
+		if len(obj.Abi) > 0 {
+			return []string{obj.Abi}, nil
 		}
 	}
 	return nil, errors.New("ethereum spec object is empty")

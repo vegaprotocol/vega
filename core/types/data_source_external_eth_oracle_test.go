@@ -31,7 +31,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 
 	t.Run("non-empty with empty lists", func(t *testing.T) {
 		protoSource := &vegapb.EthCallSpec{
-			Abi:     nil,
+			Abi:     "",
 			Args:    nil,
 			Filters: nil,
 		}
@@ -54,16 +54,8 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		timeNow := uint64(time.Now().UnixNano())
 		protoSource := &vegapb.EthCallSpec{
 			Address: "test-eth-address",
-			Abi: &structpb.ListValue{
-				Values: []*structpb.Value{
-					{
-						Kind: &structpb.Value_NumberValue{
-							NumberValue: float64(5),
-						},
-					},
-				},
-			},
-			Method: "test-method",
+			Abi:     "5",
+			Method:  "test-method",
 			Args: []*structpb.Value{
 				{},
 			},
@@ -102,7 +94,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		assert.IsType(t, types.EthCallSpec{}, ds)
 
 		assert.Equal(t, "test-eth-address", ds.Address)
-		assert.Equal(t, []byte{91, 53, 93}, ds.AbiJson)
+		assert.Equal(t, []byte("5"), ds.AbiJson)
 		assert.Equal(t, "test-method", ds.Method)
 		assert.NotNil(t, ds.ArgsJson)
 		assert.Equal(t, 0, len(ds.ArgsJson))
@@ -118,16 +110,8 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		timeNow := uint64(time.Now().UnixNano())
 		protoSource := &vegapb.EthCallSpec{
 			Address: "test-eth-address",
-			Abi: &structpb.ListValue{
-				Values: []*structpb.Value{
-					{
-						Kind: &structpb.Value_NumberValue{
-							NumberValue: float64(5),
-						},
-					},
-				},
-			},
-			Method: "test-method",
+			Abi:     "5",
+			Method:  "test-method",
 			Args: []*structpb.Value{
 				structpb.NewStringValue("test-arg-value"),
 			},
@@ -153,7 +137,7 @@ func TestEthCallSpecFromProto(t *testing.T) {
 		assert.IsType(t, types.EthCallSpec{}, ds)
 
 		assert.Equal(t, "test-eth-address", ds.Address)
-		assert.Equal(t, []byte{91, 53, 93}, ds.AbiJson)
+		assert.Equal(t, []byte("5"), ds.AbiJson)
 		assert.Equal(t, "test-method", ds.Method)
 		assert.Equal(t, []string{"\"test-arg-value\""}, ds.ArgsJson)
 		filters := ds.Filters

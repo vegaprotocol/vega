@@ -977,7 +977,7 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.address", parentProperty, name), ErrIsNotValidEthereumAddress)
 				}
 
-				if len(ethOracle.Abi.Values) == 0 {
+				if len(ethOracle.Abi) == 0 {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsNotValidEthereumAbi)
 				}
 
@@ -1050,8 +1050,8 @@ func isBindingMatchingSpec(spec *vegapb.DataSourceDefinition, bindingProperty st
 		case *vegapb.DataSourceDefinitionExternal_EthOracle:
 			ethOracle := specType.External.GetEthOracle()
 
-			for propertyName := range ethOracle.Normalisers {
-				if propertyName == bindingProperty {
+			for _, v := range ethOracle.Normalisers {
+				if v.Name == bindingProperty {
 					return true
 				}
 			}

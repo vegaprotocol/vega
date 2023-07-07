@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"sort"
 
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -30,10 +31,7 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 
 	filters := DataSourceSpecFiltersFromProto(proto.Filters)
 
-	abiBytes, err := proto.Abi.MarshalJSON()
-	if err != nil {
-		return EthCallSpec{}, fmt.Errorf("error marshalling abi: %w", err)
-	}
+	abiBytes := []byte(proto.Abi)
 
 	jsonArgs := []string{}
 	for _, protoArg := range proto.Args {
@@ -44,6 +42,11 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 		jsonArgs = append(jsonArgs, string(jsonArg))
 	}
 
+	normalisers := map[string]string{}
+	for _, v := range proto.Normalisers {
+		normalisers[v.Name] = v.Expression
+	}
+
 	return EthCallSpec{
 		Address:               proto.Address,
 		AbiJson:               abiBytes,
@@ -52,7 +55,7 @@ func EthCallSpecFromProto(proto *vegapb.EthCallSpec) (EthCallSpec, error) {
 		Trigger:               trigger,
 		RequiredConfirmations: proto.RequiredConfirmations,
 		Filters:               filters,
-		Normalisers:           proto.Normalisers,
+		Normalisers:           normalisers,
 	}, nil
 }
 
@@ -67,21 +70,26 @@ func (s EthCallSpec) IntoProto() (*vegapb.EthCallSpec, error) {
 		argsPBValue = append(argsPBValue, &v)
 	}
 
-	abiPBList := structpb.ListValue{}
-	err := abiPBList.UnmarshalJSON(s.AbiJson)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal abi json: %w", err)
+	normalisers := []*vegapb.Normaliser{}
+	for k, v := range s.Normalisers {
+		n := vegapb.Normaliser{
+			Name:       k,
+			Expression: v,
+		}
+		normalisers = append(normalisers, &n)
 	}
+
+	sort.Slice(normalisers, func(i, j int) bool { return normalisers[i].Name < normalisers[j].Name })
 
 	return &vegapb.EthCallSpec{
 		Address:               s.Address,
-		Abi:                   &abiPBList,
+		Abi:                   string(s.AbiJson),
 		Method:                s.Method,
 		Args:                  argsPBValue,
 		Trigger:               s.Trigger.IntoEthCallTriggerProto(),
 		RequiredConfirmations: s.RequiredConfirmations,
 		Filters:               s.Filters.IntoProto(),
-		Normalisers:           s.Normalisers,
+		Normalisers:           normalisers,
 	}, nil
 }
 
