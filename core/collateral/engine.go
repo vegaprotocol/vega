@@ -2616,7 +2616,7 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 	ret := make([]*types.LedgerMovement, 0, 4)
 	req := &types.TransferRequest{
 		FromAccount: make([]*types.Account, 1),
-		ToAccount:   make([]*types.Account, 1),
+		ToAccount:   []*types.Account{marketInsuranceAcc},
 		Asset:       asset,
 		Type:        types.TransferTypeClearAccount,
 	}
@@ -2624,7 +2624,6 @@ func (e *Engine) clearRemainingLPFees(ctx context.Context, mktID, asset string, 
 	lpFeeAcc, exists := e.accs[lpFeeAccID]
 	if exists && !lpFeeAcc.Balance.IsZero() {
 		req.FromAccount[0] = lpFeeAcc
-		req.ToAccount[0] = marketInsuranceAcc
 		req.Amount = lpFeeAcc.Balance.Clone()
 		lpFeeLE, err := e.getLedgerEntries(ctx, req)
 		if err != nil {
