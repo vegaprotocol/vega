@@ -16,6 +16,7 @@
 
 ### 🐛 Fixes
 
+- [8719](https://github.com/vegaprotocol/vega/issues/8719) - Do not try to resolve iceberg order if it's not set
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
