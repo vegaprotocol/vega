@@ -992,6 +992,13 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 				if ethOracle.Trigger == nil {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
 				}
+
+				if ethOracle.Trigger != nil &&
+					ethOracle.Trigger.GetTimeTrigger() != nil &&
+					ethOracle.Trigger.GetTimeTrigger().Initial == nil &&
+					ethOracle.Trigger.GetTimeTrigger().Every == nil {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger.timetrigger.(initial|every)", parentProperty, name), ErrIsRequired)
+				}
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
