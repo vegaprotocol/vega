@@ -57,10 +57,8 @@ $$
     DECLARE
         lineage_root bytea;
     BEGIN
-        -- We only need to add the successor market to the lineage table if the market
-        -- proposal for the new market has been accepted, once accepted, all other successor proposals
-        -- will be rejected as markets can only have one parent or successor.
-        IF NEW.state != 'STATE_PENDING' THEN
+        -- market lineage should only be updated if a market moved from opening auction to continuous trading
+        IF OLD.trading_mode != 'TRADING_MODE_OPENING_AUCTION' OR NEW.trading_mode != 'TRADING_MODE_CONTINUOUS' THEN
             RETURN NULL;
         END IF;
 

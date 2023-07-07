@@ -1000,10 +1000,18 @@ func testMarketLineageCreated(t *testing.T) {
 
 		block = source.getNextBlock(t, ctx)
 		parentMarket.State = entities.MarketStatePending
+		parentMarket.TradingMode = entities.MarketTradingModeOpeningAuction
 		parentMarket.VegaTime = block.VegaTime
-
 		err = md.Upsert(ctx, &parentMarket)
 		require.NoError(t, err)
+
+		block = source.getNextBlock(t, ctx)
+		parentMarket.State = entities.MarketStateActive
+		parentMarket.TradingMode = entities.MarketTradingModeContinuous
+		parentMarket.VegaTime = block.VegaTime
+		err = md.Upsert(ctx, &parentMarket)
+		require.NoError(t, err)
+
 		var marketID, parentMarketID, rootID entities.MarketID
 		err = conn.QueryRow(ctx,
 			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
@@ -1028,6 +1036,15 @@ func testMarketLineageCreated(t *testing.T) {
 
 		block = source.getNextBlock(t, ctx)
 		successorMarketA.State = entities.MarketStatePending
+		successorMarketA.TradingMode = entities.MarketTradingModeOpeningAuction
+		successorMarketA.VegaTime = block.VegaTime
+		err = md.Upsert(ctx, &successorMarketA)
+		require.NoError(t, err)
+
+		block = source.getNextBlock(t, ctx)
+		successorMarketA.State = entities.MarketStateActive
+		successorMarketA.TradingMode = entities.MarketTradingModeContinuous
+		successorMarketA.VegaTime = block.VegaTime
 		err = md.Upsert(ctx, &successorMarketA)
 		require.NoError(t, err)
 		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
@@ -1055,9 +1072,17 @@ func testMarketLineageCreated(t *testing.T) {
 
 		block = source.getNextBlock(t, ctx)
 		successorMarketB.State = entities.MarketStatePending
+		successorMarketB.TradingMode = entities.MarketTradingModeOpeningAuction
+		successorMarketB.VegaTime = block.VegaTime
 		err = md.Upsert(ctx, &successorMarketB)
 		require.NoError(t, err)
 		// proposed market successor has been accepted and is pending, so we should now have a lineage record pointing to the parent
+		block = source.getNextBlock(t, ctx)
+		successorMarketB.State = entities.MarketStateActive
+		successorMarketB.TradingMode = entities.MarketTradingModeContinuous
+		successorMarketB.VegaTime = block.VegaTime
+		err = md.Upsert(ctx, &successorMarketB)
+		require.NoError(t, err)
 		var marketID, parentMarketID, rootID entities.MarketID
 		err = conn.QueryRow(ctx,
 			`select market_id, parent_market_id, root_id from market_lineage where market_id = $1`,
@@ -1091,7 +1116,7 @@ func testListSuccessorMarkets(t *testing.T) {
 			},
 		},
 		{
-			Market: markets[8],
+			Market: markets[9],
 		},
 	}
 
@@ -1133,8 +1158,8 @@ func testListSuccessorMarkets(t *testing.T) {
 		).Encode()
 		wantEndCursor := entities.NewCursor(
 			entities.MarketCursor{
-				VegaTime: markets[8].VegaTime,
-				ID:       markets[8].ID,
+				VegaTime: markets[9].VegaTime,
+				ID:       markets[9].ID,
 			}.String(),
 		).Encode()
 		assert.Equal(t, entities.PageInfo{
@@ -1317,44 +1342,59 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 	}
 
 	markets := []struct {
-		market entities.Market
-		state  entities.MarketState
+		market      entities.Market
+		state       entities.MarketState
+		tradingMode entities.MarketTradingMode
 	}{
 		{
-			market: parentMarket,
-			state:  entities.MarketStateProposed,
+			market:      parentMarket,
+			state:       entities.MarketStateProposed,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
-			market: parentMarket,
-			state:  entities.MarketStatePending,
+			market:      parentMarket,
+			state:       entities.MarketStatePending,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
-			market: parentMarket,
-			state:  entities.MarketStateActive,
+			market:      parentMarket,
+			state:       entities.MarketStateActive,
+			tradingMode: entities.MarketTradingModeContinuous,
 		},
 		{
-			market: successorMarketA,
-			state:  entities.MarketStateProposed,
+			market:      successorMarketA,
+			state:       entities.MarketStateProposed,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
-			market: successorMarketA,
-			state:  entities.MarketStatePending,
+			market:      successorMarketA,
+			state:       entities.MarketStatePending,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
-			market: parentMarket,
-			state:  entities.MarketStateSettled,
+			market:      parentMarket,
+			state:       entities.MarketStateSettled,
+			tradingMode: entities.MarketTradingModeNoTrading,
 		},
 		{
-			market: successorMarketA,
-			state:  entities.MarketStateActive,
+			market:      successorMarketA,
+			state:       entities.MarketStateActive,
+			tradingMode: entities.MarketTradingModeContinuous,
 		},
 		{
-			market: successorMarketB,
-			state:  entities.MarketStateProposed,
+			market:      successorMarketB,
+			state:       entities.MarketStateProposed,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
-			market: successorMarketB,
-			state:  entities.MarketStatePending,
+			market:      successorMarketB,
+			state:       entities.MarketStatePending,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
+		},
+		{
+			market:      successorMarketB,
+			state:       entities.MarketStateActive,
+			tradingMode: entities.MarketTradingModeContinuous,
 		},
 	}
 
@@ -1364,6 +1404,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		block := source.getNextBlock(t, ctx)
 		u.market.VegaTime = block.VegaTime
 		u.market.State = u.state
+		u.market.TradingMode = u.tradingMode
 		err := md.Upsert(ctx, &u.market)
 		entries = append(entries, u.market)
 		require.NoError(t, err)
