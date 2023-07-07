@@ -17,7 +17,7 @@
 ### 🐛 Fixes
 
 - [8719](https://github.com/vegaprotocol/vega/issues/8719) - Do not try to resolve iceberg order if it's not set
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8721](https://github.com/vegaprotocol/vega/issues/8721) - Fix panic with triggered OCO expiring
 
 
 ## 0.72.1
