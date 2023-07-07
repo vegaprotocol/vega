@@ -293,31 +293,30 @@ func (e *Engine) ReloadConf(cfg Config) {
 // This is copy-pasted from the ethereum engine; at some point this two should probably be folded into one,
 // but just for now keep them separate to ensure we don't break existing functionality.
 type poller struct {
-	ticker                  *time.Ticker
-	done                    chan bool
-	durationBetweenTwoRetry time.Duration
+	done      chan bool
+	pollEvery time.Duration
 }
 
-func newPoller(durationBetweenTwoRetry time.Duration) *poller {
+func newPoller(pollEvery time.Duration) *poller {
 	return &poller{
-		ticker:                  time.NewTicker(durationBetweenTwoRetry),
-		done:                    make(chan bool, 1),
-		durationBetweenTwoRetry: durationBetweenTwoRetry,
+		done:      make(chan bool, 1),
+		pollEvery: pollEvery,
 	}
 }
 
 // Loop starts the poller loop until it's broken, using the Stop method.
 func (s *poller) Loop(fn func()) {
+	ticker := time.NewTicker(s.pollEvery)
 	defer func() {
-		s.ticker.Stop()
-		s.ticker.Reset(s.durationBetweenTwoRetry)
+		ticker.Stop()
+		ticker.Reset(s.pollEvery)
 	}()
 
 	for {
 		select {
 		case <-s.done:
 			return
-		case <-s.ticker.C:
+		case <-ticker.C:
 			fn()
 		}
 	}
