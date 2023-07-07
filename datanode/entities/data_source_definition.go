@@ -1,8 +1,11 @@
 package entities
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/protos/vega"
+
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -59,9 +62,10 @@ func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
 				}
 				ds.ArgsJson = append(ds.ArgsJson, string(jsonArg))
 			}
-			trigger, _ := types.EthCallTriggerFromProto(tp.Trigger)
-			//if err != nil {
-			//}
+			trigger, err := types.EthCallTriggerFromProto(tp.Trigger)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get trigger from proto: %w", err)
+			}
 			ds.Trigger = EthCallTrigger{EthCallTrigger: trigger}
 			ds.RequiredConfirmations = tp.RequiredConfirmations
 			ds.Filters = s.GetFilters()
