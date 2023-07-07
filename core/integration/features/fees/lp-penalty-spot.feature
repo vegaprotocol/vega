@@ -34,7 +34,7 @@ Feature: Penalties for Liquidity providers on spot market
       | party1 | BTC/ETH   | buy  | 5      | 18      | 0                | TYPE_LIMIT | TIF_GTC | party-order11  |
       | party2 | BTC/ETH   | sell | 5      | 25      | 0                | TYPE_LIMIT | TIF_GTC | party-order12  |
 
-Scenario: If a liquidity provider has fraction_of_time_on_book >= market.liquidity.committmentMinTimeFraction, no penalty will be taken from their general account (0044-LIME-013) 
+  Scenario: If a liquidity provider has fraction_of_time_on_book >= market.liquidity.committmentMinTimeFraction, no penalty will be taken from their general account (0044-LIME-013)
 
     Given the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     | reference   |
@@ -57,7 +57,7 @@ Scenario: If a liquidity provider has fraction_of_time_on_book >= market.liquidi
     # penalties are deposited in to the network treasury of the asset
     And the network treasury balance should be "0" for the asset "ETH"
 
-Scenario: If a liquidity provider has fraction_of_time_on_book = 0.3, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 35% of their bond stake, which will be transferred into the network treasury (0044-LIME-014)
+  Scenario: If a liquidity provider has fraction_of_time_on_book = 0.3, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 35% of their bond stake, which will be transferred into the network treasury (0044-LIME-014)
 
     Given the following network parameters are set:
       | name                                        | value |
@@ -98,7 +98,7 @@ Scenario: If a liquidity provider has fraction_of_time_on_book = 0.3, market.liq
     #  TODO: update the balance to 35% of bond stake
     And the network treasury balance should be "175" for the asset "ETH"
     
-Scenario: If a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 35% of their bond stake, which will be transferred into the network treasury (0044-LIME-015)
+  Scenario: If a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.7, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 35% of their bond stake, which will be transferred into the network treasury (0044-LIME-015)
 
     Given the following network parameters are set:
       | name                                        | value |
@@ -133,7 +133,7 @@ Scenario: If a liquidity provider has fraction_of_time_on_book = 0, market.liqui
     #  TODO: update the balance to 60% of bond stake
     And the network treasury balance should be "300" for the asset "ETH"
 
-Scenario: If a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.2, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 20% of their bond stake, which will be transferred into the market's insurance pool (0044-LIME-016)
+  Scenario: If a liquidity provider has fraction_of_time_on_book = 0, market.liquidity.committmentMinTimeFraction = 0.6, market.liquidity.sla.nonPerformanceBondPenaltySlope = 0.2, market.liquidity.sla.nonPerformanceBondPenaltyMax = 0.6 at the end of an epoch then they will forfeit 20% of their bond stake, which will be transferred into the market's insurance pool (0044-LIME-016)
 
     Given the following network parameters are set:
       | name                                        | value |
