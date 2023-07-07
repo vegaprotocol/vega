@@ -66,7 +66,7 @@ message EthCallSpec {
   // Ethereum address of the contract to call.
   string address = 1;
   // The ABI of that contract.
-  google.protobuf.ListValue abi = 2;
+  string abi = 2;
   // Name of the method on the contract to call.
   string method = 3;
   // List of arguments to pass to method call.
@@ -87,7 +87,12 @@ message EthCallSpec {
   // located, for example $[0] indicates the first result. $[1].price would look
   // in the second result returned from the contract for a structure with a key
   // called 'price' and use that if it exists.
-  map<string, string> normalisers = 8;
+  repeated Normaliser normalisers = 8;
+}
+
+message Normaliser {
+  string name = 1;
+  string expression = 2;
 }
 
 // Determines when the contract method should be called.

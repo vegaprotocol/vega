@@ -93,16 +93,8 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 					&vega.DataSourceDefinitionExternal_EthOracle{
 						EthOracle: &vegapb.EthCallSpec{
 							Address: "test-eth-address",
-							Abi: &structpb.ListValue{
-								Values: []*structpb.Value{
-									{
-										Kind: &structpb.Value_NumberValue{
-											NumberValue: float64(5),
-										},
-									},
-								},
-							},
-							Method: "test-method",
+							Abi:     "5",
+							Method:  "test-method",
 							Args: []*structpb.Value{
 								structpb.NewStringValue("test-arg-value"),
 							},
@@ -131,7 +123,7 @@ func TestDataSourceDefinitionGetOracle(t *testing.T) {
 			assert.IsType(t, r, &entities.EthCallSpec{})
 			assert.NotNil(t, r)
 			assert.Equal(t, "test-eth-address", r.Address)
-			assert.Equal(t, []byte{91, 53, 93}, r.Abi)
+			assert.Equal(t, []byte("5"), r.Abi)
 			assert.Equal(t, "test-method", r.Method)
 			assert.Equal(t, []string{"\"test-arg-value\""}, r.ArgsJson)
 			assert.Equal(t, 1, len(r.Filters))
