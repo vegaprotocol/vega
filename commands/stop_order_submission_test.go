@@ -17,7 +17,7 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 	}{
 		{
 			submission: commandspb.StopOrdersSubmission{},
-			errStr:     "must have at least one of rises above or falls bellow",
+			errStr:     "must have at least one of rises above or falls below",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{
@@ -238,7 +238,7 @@ func TestCheckStopOrdersStubmission(t *testing.T) {
 					},
 				},
 			},
-			errStr: "* (falls below and rises above market id must be the same)",
+			errStr: "* (market ID for falls below and rises above must be the same)",
 		},
 		{
 			submission: commandspb.StopOrdersSubmission{

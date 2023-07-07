@@ -277,7 +277,7 @@ type Data struct {
 	BroadcastAt int64 `protobuf:"varint,4,opt,name=broadcast_at,json=broadcastAt,proto3" json:"broadcast_at,omitempty"`
 	// Holds all metadata properties
 	MetaData []*Property `protobuf:"bytes,5,rep,name=meta_data,json=metaData,proto3" json:"meta_data,omitempty"`
-	// Error is the error message if the data could not be sourced.
+	// Error message if the data could not be sourced.
 	Error *string `protobuf:"bytes,6,opt,name=error,proto3,oneof" json:"error,omitempty"`
 }
 

@@ -30,7 +30,7 @@ const (
 	DataSourceSpec_STATUS_UNSPECIFIED DataSourceSpec_Status = 0
 	// STATUS_ACTIVE describes an active data source spec.
 	DataSourceSpec_STATUS_ACTIVE DataSourceSpec_Status = 1
-	// STATUS_DEACTIVATED describes an data source spec that is not listening to
+	// STATUS_DEACTIVATED describes a data source spec that is not listening to
 	// data anymore.
 	DataSourceSpec_STATUS_DEACTIVATED DataSourceSpec_Status = 2
 )
@@ -76,8 +76,8 @@ func (DataSourceSpec_Status) EnumDescriptor() ([]byte, []int) {
 	return file_vega_data_source_proto_rawDescGZIP(), []int{9, 0}
 }
 
-// DataSourceDefinition represents the top level object that deals with data
-// sources. DataSourceDefinition can be external or internal, with whatever
+// Represents the top level object that handles data sources.
+// Data source definition can be external or internal, with whatever
 // number of data sources are defined for each type in the child objects below.
 type DataSourceDefinition struct {
 	state         protoimpl.MessageState
@@ -160,8 +160,7 @@ func (*DataSourceDefinition_Internal) isDataSourceDefinition_SourceType() {}
 
 func (*DataSourceDefinition_External) isDataSourceDefinition_SourceType() {}
 
-// DataSourceSpecConfigurationTime is the internal data source used for emitting
-// timestamps.
+// Internal data source used for emitting timestamps.
 type DataSourceSpecConfigurationTime struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -210,8 +209,8 @@ func (x *DataSourceSpecConfigurationTime) GetConditions() []*v1.Condition {
 	return nil
 }
 
-// DataSourceDefinitionInternal is the top level object used for all internal
-// data sources. It contains one of any of the defined `SourceType` variants.
+// Top level object used for all internal data sources.
+// It contains one of any of the defined source type variants.
 type DataSourceDefinitionInternal struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
