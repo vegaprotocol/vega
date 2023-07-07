@@ -15,6 +15,10 @@ func (r orderSubmissionResolver) Size(_ context.Context, obj *commandspb.OrderSu
 }
 
 func (r orderSubmissionResolver) IcebergOrder(_ context.Context, obj *commandspb.OrderSubmission) (*vega.IcebergOrder, error) {
+	if obj.IcebergOpts == nil {
+		return nil, nil
+	}
+
 	return &vega.IcebergOrder{
 		PeakSize:           obj.IcebergOpts.PeakSize,
 		MinimumVisibleSize: obj.IcebergOpts.MinimumVisibleSize,

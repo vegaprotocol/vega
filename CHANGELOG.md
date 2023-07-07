@@ -16,6 +16,7 @@
 
 ### 🐛 Fixes
 
+- [8719](https://github.com/vegaprotocol/vega/issues/8719) - Do not try to resolve iceberg order if it's not set
 - [](https://github.com/vegaprotocol/vega/issues/xxxx) -
 
 
@@ -107,7 +108,7 @@
 - [8226](https://github.com/vegaprotocol/vega/issues/8226) - Fix auto initialise failure when initialising empty node
 - [8186](https://github.com/vegaprotocol/vega/issues/8186) - Set a close timestamp when closing a market
 - [8206](https://github.com/vegaprotocol/vega/issues/8206) - Add number of decimal places to oracle spec.
-- [8668](https://github.com/vegaprotocol/vega/issues/8668) - Market data migration scripts fix 
+- [8668](https://github.com/vegaprotocol/vega/issues/8668) - Market data migration scripts fix
 - [8225](https://github.com/vegaprotocol/vega/issues/8225) - Better error handling in `ListEntities`
 - [8222](https://github.com/vegaprotocol/vega/issues/8222) - `EstimatePositions` does not correctly validate data.
 - [8357](https://github.com/vegaprotocol/vega/issues/8357) - Load network history segments into staging area prior to load if not already present
