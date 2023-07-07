@@ -1116,7 +1116,7 @@ func testListSuccessorMarkets(t *testing.T) {
 			},
 		},
 		{
-			Market: markets[8],
+			Market: markets[9],
 		},
 	}
 
@@ -1158,8 +1158,8 @@ func testListSuccessorMarkets(t *testing.T) {
 		).Encode()
 		wantEndCursor := entities.NewCursor(
 			entities.MarketCursor{
-				VegaTime: markets[8].VegaTime,
-				ID:       markets[8].ID,
+				VegaTime: markets[9].VegaTime,
+				ID:       markets[9].ID,
 			}.String(),
 		).Encode()
 		assert.Equal(t, entities.PageInfo{
@@ -1349,7 +1349,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		{
 			market:      parentMarket,
 			state:       entities.MarketStateProposed,
-			tradingMode: entities.MarketTradingModeUnspecified,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
 			market:      parentMarket,
@@ -1364,7 +1364,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		{
 			market:      successorMarketA,
 			state:       entities.MarketStateProposed,
-			tradingMode: entities.MarketTradingModeUnspecified,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
 			market:      successorMarketA,
@@ -1384,7 +1384,7 @@ func setupSuccessorMarkets(t *testing.T, ctx context.Context) (*sqlstore.Markets
 		{
 			market:      successorMarketB,
 			state:       entities.MarketStateProposed,
-			tradingMode: entities.MarketTradingModeUnspecified,
+			tradingMode: entities.MarketTradingModeOpeningAuction,
 		},
 		{
 			market:      successorMarketB,
