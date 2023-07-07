@@ -263,6 +263,8 @@ message ProposalTerms {
     NewTransfer new_transfer = 109;
     // Cancel a governance transfer.
     CancelTransfer cancel_transfer = 110;
+    // Proposal change for updating the state of a market.
+    UpdateMarketState update_market_state = 111;
   }
 }
 
@@ -452,6 +454,8 @@ enum ProposalError {
   PROPOSAL_ERROR_GOVERNANCE_TRANSFER_PROPOSAL_INVALID = 50;
   // Proposal for cancelling transfer is invalid, check proposal ID
   PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID = 51;
+  // Proposal for updating market state is invalid
+  PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE = 52;
 }
 
 // Governance vote
@@ -484,6 +488,31 @@ message Vote {
   string total_governance_token_weight = 6;
   // The weight of the vote compared to the total amount of equity-like share on the market.
   string total_equity_like_share_weight = 7;
+}
+
+message UpdateMarketState {
+  // Configuration for governance-initiated change of a market's state
+  UpdateMarketStateConfiguration changes = 1;
+}
+
+enum MarketStateUpdateType {
+  // Default value, always invalid
+  MARKET_STATE_UPDATE_TYPE_UNSPECIFIED = 0;
+  // Request to terminate a market via governance
+  MARKET_STATE_UPDATE_TYPE_TERMINATE = 1;
+  // Request to suspend a market via governance
+  MARKET_STATE_UPDATE_TYPE_SUSPEND = 2;
+  // Request to resume a market via governance
+  MARKET_STATE_UPDATE_TYPE_RESUME = 3;
+}
+
+message UpdateMarketStateConfiguration {
+  // ID of the market
+  string market_id = 1;
+  // Type of the market update
+  MarketStateUpdateType update_type = 2;
+  // Settlement price, relevant only for market termination for futures markets
+  optional string price = 3;
 }
 
 message CancelTransfer {

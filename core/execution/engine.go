@@ -15,6 +15,7 @@ package execution
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"time"
 
@@ -438,6 +439,38 @@ func (e *Engine) submitOrRestoreMarket(ctx context.Context, marketConfig *types.
 	mkt := e.markets[marketConfig.ID]
 
 	e.publishNewMarketInfos(ctx, mkt)
+	return nil
+}
+
+func (e *Engine) VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error {
+	if !e.MarketExists(changes.MarketID) {
+		return ErrMarketDoesNotExist
+	}
+	// futures market
+	if market, ok := e.markets[changes.MarketID]; ok {
+		if changes.SettlementPrice == nil && changes.UpdateType == types.MarketStateUpdateTypeTerminate {
+			return fmt.Errorf("missing settlement price for governance initiated futures market termination")
+		}
+		state := market.GetMarketState()
+		if state == types.MarketStateCancelled || state == types.MarketStateClosed || state == types.MarketStateRejected || state == types.MarketStateSettled || state == types.MarketStateTradingTerminated {
+			return fmt.Errorf("invalid state update request. Market is already in a terminal state")
+		}
+		if changes.UpdateType == types.MarketStateUpdateTypeResume && state != types.MarketStateSuspendedViaGovernance {
+			return fmt.Errorf("invalid state update request. Market for resume is not suspended")
+		}
+		return nil
+	}
+	return nil
+}
+
+func (e *Engine) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	// futures market
+	if market, ok := e.markets[changes.MarketID]; ok {
+		return market.UpdateMarketState(ctx, changes)
+	}
+	// market, ok := e.spotMmarkets[changes.MarketID]; ok
+	// return market.UpdateMarketState(ctx, changes)
+
 	return nil
 }
 

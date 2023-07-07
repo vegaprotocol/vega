@@ -113,6 +113,8 @@ const (
 	ProposalErrorSpotNotEnabled ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED
 	// ProposalErrorInvalidSuccessorMarket indicates the successor market parameters were invalid.
 	ProposalErrorInvalidSuccessorMarket ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET
+	// ProposalErrorInvalidStateUpdate indicates that a market state update has failed.
+	ProposalErrorInvalidStateUpdate ProposalError = vegapb.ProposalError_PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE
 )
 
 type ProposalState = vegapb.Proposal_State
@@ -149,6 +151,7 @@ const (
 	ProposalTermsTypeNewSpotMarket
 	ProposalTermsTypeUpdateSpotMarket
 	ProposalTermsTypeCancelTransfer
+	ProposalTermsTypeUpdateMarketState
 )
 
 type ProposalSubmission struct {
@@ -218,6 +221,15 @@ type Proposal struct {
 	RequiredLPParticipation num.Decimal
 }
 
+func (p *Proposal) IsMarketStateUpdate() bool {
+	switch p.Terms.Change.(type) {
+	case *ProposalTermsUpdateMarketState:
+		return true
+	default:
+		return false
+	}
+}
+
 func (p *Proposal) IsMarketUpdate() bool {
 	switch p.Terms.Change.(type) {
 	case *ProposalTermsUpdateMarket:
@@ -240,6 +252,15 @@ func (p *Proposal) MarketUpdate() *UpdateMarket {
 	switch terms := p.Terms.Change.(type) {
 	case *ProposalTermsUpdateMarket:
 		return terms.UpdateMarket
+	default:
+		return nil
+	}
+}
+
+func (p *Proposal) UpdateMarketState() *UpdateMarketState {
+	switch terms := p.Terms.Change.(type) {
+	case *ProposalTermsUpdateMarketState:
+		return terms.UpdateMarketState
 	default:
 		return nil
 	}
@@ -492,6 +513,8 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		r.Change = ch
 	case *vegapb.ProposalTerms_UpdateSpotMarket:
 		r.Change = ch
+	case *vegapb.ProposalTerms_UpdateMarketState:
+		r.Change = ch
 	}
 	return r
 }
@@ -525,6 +548,15 @@ func (p *ProposalTerms) GetCancelTransfer() *CancelTransfer {
 	switch c := p.Change.(type) {
 	case *ProposalTermsCancelTransfer:
 		return c.CancelTransfer
+	default:
+		return nil
+	}
+}
+
+func (p *ProposalTerms) GetMarketStateUpdate() *UpdateMarketState {
+	switch c := p.Change.(type) {
+	case *ProposalTermsUpdateMarketState:
+		return c.UpdateMarketState
 	default:
 		return nil
 	}
@@ -629,6 +661,8 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 			change, err = NewNewTransferFromProto(ch)
 		case *vegapb.ProposalTerms_CancelTransfer:
 			change, err = NewCancelGovernanceTransferFromProto(ch)
+		case *vegapb.ProposalTerms_UpdateMarketState:
+			change, err = NewTerminateMarketFromProto(ch)
 		}
 	}
 	if err != nil {

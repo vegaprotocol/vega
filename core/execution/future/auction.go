@@ -31,6 +31,12 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time, idgen common.I
 		return
 	}
 
+	if m.mkt.State == types.MarketStateSuspendedViaGovernance {
+		if endTS := m.as.ExpiresAt(); endTS != nil && endTS.Before(now) {
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+		}
+	}
+
 	// here we are in auction, we'll want to check
 	// the triggers if we are leaving
 	defer func() {

@@ -1325,6 +1325,18 @@ func newMarketTerms(termFilter *types.DataSourceSpecFilter, termBinding *types.D
 	}
 }
 
+func newUpdateMarketState(tp types.MarketStateUpdateType, marketID string, price *num.Uint) *types.ProposalTermsUpdateMarketState {
+	return &types.ProposalTermsUpdateMarketState{
+		UpdateMarketState: &types.UpdateMarketState{
+			Changes: &types.MarketStateUpdateConfiguration{
+				MarketID:        marketID,
+				SettlementPrice: price,
+				UpdateType:      tp,
+			},
+		},
+	}
+}
+
 func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 	return &types.ProposalTermsNewSpotMarket{
 		NewSpotMarket: &types.NewSpotMarket{
@@ -1521,6 +1533,25 @@ func (e *tstEngine) newProposalForSuccessorMarket(partyID string, now time.Time,
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newMarketTerms(termFilter, termBinding, termExt, successor),
+		},
+		Rationale: &types.ProposalRationale{
+			Description: "some description",
+		},
+	}
+}
+
+func (e *tstEngine) newProposalForUpdateMarketState(partyID string, now time.Time, updateType types.MarketStateUpdateType, price *num.Uint) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newUpdateMarketState(updateType, vgrand.RandomStr(5), price),
 		},
 		Rationale: &types.ProposalRationale{
 			Description: "some description",

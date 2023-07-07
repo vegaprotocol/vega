@@ -49,7 +49,10 @@ type ToEnact struct {
 	f                 *ToEnactFreeform
 	t                 *ToEnactTransfer
 	c                 *ToEnactCancelTransfer
+	msu               *ToEnactMarketStateUpdate
 }
+
+type ToEnactMarketStateUpdate struct{}
 
 type ToEnactTransfer struct{}
 
@@ -65,6 +68,10 @@ type ToEnactNewSpotMarket struct{}
 
 // ToEnactFreeform there is nothing to enact with a freeform proposal.
 type ToEnactFreeform struct{}
+
+func (t ToEnact) IsMarketStateUpdate() bool {
+	return t.msu != nil
+}
 
 func (t ToEnact) IsCancelTransfer() bool {
 	return t.c != nil
@@ -105,6 +112,10 @@ func (t ToEnact) IsNewAssetDetails() bool {
 
 func (t ToEnact) IsFreeform() bool {
 	return t.f != nil
+}
+
+func (t *ToEnact) MarketStateUpdate() *ToEnactMarketStateUpdate {
+	return t.msu
 }
 
 func (t *ToEnact) NewTransfer() *ToEnactTransfer {

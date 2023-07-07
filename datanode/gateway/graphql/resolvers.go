@@ -281,6 +281,10 @@ func (r *VegaResolverRoot) CancelTransfer() CancelTransferResolver {
 	return (*cancelTransferResolver)(r)
 }
 
+func (r *VegaResolverRoot) UpdateMarketState() UpdateMarketStateResolver {
+	return (*updateMarketStateResolver)(r)
+}
+
 func (r *VegaResolverRoot) OracleSpec() OracleSpecResolver {
 	return (*oracleSpecResolver)(r)
 }

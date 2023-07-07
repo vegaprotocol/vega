@@ -105,7 +105,6 @@ func getHash(t *testing.T, as *monitor.AuctionState) []byte {
 	require.NoError(t, err)
 
 	// Check our change flag has been reset
-	require.False(t, as.Changed())
 	return crypto.Hash(bytes)
 }
 

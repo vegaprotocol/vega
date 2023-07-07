@@ -88,6 +88,8 @@ type ExecutionEngine interface {
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, deterministicID string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
 	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string, deterministicID string) error
+	VerifyUpdateMarketState(changes *types.MarketStateUpdateConfiguration) error
+	UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error
 	Hash() []byte
 
 	// End of block

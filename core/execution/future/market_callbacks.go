@@ -101,6 +101,7 @@ func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context
 func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {
 	m.pMonitor.SetMinDuration(d)
 	m.lMonitor.SetMinDuration(d)
+	m.minDuration = d
 	evt := m.as.UpdateMinDuration(ctx, d)
 	// we were in an auction, and the duration of the auction was updated
 	if evt != nil {

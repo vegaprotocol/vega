@@ -147,6 +147,8 @@ type Market struct {
 	maxStopOrdersPerParties *num.Uint
 	stopOrders              *stoporders.Pool
 	expiringStopOrders      *common.ExpiringOrders
+
+	minDuration time.Duration
 }
 
 // NewMarket creates a new market using the market framework configuration and creates underlying engines.
@@ -868,7 +870,7 @@ func (m *Market) closeCancelledMarket(ctx context.Context) error {
 	return nil
 }
 
-func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
+func (m *Market) closeMarket(ctx context.Context, t time.Time, finalState types.MarketState) error {
 	positions, err := m.settlement.Settle(t, m.assetDP)
 	if err != nil {
 		m.log.Error("Failed to get settle positions on market closed",
@@ -896,7 +898,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// final distribution of liquidity fees
 	m.distributeLiquidityFees(ctx)
 
-	err = m.cleanMarketWithState(ctx, types.MarketStateSettled)
+	err = m.cleanMarketWithState(ctx, finalState)
 	if err != nil {
 		return err
 	}
@@ -997,6 +999,59 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 	return parked
 }
 
+func (m *Market) uncrossOrderAtAuctionEnd(ctx context.Context) {
+	if !m.as.InAuction() || m.as.IsOpeningAuction() {
+		return
+	}
+	m.uncrossOnLeaveAuction(ctx)
+}
+
+func (m *Market) UpdateMarketState(ctx context.Context, changes *types.MarketStateUpdateConfiguration) error {
+	if changes.UpdateType == types.MarketStateUpdateTypeTerminate {
+		m.uncrossOrderAtAuctionEnd(ctx)
+		// terminate and settle
+		m.tradingTerminatedWithFinalState(ctx, types.MarketStateClosed, num.UintZero().Mul(changes.SettlementPrice, m.priceFactor))
+	} else if changes.UpdateType == types.MarketStateUpdateTypeSuspend {
+		m.mkt.State = types.MarketStateSuspendedViaGovernance
+		m.mkt.TradingMode = types.MarketTradingModeSuspendedViaGovernance
+		if m.as.InAuction() {
+			m.as.ExtendAuctionSuspension(types.AuctionDuration{Duration: int64(m.minDuration)})
+			evt := m.as.AuctionExtended(ctx, m.timeService.GetTimeNow())
+			if evt != nil {
+				m.broker.Send(evt)
+			}
+		} else {
+			m.as.StartGovernanceSuspensionAuction(m.timeService.GetTimeNow())
+			m.enterAuction(ctx)
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		}
+	} else if changes.UpdateType == types.MarketStateUpdateTypeResume && m.mkt.State == types.MarketStateSuspendedViaGovernance {
+		if m.as.GetState().Trigger == types.AuctionTriggerGovernanceSuspension && m.as.GetState().Extension == types.AuctionTriggerUnspecified {
+			m.as.EndGovernanceSuspensionAuction()
+			m.leaveAuction(ctx, m.timeService.GetTimeNow())
+		} else {
+			if m.as.GetState().Trigger == types.AuctionTriggerOpening {
+				m.mkt.State = types.MarketStatePending
+				m.mkt.TradingMode = types.MarketTradingModeOpeningAuction
+			} else {
+				m.mkt.State = types.MarketStateSuspended
+				m.mkt.TradingMode = types.MarketTradingModeMonitoringAuction
+			}
+			_, blockHash := vegacontext.TraceIDFromContext(ctx)
+			// make deterministic ID for this market, concatenate
+			// the block hash and the market ID
+			m.idgen = idgeneration.New(blockHash + crypto.HashStrToHex(m.GetID()))
+			// and we call next ID on this directly just so we don't have an ID which have
+			// a different from others, we basically burn the first ID.
+			_ = m.idgen.NextID()
+			defer func() { m.idgen = nil }()
+			m.checkAuction(ctx, m.timeService.GetTimeNow(), m.idgen)
+			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		}
+	}
+	return nil
+}
+
 // EnterAuction : Prepare the order book to be run as an auction.
 func (m *Market) enterAuction(ctx context.Context) {
 	// Change market type to auction
@@ -1033,6 +1088,37 @@ func (m *Market) enterAuction(ctx context.Context) {
 	}
 }
 
+func (m *Market) uncrossOnLeaveAuction(ctx context.Context) ([]*types.OrderConfirmation, []*types.Order) {
+	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.timeService.GetTimeNow())
+	if err != nil {
+		m.log.Error("Error leaving auction", logging.Error(err))
+	}
+
+	// Process each confirmation & apply fee calculations to each trade
+	evts := make([]events.Event, 0, len(uncrossedOrders))
+	for _, uncrossedOrder := range uncrossedOrders {
+		// handle fees first
+		err := m.applyFees(ctx, uncrossedOrder.Order, uncrossedOrder.Trades)
+		if err != nil {
+			// @TODO this ought to be an event
+			m.log.Error("Unable to apply fees to order",
+				logging.String("OrderID", uncrossedOrder.Order.ID))
+		}
+
+		// then do the confirmation
+		m.handleConfirmation(ctx, uncrossedOrder)
+
+		if uncrossedOrder.Order.Remaining == 0 {
+			uncrossedOrder.Order.Status = types.OrderStatusFilled
+		}
+		evts = append(evts, events.NewOrderEvent(ctx, uncrossedOrder.Order))
+	}
+
+	// send order events in a single batch, it's more efficient
+	m.broker.SendBatch(evts)
+	return uncrossedOrders, ordersToCancel
+}
+
 // OnOpeningAuctionFirstUncrossingPrice is triggered when the opening auction sees an uncrossing price for the first time and emits
 // an event to the state variable engine.
 func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
@@ -1066,35 +1152,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 		}
 	}()
 
-	// Change market type to continuous trading
-	uncrossedOrders, ordersToCancel, err := m.matching.LeaveAuction(m.timeService.GetTimeNow())
-	if err != nil {
-		m.log.Error("Error leaving auction", logging.Error(err))
-	}
-
-	// Process each confirmation & apply fee calculations to each trade
-	evts := make([]events.Event, 0, len(uncrossedOrders))
-	for _, uncrossedOrder := range uncrossedOrders {
-		// handle fees first
-		err := m.applyFees(ctx, uncrossedOrder.Order, uncrossedOrder.Trades)
-		if err != nil {
-			// @TODO this ought to be an event
-			m.log.Error("Unable to apply fees to order",
-				logging.String("OrderID", uncrossedOrder.Order.ID))
-		}
-
-		// then do the confirmation
-		m.handleConfirmation(ctx, uncrossedOrder)
-
-		if uncrossedOrder.Order.Remaining == 0 {
-			uncrossedOrder.Order.Status = types.OrderStatusFilled
-		}
-		evts = append(evts, events.NewOrderEvent(ctx, uncrossedOrder.Order))
-	}
-
-	// send order events in a single batch, it's more efficient
-	m.broker.SendBatch(evts)
-
+	uncrossedOrders, ordersToCancel := m.uncrossOnLeaveAuction(ctx)
 	// will hold all orders which have been updated by the uncrossing
 	// or which were cancelled at end of auction
 	updatedOrders := []*types.Order{}
@@ -3699,6 +3757,14 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 }
 
 func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
+	targetState := types.MarketStateSettled
+	if m.mkt.State == types.MarketStatePending {
+		targetState = types.MarketStateCancelled
+	}
+	m.tradingTerminatedWithFinalState(ctx, targetState, nil)
+}
+
+func (m *Market) tradingTerminatedWithFinalState(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -3708,7 +3774,8 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	}
 
 	m.tradableInstrument.Instrument.Product.UnsubscribeTradingTerminated(ctx)
-	if m.mkt.State != types.MarketStatePending {
+
+	if finalState != types.MarketStateCancelled {
 		// we're either going to set state to trading terminated
 		// or we'll be performing the final settlement (setting market status to settled)
 		// in both cases, we want to MTM any pending trades
@@ -3727,9 +3794,17 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.mkt.TradingMode = types.MarketTradingModeNoTrading
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		if m.settlementDataInMarket != nil {
+		var err error
+		if settlementDataInAsset != nil {
+			m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
+		} else if m.settlementDataInMarket != nil {
 			// because we need to be able to perform the MTM settlement, only update market state now
-			m.settlementDataWithLock(ctx)
+			settlementDataInAsset, err = m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
+			if err != nil {
+				m.log.Error(err.Error())
+			} else {
+				m.settlementDataWithLock(ctx, finalState, settlementDataInAsset)
+			}
 		} else {
 			m.log.Debug("no settlement data", logging.MarketID(m.GetID()))
 		}
@@ -3755,26 +3830,26 @@ func (m *Market) settlementData(ctx context.Context, settlementData *num.Numeric
 	defer m.mu.Unlock()
 
 	m.settlementDataInMarket = settlementData
-	m.settlementDataWithLock(ctx)
+	settlementDataInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
+	if err != nil {
+		m.log.Error(err.Error())
+		return
+	}
+	m.settlementDataWithLock(ctx, types.MarketStateSettled, settlementDataInAsset)
 }
 
 // NB this must be called with the lock already acquired.
-func (m *Market) settlementDataWithLock(ctx context.Context) {
+func (m *Market) settlementDataWithLock(ctx context.Context, finalState types.MarketState, settlementDataInAsset *num.Uint) {
 	if m.closed {
 		return
 	}
 
-	if m.mkt.State == types.MarketStateTradingTerminated && m.settlementDataInMarket != nil {
-		err := m.closeMarket(ctx, m.timeService.GetTimeNow())
+	if m.mkt.State == types.MarketStateTradingTerminated && settlementDataInAsset != nil {
+		err := m.closeMarket(ctx, m.timeService.GetTimeNow(), finalState)
 		if err != nil {
 			m.log.Error("could not close market", logging.Error(err))
 		}
-		m.closed = m.mkt.State == types.MarketStateSettled
-		settlementDataInAsset, err := m.tradableInstrument.Instrument.Product.ScaleSettlementDataToDecimalPlaces(m.settlementDataInMarket, m.assetDP)
-		if err != nil {
-			m.log.Error(err.Error())
-			return
-		}
+		m.closed = m.mkt.State == finalState
 
 		// mark price should be updated here
 		if settlementDataInAsset != nil {

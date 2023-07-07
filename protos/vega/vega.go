@@ -24,6 +24,7 @@ func (UpdateNetworkParameter) IsProposalChange()                          {}
 func (NewFreeform) IsProposalChange()                                     {}
 func (CancelTransfer) IsProposalChange()                                  {}
 func (NewTransfer) IsProposalChange()                                     {}
+func (UpdateMarketState) IsProposalChange()                               {}
 func (NewSpotMarket) IsProposalChange()                                   {}
 func (UpdateSpotMarket) IsProposalChange()                                {}
 func (LogNormalRiskModel) IsRiskModel()                                   {}

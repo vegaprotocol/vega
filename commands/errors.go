@@ -47,6 +47,7 @@ var (
 	ErrMustHaveAStopOrderTrigger                   = errors.New("must have a stop order trigger")
 	ErrFallsBelowAndRiseAboveMarketIDMustBeTheSame = errors.New("falls below and rises above market id must be the same")
 	ErrTrailingPercentOffsetMinimalIncrementMustBe = errors.New("trailing percent offset minimal increment must be >= 0.001")
+	ErrMustBeEmpty                                 = errors.New("must be empty")
 )
 
 type Errors map[string][]error

@@ -73,6 +73,8 @@ func (r *proposalTermsResolver) Change(ctx context.Context, obj *types.ProposalT
 		return obj.GetNewSpotMarket(), nil
 	case *types.ProposalTerms_UpdateSpotMarket:
 		return obj.GetUpdateSpotMarket(), nil
+	case *types.ProposalTerms_UpdateMarketState:
+		return obj.GetUpdateMarketState(), nil
 	default:
 		return nil, ErrUnsupportedProposalTermsChanges
 	}

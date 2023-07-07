@@ -232,7 +232,7 @@ func (m *Markets) GetAllPaged(ctx context.Context, marketID string, pagination e
 
 	settledClause := ""
 	if !includeSettled {
-		settledClause = " AND state != 'STATE_SETTLED'"
+		settledClause = " AND state != 'STATE_SETTLED' AND state != 'STATE_CLOSED'"
 	}
 
 	query := fmt.Sprintf(`%s
