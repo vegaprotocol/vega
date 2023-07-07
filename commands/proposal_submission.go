@@ -978,16 +978,21 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 				}
 
 				if len(ethOracle.Abi) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsNotValidEthereumAbi)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.abi", parentProperty, name), ErrIsRequired)
 				}
 
 				if len(strings.TrimSpace(ethOracle.Method)) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsNotValidEthereumMethodName)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.method", parentProperty, name), ErrIsRequired)
 				}
 
 				if len(ethOracle.Normalisers) == 0 {
-					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrNoEthereumOracleNormalisers)
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.normalisers", parentProperty, name), ErrIsRequired)
 				}
+
+				if ethOracle.Trigger == nil {
+					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
+				}
+
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}
