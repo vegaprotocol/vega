@@ -17,6 +17,7 @@
 ### 🐛 Fixes
 
 - [8709](https://github.com/vegaprotocol/vega/issues/8709) - Fix stop order enum in data node.
+- [8713](https://github.com/vegaprotocol/vega/issues/8713) - Wallet name with upper-case letter is allowed, again
 
 
 ## 0.72.0
