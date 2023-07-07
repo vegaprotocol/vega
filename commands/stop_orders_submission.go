@@ -98,7 +98,7 @@ func checkStopOrderSetup(
 				} else if poffset.LessThanOrEqual(num.DecimalZero()) || poffset.GreaterThanOrEqual(num.DecimalOne()) {
 					errs.AddForProperty(fmt.Sprintf("%s.trigger.trailing_percent_offset", fieldName), ErrMustBeWithinRange01)
 				} else if !poffset.Mod(num.MustDecimalFromString("0.001")).Equal(num.DecimalZero()) {
-					errs.AddForProperty(fmt.Sprintf("%s.trigger.trailing_percent_offset", fieldName), ErrTrailingPercentOffsetMinimalIncrementMustBe)
+					errs.AddForProperty(fmt.Sprintf("%s.trigger.trailing_percent_offset", fieldName), ErrTrailingPercentOffsetMinimalIncrementNotReached)
 				}
 			}
 		}

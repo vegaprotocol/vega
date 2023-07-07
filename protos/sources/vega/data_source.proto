@@ -8,8 +8,8 @@ import "vega/data/v1/spec.proto";
 
 option go_package = "code.vegaprotocol.io/vega/protos/vega";
 
-// DataSourceDefinition represents the top level object that deals with data
-// sources. DataSourceDefinition can be external or internal, with whatever
+// Represents the top level object that handles data sources.
+// Data source definition can be external or internal, with whatever
 // number of data sources are defined for each type in the child objects below.
 message DataSourceDefinition {
   oneof source_type {
@@ -18,15 +18,14 @@ message DataSourceDefinition {
   }
 }
 
-// DataSourceSpecConfigurationTime is the internal data source used for emitting
-// timestamps.
+// Internal data source used for emitting timestamps.
 message DataSourceSpecConfigurationTime {
   // Conditions that the timestamps should meet in order to be considered.
   repeated vega.data.v1.Condition conditions = 1;
 }
 
-// DataSourceDefinitionInternal is the top level object used for all internal
-// data sources. It contains one of any of the defined `SourceType` variants.
+// Top level object used for all internal data sources.
+// It contains one of any of the defined source type variants.
 message DataSourceDefinitionInternal {
   // Types of internal data sources
   oneof source_type {
@@ -138,7 +137,7 @@ message DataSourceSpec {
     STATUS_UNSPECIFIED = 0;
     // STATUS_ACTIVE describes an active data source spec.
     STATUS_ACTIVE = 1;
-    // STATUS_DEACTIVATED describes an data source spec that is not listening to
+    // STATUS_DEACTIVATED describes a data source spec that is not listening to
     // data anymore.
     STATUS_DEACTIVATED = 2;
   }

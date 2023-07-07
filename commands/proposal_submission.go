@@ -959,7 +959,6 @@ func checkDataSourceSpec(spec *vegapb.DataSourceDefinition, name string, parentP
 				if ethOracle.Trigger == nil {
 					errs.AddForProperty(fmt.Sprintf("%s.%s.external.ethoracle.trigger", parentProperty, name), ErrIsRequired)
 				}
-
 			} else {
 				errs.AddForProperty(fmt.Sprintf("%s.%s.external.oracle", parentProperty, name), ErrIsRequired)
 			}

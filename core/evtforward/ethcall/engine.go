@@ -158,7 +158,6 @@ func (e *Engine) CallSpec(ctx context.Context, id string, atBlock uint64) (Resul
 	}
 	e.mu.Unlock()
 
-	// TODO: check if it's safe to share an eth client between threads
 	return call.Call(ctx, e.client, atBlock)
 }
 
