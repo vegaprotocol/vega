@@ -48,10 +48,8 @@ func (s *DataSourceDefinition) GetEthOracle() (*EthCallSpec, error) {
 		switch tp := data.(type) {
 		case *vega.EthCallSpec:
 			ds.Address = tp.Address
-			abi, _ := tp.GetAbi().MarshalJSON()
-			//if err != nil {
-			//}
-			ds.Abi = abi
+			abi := tp.GetAbi()
+			ds.Abi = []byte(abi)
 			ds.Method = tp.Method
 			args := tp.GetArgs()
 			for _, arg := range args {

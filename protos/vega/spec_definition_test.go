@@ -86,16 +86,8 @@ func TestGetFilters(t *testing.T) {
 						SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
 							EthOracle: &vegapb.EthCallSpec{
 								Address: "some-eth-address",
-								Abi: &structpb.ListValue{
-									Values: []*structpb.Value{
-										{
-											Kind: &structpb.Value_StringValue{
-												StringValue: "string-value",
-											},
-										},
-									},
-								},
-								Method: "test-method",
+								Abi:     "{\"string-value\"}",
+								Method:  "test-method",
 								Args: []*structpb.Value{
 									{
 										Kind: &structpb.Value_StringValue{
@@ -309,16 +301,8 @@ func TestSetOracleConfig(t *testing.T) {
 			&vegapb.DataSourceDefinitionExternal_EthOracle{
 				EthOracle: &vegapb.EthCallSpec{
 					Address: "some-eth-address",
-					Abi: &structpb.ListValue{
-						Values: []*structpb.Value{
-							{
-								Kind: &structpb.Value_StringValue{
-									StringValue: "string-value",
-								},
-							},
-						},
-					},
-					Method: "test-method",
+					Abi:     "{\"string-value\"}",
+					Method:  "test-method",
 					Args: []*structpb.Value{
 						{
 							Kind: &structpb.Value_StringValue{
@@ -374,8 +358,7 @@ func TestSetOracleConfig(t *testing.T) {
 
 		eo := udsd.GetExternal().GetEthOracle()
 		assert.Equal(t, "some-eth-address", eo.Address)
-		assert.Equal(t, 1, len(eo.GetAbi().Values))
-		assert.Equal(t, "string-value", eo.GetAbi().Values[0].GetStringValue())
+		assert.Equal(t, "{\"string-value\"}", eo.GetAbi())
 		assert.Equal(t, "test-method", eo.Method)
 		assert.Equal(t, 1, len(eo.GetArgs()))
 		assert.Equal(t, "string-arg", eo.GetArgs()[0].GetStringValue())
@@ -675,16 +658,8 @@ func TestContent(t *testing.T) {
 						SourceType: &vegapb.DataSourceDefinitionExternal_EthOracle{
 							EthOracle: &vegapb.EthCallSpec{
 								Address: "some-eth-address",
-								Abi: &structpb.ListValue{
-									Values: []*structpb.Value{
-										{
-											Kind: &structpb.Value_StringValue{
-												StringValue: "string-value",
-											},
-										},
-									},
-								},
-								Method: "test-method",
+								Abi:     "{\"string-value\"}",
+								Method:  "test-method",
 								Args: []*structpb.Value{
 									{
 										Kind: &structpb.Value_StringValue{
@@ -745,8 +720,7 @@ func TestContent(t *testing.T) {
 			eo, ok := c.(*vegapb.EthCallSpec)
 			assert.True(t, ok)
 			assert.Equal(t, "some-eth-address", eo.Address)
-			assert.Equal(t, 1, len(eo.GetAbi().Values))
-			assert.Equal(t, "string-value", eo.GetAbi().Values[0].GetStringValue())
+			assert.Equal(t, "{\"string-value\"}", eo.GetAbi())
 			assert.Equal(t, "test-method", eo.Method)
 			assert.Equal(t, 1, len(eo.GetArgs()))
 			assert.Equal(t, "string-arg", eo.GetArgs()[0].GetStringValue())

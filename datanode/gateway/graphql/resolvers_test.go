@@ -23,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/structpb"
 
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/datanode/gateway"
@@ -118,14 +117,8 @@ func getTestMarket(termType protoTypes.DataSourceContentType) *protoTypes.Market
 			).SetOracleConfig(
 				&vega.DataSourceDefinitionExternal_EthOracle{
 					EthOracle: &protoTypes.EthCallSpec{
-						Address: "test-address",
-						Abi: &structpb.ListValue{
-							Values: []*structpb.Value{
-								{
-									Kind: structpb.NewNullValue().Kind,
-								},
-							},
-						},
+						Address:               "test-address",
+						Abi:                   "null",
 						Method:                "stake",
 						RequiredConfirmations: uint64(9),
 						Trigger: &protoTypes.EthCallTrigger{
