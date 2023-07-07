@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/core/types"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/libs/num"
+	"code.vegaprotocol.io/vega/protos/vega"
 	protoTypes "code.vegaprotocol.io/vega/protos/vega"
 	vegapb "code.vegaprotocol.io/vega/protos/vega"
 	commandspb "code.vegaprotocol.io/vega/protos/vega/commands/v1"
@@ -137,6 +138,8 @@ func checkProposalChanges(terms *protoTypes.ProposalTerms) Errors {
 		errs.Merge((checkNewTransferChanges(c)))
 	case *protoTypes.ProposalTerms_CancelTransfer:
 		errs.Merge((checkCancelTransferChanges(c)))
+	case *protoTypes.ProposalTerms_UpdateMarketState:
+		errs.Merge((checkMarketUpdateState(c)))
 	default:
 		return errs.FinalAddForProperty("proposal_submission.terms.change", ErrIsNotValid)
 	}
@@ -232,6 +235,36 @@ func checkCancelTransferChanges(change *protoTypes.ProposalTerms_CancelTransfer)
 	changes := change.CancelTransfer.Changes
 	if len(changes.TransferId) == 0 {
 		return errs.FinalAddForProperty("proposal_submission.terms.change.cancel_transfer.changes.transferId", ErrIsRequired)
+	}
+	return errs
+}
+
+func checkMarketUpdateState(change *protoTypes.ProposalTerms_UpdateMarketState) Errors {
+	errs := NewErrors()
+	if change.UpdateMarketState == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state", ErrIsRequired)
+	}
+	if change.UpdateMarketState.Changes == nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes", ErrIsRequired)
+	}
+	changes := change.UpdateMarketState.Changes
+	if len(changes.MarketId) == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.marketId", ErrIsRequired)
+	}
+	if changes.UpdateType == 0 {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.updateType", ErrIsRequired)
+	}
+	// if the update type is not terminate, price must be empty
+	if changes.UpdateType != vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil {
+		return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.price", ErrMustBeEmpty)
+	}
+
+	// if termination and price is provided it must be a valid uint
+	if changes.UpdateType == vega.MarketStateUpdateType_MARKET_STATE_UPDATE_TYPE_TERMINATE && changes.Price != nil && len(*changes.Price) > 0 {
+		n, overflow := num.UintFromString(*changes.Price, 10)
+		if overflow || n.IsNegative() {
+			return errs.FinalAddForProperty("proposal_submission.terms.change.update_market_state.changes.price", ErrIsNotValid)
+		}
 	}
 	return errs
 }

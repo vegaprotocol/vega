@@ -79,6 +79,7 @@ type AuctionState interface {
 	price.AuctionState
 	lmon.AuctionState
 	// are we in auction, and what auction are we in?
+	ExtendAuctionSuspension(delta types.AuctionDuration)
 	InAuction() bool
 	IsOpeningAuction() bool
 	IsPriceAuction() bool

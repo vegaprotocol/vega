@@ -108,6 +108,8 @@ const (
 	MarketTradingModeMonitoringAuction MarketTradingMode = proto.Market_TRADING_MODE_MONITORING_AUCTION
 	// No trading allowed.
 	MarketTradingModeNoTrading MarketTradingMode = proto.Market_TRADING_MODE_NO_TRADING
+	// Special auction mode for market suspended via governance.
+	MarketTradingModeSuspendedViaGovernance MarketTradingMode = proto.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE
 )
 
 type MarketState = proto.Market_State
@@ -135,6 +137,8 @@ const (
 	MarketStateTradingTerminated MarketState = proto.Market_STATE_TRADING_TERMINATED
 	// Settlement triggered and completed as defined by product.
 	MarketStateSettled MarketState = proto.Market_STATE_SETTLED
+	// Market has been suspended via a governance proposal.
+	MarketStateSuspendedViaGovernance MarketState = proto.Market_STATE_SUSPENDED_VIA_GOVERNANCE
 )
 
 type AuctionTrigger = proto.AuctionTrigger
@@ -152,6 +156,8 @@ const (
 	AuctionTriggerLiquidityTargetNotMet AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY_TARGET_NOT_MET
 	// Liquidity monitoring due to being unable to deploy LP orders due to missing best bid or ask.
 	AuctionTriggerUnableToDeployLPOrders AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNABLE_TO_DEPLOY_LP_ORDERS
+	// Governance triggered auction.
+	AuctionTriggerGovernanceSuspension AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_GOVERNANCE_SUSPENSION
 )
 
 type InstrumentMetadata struct {

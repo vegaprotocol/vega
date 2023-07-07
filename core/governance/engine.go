@@ -36,6 +36,7 @@ import (
 var (
 	ErrProposalDoesNotExist                      = errors.New("proposal does not exist")
 	ErrMarketDoesNotExist                        = errors.New("market does not exist")
+	ErrMarketStateUpdateNotAllowed               = errors.New("market state does not allow for state update")
 	ErrMarketNotEnactedYet                       = errors.New("market has been enacted yet")
 	ErrProposalNotOpenForVotes                   = errors.New("proposal is not open for votes")
 	ErrProposalIsDuplicate                       = errors.New("proposal with given ID already exists")
@@ -710,6 +711,9 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getNewSpotMarketProposalParameters(), nil
 	case types.ProposalTermsTypeUpdateSpotMarket:
 		return e.getUpdateSpotMarketProposalParameters(), nil
+	case types.ProposalTermsTypeUpdateMarketState:
+		// reusing market update net params
+		return e.getUpdateMarketStateProposalParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -802,8 +806,14 @@ func (e *Engine) validateOpenProposal(proposal *types.Proposal) (types.ProposalE
 
 	checkProposerToken := true
 
-	if proposal.IsMarketUpdate() {
-		proposalError, err := e.validateMarketUpdate(proposal, params)
+	if proposal.IsMarketUpdate() || proposal.IsMarketStateUpdate() {
+		marketID := ""
+		if proposal.Terms.GetMarketStateUpdate() != nil {
+			marketID = proposal.Terms.GetMarketStateUpdate().Changes.MarketID
+		} else {
+			marketID = proposal.MarketUpdate().MarketID
+		}
+		proposalError, err := e.validateMarketUpdate(proposal.ID, marketID, proposal.Party, params)
 		if err != nil && proposalError != types.ProposalErrorInsufficientEquityLikeShare {
 			return proposalError, err
 		}
@@ -925,29 +935,28 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 	return proposal, nil
 }
 
-func (e *Engine) validateMarketUpdate(proposal *types.Proposal, params *ProposalParameters) (types.ProposalError, error) {
-	updateMarket := proposal.MarketUpdate()
-	if !e.markets.MarketExists(updateMarket.MarketID) {
+func (e *Engine) validateMarketUpdate(ID, marketID, party string, params *ProposalParameters) (types.ProposalError, error) {
+	if !e.markets.MarketExists(marketID) {
 		e.log.Debug("market does not exist",
-			logging.MarketID(updateMarket.MarketID),
-			logging.PartyID(proposal.Party),
-			logging.ProposalID(proposal.ID))
+			logging.MarketID(marketID),
+			logging.PartyID(party),
+			logging.ProposalID(ID))
 		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
 	}
 	for _, p := range e.activeProposals {
-		if p.ID == updateMarket.MarketID {
+		if p.ID == marketID {
 			return types.ProposalErrorInvalidMarket, ErrMarketNotEnactedYet
 		}
 	}
 
-	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(updateMarket.MarketID, proposal.Party)
+	partyELS, _ := e.markets.GetEquityLikeShareForMarketAndParty(marketID, party)
 	if partyELS.LessThan(params.MinEquityLikeShare) {
 		e.log.Debug("proposer have insufficient equity-like share",
 			logging.String("expect-balance", params.MinEquityLikeShare.String()),
 			logging.String("proposer-balance", partyELS.String()),
-			logging.PartyID(proposal.Party),
-			logging.MarketID(updateMarket.MarketID),
-			logging.ProposalID(proposal.ID))
+			logging.PartyID(party),
+			logging.MarketID(marketID),
+			logging.ProposalID(ID))
 		return types.ProposalErrorInsufficientEquityLikeShare,
 			fmt.Errorf("proposer have insufficient equity-like share, expected >= %v got %v", params.MinEquityLikeShare, partyELS)
 	}
@@ -1016,6 +1025,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return e.validateGovernanceTransfer(terms.GetNewTransfer())
 	case types.ProposalTermsTypeCancelTransfer:
 		return e.validateCancelGovernanceTransfer(terms.GetCancelTransfer().Changes.TransferID)
+	case types.ProposalTermsTypeUpdateMarketState:
+		return e.validateMarketUpdateState(terms.GetMarketStateUpdate().Changes)
 	case types.ProposalTermsTypeNewSpotMarket:
 		if !e.markets.SpotsMarketsEnabled() {
 			return types.ProposalErrorSpotNotEnabled, ErrSpotsNotEnabled
@@ -1041,6 +1052,26 @@ func (e *Engine) validateCancelGovernanceTransfer(transferID string) (types.Prop
 	if err := e.banking.VerifyCancelGovernanceTransfer(transferID); err != nil {
 		return types.ProporsalErrorFailedGovernanceTransferCancel, err
 	}
+	return types.ProposalErrorUnspecified, nil
+}
+
+func (e *Engine) validateMarketUpdateState(update *types.MarketStateUpdateConfiguration) (types.ProposalError, error) {
+	marketID := update.MarketID
+	if !e.markets.MarketExists(marketID) {
+		e.log.Debug("market does not exist", logging.MarketID(marketID))
+		return types.ProposalErrorInvalidMarket, ErrMarketDoesNotExist
+	}
+
+	marketState, err := e.markets.GetMarketState(marketID)
+	if err != nil {
+		return types.ProposalErrorInvalidMarket, err
+	}
+
+	// if the market is already terminated or not yet started or settled
+	if marketState == types.MarketStateCancelled || marketState == types.MarketStateClosed || marketState == types.MarketStateTradingTerminated || marketState == types.MarketStateSettled || marketState == types.MarketStateProposed {
+		return types.ProposalErrorInvalidMarket, ErrMarketStateUpdateNotAllowed
+	}
+
 	return types.ProposalErrorUnspecified, nil
 }
 

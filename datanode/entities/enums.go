@@ -336,12 +336,13 @@ func (m *AssetStatus) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type MarketTradingMode vega.Market_TradingMode
 
 const (
-	MarketTradingModeUnspecified       = MarketTradingMode(vega.Market_TRADING_MODE_UNSPECIFIED)
-	MarketTradingModeContinuous        = MarketTradingMode(vega.Market_TRADING_MODE_CONTINUOUS)
-	MarketTradingModeBatchAuction      = MarketTradingMode(vega.Market_TRADING_MODE_BATCH_AUCTION)
-	MarketTradingModeOpeningAuction    = MarketTradingMode(vega.Market_TRADING_MODE_OPENING_AUCTION)
-	MarketTradingModeMonitoringAuction = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
-	MarketTradingModeNoTrading         = MarketTradingMode(vega.Market_TRADING_MODE_NO_TRADING)
+	MarketTradingModeUnspecified            = MarketTradingMode(vega.Market_TRADING_MODE_UNSPECIFIED)
+	MarketTradingModeContinuous             = MarketTradingMode(vega.Market_TRADING_MODE_CONTINUOUS)
+	MarketTradingModeBatchAuction           = MarketTradingMode(vega.Market_TRADING_MODE_BATCH_AUCTION)
+	MarketTradingModeOpeningAuction         = MarketTradingMode(vega.Market_TRADING_MODE_OPENING_AUCTION)
+	MarketTradingModeMonitoringAuction      = MarketTradingMode(vega.Market_TRADING_MODE_MONITORING_AUCTION)
+	MarketTradingModeNoTrading              = MarketTradingMode(vega.Market_TRADING_MODE_NO_TRADING)
+	MarketTradingModeSuspendedViaGovernance = MarketTradingMode(vega.Market_TRADING_MODE_SUSPENDED_VIA_GOVERNANCE)
 )
 
 func (m MarketTradingMode) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -365,16 +366,17 @@ func (m *MarketTradingMode) DecodeText(_ *pgtype.ConnInfo, src []byte) error {
 type MarketState vega.Market_State
 
 const (
-	MarketStateUnspecified       = MarketState(vega.Market_STATE_UNSPECIFIED)
-	MarketStateProposed          = MarketState(vega.Market_STATE_PROPOSED)
-	MarketStateRejected          = MarketState(vega.Market_STATE_REJECTED)
-	MarketStatePending           = MarketState(vega.Market_STATE_PENDING)
-	MarketStateCancelled         = MarketState(vega.Market_STATE_CANCELLED)
-	MarketStateActive            = MarketState(vega.Market_STATE_ACTIVE)
-	MarketStateSuspended         = MarketState(vega.Market_STATE_SUSPENDED)
-	MarketStateClosed            = MarketState(vega.Market_STATE_CLOSED)
-	MarketStateTradingTerminated = MarketState(vega.Market_STATE_TRADING_TERMINATED)
-	MarketStateSettled           = MarketState(vega.Market_STATE_SETTLED)
+	MarketStateUnspecified            = MarketState(vega.Market_STATE_UNSPECIFIED)
+	MarketStateProposed               = MarketState(vega.Market_STATE_PROPOSED)
+	MarketStateRejected               = MarketState(vega.Market_STATE_REJECTED)
+	MarketStatePending                = MarketState(vega.Market_STATE_PENDING)
+	MarketStateCancelled              = MarketState(vega.Market_STATE_CANCELLED)
+	MarketStateActive                 = MarketState(vega.Market_STATE_ACTIVE)
+	MarketStateSuspended              = MarketState(vega.Market_STATE_SUSPENDED)
+	MarketStateClosed                 = MarketState(vega.Market_STATE_CLOSED)
+	MarketStateTradingTerminated      = MarketState(vega.Market_STATE_TRADING_TERMINATED)
+	MarketStateSettled                = MarketState(vega.Market_STATE_SETTLED)
+	MarketStateSuspendedViaGovernance = MarketState(vega.Market_STATE_SUSPENDED_VIA_GOVERNANCE)
 )
 
 func (s MarketState) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
@@ -529,6 +531,7 @@ const (
 	ProposalErrorInvalidSpot                      = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SPOT)
 	ProposalErrorSpotNotEnabled                   = ProposalError(vega.ProposalError_PROPOSAL_ERROR_SPOT_PRODUCT_DISABLED)
 	ProposalErrorInvalidSuccessorMarket           = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_SUCCESSOR_MARKET)
+	ProposalErrorInvalidStateUpdate               = ProposalError(vega.ProposalError_PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE)
 )
 
 func (s ProposalError) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {

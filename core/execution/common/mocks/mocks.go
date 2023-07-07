@@ -995,6 +995,18 @@ func (mr *MockAuctionStateMockRecorder) Duration() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Duration", reflect.TypeOf((*MockAuctionState)(nil).Duration))
 }
 
+// EndGovernanceSuspensionAuction mocks base method.
+func (m *MockAuctionState) EndGovernanceSuspensionAuction() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EndGovernanceSuspensionAuction")
+}
+
+// EndGovernanceSuspensionAuction indicates an expected call of EndGovernanceSuspensionAuction.
+func (mr *MockAuctionStateMockRecorder) EndGovernanceSuspensionAuction() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EndGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).EndGovernanceSuspensionAuction))
+}
+
 // ExpiresAt mocks base method.
 func (m *MockAuctionState) ExpiresAt() *time.Time {
 	m.ctrl.T.Helper()
@@ -1055,6 +1067,18 @@ func (m *MockAuctionState) ExtendAuctionPrice(arg0 types.AuctionDuration) {
 func (mr *MockAuctionStateMockRecorder) ExtendAuctionPrice(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionPrice", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionPrice), arg0)
+}
+
+// ExtendAuctionSuspension mocks base method.
+func (m *MockAuctionState) ExtendAuctionSuspension(arg0 types.AuctionDuration) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ExtendAuctionSuspension", arg0)
+}
+
+// ExtendAuctionSuspension indicates an expected call of ExtendAuctionSuspension.
+func (mr *MockAuctionStateMockRecorder) ExtendAuctionSuspension(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtendAuctionSuspension", reflect.TypeOf((*MockAuctionState)(nil).ExtendAuctionSuspension), arg0)
 }
 
 // ExtensionTrigger mocks base method.
@@ -1249,6 +1273,18 @@ func (m *MockAuctionState) Start() time.Time {
 func (mr *MockAuctionStateMockRecorder) Start() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockAuctionState)(nil).Start))
+}
+
+// StartGovernanceSuspensionAuction mocks base method.
+func (m *MockAuctionState) StartGovernanceSuspensionAuction(arg0 time.Time) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartGovernanceSuspensionAuction", arg0)
+}
+
+// StartGovernanceSuspensionAuction indicates an expected call of StartGovernanceSuspensionAuction.
+func (mr *MockAuctionStateMockRecorder) StartGovernanceSuspensionAuction(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartGovernanceSuspensionAuction", reflect.TypeOf((*MockAuctionState)(nil).StartGovernanceSuspensionAuction), arg0)
 }
 
 // StartLiquidityAuctionNoOrders mocks base method.

@@ -1793,6 +1793,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.enactNewTransfer(ctx, prop)
 		case toEnact.IsCancelTransfer():
 			app.enactCancelTransfer(ctx, prop)
+		case toEnact.IsMarketStateUpdate():
+			app.enactMarketStateUpdate(ctx, prop)
 		default:
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
 			prop.FailUnexpectedly(fmt.Errorf("unknown proposal \"%s\" cannot be enacted", prop.ID))
@@ -1924,6 +1926,20 @@ func (app *App) enactCancelTransfer(ctx context.Context, prop *types.Proposal) {
 		app.log.Error("failed to enact governance transfer cancellation", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
 		prop.FailWithErr(types.ProporsalErrorFailedGovernanceTransferCancel, err)
 		return
+	}
+}
+
+func (app *App) enactMarketStateUpdate(ctx context.Context, prop *types.Proposal) {
+	prop.State = types.ProposalStateEnacted
+	changes := prop.Terms.GetMarketStateUpdate().Changes
+	if err := app.exec.VerifyUpdateMarketState(changes); err != nil {
+		app.log.Error("failed to enact governance market state update", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProposalErrorInvalidStateUpdate, err)
+		return
+	}
+	if err := app.exec.UpdateMarketState(ctx, changes); err != nil {
+		app.log.Error("failed to enact governance market state update", logging.String("proposal", prop.ID), logging.String("error", err.Error()))
+		prop.FailWithErr(types.ProposalErrorInvalidStateUpdate, err)
 	}
 }
 

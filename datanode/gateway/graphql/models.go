@@ -835,6 +835,55 @@ func (e GovernanceTransferType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type MarketUpdateType string
+
+const (
+	// Default value, always invalid
+	MarketUpdateTypeMarketStateUpdateTypeUnspecified MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_UNSPECIFIED"
+	// Terminate the market
+	MarketUpdateTypeMarketStateUpdateTypeTerminate MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_TERMINATE"
+	// Suspend the market
+	MarketUpdateTypeMarketStateUpdateTypeSuspend MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_SUSPEND"
+	// Resume a suspended market
+	MarketUpdateTypeMarketStateUpdateTypeResume MarketUpdateType = "MARKET_STATE_UPDATE_TYPE_RESUME"
+)
+
+var AllMarketUpdateType = []MarketUpdateType{
+	MarketUpdateTypeMarketStateUpdateTypeUnspecified,
+	MarketUpdateTypeMarketStateUpdateTypeTerminate,
+	MarketUpdateTypeMarketStateUpdateTypeSuspend,
+	MarketUpdateTypeMarketStateUpdateTypeResume,
+}
+
+func (e MarketUpdateType) IsValid() bool {
+	switch e {
+	case MarketUpdateTypeMarketStateUpdateTypeUnspecified, MarketUpdateTypeMarketStateUpdateTypeTerminate, MarketUpdateTypeMarketStateUpdateTypeSuspend, MarketUpdateTypeMarketStateUpdateTypeResume:
+		return true
+	}
+	return false
+}
+
+func (e MarketUpdateType) String() string {
+	return string(e)
+}
+
+func (e *MarketUpdateType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketUpdateType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketUpdateType", str)
+	}
+	return nil
+}
+
+func (e MarketUpdateType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // Filter type for specifying the types of transfers to filter for
 type TransferDirection string
 

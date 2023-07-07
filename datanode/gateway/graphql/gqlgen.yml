@@ -275,6 +275,8 @@ models:
     model: code.vegaprotocol.io/vega/protos/vega.CancelTransfer
   NewTransfer:
     model: code.vegaprotocol.io/vega/protos/vega.NewTransfer
+  UpdateMarketState:
+    model: code.vegaprotocol.io/vega/protos/vega.UpdateMarketState
   InstrumentConfiguration:
     model: code.vegaprotocol.io/vega/protos/vega.InstrumentConfiguration
   SuccessorConfiguration:

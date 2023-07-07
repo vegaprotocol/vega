@@ -476,6 +476,34 @@ func (mr *MockExecutionEngineMockRecorder) UpdateMarket(arg0, arg1 interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarket", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarket), arg0, arg1)
 }
 
+// UpdateMarketState mocks base method.
+func (m *MockExecutionEngine) UpdateMarketState(arg0 context.Context, arg1 *types.MarketStateUpdateConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateMarketState", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMarketState indicates an expected call of UpdateMarketState.
+func (mr *MockExecutionEngineMockRecorder) UpdateMarketState(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMarketState", reflect.TypeOf((*MockExecutionEngine)(nil).UpdateMarketState), arg0, arg1)
+}
+
+// VerifyUpdateMarketState mocks base method.
+func (m *MockExecutionEngine) VerifyUpdateMarketState(arg0 *types.MarketStateUpdateConfiguration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyUpdateMarketState", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VerifyUpdateMarketState indicates an expected call of VerifyUpdateMarketState.
+func (mr *MockExecutionEngineMockRecorder) VerifyUpdateMarketState(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyUpdateMarketState", reflect.TypeOf((*MockExecutionEngine)(nil).VerifyUpdateMarketState), arg0)
+}
+
 // MockGovernanceEngine is a mock of GovernanceEngine interface.
 type MockGovernanceEngine struct {
 	ctrl     *gomock.Controller

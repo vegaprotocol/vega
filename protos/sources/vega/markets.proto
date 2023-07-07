@@ -241,6 +241,8 @@ message Market {
     STATE_TRADING_TERMINATED = 8;
     // Settlement triggered and completed as defined by product
     STATE_SETTLED = 9;
+    // Market has been suspended via governance
+    STATE_SUSPENDED_VIA_GOVERNANCE = 10;
   }
 
   // Trading mode the market is currently running, also referred to as 'market state'
@@ -257,6 +259,8 @@ message Market {
     TRADING_MODE_MONITORING_AUCTION = 4;
     // No trading is allowed
     TRADING_MODE_NO_TRADING = 5;
+    // Special auction mode triggered via governance
+    TRADING_MODE_SUSPENDED_VIA_GOVERNANCE = 6;
 
     // Note: If adding an enum value, add a matching entry in:
     //       - gateway/graphql/helpers_enum.go
