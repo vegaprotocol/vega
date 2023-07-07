@@ -1602,6 +1602,13 @@ func (m *Market) triggerStopOrders(
 
 	m.broker.SendBatch(evts)
 
+	// remove from expiring orders
+	for _, v := range append(triggered, cancelled...) {
+		if v.Expiry.Expires() {
+			m.expiringStopOrders.RemoveOrder(v.Expiry.ExpiresAt.UnixNano(), v.ID)
+		}
+	}
+
 	confirmations := m.submitStopOrders(ctx, triggered, types.StopOrderStatusTriggered, idgen)
 
 	return append(m.triggerStopOrders(ctx, idgen), confirmations...)
