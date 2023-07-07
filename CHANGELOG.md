@@ -16,8 +16,17 @@
 
 ### 🐛 Fixes
 
+- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+
+
+## 0.72.1
+
+### 🐛 Fixes
+
 - [8709](https://github.com/vegaprotocol/vega/issues/8709) - Fix stop order enum in data node.
 - [8713](https://github.com/vegaprotocol/vega/issues/8713) - Wallet name with upper-case letter is allowed, again
+- [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
+- [8711](https://github.com/vegaprotocol/vega/issues/8711) - Fix market lineage trigger.
 
 
 ## 0.72.0
@@ -154,7 +163,6 @@
 - [8702](https://github.com/vegaprotocol/vega/issues/8702) - Fix panic on auction exit after stop orders expired in auction
 - [8703](https://github.com/vegaprotocol/vega/issues/8703) - Wire stop orders cancellation
 - [8698](https://github.com/vegaprotocol/vega/issues/8698) - Always set the `ToAccount` field when clearing fees.
-- [8711](https://github.com/vegaprotocol/vega/issues/8711) - Fix market lineage trigger.
 
 ## 0.71.0
 
