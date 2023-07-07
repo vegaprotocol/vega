@@ -12,7 +12,7 @@
 
 ### 🛠 Improvements
 
-- [](https://github.com/vegaprotocol/vega/issues/xxxx) -
+- [8718](https://github.com/vegaprotocol/vega/issues/8718) - Emit market data event after setting mark price prior to final settlement.
 
 ### 🐛 Fixes
 
