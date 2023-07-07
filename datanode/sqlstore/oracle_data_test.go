@@ -61,7 +61,7 @@ func testAddAndRetrieveOracleDataWithError(t *testing.T) {
 		assert.NoError(t, od.Add(ctx, data))
 	}
 
-	dataForSpec, _, err := od.GetOracleDataBySpecID(ctx, "deadbeef01", entities.CursorPagination{})
+	dataForSpec, _, err := od.ListOracleData(ctx, "deadbeef01", entities.CursorPagination{})
 	assert.NoError(t, err)
 	assert.Equal(t, len(dataForSpec), 1)
 
@@ -89,7 +89,7 @@ func testAddAndRetrieveOracleDataWithMetaData(t *testing.T) {
 		assert.NoError(t, od.Add(ctx, data))
 	}
 
-	dataForSpec, _, err := od.GetOracleDataBySpecID(ctx, "deadbeef01", entities.CursorPagination{})
+	dataForSpec, _, err := od.ListOracleData(ctx, "deadbeef01", entities.CursorPagination{})
 	assert.NoError(t, err)
 	assert.Equal(t, len(dataForSpec), 1)
 

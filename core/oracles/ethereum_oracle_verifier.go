@@ -83,7 +83,7 @@ type EthereumOracleVerifier struct {
 
 type pendingCallEvent struct {
 	callEvent types.EthContractCallEvent
-	check     func() error
+	check     func(ctx context.Context) error
 }
 
 func (p pendingCallEvent) GetID() string { return p.callEvent.Hash() }
@@ -91,7 +91,7 @@ func (p pendingCallEvent) GetID() string { return p.callEvent.Hash() }
 func (p pendingCallEvent) GetType() types.NodeVoteType {
 	return types.NodeVoteTypeEthereumContractCallResult
 }
-func (p *pendingCallEvent) Check() error { return p.check() }
+func (p *pendingCallEvent) Check(ctx context.Context) error { return p.check(ctx) }
 
 func NewEthereumOracleVerifier(
 	log *logging.Logger,
@@ -147,7 +147,7 @@ func (s *EthereumOracleVerifier) ProcessEthereumContractCallResult(callEvent typ
 
 	pending := &pendingCallEvent{
 		callEvent: callEvent,
-		check:     func() error { return s.checkCallEventResult(callEvent) },
+		check:     func(ctx context.Context) error { return s.checkCallEventResult(callEvent) },
 	}
 
 	s.pendingCallEvents = append(s.pendingCallEvents, pending)

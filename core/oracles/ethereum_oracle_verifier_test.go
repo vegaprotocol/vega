@@ -98,7 +98,7 @@ func testProcessEthereumOracleChainEventWithGlobalError(t *testing.T) {
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
 			resourceToCheck = toCheck
 			onQueryResultVerified = fn
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -149,7 +149,7 @@ func testProcessEthereumOracleChainEventWithLocalError(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -182,7 +182,7 @@ func testProcessEthereumOracleChainEventWithMismatchedError(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -219,7 +219,7 @@ func testProcessEthereumOracleQueryOK(t *testing.T) {
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
 			resourceToCheck = toCheck
 			onQueryResultVerified = fn
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -255,7 +255,7 @@ func testProcessEthereumOracleQueryResultMismatch(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -278,7 +278,7 @@ func testProcessEthereumOracleFilterMismatch(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -301,7 +301,7 @@ func testProcessEthereumOracleInsufficientConfirmations(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
@@ -325,7 +325,7 @@ func testProcessEthereumOracleQueryDuplicateIgnored(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 

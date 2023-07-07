@@ -147,7 +147,7 @@ func (s *EthereumOracleVerifier) restorePendingCallEvents(results []*types.EthCo
 
 		pending := &pendingCallEvent{
 			callEvent: *callEvent,
-			check:     func() error { return s.checkCallEventResult(*callEvent) },
+			check:     func(ctx context.Context) error { return s.checkCallEventResult(*callEvent) },
 		}
 
 		s.pendingCallEvents = append(s.pendingCallEvents, pending)

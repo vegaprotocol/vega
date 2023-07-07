@@ -71,7 +71,7 @@ func TestEthereumOracleVerifierWithPendingQueryResults(t *testing.T) {
 	eov.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
 		DoAndReturn(func(toCheck validators.Resource, fn func(interface{}, bool), _ time.Time) error {
-			checkResult = toCheck.Check()
+			checkResult = toCheck.Check(context.Background())
 			return nil
 		})
 
