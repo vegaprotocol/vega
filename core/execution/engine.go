@@ -206,6 +206,14 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 }
 
+func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	// TODO
+}
+
+func (e *Engine) OnEpochRestore(ctx context.Context, epoch types.Epoch) {
+	// TODO
+}
+
 func (e *Engine) SpotsMarketsEnabled() bool {
 	// TODO replace with real implementation
 	return false

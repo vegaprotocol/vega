@@ -69,6 +69,8 @@ message NewSpotMarketConfiguration {
   }
   // Decimal places for order sizes, sets what size the smallest order / position on the spot market can be.
   int64 position_decimal_places = 6;
+  // Specifies the liquidity provision SLA parameters.
+  LiquiditySLAParameters sla_params = 7;
 }
 
 // Configuration for a new futures market on Vega
@@ -180,6 +182,8 @@ message UpdateSpotMarketConfiguration {
     // Log normal risk model parameters, valid only if MODEL_LOG_NORMAL is selected.
     LogNormalRiskModel log_normal = 101;
   }
+  // Specifies the liquidity provision SLA parameters.
+  LiquiditySLAParameters sla_params = 4;
 }
 
 // Instrument configuration
@@ -456,6 +460,10 @@ enum ProposalError {
   PROPOSAL_ERROR_GOVERNANCE_CANCEL_TRANSFER_PROPOSAL_INVALID = 51;
   // Proposal for updating market state is invalid
   PROPOSAL_ERROR_INVALID_MARKET_STATE_UPDATE = 52;
+  // Liquidity provision SLA parameters are invalid
+  PROPOSAL_ERROR_INVALID_SLA_PARAMS = 53;
+  // Mandatory liquidity provision SLA parameters are missing
+  PROPOSAL_ERROR_MISSING_SLA_PARAMS = 54;
 }
 
 // Governance vote

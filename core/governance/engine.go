@@ -1185,6 +1185,7 @@ func (e *Engine) updatedSpotMarketFromProposal(p *proposal) (*types.Market, type
 			Metadata:                  terms.Changes.Metadata,
 			PriceMonitoringParameters: terms.Changes.PriceMonitoringParameters,
 			TargetStakeParameters:     terms.Changes.TargetStakeParameters,
+			SLAParams:                 terms.Changes.SLAParams,
 		},
 	}
 

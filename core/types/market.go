@@ -324,12 +324,15 @@ func (t TradableInstrument) String() string {
 }
 
 func (t TradableInstrument) DeepClone() *TradableInstrument {
-	return &TradableInstrument{
-		Instrument:       t.Instrument.DeepClone(),
-		MarginCalculator: t.MarginCalculator.DeepClone(),
-		RiskModel:        t.RiskModel,
-		rmt:              t.rmt,
+	ti := &TradableInstrument{
+		Instrument: t.Instrument.DeepClone(),
+		RiskModel:  t.RiskModel,
+		rmt:        t.rmt,
 	}
+	if t.MarginCalculator != nil {
+		ti.MarginCalculator = t.MarginCalculator.DeepClone()
+	}
+	return ti
 }
 
 type InstrumentSpot struct {
@@ -355,6 +358,7 @@ type Spot struct {
 
 func SpotFromProto(s *proto.Spot) *Spot {
 	return &Spot{
+		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
 	}
@@ -362,6 +366,7 @@ func SpotFromProto(s *proto.Spot) *Spot {
 
 func (s Spot) IntoProto() *proto.Spot {
 	return &proto.Spot{
+		Name:       s.Name,
 		BaseAsset:  s.BaseAsset,
 		QuoteAsset: s.QuoteAsset,
 	}
@@ -583,6 +588,9 @@ func (i Instrument) IntoProto() *proto.Instrument {
 	switch pt := p.(type) {
 	case *proto.Instrument_Future:
 		r.Product = pt
+
+	case *proto.Instrument_Spot:
+		r.Product = pt
 	}
 	return r
 }
@@ -759,6 +767,7 @@ type Market struct {
 	LPPriceRange                  num.Decimal
 	LinearSlippageFactor          num.Decimal
 	QuadraticSlippageFactor       num.Decimal
+	LiquiditySLAParams            *LiquiditySLAParams
 
 	TradingMode           MarketTradingMode
 	State                 MarketState
@@ -802,6 +811,11 @@ func MarketFromProto(mkt *proto.Market) (*Market, error) {
 		ParentMarketID:                parent,
 		InsurancePoolFraction:         insFraction,
 	}
+
+	if mkt.LiquiditySlaParams != nil {
+		m.LiquiditySLAParams = LiquiditySLAParamsFromProto(mkt.LiquiditySlaParams)
+	}
+
 	return m, nil
 }
 
@@ -838,6 +852,12 @@ func (m Market) IntoProto() *proto.Market {
 		parent = &pid
 		insPoolFrac = &insf
 	}
+
+	var lpSLA *proto.LiquiditySLAParameters
+	if m.LiquiditySLAParams != nil {
+		lpSLA = m.LiquiditySLAParams.IntoProto()
+	}
+
 	r := &proto.Market{
 		Id:                            m.ID,
 		TradableInstrument:            ti,
@@ -851,6 +871,7 @@ func (m Market) IntoProto() *proto.Market {
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
 		LpPriceRange:                  m.LPPriceRange.String(),
+		LiquiditySlaParams:            lpSLA,
 		LinearSlippageFactor:          m.LinearSlippageFactor.String(),
 		QuadraticSlippageFactor:       m.QuadraticSlippageFactor.String(),
 		InsurancePoolFraction:         insPoolFrac,
@@ -892,6 +913,10 @@ func (m Market) DeepClone() *Market {
 		QuadraticSlippageFactor: m.QuadraticSlippageFactor,
 		ParentMarketID:          m.ParentMarketID,
 		InsurancePoolFraction:   m.InsurancePoolFraction,
+	}
+
+	if m.LiquiditySLAParams != nil {
+		cpy.LiquiditySLAParams = m.LiquiditySLAParams.DeepClone()
 	}
 
 	if m.TradableInstrument != nil {

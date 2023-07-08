@@ -541,6 +541,7 @@ func checkNewSpotMarketChanges(change *protoTypes.ProposalTerms_NewSpotMarket) E
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.new_spot_market.changes"))
 	errs.Merge(checkNewInstrument(changes.Instrument, "proposal_submission.terms.change.new_spot_market.changes.instrument"))
 	errs.Merge(checkNewSpotRiskParameters(changes))
+	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.new_spot_market.changes.sla_params"))
 	return errs
 }
 
@@ -693,7 +694,7 @@ func checkUpdateSpotMarketChanges(change *protoTypes.ProposalTerms_UpdateSpotMar
 	errs.Merge(checkPriceMonitoring(changes.PriceMonitoringParameters, "proposal_submission.terms.change.update_spot_market.changes"))
 	errs.Merge(checkTargetStakeParams(changes.TargetStakeParameters, "proposal_submission.terms.change.update_spot_market.changes"))
 	errs.Merge(checkUpdateSpotRiskParameters(changes))
-
+	errs.Merge(checkSLAParams(changes.SlaParams, "proposal_submission.terms.change.update_spot_market.changes.sla_params"))
 	return errs
 }
 
@@ -768,7 +769,6 @@ func checkLiquidityMonitoring(parameters *protoTypes.LiquidityMonitoringParamete
 	if parameters.TargetStakeParameters.ScalingFactor <= 0 {
 		errs.AddForProperty(fmt.Sprintf("%s.liquidity_monitoring_parameters.target_stake_parameters.scaling_factor", parentProperty), ErrMustBePositive)
 	}
-
 	return errs
 }
 
@@ -1160,6 +1160,46 @@ func checkNewRiskParameters(config *protoTypes.NewMarketConfiguration) Errors {
 		errs.Merge(checkNewLogNormalRiskParameters(parameters))
 	default:
 		errs.AddForProperty("proposal_submission.terms.change.new_market.changes.risk_parameters", ErrIsNotValid)
+	}
+
+	return errs
+}
+
+func checkSLAParams(config *protoTypes.LiquiditySLAParameters, parent string) Errors {
+	errs := NewErrors()
+	if config == nil {
+		return errs.FinalAddForProperty(fmt.Sprintf("%s.sla_params", parent), ErrIsRequired)
+	}
+
+	lppr, err := num.DecimalFromString(config.PriceRange)
+	if err != nil {
+		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrIsNotValidNumber)
+	} else if lppr.IsNegative() || lppr.IsZero() {
+		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrMustBePositive)
+	} else if lppr.GreaterThan(num.DecimalFromInt64(100)) {
+		errs.AddForProperty(fmt.Sprintf("%s.price_range", parent), ErrMustBeAtMost100)
+	}
+
+	commitmentMinTimeFraction, err := num.DecimalFromString(config.CommitmentMinTimeFraction)
+	if err != nil {
+		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrIsNotValidNumber)
+	} else if commitmentMinTimeFraction.IsNegative() || commitmentMinTimeFraction.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.commitment_min_time_fraction", parent), ErrMustBeWithinRange01)
+	}
+
+	if config.ProvidersFeeCalculationTimeStep == 0 {
+		errs.AddForProperty(fmt.Sprintf("%s.providers.fee.calculation_time_step", parent), ErrMustBePositive)
+	}
+
+	slaCompetitionFactor, err := num.DecimalFromString(config.SlaCompetitionFactor)
+	if err != nil {
+		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrIsNotValidNumber)
+	} else if slaCompetitionFactor.IsNegative() || slaCompetitionFactor.GreaterThan(num.DecimalOne()) {
+		errs.AddForProperty(fmt.Sprintf("%s.sla_competition_factor", parent), ErrMustBeWithinRange01)
+	}
+
+	if config.PerformanceHysteresisEpochs < 1 {
+		errs.AddForProperty(fmt.Sprintf("%s.performance_hysteresis_epochs", parent), ErrMustBePositive)
 	}
 
 	return errs

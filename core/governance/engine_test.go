@@ -1364,6 +1364,13 @@ func newSpotMarketTerms() *types.ProposalTermsNewSpotMarket {
 				},
 				Metadata:      []string{"asset_class:spot/crypto", "product:spot"},
 				DecimalPlaces: 0,
+				SLAParams: &types.LiquiditySLAParams{
+					PriceRange:                      num.DecimalOne(),
+					CommitmentMinTimeFraction:       num.DecimalFromFloat(0.5),
+					SlaCompetitionFactor:            num.DecimalOne(),
+					ProvidersFeeCalculationTimeStep: time.Second * 1,
+					PerformanceHysteresisEpochs:     1,
+				},
 			},
 		},
 	}
