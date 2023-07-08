@@ -165,7 +165,6 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		ocoLinkID                          StopOrderID
 		expiresAt, updatedAt               *time.Time
 		expiryStrategy                     = StopOrderExpiryStrategyUnspecified
-		triggerDirection                   = StopOrderTriggerDirectionUnspecified
 		triggerPrice, triggerPercentOffset *string
 	)
 
@@ -211,7 +210,7 @@ func StopOrderFromProto(so *pbevents.StopOrderEvent, vegaTime time.Time, seqNum 
 		OCOLinkID:            ocoLinkID,
 		ExpiresAt:            expiresAt,
 		ExpiryStrategy:       expiryStrategy,
-		TriggerDirection:     triggerDirection,
+		TriggerDirection:     StopOrderTriggerDirection(so.StopOrder.TriggerDirection),
 		Status:               StopOrderStatus(so.StopOrder.Status),
 		CreatedAt:            NanosToPostgresTimestamp(so.StopOrder.CreatedAt),
 		UpdatedAt:            updatedAt,
